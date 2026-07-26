@@ -377,12 +377,13 @@ function isExpectedHitResponse(
   state: CanonicalSearchState,
   offset: number,
   workId: string,
+  mediaType: "etext" | "faksimil",
   limit = 3
 ): value is WorkSearchHitsResponse {
   if (!isRecord(value) || !Array.isArray(value.items)) return false
   if (
     value.query !== state.query ||
-    value.media_type !== "etext" ||
+    value.media_type !== mediaType ||
     value.offset !== offset ||
     value.limit !== limit ||
     !isSafeInteger(value.total_hits) ||
@@ -702,7 +703,7 @@ const focusReaderStyle = computed(() => focusMode.value && etextReader.value
 const ocrMode = computed(() => Boolean(
   explicitOcrRequested.value && facsimileReader.value?.ocrOverlay
 ))
-const searchState = computed(() => etextReader.value?.searchable
+const searchState = computed(() => reader.value?.searchable
   ? parseCanonicalSearchState()
   : null
 )
@@ -960,6 +961,9 @@ function currentPartAuthorLabel(index: number): string {
     : (author.surname ?? author.name ?? author.id)
 }
 
+let activeHitRequestController: AbortController | null = null
+onBeforeUnmount(() => activeHitRequestController?.abort())
+
 const hitFetch = await useAsyncData(
   computed(() => [
         "reader-hit",
@@ -967,28 +971,33 @@ const hitFetch = await useAsyncData(
         data.value?.identity ?? "pending",
         data.value?.status === "success" ? data.value.reader.workId : "pending"
       ].join(":")),
-      async () => {
+      async (_nuxtApp, { signal }) => {
+        activeHitRequestController?.abort()
+        activeHitRequestController = null
         const identity = dialogNeutralIdentity.value
         const state = searchState.value
         const currentReader = data.value
         if (
           !state ||
           currentReader?.status !== "success" ||
-          currentReader.identity !== readerRequestIdentity.value ||
-          currentReader.reader.mediaType !== "etext"
+          currentReader.identity !== readerRequestIdentity.value
         ) {
           return { status: "inactive" as const, identity }
         }
+        const controller = new AbortController()
+        activeHitRequestController = controller
+        const requestSignal = AbortSignal.any([signal, controller.signal])
         const offset = Math.max(state.hit - 1, 0)
         try {
           const client = createLbApiClient(
             import.meta.server ? config.apiBase : config.public.apiBase
           )
           const result = await client.GET("/works/{work_id}/search-hits", {
+            signal: requestSignal,
             params: {
               path: { work_id: currentReader.reader.workId },
               query: {
-                media_type: "etext",
+                media_type: currentReader.reader.mediaType,
                 query: state.query,
                 offset,
                 limit: 3,
@@ -1003,13 +1012,16 @@ const hitFetch = await useAsyncData(
             result.data,
             state,
             offset,
-            currentReader.reader.workId
+            currentReader.reader.workId,
+            currentReader.reader.mediaType
           )) {
             return { status: "error" as const, identity }
           }
           return { status: "success" as const, identity, response: result.data }
         } catch {
           return { status: "error" as const, identity }
+        } finally {
+          if (activeHitRequestController === controller) activeHitRequestController = null
         }
       },
       { watch: [dialogNeutralIdentity, () => data.value?.identity] }
@@ -1020,8 +1032,7 @@ const hitResponse = computed(() => {
   return value?.status === "success" &&
     value.identity === dialogNeutralIdentity.value &&
     data.value?.status === "success" &&
-    data.value.identity === readerRequestIdentity.value &&
-    data.value.reader.mediaType === "etext"
+    data.value.identity === readerRequestIdentity.value
     ? value.response
     : null
 })
@@ -1095,7 +1106,7 @@ const markedReaderHtml = computed(() => {
 const markedFacsimileReader = computed(() => {
   const currentReader = facsimileReader.value
   const overlay = currentReader?.ocrOverlay
-  const hit = selectedSearchHit.value
+  const hit = selectedSearchHit.value ?? activeHit.value
   if (!currentReader || !overlay || !hit) return currentReader
 
   return {
@@ -1152,8 +1163,7 @@ async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
     index >= response.total_hits ||
     index > maximumNavigableHit ||
     currentReader?.status !== "success" ||
-    currentReader.identity !== readerRequestIdentity.value ||
-    currentReader.reader.mediaType !== "etext"
+    currentReader.identity !== readerRequestIdentity.value
   ) return null
 
   const cached = response.items.find(item => item.index === index)
@@ -1165,7 +1175,7 @@ async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
       params: {
         path: { work_id: currentReader.reader.workId },
         query: {
-          media_type: "etext",
+          media_type: currentReader.reader.mediaType,
           query: state.query,
           offset: index,
           limit: 1,
@@ -1178,7 +1188,14 @@ async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
     })
     if (
       result.error ||
-      !isExpectedHitResponse(result.data, state, index, currentReader.reader.workId, 1) ||
+      !isExpectedHitResponse(
+        result.data,
+        state,
+        index,
+        currentReader.reader.workId,
+        currentReader.reader.mediaType,
+        1
+      ) ||
       result.data.total_hits !== response.total_hits
     ) return null
     const latestState = searchState.value
@@ -1201,17 +1218,28 @@ async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
   }
 }
 
-function rawHitFullPath(hit: Pick<WorkSearchHit, "page_name" | "index">): string {
+function rawHitFullPath(hit: WorkSearchHit): string {
   const pagePath = readerPageFullPath(rawFullPath.value, hit.page_name)
   const fragmentIndex = pagePath.indexOf("#")
   const fragment = fragmentIndex < 0 ? "" : pagePath.slice(fragmentIndex)
   const beforeHash = fragmentIndex < 0 ? pagePath : pagePath.slice(0, fragmentIndex)
   const queryIndex = beforeHash.indexOf("?")
-  if (queryIndex < 0) return `${beforeHash}?hit=${hit.index}${fragment}`
+  const replacements = new Map<string, string>([["hit", String(hit.index)]])
+  if (facsimileReader.value) {
+    replacements.set("traff", hit.highlight.from_word_id)
+    replacements.set("traffslut", hit.highlight.to_word_id)
+    replacements.set("hit_index", String(hit.index))
+  }
+  if (queryIndex < 0) {
+    const query = Array.from(replacements, ([key, value]) =>
+      `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+    ).join("&")
+    return `${beforeHash}?${query}${fragment}`
+  }
 
   const path = beforeHash.slice(0, queryIndex)
   const segments = beforeHash.slice(queryIndex + 1).split("&")
-  let replaced = false
+  const replaced = new Set<string>()
   const query = segments.map(segment => {
     const separator = segment.indexOf("=")
     const rawKey = separator < 0 ? segment : segment.slice(0, separator)
@@ -1221,11 +1249,14 @@ function rawHitFullPath(hit: Pick<WorkSearchHit, "page_name" | "index">): string
     } catch {
       return segment
     }
-    if (key !== "hit") return segment
-    replaced = true
-    return `hit=${hit.index}`
+    const value = replacements.get(key)
+    if (value === undefined) return segment
+    replaced.add(key)
+    return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
   })
-  if (!replaced) query.push(`hit=${hit.index}`)
+  for (const [key, value] of replacements) {
+    if (!replaced.has(key)) query.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+  }
   return `${path}?${query.join("&")}${fragment}`
 }
 
@@ -1576,14 +1607,16 @@ function pageHref(pageName: string): string {
 }
 
 function hitHref(hit: WorkSearchHit): string {
-  return readerHitHref({
-    author: authorParam.value,
-    title: titleParam.value,
-    page: hit.page_name,
-    mediaType: mediaTypeParam.value,
-    query: pageQuery.value,
-    hit: hit.index
-  })
+  return facsimileReader.value
+    ? rawHitFullPath(hit)
+    : readerHitHref({
+        author: authorParam.value,
+        title: titleParam.value,
+        page: hit.page_name,
+        mediaType: mediaTypeParam.value,
+        query: pageQuery.value,
+        hit: hit.index
+      })
 }
 
 function selectFacsimileSize(size: ReaderFacsimileSize): void {
@@ -2261,7 +2294,7 @@ watch(readerRequestIdentity, () => {
                 v-if="previousHit"
                 v-slot="{ navigate }"
                 custom
-                :to="readerTarget(previousHit.page_name, previousHit.index)"
+                :to="hitHref(previousHit)"
               ><a
                 rel="prev"
                 :href="hitHref(previousHit)"
@@ -2273,7 +2306,7 @@ watch(readerRequestIdentity, () => {
                 v-if="nextHit"
                 v-slot="{ navigate }"
                 custom
-                :to="readerTarget(nextHit.page_name, nextHit.index)"
+                :to="hitHref(nextHit)"
               ><a
                 rel="next"
                 :href="hitHref(nextHit)"

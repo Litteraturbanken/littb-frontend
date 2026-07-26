@@ -447,7 +447,43 @@ function hitsForQuery(query, workId) {
   }))
 }
 
-export function readerSearchHitResponse(workId, query, offset = 0, limit = 3) {
+export function readerSearchHitResponse(
+  workId,
+  query,
+  offset = 0,
+  limit = 3,
+  mediaType = "etext"
+) {
+  if (workId === "lb3203777" && mediaType === "faksimil" && query === "kyrka") {
+    const items = [
+      {
+        index: 0,
+        page_name: "58",
+        page_index: 57,
+        highlight: { from_word_id: "w58_123", to_word_id: "w58_123" }
+      },
+      {
+        index: 1,
+        page_name: "99",
+        page_index: 98,
+        highlight: { from_word_id: "w98_20", to_word_id: "w98_21" }
+      },
+      {
+        index: 2,
+        page_name: "3",
+        page_index: 2,
+        highlight: { from_word_id: "w2_10", to_word_id: "w2_10" }
+      }
+    ]
+    return {
+      query,
+      media_type: mediaType,
+      offset,
+      limit,
+      total_hits: items.length,
+      items: items.slice(offset, offset + limit)
+    }
+  }
   if (query === "max-edge") {
     const items = [
       {
@@ -471,7 +507,7 @@ export function readerSearchHitResponse(workId, query, offset = 0, limit = 3) {
     ]
     return {
       query,
-      media_type: "etext",
+      media_type: mediaType,
       offset,
       limit,
       total_hits: 1_000_003,
@@ -482,7 +518,7 @@ export function readerSearchHitResponse(workId, query, offset = 0, limit = 3) {
   const items = hitsForQuery(query, workId)
   return {
     query,
-    media_type: "etext",
+    media_type: mediaType,
     offset,
     limit,
     total_hits: items.length,

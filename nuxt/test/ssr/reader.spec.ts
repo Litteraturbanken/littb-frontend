@@ -551,6 +551,11 @@ test("real faksimil search hit falls back to backend metadata when the asset sou
   expect(html).toMatch(
     /id="w58_123"[^>]*class="[^"]*\bmarkee\b|class="[^"]*\bmarkee\b[^"]*"[^>]*id="w58_123"/
   )
+  expect(html).toContain("Sökträff 1 av 3")
+  expect(html).toContain("Nästa sökträff")
+  expect(html).toContain("sida/99/faksimil?q=kyrka&amp;hit=1")
+  expect(html).toContain("traff=w98_20&amp;traffslut=w98_21")
+  expect(html).toContain("hit_index=1")
   expect(await separateReaderRequests(request)).toEqual({
     metadata: [
       "/api/get_work_info?authorid=AarnsethF&exclude=content_vector&titlepath=Rallarliv",
@@ -561,7 +566,11 @@ test("real faksimil search hit falls back to backend metadata when the asset sou
     ocr: ["/txt/lb3203777/ocr_00057.html"],
     jpeg: []
   })
-  expect(await readerHitRequests(request)).toEqual([])
+  expect(await readerHitRequests(request)).toEqual([{
+    path: "/private-v2/works/lb3203777/search-hits",
+    query: "media_type=faksimil&query=kyrka&offset=0&limit=3" +
+      "&word_forms=false&include_older_spellings=true&prefix=false&suffix=false"
+  }])
 })
 
 test("canonical API projects source-ordered nested Reader navigation and resolves missing authors once", async ({
@@ -852,7 +861,7 @@ test("the exact faksimil page renders its fixed scan without e-text output", asy
   expect(await readerHitRequests(request)).toEqual([])
 })
 
-test("faksimil preserves search-shaped and invalid size queries without e-text hits", async ({
+test("faksimil preserves search-shaped and invalid size queries with faksimil hits", async ({
   request
 }) => {
   const response = await request.get(
@@ -869,10 +878,14 @@ test("faksimil preserves search-shaped and invalid size queries without e-text h
       "&amp;storlek=1&amp;return=first&amp;return=second&amp;unknown=bevara%20mig"
     )
   }
-  expect(html).not.toContain("reader-search-state")
+  expect(html).toContain("reader-search-state")
   expect(html).not.toContain("search_nav")
   expect(html).not.toContain("markee")
-  expect(await readerHitRequests(request)).toEqual([])
+  expect(await readerHitRequests(request)).toEqual([{
+    path: "/private-v2/works/lb-reader-gosta-berlings-saga/search-hits",
+    query: "media_type=faksimil&query=doktor&offset=0&limit=3" +
+      "&word_forms=false&include_older_spellings=true&prefix=false&suffix=false"
+  }])
 })
 
 test("an advertised direct faksimil size is server-rendered without a density pair", async ({

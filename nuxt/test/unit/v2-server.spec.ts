@@ -1155,7 +1155,7 @@ describe("v2 fixture server operations", () => {
     expect(await css.text()).toContain("forvillelser-reader")
   })
 
-  test("serves faksimil Reader metadata while search-hits remains e-text only", async () => {
+  test("serves faksimil Reader metadata and typed faksimil search hits", async () => {
     const metadataPath =
       `/api/get_work_info?authorid=${encodeURIComponent("LagerlöfS")}` +
       "&exclude=content_vector&titlepath=GostaBerlingsSaga"
@@ -1179,11 +1179,22 @@ describe("v2 fixture server operations", () => {
       `${origin}/v2/works/lb-reader-gosta-berlings-saga/search-hits` +
         "?media_type=faksimil&query=g%C3%B6sta"
     )
-    expect(searchHits.status).toBe(422)
+    expect(searchHits.status).toBe(200)
+    expect(await searchHits.json()).toMatchObject({
+      query: "gösta",
+      media_type: "faksimil",
+      offset: 0,
+      limit: 3
+    })
     expect(await (await fetch(`${origin}/_reader_metadata_requests`)).json()).toEqual({
       requests: [metadataPath]
     })
-    expect(await readerHitRequests()).toEqual({ requests: [] })
+    expect(await readerHitRequests()).toEqual({
+      requests: [{
+        path: "/v2/works/lb-reader-gosta-berlings-saga/search-hits",
+        query: "media_type=faksimil&query=g%C3%B6sta"
+      }]
+    })
   })
 
   test("serves the part-rich Reader graph only for the exact metadata query", async () => {
@@ -3907,7 +3918,7 @@ describe("v2 fixture server operations", () => {
   test("rejects malformed or extra Reader hit input without recording it", async () => {
     const invalidQueries = [
       "query=doktor",
-      "media_type=faksimil&query=doktor",
+      "media_type=pdf&query=doktor",
       "media_type=etext&query=",
       `media_type=etext&query=${"a".repeat(201)}`,
       "media_type=etext&query=doktor&offset=-1",

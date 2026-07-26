@@ -1400,9 +1400,9 @@ export interface components {
             limit: number;
             /**
              * Media Type
-             * @constant
+             * @enum {string}
              */
-            media_type: "etext";
+            media_type: "etext" | "faksimil";
             /** Offset */
             offset: number;
             /** Query */
@@ -2475,7 +2475,7 @@ export interface operations {
             query: {
                 include_older_spellings?: boolean;
                 limit?: number;
-                media_type: "etext";
+                media_type: "etext" | "faksimil";
                 offset?: number;
                 prefix?: boolean;
                 query: string;

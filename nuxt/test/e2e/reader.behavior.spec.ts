@@ -2159,7 +2159,7 @@ test("faksimil rotation resets after a different media session", async ({ page }
   expect(problems).toEqual([])
 })
 
-test("search-shaped faksimil navigation never requests e-text hits", async ({
+test("faksimil search state requests its own hits and exposes live navigation", async ({
   page,
   request
 }) => {
@@ -2170,16 +2170,69 @@ test("search-shaped faksimil navigation never requests e-text hits", async ({
       publicHitRequests.push(browserRequest.url())
     }
   })
-  const query = "?q=g%C3%B6sta&hit=1&lemma=1&ej_modern=1&prefix=1&suffix=1&s_mode=phrase&x=1&x=2"
-  await page.goto(`${facsimilePath}${query}`, { waitUntil: "networkidle" })
-  await activateReaderLink(page, "Nästa sida", facsimilePageHref("5", query))
+  const query = "?q=kyrka&hit=0&traff=w58_123&traffslut=w58_123" +
+    "&s_query=kyrka&s_lbworkid=lb3203777&s_mediatype=faksimil" +
+    "&s_word_form_only=true&s_include_modernized=true&hit_index=0" +
+    "&s_from=0&s_to=29&bare&repeat=%2f&repeat=%2F"
+  const rallarliv = "/författare/AarnsethF/titlar/Rallarliv/sida/58/faksimil"
+  await page.goto(`${rallarliv}${query}`, { waitUntil: "networkidle" })
 
-  await expect(page).toHaveURL(
-    `/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/5/faksimil${query}`
+  const toolkit = page.locator("#search_nav")
+  await expect(toolkit).toContainText("Träff 1, sida 58")
+  await expect(toolkit.getByRole("link", { name: "Nästa sökträff" })).toBeVisible()
+  await expect(toolkit.getByRole("link", { name: "Gå till första träffen" })).toBeVisible()
+  await expect(toolkit.getByRole("link", { name: "Gå till sista träffen" })).toBeVisible()
+  await expect(toolkit.getByRole("link", { name: "Gå direkt till träff . . ." })).toBeVisible()
+
+  await toolkit.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page).toHaveURL(/\/sida\/99\/faksimil\?q=kyrka&hit=1/)
+  await expect.poll(() => page.evaluate(() => location.search)).toContain("&bare&")
+  await expect.poll(() => page.evaluate(() => location.search)).toContain(
+    "&repeat=%2f&repeat=%2F"
   )
-  await expect(page.locator("#search_nav, .reader-search-state")).toHaveCount(0)
-  expect(await readerHitRequests(request)).toEqual([])
-  expect(publicHitRequests).toEqual([])
+  await expect.poll(() => page.evaluate(() => location.search)).toContain(
+    "&traff=w98_20&traffslut=w98_21"
+  )
+  await expect.poll(() => page.evaluate(() => location.search)).toContain("&hit_index=1")
+  await expect(toolkit).toContainText("Träff 2, sida 99")
+  await expect(page.locator(".reader_main .overlay #w98_20.markee")).toHaveCount(1)
+  await expect(page.locator(".reader_main .overlay #w98_21.markee.flip")).toHaveCount(1)
+
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL(/\/sida\/58\/faksimil\?q=kyrka&hit=0/)
+  await expect(toolkit).toContainText("Träff 1, sida 58")
+  await page.goForward({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL(/\/sida\/99\/faksimil\?q=kyrka&hit=1/)
+  await expect(toolkit).toContainText("Träff 2, sida 99")
+
+  await toolkit.getByRole("link", { name: "Gå till första träffen" }).click()
+  await expect(page).toHaveURL(/\/sida\/58\/faksimil\?q=kyrka&hit=0/)
+  await expect(toolkit).toContainText("Träff 1, sida 58")
+  await toolkit.getByRole("link", { name: "Gå till sista träffen" }).click()
+  await expect(page).toHaveURL(/\/sida\/3\/faksimil\?q=kyrka&hit=2/)
+  await expect(toolkit).toContainText("Träff 3, sida 3")
+
+  await toolkit.getByRole("link", { name: "Gå direkt till träff . . ." }).click()
+  const direct = toolkit.getByRole("textbox", { name: "Träffnummer" })
+  await direct.fill("2")
+  await direct.press("Enter")
+  await expect(page).toHaveURL(/\/sida\/99\/faksimil\?q=kyrka&hit=1/)
+  await expect(toolkit).toContainText("Träff 2, sida 99")
+  const window0 = "media_type=faksimil&query=kyrka&offset=0&limit=3" +
+    "&word_forms=false&include_older_spellings=true&prefix=false&suffix=false"
+  const window1 = window0.replace("offset=0", "offset=1")
+  expect(await readerHitRequests(request)).toEqual([
+    { path: "/private-v2/works/lb3203777/search-hits", query: window0 },
+    { path: "/v2/works/lb3203777/search-hits", query: window0 },
+    { path: "/v2/works/lb3203777/search-hits", query: window0 },
+    { path: "/v2/works/lb3203777/search-hits", query: window0 },
+    { path: "/v2/works/lb3203777/search-hits", query: window0 },
+    { path: "/v2/works/lb3203777/search-hits", query: window1 },
+    { path: "/v2/works/lb3203777/search-hits", query: window0 }
+  ])
+  expect(publicHitRequests).toHaveLength(6)
+  expect(publicHitRequests.every(url => new URL(url).searchParams.get("media_type") === "faksimil"))
+    .toBe(true)
   expect(problems).toEqual([])
 })
 
@@ -2201,6 +2254,48 @@ test("a selected faksimil search row marks its word in the OCR overlay", async (
   await expect(page.locator(".reader_main")).not.toHaveClass(/\bocr\b/u)
   expect(await readerHitRequests(request)).toEqual([])
   expect(problems).toEqual([])
+})
+
+test("leaving delayed faksimil hit mode aborts the obsolete request", async ({
+  page,
+  request
+}) => {
+  const rallarliv = "/författare/AarnsethF/titlar/Rallarliv/sida/58/faksimil"
+  await page.goto(`${rallarliv}?q=kyrka&hit=0`, { waitUntil: "networkidle" })
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await request.put(`${fixture}/_reader_hit_delays`, {
+    data: {
+      ["lb3203777|kyrka|0|3|false|true|false|false"]: 600
+    }
+  })
+  const failedRequests: string[] = []
+  page.on("requestfailed", browserRequest => {
+    if (new URL(browserRequest.url()).pathname.includes("/search-hits")) {
+      failedRequests.push(browserRequest.url())
+    }
+  })
+
+  await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect.poll(async () => (await readerHitRequests(request)).length).toBe(1)
+  await navigateClient(page, rallarliv)
+
+  await page.waitForTimeout(750)
+  await expect(page).toHaveURL(rallarliv)
+  await expect(page.locator("#search_nav, .reader-search-state")).toHaveCount(0)
+  expect(failedRequests).toHaveLength(1)
+})
+
+test("malformed faksimil canonical search state fails closed without hit IO", async ({
+  page,
+  request
+}) => {
+  const rallarliv = "/författare/AarnsethF/titlar/Rallarliv/sida/58/faksimil"
+  await page.goto(`${rallarliv}?q=kyrka&hit=01`, { waitUntil: "networkidle" })
+
+  await expect(page.locator(".reader_main img.faksimil")).toBeVisible()
+  await expect(page.locator("#search_nav, .reader-search-state")).toHaveCount(0)
+  await expect(page.locator(".reader_main .markee")).toHaveCount(0)
+  expect(await readerHitRequests(request)).toEqual([])
 })
 
 test("a failed faksimil scan stays bounded while context and navigation contract remain intact", async ({

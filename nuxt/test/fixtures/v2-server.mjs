@@ -1350,7 +1350,7 @@ function parseReaderHitQuery(searchParams) {
 
   const mediaType = searchParams.get("media_type")
   const rawQuery = searchParams.get("query")
-  if (mediaType !== "etext" || rawQuery === null) return null
+  if ((mediaType !== "etext" && mediaType !== "faksimil") || rawQuery === null) return null
   const query = rawQuery.trim()
   if (query.length < 1 || query.length > 200) return null
 
@@ -1387,6 +1387,7 @@ function parseReaderHitQuery(searchParams) {
   ) return null
 
   return {
+    mediaType,
     query,
     offset,
     limit,
@@ -3584,17 +3585,32 @@ const server = createServer(async (request, response) => {
 
   if (
     request.method === "GET"
-    && url.pathname === "/txt/lb3203777/ocr_00057.html"
+    && /^\/txt\/lb3203777\/ocr_(?:00002|00057|00098)\.html$/.test(url.pathname)
   ) {
     const recordedRequest = `${url.pathname}${url.search}`
     readerRequests.push(recordedRequest)
     readerOcrRequests.push(recordedRequest)
+    const content = url.pathname.endsWith("00057.html")
+      ? '<span class="w" style="top: 364px; left: 255.4px; font-size: 16.3408px"><span id="w58_123">kyrka </span><span id="w58_123">. </span></span>'
+      : url.pathname.endsWith("00098.html")
+        ? '<span class="w"><span id="w98_20">kyrka </span><span id="w98_21">igen</span></span>'
+        : '<span class="w"><span id="w2_10">kyrka</span></span>'
     return sendBody(
       response,
       200,
       "text/html; charset=utf-8",
-      '<div data-size="488.160004x756"><span class="w" style="top: 364px; left: 255.4px; font-size: 16.3408px"><span id="w58_123">kyrka </span><span id="w58_123">. </span></span></div>'
+      `<div data-size="488.160004x756">${content}</div>`
     )
+  }
+
+  if (
+    request.method === "GET"
+    && /^\/txt\/lb3203777\/lb3203777_[1-5]\/lb3203777_[1-5]_\d{4}\.jpeg$/.test(url.pathname)
+  ) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerJpegRequests.push(recordedRequest)
+    return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
   }
 
   if (
@@ -4464,7 +4480,7 @@ const server = createServer(async (request, response) => {
     if (query.query === "malformed-response") {
       return sendJson(response, 200, {
         query: query.query,
-        media_type: "etext",
+        media_type: query.mediaType,
         offset: query.offset,
         limit: query.limit,
         total_hits: "invalid",
@@ -4475,7 +4491,8 @@ const server = createServer(async (request, response) => {
       readerHitWork.workId,
       query.query,
       query.offset,
-      query.limit
+      query.limit,
+      query.mediaType
     ))
   }
 
