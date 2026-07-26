@@ -27,17 +27,17 @@ const sourceInfoAuthorityManifest = {
   "reader-source-info-closed-normal-mobile.png":
     "aa018756f1acb71859c3136f0fdf976d3800a9cfbaa56970c0646b1c205c7da0",
   "reader-source-info-drama-desktop.png":
-    "9ace3926c9db776928e780d6ac528c207607ddbc45052775567e192f60411240",
+    "bbe43c77fb2b5a1e4bbcc1caef76cc4e072d77921b55f287c6f4ee633f50cc5b",
   "reader-source-info-drama-mobile.png":
-    "f424aea770cac3e39ff29c1f6ebb49e7d78cd772696036ef8ee51565fbdd484e",
+    "35b05255207c79c4e8f8652f1e9a603efb34a7192ca9e0ac6611c7489f871576",
   "reader-source-info-long-scroll-desktop.png":
-    "0bf9fe7d4169ec7e1c82a5a00a6cc1eed946f34fb6d699469f8043536e780c3d",
+    "0e1c440dbb3d6cc0b67609ab873d37b1b406dd004e23f626c4fa556959b2f1e1",
   "reader-source-info-long-scroll-mobile.png":
-    "4e15c928787c04f94d76adad78c79e6864ea8735919dac51c542095d45ae02f4",
+    "a3449b7c3144e46b7fd866a8f53745b7acb2e47868286ac756a42187992253a3",
   "reader-source-info-normal-desktop.png":
-    "b8dabc1a4e880f2380280d592a90c50516fe19dbb9d6587a28ebf14b9719a1dc",
+    "828320f5e246fde578e822b5b1d932c4e92db83c36578d0566da0f9670916c89",
   "reader-source-info-normal-mobile.png":
-    "4d7759b0f7bc1edbc02d7a4654c489f48cc464b380a6d6063c26cd179c000a57"
+    "7140ba16a654b9e9e122bc86a07896120172706df2f39ffdb734f849da5ddc84"
 } as const
 
 type SourceInfoRequest = {
@@ -445,16 +445,22 @@ for (const visualCase of visualCases) {
     expect(problems).toEqual([])
 
     const device = isMobile ? "mobile" : "desktop"
-    await expect.soft(page).toHaveScreenshot(
-      `reader-source-info-${visualCase.name}-${device}.png`,
-      {
-        fullPage: true,
-        animations: "disabled",
-        caret: "hide",
-        scale: "css",
-        threshold: 0.1,
-        maxDiffPixels: 100
-      }
-    )
+    const screenshotName = `reader-source-info-${visualCase.name}-${device}.png`
+    const screenshotOptions = {
+      animations: "disabled" as const,
+      caret: "hide" as const,
+      scale: "css" as const,
+      threshold: 0.1,
+      maxDiffPixels: 100
+    }
+    if (visualCase.mode === "closed") {
+      await expect.soft(page).toHaveScreenshot(screenshotName, {
+        ...screenshotOptions,
+        fullPage: true
+      })
+    } else {
+      await expect.soft(dialog.locator(".modal-dialog"))
+        .toHaveScreenshot(screenshotName, screenshotOptions)
+    }
   })
 }

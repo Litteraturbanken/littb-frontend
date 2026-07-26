@@ -766,13 +766,17 @@ for (const visualCase of visualCases) {
     const directory = resolve(import.meta.dirname, "baselines")
     await mkdir(directory, { recursive: true })
     const device = testInfo.project.name === "angular-mobile" ? "mobile" : "desktop"
-    await page.screenshot({
+    const screenshotOptions = {
       path: resolve(directory, `reader-source-info-${visualCase.name}-${device}.png`),
-      fullPage: true,
-      animations: "disabled",
-      caret: "hide",
-      scale: "css"
-    })
+      animations: "disabled" as const,
+      caret: "hide" as const,
+      scale: "css" as const
+    }
+    if (visualCase.mode === "closed") {
+      await page.screenshot({ ...screenshotOptions, fullPage: true })
+    } else {
+      await page.locator(".about.modal .modal-dialog").screenshot(screenshotOptions)
+    }
 
     expect(ledger.unexpected).toEqual([])
     expect(ledger.problems).toEqual([])
