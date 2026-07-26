@@ -1,4 +1,5 @@
 import { validatePresentationSegments } from "./presentation-routes"
+import { isSlaArticleId } from "../../shared/types/sla-article"
 
 const authorPrefixes = ["/forfattare", "/författare", "/f%C3%B6rfattare"] as const
 const searchPrefixes = ["/sok", "/sök", "/s%C3%B6k"] as const
@@ -25,6 +26,57 @@ const aboutPages = new Set([
   "statistik"
 ])
 const dramawebbenPages = new Set(["pjäser", "om", "kringtexter"])
+const authorPages = new Set(["titlar", "dramawebben", "biblinfo", "mer"])
+const authorDocuments = new Set(["presentation", "bibliografi", "semer"])
+const readerMedia = new Set(["etext", "faksimil"])
+const unsafeRouteSegment = /[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u
+
+function validRouteSegment(value: string, maximumLength: number): boolean {
+  return value.length > 0
+    && value.length <= maximumLength
+    && value === value.trim()
+    && value !== "."
+    && value !== ".."
+    && !unsafeRouteSegment.test(value)
+}
+
+function isAuthorRoute(segments: string[]): boolean {
+  if (segments[0] !== "författare") return false
+
+  const author = segments[1]
+  if (!author || !validRouteSegment(author, 100)) return false
+  if (segments.length === 2) return true
+
+  const section = segments[2]
+  if (segments.length === 3) {
+    return authorPages.has(section!)
+      || authorDocuments.has(section!)
+      || (author === "LagerlöfS" && section === "omtexterna")
+  }
+
+  if (section === "omtexterna") {
+    return segments.length === 4
+      && author === "LagerlöfS"
+      && isSlaArticleId(segments[3])
+  }
+  if (section !== "titlar") return false
+
+  const title = segments[3]
+  if (!title || !validRouteSegment(title, 200)) return false
+  if (segments.length === 4) return true
+
+  const routeKind = segments[4]
+  if (segments.length === 5) {
+    return routeKind === "info" || readerMedia.has(routeKind!)
+  }
+  if (routeKind === "info") {
+    return segments.length === 6 && readerMedia.has(segments[5]!)
+  }
+  if (routeKind !== "sida" || segments.length !== 7) return false
+
+  return validRouteSegment(segments[5]!, 512)
+    && readerMedia.has(segments[6]!)
+}
 
 function replaceStaticPrefix(
   value: string,
@@ -54,14 +106,15 @@ export function isNuxtInternalHref(value: string): boolean {
     ? rawPathname.slice(0, -1)
     : rawPathname
   let decoded: string
+  let segments: string[]
   try {
     decoded = decodeURIComponent(pathname)
+    segments = pathname.split("/").slice(1).map(segment => decodeURIComponent(segment))
   } catch {
     return false
   }
   if (exactNuxtRoutes.has(decoded)) return true
 
-  const segments = decoded.split("/").slice(1)
   if (segments.some(segment => !segment)) return false
 
   if (segments[0] === "id") return segments.length <= 2
@@ -81,10 +134,5 @@ export function isNuxtInternalHref(value: string): boolean {
     if (segments.length === 1) return true
     return validatePresentationSegments(segments.slice(1))
   }
-  if (segments[0] !== "forfattare" && segments[0] !== "författare") return false
-  if (segments.length === 2) return true
-  if (segments[2] !== "titlar") return segments.length === 3 || segments.length === 4
-  if (segments.length >= 3 && segments.length <= 5) return true
-  if (segments.length === 6) return segments[4] === "info"
-  return segments.length === 7 && segments[4] === "sida"
+  return isAuthorRoute(segments)
 }

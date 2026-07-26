@@ -235,3 +235,33 @@ test("profile links use canonical internal paths and blank targets are hardened"
   await expect(page.locator('ul.links a[href="/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar"]'))
     .toHaveCount(1)
 })
+
+test("converted profile navigation keeps SPA state and Back restores the profile", async ({
+  page
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    const statefulWindow = window as typeof window & { __authorProfileSentinel?: string }
+    statefulWindow.__authorProfileSentinel = "profile-stayed-mounted"
+  })
+
+  await page
+    .getByRole("navigation", { name: "Författarsidor" })
+    .getByRole("link", { name: "Verk", exact: true })
+    .click()
+
+  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/StrindbergA\/titlar$/)
+  await expect(page.locator("h1")).toContainText("August Strindberg (1849-1912)")
+  expect(await page.evaluate(() => (
+    window as typeof window & { __authorProfileSentinel?: string }
+  ).__authorProfileSentinel)).toBe("profile-stayed-mounted")
+
+  await page.goBack()
+  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/StrindbergA$/)
+  await expect(page.locator(".introtext")).toContainText("Han debuterade med Fritänkaren.")
+  expect(await page.evaluate(() => (
+    window as typeof window & { __authorProfileSentinel?: string }
+  ).__authorProfileSentinel)).toBe("profile-stayed-mounted")
+  expect(problems).toEqual([])
+})

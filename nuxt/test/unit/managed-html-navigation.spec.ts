@@ -26,7 +26,10 @@ function target(
 describe("managed HTML navigation", () => {
   test.each([
     ["/presentationer?ankare=kulturarvet", "/presentationer?ankare=kulturarvet"],
-    ["/forfattare/LagerlofS?om-boken", "/f%C3%B6rfattare/LagerlofS?om-boken"],
+    [
+      "/författare/Lagerl%C3%B6fS?om-boken",
+      "/f%C3%B6rfattare/Lagerl%C3%B6fS?om-boken"
+    ],
     ["/sök?fras=röd%20sol&prefix", "/s%C3%B6k?fras=röd%20sol&prefix"],
     ["/editor/lb123/ix/4/e", "/editor/lb123/ix/4/e"],
     ["/om/ide/", "/om/ide/"],
@@ -56,6 +59,9 @@ describe("managed HTML navigation", () => {
     ["server alias", "/hjalp", {}],
     ["legacy presentation alias", "/p/s/Censur.html", {}],
     ["legacy latest alias", "/om/aktuellt", {}],
+    ["normalized author alias", "/forfattare/LagerlofS?om-boken", {}],
+    ["unsupported author document", "/författare/Test/legacy", {}],
+    ["unsupported reader media", "/författare/Test/titlar/Book/pdf", {}],
     ["invalid Nuxt depth", "/id/lb123/extra", {}]
   ])("leaves %s to native browser behavior", (_label, href, overrides) => {
     expect(target(href, overrides)).toBeNull()
