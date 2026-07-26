@@ -144,6 +144,14 @@ test("ordinary searchable faksimil keeps a transparent selectable OCR layer thro
   await expect(word).toContainText("OCR fixture")
   await expect(word).toHaveCSS("color", "rgba(0, 0, 0, 0)")
   await expect(word).not.toHaveCSS("pointer-events", "none")
+  expect(await word.evaluate(element => {
+    const selection = window.getSelection()
+    const range = document.createRange()
+    range.selectNodeContents(element)
+    selection?.removeAllRanges()
+    selection?.addRange(range)
+    return selection?.toString() ?? ""
+  })).toContain("OCR fixture")
   expect(await fixtureRequests(request, "ocr")).toEqual([
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"
   ])

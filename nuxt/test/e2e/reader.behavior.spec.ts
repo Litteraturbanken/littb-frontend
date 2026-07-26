@@ -3224,6 +3224,70 @@ test("rapid page intents push every draft route and debounce only the final cont
   expect(problems).toEqual([])
 })
 
+test("a rejected queued page push is contained and the next paging intent recovers", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: {
+        beforeEach: (guard: (to: { fullPath: string }) => unknown) => () => void
+      } } } }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    const state = window as typeof window & { __readerRejectedPushAttempted?: boolean }
+    const removeGuard = router.beforeEach(to => {
+      if (!to.fullPath.endsWith("/sida/-1/etext")) return
+      removeGuard()
+      state.__readerRejectedPushAttempted = true
+      throw new Error("rejected Reader page push")
+    })
+  })
+
+  await page.keyboard.press("n")
+  await expect.poll(() => page.evaluate(() => Boolean((window as typeof window & {
+    __readerRejectedPushAttempted?: boolean
+  }).__readerRejectedPushAttempted))).toBe(true)
+  await page.waitForTimeout(50)
+  await expect(page).toHaveURL(readerPath)
+
+  await page.keyboard.press("n")
+  await expect(page).toHaveURL(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
+  )
+  expect(problems).toEqual([])
+})
+
+test("a canceled leave keeps Reader keyboard paging active", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.evaluate(async () => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: {
+        beforeEach: (guard: (to: { path: string }) => unknown) => () => void
+        push: (path: string) => Promise<unknown>
+      } } } }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    const removeGuard = router.beforeEach(to => {
+      if (to.path !== "/bibliotek") return
+      removeGuard()
+      return false
+    })
+    await router.push("/bibliotek")
+  })
+  await expect(page).toHaveURL(readerPath)
+
+  await page.keyboard.press("n")
+  await expect(page).toHaveURL(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
+  )
+  expect(problems).toEqual([])
+})
+
 test("a bare page-position track click previews its integer and commits once", async ({
   page,
   request

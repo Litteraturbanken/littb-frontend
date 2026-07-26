@@ -707,8 +707,13 @@ function queueReaderPage(pageName: string): void {
   const href = pageHref(pageName)
   pendingPageNavigations += 1
   pageNavigationChain = pageNavigationChain
-    .catch(() => undefined)
-    .then(() => router.push(href).then(() => undefined))
+    .then(async () => {
+      try {
+        await router.push(href)
+      } catch {
+        pageRouteDraftName.value = pageParam.value
+      }
+    })
     .finally(() => {
       pendingPageNavigations -= 1
       if (pendingPageNavigations === 0) pageRouteDraftName.value = pageParam.value
@@ -1743,7 +1748,6 @@ onMounted(() => document.addEventListener("keydown", handleSourceInfoKeydown))
 onBeforeUnmount(() => document.removeEventListener("keydown", handleSourceInfoKeydown))
 onMounted(() => document.addEventListener("keydown", handleReaderPagingKeydown))
 onBeforeUnmount(() => document.removeEventListener("keydown", handleReaderPagingKeydown))
-onBeforeRouteLeave(() => document.removeEventListener("keydown", handleReaderPagingKeydown))
 onMounted(() => document.addEventListener("keydown", handleProductionShortcutKeydown))
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", handleProductionShortcutKeydown)

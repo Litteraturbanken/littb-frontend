@@ -204,6 +204,9 @@ test("chronology bare track clicks move the nearest handle and ties choose the u
   await clickYear(2010)
   await expect(from).toHaveValue("1900")
   await expect(to).toHaveValue("2010")
+  expect(await page.evaluate(
+    () => (window as typeof window & { __chronologyPushes?: number }).__chronologyPushes
+  )).toBe(1)
 
   await page.goto("/bibliotek?avancerat=1&intervall=1900,2000", { waitUntil: "networkidle" })
   await waitForHydration(page)
@@ -214,6 +217,26 @@ test("chronology bare track clicks move the nearest handle and ties choose the u
   expect(await page.evaluate(
     () => (window as typeof window & { __chronologyPushes?: number }).__chronologyPushes
   )).toBe(1)
+})
+
+test("chronology thumb clicks focus the chosen slider for native keyboard input", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?avancerat=1&intervall=1900,2000", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  const track = page.locator("[data-library-chronology-range] .rzslider")
+  await track.scrollIntoViewIfNeeded()
+  const box = await track.boundingBox()
+  expect(box).not.toBeNull()
+  const upperThumbX = box!.x + 10 + (box!.width - 20) * (2000 - 1800) / (2026 - 1800)
+  await page.mouse.click(upperThumbX, box!.y + box!.height / 2)
+
+  const upperSlider = page.getByRole("slider", { name: "Till tryckår reglage" })
+  await expect(upperSlider).toBeFocused()
+  await page.keyboard.press("ArrowLeft")
+  await expect(page.getByLabel("Till tryckår", { exact: true })).toHaveValue("1999")
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1900,1999")
 })
 
 test("a delayed advanced request cannot replace a newer route-owned result", async ({

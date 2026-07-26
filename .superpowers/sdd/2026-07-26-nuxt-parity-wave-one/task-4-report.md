@@ -53,3 +53,23 @@ Explicitly excluded are editor-reader pages, APIs, types, tests, and captures; Q
 - One combined desktop Library advanced run transiently counted six requests where the assertion expected five; the final route was correct and an isolated rerun passed. The focused nearest-handle desktop and mobile regressions are stable and pass.
 
 Commit subject: `fix(reader): restore navigation and OCR parity`.
+
+## Review fix round 1 (2026-07-26)
+
+Queued Reader navigation now catches each individual `router.push` rejection, resets the route draft to the actual current page, and leaves the serialization chain resolved. Keyboard paging cleanup now occurs only when the Reader component actually unmounts, so a canceled route leave cannot disable the still-mounted page. Library chronology pointer handling explicitly focuses the selected range input after suppressing the native pointer default, preserving native keyboard continuation without changing the reviewed nearest-handle/tie algorithm.
+
+RED evidence:
+
+- A one-shot throwing Router guard produced `pageerror: rejected Reader page push`, showing that the queued promise remained rejected/unhandled until a later intent.
+- A one-shot guard canceled `/bibliotek`; the Reader URL remained active, but pressing `n` timed out at page `-2`, proving `onBeforeRouteLeave` had removed the paging listener before the navigation outcome.
+- Clicking the upper chronology thumb left `Till tryckår reglage` inactive until timeout, proving `preventDefault` blocked native focus without an explicit handoff.
+
+GREEN evidence:
+
+- The throwing-guard regression contains the rejection with no page error, keeps the original URL, and lets the next `n` reach page `-1`.
+- The canceled-leave regression keeps `n` navigation active.
+- Chronology track clicks still choose the nearest handle and upper tie, now assert exactly one push for the near-max gesture, focus the chosen slider on a thumb click, and accept native Arrow-key input.
+- The searchable OCR regression now creates a real DOM `Selection` over transparent overlay text and asserts its contents.
+- Focused desktop regressions passed `2/2` Reader navigation, `2/2` chronology, and `1/1` OCR; the corresponding mobile Reader/chronology set passed `4/4`.
+
+The six-path staged index was exported to detached worktree `/tmp/littb-reader-review-staged` at verification commit `e3cc921d`. Fresh isolated-index verification passed: `yarn typecheck` (`Done in 4.21s`); 7 focused unit files with 148 tests; 5 focused desktop browser regressions; 4 focused mobile browser regressions; the existing rapid navigation/debounce regression on desktop and mobile (`2/2`); and 95 Reader final-parity/core SSR tests. `git diff --cached --check` also passed. The staged Reader page excludes its unrelated unstaged Quick Search developer-context hunks.

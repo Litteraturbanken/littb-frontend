@@ -2786,6 +2786,8 @@ function setChronologyDraft(endpoint: "from" | "to", value: string) {
 }
 
 const chronologyPointerEndpoint = ref<"from" | "to" | null>(null)
+const chronologyFromRange = ref<HTMLInputElement | null>(null)
+const chronologyToRange = ref<HTMLInputElement | null>(null)
 function chronologyPointerYear(event: PointerEvent): number | null {
   const bounds = chronologyBounds.value
   if (!bounds || !(event.currentTarget instanceof HTMLElement)) return null
@@ -2813,6 +2815,10 @@ function beginChronologyPointer(event: PointerEvent) {
     : fromDistance > toDistance
       ? "to"
       : year < from ? "from" : "to"
+  const range = chronologyPointerEndpoint.value === "from"
+    ? chronologyFromRange.value
+    : chronologyToRange.value
+  range?.focus({ preventScroll: true })
   track.setPointerCapture(event.pointerId)
   setChronologyDraft(chronologyPointerEndpoint.value, String(year))
 }
@@ -3353,6 +3359,7 @@ onUnmounted(disposeLibraryRequest)
               @pointercancel="cancelChronologyPointer"
             >
               <input
+                ref="chronologyFromRange"
                 type="range"
                 :min="chronologyFloor"
                 :max="chronologyCeiling"
@@ -3363,6 +3370,7 @@ onUnmounted(disposeLibraryRequest)
                 @change="commitChronologyDraft('from', ($event.target as HTMLInputElement).value)"
               >
               <input
+                ref="chronologyToRange"
                 type="range"
                 :min="chronologyFloor"
                 :max="chronologyCeiling"
