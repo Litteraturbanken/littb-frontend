@@ -72,9 +72,7 @@ test("Help renders the exact active state and authority submenu in the toolkit w
     )
   }
 
-  const initialContentRequests = await loggedContentRequests(request)
-  expect(initialContentRequests.length).toBeGreaterThan(0)
-  expect([...new Set(initialContentRequests)]).toEqual([contentPath])
+  expect(await loggedContentRequests(request)).toEqual([contentPath])
   expect(problems).toEqual([])
 })
 
