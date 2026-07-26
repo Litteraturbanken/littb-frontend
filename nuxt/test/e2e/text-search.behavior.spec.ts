@@ -463,6 +463,84 @@ test("every advanced filter family serializes exactly and reaches the semantic r
   })
 })
 
+test("chronology bare-track pointers move the nearest handle once and preserve route state", async ({
+  page
+}) => {
+  const openRange = async () => {
+    await openSearch(
+      page,
+      "/s%C3%B6k?fras=frihet&intervall=1300,1900&traffsida=3&keep=one&keep=two"
+    )
+    await page.evaluate(() => {
+      const state = window as typeof window & { __rangeMutations?: number }
+      const push = history.pushState.bind(history)
+      state.__rangeMutations = 0
+      history.pushState = (...args) => {
+        state.__rangeMutations! += 1
+        return push(...args)
+      }
+    })
+  }
+  const clickYear = async (year: number) => {
+    const track = page.locator("[data-search-chronology-range]")
+    await track.scrollIntoViewIfNeeded()
+    const box = await track.boundingBox()
+    expect(box).not.toBeNull()
+    const x = box!.x + 10 + (box!.width - 20) * (year - 1248) / (2026 - 1248)
+    await page.mouse.click(x, box!.y + box!.height / 2)
+  }
+  const mutationCount = () => page.evaluate(
+    () => (window as typeof window & { __rangeMutations?: number }).__rangeMutations
+  )
+
+  await openRange()
+  await clickYear(1400)
+  await expect(page.getByRole("slider", { name: "Från år reglage" })).toBeFocused()
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1400,1900")
+  const lowerQuery = new URL(page.url()).searchParams
+  expect(lowerQuery.getAll("keep")).toEqual(["one", "two"])
+  expect(lowerQuery.has("traffsida")).toBe(false)
+  expect(await mutationCount()).toBe(1)
+
+  await openRange()
+  await clickYear(2000)
+  await expect(page.getByRole("slider", { name: "Till år reglage" })).toBeFocused()
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1300,2000")
+  expect(await mutationCount()).toBe(1)
+
+  await openRange()
+  await clickYear(1600)
+  await expect(page.getByRole("slider", { name: "Till år reglage" })).toBeFocused()
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1300,1600")
+  expect(await mutationCount()).toBe(1)
+
+  await openRange()
+  await page.locator("[data-search-chronology-range]").dispatchEvent("pointerdown", {
+    button: 2,
+    clientX: 0,
+    clientY: 0,
+    pointerId: 71
+  })
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1300,1900")
+  expect(await mutationCount()).toBe(0)
+})
+
+test("chronology native slider keyboard input remains independent of the bare track", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&intervall=1300,1900&keep=keyboard")
+  const upper = page.getByRole("slider", { name: "Till år reglage" })
+  await upper.focus()
+  await page.keyboard.press("ArrowLeft")
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1300,1899")
+  expect(new URL(page.url()).searchParams.get("keep")).toBe("keyboard")
+})
+
 test("late option bounds do not overwrite a chronology edit in progress", async ({
   page,
   request

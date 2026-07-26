@@ -560,6 +560,72 @@ function setChronologyDraft(endpoint: "from" | "to", value: string) {
   else chronologyToDraft.value = value
 }
 
+const chronologyPointerEndpoint = ref<"from" | "to" | null>(null)
+
+function chronologyPointerYear(event: PointerEvent): number | null {
+  if (!(event.currentTarget instanceof HTMLElement)) return null
+  const box = event.currentTarget.getBoundingClientRect()
+  const usableWidth = Math.max(1, box.width - 20)
+  const fraction = Math.max(0, Math.min(1, (event.clientX - box.left - 10) / usableWidth))
+  return Math.round(
+    chronologyFloor.value + fraction * (chronologyCeiling.value - chronologyFloor.value)
+  )
+}
+
+function setChronologyPointerDraft(endpoint: "from" | "to", year: number) {
+  const other = Number(endpoint === "from"
+    ? chronologyToDraft.value
+    : chronologyFromDraft.value)
+  const bounded = Number.isFinite(other)
+    ? endpoint === "from" ? Math.min(year, other) : Math.max(year, other)
+    : year
+  setChronologyDraft(endpoint, String(bounded))
+}
+
+function beginChronologyPointer(event: PointerEvent) {
+  const track = event.currentTarget
+  if (
+    event.button !== 0
+    || !(track instanceof HTMLElement)
+    || event.target !== track
+  ) return
+  const year = chronologyPointerYear(event)
+  if (year === null) return
+  event.preventDefault()
+  const from = Number(chronologyFromDraft.value)
+  const to = Number(chronologyToDraft.value)
+  const endpoint = Math.abs(year - from) < Math.abs(year - to) ? "from" : "to"
+  chronologyPointerEndpoint.value = endpoint
+  const range = track.querySelector<HTMLInputElement>(`input[data-range-endpoint="${endpoint}"]`)
+  range?.focus({ preventScroll: true })
+  track.setPointerCapture(event.pointerId)
+  setChronologyPointerDraft(endpoint, year)
+}
+
+function moveChronologyPointer(event: PointerEvent) {
+  const endpoint = chronologyPointerEndpoint.value
+  if (!endpoint) return
+  const year = chronologyPointerYear(event)
+  if (year !== null) setChronologyPointerDraft(endpoint, year)
+}
+
+function finishChronologyPointer(event: PointerEvent) {
+  const endpoint = chronologyPointerEndpoint.value
+  if (!endpoint) return
+  moveChronologyPointer(event)
+  chronologyPointerEndpoint.value = null
+  void commitChronologyDraft(
+    endpoint,
+    endpoint === "from" ? chronologyFromDraft.value : chronologyToDraft.value
+  )
+}
+
+function cancelChronologyPointer() {
+  chronologyPointerEndpoint.value = null
+  chronologyDraftDirty.value = false
+  syncChronologyDraft()
+}
+
 async function commitChronologyDraft(endpoint: "from" | "to", value: string) {
   setChronologyDraft(endpoint, value)
   const floor = chronologyFloor.value
@@ -1174,11 +1240,17 @@ useHead({
       </div>
       <div class="flex block max-w-3xl pr-2">
         <div
+          data-search-chronology-range
           class="rzslider mt-3 slider-large chronology_ranges"
           :style="chronologyRangeStyle"
+          @pointerdown="beginChronologyPointer"
+          @pointermove="moveChronologyPointer"
+          @pointerup="finishChronologyPointer"
+          @pointercancel="cancelChronologyPointer"
         >
           <input
             type="range"
+            data-range-endpoint="from"
             :min="chronologyFloor"
             :max="chronologyCeiling"
             step="1"
@@ -1189,6 +1261,7 @@ useHead({
           >
           <input
             type="range"
+            data-range-endpoint="to"
             :min="chronologyFloor"
             :max="chronologyCeiling"
             step="1"

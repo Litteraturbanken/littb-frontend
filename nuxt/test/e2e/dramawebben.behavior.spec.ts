@@ -624,6 +624,108 @@ test("every legacy catalog filter is query-owned, local, inclusive, and clearabl
   expect(problems).toEqual([])
 })
 
+test("range bare-track pointers choose the nearest handle and mutate the route once", async ({
+  page
+}) => {
+  const openPagesRange = async () => {
+    await page.goto(
+      "/dramawebben/pj%C3%A4ser?number_of_pages=24,120&keep=one&keep=two",
+      { waitUntil: "networkidle" }
+    )
+    await page.getByRole("button", { name: "Akter och roller", exact: true }).click()
+    await page.evaluate(() => {
+      const state = window as typeof window & { __rangeMutations?: number }
+      const push = history.pushState.bind(history)
+      const replace = history.replaceState.bind(history)
+      state.__rangeMutations = 0
+      history.pushState = (...args) => {
+        state.__rangeMutations! += 1
+        return push(...args)
+      }
+      history.replaceState = (...args) => {
+        state.__rangeMutations! += 1
+        return replace(...args)
+      }
+    })
+  }
+  const clickPages = async (value: number) => {
+    const track = page.locator("[data-drama-range=number_of_pages]")
+    const box = await track.boundingBox()
+    expect(box).not.toBeNull()
+    const x = box!.x + 7.5 + (box!.width - 15) * (value - 18) / (120 - 18)
+    await page.mouse.click(x, box!.y + box!.height - 4)
+  }
+  const mutationCount = () => page.evaluate(
+    () => (window as typeof window & { __rangeMutations?: number }).__rangeMutations
+  )
+
+  await openPagesRange()
+  await clickPages(30)
+  await expect(page.getByRole("slider", { name: "Antal sidor från" })).toBeFocused()
+  await expectQuery(page, "number_of_pages", "30,120")
+  const lowerQuery = new URL(page.url()).searchParams
+  expect(lowerQuery.getAll("keep")).toEqual(["one", "two"])
+  expect(await mutationCount()).toBe(1)
+
+  await openPagesRange()
+  await clickPages(110)
+  await expect(page.getByRole("slider", { name: "Antal sidor till" })).toBeFocused()
+  await expectQuery(page, "number_of_pages", "24,110")
+  expect(await mutationCount()).toBe(1)
+
+  await openPagesRange()
+  await clickPages(72)
+  await expect(page.getByRole("slider", { name: "Antal sidor till" })).toBeFocused()
+  await expectQuery(page, "number_of_pages", "24,72")
+  expect(await mutationCount()).toBe(1)
+
+  await openPagesRange()
+  const pagesTrack = page.locator("[data-drama-range=number_of_pages]")
+  const box = await pagesTrack.boundingBox()
+  expect(box).not.toBeNull()
+  await page.mouse.click(box!.x + 1, box!.y + box!.height - 4)
+  await expectQuery(page, "number_of_pages", "18,120")
+  expect(await mutationCount()).toBe(1)
+})
+
+test("all drama range tracks share pointer behavior while native keyboard input stays native", async ({
+  page
+}) => {
+  await page.goto("/dramawebben/pj%C3%A4ser?keep=range", { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Akter och roller", exact: true }).click()
+
+  for (const key of [
+    "number_of_acts",
+    "number_of_roles",
+    "number_of_pages",
+    "female_roles",
+    "male_roles",
+    "other_roles"
+  ]) {
+    const track = page.locator(`[data-drama-range=${key}]`)
+    const box = await track.boundingBox()
+    expect(box).not.toBeNull()
+    await page.mouse.click(box!.x + box!.width * 0.25, box!.y + box!.height - 4)
+    await expect.poll(() => new URL(page.url()).searchParams.has(key)).toBe(true)
+  }
+
+  const pagesFrom = page.getByRole("slider", { name: "Antal sidor från" })
+  await pagesFrom.focus()
+  const before = Number(await pagesFrom.inputValue())
+  await page.keyboard.press("ArrowRight")
+  await expectQuery(page, "number_of_pages", `${before + 1},120`)
+  expect(new URL(page.url()).searchParams.get("keep")).toBe("range")
+
+  const beforeRightClick = page.url()
+  await page.locator("[data-drama-range=number_of_pages]").dispatchEvent("pointerdown", {
+    button: 2,
+    clientX: 0,
+    clientY: 0,
+    pointerId: 72
+  })
+  expect(page.url()).toBe(beforeRightClick)
+})
+
 test("Headless UI catalog controls support keyboard, Escape, outside close, and focus return", async ({
   page,
   request

@@ -485,6 +485,52 @@ function setRange(key: RangeKey, side: "from" | "to", value: string) {
   void setQuery(key, `${from},${to}`)
 }
 
+const rangePointer = ref<{ key: RangeKey, side: "from" | "to" } | null>(null)
+
+function rangePointerValue(event: PointerEvent, key: RangeKey): number | null {
+  if (!(event.currentTarget instanceof HTMLElement)) return null
+  const bounds = ranges.value[key]
+  const box = event.currentTarget.getBoundingClientRect()
+  const usableWidth = Math.max(1, box.width - 15)
+  const fraction = Math.max(0, Math.min(1, (event.clientX - box.left - 7.5) / usableWidth))
+  return Math.round(bounds.floor + fraction * (bounds.ceil - bounds.floor))
+}
+
+function beginRangePointer(event: PointerEvent, key: RangeKey) {
+  const track = event.currentTarget
+  if (
+    event.button !== 0
+    || !(track instanceof HTMLElement)
+    || event.target !== track
+  ) return
+  const value = rangePointerValue(event, key)
+  if (value === null) return
+  event.preventDefault()
+  const current = selectedRange(key)
+  const side = Math.abs(value - current.from) < Math.abs(value - current.to) ? "from" : "to"
+  rangePointer.value = { key, side }
+  track.querySelector<HTMLInputElement>(`input[data-range-endpoint="${side}"]`)
+    ?.focus({ preventScroll: true })
+  track.setPointerCapture(event.pointerId)
+}
+
+function finishRangePointer(event: PointerEvent, key: RangeKey) {
+  const pointer = rangePointer.value
+  if (!pointer || pointer.key !== key) return
+  const value = rangePointerValue(event, key)
+  rangePointer.value = null
+  if (value === null) return
+  const current = selectedRange(key)
+  const bounded = pointer.side === "from"
+    ? Math.min(value, current.to)
+    : Math.max(value, current.from)
+  setRange(key, pointer.side, String(bounded))
+}
+
+function cancelRangePointer() {
+  rangePointer.value = null
+}
+
 function setChildren() {
   void setQuery("barnlitteratur", childrenOnly.value ? null : "true")
 }
@@ -601,10 +647,17 @@ useHead(() => ({
               <PopoverPanel as="ul" class="dropdown-menu" role="group">
               <li v-for="field in rangeFields" :key="field.key" :class="{ dirty: selectedRange(field.key).active }">
                 <span class="label">{{ field.label }}</span>
-                <div class="number_input catalog_range">
+                <div
+                  class="number_input catalog_range"
+                  :data-drama-range="field.key"
+                  @pointerdown="beginRangePointer($event, field.key)"
+                  @pointerup="finishRangePointer($event, field.key)"
+                  @pointercancel="cancelRangePointer"
+                >
                   <span class="range_values"><span>{{ selectedRange(field.key).from }}</span><span>{{ selectedRange(field.key).to }}</span></span>
                   <input
                     type="range"
+                    data-range-endpoint="from"
                     :aria-label="`${field.label} från`"
                     :min="ranges[field.key].floor"
                     :max="ranges[field.key].ceil"
@@ -613,6 +666,7 @@ useHead(() => ({
                   >
                   <input
                     type="range"
+                    data-range-endpoint="to"
                     :aria-label="`${field.label} till`"
                     :min="ranges[field.key].floor"
                     :max="ranges[field.key].ceil"
