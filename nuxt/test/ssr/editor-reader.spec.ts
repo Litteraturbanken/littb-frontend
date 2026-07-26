@@ -220,7 +220,7 @@ test("SSR renders a requested Editor source-information dialog", async ({ reques
   const { document } = parseHTML(await response.text())
   const dialog = document.querySelector('.modal.about[role="dialog"]')
   expect(dialog?.textContent).toContain("Doktor Glas. Roman")
-  expect(dialog?.querySelector('a[href="/författare/S%C3%B6derbergH"]')?.textContent)
+  expect(dialog?.querySelector('a[href="/f%C3%B6rfattare/S%C3%B6derbergH"]')?.textContent)
     .toContain("Hjalmar Söderberg")
 })
 
@@ -235,6 +235,24 @@ test("SSR restores a serialized Editor search hit and marquee", async ({ request
   expect(document.querySelector("#search_nav")?.textContent).toContain("Träff 1, sida 5")
   expect(document.querySelector("#w5_1.markee")).not.toBeNull()
   expect(document.querySelector("#w5_2.markee.flip")).not.toBeNull()
+})
+
+test("SSR restores a live-style bare prefix Editor search session", async ({ request }) => {
+  const response = await request.get(
+    "/editor/lb8345227/ix/4/f?keep=%2f&keep=%2F&show_search_work&s_query=brev" +
+    "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_prefix&s_word_form_only" +
+    "&s_include_modernized&hit_index=0&traff=w5_1&traffslut=w5_2#prefix-session"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector("#search_nav")?.textContent).toContain("357 sökträffar")
+  expect(document.querySelector("#w5_1.markee")).not.toBeNull()
+  expect(document.querySelector('#search_nav a[rel="next"]')?.getAttribute("href")).toBe(
+    "/editor/lb8345227/ix/5/f?keep=%2f&keep=%2F&show_search_work" +
+      "&s_query=brev&s_lbworkid=lb8345227&s_mediatype=faksimil" +
+      "&s_word_form_only=true&s_include_modernized=true&s_prefix=true" +
+      "&hit_index=1&traff=w6_1&traffslut=w6_1"
+  )
 })
 
 test("SSR rejects partial Editor contributor and part metadata atomically", async ({ request }) => {

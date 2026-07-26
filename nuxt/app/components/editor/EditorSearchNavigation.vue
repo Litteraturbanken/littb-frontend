@@ -8,7 +8,9 @@ defineProps<{
   currentPageName: string | null
   failed: boolean
   loading: boolean
+  nextHref: string | null
   nextHit: WorkSearchHit | null
+  previousHref: string | null
   previousHit: WorkSearchHit | null
   returnHref: string | null
   totalHits: number | null
@@ -35,6 +37,15 @@ function submitGoto(): void {
   }
   emit("navigate", Number(gotoOrdinal.value) - 1)
 }
+
+function navigateCached(event: MouseEvent, index: number): void {
+  if (
+    event.defaultPrevented || event.button !== 0 || event.altKey || event.ctrlKey ||
+    event.metaKey || event.shiftKey
+  ) return
+  event.preventDefault()
+  emit("navigate", index)
+}
 </script>
 
 <template>
@@ -49,19 +60,19 @@ function submitGoto(): void {
       <ul class="ctrls">
         <li class="arrows">
           <a
-            v-if="previousHit"
+            v-if="previousHit && previousHref"
             rel="prev"
-            href=""
+            :href="previousHref"
             aria-label="Föregående sökträff"
-            @click.prevent="emit('navigate', previousHit.index)"
+            @click="navigateCached($event, previousHit.index)"
           ><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span></a>
           <button v-else class="submit btn navicon left" disabled aria-hidden="true" tabindex="-1"><i class="fa fa-angle-left" /></button>{{ " " }}
           <a
-            v-if="nextHit"
+            v-if="nextHit && nextHref"
             rel="next"
-            href=""
+            :href="nextHref"
             aria-label="Nästa sökträff"
-            @click.prevent="emit('navigate', nextHit.index)"
+            @click="navigateCached($event, nextHit.index)"
           ><span class="submit btn navicon navicon-visual" aria-hidden="true"><i class="fa fa-angle-right" /></span></a>
           <button v-else class="submit btn navicon" disabled aria-hidden="true" tabindex="-1"><i class="fa fa-angle-right" /></button>
         </li>

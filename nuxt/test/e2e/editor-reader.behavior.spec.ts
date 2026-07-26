@@ -105,7 +105,7 @@ test("editor Reader restores contents and source dialogs with focus return", asy
   const source = page.getByRole("dialog", { name: "Om boken" })
   await expect(source).toContainText("Doktor Glas. Roman")
   await expect(source.getByRole("link", { name: "Hjalmar Söderberg" }))
-    .toHaveAttribute("href", "/författare/S%C3%B6derbergH")
+    .toHaveAttribute("href", "/f%C3%B6rfattare/S%C3%B6derbergH")
   await page.keyboard.press("Escape")
   await expect(source).toHaveCount(0)
   await expect(sourceTrigger).toBeFocused()
@@ -161,7 +161,7 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
   expect(submitted.searchParams.has("show_search_work")).toBe(true)
   expect(submitted.searchParams.getAll("keep")).toEqual(["/", "/"])
   const hitNavigation = page.getByRole("navigation", { name: "Sökträffsnavigering" })
-  await expect(hitNavigation).toContainText("3 sökträffar")
+  await expect(hitNavigation).toContainText("237 sökträffar")
   await expect(hitNavigation).toContainText("Träff 1, sida 5")
   await expect(page.locator("#w5_1.markee")).toHaveCount(1)
   await expect(page.locator("#w5_2.markee.flip")).toHaveCount(1)
@@ -182,7 +182,7 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
   await expect(hitNavigation).toContainText("Träff 1, sida 5")
   await expect(page.locator("#w5_1.markee")).toHaveCount(1)
   await hitNavigation.getByRole("link", { name: "Gå till sista träffen" }).click()
-  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/6\/f.*hit_index=2/u)
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/6\/f.*hit_index=236/u)
   await expect(page.locator("#w7_1.markee")).toHaveCount(1)
 
   await hitNavigation.getByRole("link", { name: "Gå direkt till träff" }).click()
@@ -205,6 +205,122 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
     .toBe("/editor/lb8345227/ix/5/f?keep=%2f&keep=%2F")
   await expect(page.locator(".editor-reader .markee")).toHaveCount(0)
   await expect(hitNavigation).toHaveCount(0)
+})
+
+test("editor Reader restores live-style bare prefix flags across hydration and reload", async ({
+  page,
+  request
+}) => {
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  const prefixUrl = "/editor/lb8345227/ix/4/f?keep=%2f&keep=%2F&show_search_work" +
+    "&s_query=brev&s_lbworkid=lb8345227&s_mediatype=faksimil&s_prefix" +
+    "&s_word_form_only&s_include_modernized&hit_index=0&traff=w5_1&traffslut=w5_2" +
+    "#prefix-session"
+  await page.goto(prefixUrl, { waitUntil: "networkidle" })
+
+  const navigation = page.getByRole("navigation", { name: "Sökträffsnavigering" })
+  await expect(navigation).toContainText("357 sökträffar")
+  await expect(navigation).toContainText("Träff 1, sida 5")
+  await expect(page.locator("#w5_1.markee")).toHaveCount(1)
+  const next = navigation.getByRole("link", { name: "Nästa sökträff" })
+  await expect(next).toHaveAttribute(
+    "href",
+    "/editor/lb8345227/ix/5/f?keep=%2f&keep=%2F&show_search_work" +
+      "&s_query=brev&s_lbworkid=lb8345227&s_mediatype=faksimil" +
+      "&s_word_form_only=true&s_include_modernized=true&s_prefix=true" +
+      "&hit_index=1&traff=w6_1&traffslut=w6_1#prefix-session"
+  )
+  expect(await next.evaluate(link => {
+    let preventedByComponent = true
+    link.addEventListener("click", event => {
+      preventedByComponent = event.defaultPrevented
+      event.preventDefault()
+    }, { once: true })
+    link.dispatchEvent(new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      ctrlKey: true
+    }))
+    return preventedByComponent
+  })).toBe(false)
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/4\/f.*hit_index=0.*#prefix-session/u)
+  await next.click()
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/5\/f.*hit_index=1.*#prefix-session/u)
+  await expect(page.locator("#w6_1.markee")).toHaveCount(1)
+  await expect(navigation.getByRole("link", { name: "Föregående sökträff" })).toHaveAttribute(
+    "href",
+    "/editor/lb8345227/ix/4/f?keep=%2f&keep=%2F&show_search_work" +
+      "&s_query=brev&s_lbworkid=lb8345227&s_mediatype=faksimil" +
+      "&s_word_form_only=true&s_include_modernized=true&s_prefix=true" +
+      "&hit_index=0&traff=w5_1&traffslut=w5_2#prefix-session"
+  )
+  await page.goBack()
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/4\/f.*hit_index=0.*#prefix-session/u)
+
+  await page.reload({ waitUntil: "networkidle" })
+  await expect(navigation).toContainText("357 sökträffar")
+  await expect(page.locator("#w5_1.markee")).toHaveCount(1)
+  const requests = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+  expect(requests.requests).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      path: "/v2/works/lb8345227/search-hits",
+      query: "media_type=faksimil&query=brev&offset=0&limit=3" +
+        "&word_forms=false&include_older_spellings=true&prefix=true&suffix=false"
+    })
+  ]))
+})
+
+test("editor Reader treats omitted word-form-only as legacy lemma and rejects ambiguous flags", async ({
+  page,
+  request
+}) => {
+  const base = "/editor/lb8345227/ix/4/f?s_query=brev&s_lbworkid=lb8345227" +
+    "&s_mediatype=faksimil&s_include_modernized=true" +
+    "&hit_index=0&traff=w5_1&traffslut=w5_2"
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await page.goto(base, { waitUntil: "networkidle" })
+  await expect(page.getByRole("navigation", { name: "Sökträffsnavigering" }))
+    .toContainText("237 sökträffar")
+  const lemmaRequests = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+  expect(lemmaRequests.requests).toEqual([
+    expect.objectContaining({ query: expect.stringContaining("word_forms=true") })
+  ])
+
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await page.goto(`${base}&s_word_form_only&s_suffix`, { waitUntil: "networkidle" })
+  const bareSuffixRequests = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+  expect(bareSuffixRequests.requests).toEqual([
+    expect.objectContaining({
+      query: "media_type=faksimil&query=brev&offset=0&limit=3" +
+        "&word_forms=false&include_older_spellings=true&prefix=false&suffix=true"
+    })
+  ])
+
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await page.goto(
+    `${base}&s_word_form_only=false&s_prefix=false&s_suffix=false`,
+    { waitUntil: "networkidle" }
+  )
+  const explicitFalseRequests = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+  expect(explicitFalseRequests.requests).toEqual([
+    expect.objectContaining({
+      query: "media_type=faksimil&query=brev&offset=0&limit=3" +
+        "&word_forms=true&include_older_spellings=true&prefix=false&suffix=false"
+    })
+  ])
+
+  for (const invalid of [
+    `${base}&s_prefix&s_prefix=false`,
+    `${base}&s_suffix=1`,
+    `${base}&s_word_form_only=true&s_word_form_only=false`,
+    `${base}&s_include_modernized=`
+  ]) {
+    await request.delete(`${fixture}/_reader_hit_requests`)
+    await page.goto(invalid, { waitUntil: "networkidle" })
+    await expect(page.getByRole("navigation", { name: "Sökträffsnavigering" })).toHaveCount(0)
+    expect((await (await request.get(`${fixture}/_reader_hit_requests`)).json()).requests)
+      .toEqual([])
+  }
 })
 
 test("editor Reader search state fails closed on mismatched identity and backend failure", async ({

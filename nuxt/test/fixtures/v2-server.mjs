@@ -4500,7 +4500,8 @@ const server = createServer(async (request, response) => {
       query.query,
       query.offset,
       query.limit,
-      query.mediaType
+      query.mediaType,
+      query
     ))
   }
 

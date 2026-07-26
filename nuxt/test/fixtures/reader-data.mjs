@@ -474,8 +474,37 @@ export function readerSearchHitResponse(
   query,
   offset = 0,
   limit = 3,
-  mediaType = "etext"
+  mediaType = "etext",
+  options = {}
 ) {
+  if (query === "brev" && (workId === "lb8345227" || workId === "lb-editor-boye")) {
+    const totalHits = options.prefix ? 357 : 237
+    const hitTemplates = [
+      {
+        page_name: "5",
+        page_index: 4,
+        highlight: { from_word_id: "w5_1", to_word_id: "w5_2" }
+      },
+      {
+        page_name: "6",
+        page_index: 5,
+        highlight: { from_word_id: "w6_1", to_word_id: "w6_1" }
+      },
+      {
+        page_name: "7",
+        page_index: 6,
+        highlight: { from_word_id: "w7_1", to_word_id: "w7_1" }
+      }
+    ]
+    const items = Array.from({
+      length: Math.max(0, Math.min(limit, totalHits - offset))
+    }, (_, position) => {
+      const index = offset + position
+      const template = hitTemplates[index % hitTemplates.length]
+      return { ...template, index, highlight: { ...template.highlight } }
+    })
+    return { query, media_type: mediaType, offset, limit, total_hits: totalHits, items }
+  }
   if (query === "faksimil-index-word") {
     return {
       query,

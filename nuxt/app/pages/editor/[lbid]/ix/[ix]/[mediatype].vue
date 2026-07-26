@@ -518,8 +518,10 @@ function routeSingleString(key: string): string | null {
   return typeof value === "string" ? value : null
 }
 
-function parseBooleanQuery(value: string | null, fallback: boolean): boolean | null {
-  if (value === null) return fallback
+function routeBoolean(key: string, fallback: boolean): boolean | null {
+  if (!Object.hasOwn(route.query, key)) return fallback
+  const value = route.query[key]
+  if (value === null) return true
   if (value === "true") return true
   if (value === "false") return false
   return null
@@ -532,13 +534,10 @@ const searchState = computed<EditorSearchState | null>(() => {
   const hitIndex = routeSingleString("hit_index")
   const fromWordId = routeSingleString("traff")
   const toWordId = routeSingleString("traffslut")
-  const wordFormOnly = parseBooleanQuery(routeSingleString("s_word_form_only"), true)
-  const includeOlderSpellings = parseBooleanQuery(
-    routeSingleString("s_include_modernized"),
-    true
-  )
-  const prefix = parseBooleanQuery(routeSingleString("s_prefix"), false)
-  const suffix = parseBooleanQuery(routeSingleString("s_suffix"), false)
+  const wordFormOnly = routeBoolean("s_word_form_only", false)
+  const includeOlderSpellings = routeBoolean("s_include_modernized", true)
+  const prefix = routeBoolean("s_prefix", false)
+  const suffix = routeBoolean("s_suffix", false)
   if (
     !current?.searchable || query.length < 1 || query.length > 200 ||
     routeSingleString("s_lbworkid") !== current.workId ||
@@ -760,6 +759,13 @@ function workSearchHitHref(hit: WorkSearchHit, query: string): string {
   )
   return `${path}?${retained.join("&")}${fragment}`
 }
+
+const previousHitHref = computed(() => previousHit.value && searchState.value
+  ? workSearchHitHref(previousHit.value, searchState.value.query)
+  : null)
+const nextHitHref = computed(() => nextHit.value && searchState.value
+  ? workSearchHitHref(nextHit.value, searchState.value.query)
+  : null)
 
 async function submitWorkSearch(): Promise<void> {
   const query = workSearchQuery.value.trim()
@@ -992,7 +998,9 @@ useHead(() => ({
           :current-page-name="page?.pageName ?? null"
           :failed="hitFetch.data.value?.status === 'error'"
           :loading="hitFetch.status.value === 'pending'"
+          :next-href="nextHitHref"
           :next-hit="nextHit"
+          :previous-href="previousHitHref"
           :previous-hit="previousHit"
           :return-href="searchReturnHref"
           :total-hits="hitResponse?.total_hits ?? null"
@@ -1007,7 +1015,9 @@ useHead(() => ({
           :current-page-name="page?.pageName ?? null"
           :failed="hitFetch.data.value?.status === 'error'"
           :loading="hitFetch.status.value === 'pending'"
+          :next-href="nextHitHref"
           :next-hit="nextHit"
+          :previous-href="previousHitHref"
           :previous-hit="previousHit"
           :return-href="searchReturnHref"
           :total-hits="hitResponse?.total_hits ?? null"
