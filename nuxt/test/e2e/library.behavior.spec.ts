@@ -391,6 +391,34 @@ for (const mode of ["works", "latest", "epub", "pdf"] as const) {
   })
 }
 
+test("Library tooltip keeps independent hover and keyboard focus state", async ({ page }) => {
+  await page.goto("/bibliotek?visa=works", { waitUntil: "networkidle" })
+  const title = page.locator("[data-library-work-row]").first()
+    .locator("[data-library-tooltip-kind=title]")
+  const tooltip = page.getByRole("tooltip")
+
+  await title.focus()
+  await page.waitForTimeout(300)
+  await expect(tooltip).toHaveCount(0)
+  await title.hover()
+  await page.mouse.move(0, 0)
+  await expect(title).toBeFocused()
+  await expect(tooltip).toHaveCount(1, { timeout: 350 })
+  await expect(tooltip).toHaveText("Doktor Glas. Roman")
+  await title.blur()
+  await expect(tooltip).toHaveCount(0)
+
+  await title.hover()
+  await page.waitForTimeout(300)
+  await expect(tooltip).toHaveCount(0)
+  await title.focus()
+  await title.blur()
+  await expect(tooltip).toHaveCount(1, { timeout: 350 })
+  await expect(tooltip).toHaveText("Doktor Glas. Roman")
+  await page.mouse.move(0, 0)
+  await expect(tooltip).toHaveCount(0)
+})
+
 test("delayed Works and Dikt transitions never relabel rows owned by the other mode", async ({
   page,
   request

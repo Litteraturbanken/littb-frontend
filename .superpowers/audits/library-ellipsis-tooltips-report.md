@@ -46,7 +46,7 @@ RED:
 GREEN:
 
 - Focused tooltip E2E: 4 passed.
-- Full `library.behavior.spec.ts` desktop E2E: 49 passed.
+- Full `library.behavior.spec.ts` desktop E2E: 50 passed.
 - Full `library.visual.spec.ts` desktop project: 7 passed.
 - Full `test/ssr/library.spec.ts`: 72 passed.
 - `test/unit/library-tooltip.spec.ts`: 3 passed.
@@ -56,3 +56,13 @@ GREEN:
 The E2E coverage verifies hidden-before-delay, full title content, keyboard-focus
 author/year content, leave/blur/route cleanup, retained ellipsis CSS, unchanged
 editor suffix, one visible request, and no browser/hydration errors.
+
+## Review follow-up
+
+An independent review found that the initial directive treated hover and focus as
+a single trigger: leaving with keyboard focus still active (or blurring while
+still hovered) hid the tooltip. A new crossed-state E2E failed on that exact
+focus → hover → leave sequence before the fix. The directive now tracks hover
+and focus independently, retains one pending timer or popup while either remains
+active, and hides only after both have ended. The focused regression passes 1/1
+and the final full Library behavior suite passes 50/50.

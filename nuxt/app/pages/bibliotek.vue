@@ -255,6 +255,8 @@ let libraryTooltipSequence = 0
 
 type LibraryTooltipState = {
   content: string
+  hovered: boolean
+  focused: boolean
   timer: ReturnType<typeof setTimeout> | null
   popup: HTMLDivElement | null
   previousDescribedBy: string | null
@@ -273,10 +275,10 @@ function hideLibraryTooltip(element: HTMLElement, state: LibraryTooltipState) {
 }
 
 function showLibraryTooltip(element: HTMLElement, state: LibraryTooltipState) {
-  hideLibraryTooltip(element, state)
-  if (!state.content) return
+  if (!state.content || state.popup || state.timer || (!state.hovered && !state.focused)) return
   state.timer = setTimeout(() => {
-    if (!element.isConnected || !state.content) return
+    state.timer = null
+    if (!element.isConnected || !state.content || (!state.hovered && !state.focused)) return
     const popup = document.createElement("div")
     const inner = document.createElement("div")
     const arrow = document.createElement("div")
@@ -297,28 +299,48 @@ function showLibraryTooltip(element: HTMLElement, state: LibraryTooltipState) {
     popup.style.transform = "translate(-50%, -100%)"
     state.popup = popup
     element.setAttribute("aria-describedby", id)
-    state.timer = null
   }, libraryTooltipDelay)
 }
 
+function updateLibraryTooltipVisibility(element: HTMLElement, state: LibraryTooltipState) {
+  if (state.hovered || state.focused) showLibraryTooltip(element, state)
+  else hideLibraryTooltip(element, state)
+}
+
 function mountLibraryTooltip(element: HTMLElement, binding: DirectiveBinding<string>) {
-  const enter = () => showLibraryTooltip(element, state)
-  const leave = () => hideLibraryTooltip(element, state)
+  const mouseenter = () => {
+    state.hovered = true
+    updateLibraryTooltipVisibility(element, state)
+  }
+  const mouseleave = () => {
+    state.hovered = false
+    updateLibraryTooltipVisibility(element, state)
+  }
+  const focus = () => {
+    state.focused = true
+    updateLibraryTooltipVisibility(element, state)
+  }
+  const blur = () => {
+    state.focused = false
+    updateLibraryTooltipVisibility(element, state)
+  }
   const state: LibraryTooltipState = {
     content: binding.value || "",
+    hovered: false,
+    focused: false,
     timer: null,
     popup: null,
     previousDescribedBy: element.getAttribute("aria-describedby"),
     cleanup: () => {
       for (const [event, handler] of [
-        ["mouseenter", enter], ["mouseleave", leave], ["focus", enter], ["blur", leave]
+        ["mouseenter", mouseenter], ["mouseleave", mouseleave], ["focus", focus], ["blur", blur]
       ] as const) {
         element.removeEventListener(event, handler)
       }
     }
   }
   for (const [event, handler] of [
-    ["mouseenter", enter], ["mouseleave", leave], ["focus", enter], ["blur", leave]
+    ["mouseenter", mouseenter], ["mouseleave", mouseleave], ["focus", focus], ["blur", blur]
   ] as const) element.addEventListener(event, handler)
   libraryTooltipStates.set(element, state)
 }
@@ -341,6 +363,8 @@ const vLibraryTooltip: ObjectDirective<HTMLElement, string> = {
     if (!state.content) {
       state.cleanup()
       libraryTooltipStates.delete(element)
+    } else {
+      updateLibraryTooltipVisibility(element, state)
     }
   },
   beforeUnmount(element) {
