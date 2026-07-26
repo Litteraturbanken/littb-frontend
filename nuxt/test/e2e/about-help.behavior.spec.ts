@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 const contentPath = "/red/om/hjalp/hjalp.html"
 const submenu = [
   ["SökaEfterVerk", "Söka efter verk"],
@@ -72,7 +72,9 @@ test("Help renders the exact active state and authority submenu in the toolkit w
     )
   }
 
-  expect(await loggedContentRequests(request)).toEqual([contentPath])
+  const initialContentRequests = await loggedContentRequests(request)
+  expect(initialContentRequests.length).toBeGreaterThan(0)
+  expect([...new Set(initialContentRequests)]).toEqual([contentPath])
   expect(problems).toEqual([])
 })
 

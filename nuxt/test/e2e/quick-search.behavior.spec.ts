@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 
 async function reset(request: APIRequestContext) {
   await Promise.all([
@@ -249,7 +249,10 @@ test("mouse and wrapped keyboard selection navigate exact URLs and skip the disa
   await expect(rows.nth(1)).toHaveClass(/\bactive\b/)
   await expect(input).toHaveAttribute("aria-activedescendant", await rows.nth(1).getAttribute("id") ?? "")
   await rows.nth(1).click()
-  await expect(page).toHaveURL("/författare/StrindbergA/titlar/RodaRummet/sida/1/etext")
+  await expect(page).toHaveURL(
+    "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/1/etext"
+  )
+  await expect(page.locator(".reader_main .etext")).toContainText("frihet")
 
   await page.goto("/om/ide", { waitUntil: "networkidle" })
   await openQuickSearch(page)

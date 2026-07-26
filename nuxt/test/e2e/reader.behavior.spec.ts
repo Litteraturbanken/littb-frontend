@@ -1271,6 +1271,8 @@ test("keyboard paging is guarded by editors and dialogs and is removed on unmoun
 
   await navigateClient(page, "/bibliotek")
   await expect(page).toHaveURL("/bibliotek")
+  await expect(page.locator('[data-library-mounted="true"]')).toBeAttached()
+  await expect(page.locator(".reader_main")).toHaveCount(0)
   await page.keyboard.press("Shift+ArrowRight")
   await page.waitForTimeout(100)
   await expect(page).toHaveURL("/bibliotek")

@@ -47,7 +47,8 @@ export default defineConfig({
         /e2e\/.*\.visual\.spec\.ts/,
         /e2e\/reader\.behavior\.spec\.ts/,
         /e2e\/editor-reader\.mobile\.behavior\.spec\.ts/,
-        /e2e\/library-advanced\.behavior\.spec\.ts/
+        /e2e\/library-advanced\.behavior\.spec\.ts/,
+        /e2e\/quick-search-developer\.behavior\.spec\.ts/
       ],
       use: { ...devices["iPhone 13"], browserName: "chromium" }
     }

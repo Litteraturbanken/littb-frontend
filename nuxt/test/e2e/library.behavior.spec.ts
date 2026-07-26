@@ -65,6 +65,7 @@ async function pushRoute(page: import("@playwright/test").Page, path: string) {
 }
 
 test.beforeEach(async ({ request }) => reset(request))
+test.afterEach(async ({ request }) => reset(request))
 
 test("SSR starts global Library navigation from the clean default", async ({ request }) => {
   const response = await request.get(
