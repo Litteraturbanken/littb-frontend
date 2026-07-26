@@ -2,6 +2,7 @@ import { parseHTML } from "linkedom"
 import { describe, expect, it } from "vitest"
 
 import {
+  readerWordFromTarget,
   sanitizeDictionaryArticle,
   selectedReaderWord
 } from "../../app/lib/reader-dictionary"
@@ -40,5 +41,32 @@ describe("reader dictionary", () => {
       element: word,
       word: "hund"
     })
+  })
+
+  it("recovers one bounded word from a nested Reader word target", () => {
+    const { document } = parseHTML(
+      '<section class="reader_main"><span class="w"><span id="ocr"> verkligt </span></span></section>'
+    )
+    const root = document.querySelector(".reader_main")!
+    const word = document.querySelector<HTMLElement>(".w")!
+
+    expect(readerWordFromTarget(document.querySelector("#ocr"), root)).toEqual({
+      element: word,
+      word: "verkligt"
+    })
+  })
+
+  it.each([
+    ["outside the Reader", '<span class="w"><span id="target">hund</span></span>'],
+    ["a multi-word Reader target", '<section class="reader_main"><span class="w"><span id="target">två ord</span></span></section>'],
+    ["a control-character Reader target", '<section class="reader_main"><span class="w"><span id="target">hu\u0007nd</span></span></section>'],
+    ["an overlong Reader target", `<section class="reader_main"><span class="w"><span id="target">${"x".repeat(101)}</span></span></section>`],
+    ["an interactive Reader target", '<section class="reader_main"><span class="w"><a id="target">hund</a></span></section>']
+  ])("rejects %s", (_name, markup) => {
+    const { document } = parseHTML(markup)
+    const root = document.querySelector(".reader_main")
+      ?? document.createElement("section")
+
+    expect(readerWordFromTarget(document.querySelector("#target"), root)).toBeNull()
   })
 })

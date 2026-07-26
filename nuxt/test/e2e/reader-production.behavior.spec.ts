@@ -22,14 +22,7 @@ test.beforeEach(async ({ page }) => {
 
 test("one selected Reader word opens the sanitized legacy dictionary dialog", async ({ page }) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
-  await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().evaluate(word => {
-    const range = document.createRange()
-    range.selectNodeContents(word)
-    const selection = window.getSelection()!
-    selection.removeAllRanges()
-    selection.addRange(range)
-    word.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }))
-  })
+  await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().dblclick()
 
   const indicator = page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" })
   await expect(indicator).toBeVisible()
@@ -51,6 +44,44 @@ test("one selected Reader word opens the sanitized legacy dictionary dialog", as
   await expect(close).toBeFocused()
   await close.click()
   await expect(dialog).toHaveCount(0)
+})
+
+test("a collapsed OCR double-click recovers the nested Reader word without a stale timer", async ({ page }) => {
+  await page.addInitScript(() => {
+    document.addEventListener("dblclick", () => {
+      window.getSelection()?.removeAllRanges()
+    }, true)
+  })
+  await page.goto(
+    "/författare/BoyeK/titlar/EttVerkligtJordiskt/sida/3/faksimil",
+    { waitUntil: "networkidle" }
+  )
+  const ocrWord = page.locator(".reader_main .w").filter({ hasText: "Boye OCR" })
+  await ocrWord.evaluate(element => {
+    element.innerHTML = '<span id="reported-nested-ocr-word"> verkligt </span>'
+  })
+
+  await page.locator(".reader_main #reported-nested-ocr-word").dblclick()
+
+  const indicator = page.getByRole("button", { name: "Slå upp verkligt i Svensk ordbok" })
+  await expect(indicator).toBeVisible()
+  await page.waitForTimeout(650)
+  await expect(indicator).toBeVisible()
+})
+
+test("manual one-word selection retains delayed mouseup inspection", async ({ page }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().evaluate(word => {
+    const range = document.createRange()
+    range.selectNodeContents(word)
+    const selection = window.getSelection()!
+    selection.removeAllRanges()
+    selection.addRange(range)
+    word.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }))
+  })
+
+  await expect(page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" }))
+    .toBeVisible()
 })
 
 test("Reader production keys copy typed values and push alternate media history", async ({ page }) => {

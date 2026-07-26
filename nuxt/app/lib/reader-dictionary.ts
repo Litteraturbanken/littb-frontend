@@ -42,18 +42,40 @@ function containingElement(node: Node | null): Element | null {
   return node.nodeType === 1 ? node as Element : node.parentElement
 }
 
-export function selectedReaderWord(
-  selection: Selection | null,
-  root: Element
-): { element: HTMLElement, word: string } | null {
-  if (!selection || selection.rangeCount !== 1 || selection.isCollapsed) return null
-  const word = selection.toString().trim()
+function validatedReaderWord(value: string): string | null {
+  const word = value.trim()
   if (
     !word
     || word.length > maximumWordLength
     || /\s/u.test(word)
     || /[\u0000-\u001f\u007f-\u009f]/u.test(word)
   ) return null
+  return word
+}
+
+export function readerWordFromTarget(
+  target: Element | null,
+  root: Element
+): { element: HTMLElement, word: string } | null {
+  if (
+    !target
+    || !root.contains(target)
+    || target.closest("a, button, input, select, textarea, [role='button'], [role='dialog']")
+  ) return null
+
+  const element = target.closest<HTMLElement>(".w")
+  if (!element || !root.contains(element)) return null
+  const word = validatedReaderWord(element.textContent ?? "")
+  return word ? { element, word } : null
+}
+
+export function selectedReaderWord(
+  selection: Selection | null,
+  root: Element
+): { element: HTMLElement, word: string } | null {
+  if (!selection || selection.rangeCount !== 1 || selection.isCollapsed) return null
+  const word = validatedReaderWord(selection.toString())
+  if (!word) return null
 
   const range = selection.getRangeAt(0)
   const startWord = containingElement(range.startContainer)?.closest<HTMLElement>(".w")

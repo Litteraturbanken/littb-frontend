@@ -1904,9 +1904,7 @@ watch(readerRequestIdentity, () => {
         />
       </section>
 
-      <ClientOnly>
-        <ReaderDictionaryLookup />
-      </ClientOnly>
+      <ReaderDictionaryLookup />
       <LegacyNotice :message="productionShortcutMessage" />
       <ClientOnly>
         <ReaderFocusControls

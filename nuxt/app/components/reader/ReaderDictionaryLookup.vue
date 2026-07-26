@@ -2,6 +2,7 @@
 import type { components } from "~/lib/api/generated/lbapi"
 import { createLbApiClient } from "~/lib/api/client"
 import {
+  readerWordFromTarget,
   sanitizeDictionaryArticle,
   selectedReaderWord
 } from "~/lib/reader-dictionary"
@@ -32,13 +33,13 @@ function showMessage(value: string): void {
   }, 2200)
 }
 
-function inspectSelection(): void {
-  const root = document.querySelector(".reader_main")
-  const selected = root ? selectedReaderWord(window.getSelection(), root) : null
-  if (!selected) {
-    indicator.value = null
-    return
-  }
+function clearSelectionTimer(): void {
+  if (!selectionTimer) return
+  clearTimeout(selectionTimer)
+  selectionTimer = null
+}
+
+function showIndicator(selected: { element: HTMLElement, word: string }): void {
   const box = selected.element.getBoundingClientRect()
   indicator.value = {
     left: box.right + window.scrollX,
@@ -47,12 +48,33 @@ function inspectSelection(): void {
   }
 }
 
+function inspectSelection(): void {
+  const root = document.querySelector(".reader_main")
+  const selected = root ? selectedReaderWord(window.getSelection(), root) : null
+  if (!selected) {
+    indicator.value = null
+    return
+  }
+  showIndicator(selected)
+}
+
 function handleMouseup(): void {
-  if (selectionTimer) clearTimeout(selectionTimer)
+  clearSelectionTimer()
   selectionTimer = setTimeout(() => {
     selectionTimer = null
     inspectSelection()
   }, 500)
+}
+
+function handleDoubleClick(event: MouseEvent): void {
+  const target = event.target
+  const root = document.querySelector(".reader_main")
+  if (!(target instanceof Element) || !root) return
+  const targetWord = readerWordFromTarget(target, root)
+  if (!targetWord) return
+  const selected = selectedReaderWord(window.getSelection(), root) ?? targetWord
+  clearSelectionTimer()
+  showIndicator(selected)
 }
 
 function handleDocumentClick(event: MouseEvent): void {
@@ -77,10 +99,7 @@ function validArticle(value: unknown, word: string): value is DictionaryArticle 
 async function lookup(): Promise<void> {
   const selected = indicator.value
   indicator.value = null
-  if (selectionTimer) {
-    clearTimeout(selectionTimer)
-    selectionTimer = null
-  }
+  clearSelectionTimer()
   window.getSelection()?.removeAllRanges()
   if (!selected) return
   try {
@@ -111,18 +130,21 @@ function close(): void {
 }
 
 watch(() => route.fullPath, () => {
+  clearSelectionTimer()
   indicator.value = null
   close()
 })
 
-onMounted(() => {
+onBeforeMount(() => {
   document.addEventListener("mouseup", handleMouseup)
+  document.addEventListener("dblclick", handleDoubleClick)
   document.addEventListener("click", handleDocumentClick)
 })
 onBeforeUnmount(() => {
   document.removeEventListener("mouseup", handleMouseup)
+  document.removeEventListener("dblclick", handleDoubleClick)
   document.removeEventListener("click", handleDocumentClick)
-  if (selectionTimer) clearTimeout(selectionTimer)
+  clearSelectionTimer()
   if (messageTimer) clearTimeout(messageTimer)
 })
 </script>
