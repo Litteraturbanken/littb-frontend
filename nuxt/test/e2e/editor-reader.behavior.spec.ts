@@ -82,6 +82,73 @@ test("editor Reader restores multipart contributor context and mapped navigation
   await expect(context.locator(".current_part .navtitle")).toHaveCount(0)
 })
 
+test("editor Reader restores contents and source dialogs with focus return", async ({ page }) => {
+  await page.goto("/editor/lb-editor-boye/ix/4/f?keep=%2f&keep=%2F", {
+    waitUntil: "networkidle"
+  })
+
+  const contentsTrigger = page.getByRole("link", { name: "Innehållsförteckning" })
+  await contentsTrigger.click()
+  await expect(page).toHaveURL(/\?keep=%2f&keep=%2F&innehall$/u)
+  const contents = page.getByRole("dialog", { name: "Innehållsförteckning" })
+  await expect(contents).toBeVisible()
+  await expect(contents.getByRole("link", { name: "Förord" }))
+    .toHaveAttribute("href", "/editor/lb-editor-boye/ix/4/f?keep=%2f&keep=%2F")
+  await contents.getByRole("button", { name: "Stäng" }).click()
+  await expect(contents).toHaveCount(0)
+  await expect(contentsTrigger).toBeFocused()
+
+  await page.goto(`${editorFaksimil}?keep=%2f&keep=%2F`, { waitUntil: "networkidle" })
+  const sourceTrigger = page.getByRole("link", { name: "Mer om boken" })
+  await sourceTrigger.click()
+  await expect(page).toHaveURL(/\?keep=%2f&keep=%2F&om-boken$/u)
+  const source = page.getByRole("dialog", { name: "Om boken" })
+  await expect(source).toContainText("Doktor Glas. Roman")
+  await expect(source.getByRole("link", { name: "Hjalmar Söderberg" }))
+    .toHaveAttribute("href", "/författare/S%C3%B6derbergH")
+  await page.keyboard.press("Escape")
+  await expect(source).toHaveCount(0)
+  await expect(sourceTrigger).toBeFocused()
+
+  await sourceTrigger.click()
+  await expect(source).toBeVisible()
+  await source.locator(".modal-backdrop").click({ position: { x: 5, y: 5 } })
+  await expect(source).toHaveCount(0)
+  await expect(sourceTrigger).toBeFocused()
+})
+
+test("editor Reader restores focus mode through raw-preserving router history", async ({ page }) => {
+  const initial = `${editorFaksimil}?bare&repeat=%2f&repeat=%2F#focus-marker`
+  await page.goto(initial, { waitUntil: "networkidle" })
+
+  await page.getByRole("link", { name: "Läsfokus" }).click()
+  expect(new URL(page.url()).pathname + new URL(page.url()).search + new URL(page.url()).hash)
+    .toBe(`${editorFaksimil}?bare&repeat=%2f&repeat=%2F&fokus#focus-marker`)
+  await expect(page.getByRole("toolbar", { name: "Läsfokus" })).toBeVisible()
+  await expect(page.locator(".editor-reader .reader_main")).toHaveClass(/\bfocus\b/u)
+  await page.getByRole("button", { name: "Stäng Läsfokus" }).click()
+  expect(new URL(page.url()).pathname + new URL(page.url()).search + new URL(page.url()).hash)
+    .toBe(initial)
+})
+
+test("editor Reader work search opens, focuses, and navigates to the first raw hit", async ({
+  page
+}) => {
+  await page.goto(`${editorEtext}?keep=%2f&keep=%2F`, { waitUntil: "networkidle" })
+
+  const trigger = page.getByRole("link", { name: "Sök i verket", exact: true })
+  await trigger.click()
+  const input = page.getByRole("searchbox", { name: "Sök i verket" })
+  await expect(input).toBeFocused()
+  await input.fill("kyrka")
+  await page.getByRole("button", { name: "Sök", exact: true }).click()
+
+  await expect(page).toHaveURL(
+    /\/editor\/lb-editor-doktor\/ix\/1\/e\?keep=%2f&keep=%2F&q=kyrka&hit=0$/u
+  )
+  await expect(page.locator(".editor-reader .etext")).toContainText("EDITORSSIDA 1")
+})
+
 test("editor Reader suppresses non-atomic contributor and part metadata", async ({ page }) => {
   for (const workId of [
     "lb-editor-malformed-contributor",

@@ -193,6 +193,14 @@ test("SSR exposes bounded Editor contributors, mapped readable bounds, and part 
     ?.textContent).toContain("Gå till första sidan")
   expect(document.querySelector('.reader-context-ssr a[href="/editor/lb-editor-boye/ix/4/f"]')
     ?.textContent).toContain("Gå till nästa del")
+  expect(document.querySelector('.reader-context-ssr a[href="/editor/lb-editor-boye/ix/0/f?innehall"]')
+    ?.textContent).toBe("Innehållsförteckning")
+  expect(document.querySelector('.reader-context-ssr a[href="/editor/lb-editor-boye/ix/0/f?om-boken"]')
+    ?.textContent).toBe("Mer om boken")
+  expect(document.querySelector('.reader-context-ssr a[href="/editor/lb-editor-boye/ix/0/f?fokus"]')
+    ?.textContent).toBe("Läsfokus")
+  expect(document.querySelector(".reader-context-ssr .reader-work-search-trigger")?.textContent)
+    .toBe("Sök i verket")
 
   expect(document.querySelector(".reader-context-ssr .current_part")).toBeNull()
 
@@ -203,6 +211,16 @@ test("SSR exposes bounded Editor contributors, mapped readable bounds, and part 
     .toContain("Paulina Helgeson")
   expect(partDocument.querySelector(".reader-context-ssr .current_part .navtitle")?.textContent)
     .toBe("Förord")
+})
+
+test("SSR renders a requested Editor source-information dialog", async ({ request }) => {
+  const response = await request.get("/editor/lb-editor-doktor/ix/1/f?keep=%2f&om-boken")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const dialog = document.querySelector('.modal.about[role="dialog"]')
+  expect(dialog?.textContent).toContain("Doktor Glas. Roman")
+  expect(dialog?.querySelector('a[href="/författare/S%C3%B6derbergH"]')?.textContent)
+    .toContain("Hjalmar Söderberg")
 })
 
 test("SSR rejects partial Editor contributor and part metadata atomically", async ({ request }) => {

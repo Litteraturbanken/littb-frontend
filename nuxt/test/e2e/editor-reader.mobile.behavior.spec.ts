@@ -41,3 +41,23 @@ test("mobile Editor slider thumb reflects the raw page index", async ({ page }) 
     return Math.round((pointer.x + pointer.width / 2 - bar.x) / bar.width * 100)
   }).toBe(50)
 })
+
+test("mobile Editor exposes the restored Reader tools accessibly", async ({ page }) => {
+  await page.goto(editorFaksimil, { waitUntil: "networkidle" })
+
+  const sourceTrigger = page.getByRole("link", { name: "Mer om boken" })
+  await sourceTrigger.focus()
+  await sourceTrigger.press("Enter")
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(dialog).toContainText("Doktor Glas. Roman")
+  await page.keyboard.press("Escape")
+  await expect(dialog).toHaveCount(0)
+
+  const focusTrigger = page.getByRole("link", { name: "Läsfokus" })
+  await focusTrigger.focus()
+  await focusTrigger.press("Enter")
+  await expect(page.getByRole("toolbar", { name: "Läsfokus" })).toBeVisible()
+  const closeFocus = page.getByRole("button", { name: "Stäng Läsfokus" })
+  await closeFocus.focus()
+  await closeFocus.press("Enter")
+})

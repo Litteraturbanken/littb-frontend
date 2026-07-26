@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import type { EditorReaderPage } from "#shared/types/editor-reader"
+import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
+import { createLbApiClient } from "~/lib/api/client"
+import type { components } from "~/lib/api/generated/lbapi"
+import {
+  readerContentsHref,
+  readerContentsIsOpen,
+  readerContentsNeutralFullPath,
+  readerSourceInfoHref,
+  readerSourceInfoIsOpen,
+  readerSourceInfoNeutralFullPath
+} from "~/lib/reader-routes"
 
 definePageMeta({
   validate: route => typeof route.params.lbid === "string" &&
@@ -33,6 +44,7 @@ const requestIdentity = computed(() => JSON.stringify([
   alias.value
 ]))
 const requestFetch = useRequestFetch()
+const config = useRuntimeConfig()
 function requestPage(): Promise<EditorReaderPage> {
   return requestFetch<EditorReaderPage>(
     `/api/editor/${encodeURIComponent(workId.value)}/${index.value}/${alias.value}`
@@ -100,8 +112,10 @@ function currentPartAuthorLabel(index: number): string {
 function browserFullPath(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`
 }
-function navigateRawFullPath(fullPath: string): Promise<void> {
-  if (!import.meta.client) return router.push(fullPath).then(() => undefined)
+function navigateRawFullPath(fullPath: string, replace = false): Promise<void> {
+  if (!import.meta.client) {
+    return (replace ? router.replace(fullPath) : router.push(fullPath)).then(() => undefined)
+  }
   const previousFullPath = rawFullPath.value
   return new Promise<void>((resolve, reject) => {
     const removeAfterEach = router.afterEach((_to, _from, failure) => {
@@ -111,30 +125,62 @@ function navigateRawFullPath(fullPath: string): Promise<void> {
     })
     try {
       const currentState = window.history.state ?? {}
-      window.history.replaceState(
-        { ...currentState, current: previousFullPath, forward: fullPath },
-        "",
-        previousFullPath
-      )
-      const state = {
-        back: previousFullPath,
-        current: fullPath,
-        editorFacsimileSize: facsimileSize.value,
-        editorRotation: rotation.value,
-        forward: null,
-        position: typeof currentState.position === "number"
-          ? currentState.position + 1
-          : window.history.length,
-        replaced: false,
-        scroll: null
+      let state
+      if (replace) {
+        state = {
+          ...currentState,
+          current: fullPath,
+          editorFacsimileSize: facsimileSize.value,
+          editorRotation: rotation.value,
+          replaced: true
+        }
+        window.history.replaceState(state, "", fullPath)
+      } else {
+        window.history.replaceState(
+          { ...currentState, current: previousFullPath, forward: fullPath },
+          "",
+          previousFullPath
+        )
+        state = {
+          back: previousFullPath,
+          current: fullPath,
+          editorFacsimileSize: facsimileSize.value,
+          editorRotation: rotation.value,
+          forward: null,
+          position: typeof currentState.position === "number"
+            ? currentState.position + 1
+            : window.history.length,
+          replaced: false,
+          scroll: null
+        }
+        window.history.pushState(state, "", fullPath)
       }
-      window.history.pushState(state, "", fullPath)
       window.dispatchEvent(new PopStateEvent("popstate", { state }))
     } catch (navigationError) {
       removeAfterEach()
       reject(navigationError)
     }
   })
+}
+
+function withBareQueryKey(fullPath: string, key: string, enabled: boolean): string {
+  const fragmentIndex = fullPath.indexOf("#")
+  const fragment = fragmentIndex < 0 ? "" : fullPath.slice(fragmentIndex)
+  const beforeHash = fragmentIndex < 0 ? fullPath : fullPath.slice(0, fragmentIndex)
+  const queryIndex = beforeHash.indexOf("?")
+  const path = queryIndex < 0 ? beforeHash : beforeHash.slice(0, queryIndex)
+  const rawQuery = queryIndex < 0 ? "" : beforeHash.slice(queryIndex + 1)
+  const retained = rawQuery.length === 0 ? [] : rawQuery.split("&").filter(segment => {
+    const separator = segment.indexOf("=")
+    const rawKey = separator < 0 ? segment : segment.slice(0, separator)
+    try {
+      return decodeURIComponent(rawKey.replace(/\+/g, " ")) !== key
+    } catch {
+      return true
+    }
+  })
+  if (enabled) retained.push(key)
+  return `${path}${retained.length ? `?${retained.join("&")}` : ""}${fragment}`
 }
 function navigateLink(event: MouseEvent, target: string): void {
   if (
@@ -220,6 +266,306 @@ const overlayStyle = computed(() => {
     transform: `scale(${width > 0 && imageWidth.value > 0 ? imageWidth.value / width : 1})`
   }
 })
+
+const contentsRequested = computed(() => readerContentsIsOpen(route.query.innehall))
+const contentsOpen = computed(() => (
+  !sourceInfoRequested.value && contentsRequested.value && (page.value?.parts.length ?? 0) > 0
+))
+const contentsHref = computed(() => readerContentsHref(rawFullPath.value))
+const contentsNeutralHref = computed(() => readerContentsNeutralFullPath(rawFullPath.value))
+const contentsTrigger = ref<HTMLAnchorElement | null>(null)
+const contentsPartHrefs = computed(() => page.value?.parts.map(part => (
+  readerContentsNeutralFullPath(href(part.startPageIndex))
+)) ?? [])
+let contentsClosePending = false
+
+function openContents(): void {
+  if (!contentsOpen.value) void navigateRawFullPath(contentsHref.value, true)
+}
+
+async function closeContents(): Promise<void> {
+  if (!contentsOpen.value || contentsClosePending) return
+  contentsClosePending = true
+  try {
+    await navigateRawFullPath(contentsNeutralHref.value, true)
+    await nextTick()
+    contentsTrigger.value?.focus()
+  } finally {
+    contentsClosePending = false
+  }
+}
+
+function selectContentsPage(pageName: string): void {
+  const part = page.value?.parts.find(item => item.startPageName === pageName)
+  if (!part) return
+  void navigateRawFullPath(href(part.startPageIndex))
+}
+
+const sourceInfoRequested = computed(() => readerSourceInfoIsOpen(route.query["om-boken"]))
+const sourceInfoAvailable = computed(() => Boolean(
+  page.value?.metadataAvailable && page.value.authorId && page.value.titlePath
+))
+const sourceInfoOpen = computed(() => sourceInfoRequested.value && sourceInfoAvailable.value)
+const sourceInfoHref = computed(() => readerSourceInfoHref(rawFullPath.value))
+const sourceInfoNeutralHref = computed(() => readerSourceInfoNeutralFullPath(rawFullPath.value))
+const sourceInfoTrigger = ref<HTMLAnchorElement | null>(null)
+const sourceInfoIdentity = computed(() => JSON.stringify([
+  page.value?.authorId,
+  page.value?.titlePath,
+  page.value?.mediaType
+]))
+type EditorSourceInfoState =
+  | { status: "success", identity: string, sourceInfo: ReaderSourceInfo }
+  | { status: "error", identity: string }
+const initialSourceInfoRequested = sourceInfoRequested.value
+let sourceInfoController: AbortController | null = null
+const sourceInfoFetch = await useAsyncData<EditorSourceInfoState>(
+  computed(() => `editor-source-info:${sourceInfoIdentity.value}`),
+  async (_nuxtApp, { signal }) => {
+    sourceInfoController?.abort()
+    const identity = sourceInfoIdentity.value
+    const current = page.value
+    if (!current?.metadataAvailable || !current.authorId || !current.titlePath) {
+      return { status: "error" as const, identity }
+    }
+    const controller = new AbortController()
+    sourceInfoController = controller
+    try {
+      const sourceInfo = await requestFetch<ReaderSourceInfo>([
+        "/api/reader/source-info",
+        encodeURIComponent(current.authorId),
+        encodeURIComponent(current.titlePath)
+      ].join("/"), {
+        query: { media_type: current.mediaType },
+        retry: 0,
+        signal: AbortSignal.any([signal, controller.signal])
+      })
+      return { status: "success" as const, identity, sourceInfo }
+    } catch {
+      return { status: "error" as const, identity }
+    } finally {
+      if (sourceInfoController === controller) sourceInfoController = null
+    }
+  },
+  { immediate: initialSourceInfoRequested }
+)
+const sourceInfo = computed(() => {
+  const current = sourceInfoFetch.data.value
+  return current?.status === "success" && current.identity === sourceInfoIdentity.value
+    ? current.sourceInfo
+    : null
+})
+const sourceInfoFailed = computed(() => {
+  const current = sourceInfoFetch.data.value
+  return current?.status === "error" && current.identity === sourceInfoIdentity.value
+})
+const sourceInfoLoading = computed(() => sourceInfoOpen.value && !sourceInfo.value &&
+  !sourceInfoFailed.value && (
+    sourceInfoFetch.status.value === "idle" || sourceInfoFetch.status.value === "pending"
+  ))
+watch(sourceInfoRequested, open => {
+  if (!open || (import.meta.client && nuxtApp.isHydrating)) return
+  const current = sourceInfoFetch.data.value
+  if (!current || current.identity !== sourceInfoIdentity.value || current.status === "error") {
+    void sourceInfoFetch.execute()
+  }
+})
+watch(sourceInfoIdentity, () => sourceInfoController?.abort())
+onBeforeUnmount(() => sourceInfoController?.abort())
+
+function openSourceInfo(): void {
+  if (!sourceInfoOpen.value) void navigateRawFullPath(sourceInfoHref.value, true)
+}
+
+async function closeSourceInfo(): Promise<void> {
+  if (!sourceInfoOpen.value) return
+  await navigateRawFullPath(sourceInfoNeutralHref.value, true)
+  await nextTick()
+  sourceInfoTrigger.value?.focus()
+}
+
+const focusMode = computed(() => route.query.fokus !== undefined)
+const focusHref = computed(() => withBareQueryKey(rawFullPath.value, "fokus", true))
+const focusNeutralHref = computed(() => withBareQueryKey(rawFullPath.value, "fokus", false))
+const focusBarVisible = ref(true)
+const focusNightMode = ref(false)
+const focusTextScale = ref(1)
+const focusReaderStyle = computed(() => focusMode.value && page.value?.mediaType === "etext"
+  ? {
+      transform: `scaleX(${focusTextScale.value}) scaleY(${focusTextScale.value})`,
+      transformOrigin: "left top"
+    }
+  : undefined)
+const focusParts = computed(() => page.value?.parts.map(part => ({
+  href: href(part.startPageIndex),
+  label: part.navTitle || part.shortTitle || part.title
+})) ?? [])
+function activateFocus(): void {
+  focusBarVisible.value = true
+  focusNightMode.value = false
+  void navigateRawFullPath(focusHref.value, true)
+}
+function closeFocus(): void {
+  void navigateRawFullPath(focusNeutralHref.value, true)
+}
+function toggleFocusBar(): void {
+  if (focusMode.value) focusBarVisible.value = !focusBarVisible.value
+}
+function adjustFocusText(delta: number): void {
+  focusTextScale.value = Math.min(2.5, Math.max(0.5, focusTextScale.value + delta))
+}
+
+type WorkSearchHit = components["schemas"]["WorkSearchHit"]
+type WorkSearchOption = "default" | "lemma" | "modernize" | "prefix" | "suffix" | "infix"
+const workSearchOpen = ref(false)
+const workSearchQuery = ref("")
+const workSearchMessage = ref("")
+const workSearchInput = ref<HTMLInputElement | null>(null)
+const workSearchLemma = ref(false)
+const workSearchOlderSpellings = ref(true)
+const workSearchPrefix = ref(false)
+const workSearchSuffix = ref(false)
+const workSearchOptions = computed<ReadonlyArray<{
+  key: WorkSearchOption
+  label: string
+  selected: boolean
+}>>(() => [
+  { key: "default", label: "SÖK EFTER ORD ELLER FRAS", selected: !workSearchLemma.value && !workSearchPrefix.value && !workSearchSuffix.value },
+  { key: "lemma", label: "INKLUDERA BÖJNINGSFORMER", selected: workSearchLemma.value },
+  { key: "modernize", label: "INKLUDERA ÄLDRE STAVNINGSFORMER", selected: workSearchOlderSpellings.value },
+  { key: "prefix", label: "SÖK EFTER ORDBÖRJAN", selected: workSearchPrefix.value },
+  { key: "suffix", label: "SÖK EFTER ORDSLUT", selected: workSearchSuffix.value },
+  { key: "infix", label: "SÖK EFTER DEL AV ORD", selected: workSearchPrefix.value && workSearchSuffix.value }
+])
+let workSearchController: AbortController | null = null
+onBeforeUnmount(() => workSearchController?.abort())
+watch(requestIdentity, () => {
+  workSearchController?.abort()
+  workSearchOpen.value = false
+  workSearchMessage.value = ""
+})
+
+function toggleWorkSearch(): void {
+  if (!page.value?.searchable) return
+  workSearchOpen.value = !workSearchOpen.value
+  workSearchMessage.value = ""
+  if (workSearchOpen.value) void nextTick(() => workSearchInput.value?.focus())
+}
+
+function chooseWorkSearchOption(option: WorkSearchOption): void {
+  if (option === "default") {
+    workSearchLemma.value = false
+    workSearchOlderSpellings.value = false
+    workSearchPrefix.value = false
+    workSearchSuffix.value = false
+  } else if (option === "lemma") {
+    workSearchLemma.value = true
+    workSearchOlderSpellings.value = false
+    workSearchPrefix.value = false
+    workSearchSuffix.value = false
+  } else if (option === "modernize") {
+    workSearchOlderSpellings.value = !workSearchOlderSpellings.value
+    if (workSearchOlderSpellings.value) {
+      workSearchLemma.value = false
+      workSearchPrefix.value = false
+      workSearchSuffix.value = false
+    }
+  } else if (option === "infix") {
+    workSearchLemma.value = false
+    workSearchOlderSpellings.value = false
+    workSearchPrefix.value = true
+    workSearchSuffix.value = true
+  } else {
+    workSearchLemma.value = false
+    workSearchOlderSpellings.value = false
+    if (option === "prefix") workSearchPrefix.value = !workSearchPrefix.value
+    if (option === "suffix") workSearchSuffix.value = !workSearchSuffix.value
+  }
+}
+
+function activateWorkSearchOption(event: KeyboardEvent, option: WorkSearchOption): void {
+  if (event.key !== "Enter" && event.key !== " ") return
+  event.preventDefault()
+  chooseWorkSearchOption(option)
+}
+
+function decodedRawQueryKey(segment: string): string | null {
+  const separator = segment.indexOf("=")
+  const rawKey = separator < 0 ? segment : segment.slice(0, separator)
+  try {
+    return decodeURIComponent(rawKey.replace(/\+/g, " "))
+  } catch {
+    return null
+  }
+}
+
+function workSearchHitHref(hit: WorkSearchHit, query: string): string {
+  const target = href(hit.page_index)
+  const fragmentIndex = target.indexOf("#")
+  const fragment = fragmentIndex < 0 ? "" : target.slice(fragmentIndex)
+  const beforeHash = fragmentIndex < 0 ? target : target.slice(0, fragmentIndex)
+  const queryIndex = beforeHash.indexOf("?")
+  const path = queryIndex < 0 ? beforeHash : beforeHash.slice(0, queryIndex)
+  const rawQuery = queryIndex < 0 ? "" : beforeHash.slice(queryIndex + 1)
+  const retained = rawQuery.length === 0 ? [] : rawQuery.split("&").filter(segment => {
+    const key = decodedRawQueryKey(segment)
+    return key !== "q" && key !== "hit"
+  })
+  retained.push(new URLSearchParams({ q: query }).toString(), `hit=${hit.index}`)
+  return `${path}?${retained.join("&")}${fragment}`
+}
+
+async function submitWorkSearch(): Promise<void> {
+  const query = workSearchQuery.value.trim()
+  if (query.length < 1) {
+    workSearchMessage.value = "Ange ett sökord eller en fras."
+    workSearchInput.value?.focus()
+    return
+  }
+  if (query.length > 200) {
+    workSearchMessage.value = "Sökningen får vara högst 200 tecken."
+    workSearchInput.value?.focus()
+    return
+  }
+  const current = page.value
+  if (!current?.searchable) return
+  workSearchController?.abort()
+  const controller = new AbortController()
+  workSearchController = controller
+  workSearchMessage.value = ""
+  try {
+    const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
+    const result = await client.GET("/works/{work_id}/search-hits", {
+      signal: controller.signal,
+      params: {
+        path: { work_id: current.workId },
+        query: {
+          media_type: current.mediaType,
+          query,
+          offset: 0,
+          limit: 1,
+          word_forms: workSearchLemma.value,
+          include_older_spellings: workSearchOlderSpellings.value,
+          prefix: workSearchPrefix.value,
+          suffix: workSearchSuffix.value
+        }
+      }
+    })
+    const hit = result.error ? null : result.data?.items[0]
+    if (!hit || hit.page_index < 0 || hit.page_index >= (current.pageCount ?? 0)) {
+      workSearchMessage.value = result.error ? "Sökningen kunde inte genomföras." : "Inga träffar."
+      return
+    }
+    workSearchOpen.value = false
+    await navigateRawFullPath(workSearchHitHref(hit, query))
+  } catch (searchError) {
+    if (!(searchError instanceof DOMException && searchError.name === "AbortError")) {
+      workSearchMessage.value = "Sökningen kunde inte genomföras."
+    }
+  } finally {
+    if (workSearchController === controller) workSearchController = null
+  }
+}
 function isEditableTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && (
     target.isContentEditable || ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)
@@ -261,8 +607,14 @@ function keyboardTarget(event: KeyboardEvent): number | null {
 function handleKeyboard(event: KeyboardEvent): void {
   if (
     event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey ||
-    isEditableTarget(event.target) || isEditableTarget(document.activeElement)
+    isEditableTarget(event.target) || isEditableTarget(document.activeElement) ||
+    document.querySelector('[role="dialog"]')
   ) return
+  if (event.key === "Escape" && focusMode.value) {
+    event.preventDefault()
+    closeFocus()
+    return
+  }
   const target = keyboardTarget(event)
   if (target === null) return
   event.preventDefault()
@@ -290,13 +642,32 @@ useHead(() => ({
 <template>
   <div class="editor-reader reader-page">
     <p v-if="clientRequestFailed" class="reader-error" role="alert">Ett fel inträffade vid sidhämtningen.</p>
-    <section v-if="page" class="reader_main state-not-parallel relative" :class="{ 'type-faksimil': page.mediaType === 'faksimil', ocr: ocrMode }">
+    <section v-if="page" class="reader_main state-not-parallel relative" :class="{ 'type-faksimil': page.mediaType === 'faksimil', focus: focusMode, night: focusMode && focusNightMode, ocr: ocrMode }" :style="focusReaderStyle" @click="toggleFocusBar">
       <div v-if="page.html" class="etext txt" v-html="page.html" />
       <div v-if="page.overlayHtml && page.overlayWidth && page.overlayHeight" class="absolute left-0 top-0 overflow-hidden h-full w-full pointer-events-none">
         <div class="overlay overflow-hidden origin-top-left" :style="overlayStyle" v-html="page.overlayHtml" />
       </div>
       <div v-if="selectedFacsimileSource" class="img_area" :style="selectedFacsimileSource.width ? { width: `${selectedFacsimileSource.width}px` } : undefined"><img ref="facsimileImage" class="faksimil transform transition duration-200" :style="{ ...(selectedFacsimileSource.width ? { width: `${selectedFacsimileSource.width}px`, maxWidth: `${selectedFacsimileSource.width}px` } : {}), transform: `rotate(${rotation}deg)` }" :src="selectedFacsimileSource.url" :alt="`Sida ${page.pageIndex}`" @load="updateImageWidth"></div>
     </section>
+    <ClientOnly>
+      <ReaderFocusControls
+        v-if="page && focusMode"
+        :bar-visible="focusBarVisible"
+        :larger-size-enabled="Boolean(largerFacsimileSource)"
+        :media-type="page.mediaType"
+        :next-href="page.nextIndex === null ? null : href(page.nextIndex)"
+        :night-mode="focusNightMode"
+        :parts="focusParts"
+        :previous-href="page.previousIndex === null ? null : href(page.previousIndex)"
+        :smaller-size-enabled="Boolean(smallerFacsimileSource)"
+        :start-href="href(page.firstReadableIndex)"
+        @adjust-text="adjustFocusText"
+        @close="closeFocus"
+        @navigate="navigateRawFullPath"
+        @select-size="delta => selectFacsimileSource(delta < 0 ? smallerFacsimileSource : largerFacsimileSource)"
+        @toggle-night="focusNightMode = !focusNightMode"
+      />
+    </ClientOnly>
     <ClientOnly>
       <Teleport to="#toolkit">
         <div
@@ -389,9 +760,45 @@ useHead(() => ({
           </div>
           <div v-if="page.metadataAvailable" class="subnav mt-10 editor-metadata-controls">
             <ul>
-              <li><span>Mer om boken</span></li>
-              <li><span>Läsfokus</span></li>
-              <li><span>Sök i verket</span></li>
+              <li v-if="page.parts.length"><a ref="contentsTrigger" :href="contentsHref" @click.prevent="openContents">Innehållsförteckning</a></li>
+              <li v-if="sourceInfoAvailable"><a ref="sourceInfoTrigger" :href="sourceInfoHref" @click.prevent="openSourceInfo">Mer om boken</a></li>
+              <li><a :href="focusHref" @click.prevent="activateFocus">Läsfokus</a></li>
+              <li v-if="page.searchable">
+                <a
+                  class="reader-work-search-trigger"
+                  href=""
+                  :aria-expanded="workSearchOpen"
+                  @click.prevent="toggleWorkSearch"
+                >Sök i verket</a>
+                <div v-show="workSearchOpen" class="searchbox">
+                  <div class="collapse-content">
+                    <div class="header">
+                      <div class="auth">Sök i <span class="author"><ReaderContributors :contributors="page.contributors" /></span></div>
+                      <div class="title">{{ page.title }}</div>
+                    </div>
+                    <div class="ctrls">
+                      <form @submit.prevent="submitWorkSearch">
+                        <input ref="workSearchInput" v-model="workSearchQuery" class="border border-gray-300" type="search" aria-label="Sök i verket">
+                        <button type="submit" class="submit btn">Sök</button>
+                      </form>
+                      <p v-if="workSearchMessage" class="work-search-message" role="status">{{ workSearchMessage }}</p>
+                      <ul class="search_opts_widget inline-block">
+                        <li v-for="option in workSearchOptions" :key="option.key" class="hover:text-primary">
+                          <span aria-hidden="true"><span>{{ option.selected ? "✓" : "" }}</span></span>
+                          <span
+                            role="checkbox"
+                            :aria-checked="option.selected"
+                            tabindex="0"
+                            @click="chooseWorkSearchOption(option.key)"
+                            @keydown="activateWorkSearchOption($event, option.key)"
+                          >{{ option.label }}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </li>
+              <li v-else aria-disabled="true"><a class="disabled" aria-disabled="true" tabindex="-1">Sök i verket</a></li>
               <li><NuxtLink v-if="authorSearchHref" :to="authorSearchHref">Sök i författarens texter</NuxtLink><span v-else>Sök i författarens texter</span></li>
             </ul>
             <NuxtLink v-if="page.closeHref" class="submit btn mt-4 text-xs" :to="page.closeHref">Stäng editor</NuxtLink>
@@ -433,10 +840,34 @@ useHead(() => ({
             v-if="page.endPageName"
           >av {{ page.endPageName }}</template></span>
           <input v-if="page.pageCount !== null && page.pageIndexes === null" type="range" min="0" :max="page.pageCount - 1" :value="page.pageIndex" aria-label="Gå till sida">
+          <a v-if="page.metadataAvailable && page.parts.length" :href="contentsHref">Innehållsförteckning</a>
+          <a v-if="page.metadataAvailable && page.authorId && page.titlePath" :href="sourceInfoHref">Mer om boken</a>
+          <a v-if="page.metadataAvailable" :href="focusHref">Läsfokus</a>
+          <span v-if="page.metadataAvailable" class="reader-work-search-trigger" :class="{ disabled: !page.searchable }">Sök i verket</span>
           <a v-if="page.metadataAvailable && page.closeHref" :href="page.closeHref">Stäng editor</a>
         </aside>
       </template>
     </ClientOnly>
+    <ClientOnly>
+      <ReaderContentsDialog
+        v-if="page"
+        :open="contentsOpen"
+        :contributors="page.contributors"
+        :title="page.title ?? page.workId"
+        :imprint-year="page.imprintYear"
+        :parts="page.parts"
+        :part-hrefs="contentsPartHrefs"
+        @close="closeContents"
+        @select-page="selectContentsPage"
+      />
+    </ClientOnly>
+    <ReaderSourceInfoDialog
+      :open="sourceInfoOpen"
+      :loading="sourceInfoLoading"
+      :failed="sourceInfoFailed"
+      :source-info="sourceInfo"
+      @close="closeSourceInfo"
+    />
   </div>
 </template>
 
