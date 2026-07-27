@@ -20,20 +20,50 @@ function declaredByteLength(response: Response): number | null {
   return bytes
 }
 
-function rawAbsolutePathname(value: string): string | null {
-  const schemeSeparator = value.indexOf("://")
-  if (schemeSeparator <= 0) return null
-  const authorityStart = schemeSeparator + 3
+type RawUrlAuthority = Readonly<{
+  protocol: string
+  suffix: string
+}>
+
+function hasUnsafeRawAuthorityCharacter(value: string): boolean {
+  for (const character of value) {
+    const codePoint = character.codePointAt(0) ?? 0
+    if (codePoint <= 0x20 || codePoint === 0x7f || character === "@") return true
+  }
+  return false
+}
+
+function inspectRawUrlAuthority(value: string, errorMessage: string): RawUrlAuthority {
+  const error = new Error(errorMessage)
+  const scheme = /^([a-z][\d+.a-z-]*):\/\//i.exec(value)
+  if (!scheme) throw error
+
+  const authorityStart = scheme[0].length
   const delimiters = ["/", "\\", "?", "#"]
     .map(delimiter => value.indexOf(delimiter, authorityStart))
     .filter(index => index >= 0)
   const authorityEnd = delimiters.length === 0 ? value.length : Math.min(...delimiters)
-  if (value[authorityEnd] !== "/" && value[authorityEnd] !== "\\") return "/"
-  const queryIndex = value.indexOf("?", authorityEnd)
-  const fragmentIndex = value.indexOf("#", authorityEnd)
+  const authority = value.slice(authorityStart, authorityEnd)
+  if (
+    !authority
+    || hasUnsafeRawAuthorityCharacter(authority)
+    || authority.endsWith(":")
+  ) {
+    throw error
+  }
+  return {
+    protocol: `${scheme[1]?.toLowerCase()}:`,
+    suffix: value.slice(authorityEnd)
+  }
+}
+
+function rawPathname(suffix: string): string {
+  if (suffix[0] !== "/" && suffix[0] !== "\\") return "/"
+  const queryIndex = suffix.indexOf("?")
+  const fragmentIndex = suffix.indexOf("#")
   const pathEnds = [queryIndex, fragmentIndex].filter(index => index >= 0)
-  const pathEnd = pathEnds.length === 0 ? value.length : Math.min(...pathEnds)
-  return value.slice(authorityEnd, pathEnd)
+  const pathEnd = pathEnds.length === 0 ? suffix.length : Math.min(...pathEnds)
+  return suffix.slice(0, pathEnd)
 }
 
 const maximumPathDecodeLayers = 5
@@ -70,9 +100,15 @@ function hasUnsafeEncodedPath(rawPathname: string): boolean {
   return rawPathname.split("/").some(hasUnsafePathSegment)
 }
 
-function configuredAuthorityOrigin(value: string): string {
+type ConfiguredAuthority = Readonly<{
+  origin: string
+  protocol: "http:" | "https:"
+}>
+
+function configuredAuthority(value: string): ConfiguredAuthority {
   const error = new Error("Managed text configured authority is not allowed")
   if (value !== value.trim()) throw error
+  const rawAuthority = inspectRawUrlAuthority(value, error.message)
 
   let authority: URL
   try {
@@ -82,6 +118,7 @@ function configuredAuthorityOrigin(value: string): string {
   }
   if (
     !["http:", "https:"].includes(authority.protocol)
+    || authority.protocol !== rawAuthority.protocol
     || authority.origin === "null"
     || authority.username
     || authority.password
@@ -89,16 +126,11 @@ function configuredAuthorityOrigin(value: string): string {
     throw error
   }
 
-  const schemeSeparator = value.indexOf("://")
-  if (schemeSeparator <= 0) throw error
-  const authorityStart = schemeSeparator + 3
-  const delimiters = ["/", "\\", "?", "#"]
-    .map(delimiter => value.indexOf(delimiter, authorityStart))
-    .filter(index => index >= 0)
-  const suffixStart = delimiters.length === 0 ? value.length : Math.min(...delimiters)
-  const suffix = value.slice(suffixStart)
-  if (suffix !== "" && suffix !== "/") throw error
-  return authority.origin
+  if (rawAuthority.suffix !== "" && rawAuthority.suffix !== "/") throw error
+  return {
+    origin: authority.origin,
+    protocol: authority.protocol as "http:" | "https:"
+  }
 }
 
 function pathMatchesPrefix(pathname: string, rawPrefix: string): boolean {
@@ -148,17 +180,20 @@ export async function fetchManagedText(
   rules: ManagedTextRules,
   fetcher: typeof fetch = fetch
 ): Promise<string> {
-  const authorityOrigin = configuredAuthorityOrigin(rules.authorityOrigin)
+  const authority = configuredAuthority(rules.authorityOrigin)
   const response = await fetcher(url, { redirect: "follow" })
+  let rawFinalUrl: RawUrlAuthority | undefined
+  let rawFinalError: unknown
+  try {
+    rawFinalUrl = inspectRawUrlAuthority(response.url, "Managed text final URL is not allowed")
+  } catch (error) {
+    rawFinalError = error
+  }
   let finalUrl: URL
   try {
     finalUrl = new URL(response.url)
   } catch (error) {
     return rejectUnreadBody(response, error)
-  }
-  const rawPathname = rawAbsolutePathname(response.url)
-  if (rawPathname === null || hasUnsafeEncodedPath(rawPathname)) {
-    return rejectUnreadBody(response, new Error("Managed text final path is not allowed"))
   }
   if (finalUrl.username || finalUrl.password) {
     return rejectUnreadBody(
@@ -166,8 +201,27 @@ export async function fetchManagedText(
       new Error("Managed text final URL credentials are not allowed")
     )
   }
-  if (finalUrl.origin !== authorityOrigin) {
+  if (!rawFinalUrl) {
+    return rejectUnreadBody(
+      response,
+      rawFinalError ?? new Error("Managed text final URL is not allowed")
+    )
+  }
+  if (
+    !["http:", "https:"].includes(finalUrl.protocol)
+    || finalUrl.protocol !== rawFinalUrl.protocol
+  ) {
+    return rejectUnreadBody(response, new Error("Managed text final URL is not allowed"))
+  }
+  if (finalUrl.protocol !== authority.protocol) {
+    return rejectUnreadBody(response, new Error("Managed text final protocol is not allowed"))
+  }
+  if (finalUrl.origin !== authority.origin) {
     return rejectUnreadBody(response, new Error("Managed text final authority is not allowed"))
+  }
+  const finalRawPathname = rawPathname(rawFinalUrl.suffix)
+  if (hasUnsafeEncodedPath(finalRawPathname)) {
+    return rejectUnreadBody(response, new Error("Managed text final path is not allowed"))
   }
   if (!rules.allowedPathPrefixes.some(prefix => pathMatchesPrefix(finalUrl.pathname, prefix))) {
     return rejectUnreadBody(response, new Error("Managed text final path is not allowed"))

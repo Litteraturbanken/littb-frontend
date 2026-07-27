@@ -246,6 +246,84 @@ describe("managed text transport", () => {
     })
   })
 
+  test.each([
+    ["empty userinfo", "https://@assets.test/txt/work/res_00001.html", rules],
+    ["empty username and password", "https://:@assets.test/txt/work/res_00001.html", rules],
+    ["embedded tab", "https://assets.\ttest/txt/work/res_00001.html", rules],
+    ["embedded newline", "https://assets.\ntest/txt/work/res_00001.html", rules],
+    ["empty port", "https://assets.test:/txt/work/res_00001.html", rules],
+    [
+      "empty bracketed IPv6 port",
+      "https://[2001:db8::1]:/txt/work/res_00001.html",
+      { ...rules, authorityOrigin: "https://[2001:db8::1]" }
+    ],
+    ["empty authority", "https:///assets.test/txt/work/res_00001.html", rules]
+  ])("rejects a final URL with raw %s and cancels its unread body", async (
+    _label,
+    url,
+    managedRules
+  ) => {
+    const rejected = unreadResponse({
+      headers: { "content-type": "text/html" },
+      url
+    })
+
+    await expectCancelledRejection({
+      ...rejected,
+      expected: "Managed text final URL is not allowed",
+      managedRules
+    })
+  })
+
+  test.each([
+    ["embedded NUL", "https://assets.\u0000test/txt/work/res_00001.html"],
+    ["embedded DEL", "https://assets.\u007ftest/txt/work/res_00001.html"]
+  ])("rejects a final URL with %s and cancels its unread body", async (_label, url) => {
+    const rejected = unreadResponse({
+      headers: { "content-type": "text/html" },
+      url
+    })
+
+    await expectCancelledRejection({ ...rejected, expected: TypeError })
+  })
+
+  test("rejects a blob final URL even when the root path prefix is allowed", async () => {
+    const rejected = unreadResponse({
+      headers: { "content-type": "text/html" },
+      url: "blob:https://assets.test/reader-page"
+    })
+
+    await expectCancelledRejection({
+      ...rejected,
+      expected: "Managed text final URL is not allowed",
+      managedRules: { ...rules, allowedPathPrefixes: ["/"] }
+    })
+  })
+
+  test.each([
+    ["HTTP for HTTPS", "http://assets.test/txt/work/res_00001.html", rules],
+    [
+      "HTTPS for HTTP",
+      "https://assets.test/txt/work/res_00001.html",
+      { ...rules, authorityOrigin: "http://assets.test" }
+    ]
+  ])("rejects a final response using %s and cancels its unread body", async (
+    _label,
+    url,
+    managedRules
+  ) => {
+    const rejected = unreadResponse({
+      headers: { "content-type": "text/html" },
+      url
+    })
+
+    await expectCancelledRejection({
+      ...rejected,
+      expected: "Managed text final protocol is not allowed",
+      managedRules
+    })
+  })
+
   test("does not treat an allowed path prefix sibling as a descendant", async () => {
     const rejected = unreadResponse({
       headers: { "content-type": "text/html" },
@@ -383,6 +461,16 @@ describe("managed text transport", () => {
   test.each([
     ["malformed", "://not-an-origin"],
     ["credentials", "https://reader:secret@assets.test"],
+    ["empty userinfo", "https://@assets.test"],
+    ["empty username and password", "https://:@assets.test"],
+    ["embedded tab", "https://assets.\ttest"],
+    ["embedded newline", "https://assets.\ntest"],
+    ["embedded space", "https://assets. test"],
+    ["embedded NUL", "https://assets.\u0000test"],
+    ["embedded DEL", "https://assets.\u007ftest"],
+    ["empty port", "https://assets.test:"],
+    ["empty bracketed IPv6 port", "https://[2001:db8::1]:"],
+    ["empty authority", "https://"],
     ["file scheme", "file:///tmp/assets"],
     ["opaque scheme", "data:text/plain,assets"],
     ["path", "https://assets.test/txt"],
@@ -417,6 +505,41 @@ describe("managed text transport", () => {
       { ...rules, authorityOrigin: "https://assets.test:8443" },
       fetcher
     )).resolves.toBe("port text")
+    expect(fetcher).toHaveBeenCalledOnce()
+  })
+
+  test.each([
+    [
+      "uppercase HTTPS host and explicit default port",
+      "HTTPS://ASSETS.TEST:443/",
+      "HTTPS://ASSETS.TEST:443/txt/work/res_00001.html?username=app#page"
+    ],
+    [
+      "explicit HTTP default port",
+      "http://assets.test:80",
+      "http://assets.test/txt/work/res_00001.html"
+    ],
+    [
+      "bracketed IPv6 default port",
+      "https://[2001:db8::1]:443",
+      "https://[2001:db8::1]/txt/work/res_00001.html"
+    ],
+    [
+      "bracketed IPv6 nondefault port",
+      "https://[2001:db8::1]:8443",
+      "https://[2001:db8::1]:8443/txt/work/res_00001.html"
+    ]
+  ])("permits %s", async (_label, authorityOrigin, url) => {
+    const fetcher = responseFetcher(managedResponse("canonical", {
+      headers: { "content-type": "text/html" },
+      url
+    }))
+
+    await expect(fetchManagedText(
+      url,
+      { ...rules, authorityOrigin },
+      fetcher
+    )).resolves.toBe("canonical")
     expect(fetcher).toHaveBeenCalledOnce()
   })
 
