@@ -8,6 +8,12 @@ const legacyApiProxyTarget = legacyApiProxyOverride || "http://127.0.0.1:8000"
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   ssr: true,
+  modules: ["@nuxt/eslint"],
+  eslint: {
+    config: {
+      autoInit: false
+    }
+  },
   devtools: { enabled: false },
   css: [
     "~/assets/styles/bootstrap.scss",
