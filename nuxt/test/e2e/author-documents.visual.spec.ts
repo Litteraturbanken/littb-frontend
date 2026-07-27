@@ -70,9 +70,9 @@ for (const documentCase of visualCases) {
     const browserManagedAssets: string[] = []
     const unexpectedApplicationRequests: string[] = []
     const selectedAssets = new Set<string>(documentCase.assets)
-    // SSR starts the managed images before Vue hydrates `v-html`; hydration then
-    // assigns the same innerHTML and requests the selected images a second time.
-    const expectedAssetRequests = [...documentCase.assets, ...documentCase.assets].sort()
+    // The hydration-stable capability renderer preserves the SSR nodes, so every
+    // selected managed image keeps its browser ownership without a duplicate load.
+    const expectedAssetRequests = [...documentCase.assets].sort()
 
     await page.route("**/*", route => {
       const browserRequest = route.request()
@@ -119,6 +119,9 @@ for (const documentCase of visualCases) {
 
     expect(browserApiRequests).toEqual([])
     expect(browserManagedAssets.sort()).toEqual(expectedAssetRequests)
+    for (const asset of selectedAssets) {
+      expect(browserManagedAssets.filter(requested => requested === asset)).toHaveLength(1)
+    }
     expect(await fixtureRequests(request, "_author_document_requests")).toEqual([
       { kind: "descriptor", path: documentCase.descriptorPath },
       { kind: "content", path: documentCase.sourcePath }

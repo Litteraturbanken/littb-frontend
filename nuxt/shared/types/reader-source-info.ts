@@ -1,3 +1,5 @@
+import type { SanitizedHtml } from "./renderable-html"
+
 export type ReaderSourceInfoMediaType = "etext" | "faksimil" | "pdf" | "infopost"
 
 export interface ReaderSourceInfoAuthor {
@@ -35,7 +37,7 @@ export interface ReaderSourceInfoDownloadAction {
 }
 
 export interface ReaderSourceInfoErrataRow {
-  cellsHtml: string[]
+  cellsHtml: SanitizedHtml<"reader-source-info">[]
 }
 
 export interface ReaderSourceInfoProvenance {
@@ -61,8 +63,8 @@ export interface ReaderSourceInfoDramaFact {
 export interface ReaderSourceInfoDramawebben {
   hasIntroduction: boolean
   facts: ReaderSourceInfoDramaFact[]
-  rolesHtml: string[]
-  historyHtml: string | null
+  rolesHtml: SanitizedHtml<"reader-source-info">[]
+  historyHtml: SanitizedHtml<"reader-source-info"> | null
 }
 
 export interface ReaderSourceInfo {
@@ -75,9 +77,9 @@ export interface ReaderSourceInfo {
   shortTitle: string | null
   textType: string | null
   authors: ReaderSourceInfoAuthor[]
-  sourceDescriptionHtml: string | null
+  sourceDescriptionHtml: SanitizedHtml<"reader-source-info"> | null
   sourceDescriptionAuthor: ReaderSourceInfoAttribution | null
-  workIntroductionHtml: string | null
+  workIntroductionHtml: SanitizedHtml<"reader-source-info"> | null
   workIntroductionAuthor: ReaderSourceInfoAttribution | null
   imprint: string | null
   urn: string | null
@@ -85,11 +87,10 @@ export interface ReaderSourceInfo {
   licenseKey: string | null
   isPrinted: boolean | null
   provenance: ReaderSourceInfoProvenance[]
-  licenseHtml: string | null
+  licenseHtml: SanitizedHtml<"reader-source-info"> | null
   cover: ReaderSourceInfoCover
   readActions: ReaderSourceInfoReadAction[]
   downloadActions: ReaderSourceInfoDownloadAction[]
   errata: ReaderSourceInfoErrataRow[]
   dramawebben: ReaderSourceInfoDramawebben | null
 }
-

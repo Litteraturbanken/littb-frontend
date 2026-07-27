@@ -1,6 +1,11 @@
 import { parseHTML } from "linkedom"
 
 import { hasC0OrC1Control, hasEcmaWhitespace } from "#shared/utils/text-safety"
+import type { SanitizedHtml } from "#shared/types/renderable-html"
+import {
+  emptyRenderableHtml,
+  issueDictionaryArticleHtml
+} from "#shared/utils/renderable-html"
 
 const maximumArticleLength = 200_000
 const maximumWordLength = 100
@@ -15,11 +20,11 @@ function isAllowedTag(tag: string): boolean {
   return safeHtmlTags.has(tag) || (customSoTag.test(tag) && !blockedTags.has(tag) && tag !== "a")
 }
 
-export function sanitizeDictionaryArticle(markup: string): string {
-  if (!markup || markup.length > maximumArticleLength) return ""
+export function sanitizeDictionaryArticle(markup: string): SanitizedHtml<"dictionary-article"> {
+  if (!markup || markup.length > maximumArticleLength) return emptyRenderableHtml()
   const { document } = parseHTML(`<div data-dictionary-root>${markup}</div>`)
   const root = document.querySelector("[data-dictionary-root]")
-  if (!root) return ""
+  if (!root) return emptyRenderableHtml()
 
   for (const element of Array.from(root.querySelectorAll("*")).reverse()) {
     const tag = element.tagName.toLowerCase()
@@ -36,7 +41,9 @@ export function sanitizeDictionaryArticle(markup: string): string {
     }
   }
   const html = root.innerHTML
-  return html.length <= maximumArticleLength ? html : ""
+  return html.length <= maximumArticleLength
+    ? issueDictionaryArticleHtml(html)
+    : emptyRenderableHtml()
 }
 
 function containingElement(node: Node | null): Element | null {

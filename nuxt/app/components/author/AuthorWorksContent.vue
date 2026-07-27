@@ -145,10 +145,11 @@ function isDownloadTitle(work: AuthorWork): boolean {
               :src="author.portrait.url"
               :alt="`Porträtt av ${author.full_name}`"
             >
-            <figcaption
+            <RenderableHtmlContent
               v-if="portraitCaptionHtml"
+              as="figcaption"
               class="bg-white bg-opacity-75 p-3 text-base"
-              v-html="portraitCaptionHtml"
+              :html="portraitCaptionHtml"
             />
           </div>
 

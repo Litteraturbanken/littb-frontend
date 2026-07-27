@@ -1,5 +1,7 @@
 import { parseHTML } from "linkedom"
 
+import type { SanitizedHtml } from "../../shared/types/renderable-html"
+import { issueEditorEtextHtml } from "../../shared/utils/renderable-html"
 import { hasC0OrC1Control } from "../../shared/utils/text-safety"
 
 export const maximumEditorHtmlLength = 2 * 1024 * 1024
@@ -206,7 +208,7 @@ function sanitizeElement(element: SanitizedElement): void {
   }
 }
 
-export function sanitizeEditorEtextHtml(source: string): string | null {
+export function sanitizeEditorEtextHtml(source: string): SanitizedHtml<"editor-etext"> | null {
   if (source.length === 0 || source.length > maximumEditorHtmlLength) return null
   try {
     const { document } = parseHTML(
@@ -218,7 +220,9 @@ export function sanitizeEditorEtextHtml(source: string): string | null {
       sanitizeElement(element)
     }
     const html = document.body.innerHTML
-    return html.length > 0 && html.length <= maximumEditorHtmlLength ? html : null
+    return html.length > 0 && html.length <= maximumEditorHtmlLength
+      ? issueEditorEtextHtml(html)
+      : null
   } catch {
     return null
   }

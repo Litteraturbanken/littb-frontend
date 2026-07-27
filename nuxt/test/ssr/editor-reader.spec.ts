@@ -20,8 +20,12 @@ test("SSR renders editor metadata, OCR, and raw page bounds", async ({ request }
   )
   expect(document.querySelector(".editor-reader .img_area")?.getAttribute("style"))
     .toContain("width:625px")
-  expect(document.querySelector(".editor-reader .overlay")?.textContent).toContain("OCR")
-  expect(document.querySelector(".editor-reader .overlay")?.getAttribute("style"))
+  const overlay = document.querySelector(".editor-reader .overlay")
+  expect(overlay?.localName).toBe("div")
+  expect(overlay?.innerHTML).toBe(
+    '<div data-size="2500x3600"><span class="w">OCR</span></div>'
+  )
+  expect(overlay?.getAttribute("style"))
     .toContain("scale(0.25)")
   expect(document.querySelector('input[aria-label="Gå till sida"]')?.getAttribute("max"))
     .toBe("2")

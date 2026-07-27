@@ -3,8 +3,14 @@ import { Dialog, DialogPanel, DialogTitle } from "@headlessui/vue"
 
 import type {
   ReaderSourceInfo,
-  ReaderSourceInfoDramaFact
+  ReaderSourceInfoDramaFact,
+  ReaderSourceInfoErrataRow
 } from "#shared/types/reader-source-info"
+import type { SanitizedHtml } from "#shared/types/renderable-html"
+import {
+  emptyRenderableHtml,
+  joinReaderSourceRows
+} from "#shared/utils/renderable-html"
 import type { components } from "~/lib/api/generated/lbapi"
 import { canonicalNuxtHref } from "~/lib/internal-navigation"
 
@@ -48,6 +54,16 @@ function fileSize(size: number | null): string | null {
 
 function toggleErrata(): void {
   errataOpen.value = !errataOpen.value
+}
+
+function joinedRolesHtml(
+  values: readonly SanitizedHtml<"reader-source-info">[]
+): SanitizedHtml<"reader-source-info"> {
+  return joinReaderSourceRows(values)
+}
+
+function errataCellHtml(row: ReaderSourceInfoErrataRow): SanitizedHtml<"reader-source-info"> {
+  return row.cellsHtml[1] ?? emptyRenderableHtml()
 }
 
 function authorRole(authorType: string | null, role: string | null): string | null {
@@ -144,10 +160,11 @@ onMounted(() => {
 
             <div class="columns">
               <div class="col_left">
-                <div
+                <RenderableHtmlContent
                   v-if="sourceInfo.sourceDescriptionHtml"
+                  as="div"
                   class="sourcedesc"
-                  v-html="sourceInfo.sourceDescriptionHtml"
+                  :html="sourceInfo.sourceDescriptionHtml"
                 />
                 <div class="mb-8 text-right italic">{{
                   sourceInfo.sourceDescriptionAuthor?.fullName ?? ""
@@ -232,10 +249,11 @@ onMounted(() => {
               </div>
             </div>
 
-            <div
+            <RenderableHtmlContent
               v-if="sourceInfo.workIntroductionHtml"
+              as="div"
               class="workintro mt-4"
-              v-html="sourceInfo.workIntroductionHtml"
+              :html="sourceInfo.workIntroductionHtml"
             />
             <div class="mb-8 text-right italic">{{
               sourceInfo.workIntroductionAuthor?.fullName ?? ""
@@ -253,11 +271,18 @@ onMounted(() => {
               </table>
               <div v-if="sourceInfo.dramawebben.rolesHtml.length">
                 <h3 class="heading">Rollista</h3>
-                <div v-html="sourceInfo.dramawebben.rolesHtml.join('<br>')" />
+                <RenderableHtmlContent
+                  as="div"
+                  :html="joinedRolesHtml(sourceInfo.dramawebben.rolesHtml)"
+                />
               </div>
               <div v-if="sourceInfo.dramawebben.historyHtml">
                 <h3 class="heading">Teaterkritik</h3>
-                <div class="history" v-html="sourceInfo.dramawebben.historyHtml" />
+                <RenderableHtmlContent
+                  as="div"
+                  class="history"
+                  :html="sourceInfo.dramawebben.historyHtml"
+                />
               </div>
             </div>
 
@@ -276,11 +301,12 @@ onMounted(() => {
               <p v-if="provenance.text">{{ provenance.text }}</p>
             </div>
 
-            <div
+            <RenderableHtmlContent
               v-if="sourceInfo.licenseHtml"
+              as="div"
               class="license mt-4"
               :class="{ drama: sourceInfo.dramawebben }"
-              v-html="sourceInfo.licenseHtml"
+              :html="sourceInfo.licenseHtml"
             />
 
             <div v-if="sourceInfo.mediaType === 'etext'" class="errata">
@@ -297,7 +323,10 @@ onMounted(() => {
                     :key="rowIndex"
                   >
                     <td>{{ row.cellsHtml[0] ?? "" }}</td>
-                    <td v-html="row.cellsHtml[1] ?? ''" />
+                    <RenderableHtmlContent
+                      as="td"
+                      :html="errataCellHtml(row)"
+                    />
                   </tr>
                 </tbody>
               </table>

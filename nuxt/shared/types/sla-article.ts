@@ -1,6 +1,7 @@
 import type { components } from "../../app/lib/api/generated/lbapi"
 
 import type { AuthorSupplementalAuthor } from "./author-document"
+import type { SanitizedHtml } from "./renderable-html"
 
 export type SlaArticleId = components["schemas"]["SlaArticleDescriptor"]["article_id"]
 
@@ -56,5 +57,5 @@ export interface SlaArticlePage {
   author: AuthorSupplementalAuthor
   articleId: SlaArticleId
   sourcePath: SlaArticleSourcePath
-  bodyHtml: string
+  bodyHtml: SanitizedHtml<"sla-article">
 }

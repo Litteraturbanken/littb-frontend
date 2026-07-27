@@ -175,6 +175,7 @@ test("SSR renders the exact Almqvist Mera om shell and frozen managed body", asy
 
   const managedBody = document.querySelector(".page_content > .content.unbox")
   expect(managedBody).not.toBeNull()
+  expect(managedBody?.localName).toBe("div")
   expect(managedBody?.querySelector("h1")?.textContent?.trim())
     .toBe("Carl Jonas Love Almqvist")
   expect(managedBody?.querySelector("h2")?.textContent?.trim())

@@ -6,6 +6,8 @@ import type {
   DramawebbenDocumentKind,
   DramawebbenManagedDocument
 } from "../../shared/types/dramawebben-document"
+import type { SanitizedHtml } from "../../shared/types/renderable-html"
+import { issueDramawebbenDocumentHtml } from "../../shared/utils/renderable-html"
 import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
 
 type SanitizableAttribute = { name: string }
@@ -141,7 +143,9 @@ export class InvalidDramawebbenDocumentSource extends Error {
   }
 }
 
-export function parseDramawebbenDocumentBody(source: string): string {
+export function parseDramawebbenDocumentBody(
+  source: string
+): SanitizedHtml<"dramawebben-document"> {
   let document: ParsedDramawebbenDocument
   try {
     ({ document } = parseHTML(source) as unknown as {
@@ -154,7 +158,7 @@ export function parseDramawebbenDocumentBody(source: string): string {
   if (bodies.length !== 1) throw new InvalidDramawebbenDocumentSource()
   const body = bodies[0]!
   for (const child of [...body.childNodes]) sanitizeNode(child)
-  return body.innerHTML
+  return issueDramawebbenDocumentHtml(body.innerHTML)
 }
 
 export function dramawebbenDocumentError(
@@ -241,7 +245,7 @@ export async function loadDramawebbenDocument(
     return dramawebbenDocumentError(502, "dramawebben_document_unavailable")
   }
 
-  let bodyHtml: string
+  let bodyHtml: SanitizedHtml<"dramawebben-document">
   try {
     bodyHtml = parseDramawebbenDocumentBody(source)
   } catch {

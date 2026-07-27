@@ -53,6 +53,12 @@ test("SSR renders the complete ordinary author profile from one private request"
 
   const intro = document.querySelector(".page_content .introtext.content.unbox.show_more")
   expect(intro).not.toBeNull()
+  expect(intro?.firstElementChild?.localName).toBe("div")
+  expect(intro?.firstElementChild?.innerHTML).toBe(
+    '<p>August Strindberg var författare och dramatiker.</p>'
+    + '<p>Han debuterade med <a href="/författare/StrindbergA/titlar/Fritankaren/etext">'
+    + "<i>Fritänkaren</i></a>.</p>"
+  )
   expect(compactText(intro?.textContent)).toContain("August Strindberg var författare och dramatiker.")
   expect(compactText(intro?.textContent)).toContain("Han debuterade med Fritänkaren.")
   expect(intro?.querySelector("a")?.getAttribute("href"))
@@ -61,6 +67,9 @@ test("SSR renders the complete ordinary author profile from one private request"
   expect(intro?.querySelector(".source_header")?.textContent?.trim()).toBe("Källor")
   expect([...intro?.querySelectorAll(".source_content") ?? []].map(node => compactText(node.textContent)))
     .toEqual(["Svenskt biografiskt lexikon", "Litteraturbanken"])
+  expect(intro?.querySelector(".source_content")?.localName).toBe("div")
+  expect(intro?.querySelector(".source_content")?.innerHTML)
+    .toBe("<i>Svenskt biografiskt lexikon</i>")
   expect(compactText(intro?.querySelector(".pseudonym")?.textContent))
     .toBe("Pseudonymer Härved Ulf, Frater Sylvester")
   expect(compactText(intro?.querySelector(".other_name")?.textContent))
@@ -72,6 +81,9 @@ test("SSR renders the complete ordinary author profile from one private request"
   expect(portrait?.querySelector("img.author_img")?.getAttribute("alt"))
     .toBe("Porträtt av August Strindberg")
   expect(compactText(portrait?.querySelector("figcaption")?.textContent))
+    .toBe("August Strindberg, fotograferad 1902.")
+  expect(portrait?.querySelector("figcaption")?.localName).toBe("figcaption")
+  expect(portrait?.querySelector("figcaption")?.innerHTML)
     .toBe("August Strindberg, fotograferad 1902.")
   const linkBoxes = [...portrait?.querySelectorAll(".ext_links") ?? []]
   expect(linkBoxes).toHaveLength(2)

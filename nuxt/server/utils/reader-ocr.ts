@@ -1,6 +1,7 @@
 import { parseHTML } from "linkedom"
 
 import type { ReaderOcrOverlay } from "../../shared/types/reader"
+import { issueReaderOcrHtml } from "../../shared/utils/renderable-html"
 import { hasC0OrC1Control } from "../../shared/utils/text-safety"
 
 const maximumOverlayLength = 512 * 1024
@@ -119,7 +120,7 @@ export function parseReaderOcrOverlay(source: string): ReaderOcrOverlay | null {
     for (const element of Array.from(root.querySelectorAll("*"))) {
       sanitizeOverlayElement(element, false)
     }
-    return { html: root.outerHTML, width, height }
+    return { html: issueReaderOcrHtml(root.outerHTML), width, height }
   } catch {
     return null
   }

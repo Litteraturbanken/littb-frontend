@@ -8,6 +8,8 @@ import type {
   AuthorDocumentKind,
   AuthorSupplementalPage
 } from "../../shared/types/author-document"
+import type { SanitizedHtml } from "../../shared/types/renderable-html"
+import { issueAuthorDocumentHtml } from "../../shared/utils/renderable-html"
 import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
 
 export type AuthorDocumentDescriptor = components["schemas"]["AuthorDocumentDescriptor"]
@@ -347,7 +349,7 @@ export class InvalidAuthorDocumentSource extends Error {
 export function parseAuthorDocumentBody(
   source: string,
   kind: AuthorDocumentKind = "presentation"
-): string {
+): SanitizedHtml<"author-document"> {
   let document: ParsedAuthorDocument
   try {
     ({ document } = parseHTML(source) as unknown as { document: ParsedAuthorDocument })
@@ -358,7 +360,7 @@ export function parseAuthorDocumentBody(
   if (bodies.length !== 1) throw new InvalidAuthorDocumentSource()
   const body = bodies[0]!
   for (const child of [...body.childNodes]) sanitizeNode(child, kind)
-  return body.innerHTML
+  return issueAuthorDocumentHtml(body.innerHTML)
 }
 
 export function documentError(
@@ -513,7 +515,7 @@ export async function loadAuthorDocument(
     return documentError(502, "author_document_unavailable")
   }
 
-  let bodyHtml: string
+  let bodyHtml: SanitizedHtml<"author-document">
   try {
     bodyHtml = parseAuthorDocumentBody(source, requestedKind)
   } catch {

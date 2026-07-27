@@ -363,7 +363,7 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
       sourceError()
     }
   }
-  let overlayHtml: string | null = null
+  let overlayHtml: EditorReaderPage["overlayHtml"] = null
   let overlayWidth: number | null = null
   let overlayHeight: number | null = null
   if (mediaType === "faksimil") {

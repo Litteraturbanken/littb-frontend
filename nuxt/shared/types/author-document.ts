@@ -1,4 +1,5 @@
 import type { components } from "../../app/lib/api/generated/lbapi"
+import type { SanitizedHtml } from "./renderable-html"
 
 export type AuthorDocumentKind =
   components["schemas"]["AuthorDocumentDescriptor"]["document_kind"]
@@ -21,5 +22,5 @@ export interface AuthorSupplementalAuthor {
 export interface AuthorSupplementalPage {
   author: AuthorSupplementalAuthor
   documentKind: AuthorDocumentKind
-  bodyHtml: string
+  bodyHtml: SanitizedHtml<"author-document">
 }

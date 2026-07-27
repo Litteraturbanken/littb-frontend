@@ -1,6 +1,11 @@
 import { parseHTML } from "linkedom"
 
 import { hasC0OrC1Control } from "#shared/utils/text-safety"
+import type { SanitizedHtml } from "#shared/types/renderable-html"
+import {
+  emptyRenderableHtml,
+  issueAuthorProfileHtml
+} from "#shared/utils/renderable-html"
 import type { components } from "./api/generated/lbapi"
 
 type AuthorProfile = components["schemas"]["AuthorProfile"]
@@ -10,12 +15,12 @@ export type AuthorProfileView = {
   authorId: string
   fullName: string
   lifespan: string
-  introductionHtml: string
+  introductionHtml: SanitizedHtml<"author-profile">
   introductionBy: string
-  sourceHtml: string[]
+  sourceHtml: SanitizedHtml<"author-profile">[]
   pseudonymNames: string[]
   otherNames: string[]
-  portrait: { url: string, captionHtml: string } | null
+  portrait: { url: string, captionHtml: SanitizedHtml<"author-profile"> } | null
   searchUrl: string
   audioUrl: string
   mapUrl: string
@@ -245,14 +250,16 @@ function sanitizeNode(node: Node): void {
   sanitizeAttributes(element)
 }
 
-export function sanitizeAuthorHtml(value: string | null | undefined): string {
-  if (!value) return ""
+export function sanitizeAuthorHtml(
+  value: string | null | undefined
+): SanitizedHtml<"author-profile"> {
+  if (!value) return emptyRenderableHtml()
 
   const { document } = parseHTML("<!doctype html><html><body></body></html>")
   const container = document.createElement("div")
   container.innerHTML = value
   for (const child of [...container.childNodes]) sanitizeNode(child)
-  return container.innerHTML
+  return issueAuthorProfileHtml(container.innerHTML)
 }
 
 function profileLinks(links: AuthorProfile["related_links"]): Array<{ label: string, url: string }> {

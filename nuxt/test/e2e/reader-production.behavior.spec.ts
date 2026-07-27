@@ -35,7 +35,16 @@ test("one selected Reader word opens the sanitized legacy dictionary dialog", as
   const dialog = page.locator(".so_modal")
   await expect(dialog).toContainText("Svensk ordbok utgiven av")
   await expect(dialog.locator("xpath=ancestor::*[@role='dialog']")).toHaveCount(1)
-  await expect(dialog.locator("._so_article")).toContainText("En deterministisk ordboksartikel.")
+  const article = dialog.locator("._so_article")
+  await expect(article).toContainText("En deterministisk ordboksartikel.")
+  expect(await article.evaluate(element => ({
+    html: element.innerHTML,
+    tag: element.tagName
+  }))).toEqual({
+    html: "<lemma>DOKTOR<grundform>DOKTOR</grundform>"
+      + "<lexem><def>En deterministisk ordboksartikel.</def></lexem></lemma>",
+    tag: "DIV"
+  })
   await expect(dialog.locator("._so_article script, ._so_article [onclick], ._so_article [href]"))
     .toHaveCount(0)
   await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)

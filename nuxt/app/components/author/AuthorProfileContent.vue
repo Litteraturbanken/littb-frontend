@@ -87,7 +87,7 @@ onBeforeUnmount(() => {
         }"
       >
         <div class="introtext content unbox show_more">
-          <div v-html="profile.introductionHtml" />
+          <RenderableHtmlContent as="div" :html="profile.introductionHtml" />
           <div v-if="profile.introductionBy" class="introauthor">
             <em>{{ profile.introductionBy }}</em>
           </div>
@@ -97,7 +97,7 @@ onBeforeUnmount(() => {
             </span>
             <ul>
               <li v-for="(source, index) in profile.sourceHtml" :key="index">
-                <div class="source_content" v-html="source" />
+                <RenderableHtmlContent as="div" class="source_content" :html="source" />
               </li>
             </ul>
           </div>
@@ -125,10 +125,11 @@ onBeforeUnmount(() => {
               :src="profile.portrait.url"
               :alt="`Porträtt av ${profile.fullName}`"
             >
-            <figcaption
+            <RenderableHtmlContent
               v-if="profile.portrait.captionHtml"
+              as="figcaption"
               class="bg-white bg-opacity-75 p-3 text-base"
-              v-html="profile.portrait.captionHtml"
+              :html="profile.portrait.captionHtml"
             />
           </div>
 
@@ -172,7 +173,7 @@ onBeforeUnmount(() => {
 
       <div v-else>
         <div class="introtext content sm:inline-block show_more">
-          <div v-html="profile.introductionHtml" />
+          <RenderableHtmlContent as="div" :html="profile.introductionHtml" />
           <div v-if="profile.introductionBy" class="introauthor">
             <em>{{ profile.introductionBy }}</em>
             <div class="drama_subtitle sc"><NuxtLink to="/dramawebben">Dramawebben</NuxtLink></div>
@@ -185,7 +186,7 @@ onBeforeUnmount(() => {
             <span class="sc drama-source-header__visual" aria-hidden="true">Källor</span>
             <ul>
               <li v-for="(source, index) in profile.sourceHtml" :key="index">
-                <div class="source_content" v-html="source" />
+                <RenderableHtmlContent as="div" class="source_content" :html="source" />
               </li>
             </ul>
           </div>
@@ -208,7 +209,11 @@ onBeforeUnmount(() => {
             :src="profile.portrait.url"
             :alt="`Porträtt av ${profile.fullName}`"
           >
-          <figcaption v-if="profile.portrait.captionHtml" v-html="profile.portrait.captionHtml" />
+          <RenderableHtmlContent
+            v-if="profile.portrait.captionHtml"
+            as="figcaption"
+            :html="profile.portrait.captionHtml"
+          />
         </div>
       </div>
     </div>

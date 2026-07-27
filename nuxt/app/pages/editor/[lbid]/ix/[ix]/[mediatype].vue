@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { parseHTML } from "linkedom"
-
 import type { EditorReaderPage } from "#shared/types/editor-reader"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
+import {
+  markEditorEtextHtml,
+  markReaderOcrHtml
+} from "~/lib/search-hit-highlight"
 import { parseTextSearchReturnHref } from "~/lib/text-search-navigation"
 import {
   readerContentsHref,
@@ -687,27 +689,29 @@ const nextHit = computed(() => {
   return state && hitResponse.value?.items.find(item => item.index === state.hit + 1) || null
 })
 
-function markEditorHtml(html: string, hit: WorkSearchHit | null): string {
+function markEditorHtml(
+  html: NonNullable<EditorReaderPage["html"]>,
+  hit: WorkSearchHit | null
+): NonNullable<EditorReaderPage["html"]> {
   const current = page.value
   if (!hit || !current || hit.page_index !== current.pageIndex) return html
-  const { document } = parseHTML(`<div data-editor-highlight-root>${html}</div>`)
-  const root = document.querySelector("[data-editor-highlight-root]")
-  if (!root) return html
-  const spans = Array.from(root.querySelectorAll("span[id]"))
-  const start = spans.findIndex(span => span.getAttribute("id") === hit.highlight.from_word_id)
-  const end = spans.findLastIndex(span => span.getAttribute("id") === hit.highlight.to_word_id)
-  if (start < 0 || end < start) return html
-  for (let position = start; position <= end; position += 1) {
-    spans[position]!.classList.add("markee")
-    if ((position - start) % 2 === 1) spans[position]!.classList.add("flip")
-  }
-  return root.innerHTML
+  return markEditorEtextHtml(
+    html,
+    hit.highlight.from_word_id,
+    hit.highlight.to_word_id
+  )
 }
 const markedEditorHtml = computed(() => page.value?.html
   ? markEditorHtml(page.value.html, activeHit.value)
   : null)
 const markedOverlayHtml = computed(() => page.value?.overlayHtml
-  ? markEditorHtml(page.value.overlayHtml, activeHit.value)
+  ? activeHit.value && page.value && activeHit.value.page_index === page.value.pageIndex
+    ? markReaderOcrHtml(
+        page.value.overlayHtml,
+        activeHit.value.highlight.from_word_id,
+        activeHit.value.highlight.to_word_id
+      )
+    : page.value.overlayHtml
   : null)
 
 const editorSearchKeys = new Set([
@@ -966,9 +970,19 @@ useHead(() => ({
   <div class="editor-reader reader-page">
     <p v-if="clientRequestFailed" class="reader-error" role="alert">Ett fel inträffade vid sidhämtningen.</p>
     <section v-if="page" class="reader_main state-not-parallel relative" :class="{ 'type-faksimil': page.mediaType === 'faksimil', focus: focusMode, night: focusMode && focusNightMode, ocr: ocrMode }" :style="focusReaderStyle" @click="toggleFocusBar">
-      <div v-if="markedEditorHtml" class="etext txt" v-html="markedEditorHtml" />
+      <RenderableHtmlContent
+        v-if="markedEditorHtml"
+        as="div"
+        class="etext txt"
+        :html="markedEditorHtml"
+      />
       <div v-if="markedOverlayHtml && page.overlayWidth && page.overlayHeight" class="absolute left-0 top-0 overflow-hidden h-full w-full pointer-events-none">
-        <div class="overlay overflow-hidden origin-top-left" :style="overlayStyle" v-html="markedOverlayHtml" />
+        <RenderableHtmlContent
+          as="div"
+          class="overlay overflow-hidden origin-top-left"
+          :style="overlayStyle"
+          :html="markedOverlayHtml"
+        />
       </div>
       <div v-if="selectedFacsimileSource" class="img_area" :style="selectedFacsimileSource.width ? { width: `${selectedFacsimileSource.width}px` } : undefined"><img ref="facsimileImage" class="faksimil transform transition duration-200" :style="{ ...(selectedFacsimileSource.width ? { width: `${selectedFacsimileSource.width}px`, maxWidth: `${selectedFacsimileSource.width}px` } : {}), transform: `rotate(${rotation}deg)` }" :src="selectedFacsimileSource.url" :alt="`Sida ${page.pageIndex}`" @load="updateImageWidth"></div>
     </section>

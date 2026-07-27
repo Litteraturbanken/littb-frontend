@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { components } from "~/lib/api/generated/lbapi"
+import type { SanitizedHtml } from "#shared/types/renderable-html"
+import { emptyRenderableHtml } from "#shared/utils/renderable-html"
 import { createLbApiClient } from "~/lib/api/client"
 import {
   readerWordFromTarget,
@@ -13,7 +15,7 @@ const route = useRoute()
 const config = useRuntimeConfig()
 const indicator = ref<{ left: number, top: number, word: string } | null>(null)
 const article = ref<DictionaryArticle | null>(null)
-const articleHtml = ref("")
+const articleHtml = ref<SanitizedHtml<"dictionary-article">>(emptyRenderableHtml())
 const message = ref("")
 let selectionTimer: ReturnType<typeof setTimeout> | null = null
 let messageTimer: ReturnType<typeof setTimeout> | null = null
@@ -127,7 +129,7 @@ async function lookup(): Promise<void> {
 
 function close(): void {
   article.value = null
-  articleHtml.value = ""
+  articleHtml.value = emptyRenderableHtml()
 }
 
 watch(() => route.fullPath, () => {

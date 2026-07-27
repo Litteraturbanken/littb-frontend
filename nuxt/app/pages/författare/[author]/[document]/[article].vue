@@ -230,10 +230,11 @@ useHead({
         </nav>
 
         <div class="page_content">
-          <div
+          <RenderableHtmlContent
+            as="div"
             class="content unbox"
+            :html="page.bodyHtml"
             @click="navigateManagedHtml"
-            v-html="page.bodyHtml"
           />
         </div>
       </template>

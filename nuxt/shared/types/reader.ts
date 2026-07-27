@@ -1,4 +1,5 @@
 import type { ReaderAuthorContribution } from "../utils/reader-author"
+import type { SanitizedHtml } from "./renderable-html"
 
 export type ReaderMediaType = "etext" | "faksimil"
 
@@ -14,7 +15,7 @@ export interface ReaderFacsimileSource extends ReaderFacsimileSizeSource {
 }
 
 export interface ReaderOcrOverlay {
-  html: string
+  html: SanitizedHtml<"reader-ocr">
   width: number
   height: number
 }

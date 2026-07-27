@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/vue"
 
+import type { SanitizedHtml } from "#shared/types/renderable-html"
+
 defineProps<{
-  articleHtml: string
+  articleHtml: SanitizedHtml<"dictionary-article">
   open: boolean
 }>()
 
@@ -32,7 +34,7 @@ const closeButton = ref<HTMLButtonElement | null>(null)
               @click="emit('close')"
             >Stäng</button>
           </div>
-          <div class="_so_article" v-html="articleHtml" />
+          <RenderableHtmlContent as="div" class="_so_article" :html="articleHtml" />
           <div class="modal-footer"><i>Artikeln får inte kopieras eller spridas.</i></div>
         </div>
       </DialogPanel>

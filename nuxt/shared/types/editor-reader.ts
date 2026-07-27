@@ -1,4 +1,5 @@
 import type { ReaderPart, ReaderWorkContributor } from "./reader"
+import type { SanitizedHtml } from "./renderable-html"
 
 export interface EditorFacsimileSource {
   size: number
@@ -15,7 +16,7 @@ export interface EditorReaderPage {
   endPageName: string | null
   facsimileSources: EditorFacsimileSource[]
   firstReadableIndex: number
-  html: string | null
+  html: SanitizedHtml<"editor-etext"> | null
   imageWidth: number | null
   imageUrl: string | null
   imprintYear: string | null
@@ -25,7 +26,7 @@ export interface EditorReaderPage {
   nextIndex: number | null
   nextPartIndex: number | null
   overlayHeight: number | null
-  overlayHtml: string | null
+  overlayHtml: SanitizedHtml<"reader-ocr"> | null
   overlayWidth: number | null
   pageIndexes: number[] | null
   pageCount: number | null

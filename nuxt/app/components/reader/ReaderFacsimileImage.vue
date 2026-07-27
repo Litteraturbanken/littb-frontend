@@ -68,10 +68,11 @@ watch(selectedSourceIdentity, () => {
       v-if="page.ocrOverlay"
       class="reader-ocr-layer absolute left-0 top-0 overflow-hidden h-full w-full"
     >
-      <div
+      <RenderableHtmlContent
+        as="div"
         class="overlay overflow-hidden origin-top-left"
         :style="overlayStyle"
-        v-html="page.ocrOverlay.html"
+        :html="page.ocrOverlay.html"
       />
     </div>
     <img

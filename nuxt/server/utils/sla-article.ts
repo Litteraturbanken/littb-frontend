@@ -10,6 +10,8 @@ import {
   type SlaArticlePage,
   type SlaArticleSourcePath
 } from "../../shared/types/sla-article"
+import type { SanitizedHtml } from "../../shared/types/renderable-html"
+import { issueSlaArticleHtml } from "../../shared/utils/renderable-html"
 import {
   hasC0OrC1Control,
   hasHtmlUnsafeCodeUnit,
@@ -407,7 +409,7 @@ export class InvalidSlaArticleSource extends Error {
   }
 }
 
-export function parseSlaArticleBody(source: string): string {
+export function parseSlaArticleBody(source: string): SanitizedHtml<"sla-article"> {
   let document: ParsedSlaArticle
   try {
     ({ document } = parseHTML(source) as unknown as { document: ParsedSlaArticle })
@@ -419,7 +421,7 @@ export function parseSlaArticleBody(source: string): string {
   const body = bodies[0]!
   for (const child of [...body.childNodes]) sanitizeNode(child)
   removeUnpairedFragments(body)
-  return body.innerHTML
+  return issueSlaArticleHtml(body.innerHTML)
 }
 
 export function slaArticleError(
@@ -498,7 +500,7 @@ export async function loadSlaArticle(
     return slaArticleError(502, "sla_article_unavailable")
   }
 
-  let bodyHtml: string
+  let bodyHtml: SanitizedHtml<"sla-article">
   try {
     bodyHtml = parseSlaArticleBody(source)
   } catch {

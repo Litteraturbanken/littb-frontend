@@ -138,7 +138,7 @@ useHead({
 
 <template>
   <DramawebbenShell :page="kind">
-    <div v-if="page" v-html="page.bodyHtml" />
+    <RenderableHtmlContent v-if="page" as="div" :html="page.bodyHtml" />
     <p v-else-if="accepted" class="error">Innehållet kan inte visas just nu.</p>
   </DramawebbenShell>
 </template>

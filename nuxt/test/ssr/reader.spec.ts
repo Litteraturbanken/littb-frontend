@@ -227,6 +227,10 @@ test("Boye Reader API and SSR retain ordered work contributors", async ({ reques
   expect(context?.querySelector(".author em")?.textContent).toBe("&")
   expect(context?.querySelector(".author .authortype")?.textContent).toBe("red.")
   const ocrLayer = document.querySelector(".reader-ocr-layer .overlay")
+  expect(ocrLayer?.localName).toBe("div")
+  expect(ocrLayer?.innerHTML).toBe(
+    '<div data-size="625x900"><span class="w">Boye OCR</span></div>'
+  )
   expect(ocrLayer?.getAttribute("style")).toContain("width:625px")
   expect(ocrLayer?.querySelector('[data-size="625x900"]')?.textContent).toBe("Boye OCR")
 })
@@ -252,6 +256,15 @@ test("direct bare source-information SSR renders the Reader and complete modal o
   expect(html).toContain("För e-boken gäller licensen CC0")
   expect(html).toContain("följande ändringar gjorts mot originalet")
   const { document } = parseHTML(html)
+  const sourceDescription = document.querySelector(".modal.about .sourcedesc")
+  expect(sourceDescription?.localName).toBe("div")
+  expect(sourceDescription?.innerHTML).toBe("Albert Bonniers förlag, Stockholm 1905.")
+  const license = document.querySelector(".modal.about .license")
+  expect(license?.localName).toBe("div")
+  expect(license?.innerHTML).toContain("För e-boken gäller licensen CC0")
+  const errataCell = document.querySelector(".modal.about .errata_table tbody tr td:nth-child(2)")
+  expect(errataCell?.localName).toBe("td")
+  expect(errataCell?.innerHTML).toBe("rättning <em>1</em>")
   const similarRows = [...document.querySelectorAll(".reader-similar-works tbody tr")]
   expect(similarRows.map(row => ({
     author: row.querySelector("td:first-child")?.textContent?.trim(),
@@ -382,6 +395,7 @@ test("drama Reader projects closed copy and complete source-information facts", 
     section.querySelector("h3")?.textContent?.trim() === "Rollista"
   ))
   const roles = roleSection?.querySelector("div")
+  expect(roles?.localName).toBe("div")
   expect(roles?.innerHTML).toBe(
     '<i>Direktören</i>, grosshandlare<br><span class="role">Anna</span>, hans dotter'
   )

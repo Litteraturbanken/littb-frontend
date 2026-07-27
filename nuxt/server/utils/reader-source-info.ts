@@ -9,6 +9,8 @@ import type {
   ReaderSourceInfoMediaType,
   ReaderSourceInfoProvenance
 } from "../../shared/types/reader-source-info"
+import type { SanitizedHtml } from "../../shared/types/renderable-html"
+import { issueReaderSourceInfoHtml } from "../../shared/utils/renderable-html"
 import {
   hasC0OrC1Control,
   hasHtmlUnsafeCodeUnit,
@@ -599,7 +601,7 @@ function sanitizeNode(
 export function sanitizeReaderSourceInfoHtml(
   source: string,
   context: "editorial" | "inline" | "license" = "editorial"
-): string {
+): SanitizedHtml<"reader-source-info"> {
   if (!boundedHtmlString(source, 200_000, true)) invalidSourceInfo()
   let document: ParsedDocument
   try {
@@ -613,7 +615,7 @@ export function sanitizeReaderSourceInfoHtml(
   if (bodies.length !== 1) invalidSourceInfo()
   const body = bodies[0]!
   for (const child of [...body.childNodes]) sanitizeNode(child, context)
-  return body.innerHTML
+  return issueReaderSourceInfoHtml(body.innerHTML)
 }
 
 function validateTextDefinition(value: unknown): ProvenanceTextDefinition {
@@ -842,7 +844,7 @@ export function projectReaderSourceInfoLicense(
   definitions: Record<string, string>,
   licenseKey: string | null,
   provenance: ReaderSourceInfoProvenance[]
-): string | null {
+): SanitizedHtml<"reader-source-info"> | null {
   if (licenseKey === null) return null
   const source = definitions[licenseKey]
   if (source === undefined) return null

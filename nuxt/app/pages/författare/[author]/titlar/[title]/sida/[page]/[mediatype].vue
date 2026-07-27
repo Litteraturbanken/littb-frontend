@@ -13,6 +13,7 @@ import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import { usefulLibraryTooltipText } from "~/lib/library-tooltip"
+import { markReaderSearchOcrHtml } from "~/lib/search-hit-highlight"
 import { toBoundedDeveloperValue } from "~/lib/quick-search-developer"
 import { readerMissingPageErrorData } from "~/lib/reader-missing-page"
 import { readerTitleTooltipDirective } from "~/lib/reader-title-tooltip"
@@ -1125,11 +1126,16 @@ const markedFacsimileReader = computed(() => {
     ...currentReader,
     ocrOverlay: {
       ...overlay,
-      html: markReaderHtml(
+      html: markReaderSearchOcrHtml(
         overlay.html,
-        hit,
-        currentReader.pageName,
-        currentReader.pageIndex
+        {
+          fromWordId: hit.highlight.from_word_id,
+          hitPageIndex: hit.page_index,
+          hitPageName: hit.page_name,
+          pageIndex: currentReader.pageIndex,
+          pageName: currentReader.pageName,
+          toWordId: hit.highlight.to_word_id
+        }
       )
     }
   }
