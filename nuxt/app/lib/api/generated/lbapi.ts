@@ -208,6 +208,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/library/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Library Counts */
+        post: operations["v2_post_library_counts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Library Options */
+        get: operations["v2_get_library_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Library Search */
+        post: operations["v2_post_library_search"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/quick-search": {
         parameters: {
             query?: never;
@@ -787,6 +838,602 @@ export interface components {
         LegacyDramawebbenRouteResolution: {
             /** Location */
             location: string;
+        };
+        /** LibraryAboutAuthor */
+        LibraryAboutAuthor: {
+            /** Author Id */
+            author_id: string;
+            /** Label */
+            label: string;
+        };
+        /** LibraryAction */
+        LibraryAction: {
+            /** Download Filename */
+            download_filename: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "read" | "download" | "search" | "about";
+            /** Label */
+            label: string;
+            /** Url */
+            url: string;
+        };
+        /** LibraryAllAuthorItem */
+        LibraryAllAuthorItem: {
+            /** Author Id */
+            author_id: string;
+            /** Birth Year */
+            birth_year: number | null;
+            /** Death Year */
+            death_year: number | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "author";
+            /** Name For Index */
+            name_for_index: string;
+            /** Popularity */
+            popularity: number;
+        };
+        /** LibraryAllExternalItem */
+        LibraryAllExternalItem: {
+            /** Byline */
+            byline: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "literature_map" | "presentation" | "translator_lexicon" | "wordpress";
+            /** Source Label */
+            source_label: string;
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+        };
+        /** LibraryAllPdfItem */
+        LibraryAllPdfItem: {
+            /** Imprint Year */
+            imprint_year: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "pdf";
+            main_author: components["schemas"]["LibraryAuthor"];
+            /** Short Title */
+            short_title: string | null;
+            /** Source Label */
+            source_label: string;
+            /** Title */
+            title: string;
+            /** Work Id */
+            work_id: string;
+        };
+        /** LibraryAllSearchRequest */
+        LibraryAllSearchRequest: {
+            filters: components["schemas"]["LibraryFilters"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "all";
+            /**
+             * Reverse
+             * @default false
+             */
+            reverse: boolean;
+            /**
+             * Sort
+             * @default relevance
+             * @enum {string}
+             */
+            sort: "relevance" | "author" | "title" | "chronology";
+        };
+        /** LibraryAllSearchResponse */
+        LibraryAllSearchResponse: {
+            /** Items */
+            items: (components["schemas"]["LibraryAllTextItem"] | components["schemas"]["LibraryAllPdfItem"] | components["schemas"]["LibraryAllAuthorItem"] | components["schemas"]["LibraryAllExternalItem"])[];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "all";
+            /** Total Hits */
+            total_hits: number;
+        };
+        /** LibraryAllTextItem */
+        LibraryAllTextItem: {
+            /** Imprint Year */
+            imprint_year: string | null;
+            /**
+             * Index
+             * @enum {string}
+             */
+            index: "etext" | "faksimil" | "etext-part" | "faksimil-part";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "text";
+            main_author: components["schemas"]["LibraryAuthor"];
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "etext" | "faksimil";
+            /** Page Name */
+            page_name: string;
+            /** Reader Author Id */
+            reader_author_id: string;
+            /** Short Title */
+            short_title: string | null;
+            /** Source Label */
+            source_label: string;
+            /** Title */
+            title: string;
+            /** Title Id */
+            title_id: string;
+        };
+        /** LibraryAuthor */
+        LibraryAuthor: {
+            /** Author Id */
+            author_id: string;
+            /** Birth Year */
+            birth_year: string | null;
+            /** Death Year */
+            death_year: string | null;
+            /** Full Name */
+            full_name: string | null;
+            /** Role */
+            role: ("author" | "editor" | "illustrator") | null;
+            /** Surname */
+            surname: string | null;
+        };
+        /** LibraryAuthorsSearchRequest */
+        LibraryAuthorsSearchRequest: {
+            filters: components["schemas"]["LibraryFilters"];
+            /**
+             * Limit
+             * @default 150
+             */
+            limit: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "authors";
+            /**
+             * Reverse
+             * @default false
+             */
+            reverse: boolean;
+            /**
+             * Sort
+             * @default popularity
+             * @enum {string}
+             */
+            sort: "name" | "popularity" | "chronology";
+        };
+        /** LibraryAuthorsSearchResponse */
+        LibraryAuthorsSearchResponse: {
+            /** Items */
+            items: components["schemas"]["LibraryAllAuthorItem"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "authors";
+            /** Total Authors */
+            total_authors: number;
+            /** Total Parts */
+            total_parts: number;
+            /** Total Works */
+            total_works: number;
+        };
+        /** LibraryBrowseCountResponse */
+        LibraryBrowseCountResponse: {
+            /** Author Ids */
+            author_ids: string[] | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "parts" | "works";
+            /** Total */
+            total: number | null;
+        };
+        /** LibraryBrowseItem */
+        LibraryBrowseItem: {
+            /** Actions */
+            actions: components["schemas"]["LibraryAction"][];
+            author: components["schemas"]["LibraryAuthor"];
+            /** Author Url */
+            author_url: string;
+            /** Full Title */
+            full_title: string | null;
+            /** Key */
+            key: string;
+            /** Route Author Id */
+            route_author_id: string;
+            /**
+             * Route Media Type
+             * @enum {string}
+             */
+            route_media_type: "etext" | "faksimil" | "infopost" | "pdf";
+            /** Route Title Id */
+            route_title_id: string;
+            /** Source Exports */
+            source_exports: components["schemas"]["LibrarySourceExport"][];
+            /** Title */
+            title: string;
+            /** Title Path */
+            title_path: string;
+            /** Title Url */
+            title_url: string;
+            /** Year */
+            year: string | null;
+        };
+        /** LibraryChronology */
+        LibraryChronology: {
+            /** Year From */
+            year_from: number;
+            /** Year To */
+            year_to: number;
+        };
+        /** LibraryDownloadCountResponse */
+        LibraryDownloadCountResponse: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "epub" | "pdf";
+            /** Total */
+            total: number | null;
+        };
+        /** LibraryDownloadItem */
+        LibraryDownloadItem: {
+            author: components["schemas"]["LibraryAuthor"];
+            /** Author Url */
+            author_url: string;
+            /** Download Filename */
+            download_filename: string;
+            /** Download Url */
+            download_url: string;
+            /** Full Title */
+            full_title: string | null;
+            /** Route Author Id */
+            route_author_id: string;
+            /**
+             * Route Media Type
+             * @enum {string}
+             */
+            route_media_type: "etext" | "faksimil" | "infopost" | "pdf";
+            /** Route Title Id */
+            route_title_id: string;
+            /** Title */
+            title: string;
+            /** Title Url */
+            title_url: string;
+            /** Year */
+            year: string | null;
+        };
+        /** LibraryEpubCountRequest */
+        LibraryEpubCountRequest: {
+            filters: components["schemas"]["LibraryFilters"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "epub";
+        };
+        /** LibraryEpubSearchRequest */
+        LibraryEpubSearchRequest: {
+            filters: components["schemas"]["LibraryFilters"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "epub";
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Reverse
+             * @default false
+             */
+            reverse: boolean;
+            /**
+             * Sort
+             * @default popularity
+             * @enum {string}
+             */
+            sort: "author" | "title" | "popularity" | "chronology";
+        };
+        /** LibraryEpubSearchResponse */
+        LibraryEpubSearchResponse: {
+            /** Items */
+            items: components["schemas"]["LibraryDownloadItem"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "epub";
+            /** Total Hits */
+            total_hits: number;
+            /** Total Works */
+            total_works: number;
+        };
+        /** LibraryFilters */
+        LibraryFilters: {
+            /** About Author Ids */
+            about_author_ids?: string[];
+            /** Categories */
+            categories?: ("texttype:brev;brevsamling" | "texttype:drama;dramasamling" | "texttype:essä;essäsamling" | "texttype:novellsamling;novell" | "texttype:diktsamling;dikt" | "texttype:roman" | "texttype:sakprosa;kringtexter;avhandling;referensverk" | "keyword:Barnlitteratur" | "keyword:Biografika|texttype:brev;brevsamling" | "keyword:Finlandssvenskt" | "keyword:Flickböcker" | "texttype:herdaminne" | "keyword:Humor" | "texttype:kistebrev" | "texttype:kringtext" | "texttype:kåseri;kåserisamling" | "texttype:reseskildring" | "keyword:Rösträtt" | "keyword:Sapmi" | "keyword:Folktryck" | "keyword:sentpajorden" | "keyword:OrdenPrövas" | "keyword:LB-antologi" | "keyword:1800" | "source:bibliotekariesidor" | "source:diktensmuseum" | "keyword:Dramawebben" | "source:skolan" | "source:litteraturkartan" | "source:ljudochbild" | "source:sol" | "keyword:SLS-FI" | "provenance.library:SVELITT" | "provenance.library:SA" | "provenance.library:SFS" | "provenance.library:SVA" | "author_ids:KunglSamfundet" | "provenance.library:SVS")[];
+            /** Gender */
+            gender?: ("female" | "male") | null;
+            /** Languages */
+            languages?: ("modernized:true" | "modernized:false" | "translation:true" | "original:true" | "language:swe" | "foreign:true" | "language:eng" | "language:deu" | "language:fra" | "language:lat" | "language:smi" | "proofread:true" | "proofread:false")[];
+            /** Media */
+            media?: ("mediatype:etext" | "mediatype:faksimil" | "has_epub:true" | "mediatype:pdf")[];
+            /** Narrowing Categories */
+            narrowing_categories?: ("texttype:brev;brevsamling" | "texttype:drama;dramasamling" | "texttype:essä;essäsamling" | "texttype:novellsamling;novell" | "texttype:diktsamling;dikt" | "texttype:roman" | "texttype:sakprosa;kringtexter;avhandling;referensverk" | "keyword:Barnlitteratur" | "keyword:Biografika|texttype:brev;brevsamling" | "keyword:Finlandssvenskt" | "keyword:Flickböcker" | "texttype:herdaminne" | "keyword:Humor" | "texttype:kistebrev" | "texttype:kringtext" | "texttype:kåseri;kåserisamling" | "texttype:reseskildring" | "keyword:Rösträtt" | "keyword:Sapmi" | "keyword:Folktryck" | "keyword:sentpajorden" | "keyword:OrdenPrövas" | "keyword:LB-antologi" | "keyword:1800" | "source:bibliotekariesidor" | "source:diktensmuseum" | "keyword:Dramawebben" | "source:skolan" | "source:litteraturkartan" | "source:ljudochbild" | "source:sol" | "keyword:SLS-FI" | "provenance.library:SVELITT" | "provenance.library:SA" | "provenance.library:SFS" | "provenance.library:SVA" | "author_ids:KunglSamfundet" | "provenance.library:SVS")[];
+            /**
+             * Query
+             * @default
+             */
+            query: string;
+            /** Year From */
+            year_from?: number | null;
+            /** Year To */
+            year_to?: number | null;
+        };
+        /** LibraryLatestGroup */
+        LibraryLatestGroup: {
+            /** Imported On */
+            imported_on: string;
+            /** Items */
+            items: components["schemas"]["LibraryLatestItem"][];
+            /** Source Count */
+            source_count: number | null;
+        };
+        /** LibraryLatestItem */
+        LibraryLatestItem: {
+            author: components["schemas"]["LibraryAuthor"];
+            /** Author Url */
+            author_url: string;
+            /** Full Title */
+            full_title: string | null;
+            /** Imported On */
+            imported_on: string;
+            /** Route Author Id */
+            route_author_id: string;
+            /**
+             * Route Media Type
+             * @enum {string}
+             */
+            route_media_type: "etext" | "faksimil" | "infopost" | "pdf";
+            /** Route Title Id */
+            route_title_id: string;
+            /** Title */
+            title: string;
+            /** Title Url */
+            title_url: string;
+            /** Year */
+            year: string | null;
+        };
+        /** LibraryLatestSearchRequest */
+        LibraryLatestSearchRequest: {
+            filters: components["schemas"]["LibraryFilters"];
+            /**
+             * Hide 1800
+             * @default false
+             */
+            hide_1800: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "latest";
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Reverse
+             * @default false
+             */
+            reverse: boolean;
+        };
+        /** LibraryLatestSearchResponse */
+        LibraryLatestSearchResponse: {
+            /** Groups */
+            groups: components["schemas"]["LibraryLatestGroup"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "latest";
+            /** Total Hits */
+            total_hits: number;
+            /** Total Works */
+            total_works: number;
+        };
+        /** LibraryOptionsResponse */
+        LibraryOptionsResponse: {
+            /** About Authors */
+            about_authors: components["schemas"]["LibraryAboutAuthor"][] | null;
+            chronology: components["schemas"]["LibraryChronology"] | null;
+        };
+        /** LibraryPartsCountRequest */
+        LibraryPartsCountRequest: {
+            filters: components["schemas"]["LibraryFilters"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "parts";
+        };
+        /** LibraryPartsSearchRequest */
+        LibraryPartsSearchRequest: {
+            filters: components["schemas"]["LibraryFilters"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "parts";
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Reverse
+             * @default false
+             */
+            reverse: boolean;
+            /**
+             * Sort
+             * @default title
+             * @enum {string}
+             */
+            sort: "author" | "title";
+        };
+        /** LibraryPartsSearchResponse */
+        LibraryPartsSearchResponse: {
+            /** Items */
+            items: components["schemas"]["LibraryBrowseItem"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "parts";
+            /** Total Parts */
+            total_parts: number;
+        };
+        /** LibraryPdfCountRequest */
+        LibraryPdfCountRequest: {
+            filters: components["schemas"]["LibraryFilters"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "pdf";
+        };
+        /** LibraryPdfSearchRequest */
+        LibraryPdfSearchRequest: {
+            filters: components["schemas"]["LibraryFilters"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "pdf";
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Reverse
+             * @default false
+             */
+            reverse: boolean;
+            /**
+             * Sort
+             * @default popularity
+             * @enum {string}
+             */
+            sort: "author" | "title" | "popularity" | "chronology";
+        };
+        /** LibraryPdfSearchResponse */
+        LibraryPdfSearchResponse: {
+            /** Items */
+            items: components["schemas"]["LibraryDownloadItem"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "pdf";
+            /** Total Hits */
+            total_hits: number;
+            /** Total Works */
+            total_works: number;
+        };
+        /** LibrarySourceExport */
+        LibrarySourceExport: {
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "txt" | "xml" | "workdb" | "pdf";
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "etext" | "faksimil";
+            /** Size */
+            size: number;
+            /** Work Id */
+            work_id: string;
+        };
+        /** LibraryWorksCountRequest */
+        LibraryWorksCountRequest: {
+            filters: components["schemas"]["LibraryFilters"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "works";
+        };
+        /** LibraryWorksSearchRequest */
+        LibraryWorksSearchRequest: {
+            filters: components["schemas"]["LibraryFilters"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "works";
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Reverse
+             * @default false
+             */
+            reverse: boolean;
+            /**
+             * Sort
+             * @default popularity
+             * @enum {string}
+             */
+            sort: "author" | "title" | "popularity" | "chronology";
+            /**
+             * Source Only
+             * @default false
+             */
+            source_only: boolean;
+        };
+        /** LibraryWorksSearchResponse */
+        LibraryWorksSearchResponse: {
+            /** Items */
+            items: components["schemas"]["LibraryBrowseItem"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "works";
+            /** Total Hits */
+            total_hits: number;
+            /** Total Works */
+            total_works: number;
         };
         /** MediaCounts */
         MediaCounts: {
@@ -2091,6 +2738,155 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_post_library_counts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibraryEpubCountRequest"] | components["schemas"]["LibraryPdfCountRequest"] | components["schemas"]["LibraryWorksCountRequest"] | components["schemas"]["LibraryPartsCountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryDownloadCountResponse"] | components["schemas"]["LibraryBrowseCountResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_library_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryOptionsResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_post_library_search: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibraryAllSearchRequest"] | components["schemas"]["LibraryAuthorsSearchRequest"] | components["schemas"]["LibraryWorksSearchRequest"] | components["schemas"]["LibraryPartsSearchRequest"] | components["schemas"]["LibraryLatestSearchRequest"] | components["schemas"]["LibraryEpubSearchRequest"] | components["schemas"]["LibraryPdfSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryAllSearchResponse"] | components["schemas"]["LibraryAuthorsSearchResponse"] | components["schemas"]["LibraryWorksSearchResponse"] | components["schemas"]["LibraryPartsSearchResponse"] | components["schemas"]["LibraryLatestSearchResponse"] | components["schemas"]["LibraryEpubSearchResponse"] | components["schemas"]["LibraryPdfSearchResponse"];
                 };
             };
             /** @description Invalid request */
