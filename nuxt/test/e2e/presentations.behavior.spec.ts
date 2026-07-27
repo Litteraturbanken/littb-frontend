@@ -250,7 +250,7 @@ test("Presentation route transitions replace all document head and body state be
   await expect(page.locator('link[href="/app/style/date.css"]')).toHaveCount(0)
   expect(await documentStyleText(page)).not.toContain("\np.image {text-align:center}\n")
   expect(await documentStyleText(page)).not.toContain("html { background-color: #382a32; }")
-  await expect(page.locator("html")).toHaveAttribute("style", /presentations[^\"]*\.jpg/)
+  await expect(page.locator("html")).toHaveAttribute("style", /presentations[^"]*\.jpg/)
   await expect(page.locator("html")).not.toHaveAttribute("style", /rostratt_[ab]\.jpg/)
   await expect(page.locator("body")).toHaveClass("focus page-presentation ready")
   await expect(page.locator("body")).not.toHaveClass(/\bpresentation-style-rostratt\b/)

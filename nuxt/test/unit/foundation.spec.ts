@@ -60,7 +60,7 @@ describe("standalone Nuxt foundation", () => {
     const contents = await Promise.all(files.map(path => readFile(path, "utf8")))
     for (const source of contents) {
       expect(source).not.toMatch(/from\s+["'][^"']*\.\.\/app(?:\/|["'])/)
-      expect(source).not.toMatch(/from\s+["']angular(?:[\/"'])/)
+      expect(source).not.toMatch(/from\s+["']angular(?:[\u002f"'])/)
       expect(source).not.toContain("window.angular")
     }
   })

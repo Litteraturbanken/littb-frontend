@@ -2,7 +2,6 @@ import { createError, type H3Event } from "h3"
 
 import { createLbApiClient } from "../../app/lib/api/client"
 import type { components } from "../../app/lib/api/generated/lbapi"
-import { encodeRfc3986Segment } from "./author-document"
 
 export type LegacyAuthorRouteRequest =
   components["schemas"]["LegacyAuthorRouteRequest"]

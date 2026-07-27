@@ -320,7 +320,8 @@ export const libraryQueryMalformedEnvelopeResponse = {
   suggest: []
 }
 
-const { suggest: _suggest, ...libraryQueryAbsentSuggest } = libraryQueryPageOneResponse
+const { suggest: omittedSuggest, ...libraryQueryAbsentSuggest } = libraryQueryPageOneResponse
+void omittedSuggest
 export const libraryQueryAbsentSuggestResponse = libraryQueryAbsentSuggest
 
 export const libraryQueryNullSuggestResponse = {

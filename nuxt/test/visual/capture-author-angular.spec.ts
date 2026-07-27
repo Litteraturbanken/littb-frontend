@@ -11,12 +11,10 @@ import { waitForVisualAssets } from "../helpers/visual"
 test.use({ serviceWorkers: "block" })
 
 const authorityOrigin = "http://127.0.0.1:9000"
-const authorExclude = "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources,intro_text,wikidata,dramawebben"
 const optionalListAllPrefix = "/api/list_all/"
 const optionalPartsPrefix = "/api/list_parts_in_others_works/"
 
 type FrozenProfile = typeof strindbergAuthorProfile | typeof lagerlofAuthorProfile
-type LegacyAuthorProfile = ReturnType<typeof legacyProfile>
 type VisualCase = {
   name: "rich" | "sparse" | "dramawebben"
   route: string

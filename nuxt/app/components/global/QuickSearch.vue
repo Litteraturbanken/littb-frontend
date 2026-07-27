@@ -203,7 +203,7 @@ async function runSearch(value: string, version: number) {
     remoteItems.value = data.items
     correction.value = data.correction
     requestState.value = "success"
-  } catch (error) {
+  } catch {
     if (version !== requestVersion || controller.signal.aborted) return
     requestState.value = "failure"
   } finally {

@@ -12,7 +12,6 @@ test.use({ serviceWorkers: "block" })
 const authorityOrigin = "http://127.0.0.1:9000"
 const bibliographyOrigin = "http://demolittb.spraakdata.gu.se"
 const audioOrigin = "https://litteraturbanken.se"
-const authorExclude = "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources,intro_text,wikidata,dramawebben"
 const routePath = "/författare/StrindbergA/biblinfo"
 
 function requestSignature(url: URL) {
@@ -76,12 +75,7 @@ test("captures the Angular bibliography authority inside the author shell", asyn
   const unexpectedRequests: string[] = []
   const productionRequests: string[] = []
   const problems: string[] = []
-  let authorityFonts: Buffer
-  let ordinaryBackground: Buffer
-  let dramawebbenBackground: Buffer
-  let portrait: Buffer
-
-  ;[authorityFonts, ordinaryBackground, dramawebbenBackground, portrait] = await Promise.all([
+  const [authorityFonts, ordinaryBackground, dramawebbenBackground, portrait] = await Promise.all([
     readFile(resolve(import.meta.dirname, "../../../app/styles/fonts/601526/32FBEBA806C948833.css")),
     readFile(resolve(import.meta.dirname, "../../../app/img/forf2_bkg.jpg")),
     readFile(resolve(import.meta.dirname, "../../../app/img/dramawebben_fade_more.jpg")),

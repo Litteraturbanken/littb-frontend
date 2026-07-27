@@ -2,8 +2,6 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 
 import { waitForVisualAssets } from "../helpers/visual"
 
-// This JavaScript fixture is deliberately shared with the Node HTTP fixture.
-// @ts-ignore -- Playwright transpiles the adjacent ESM module directly.
 import {
   quickSearchTypedResponse,
   quickSearchVisualQuery

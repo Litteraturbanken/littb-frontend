@@ -36,6 +36,8 @@ const props = withDefaults(defineProps<{
   spaceAfterRemove?: boolean
   persistentInputRow?: boolean
 }>(), {
+  optionGroups: () => [],
+  accessibleName: undefined,
   searchable: false,
   loading: false,
   spaceAfterRemove: true,
@@ -49,7 +51,7 @@ const emit = defineEmits<{
 
 const multiselect = ref<InstanceType<typeof VueMultiselect> | null>(null)
 const controlName = computed(() => props.accessibleName ?? props.placeholder)
-const flatOptions = computed(() => props.optionGroups
+const flatOptions = computed(() => props.optionGroups.length > 0
   ? props.optionGroups.flatMap(group => group.options)
   : props.options)
 const multiselectOptions = computed<VueMultiselectOption[] | VueMultiselectOptionGroup[]>(() => {
@@ -57,7 +59,7 @@ const multiselectOptions = computed<VueMultiselectOption[] | VueMultiselectOptio
     ...option,
     $isDisabled: option.disabled === true
   })
-  return props.optionGroups
+  return props.optionGroups.length > 0
     ? props.optionGroups.map(group => ({ label: group.label, options: group.options.map(mapOption) }))
     : props.options.map(mapOption)
 })

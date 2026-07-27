@@ -4,8 +4,6 @@ import { expect, test, type Page } from "@playwright/test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 
-// This JavaScript fixture is deliberately shared with the Node HTTP fixture.
-// @ts-ignore -- Playwright transpiles the adjacent ESM module directly.
 import {
   angularQuickSearchResponse,
   quickSearchTypedResponse,

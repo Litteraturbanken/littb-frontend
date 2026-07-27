@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto"
 import { mkdir, readFile } from "node:fs/promises"
 import { resolve } from "node:path"
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test } from "@playwright/test"
 
 import { slaArticleFixtures } from "../fixtures/sla-article-data.mjs"
 import { waitForVisualAssets } from "../helpers/visual"
