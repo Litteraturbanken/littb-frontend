@@ -1,6 +1,16 @@
 <script lang="ts">
+import type { ManagedAssetHtml } from "#shared/types/renderable-html"
+import {
+  fetchManagedText,
+  managedHomeTextRules
+} from "#shared/utils/managed-text"
+import {
+  emptyRenderableHtml,
+  issueManagedHomeHtml
+} from "#shared/utils/renderable-html"
+
 export type HomeContent = {
-  bodyHtml: string
+  bodyHtml: ManagedAssetHtml<"home-editorial">
   stylesheetPath: string | null
   backgroundImagePath: string | null
   backgroundColor: string | null
@@ -31,9 +41,9 @@ const rawTextElements = new Set([
   "xmp"
 ])
 
-function emptyHomeContent(bodyHtml = ""): HomeContent {
+function emptyHomeContent(): HomeContent {
   return {
-    bodyHtml,
+    bodyHtml: emptyRenderableHtml<ManagedAssetHtml<"home-editorial">>(),
     stylesheetPath: null,
     backgroundImagePath: null,
     backgroundColor: null
@@ -233,7 +243,10 @@ function backgroundDeclaration(tag: string): {
 }
 
 export function parseHomeContent(source: string): HomeContent {
-  const output = emptyHomeContent(source)
+  const output: HomeContent = {
+    ...emptyHomeContent(),
+    bodyHtml: issueManagedHomeHtml(source)
+  }
   const ranges: SourceRange[] = []
 
   for (const tag of controlTags(source)) {
@@ -246,12 +259,14 @@ export function parseHomeContent(source: string): HomeContent {
     }
   }
 
-  output.bodyHtml = ranges
-    .sort((left, right) => right.start - left.start)
-    .reduce(
-      (body, range) => `${body.slice(0, range.start)}${body.slice(range.end)}`,
-      source
-    )
+  output.bodyHtml = issueManagedHomeHtml(
+    ranges
+      .sort((left, right) => right.start - left.start)
+      .reduce(
+        (body, range) => `${body.slice(0, range.start)}${body.slice(range.end)}`,
+        source
+      )
+  )
   return output
 }
 </script>
@@ -276,7 +291,8 @@ const { data: content } = await useAsyncData<HomeContent>("home-content", async 
   const base = import.meta.server ? config.contentBase : config.public.contentBase
   const url = `${base.replace(/\/$/, "")}${contentPath}?${cacheBuster.value}`
   try {
-    const source = await $fetch<string>(url, { responseType: "text", retry: 0 })
+    const authorityOrigin = base || window.location.origin
+    const source = await fetchManagedText(url, managedHomeTextRules(authorityOrigin))
     return parseHomeContent(source)
   } catch {
     return emptyHomeContent()
@@ -310,6 +326,11 @@ useHead(() => {
   <div class="center_col">
     <h1>Litteraturbanken</h1>
     <h2 class="caps">Nytt <i class="no-caps">&amp;</i> anmärkningsvärt</h2>
-    <div class="home-editorial" @click="navigateManagedHtml" v-html="homeContent.bodyHtml" />
+    <RenderableHtmlContent
+      as="div"
+      :html="homeContent.bodyHtml"
+      class="home-editorial"
+      @click="navigateManagedHtml"
+    />
   </div>
 </template>

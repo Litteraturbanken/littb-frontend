@@ -200,7 +200,7 @@ async function expectPresentationReady(page: Page, visualCase: VisualCase) {
 function expectedLedger(visualCase: VisualCase) {
   const paths = [visualCase.contentPath]
   if (visualCase.name !== "index") paths.push(backgroundsPath)
-  paths.push(...visualCase.stylesheets, ...visualCase.images, ...visualCase.images)
+  paths.push(...visualCase.stylesheets, ...visualCase.images)
   if (visualCase.backgroundPath) paths.push(visualCase.backgroundPath, visualCase.backgroundPath)
   return paths.sort()
 }
@@ -251,7 +251,11 @@ for (const visualCase of cases) {
     expect(response?.status()).toBe(200)
 
     await expectPresentationReady(page, visualCase)
-    expect((await presentationRequests(request)).sort()).toEqual(expectedLedger(visualCase))
+    const requests = await presentationRequests(request)
+    expect(requests.sort()).toEqual(expectedLedger(visualCase))
+    for (const image of visualCase.images) {
+      expect(requests.filter(path => path === image)).toHaveLength(1)
+    }
     expect(forbidden).toEqual([])
     expect(problems).toEqual([])
 

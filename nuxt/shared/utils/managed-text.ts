@@ -1,9 +1,77 @@
 export type ManagedTextRules = Readonly<{
   authorityOrigin: string
+  allowedPaths?: readonly string[]
   allowedPathPrefixes: readonly string[]
   allowedContentTypes: readonly string[]
   maximumBytes: number
 }>
+
+export const maximumHomeEditorialBytes = 8_192
+export const maximumAboutEditorialBytes = 32_768
+export const maximumPresentationEditorialBytes = 65_536
+export const maximumPresentationBackgroundBytes = 2_048
+
+const homeEditorialPath = "/red/om/start/startsida-ny.html"
+const aboutEditorialPaths = [
+  "/red/om/ide/omlitteraturbanken.html",
+  "/red/om/ide/organisation.html",
+  "/red/om/rattigheter/rattigheter.html",
+  "/red/om/tack.html",
+  "/red/om/hjalp/hjalp.html",
+  "/red/om/visioner/visioner.html",
+  "/red/om/ide/english.html",
+  "/red/om/ide/deutsch.html",
+  "/red/om/ide/francais.html"
+] as const
+const presentationIndexPath = "/red/presentationer/presentationerForfattare.html"
+const presentationBackgroundPath = "/red/bilder/bakgrundsbilder/backgrounds.xml"
+
+export function managedHomeTextRules(authorityOrigin: string): ManagedTextRules {
+  return {
+    authorityOrigin,
+    allowedPaths: [homeEditorialPath],
+    allowedPathPrefixes: [],
+    allowedContentTypes: ["text/html"],
+    maximumBytes: maximumHomeEditorialBytes
+  }
+}
+
+export function managedAboutTextRules(authorityOrigin: string): ManagedTextRules {
+  return {
+    authorityOrigin,
+    allowedPaths: aboutEditorialPaths,
+    allowedPathPrefixes: [],
+    allowedContentTypes: ["text/html"],
+    maximumBytes: maximumAboutEditorialBytes
+  }
+}
+
+export function managedPresentationDocumentTextRules(
+  authorityOrigin: string
+): ManagedTextRules {
+  return {
+    authorityOrigin,
+    allowedPaths: [presentationIndexPath],
+    allowedPathPrefixes: [
+      "/red/presentationer/specialomraden/",
+      "/red/presentationer/vandringar/"
+    ],
+    allowedContentTypes: ["text/html"],
+    maximumBytes: maximumPresentationEditorialBytes
+  }
+}
+
+export function managedPresentationBackgroundTextRules(
+  authorityOrigin: string
+): ManagedTextRules {
+  return {
+    authorityOrigin,
+    allowedPaths: [presentationBackgroundPath],
+    allowedPathPrefixes: [],
+    allowedContentTypes: ["application/xml"],
+    maximumBytes: maximumPresentationBackgroundBytes
+  }
+}
 
 function responseMediaType(response: Response): string {
   return response.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() ?? ""
@@ -223,7 +291,10 @@ export async function fetchManagedText(
   if (hasUnsafeEncodedPath(finalRawPathname)) {
     return rejectUnreadBody(response, new Error("Managed text final path is not allowed"))
   }
-  if (!rules.allowedPathPrefixes.some(prefix => pathMatchesPrefix(finalUrl.pathname, prefix))) {
+  if (
+    !rules.allowedPaths?.includes(finalUrl.pathname)
+    && !rules.allowedPathPrefixes.some(prefix => pathMatchesPrefix(finalUrl.pathname, prefix))
+  ) {
     return rejectUnreadBody(response, new Error("Managed text final path is not allowed"))
   }
   if (!response.ok) {

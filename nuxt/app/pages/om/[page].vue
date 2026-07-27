@@ -1,6 +1,29 @@
-<script setup lang="ts">
+<script lang="ts">
 import AboutPageShell from "../../components/about/AboutPageShell.vue"
 
+import type { ManagedAssetHtml } from "#shared/types/renderable-html"
+import {
+  fetchManagedText,
+  managedAboutTextRules
+} from "#shared/utils/managed-text"
+import {
+  emptyRenderableHtml,
+  issueManagedAboutHtml
+} from "#shared/utils/renderable-html"
+
+export type AboutContent = ManagedAssetHtml<"about-editorial">
+
+export function extractAboutBody(html: string): AboutContent {
+  const body = html.match(/<body(?:\s[^>]*)?>([\s\S]*?)<\/body>/i)
+  return issueManagedAboutHtml(body?.[1] ?? html)
+}
+
+export function emptyAboutContent(): AboutContent {
+  return emptyRenderableHtml<AboutContent>()
+}
+</script>
+
+<script setup lang="ts">
 const pages = {
   ide: {
     activePage: "ide",
@@ -80,11 +103,6 @@ const selectedPage = computed(() => pages[pageKey.value])
 const asyncKey = computed(() => `about-content:${pageKey.value}`)
 const config = useRuntimeConfig()
 
-function extractBody(html: string): string {
-  const body = html.match(/<body(?:\s[^>]*)?>([\s\S]*?)<\/body>/i)
-  return body?.[1] ?? html
-}
-
 function humanizeHelpLabel(value: string): string {
   const words = value
     .replace(/([A-Z])/g, " $1")
@@ -106,19 +124,21 @@ function extractHelpSubmenu(html: string): Array<{ id: string; label: string }> 
   }))
 }
 
-const { data: content } = await useAsyncData(asyncKey, async () => {
+const { data: content } = await useAsyncData<AboutContent>(asyncKey, async () => {
   const base = import.meta.server ? config.contentBase : config.public.contentBase
   const url = `${base.replace(/\/$/, "")}${selectedPage.value.contentPath}`
   try {
-    const html = await $fetch<string>(url, { responseType: "text" })
-    return extractBody(html)
+    const authorityOrigin = base || window.location.origin
+    const html = await fetchManagedText(url, managedAboutTextRules(authorityOrigin))
+    return extractAboutBody(html)
   } catch (error) {
     if (import.meta.dev) console.error(`About content request failed for ${pageKey.value}`, error)
-    return ""
+    return emptyAboutContent()
   }
 })
 
-const helpSubmenu = computed(() => pageKey.value === "hjalp" ? extractHelpSubmenu(content.value ?? "") : [])
+const aboutContent = computed(() => content.value ?? emptyAboutContent())
+const helpSubmenu = computed(() => pageKey.value === "hjalp" ? extractHelpSubmenu(aboutContent.value) : [])
 const navigateManagedHtml = useManagedHtmlNavigation()
 
 async function scrollToHelpAnchor(value: unknown) {
@@ -146,13 +166,19 @@ watch(
 
 <template>
   <AboutPageShell :active-page="selectedPage.activePage">
-    <div
+    <RenderableHtmlContent
       v-if="pageKey === 'hjalp'"
+      as="div"
+      :html="aboutContent"
       class="help_content content unbox page-help"
       @click="navigateManagedHtml"
-      v-html="content || ''"
     />
-    <section v-else @click="navigateManagedHtml" v-html="content || ''" />
+    <RenderableHtmlContent
+      v-else
+      as="section"
+      :html="aboutContent"
+      @click="navigateManagedHtml"
+    />
     <ClientOnly>
       <Teleport v-if="pageKey === 'hjalp'" to="#toolkit">
         <div toolkit>

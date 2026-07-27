@@ -11,6 +11,12 @@ import {
 } from "@vue/compiler-dom"
 import { describe, expect, test } from "vitest"
 
+import {
+  fetchManagedText,
+  managedPresentationBackgroundTextRules,
+  managedPresentationDocumentTextRules
+} from "../../shared/utils/managed-text"
+
 const root = fileURLToPath(new URL("../fixtures/presentation-content", import.meta.url))
 
 const xhtmlFixtures = [
@@ -137,7 +143,13 @@ describe("Presentation content authority fixtures", () => {
   })
 
   test("the ordered background fixture locks wildcard, duplicate, and multi-class cases", async () => {
-    const xml = await readFile(resolve(root, "backgrounds.xml"), "utf8")
+    const content = await readFile(resolve(root, "backgrounds.xml"))
+    const xml = content.toString("utf8")
+
+    expect(content.byteLength).toBe(733)
+    expect(createHash("sha256").update(content).digest("hex")).toBe(
+      "4b35bbde2ba5fd6bd604a0e7efa234f13e744fdf3722ecd570761cdd24c3802d"
+    )
 
     const firstExact = xml.indexOf('target="/presentationer/specialomraden/Rostratt.html"')
     const folderWildcard = xml.indexOf('target="/presentationer/specialomraden/*"')
@@ -181,5 +193,34 @@ describe("Presentation content authority fixtures", () => {
     const content = await readFile(resolve(root, filename), "utf8")
     expect(content).toContain(marker)
     expect(content).toContain("PRESENTATION-FIXTURE")
+  })
+
+  test.each([
+    [
+      "document",
+      "/red/presentationer/specialomraden/FutureEditorialAddition.html",
+      "text/html",
+      managedPresentationDocumentTextRules
+    ],
+    [
+      "background",
+      "/red/bilder/bakgrundsbilder/backgrounds.xml",
+      "application/xml",
+      managedPresentationBackgroundTextRules
+    ]
+  ])("the named Presentation %s rule accepts only its managed path and MIME", async (
+    _label,
+    path,
+    contentType,
+    rules
+  ) => {
+    const response = new Response("managed", { headers: { "content-type": contentType } })
+    Object.defineProperty(response, "url", { value: `https://assets.test${path}` })
+
+    await expect(fetchManagedText(
+      `https://assets.test${path}`,
+      rules("https://assets.test"),
+      async () => response
+    )).resolves.toBe("managed")
   })
 })

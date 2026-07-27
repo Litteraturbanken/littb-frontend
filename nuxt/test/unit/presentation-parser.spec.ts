@@ -82,6 +82,22 @@ describe("Presentation XHTML parser", () => {
     ]) expect(parsed.bodyHtml).toContain(value)
   })
 
+  test("issues stylesheet hrefs only for normalized root-owned paths", () => {
+    const parsed = parsePresentationDocument(`
+      <html><head>
+        <link rel="stylesheet" href="app/style/article.css">
+        <link rel="stylesheet" href="/red/presentationer/theme.css?edition=1">
+        <link rel="stylesheet" href="https://other.test/external.css">
+        <link rel="stylesheet" href="//other.test/protocol-relative.css">
+      </head><body><h1>Stilmallar</h1></body></html>
+    `)
+
+    expect(parsed.styleNodes).toEqual([
+      { kind: "stylesheet", href: "/app/style/article.css" },
+      { kind: "stylesheet", href: "/red/presentationer/theme.css?edition=1" }
+    ])
+  })
+
   test.each([
     "javascript:alert(1)",
     "java\u000bscript:alert(1)",

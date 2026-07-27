@@ -18,6 +18,12 @@ import type {
 import type { ReaderEtextPage, ReaderOcrOverlay } from "../../shared/types/reader"
 import type { SlaArticlePage } from "../../shared/types/sla-article"
 import type { AuthorProfileView } from "../../app/lib/author-profile"
+import type { HomeContent } from "../../app/pages/index.vue"
+import type { AboutContent } from "../../app/pages/om/[page].vue"
+import {
+  parseBackgroundRules,
+  parsePresentationDocument
+} from "../../app/pages/presentationer/presentation-parser"
 import {
   markEditorEtextHtml,
   markReaderOcrHtml
@@ -63,6 +69,48 @@ const managedPresentationStyle: ManagedStyleText<"presentation-editorial">
   = issueManagedPresentationStyle("body { color: red; }")
 const managedPresentationStylesheetHref: ManagedStylesheetHref<"presentation-editorial">
   = issueManagedPresentationStylesheetHref("/presentation.css")
+
+const homeBody: HomeContent["bodyHtml"] = managedHome
+const aboutBody: AboutContent = managedAbout
+const parsedPresentation = parsePresentationDocument(
+  "<html><body><h1>Presentation</h1></body></html>"
+)
+const presentationBody: ManagedAssetHtml<"presentation-editorial">
+  = parsedPresentation.bodyHtml
+for (const styleNode of parsedPresentation.styleNodes) {
+  if (styleNode.kind === "stylesheet") {
+    const href: ManagedStylesheetHref<"presentation-editorial"> = styleNode.href
+    void href
+  } else {
+    const text: ManagedStyleText<"presentation-editorial"> = styleNode.textContent
+    void text
+  }
+}
+const [parsedBackground] = parseBackgroundRules(
+  '<backgrounds><background target="/presentationer/*"><style>html { color: red; }</style></background></backgrounds>'
+)
+const backgroundStyle: ManagedStyleText<"presentation-editorial"> | null | undefined
+  = parsedBackground?.styleText
+
+// @ts-expect-error Home content must retain its managed editorial authority.
+const plainHomeBody: HomeContent["bodyHtml"] = "<p>Plain home</p>"
+// @ts-expect-error Plain strings have not passed the About editorial authority.
+const plainAboutBody: ManagedAssetHtml<"about-editorial"> = "<p>Plain About</p>"
+// @ts-expect-error About page content must retain its managed editorial authority.
+const plainAboutPageContent: AboutContent = "<p>Plain About page</p>"
+// @ts-expect-error Plain strings have not passed the Presentation editorial authority.
+const plainPresentationBody: ManagedAssetHtml<"presentation-editorial">
+  = "<p>Plain Presentation</p>"
+// @ts-expect-error About editorial HTML cannot be widened to the Home authority.
+const aboutThroughHome: ManagedAssetHtml<"home-editorial"> = managedAbout
+// @ts-expect-error Home editorial HTML cannot be widened to the About authority.
+const homeThroughAbout: ManagedAssetHtml<"about-editorial"> = managedHome
+// @ts-expect-error Presentation HTML cannot be installed as Presentation style text.
+const presentationHtmlAsStyle: ManagedStyleText<"presentation-editorial">
+  = managedPresentation
+// @ts-expect-error Presentation style text cannot be installed as a stylesheet href.
+const presentationStyleAsHref: ManagedStylesheetHref<"presentation-editorial">
+  = managedPresentationStyle
 
 const emptySourceInfo: SanitizedHtml<"reader-source-info"> = emptyRenderableHtml()
 const joinedSourceRows: SanitizedHtml<"reader-source-info"> = joinReaderSourceRows([
@@ -178,6 +226,18 @@ const plainDramaHistory: NonNullable<ReaderSourceInfoDramawebben["historyHtml"]>
 void capabilities
 void props
 void plainStringProps
+void homeBody
+void aboutBody
+void presentationBody
+void backgroundStyle
+void plainHomeBody
+void plainAboutBody
+void plainAboutPageContent
+void plainPresentationBody
+void aboutThroughHome
+void homeThroughAbout
+void presentationHtmlAsStyle
+void presentationStyleAsHref
 void styleAsHtmlProps
 void unsupportedTagProps
 void wrongPolicy

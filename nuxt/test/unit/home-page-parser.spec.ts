@@ -17,12 +17,29 @@ async function loadParser(): Promise<ParseHomeContent> {
   const source = await readFile(pagePath, "utf8")
   const script = source.match(/<script lang="ts">([\s\S]*?)<\/script>/)?.[1]
   if (!script) throw new Error("Home page must expose its page-local parser from a normal TypeScript script")
+  const renderableHtmlSource = await readFile(
+    fileURLToPath(new URL("../../shared/utils/renderable-html.ts", import.meta.url)),
+    "utf8"
+  )
+  const compilerOptions = {
+    module: ts.ModuleKind.ESNext,
+    target: ts.ScriptTarget.ES2022
+  } as const
+  const renderableHtmlJavascript = ts.transpileModule(renderableHtmlSource, {
+    compilerOptions
+  }).outputText
+  const renderableHtmlModule = `data:text/javascript;base64,${Buffer.from(
+    renderableHtmlJavascript
+  ).toString("base64")}`
   const javascript = ts.transpileModule(script, {
     compilerOptions: {
       module: ts.ModuleKind.ESNext,
       target: ts.ScriptTarget.ES2022
     }
-  }).outputText
+  }).outputText.replace(
+    'from "#shared/utils/renderable-html"',
+    `from "${renderableHtmlModule}"`
+  )
   const encoded = Buffer.from(javascript).toString("base64")
   const module = await import(`data:text/javascript;base64,${encoded}#${Date.now()}`)
   return module.parseHomeContent as ParseHomeContent

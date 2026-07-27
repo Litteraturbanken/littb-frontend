@@ -1,5 +1,16 @@
 import { DOMParser } from "linkedom"
 
+import type {
+  ManagedAssetHtml,
+  ManagedStyleText,
+  ManagedStylesheetHref
+} from "#shared/types/renderable-html"
+import {
+  emptyRenderableHtml,
+  issueManagedPresentationHtml,
+  issueManagedPresentationStyle,
+  issueManagedPresentationStylesheetHref
+} from "#shared/utils/renderable-html"
 import { removeC0AndSpace } from "#shared/utils/text-safety"
 
 export { validatePresentationSegments } from "../../lib/presentation-routes"
@@ -24,11 +35,17 @@ type ParsedDocument = {
 }
 
 export type PresentationStyleNode =
-  | { kind: "stylesheet"; href: string }
-  | { kind: "inline"; textContent: string }
+  | {
+    kind: "stylesheet"
+    href: ManagedStylesheetHref<"presentation-editorial">
+  }
+  | {
+    kind: "inline"
+    textContent: ManagedStyleText<"presentation-editorial">
+  }
 
 export type PresentationDocument = {
-  bodyHtml: string
+  bodyHtml: ManagedAssetHtml<"presentation-editorial">
   title: string
   description: string
   styleNodes: PresentationStyleNode[]
@@ -38,12 +55,12 @@ export type BackgroundRule = {
   target: string
   imagePath: string | null
   className: string | null
-  styleText: string | null
+  styleText: ManagedStyleText<"presentation-editorial"> | null
 }
 
 export function emptyPresentationDocument(): PresentationDocument {
   return {
-    bodyHtml: "",
+    bodyHtml: emptyRenderableHtml<ManagedAssetHtml<"presentation-editorial">>(),
     title: "",
     description: "",
     styleNodes: []
@@ -63,6 +80,25 @@ function normalizedUrl(value: string): string | null {
   try {
     const resolved = new URL(trimmed, "https://presentation.invalid/")
     return `${resolved.pathname}${resolved.search}${resolved.hash}`
+  } catch {
+    return null
+  }
+}
+
+function managedStylesheetHref(
+  value: string
+): ManagedStylesheetHref<"presentation-editorial"> | null {
+  const normalized = normalizedUrl(value)
+  if (!normalized?.startsWith("/") || normalized.startsWith("//")) return null
+
+  try {
+    const base = new URL("https://presentation.invalid")
+    const parsed = new URL(normalized, base)
+    if (
+      parsed.origin !== base.origin
+      || `${parsed.pathname}${parsed.search}${parsed.hash}` !== normalized
+    ) return null
+    return issueManagedPresentationStylesheetHref(normalized)
   } catch {
     return null
   }
@@ -100,15 +136,18 @@ export function parsePresentationDocument(source: string): PresentationDocument 
     const styleNodes: PresentationStyleNode[] = head
       ? Array.from(head.querySelectorAll('link[rel~="stylesheet"], style')).flatMap<PresentationStyleNode>(node => {
           if (node.localName === "style") {
-            return [{ kind: "inline", textContent: node.textContent ?? "" }]
+            return [{
+              kind: "inline",
+              textContent: issueManagedPresentationStyle(node.textContent ?? "")
+            }]
           }
-          const href = normalizedUrl(node.getAttribute("href") ?? "")
+          const href = managedStylesheetHref(node.getAttribute("href") ?? "")
           return href ? [{ kind: "stylesheet", href }] : []
         })
       : []
 
     return {
-      bodyHtml: body.innerHTML,
+      bodyHtml: issueManagedPresentationHtml(body.innerHTML),
       ...firstHeadingMetadata(body),
       styleNodes
     }
@@ -127,11 +166,14 @@ export function parseBackgroundRules(source: string): BackgroundRule[] {
     return Array.from(document.querySelectorAll("background"), node => {
       const target = node.getAttribute("target") ?? ""
       const rawImagePath = node.getAttribute("url")
+      const rawStyleText = node.querySelector("style")?.textContent?.trim() || null
       return {
         target,
         imagePath: rawImagePath === null ? null : normalizedUrl(rawImagePath),
         className: node.getAttribute("class"),
-        styleText: node.querySelector("style")?.textContent?.trim() || null
+        styleText: rawStyleText === null
+          ? null
+          : issueManagedPresentationStyle(rawStyleText)
       }
     }).filter(rule => rule.target.startsWith("/presentationer/"))
   } catch {

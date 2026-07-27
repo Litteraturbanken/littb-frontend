@@ -2,6 +2,12 @@
 import presentationBackground from "~/assets/img/presentations.jpg"
 
 import {
+  fetchManagedText,
+  managedPresentationBackgroundTextRules,
+  managedPresentationDocumentTextRules
+} from "#shared/utils/managed-text"
+
+import {
   emptyPresentationDocument,
   parseBackgroundRules,
   parsePresentationDocument,
@@ -45,17 +51,21 @@ const canonicalPath = computed(() => isIndex.value
 )
 const asyncKey = computed(() => `presentation-content:${segments.value.join("/") || "index"}`)
 
-function contentUrl(path: string) {
+function contentLocation(path: string) {
   const base = import.meta.server ? config.contentBase : config.public.contentBase
-  return `${base.replace(/\/$/, "")}${path}`
+  return {
+    authorityOrigin: base || window.location.origin,
+    url: `${base.replace(/\/$/, "")}${path}`
+  }
 }
 
 async function fetchDocument(path: string): Promise<PresentationDocument> {
   try {
-    const source = await $fetch<string>(contentUrl(path), {
-      responseType: "text",
-      retry: 0
-    })
+    const location = contentLocation(path)
+    const source = await fetchManagedText(
+      location.url,
+      managedPresentationDocumentTextRules(location.authorityOrigin)
+    )
     return parsePresentationDocument(source)
   } catch {
     return emptyPresentationDocument()
@@ -64,9 +74,10 @@ async function fetchDocument(path: string): Promise<PresentationDocument> {
 
 async function fetchBackground(path: string): Promise<BackgroundRule | null> {
   try {
-    const source = await $fetch<string>(
-      contentUrl("/red/bilder/bakgrundsbilder/backgrounds.xml"),
-      { responseType: "text", retry: 0 }
+    const location = contentLocation("/red/bilder/bakgrundsbilder/backgrounds.xml")
+    const source = await fetchManagedText(
+      location.url,
+      managedPresentationBackgroundTextRules(location.authorityOrigin)
     )
     return selectBackgroundRule(parseBackgroundRules(source), path)
   } catch {
@@ -189,17 +200,19 @@ useHead(() => {
 </script>
 
 <template>
-  <div
+  <RenderableHtmlContent
     v-if="isIndex"
+    as="div"
+    :html="pageData.document.bodyHtml"
     class="doc main"
     @click="navigateManagedHtml"
-    v-html="pageData.document.bodyHtml"
   />
-  <div
+  <RenderableHtmlContent
     v-else
+    as="div"
+    :html="pageData.document.bodyHtml"
     class="content"
     style="position:relative;"
     @click="navigateManagedHtml"
-    v-html="pageData.document.bodyHtml"
   />
 </template>
