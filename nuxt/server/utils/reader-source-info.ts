@@ -371,13 +371,14 @@ export function validateReaderSourceInfoResponse(
   for (const item of downloadActions) {
     if (!isRecord(item) || !exactKeys(item, downloadActionKeys)) invalidSourceInfo()
     const filename = String(item.filename)
+    const filenameCodePointLength = [...filename].length
     if (
       (item.media_type !== "epub" && item.media_type !== "pdf")
       || item.label !== item.media_type
       || downloadMedia.has(item.media_type)
       || !safeRootUrl(item.url)
-      || filename.length < 1
-      || filename.length > 500
+      || filenameCodePointLength < 1
+      || filenameCodePointLength > 500
       || filename.includes("/")
       || filename.includes("\\")
       || hasC0OrC1Control(filename)

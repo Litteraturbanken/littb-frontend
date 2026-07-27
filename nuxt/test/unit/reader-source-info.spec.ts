@@ -184,6 +184,30 @@ describe("Reader source-information runtime contract", () => {
     )).toThrow("Invalid Reader source information")
   })
 
+  test("counts astral download filename length as Unicode code points", () => {
+    const value = cloneRecord(doktorGlasSourceInfo)
+    const action = requiredRecord(
+      { action: requiredArray(value, "download_actions")[0] },
+      "action"
+    )
+    action.filename = `${"😀".repeat(495)}.epub`
+
+    expect(validateReaderSourceInfoResponse(
+      value,
+      "SöderbergH",
+      "DoktorGlas",
+      "etext"
+    )).toEqual(value)
+
+    action.filename = `${"😀".repeat(496)}.epub`
+    expect(() => validateReaderSourceInfoResponse(
+      value,
+      "SöderbergH",
+      "DoktorGlas",
+      "etext"
+    )).toThrow("Invalid Reader source information")
+  })
+
   test("accepts the backend selected-media fallback for an explicit request", () => {
     expect(validateReaderSourceInfoResponse(
       doktorGlasSourceInfo,
