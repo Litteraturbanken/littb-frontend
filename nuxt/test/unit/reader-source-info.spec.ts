@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from "vitest"
 
-import type { components } from "../../app/lib/api/generated/lbapi"
 import {
   buildReaderSourceInfo,
   clearReaderSourceInfoStaticCache,
@@ -15,6 +14,12 @@ import {
   validateReaderSourceInfoResponse
 } from "../../server/utils/reader-source-info"
 import {
+  cloneRecord,
+  requiredArray,
+  requiredRecord,
+  type JsonRecord
+} from "../helpers/malformed-json"
+import {
   cendrillonInfopostSourceInfo,
   doktorGlasSourceInfo,
   dramaSourceInfo,
@@ -25,8 +30,6 @@ import {
   sourceInfoProvenance,
   sparseSourceInfo
 } from "../fixtures/reader-source-info-data.mjs"
-
-type WorkSourceInfoResponse = components["schemas"]["WorkSourceInfoResponse"]
 
 function clone<T>(value: T): T {
   return structuredClone(value)
@@ -85,34 +88,63 @@ describe("Reader source-information runtime contract", () => {
   })
 
   test.each([
-    ["top-level extra field", (value: any) => { value.unexpected = true }],
-    ["wrong requested title", (value: any) => { value.title_path = "Other" }],
-    ["unsafe selected author", (value: any) => { value.author_id = "../secret" }],
-    ["duplicate author", (value: any) => { value.authors.push(value.authors[0]) }],
-    ["author extra field", (value: any) => { value.authors[0].unexpected = true }],
-    ["unsafe author URL", (value: any) => { value.authors[0].url = "javascript:bad()" }],
-    ["cover traversal", (value: any) => { value.cover.small_url = "/txt/%2e%2e/secret" }],
-    ["duplicate read action", (value: any) => { value.read_actions.push(value.read_actions[0]) }],
-    ["read action mismatch", (value: any) => { value.read_actions[0].label = "faksimil" }],
-    ["unsafe download filename", (value: any) => { value.download_actions[0].filename = "../book.epub" }],
-    ["unsafe download URL", (value: any) => { value.download_actions[0].url = "//evil.test/book" }],
-    ["unsafe provenance key", (value: any) => { value.provenance[0].library = " GUB" }],
-    ["wrong provenance flag", (value: any) => { value.provenance[0].use_alternate_text = 1 }],
-    ["oversized HTML", (value: any) => { value.source_description_html = "x".repeat(200_001) }],
-    ["errata extra field", (value: any) => { value.errata[0].unexpected = true }],
-    ["too many errata cells", (value: any) => { value.errata[0].cells_html = Array(101).fill("") }],
-    ["drama extra field", (value: any) => { value.dramawebben = { ...dramaSourceInfo.dramawebben, unexpected: true } }],
-    ["duplicate drama fact", (value: any) => {
-      value.dramawebben = clone(dramaSourceInfo.dramawebben)
-      value.dramawebben.facts.push(value.dramawebben.facts[0])
+    ["top-level extra field", (value: JsonRecord) => { value.unexpected = true }],
+    ["wrong requested title", (value: JsonRecord) => { value.title_path = "Other" }],
+    ["unsafe selected author", (value: JsonRecord) => { value.author_id = "../secret" }],
+    ["duplicate author", (value: JsonRecord) => {
+      const authors = requiredArray(value, "authors")
+      authors.push(authors[0])
     }],
-    ["invalid drama role", (value: any) => {
-      value.dramawebben = clone(dramaSourceInfo.dramawebben)
-      value.dramawebben.roles[0] = 42
+    ["author extra field", (value: JsonRecord) => {
+      requiredRecord({ author: requiredArray(value, "authors")[0] }, "author").unexpected = true
     }],
-    ["unsafe control character", (value: any) => { value.title = "Doktor\u0000 Glas" }]
+    ["unsafe author URL", (value: JsonRecord) => {
+      requiredRecord({ author: requiredArray(value, "authors")[0] }, "author").url = "javascript:bad()"
+    }],
+    ["cover traversal", (value: JsonRecord) => {
+      requiredRecord(value, "cover").small_url = "/txt/%2e%2e/secret"
+    }],
+    ["duplicate read action", (value: JsonRecord) => {
+      const actions = requiredArray(value, "read_actions")
+      actions.push(actions[0])
+    }],
+    ["read action mismatch", (value: JsonRecord) => {
+      requiredRecord({ action: requiredArray(value, "read_actions")[0] }, "action").label = "faksimil"
+    }],
+    ["unsafe download filename", (value: JsonRecord) => {
+      requiredRecord({ action: requiredArray(value, "download_actions")[0] }, "action").filename = "../book.epub"
+    }],
+    ["unsafe download URL", (value: JsonRecord) => {
+      requiredRecord({ action: requiredArray(value, "download_actions")[0] }, "action").url = "//evil.test/book"
+    }],
+    ["unsafe provenance key", (value: JsonRecord) => {
+      requiredRecord({ provenance: requiredArray(value, "provenance")[0] }, "provenance").library = " GUB"
+    }],
+    ["wrong provenance flag", (value: JsonRecord) => {
+      requiredRecord({ provenance: requiredArray(value, "provenance")[0] }, "provenance").use_alternate_text = 1
+    }],
+    ["oversized HTML", (value: JsonRecord) => { value.source_description_html = "x".repeat(200_001) }],
+    ["errata extra field", (value: JsonRecord) => {
+      requiredRecord({ errata: requiredArray(value, "errata")[0] }, "errata").unexpected = true
+    }],
+    ["too many errata cells", (value: JsonRecord) => {
+      requiredRecord({ errata: requiredArray(value, "errata")[0] }, "errata").cells_html = Array(101).fill("")
+    }],
+    ["drama extra field", (value: JsonRecord) => {
+      value.dramawebben = { ...dramaSourceInfo.dramawebben, unexpected: true }
+    }],
+    ["duplicate drama fact", (value: JsonRecord) => {
+      value.dramawebben = clone(dramaSourceInfo.dramawebben)
+      const facts = requiredArray(requiredRecord(value, "dramawebben"), "facts")
+      facts.push(facts[0])
+    }],
+    ["invalid drama role", (value: JsonRecord) => {
+      value.dramawebben = clone(dramaSourceInfo.dramawebben)
+      requiredArray(requiredRecord(value, "dramawebben"), "roles")[0] = 42
+    }],
+    ["unsafe control character", (value: JsonRecord) => { value.title = "Doktor\u0000 Glas" }]
   ])("rejects %s recursively", (_name, mutate) => {
-    const value = clone(doktorGlasSourceInfo)
+    const value = cloneRecord(doktorGlasSourceInfo)
     mutate(value)
     expect(() => validateReaderSourceInfoResponse(
       value,

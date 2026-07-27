@@ -25,6 +25,12 @@ import {
   textSearchRouteIdentity,
   textSearchSubmitQuery
 } from "../../app/lib/text-search"
+import {
+  cloneRecord,
+  requiredArray,
+  requiredRecord,
+  type JsonRecord
+} from "../helpers/malformed-json"
 
 function resultsResponse() {
   return {
@@ -491,42 +497,81 @@ describe("text search route state", () => {
   })
 
   test.each([
-    { name: "extra root key", mutate: (copy: any) => { copy.raw = true } },
-    { name: "extra work key", mutate: (copy: any) => { copy.works[0].source = {} } },
+    { name: "extra root key", mutate: (copy: JsonRecord) => { copy.raw = true } },
+    {
+      name: "extra work key",
+      mutate: (copy: JsonRecord) => {
+        requiredRecord({ work: requiredArray(copy, "works")[0] }, "work").source = {}
+      }
+    },
     {
       name: "extra word key",
-      mutate: (copy: any) => { copy.works[0].highlights[0].match[0].lemma = "fri" }
+      mutate: (copy: JsonRecord) => {
+        const work = requiredRecord({ work: requiredArray(copy, "works")[0] }, "work")
+        const highlight = requiredRecord(
+          { highlight: requiredArray(work, "highlights")[0] },
+          "highlight"
+        )
+        requiredRecord({ word: requiredArray(highlight, "match")[0] }, "word").lemma = "fri"
+      }
     },
-    { name: "wrong query", mutate: (copy: any) => { copy.query = "other" } },
-    { name: "wrong page", mutate: (copy: any) => { copy.page = 2 } },
-    { name: "unsupported media", mutate: (copy: any) => { copy.works[0].mediatype = "audio" } },
-    { name: "unsafe work ID", mutate: (copy: any) => { copy.works[0].lbworkid = "bad/id" } },
+    { name: "wrong query", mutate: (copy: JsonRecord) => { copy.query = "other" } },
+    { name: "wrong page", mutate: (copy: JsonRecord) => { copy.page = 2 } },
+    {
+      name: "unsupported media",
+      mutate: (copy: JsonRecord) => {
+        requiredRecord({ work: requiredArray(copy, "works")[0] }, "work").mediatype = "audio"
+      }
+    },
+    {
+      name: "unsafe work ID",
+      mutate: (copy: JsonRecord) => {
+        requiredRecord({ work: requiredArray(copy, "works")[0] }, "work").lbworkid = "bad/id"
+      }
+    },
     {
       name: "duplicate work ID",
-      mutate: (copy: any) => { copy.works.push(structuredClone(copy.works[0])); copy.total_work_hits = 2 }
+      mutate: (copy: JsonRecord) => {
+        const works = requiredArray(copy, "works")
+        works.push(structuredClone(works[0]))
+        copy.total_work_hits = 2
+      }
     },
     {
       name: "duplicate facet ID",
-      mutate: (copy: any) => { copy.author_facets.push(structuredClone(copy.author_facets[0])) }
+      mutate: (copy: JsonRecord) => {
+        const facets = requiredArray(copy, "author_facets")
+        facets.push(structuredClone(facets[0]))
+      }
     },
     {
       name: "descending token order",
-      mutate: (copy: any) => { copy.works[0].highlights[0].match.push(
-        { word: "nu", page_name: "12", word_id: "w12_2" }
-      ) }
+      mutate: (copy: JsonRecord) => {
+        const work = requiredRecord({ work: requiredArray(copy, "works")[0] }, "work")
+        const highlight = requiredRecord(
+          { highlight: requiredArray(work, "highlights")[0] },
+          "highlight"
+        )
+        requiredArray(highlight, "match").push({ word: "nu", page_name: "12", word_id: "w12_2" })
+      }
     },
     {
       name: "mixed match page names",
-      mutate: (copy: any) => { copy.works[0].highlights[0].match.push(
-        { word: "nu", page_name: "13", word_id: "w12_5" }
-      ) }
+      mutate: (copy: JsonRecord) => {
+        const work = requiredRecord({ work: requiredArray(copy, "works")[0] }, "work")
+        const highlight = requiredRecord(
+          { highlight: requiredArray(work, "highlights")[0] },
+          "highlight"
+        )
+        requiredArray(highlight, "match").push({ word: "nu", page_name: "13", word_id: "w12_5" })
+      }
     },
-    { name: "incoherent total", mutate: (copy: any) => { copy.total_work_hits = 0 } }
+    { name: "incoherent total", mutate: (copy: JsonRecord) => { copy.total_work_hits = 0 } }
   ])("rejects result responses with $name", ({ mutate }) => {
     const request = buildTextSearchResultsRequest(
       parseTextSearchRouteQuery({ fras: "frihet" })
     )
-    const response = resultsResponse()
+    const response = cloneRecord(resultsResponse())
     mutate(response)
     expect(acceptTextSearchResultsResponse(
       response,
@@ -819,28 +864,50 @@ describe("text search route state", () => {
   })
 
   test.each([
-    { name: "missing year key", mutate: (copy: any) => { delete copy.year_to } },
-    { name: "extra title key", mutate: (copy: any) => { copy.title_options[0].raw = true } },
-    { name: "unsafe author ID", mutate: (copy: any) => { copy.authors[0].author_id = "bad/id" } },
+    { name: "missing year key", mutate: (copy: JsonRecord) => { delete copy.year_to } },
+    {
+      name: "extra title key",
+      mutate: (copy: JsonRecord) => {
+        requiredRecord({ title: requiredArray(copy, "title_options")[0] }, "title").raw = true
+      }
+    },
+    {
+      name: "unsafe author ID",
+      mutate: (copy: JsonRecord) => {
+        requiredRecord({ author: requiredArray(copy, "authors")[0] }, "author").author_id = "bad/id"
+      }
+    },
     {
       name: "duplicate title ID",
-      mutate: (copy: any) => { copy.title_options.push(structuredClone(copy.title_options[0])) }
+      mutate: (copy: JsonRecord) => {
+        const titles = requiredArray(copy, "title_options")
+        titles.push(structuredClone(titles[0]))
+      }
     },
     {
       name: "duplicate facet ID",
-      mutate: (copy: any) => { copy.title_author_facets.push(structuredClone(copy.title_author_facets[0])) }
+      mutate: (copy: JsonRecord) => {
+        const facets = requiredArray(copy, "title_author_facets")
+        facets.push(structuredClone(facets[0]))
+      }
     },
     {
       name: "duplicate author ID",
-      mutate: (copy: any) => { copy.authors.push(structuredClone(copy.authors[0])) }
+      mutate: (copy: JsonRecord) => {
+        const authors = requiredArray(copy, "authors")
+        authors.push(structuredClone(authors[0]))
+      }
     },
-    { name: "descending years", mutate: (copy: any) => { copy.year_from = 2200; copy.year_to = 1000 } },
-    { name: "negative total", mutate: (copy: any) => { copy.title_total = -1 } }
+    {
+      name: "descending years",
+      mutate: (copy: JsonRecord) => { copy.year_from = 2200; copy.year_to = 1000 }
+    },
+    { name: "negative total", mutate: (copy: JsonRecord) => { copy.title_total = -1 } }
   ])("rejects options responses with $name", ({ mutate }) => {
     const request = buildTextSearchOptionsRequest(
       parseTextSearchRouteQuery({ fras: "frihet" })
     )
-    const response = optionsResponse()
+    const response = cloneRecord(optionsResponse())
     mutate(response)
     expect(acceptTextSearchOptionsResponse(
       response,
