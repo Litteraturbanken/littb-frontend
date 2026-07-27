@@ -10,18 +10,22 @@ const contractAllowlist = new Set([
   "test/nuxt/reader-source-info-contract.ts",
   "test/nuxt/renderable-html-contract.ts"
 ])
-const expectedEslintIgnores = [
-  ".nuxt/**",
-  ".output/**",
-  "node_modules/**",
-  "app/lib/api/generated/**",
-  "coverage/**",
-  "playwright-report/**",
-  "test-results*/**"
-]
+const canonicalEslintConfig = `import withNuxt from "./.nuxt/eslint.config.mjs"
+
+export default withNuxt({
+  ignores: [
+    ".nuxt/**",
+    ".output/**",
+    "node_modules/**",
+    "app/lib/api/generated/**",
+    "coverage/**",
+    "playwright-report/**",
+    "test-results*/**"
+  ]
+})
+`
 const tsIgnoreToken = ["@ts", "ignore"].join("-")
 const tsExpectedErrorToken = ["@ts", "expect-error"].join("-")
-const vueHtmlToken = ["v", "html"].join("-")
 const domHtmlToken = ["inner", "HTML"].join("")
 const assertionKeyword = ["a", "s"].join("")
 const capabilityTypes = [
@@ -32,7 +36,6 @@ const capabilityTypes = [
   "RenderableHtml",
   "SanitizedHtml"
 ]
-const capabilityAlternation = capabilityTypes.join("|")
 const reviewedCapabilityExports = [
   "issueAuthorProfileHtml",
   "issueAuthorDocumentHtml",
@@ -52,54 +55,173 @@ const reviewedCapabilityExports = [
   "joinReaderSourceRows",
   "transformManagedReaderHtml"
 ]
-const privateCapabilityConstructor = [
-  "function capability<T extends RenderableCapability>(value: string): T {",
-  `  return value ${assertionKeyword} T`,
-  "}"
-].join("\n")
-const reviewedDomSignatures = new Map([
-  [rendererPath, [`name !== "${domHtmlToken}"`, `${domHtmlToken}: props.html`]],
-  ["app/lib/author-profile.ts", [
-    `container.${domHtmlToken} = value`,
-    `issueAuthorProfileHtml(container.${domHtmlToken})`
-  ]],
-  ["app/lib/reader-dictionary.ts", [`const html = root.${domHtmlToken}`]],
-  ["app/lib/search-hit-highlight.ts", [
-    `return root.${domHtmlToken}`,
-    `issueReaderOcrHtml(root.${domHtmlToken})`
-  ]],
-  ["app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue", [
-    `return root.${domHtmlToken}`
-  ]],
-  ["app/pages/presentationer/presentation-parser.ts", [
-    `${domHtmlToken}: string`,
-    `issueManagedPresentationHtml(body.${domHtmlToken})`
-  ]],
-  ["server/utils/author-document.ts", [
-    `${domHtmlToken}: string`,
-    `issueAuthorDocumentHtml(body.${domHtmlToken})`
-  ]],
-  ["server/utils/dramawebben-document.ts", [
-    `${domHtmlToken}: string`,
-    `issueDramawebbenDocumentHtml(body.${domHtmlToken})`
-  ]],
-  ["server/utils/editor-reader-html.ts", [
-    `body: { ${domHtmlToken}: string, querySelectorAll:`,
-    `const html = document.body.${domHtmlToken}`
-  ]],
-  ["server/utils/reader-source-info.ts", [
-    `${domHtmlToken}: string`,
-    `issueReaderSourceInfoHtml(body.${domHtmlToken})`,
-    `return texts[0]!.${domHtmlToken}`
-  ]],
-  ["server/utils/sla-article.ts", [
-    `${domHtmlToken}: string`,
-    `issueSlaArticleHtml(body.${domHtmlToken})`
-  ]]
+const capabilityIssuers = new Set(reviewedCapabilityExports.filter(name => name.startsWith("issue")))
+const knownCapabilityFields = new Set([
+  "bodyHtml",
+  "captionHtml",
+  "href",
+  "introductionHtml",
+  "sourceHtml",
+  "styleText",
+  "textContent"
+])
+const reviewedDomPolicies = new Map([
+  [rendererPath, {
+    provenance: [],
+    operations: [
+      { source: `name !== "${domHtmlToken}"`, count: 1 },
+      { source: `${domHtmlToken}: props.html`, count: 1 }
+    ]
+  }],
+  ["app/lib/author-profile.ts", {
+    provenance: [
+      { source: `import { parseHTML } from "linkedom"`, count: 1 },
+      { source: "const { document } = parseHTML(", count: 1 },
+      { source: "const container = document.createElement(", count: 1 }
+    ],
+    operations: [
+      { source: `container.${domHtmlToken} = value`, count: 1 },
+      { source: `issueAuthorProfileHtml(container.${domHtmlToken})`, count: 1 }
+    ]
+  }],
+  ["app/lib/reader-dictionary.ts", {
+    provenance: [
+      { source: `import { parseHTML } from "linkedom"`, count: 1 },
+      { source: "const { document } = parseHTML(", count: 1 },
+      { source: "const root = document.querySelector(", count: 1 }
+    ],
+    operations: [{ source: `const html = root.${domHtmlToken}`, count: 1 }]
+  }],
+  ["app/lib/search-hit-highlight.ts", {
+    provenance: [
+      { source: `import { parseHTML } from "linkedom"`, count: 1 },
+      { source: "const { document } = parseHTML(", count: 2 },
+      { source: "const root = document.querySelector(", count: 2 }
+    ],
+    operations: [
+      { source: `return root.${domHtmlToken}`, count: 1 },
+      { source: `issueReaderOcrHtml(root.${domHtmlToken})`, count: 1 }
+    ]
+  }],
+  ["app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue", {
+    provenance: [
+      { source: `import { parseHTML } from "linkedom"`, count: 1 },
+      { source: "const { document } = parseHTML(", count: 1 },
+      { source: "const root = document.querySelector(", count: 1 }
+    ],
+    operations: [{ source: `return root.${domHtmlToken}`, count: 1 }]
+  }],
+  ["app/pages/presentationer/presentation-parser.ts", {
+    provenance: [
+      { source: `import { DOMParser } from "linkedom"`, count: 1 },
+      { source: "new DOMParser().parseFromString(", count: 2 },
+      { source: `const body = document.querySelector("body")`, count: 1 }
+    ],
+    operations: [
+      { source: `${domHtmlToken}: string`, count: 1 },
+      { source: `issueManagedPresentationHtml(body.${domHtmlToken})`, count: 1 }
+    ]
+  }],
+  ["server/utils/author-document.ts", {
+    provenance: parsedBodyProvenance("ParsedAuthorDocument"),
+    operations: [
+      { source: `${domHtmlToken}: string`, count: 1 },
+      { source: `issueAuthorDocumentHtml(body.${domHtmlToken})`, count: 1 }
+    ]
+  }],
+  ["server/utils/dramawebben-document.ts", {
+    provenance: parsedBodyProvenance("ParsedDramawebbenDocument"),
+    operations: [
+      { source: `${domHtmlToken}: string`, count: 1 },
+      { source: `issueDramawebbenDocumentHtml(body.${domHtmlToken})`, count: 1 }
+    ]
+  }],
+  ["server/utils/editor-reader-html.ts", {
+    provenance: [
+      { source: `import { parseHTML } from "linkedom"`, count: 1 },
+      { source: "const { document } = parseHTML(", count: 1 }
+    ],
+    operations: [
+      { source: `body: { ${domHtmlToken}: string, querySelectorAll:`, count: 1 },
+      { source: `const html = document.body.${domHtmlToken}`, count: 1 }
+    ]
+  }],
+  ["server/utils/reader-source-info.ts", {
+    provenance: [
+      { source: `import { parseHTML } from "linkedom"`, count: 1 },
+      { source: "({ document } = parseHTML(", count: 2 },
+      { source: `const bodies = [...document.querySelectorAll("body")]`, count: 1 },
+      { source: "const body = bodies[0]!", count: 1 },
+      { source: `const texts = [...document.querySelectorAll("text")]`, count: 1 }
+    ],
+    operations: [
+      { source: `${domHtmlToken}: string`, count: 1 },
+      { source: `issueReaderSourceInfoHtml(body.${domHtmlToken})`, count: 1 },
+      { source: `return texts[0]!.${domHtmlToken}`, count: 1 }
+    ]
+  }],
+  ["server/utils/sla-article.ts", {
+    provenance: parsedBodyProvenance("ParsedSlaArticle"),
+    operations: [
+      { source: `${domHtmlToken}: string`, count: 1 },
+      { source: `issueSlaArticleHtml(body.${domHtmlToken})`, count: 1 }
+    ]
+  }]
 ])
 
 const violations = []
 let auditedFileCount = 0
+
+function parsedBodyProvenance(parsedType) {
+  return [
+    { source: `import { parseHTML } from "linkedom"`, count: 1 },
+    {
+      source: `({ document } = parseHTML(source) ${assertionKeyword} unknown ${assertionKeyword} { document: ${parsedType} })`,
+      count: 1
+    },
+    { source: `const bodies = [...document.querySelectorAll("body")]`, count: 1 },
+    { source: "const body = bodies[0]!", count: 1 }
+  ]
+}
+
+const reviewedCapabilityDeclarations = [
+  `export function issueAuthorProfileHtml(value: string): SanitizedHtml<"author-profile"> {`,
+  `export function issueAuthorDocumentHtml(value: string): SanitizedHtml<"author-document"> {`,
+  `export function issueDramawebbenDocumentHtml(value: string): SanitizedHtml<"dramawebben-document"> {`,
+  `export function issueSlaArticleHtml(value: string): SanitizedHtml<"sla-article"> {`,
+  `export function issueDictionaryArticleHtml(value: string): SanitizedHtml<"dictionary-article"> {`,
+  `export function issueReaderOcrHtml(value: string): SanitizedHtml<"reader-ocr"> {`,
+  `export function issueReaderSourceInfoHtml(value: string): SanitizedHtml<"reader-source-info"> {`,
+  `export function issueEditorEtextHtml(value: string): SanitizedHtml<"editor-etext"> {`,
+  `export function issueManagedReaderHtml(value: string): ManagedAssetHtml<"reader-etext"> {`,
+  `export function issueManagedHomeHtml(value: string): ManagedAssetHtml<"home-editorial"> {`,
+  `export function issueManagedAboutHtml(value: string): ManagedAssetHtml<"about-editorial"> {`,
+  `export function issueManagedPresentationHtml(value: string): ManagedAssetHtml<"presentation-editorial"> {`,
+  `export function issueManagedPresentationStyle(value: string): ManagedStyleText<"presentation-editorial"> {`,
+  `export function issueManagedPresentationStylesheetHref(value: string): ManagedStylesheetHref<"presentation-editorial"> {`,
+  `export function emptyRenderableHtml<Value extends RenderableHtml>(): Value {`,
+  `export function joinReaderSourceRows(values: readonly SanitizedHtml<"reader-source-info">[]): SanitizedHtml<"reader-source-info"> {`,
+  `export function transformManagedReaderHtml(value: ManagedAssetHtml<"reader-etext">, transform: (value: string) => string): ManagedAssetHtml<"reader-etext"> {`
+]
+const reviewedCapabilityCalls = [
+  `capability<SanitizedHtml<"author-profile">>(value)`,
+  `capability<SanitizedHtml<"author-document">>(value)`,
+  `capability<SanitizedHtml<"dramawebben-document">>(value)`,
+  `capability<SanitizedHtml<"sla-article">>(value)`,
+  `capability<SanitizedHtml<"dictionary-article">>(value)`,
+  `capability<SanitizedHtml<"reader-ocr">>(value)`,
+  `capability<SanitizedHtml<"reader-source-info">>(value)`,
+  `capability<SanitizedHtml<"editor-etext">>(value)`,
+  `capability<ManagedAssetHtml<"reader-etext">>(value)`,
+  `capability<ManagedAssetHtml<"home-editorial">>(value)`,
+  `capability<ManagedAssetHtml<"about-editorial">>(value)`,
+  `capability<ManagedAssetHtml<"presentation-editorial">>(value)`,
+  `capability<ManagedStyleText<"presentation-editorial">>(value)`,
+  `capability<ManagedStylesheetHref<"presentation-editorial">>(value)`,
+  `capability<Value>("")`,
+  `capability<SanitizedHtml<"reader-source-info">>(values.join("<br>"))`,
+  `capability<ManagedAssetHtml<"reader-etext">>(transform(value))`
+]
 
 function normalizedRelativePath(absolutePath) {
   return relative(root, absolutePath).split(sep).join("/")
@@ -138,212 +260,494 @@ function lineNumberAt(source, index) {
   return line
 }
 
-function tokenIndexes(source, token) {
-  const indexes = []
-  let fromIndex = 0
-  while (fromIndex < source.length) {
-    const index = source.indexOf(token, fromIndex)
-    if (index === -1) break
-    indexes.push(index)
-    fromIndex = index + token.length
+function isLineTerminator(character) {
+  return character === "\n" || character === "\r" || character === "\u2028" || character === "\u2029"
+}
+
+function canStartRegularExpression(tokens) {
+  const previous = tokens.at(-1)?.value
+  return previous === undefined || [
+    "(", "[", "{", ",", ":", ";", "=", "!", "?", "&", "|", ">",
+    "case", "delete", "else", "in", "instanceof", "new", "return", "throw", "typeof", "void", "yield"
+  ].includes(previous)
+}
+
+function regularExpressionEnd(source, start) {
+  let index = start + 1
+  let inCharacterClass = false
+  while (index < source.length && !isLineTerminator(source[index])) {
+    if (source[index] === "\\") {
+      index += 2
+      continue
+    }
+    if (source[index] === "[") inCharacterClass = true
+    else if (source[index] === "]") inCharacterClass = false
+    else if (source[index] === "/" && !inCharacterClass) {
+      index += 1
+      while (index < source.length && /[A-Za-z]/u.test(source[index])) index += 1
+      return index
+    }
+    index += 1
+  }
+  return null
+}
+
+function lexSource(source) {
+  const tokens = []
+  const comments = []
+  let index = 0
+  const pushToken = (start, end, kind = "punctuator") => {
+    tokens.push({ value: source.slice(start, end), start, end, kind })
+  }
+  while (index < source.length) {
+    const character = source[index]
+    if (/\s/u.test(character)) {
+      index += 1
+      continue
+    }
+    if (source.startsWith("//", index)) {
+      const start = index
+      const bodyStart = index + 2
+      index = bodyStart
+      while (index < source.length && !isLineTerminator(source[index])) index += 1
+      comments.push({ start, body: source.slice(bodyStart, index) })
+      continue
+    }
+    if (source.startsWith("/*", index)) {
+      const start = index
+      const bodyStart = index + 2
+      const close = source.indexOf("*/", bodyStart)
+      index = close === -1 ? source.length : close + 2
+      comments.push({ start, body: source.slice(bodyStart, close === -1 ? source.length : close) })
+      continue
+    }
+    if (source.startsWith("<!--", index)) {
+      const start = index
+      const bodyStart = index + 4
+      const close = source.indexOf("-->", bodyStart)
+      index = close === -1 ? source.length : close + 3
+      comments.push({ start, body: source.slice(bodyStart, close === -1 ? source.length : close) })
+      continue
+    }
+    if (character === "/" && canStartRegularExpression(tokens)) {
+      const end = regularExpressionEnd(source, index)
+      if (end !== null) {
+        pushToken(index, end, "regexp")
+        index = end
+        continue
+      }
+    }
+    if (character === "\"" || character === "'" || character === "`") {
+      const start = index
+      const quote = character
+      index += 1
+      while (index < source.length) {
+        if (source[index] === "\\") {
+          index += 2
+          continue
+        }
+        if (source[index] === quote) {
+          index += 1
+          break
+        }
+        index += 1
+      }
+      pushToken(start, index, quote === "`" ? "template" : "string")
+      continue
+    }
+    if (/[A-Za-z_$]/u.test(character)) {
+      const start = index
+      index += 1
+      while (index < source.length && /[A-Za-z0-9_$]/u.test(source[index])) index += 1
+      pushToken(start, index, "identifier")
+      continue
+    }
+    if (/[0-9]/u.test(character)) {
+      const start = index
+      index += 1
+      while (index < source.length && /[0-9A-Za-z_.]/u.test(source[index])) index += 1
+      pushToken(start, index, "number")
+      continue
+    }
+    pushToken(index, index + 1)
+    index += 1
+  }
+  return { tokens, comments }
+}
+
+function sequenceValues(source) {
+  return lexSource(source).tokens.map(token => token.value)
+}
+
+function sequenceMatches(tokens, source) {
+  const expected = sequenceValues(source)
+  const matches = []
+  if (expected.length === 0) return matches
+  for (let start = 0; start <= tokens.length - expected.length; start += 1) {
+    if (expected.every((value, offset) => tokens[start + offset].value === value)) {
+      matches.push({ start, end: start + expected.length })
+    }
+  }
+  return matches
+}
+
+function importAliasIndexes(tokens) {
+  const indexes = new Set()
+  for (let index = 0; index < tokens.length; index += 1) {
+    if (tokens[index].value !== "import" || tokens[index + 1]?.value === "(") continue
+    let cursor = index + 1
+    while (cursor < tokens.length && tokens[cursor].value !== "from" && tokens[cursor].value !== ";") {
+      if (tokens[cursor].value === assertionKeyword) indexes.add(cursor)
+      cursor += 1
+    }
   }
   return indexes
 }
 
-function addTokenViolations(relativePath, source, token, message) {
-  let fromIndex = 0
-  while (fromIndex < source.length) {
-    const index = source.indexOf(token, fromIndex)
-    if (index === -1) return
-    addViolation(relativePath, lineNumberAt(source, index), message)
-    fromIndex = index + token.length
+function statementTokens(tokens, equalsIndex) {
+  const values = []
+  let depth = 0
+  const startLine = lineNumberAtToken(tokens[equalsIndex])
+  for (let index = equalsIndex + 1; index < tokens.length; index += 1) {
+    const value = tokens[index].value
+    const previous = values.at(-1)?.value
+    const lineContinuation = ["&", "|", ".", "?", "[", "<"].includes(value)
+      || ["&", "|", ".", "?", "[", "<", "extends", "keyof", "readonly", "typeof"].includes(previous)
+    if (depth === 0 && (value === ";" || (values.length > 0
+      && lineNumberAtToken(tokens[index]) > startLine
+      && !lineContinuation))) break
+    if (["(", "[", "{", "<"].includes(value)) depth += 1
+    if ([")", "]", "}", ">"].includes(value) && depth > 0) depth -= 1
+    values.push(tokens[index])
+  }
+  return values
+}
+
+function lineNumberAtToken(token) {
+  return token.line ?? 1
+}
+
+function enrichTokenLines(source, tokens) {
+  let line = 1
+  let position = 0
+  for (const token of tokens) {
+    while (position < token.start) {
+      const code = source.charCodeAt(position)
+      if (code === 13) {
+        line += 1
+        if (source.charCodeAt(position + 1) === 10) position += 1
+      } else if (code === 10 || code === 0x2028 || code === 0x2029) {
+        line += 1
+      }
+      position += 1
+    }
+    token.line = line
   }
 }
 
-function addPatternViolations(relativePath, source, pattern, message) {
-  pattern.lastIndex = 0
-  for (const match of source.matchAll(pattern)) {
-    addViolation(relativePath, lineNumberAt(source, match.index), message)
+function hasTaintedType(tokens, aliases, values, genericParameters = new Set()) {
+  const identifiers = new Set(tokens.filter(token => token.kind === "identifier").map(token => token.value))
+  if (capabilityTypes.some(type => identifiers.has(type))) return true
+  if ([...aliases].some(alias => identifiers.has(alias))) return true
+  if ([...values].some(value => identifiers.has(value))) return true
+  if ([...capabilityIssuers].some(issuer => identifiers.has(issuer))) return true
+  if (tokens.some(token => token.value === "[")
+    && tokens.some(token => knownCapabilityFields.has(token.value) || knownCapabilityFields.has(literalText(token)))) {
+    return true
   }
+  return [...genericParameters].some(parameter => identifiers.has(parameter))
 }
 
-function capabilityAliases(source) {
+function capabilityTaint(tokens) {
   const aliases = new Set()
-  const importRanges = []
-  const importPattern = /\bimport\s+(?:type\s+)?\{([\s\S]*?)\}\s+from\s+["'][^"']+["']/gu
-  for (const match of source.matchAll(importPattern)) {
-    importRanges.push([match.index, match.index + match[0].length])
-    const aliasPattern = new RegExp(`\\b(?:${capabilityAlternation})\\s+as\\s+([A-Za-z_$][\\w$]*)`, "gu")
-    for (const alias of match[1].matchAll(aliasPattern)) aliases.add(alias[1])
+  const values = new Set()
+  const importAliases = importAliasIndexes(tokens)
+  for (let index = 0; index < tokens.length - 2; index += 1) {
+    if ((capabilityTypes.includes(tokens[index].value) || capabilityIssuers.has(tokens[index].value))
+      && tokens[index + 1].value === assertionKeyword
+      && tokens[index + 2].kind === "identifier") {
+      aliases.add(tokens[index + 2].value)
+    }
   }
-  const typeAliases = [...source.matchAll(/\btype\s+([A-Za-z_$][\w$]*)\s*=\s*([^;\r\n\u2028\u2029]+)/gu)]
-  let addedAlias = true
-  while (addedAlias) {
-    addedAlias = false
-    for (const match of typeAliases) {
-      const rightHandSide = match[2]
-      if (capabilityTypes.some(type => new RegExp(`\\b${type}\\b`, "u").test(rightHandSide))
-        || [...aliases].some(alias => new RegExp(`\\b${alias}\\b`, "u").test(rightHandSide))) {
-        const size = aliases.size
-        aliases.add(match[1])
-        if (aliases.size !== size) addedAlias = true
+  for (let index = 0; index < tokens.length - 3; index += 1) {
+    if (!["const", "let", "var"].includes(tokens[index].value)
+      || tokens[index + 1].kind !== "identifier"
+      || tokens[index + 2].value !== "=") continue
+    const assigned = statementTokens(tokens, index + 2)
+    if (assigned.some(token => capabilityIssuers.has(token.value))) values.add(tokens[index + 1].value)
+  }
+  const typeAliases = []
+  for (let index = 0; index < tokens.length - 2; index += 1) {
+    if (tokens[index].value !== "type"
+      || tokens[index + 1].kind !== "identifier"
+      || tokens[index + 2].value !== "=") continue
+    typeAliases.push({ name: tokens[index + 1].value, rightHandSide: statementTokens(tokens, index + 2) })
+  }
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const alias of typeAliases) {
+      if (!aliases.has(alias.name) && hasTaintedType(alias.rightHandSide, aliases, values)) {
+        aliases.add(alias.name)
+        changed = true
       }
     }
   }
-  return { aliases, importRanges }
+  return { aliases, values, importAliases }
 }
 
-function hasCapabilityReference(source, aliases) {
-  return capabilityTypes.some(type => new RegExp(`\\b${type}\\b`, "u").test(source))
-    || [...aliases].some(alias => new RegExp(`\\b${alias}\\b`, "u").test(source))
-}
-
-function auditCapabilityAssertions(relativePath, source) {
-  const { aliases, importRanges } = capabilityAliases(source)
-  const genericParameters = new Set()
-  const genericDeclarations = [
-    /\bfunction\s+[A-Za-z_$][\w$]*\s*<([^>]+)>/gu,
-    /\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*<([^>]+)>\s*\(/gu,
-    /\b(?:type|interface)\s+[A-Za-z_$][\w$]*\s*<([^>]+)>/gu
-  ]
-  for (const pattern of genericDeclarations) {
-    for (const match of source.matchAll(pattern)) {
-      for (const parameter of match[1].split(",")) {
-        const name = parameter.trim().match(/^([A-Za-z_$][\w$]*)\b/u)?.[1]
-        if (name !== undefined) genericParameters.add(name)
+function genericParameters(tokens) {
+  const parameters = new Set()
+  for (let index = 0; index < tokens.length; index += 1) {
+    if (tokens[index].value !== "<") continue
+    const declaredFunction = tokens[index - 2]?.value === "function"
+      && tokens[index - 1]?.kind === "identifier"
+    const declaredAnonymousFunction = tokens[index - 1]?.value === "function"
+    const declaredArrow = tokens[index - 1]?.value === "="
+      || (tokens[index - 1]?.value === "async" && tokens[index - 2]?.value === "=")
+    if (!declaredFunction && !declaredAnonymousFunction && !declaredArrow) continue
+    let depth = 1
+    let end = index + 1
+    while (end < tokens.length && depth > 0) {
+      if (tokens[end].value === "<") depth += 1
+      if (tokens[end].value === ">") depth -= 1
+      end += 1
+    }
+    if (depth !== 0 || tokens[end]?.value !== "(") continue
+    for (const token of tokens.slice(index + 1, end - 1)) {
+      if (token.kind === "identifier" && /^[A-Z][A-Za-z0-9_$]*$/u.test(token.value)) {
+        parameters.add(token.value)
+        break
       }
     }
   }
-  for (const match of source.matchAll(/\bas\b/gu)) {
-    if (importRanges.some(([start, end]) => match.index >= start && match.index < end)) continue
-    const end = source.slice(match.index).search(/[;\r\n\u2028\u2029]/u)
-    const assertedType = source.slice(match.index + match[0].length, end === -1 ? source.length : match.index + end)
-    const assertedName = assertedType.trim().match(/^([A-Za-z_$][\w$]*)\b/u)?.[1]
-    const genericForgery = assertedName !== undefined
-      && genericParameters.has(assertedName)
-      && hasCapabilityReference(source, aliases)
-    if (hasCapabilityReference(assertedType, aliases) || genericForgery) {
+  return parameters
+}
+
+function assertedTypeTokens(tokens, assertionIndex) {
+  const asserted = []
+  let depth = 0
+  let latestLine = lineNumberAtToken(tokens[assertionIndex])
+  for (let index = assertionIndex + 1; index < tokens.length; index += 1) {
+    const value = tokens[index].value
+    const previous = asserted.at(-1)?.value
+    const lineContinuation = ["&", "|", ".", "?", "[", "<"].includes(value)
+      || ["&", "|", ".", "?", "[", "<", "extends", "keyof", "readonly", "typeof"].includes(previous)
+    if (depth === 0 && ([";", "=", ",", "}", ")", "]", assertionKeyword].includes(value)
+      || (asserted.length > 0 && lineNumberAtToken(tokens[index]) > latestLine && !lineContinuation))) break
+    if (["(", "[", "{", "<"].includes(value)) depth += 1
+    if ([")", "]", "}", ">"].includes(value) && depth > 0) depth -= 1
+    asserted.push(tokens[index])
+    latestLine = lineNumberAtToken(tokens[index])
+  }
+  return asserted
+}
+
+function auditCapabilityAssertions(relativePath, source, lexical) {
+  const { tokens } = lexical
+  const { aliases, values, importAliases } = capabilityTaint(tokens)
+  const generics = genericParameters(tokens)
+  const sourceCarriesCapability = hasTaintedType(tokens, aliases, values)
+  for (let index = 0; index < tokens.length; index += 1) {
+    if (tokens[index].value !== assertionKeyword
+      || importAliases.has(index)
+      || tokens[index + 1]?.value === ":") continue
+    const asserted = assertedTypeTokens(tokens, index)
+    const genericForgery = sourceCarriesCapability && hasTaintedType(asserted, new Set(), new Set(), generics)
+    if (hasTaintedType(asserted, aliases, values) || genericForgery) {
       addViolation(
         relativePath,
-        lineNumberAt(source, match.index),
+        lineNumberAt(source, tokens[index].start),
         "capability assertions are limited to the private capability helper"
       )
     }
   }
 
-  const angleAssertionPattern = /(^|[=([{,:;!?&|]\s*)<([^\r\n\u2028\u2029]{1,500}?)>\s*(?=[A-Za-z_$"'([{])/gmu
-  for (const match of source.matchAll(angleAssertionPattern)) {
-    if (hasCapabilityReference(match[2], aliases)) {
-      const assertionIndex = match.index + match[1].length
+  const allowedBefore = new Set(["=", "(", "[", "{", ",", ":", "return", "=>"])
+  for (let index = 0; index < tokens.length; index += 1) {
+    if (tokens[index].value !== "<" || !allowedBefore.has(tokens[index - 1]?.value ?? "=")) continue
+    let depth = 1
+    let end = index + 1
+    while (end < tokens.length && depth > 0) {
+      if (tokens[end].value === "<") depth += 1
+      if (tokens[end].value === ">") depth -= 1
+      end += 1
+    }
+    if (depth !== 0 || tokens[end]?.value === "(" || tokens[end]?.value === "=>") continue
+    if (hasTaintedType(tokens.slice(index + 1, end - 1), aliases, values)) {
       addViolation(
         relativePath,
-        lineNumberAt(source, assertionIndex),
+        lineNumberAt(source, tokens[index].start),
         "capability assertions are limited to the private capability helper"
       )
     }
   }
 }
 
-function auditCapabilityUtility(relativePath, source) {
-  const constructorCount = tokenIndexes(source, privateCapabilityConstructor).length
-  const assertionCount = [...source.matchAll(/\bas\b/gu)].length
-  if (constructorCount !== 1 || assertionCount !== 1) {
-    addViolation(relativePath, 1, "exactly one private capability assertion is required")
+function auditCapabilityUtility(relativePath, source, lexical) {
+  const { tokens } = lexical
+  const exportNames = []
+  let exportCount = 0
+  for (let index = 0; index < tokens.length; index += 1) {
+    if (tokens[index].value !== "export") continue
+    exportCount += 1
+    if (tokens[index + 1]?.value === "function") exportNames.push(tokens[index + 2]?.value)
   }
-
-  if (/\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*capability\b/u.test(source)) {
-    addViolation(relativePath, 1, "the private capability constructor must not be aliased")
-  }
-
-  const exportFunctions = [...source.matchAll(/\bexport\s+function\s+([A-Za-z_$][\w$]*)/gu)]
-  const actualExports = exportFunctions.map(match => match[1])
-  const everyExport = [...source.matchAll(/\bexport\b/gu)]
-  const exactSurface = actualExports.length === reviewedCapabilityExports.length
-    && actualExports.every((name, index) => name === reviewedCapabilityExports[index])
-    && everyExport.length === exportFunctions.length
-  if (!exactSurface) {
-    addViolation(relativePath, 1, "capability utility exports must equal the reviewed issuer surface")
+  const aliasIndexes = importAliasIndexes(tokens)
+  const assertionCount = tokens.filter((token, index) => token.value === assertionKeyword && !aliasIndexes.has(index)).length
+  const constructor = `function capability<T extends RenderableCapability>(value: string): T { return value ${assertionKeyword} T }`
+  const structuralSurfaceMatches = sequenceMatches(tokens, constructor).length === 1
+    && assertionCount === 1
+    && exportCount === reviewedCapabilityExports.length
+    && exportNames.length === reviewedCapabilityExports.length
+    && exportNames.every((name, index) => name === reviewedCapabilityExports[index])
+    && reviewedCapabilityDeclarations.every(declaration => sequenceMatches(tokens, declaration).length === 1)
+    && reviewedCapabilityCalls.every(call => sequenceMatches(tokens, call).length === 1)
+    && tokens.filter(token => token.value === "capability").length === reviewedCapabilityCalls.length + 1
+  if (!structuralSurfaceMatches) {
+    addViolation(relativePath, 1, "capability utility must equal the reviewed structural surface")
   }
 }
 
-function auditExpectedErrors(relativePath, source) {
-  let fromIndex = 0
-  while (fromIndex < source.length) {
-    const index = source.indexOf(tsExpectedErrorToken, fromIndex)
-    if (index === -1) return
-    const line = lineNumberAt(source, index)
+function auditTypeScriptDirectives(relativePath, source, comments) {
+  for (const comment of comments) {
+    const ignoreIndex = comment.body.indexOf(tsIgnoreToken)
+    if (ignoreIndex !== -1) {
+      addViolation(relativePath, lineNumberAt(source, comment.start), "TypeScript ignore comments are forbidden")
+    }
+    const index = comment.body.indexOf(tsExpectedErrorToken)
+    if (index === -1) continue
+    const line = lineNumberAt(source, comment.start)
     if (!contractAllowlist.has(relativePath)) {
       addViolation(relativePath, line, "expected-error directives are limited to compile contracts")
     }
-    const lineEnd = source.indexOf("\n", index)
-    const suffix = source.slice(index + tsExpectedErrorToken.length, lineEnd === -1 ? source.length : lineEnd).trim()
+    const suffix = comment.body
+      .slice(index + tsExpectedErrorToken.length)
+      .split(/[\r\n\u2028\u2029]/u, 1)[0]
+      .trim()
     if (suffix.length === 0) {
       addViolation(relativePath, line, "expected-error directives require a description")
     }
-    fromIndex = index + tsExpectedErrorToken.length
   }
 }
 
-function auditInlineEslintConfiguration(relativePath, source) {
-  const commentPattern = /\/\*([\s\S]*?)\*\/|\/\/([^\r\n\u2028\u2029]*)/gu
-  for (const match of source.matchAll(commentPattern)) {
-    const body = (match[1] ?? match[2] ?? "").trim()
+function auditInlineEslintConfiguration(relativePath, source, comments) {
+  for (const comment of comments) {
+    const body = comment.body.trim().replace(/^\*+\s*/u, "")
     if (/^(?:eslint(?:\b|-)|global\b|exported\b)/u.test(body)) {
       addViolation(
         relativePath,
-        lineNumberAt(source, match.index),
+        lineNumberAt(source, comment.start),
         "ESLint inline configuration comments are forbidden"
       )
     }
   }
 }
 
-function auditDomHtml(relativePath, source) {
-  if (!isProductionPath(relativePath) || !source.includes(domHtmlToken)) return
-  const reviewedSignatures = reviewedDomSignatures.get(relativePath)
-  if (reviewedSignatures === undefined) {
-    addTokenViolations(relativePath, source, domHtmlToken, "DOM HTML access is not in the reviewed allowlist")
+function literalText(token) {
+  if (token?.kind === "template") {
+    const value = token.value.slice(1, -1)
+    return value.includes("${") ? null : value
+  }
+  if (token?.kind !== "string") return null
+  if (token.value.startsWith("\"")) {
+    try {
+      return JSON.parse(token.value)
+    } catch {
+      return null
+    }
+  }
+  return token.value.slice(1, -1).replace(/\\'/gu, "'").replace(/\\\\/gu, "\\")
+}
+
+function auditComputedDomHtml(relativePath, source, tokens) {
+  const violationStarts = new Set()
+  for (let index = 0; index < tokens.length - 2; index += 1) {
+    if (literalText(tokens[index]) === "inner"
+      && tokens[index + 1].value === "+"
+      && literalText(tokens[index + 2]) === "HTML") {
+      violationStarts.add(tokens[index].start)
+    }
+    if (tokens[index].value !== "[") continue
+    let cursor = index + 1
+    const pieces = []
+    while (cursor < tokens.length && tokens[cursor].value !== "]" && pieces.length < 12) {
+      pieces.push(tokens[cursor])
+      cursor += 1
+    }
+    if (tokens[cursor]?.value !== "]") continue
+    const isStatic = pieces.length > 0 && pieces.every((token, offset) => offset % 2 === 0
+      ? literalText(token) !== null
+      : token.value === "+")
+    if (isStatic && pieces.filter((_token, offset) => offset % 2 === 0)
+      .map(token => literalText(token)).join("") === domHtmlToken) {
+      violationStarts.add(tokens[index].start)
+    }
+  }
+  for (const start of [...violationStarts].sort((left, right) => left - right)) {
+    addViolation(relativePath, lineNumberAt(source, start), "computed DOM HTML access is forbidden")
+  }
+}
+
+function auditVueDirectives(relativePath, source, tokens) {
+  for (let index = 0; index < tokens.length - 2; index += 1) {
+    if (tokens[index].value === "v"
+      && tokens[index + 1].value === "-"
+      && tokens[index + 2].value === "html") {
+      addViolation(relativePath, lineNumberAt(source, tokens[index].start), "Vue raw-HTML directives are forbidden")
+    }
+    if (tokens[index].value === ":"
+      && tokens[index + 1].value === "["
+      && tokens[index].end === tokens[index + 1].start) {
+      addViolation(relativePath, lineNumberAt(source, tokens[index].start), "dynamic Vue argument bindings are forbidden")
+    }
+  }
+}
+
+function auditDomHtml(relativePath, source, tokens) {
+  if (!isProductionPath(relativePath)) return
+  const reviewed = reviewedDomPolicies.get(relativePath)
+  if (reviewed === undefined) {
+    for (const token of tokens.filter(token => token.value === domHtmlToken)) {
+      addViolation(relativePath, lineNumberAt(source, token.start), "DOM HTML access is not in the reviewed allowlist")
+    }
     return
   }
 
-  const coveredRanges = []
+  if (reviewed.provenance.some(operation => sequenceMatches(tokens, operation.source).length !== operation.count)) {
+    addViolation(relativePath, 0, "reviewed detached DOM provenance changed")
+  }
+  const coveredTokenIndexes = new Set()
   let cardinalityChanged = false
-  for (const signature of reviewedSignatures) {
-    const indexes = tokenIndexes(source, signature)
-    if (indexes.length !== 1) cardinalityChanged = true
-    for (const index of indexes) coveredRanges.push([index, index + signature.length])
+  for (const operation of reviewed.operations) {
+    const matches = sequenceMatches(tokens, operation.source)
+    if (matches.length !== operation.count) cardinalityChanged = true
+    for (const match of matches) {
+      for (let index = match.start; index < match.end; index += 1) coveredTokenIndexes.add(index)
+    }
   }
-  if (cardinalityChanged) {
-    addViolation(relativePath, 0, "reviewed DOM HTML signature cardinality changed")
-  }
-  for (const index of tokenIndexes(source, domHtmlToken)) {
-    if (!coveredRanges.some(([start, end]) => index >= start && index < end)) {
-      addViolation(relativePath, lineNumberAt(source, index), "DOM HTML access does not match the reviewed signature")
+  if (cardinalityChanged) addViolation(relativePath, 0, "reviewed DOM HTML signature cardinality changed")
+  for (let index = 0; index < tokens.length; index += 1) {
+    if (tokens[index].value === domHtmlToken && !coveredTokenIndexes.has(index)) {
+      addViolation(relativePath, lineNumberAt(source, tokens[index].start), "DOM HTML access does not match the reviewed signature")
     }
   }
 }
 
 function auditSource(relativePath, source) {
-  auditInlineEslintConfiguration(relativePath, source)
-  addTokenViolations(relativePath, source, tsIgnoreToken, "TypeScript ignore comments are forbidden")
-  auditExpectedErrors(relativePath, source)
-
-  if (extname(relativePath) === ".vue") {
-    addPatternViolations(
-      relativePath,
-      source,
-      new RegExp(`\\b${vueHtmlToken}(?=\\s*(?:[.:][\\w-]+)*\\s*=)`, "gu"),
-      "Vue raw-HTML directives are forbidden"
-    )
-  }
-
-  auditDomHtml(relativePath, source)
+  const lexical = lexSource(source)
+  enrichTokenLines(source, lexical.tokens)
+  auditInlineEslintConfiguration(relativePath, source, lexical.comments)
+  auditTypeScriptDirectives(relativePath, source, lexical.comments)
+  auditComputedDomHtml(relativePath, source, lexical.tokens)
+  if (extname(relativePath) === ".vue") auditVueDirectives(relativePath, source, lexical.tokens)
+  auditDomHtml(relativePath, source, lexical.tokens)
 
   if (relativePath === capabilityPath) {
-    auditCapabilityUtility(relativePath, source)
+    auditCapabilityUtility(relativePath, source, lexical)
     return
   }
-  auditCapabilityAssertions(relativePath, source)
+  auditCapabilityAssertions(relativePath, source, lexical)
 }
 
 function readSource(absolutePath, relativePath) {
@@ -366,31 +770,8 @@ function auditEslintConfig() {
     return
   }
 
-  const propertyPattern = name => new RegExp(
-    `(?:\\[\\s*["']${name}["']\\s*\\]|\\b${name}\\b)\\s*:`,
-    "gu"
-  )
-  const rulesProperties = [...source.matchAll(propertyPattern("rules"))]
-  for (const match of rulesProperties) {
-    addViolation(relativePath, lineNumberAt(source, match.index), "ESLint rules overrides are forbidden")
-  }
-
-  const ignoreProperties = [...source.matchAll(propertyPattern("ignores"))]
-  const ignoreBlocks = [...source.matchAll(/\bignores\s*:\s*\[([\s\S]*?)\]/gu)]
-  const block = ignoreBlocks.length === 1 ? ignoreBlocks[0][1] : null
-  const parsed = []
-  let residual = block ?? "invalid"
-  if (block !== null) {
-    const quotedValue = /(["'])(.*?)\1/gu
-    for (const match of block.matchAll(quotedValue)) parsed.push(match[2])
-    residual = block.replace(quotedValue, "").replace(/[\s,]/gu, "")
-  }
-  if (residual.length > 0
-    || ignoreProperties.length !== 1
-    || parsed.length !== expectedEslintIgnores.length
-    || parsed.some((value, index) => value !== expectedEslintIgnores[index])) {
-    const index = ignoreProperties[0]?.index ?? 0
-    addViolation(relativePath, lineNumberAt(source, index), "ESLint ignores must equal the seven reviewed path families")
+  if (source !== canonicalEslintConfig) {
+    addViolation(relativePath, 1, "ESLint configuration must equal the canonical reviewed file")
   }
 }
 

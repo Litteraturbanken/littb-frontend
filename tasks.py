@@ -173,41 +173,73 @@ def _verify_visual_baselines(
     repository: Path = ROOT,
     authority: str = "06add2bb",
 ) -> None:
-    for command, message in (
-        (
-            ["git", "diff", "--exit-code", f"{authority}..HEAD", "--", VISUAL_BASELINE_PATH],
-            "Committed visual baselines differ from the immutable authority",
-        ),
-        (
-            ["git", "diff", "--exit-code", "--cached", "--", VISUAL_BASELINE_PATH],
-            "Staged visual baseline changes are forbidden",
-        ),
-        (
-            ["git", "diff", "--exit-code", "--", VISUAL_BASELINE_PATH],
-            "Unstaged visual baseline changes are forbidden",
-        ),
-    ):
-        result = subprocess.run(
-            command,
-            cwd=repository,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            raise Exit(message)
-
-    untracked = subprocess.run(
-        ["git", "ls-files", "--others", "--", VISUAL_BASELINE_PATH],
+    root_result = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
         cwd=repository,
         capture_output=True,
         text=True,
         check=False,
     )
-    if untracked.returncode != 0:
-        raise Exit("Unable to inspect untracked visual baselines")
-    if untracked.stdout.strip():
-        raise Exit("Untracked visual baseline files are forbidden")
+    if root_result.returncode != 0:
+        raise Exit("Unable to resolve the visual-baseline repository root")
+    repository_root = Path(root_result.stdout.strip()).resolve()
+
+    authority_result = subprocess.run(
+        ["git", "rev-parse", "--verify", "--quiet", f"{authority}^{{commit}}"],
+        cwd=repository_root,
+        capture_output=True,
+        check=False,
+    )
+    if authority_result.returncode != 0:
+        raise Exit("The immutable visual-baseline authority is invalid")
+
+    tree_result = subprocess.run(
+        ["git", "ls-tree", "-r", "-z", "--full-tree", authority, "--", VISUAL_BASELINE_PATH],
+        cwd=repository_root,
+        capture_output=True,
+        check=False,
+    )
+    if tree_result.returncode != 0:
+        raise Exit("Unable to read the immutable visual-baseline authority")
+
+    authority_blobs: dict[str, bytes] = {}
+    for record in tree_result.stdout.split(b"\0"):
+        if not record:
+            continue
+        try:
+            metadata, encoded_path = record.split(b"\t", 1)
+            mode, object_type, object_id = metadata.split(b" ", 2)
+            relative_path = encoded_path.decode("utf-8")
+        except (UnicodeDecodeError, ValueError) as error:
+            raise Exit("The immutable visual-baseline authority is malformed") from error
+        if object_type != b"blob" or mode == b"120000":
+            raise Exit("The immutable visual-baseline authority contains a non-file entry")
+        authority_blobs[relative_path] = object_id
+
+    baseline_root = repository_root / VISUAL_BASELINE_PATH
+    if baseline_root.is_symlink():
+        raise Exit("Visual baseline symlinks are forbidden")
+    filesystem_files: dict[str, Path] = {}
+    if baseline_root.exists():
+        for path in baseline_root.rglob("*"):
+            if path.is_symlink():
+                raise Exit("Visual baseline symlinks are forbidden")
+            if path.is_file():
+                filesystem_files[path.relative_to(repository_root).as_posix()] = path
+
+    if set(authority_blobs) != set(filesystem_files):
+        raise Exit("The visual baseline tree differs from the immutable authority")
+    for relative_path, object_id in authority_blobs.items():
+        blob_result = subprocess.run(
+            ["git", "cat-file", "blob", object_id.decode("ascii")],
+            cwd=repository_root,
+            capture_output=True,
+            check=False,
+        )
+        if blob_result.returncode != 0:
+            raise Exit("Unable to read an immutable visual-baseline blob")
+        if filesystem_files[relative_path].read_bytes() != blob_result.stdout:
+            raise Exit(f"Visual baseline bytes differ from authority: {relative_path}")
 
 
 def _backend_has_v2(settings: Settings) -> bool:
@@ -514,6 +546,7 @@ def quality_library(context: Context) -> None:
     """Run the focused typed Library backend and Nuxt quality gates."""
     settings = Settings.from_environment()
     python = _backend_python(settings)
+    node_environment = _nuxt_node_environment(settings)
     _run(
         context,
         [
@@ -529,7 +562,12 @@ def quality_library(context: Context) -> None:
     )
     codegen_check.body(context)
     _check_nuxt_contract(context, settings, "test/nuxt/library-contract.ts")
-    _run(context, ["yarn", "typecheck"], settings.nuxt_dir)
+    _run(
+        context,
+        ["yarn", "typecheck"],
+        settings.nuxt_dir,
+        env=node_environment,
+    )
     _run(
         context,
         [
@@ -542,6 +580,7 @@ def quality_library(context: Context) -> None:
             "test/unit/v2-server.spec.ts",
         ],
         settings.nuxt_dir,
+        env=node_environment,
     )
     _run(
         context,
@@ -553,6 +592,7 @@ def quality_library(context: Context) -> None:
             "--project=ssr",
         ],
         settings.nuxt_dir,
+        env=node_environment,
     )
 
 

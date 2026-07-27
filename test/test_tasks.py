@@ -319,7 +319,12 @@ class InvokeTasksTest(unittest.TestCase):
                     settings.nuxt_dir,
                     env=node_environment,
                 ),
-                call(context, ["yarn", "typecheck"], settings.nuxt_dir),
+                call(
+                    context,
+                    ["yarn", "typecheck"],
+                    settings.nuxt_dir,
+                    env=node_environment,
+                ),
                 call(
                     context,
                     [
@@ -330,6 +335,7 @@ class InvokeTasksTest(unittest.TestCase):
                         "test/unit/v2-server.spec.ts",
                     ],
                     settings.nuxt_dir,
+                    env=node_environment,
                 ),
                 call(
                     context,
@@ -338,6 +344,7 @@ class InvokeTasksTest(unittest.TestCase):
                         "test/ssr/library.spec.ts", "--project=ssr",
                     ],
                     settings.nuxt_dir,
+                    env=node_environment,
                 ),
             ],
         )
@@ -566,6 +573,21 @@ class InvokeTasksTest(unittest.TestCase):
             authority = initialize_visual_repository(repository)
             tasks._verify_visual_baselines(repository, authority)
 
+    def test_visual_baseline_gate_rejects_a_committed_change_after_authority(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            authority = initialize_visual_repository(repository)
+            baseline = repository / "nuxt/test/visual/baselines/authority.png"
+            baseline.write_bytes(b"committed later")
+            self.assertEqual(run_git(repository, "add", str(baseline)).returncode, 0)
+            self.assertEqual(
+                run_git(repository, "commit", "-qm", "change visual baseline").returncode,
+                0,
+            )
+
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository, authority)
+
     def test_visual_baseline_gate_rejects_a_staged_tracked_change(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
@@ -592,6 +614,60 @@ class InvokeTasksTest(unittest.TestCase):
             (repository / "nuxt/test/visual/baselines/new.png").write_bytes(b"untracked")
             with self.assertRaises(tasks.Exit):
                 tasks._verify_visual_baselines(repository, authority)
+
+    def test_visual_baseline_gate_rejects_an_ordinary_untracked_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            authority = initialize_visual_repository(repository)
+            (repository / "nuxt/test/visual/baselines/new.png").write_bytes(b"untracked")
+
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository, authority)
+
+    def test_visual_baseline_gate_reads_assume_unchanged_files_from_disk(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            authority = initialize_visual_repository(repository)
+            relative_path = "nuxt/test/visual/baselines/authority.png"
+            self.assertEqual(
+                run_git(repository, "update-index", "--assume-unchanged", relative_path).returncode,
+                0,
+            )
+            (repository / relative_path).write_bytes(b"hidden assume-unchanged change")
+
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository, authority)
+
+    def test_visual_baseline_gate_reads_skip_worktree_files_from_disk(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            authority = initialize_visual_repository(repository)
+            relative_path = "nuxt/test/visual/baselines/authority.png"
+            self.assertEqual(
+                run_git(repository, "update-index", "--skip-worktree", relative_path).returncode,
+                0,
+            )
+            (repository / relative_path).write_bytes(b"hidden skip-worktree change")
+
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository, authority)
+
+    def test_visual_baseline_gate_resolves_repository_root_from_a_subdirectory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            authority = initialize_visual_repository(repository)
+            (repository / "nuxt/test/visual/baselines/authority.png").write_bytes(b"subdirectory change")
+
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository / "nuxt", authority)
+
+    def test_visual_baseline_gate_rejects_an_invalid_authority(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            initialize_visual_repository(repository)
+
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository, "not-an-authority")
 
     def test_release_quality_stops_after_the_first_failed_gate(self) -> None:
         context = tasks.Context()

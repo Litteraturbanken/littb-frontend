@@ -46,15 +46,20 @@ Renderable content is nominally typed by both kind and policy:
   acquire a capability.
 
 `RenderableHtmlContent.vue` is the sole live Vue-owned DOM HTML renderer. Each
-reviewed detached-DOM operation is pinned to an exact source signature and
-cardinality in `scripts/verify-architecture-policy.mjs`; an allowlisted file is
-not allowed to introduce another DOM HTML read or write. Adding or changing an
-operation requires security review and a deliberate policy update. Capability
-issuance is likewise pinned to the exact exported issuer surface and exactly
-one private constructor assertion. Vue raw-HTML directives (including
-arguments and modifiers), capability aliases/casts/generic escapes, exported
-branders, inline ESLint configuration, and unreviewed TypeScript suppression
-comments are blocking violations.
+reviewed detached-DOM operation is pinned to executable-token provenance, an
+exact source signature, and cardinality in
+`scripts/verify-architecture-policy.mjs`; comments and string literals cannot
+satisfy the review, and an allowlisted file cannot introduce another DOM HTML
+read or write. Computed DOM HTML keys and dynamic Vue arguments are forbidden.
+Adding or changing an operation requires security review and a deliberate
+policy update. Capability issuance is likewise pinned to exact issuer
+declarations and calls, the exact export surface, and exactly one private
+constructor assertion. The policy traces imported aliases, derived/indexed
+types, issuer values, and generic assertions. Vue raw-HTML directives
+(including arguments and modifiers), capability casts or generic escapes,
+exported branders, inline ESLint configuration, and unreviewed TypeScript
+suppression comments are blocking violations. The ESLint configuration itself
+must byte-for-byte equal the reviewed canonical file.
 
 Presentation stylesheet links are authority/path capabilities. Their bodies
 remain browser-owned and are not prefetched, proxied, or rewritten by Nuxt.
@@ -105,14 +110,17 @@ for page modules, parsers, and highlighters without expected-error directives.
 `invoke quality.library` runs the focused backend Library model, provider, and
 API tests; the deterministic snapshot/generated-client check; the Library
 compile-time contract; Nuxt typecheck and focused Library unit tests; and the
-Library SSR project. The full desktop/mobile browser and visual suites remain
-part of the parity gate above.
+Library SSR project. Every Yarn subprocess in this task uses the Node 22
+runtime pinned by `nuxt/.nvmrc`. The full desktop/mobile browser and visual
+suites remain part of the parity gate above.
 
 Committed visual baselines are immutable relative to authority commit
-`06add2bb`. The release task compares that authority with `HEAD`, the Git
-index, and the working tree, then rejects ordinary or ignored untracked files
-under the baseline directory. It never updates snapshots or generated
-artifacts.
+`06add2bb`. From the resolved repository root, the release task reads the
+authority tree's blob set and byte-compares it directly with the current
+filesystem baseline tree. This is independent of index flags such as
+assume-unchanged and skip-worktree, and it rejects changed, missing, added,
+ordinary-untracked, ignored-untracked, or symlinked baseline files. It never
+updates snapshots or generated artifacts.
 
 ## Next contract tranche
 
