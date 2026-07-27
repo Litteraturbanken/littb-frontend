@@ -94,10 +94,15 @@ type SourceInfoOperation = paths["/works/{author_id}/{title_path}/source-info"][
 type SourceInfoResponse = components["schemas"]["WorkSourceInfoResponse"]
 type SimilarWorksOperation = paths["/works/{work_id}/similar"]["get"]
 type SimilarWorksResponse = components["schemas"]["SimilarWorksResponse"]
+type LibrarySearchRequest = operations["v2_post_library_search"]["requestBody"]["content"]["application/json"]
+type LibrarySearchResponse = operations["v2_post_library_search"]["responses"][200]["content"]["application/json"]
+type LibraryCountRequest = operations["v2_post_library_counts"]["requestBody"]["content"]["application/json"]
+type LibraryCountResponse = operations["v2_post_library_counts"]["responses"][200]["content"]["application/json"]
+type LibraryOptionsResponse = operations["v2_get_library_options"]["responses"][200]["content"]["application/json"]
 
 const generatedReaderHitContract: ReaderHitOperation = null as unknown as
   operations["v2_get_work_search_hits"]
-const generatedAuthorWorksContract: AuthorWorksOperation = null as unknown as
+const _generatedAuthorWorksContract: AuthorWorksOperation = null as unknown as
   operations["v2_get_author_works"]
 const generatedAuthorDocumentContract: AuthorDocumentOperation = null as unknown as
   operations["v2_get_author_document"]
@@ -119,15 +124,15 @@ const generatedLegacyAuthorRouteResolution: LegacyAuthorRouteResolution = {
   author_id: "SöderbergH",
   title_id: "Förvillelser"
 }
-const generatedAuthorWorksResponse: AuthorWorksResponse = null as unknown as
+const _generatedAuthorWorksResponse: AuthorWorksResponse = null as unknown as
   operations["v2_get_author_works"]["responses"][200]["content"]["application/json"]
-const validAuthorWorkReadAction: AuthorWorkReadAction = {
+const _validAuthorWorkReadAction: AuthorWorkReadAction = {
   media_type: "etext",
   kind: "read",
   url: "/reader",
   download_filename: null
 }
-const validAuthorWorkDownloadAction: AuthorWorkDownloadAction = {
+const _validAuthorWorkDownloadAction: AuthorWorkDownloadAction = {
   media_type: "epub",
   kind: "download",
   url: "/book.epub",
@@ -543,7 +548,10 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_author_document_pdf_requests`, { method: "DELETE" }),
       fetch(`${origin}/_text_search/requests`, { method: "DELETE" }),
       fetch(`${origin}/_text_search/failures`, { method: "DELETE" }),
-      fetch(`${origin}/_text_search/delays`, { method: "DELETE" })
+      fetch(`${origin}/_text_search/delays`, { method: "DELETE" }),
+      fetch(`${origin}/_library_v2/requests`, { method: "DELETE" }),
+      fetch(`${origin}/_library_v2/failures`, { method: "DELETE" }),
+      fetch(`${origin}/_library_v2/delays`, { method: "DELETE" })
     ])
   })
 
@@ -4069,5 +4077,128 @@ describe("v2 fixture server operations", () => {
     expect(await (await fetch(`${origin}/_library_relevance_delays`)).json())
       .toEqual({ delays: {} })
     expect((await fetch(`${origin}/v2/stats`)).status).toBe(200)
+  })
+
+  test("serves typed Library options, all seven searches, and four counts on public and private paths", async () => {
+    const filters = {
+      query: "Selma",
+      gender: null,
+      categories: [],
+      narrowing_categories: [],
+      about_author_ids: [],
+      media: [],
+      languages: [],
+      year_from: null,
+      year_to: null
+    } satisfies components["schemas"]["LibraryFilters"]
+    const searches = [
+      { mode: "all", filters, sort: "relevance", reverse: false },
+      { mode: "authors", filters, sort: "name", reverse: false, limit: 150 },
+      { mode: "works", filters, sort: "author", reverse: false, page: 1, source_only: false },
+      { mode: "parts", filters, sort: "title", reverse: false, page: 1 },
+      { mode: "latest", filters, reverse: false, page: 1, hide_1800: false },
+      { mode: "epub", filters, sort: "popularity", reverse: false, page: 1 },
+      { mode: "pdf", filters, sort: "chronology", reverse: false, page: 1 }
+    ] satisfies LibrarySearchRequest[]
+    const counts = (["epub", "pdf", "works", "parts"] as const).map(mode => (
+      { mode, filters }
+    )) satisfies LibraryCountRequest[]
+
+    const options = await fetch(`${origin}/v2/library/options`)
+    expect(options.status).toBe(200)
+    expect(await options.json() as LibraryOptionsResponse).toEqual({
+      chronology: { year_from: 1800, year_to: 2026 },
+      about_authors: [{ author_id: "LagerlofS", label: "Lagerlöf, Selma" }]
+    })
+    for (const [index, body] of searches.entries()) {
+      const scope = index % 2 ? "private-v2" : "v2"
+      const response = await fetch(`${origin}/${scope}/library/search`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body)
+      })
+      expect(response.status).toBe(200)
+      expect((await response.json() as LibrarySearchResponse).mode).toBe(body.mode)
+    }
+    for (const body of counts) {
+      const response = await fetch(`${origin}/private-v2/library/counts`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body)
+      })
+      expect(response.status).toBe(200)
+      expect((await response.json() as LibraryCountResponse).mode).toBe(body.mode)
+    }
+
+    const ledger = await (await fetch(`${origin}/_library_v2/requests`)).json()
+    expect(ledger.options).toHaveLength(1)
+    expect(ledger.search.map((entry: { body: LibrarySearchRequest }) => entry.body)).toEqual(searches)
+    expect(ledger.counts.map((entry: { body: LibraryCountRequest }) => entry.body)).toEqual(counts)
+  })
+
+  test("strictly rejects malformed Library method, query, filters, lists, and mode fields", async () => {
+    const filters = {
+      query: "Selma", gender: null, categories: [], narrowing_categories: [],
+      about_author_ids: [], media: [], languages: [], year_from: null, year_to: null
+    }
+    const invalid = [
+      { mode: "all", filters, sort: "relevance", reverse: false, extra: true },
+      { mode: "all", filters: { ...filters, categories: ["texttype:roman", "texttype:roman"] }, sort: "relevance", reverse: false },
+      { mode: "works", filters, sort: "author", reverse: false, page: 1 },
+      { mode: "latest", filters, reverse: false, page: 1, hide_1800: false, sort: "author" }
+    ]
+    for (const body of invalid) {
+      const response = await fetch(`${origin}/v2/library/search`, {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
+      })
+      expect(response.status).toBe(422)
+    }
+    expect((await fetch(`${origin}/v2/library/options?extra=1`)).status).toBe(422)
+    expect((await fetch(`${origin}/v2/library/search`)).status).toBe(405)
+  })
+
+  test("keeps Library option sections and search/count failure and delay controls independent", async () => {
+    const filters = {
+      query: "", gender: null, categories: [], narrowing_categories: [],
+      about_author_ids: [], media: [], languages: [], year_from: null, year_to: null
+    }
+    const pdf = { mode: "pdf", filters, sort: "popularity", reverse: false, page: 1 } satisfies LibrarySearchRequest
+    const epubCount = { mode: "epub", filters } satisfies LibraryCountRequest
+    for (const failure of [
+      { operation: "options", section: "chronology" },
+      { operation: "search", mode: "pdf" },
+      { operation: "counts", mode: "epub" }
+    ]) {
+      expect((await fetch(`${origin}/_library_v2/failures`, {
+        method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(failure)
+      })).status).toBe(200)
+    }
+    expect(await (await fetch(`${origin}/v2/library/options`)).json()).toEqual({
+      chronology: null,
+      about_authors: [{ author_id: "LagerlofS", label: "Lagerlöf, Selma" }]
+    })
+    expect((await fetch(`${origin}/v2/library/search`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(pdf)
+    })).status).toBe(503)
+    expect((await fetch(`${origin}/v2/library/counts`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(epubCount)
+    })).status).toBe(503)
+
+    await fetch(`${origin}/_library_v2/failures`, { method: "DELETE" })
+    for (const delayed of [
+      { operation: "search", body: pdf, delay: 30 },
+      { operation: "counts", body: epubCount, delay: 30 }
+    ]) {
+      await fetch(`${origin}/_library_v2/delays`, {
+        method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(delayed)
+      })
+    }
+    for (const [path, body] of [["search", pdf], ["counts", epubCount]] as const) {
+      const started = Date.now()
+      expect((await fetch(`${origin}/v2/library/${path}`, {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
+      })).status).toBe(200)
+      expect(Date.now() - started).toBeGreaterThanOrEqual(20)
+    }
   })
 })

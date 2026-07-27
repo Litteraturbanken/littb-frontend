@@ -330,6 +330,13 @@ let libraryImprintRequests = []
 let libraryMetadataRequests = []
 let libraryMetadataVariant = "normal"
 let libraryDownloadRequests = []
+let libraryV2Requests = { options: [], search: [], counts: [] }
+let libraryV2Failures = {
+  options: new Set(),
+  search: new Set(),
+  counts: new Set()
+}
+let libraryV2Delays = { options: 0, search: {}, counts: {} }
 let authorDocumentRequests = []
 let authorDocumentAssetRequests = []
 let authorDocumentFailure = null
@@ -1182,6 +1189,17 @@ function validationError(response) {
   })
 }
 
+function methodNotAllowed(response, allowed) {
+  response.setHeader("allow", allowed.join(", "))
+  return sendJson(response, 405, {
+    error: {
+      code: "method_not_allowed",
+      message: "Method not allowed",
+      details: null
+    }
+  })
+}
+
 const textSearchCategories = new Set([
   "texttype:brev;brevsamling", "texttype:drama;dramasamling",
   "texttype:essä;essäsamling", "texttype:novellsamling;novell",
@@ -1206,6 +1224,157 @@ const textSearchLanguages = new Set([
   "language:fra", "language:lat", "language:smi", "proofread:true",
   "proofread:false"
 ])
+const libraryMedia = new Set([
+  "mediatype:etext", "mediatype:faksimil", "has_epub:true", "mediatype:pdf"
+])
+
+function validDistinctStringArray(value, maximum, allowed = null) {
+  return validStringArray(value, maximum, allowed) && new Set(value).size === value.length
+}
+
+function validLibraryFilters(filters) {
+  const fields = [
+    "query", "gender", "categories", "narrowing_categories", "about_author_ids",
+    "media", "languages", "year_from", "year_to"
+  ]
+  if (filters === null || typeof filters !== "object" || Array.isArray(filters)
+    || Object.keys(filters).length !== fields.length
+    || fields.some(field => !Object.hasOwn(filters, field))) return false
+  if (!validBoundedString(filters.query, 200, true)) return false
+  if (filters.gender !== null && filters.gender !== "female" && filters.gender !== "male") return false
+  if (!validDistinctStringArray(filters.categories, 38, textSearchCategories)
+    || !validDistinctStringArray(filters.narrowing_categories, 38, textSearchCategories)
+    || !validDistinctStringArray(filters.about_author_ids, 50)
+    || !validDistinctStringArray(filters.media, 4, libraryMedia)
+    || !validDistinctStringArray(filters.languages, 13, textSearchLanguages)) return false
+  for (const field of ["year_from", "year_to"]) {
+    if (filters[field] !== null
+      && (!Number.isInteger(filters[field]) || filters[field] < 1000 || filters[field] > 2200)) return false
+  }
+  return filters.year_from === null || filters.year_to === null || filters.year_from <= filters.year_to
+}
+
+const librarySearchFields = {
+  all: ["mode", "filters", "sort", "reverse"],
+  authors: ["mode", "filters", "sort", "reverse", "limit"],
+  works: ["mode", "filters", "sort", "reverse", "page", "source_only"],
+  parts: ["mode", "filters", "sort", "reverse", "page"],
+  latest: ["mode", "filters", "reverse", "page", "hide_1800"],
+  epub: ["mode", "filters", "sort", "reverse", "page"],
+  pdf: ["mode", "filters", "sort", "reverse", "page"]
+}
+const librarySorts = {
+  all: new Set(["relevance", "author", "title", "chronology"]),
+  authors: new Set(["name", "popularity", "chronology"]),
+  works: new Set(["author", "title", "popularity", "chronology"]),
+  parts: new Set(["author", "title"]),
+  epub: new Set(["author", "title", "popularity", "chronology"]),
+  pdf: new Set(["author", "title", "popularity", "chronology"])
+}
+
+function hasExactFields(body, fields) {
+  return Object.keys(body).length === fields.length
+    && fields.every(field => Object.hasOwn(body, field))
+}
+
+function validLibrarySearchBody(body) {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) return false
+  const fields = librarySearchFields[body.mode]
+  if (!fields || !hasExactFields(body, fields) || !validLibraryFilters(body.filters)
+    || typeof body.reverse !== "boolean") return false
+  if (body.mode !== "latest" && !librarySorts[body.mode].has(body.sort)) return false
+  if (body.mode === "authors") return Number.isInteger(body.limit) && body.limit >= 1 && body.limit <= 500
+  if (body.mode === "all") return true
+  if (!Number.isInteger(body.page) || body.page < 1 || body.page > 10_000) return false
+  if (body.mode === "works") return typeof body.source_only === "boolean"
+  if (body.mode === "latest") return typeof body.hide_1800 === "boolean"
+  return true
+}
+
+function validLibraryCountBody(body) {
+  return body !== null && typeof body === "object" && !Array.isArray(body)
+    && hasExactFields(body, ["mode", "filters"])
+    && ["epub", "pdf", "works", "parts"].includes(body.mode)
+    && validLibraryFilters(body.filters)
+}
+
+function canonicalLibraryIdentity(body) {
+  const filters = {
+    query: body.filters.query,
+    gender: body.filters.gender,
+    categories: body.filters.categories,
+    narrowing_categories: body.filters.narrowing_categories,
+    about_author_ids: body.filters.about_author_ids,
+    media: body.filters.media,
+    languages: body.filters.languages,
+    year_from: body.filters.year_from,
+    year_to: body.filters.year_to
+  }
+  if (body.mode === "all") return JSON.stringify({ mode: body.mode, filters, sort: body.sort, reverse: body.reverse })
+  if (body.mode === "authors") return JSON.stringify({ mode: body.mode, filters, sort: body.sort, reverse: body.reverse, limit: body.limit })
+  if (body.mode === "works") return JSON.stringify({ mode: body.mode, filters, sort: body.sort, reverse: body.reverse, page: body.page, source_only: body.source_only })
+  if (body.mode === "latest") return JSON.stringify({ mode: body.mode, filters, reverse: body.reverse, page: body.page, hide_1800: body.hide_1800 })
+  if (body.mode === "parts" || body.mode === "epub" || body.mode === "pdf") {
+    return JSON.stringify({ mode: body.mode, filters, sort: body.sort, reverse: body.reverse, page: body.page })
+  }
+  return JSON.stringify({ mode: body.mode, filters })
+}
+
+const libraryFixtureAuthor = {
+  author_id: "LagerlofS",
+  full_name: "Lagerlöf, Selma",
+  surname: "Lagerlöf",
+  role: "author",
+  birth_year: "1858",
+  death_year: "1940"
+}
+
+function librarySearchResponse(mode) {
+  if (mode === "all") return {
+    mode, total_hits: 1, items: [{
+      kind: "author", author_id: "LagerlofS", birth_year: 1858, death_year: 1940,
+      name_for_index: "Lagerlöf, Selma", popularity: 100
+    }]
+  }
+  if (mode === "authors") return {
+    mode, total_authors: 1, total_works: 1, total_parts: 0, items: [{
+      kind: "author", author_id: "LagerlofS", birth_year: 1858, death_year: 1940,
+      name_for_index: "Lagerlöf, Selma", popularity: 100
+    }]
+  }
+  if (mode === "latest") return {
+    mode, total_hits: 1, total_works: 1,
+    groups: [{ imported_on: "2026-07-27", source_count: 1, items: [] }]
+  }
+  if (mode === "epub" || mode === "pdf") return {
+    mode, total_hits: 1, total_works: 1, items: [{
+      author: libraryFixtureAuthor,
+      author_url: "/författare/LagerlofS/",
+      download_filename: `gosta.${mode}`,
+      download_url: `/${mode}/gosta.${mode}`,
+      full_title: "Gösta Berlings saga",
+      route_author_id: "LagerlofS", route_media_type: mode === "pdf" ? "pdf" : "etext",
+      route_title_id: "GostaBerlingsSaga", title: "Gösta Berlings saga",
+      title_url: "/författare/LagerlofS/titlar/GostaBerlingsSaga/", year: "1891"
+    }]
+  }
+  const browse = {
+    actions: [], author: libraryFixtureAuthor, author_url: "/författare/LagerlofS/",
+    full_title: "Gösta Berlings saga", key: "gosta", route_author_id: "LagerlofS",
+    route_media_type: "etext", route_title_id: "GostaBerlingsSaga", source_exports: [],
+    title: "Gösta Berlings saga", title_path: "LagerlofS/GostaBerlingsSaga",
+    title_url: "/författare/LagerlofS/titlar/GostaBerlingsSaga/", year: "1891"
+  }
+  return mode === "works"
+    ? { mode, items: [browse], total_hits: 1, total_works: 1 }
+    : { mode, items: [browse], total_parts: 1 }
+}
+
+function libraryCountResponse(mode) {
+  return mode === "works" || mode === "parts"
+    ? { mode, total: 1, author_ids: ["LagerlofS"] }
+    : { mode, total: 1 }
+}
 const textSearchLegacyFields = new Set([
   "author_ids", "keyword", "language", "main_author.gender", "mediatype",
   "modernized", "proofread", "provenance.library", "source", "texttype"
@@ -1912,6 +2081,75 @@ const server = createServer(async (request, response) => {
   if (request.method === "OPTIONS") return sendJson(response, 204, null)
   if (request.method === "GET" && url.pathname === "/health") {
     return sendJson(response, 200, { ok: true })
+  }
+  if (url.pathname === "/_library_v2/requests") {
+    if (request.method === "GET") return sendJson(response, 200, libraryV2Requests)
+    if (request.method === "DELETE") {
+      libraryV2Requests = { options: [], search: [], counts: [] }
+      return sendJson(response, 200, libraryV2Requests)
+    }
+    return validationError(response)
+  }
+  if (url.pathname === "/_library_v2/failures") {
+    const serialized = () => ({
+      options: [...libraryV2Failures.options],
+      search: [...libraryV2Failures.search],
+      counts: [...libraryV2Failures.counts]
+    })
+    if (request.method === "GET") return sendJson(response, 200, serialized())
+    if (request.method === "DELETE") {
+      libraryV2Failures = { options: new Set(), search: new Set(), counts: new Set() }
+      return sendJson(response, 200, serialized())
+    }
+    if (request.method === "PUT") {
+      let body
+      try { body = await readJson(request) } catch { return validationError(response) }
+      if (body === null || typeof body !== "object" || Array.isArray(body)) return validationError(response)
+      if (body.operation === "options") {
+        if (!hasExactFields(body, ["operation", "section"])
+          || !["chronology", "about_authors"].includes(body.section)) return validationError(response)
+        libraryV2Failures.options.add(body.section)
+      } else if (body.operation === "search") {
+        if (!hasExactFields(body, ["operation", "mode"])
+          || !Object.hasOwn(librarySearchFields, body.mode)) return validationError(response)
+        libraryV2Failures.search.add(body.mode)
+      } else if (body.operation === "counts") {
+        if (!hasExactFields(body, ["operation", "mode"])
+          || !["epub", "pdf", "works", "parts"].includes(body.mode)) return validationError(response)
+        libraryV2Failures.counts.add(body.mode)
+      } else return validationError(response)
+      return sendJson(response, 200, serialized())
+    }
+    return validationError(response)
+  }
+  if (url.pathname === "/_library_v2/delays") {
+    if (request.method === "GET") return sendJson(response, 200, libraryV2Delays)
+    if (request.method === "DELETE") {
+      libraryV2Delays = { options: 0, search: {}, counts: {} }
+      return sendJson(response, 200, libraryV2Delays)
+    }
+    if (request.method === "PUT") {
+      let body
+      try { body = await readJson(request) } catch { return validationError(response) }
+      if (body === null || typeof body !== "object" || Array.isArray(body)
+        || !Number.isInteger(body.delay) || body.delay < 0 || body.delay > 5000) {
+        return validationError(response)
+      }
+      if (body.operation === "options") {
+        if (!hasExactFields(body, ["operation", "delay"])) return validationError(response)
+        libraryV2Delays.options = body.delay
+      } else if (body.operation === "search") {
+        if (!hasExactFields(body, ["operation", "body", "delay"])
+          || !validLibrarySearchBody(body.body)) return validationError(response)
+        libraryV2Delays.search[canonicalLibraryIdentity(body.body)] = body.delay
+      } else if (body.operation === "counts") {
+        if (!hasExactFields(body, ["operation", "body", "delay"])
+          || !validLibraryCountBody(body.body)) return validationError(response)
+        libraryV2Delays.counts[canonicalLibraryIdentity(body.body)] = body.delay
+      } else return validationError(response)
+      return sendJson(response, 200, libraryV2Delays)
+    }
+    return validationError(response)
   }
   const textSearchControlMatch = /^\/_text_search\/(requests|failures|delays)(?:\/([^/]+))?$/.exec(
     url.pathname
@@ -3915,6 +4153,66 @@ const server = createServer(async (request, response) => {
     return sendJson(response, 200, dramawebbenCatalogFixture())
   }
 
+  if (apiPathname === "/v2/library/options") {
+    if (request.method !== "GET") return methodNotAllowed(response, ["GET"])
+    if ([...url.searchParams.keys()].length > 0) return validationError(response)
+    libraryV2Requests.options.push({
+      method: request.method,
+      path: url.pathname,
+      scope: url.pathname.startsWith("/private-v2/") ? "private" : "public"
+    })
+    if (libraryV2Delays.options > 0) {
+      await new Promise(resolve => setTimeout(resolve, libraryV2Delays.options))
+    }
+    return sendJson(response, 200, {
+      chronology: libraryV2Failures.options.has("chronology")
+        ? null
+        : { year_from: 1800, year_to: 2026 },
+      about_authors: libraryV2Failures.options.has("about_authors")
+        ? null
+        : [{ author_id: "LagerlofS", label: "Lagerlöf, Selma" }]
+    })
+  }
+
+  const libraryOperationMatch = /^\/v2\/library\/(search|counts)$/.exec(apiPathname)
+  if (libraryOperationMatch) {
+    const operation = libraryOperationMatch[1]
+    if (request.method !== "POST") return methodNotAllowed(response, ["POST"])
+    if ([...url.searchParams.keys()].length > 0) return validationError(response)
+    const rawContentType = request.headers["content-type"]
+    const contentType = typeof rawContentType === "string"
+      ? rawContentType.split(";", 1)[0].trim().toLowerCase()
+      : ""
+    if (contentType !== "application/json") return validationError(response)
+    let body
+    try { body = await readJson(request) } catch { return validationError(response) }
+    const valid = operation === "search"
+      ? validLibrarySearchBody(body)
+      : validLibraryCountBody(body)
+    if (!valid) return validationError(response)
+    libraryV2Requests[operation].push({
+      method: request.method,
+      path: url.pathname,
+      scope: url.pathname.startsWith("/private-v2/") ? "private" : "public",
+      body
+    })
+    const identity = canonicalLibraryIdentity(body)
+    const delay = libraryV2Delays[operation][identity] ?? 0
+    if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay))
+    if (libraryV2Failures[operation].has(body.mode)) {
+      return sendJson(response, 503, {
+        error: {
+          code: "library_search_unavailable",
+          message: "Unable to load Library results",
+          details: null
+        }
+      })
+    }
+    return sendJson(response, 200, operation === "search"
+      ? librarySearchResponse(body.mode)
+      : libraryCountResponse(body.mode))
+  }
+
   if (apiPathname === "/v2/text-search/chronology") {
     if (request.method !== "GET") return methodNotAllowed(response, ["GET"])
     const recordedRequest = {
@@ -4565,7 +4863,9 @@ const server = createServer(async (request, response) => {
       .filter(entry => !resources.length || resources.includes(entry.resource))
       .filter(entry => !normalizedWholeText
         || entry.title.toLocaleLowerCase("sv").includes(normalizedWholeText))
-      .map(({ resource, ...entry }) => entry)
+      .map(entry => Object.fromEntries(
+        Object.entries(entry).filter(([key]) => key !== "resource")
+      ))
     return sendJson(response, 200, { items })
   }
 

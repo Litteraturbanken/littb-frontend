@@ -10,7 +10,7 @@ const json = (body: unknown, status = 200) =>
 
 describe("generated LB API client", () => {
   test("calls the schema-relative stats path under the supplied v2 base", async () => {
-    const fetchMock = vi.fn(async (request: Request) =>
+    const fetchMock = vi.fn(async (_request: Request) =>
       json({
         works: 1,
         authors: 2,
@@ -83,6 +83,51 @@ describe("generated LB API client", () => {
     const request = fetchMock.mock.calls[0][0]
     expect(request.url).toBe("http://example.test/v2/contact")
     expect(request.method).toBe("POST")
+    expect(await request.json()).toEqual(body)
+  })
+
+  test("posts the exact typed Library body and forwards its AbortSignal", async () => {
+    const fetchMock = vi.fn(async () => json({
+      mode: "works",
+      items: [],
+      total_hits: 0,
+      total_works: 0
+    }))
+    const client = createLbApiClient("http://example.test/v2", fetchMock)
+    const controller = new AbortController()
+    const body = {
+      mode: "works" as const,
+      filters: {
+        query: "Selma",
+        gender: null,
+        categories: [],
+        narrowing_categories: [],
+        about_author_ids: [],
+        media: [],
+        languages: [],
+        year_from: null,
+        year_to: null
+      },
+      sort: "author" as const,
+      reverse: false,
+      page: 1,
+      source_only: false
+    }
+
+    const { data, error } = await client.POST("/library/search", {
+      body,
+      signal: controller.signal
+    })
+
+    expect(error).toBeUndefined()
+    expect(data?.mode).toBe("works")
+    expect(fetchMock).toHaveBeenCalledOnce()
+    const request = fetchMock.mock.calls[0][0]
+    expect(request.url).toBe("http://example.test/v2/library/search")
+    expect(request.method).toBe("POST")
+    expect(request.signal.aborted).toBe(false)
+    controller.abort()
+    expect(request.signal.aborted).toBe(true)
     expect(await request.json()).toEqual(body)
   })
 
