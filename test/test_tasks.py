@@ -26,6 +26,33 @@ def run_invoke(*arguments: str, env: dict[str, str] | None = None) -> subprocess
     )
 
 
+def run_git(repository: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *arguments],
+        cwd=repository,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def initialize_visual_repository(repository: Path) -> str:
+    baseline = repository / "nuxt" / "test" / "visual" / "baselines" / "authority.png"
+    baseline.parent.mkdir(parents=True)
+    baseline.write_bytes(b"authority")
+    for arguments in (
+        ("init", "-q"),
+        ("config", "user.email", "quality@example.test"),
+        ("config", "user.name", "Quality Gate"),
+        ("add", "."),
+        ("commit", "-qm", "visual authority"),
+    ):
+        result = run_git(repository, *arguments)
+        if result.returncode != 0:
+            raise AssertionError(result.stderr)
+    return run_git(repository, "rev-parse", "HEAD").stdout.strip()
+
+
 class InvokeTasksTest(unittest.TestCase):
     def test_default_backend_dir_is_discovered_from_the_main_repository(self) -> None:
         git_result = subprocess.CompletedProcess(
@@ -133,12 +160,15 @@ class InvokeTasksTest(unittest.TestCase):
             nuxt_port=3020,
         )
         context = tasks.Context()
+        node_environment = {"PATH": "/configured/node/bin:/usr/bin"}
 
         with patch.dict(
             os.environ,
             {"LB_BACKEND_PYTHON": "/configured/backend/virtual_env/bin/python"},
         ), patch.object(
             tasks.Settings, "from_environment", return_value=settings
+        ), patch.object(
+            tasks, "_nuxt_node_environment", return_value=node_environment
         ), patch.object(tasks, "_run") as run:
             tasks.codegen_check.body(context)
 
@@ -164,8 +194,38 @@ class InvokeTasksTest(unittest.TestCase):
             run.call_args_list[1].kwargs,
             {
                 "env": {
-                    "LBAPI_OPENAPI_SCHEMA": "/configured/backend/openapi/v2.json"
+                    "LBAPI_OPENAPI_SCHEMA": "/configured/backend/openapi/v2.json",
+                    **node_environment,
                 }
+            },
+        )
+
+    def test_codegen_generate_uses_the_configured_node_runtime(self) -> None:
+        settings = tasks.Settings(
+            backend_app="example.web:app",
+            backend_dir=Path("/configured/backend"),
+            backend_host="127.0.0.1",
+            backend_port=8000,
+            nuxt_dir=Path("/configured/nuxt"),
+            nuxt_port=3020,
+        )
+        context = tasks.Context()
+        node_environment = {"PATH": "/configured/node/bin:/usr/bin"}
+
+        with patch.object(
+            tasks.Settings, "from_environment", return_value=settings
+        ), patch.object(
+            tasks, "_nuxt_node_environment", return_value=node_environment
+        ), patch.object(tasks, "_run") as run:
+            tasks.codegen_generate.body(context)
+
+        run.assert_called_once_with(
+            context,
+            ["yarn", "api:generate"],
+            settings.nuxt_dir,
+            env={
+                "LBAPI_OPENAPI_SCHEMA": "http://127.0.0.1:8000/v2/openapi.json",
+                **node_environment,
             },
         )
 
@@ -202,12 +262,15 @@ class InvokeTasksTest(unittest.TestCase):
             nuxt_port=3020,
         )
         context = tasks.Context()
+        node_environment = {"PATH": "/configured/node/bin:/usr/bin"}
 
         with patch.dict(
             os.environ,
             {"LB_BACKEND_PYTHON": "/configured/backend/virtual_env/bin/python"},
         ), patch.object(
             tasks.Settings, "from_environment", return_value=settings
+        ), patch.object(
+            tasks, "_nuxt_node_environment", return_value=node_environment
         ), patch.object(tasks, "_run") as run:
             tasks.quality_library.body(context)
 
@@ -241,7 +304,8 @@ class InvokeTasksTest(unittest.TestCase):
                     ["yarn", "api:check"],
                     settings.nuxt_dir,
                     env={
-                        "LBAPI_OPENAPI_SCHEMA": "/configured/backend/openapi/v2.json"
+                        "LBAPI_OPENAPI_SCHEMA": "/configured/backend/openapi/v2.json",
+                        **node_environment,
                     },
                 ),
                 call(
@@ -253,6 +317,7 @@ class InvokeTasksTest(unittest.TestCase):
                         "test/nuxt/library-contract.ts",
                     ],
                     settings.nuxt_dir,
+                    env=node_environment,
                 ),
                 call(context, ["yarn", "typecheck"], settings.nuxt_dir),
                 call(
@@ -287,12 +352,15 @@ class InvokeTasksTest(unittest.TestCase):
             nuxt_port=3020,
         )
         context = tasks.Context()
+        node_environment = {"PATH": "/configured/node/bin:/usr/bin"}
 
         with patch.dict(
             os.environ,
             {"LB_BACKEND_PYTHON": "/configured/backend/virtual_env/bin/python"},
         ), patch.object(
             tasks.Settings, "from_environment", return_value=settings
+        ), patch.object(
+            tasks, "_nuxt_node_environment", return_value=node_environment
         ), patch.object(tasks, "_run") as run:
             tasks.quality_contract.body(context)
 
@@ -318,7 +386,8 @@ class InvokeTasksTest(unittest.TestCase):
                     ["yarn", "api:check"],
                     settings.nuxt_dir,
                     env={
-                        "LBAPI_OPENAPI_SCHEMA": "/configured/backend/openapi/v2.json"
+                        "LBAPI_OPENAPI_SCHEMA": "/configured/backend/openapi/v2.json",
+                        **node_environment,
                     },
                 ),
                 call(
@@ -329,21 +398,25 @@ class InvokeTasksTest(unittest.TestCase):
                         "test/nuxt/author-works-contract.ts",
                     ],
                     settings.nuxt_dir,
+                    env=node_environment,
                 ),
                 call(
                     context,
                     [*compile_prefix, "--strict", "test/nuxt/library-contract.ts"],
                     settings.nuxt_dir,
+                    env=node_environment,
                 ),
                 call(
                     context,
                     [*compile_prefix, "--strict", "test/nuxt/reader-source-info-contract.ts"],
                     settings.nuxt_dir,
+                    env=node_environment,
                 ),
                 call(
                     context,
                     [*compile_prefix, "--strict", "test/nuxt/renderable-html-contract.ts"],
                     settings.nuxt_dir,
+                    env=node_environment,
                 ),
                 call(
                     context,
@@ -364,6 +437,7 @@ class InvokeTasksTest(unittest.TestCase):
                         "test/unit/library-contract.spec.ts",
                     ],
                     settings.nuxt_dir,
+                    env=node_environment,
                 ),
             ],
         )
@@ -407,6 +481,38 @@ class InvokeTasksTest(unittest.TestCase):
         for invocation in run.call_args_list:
             self.assertNotIn("warn", invocation.kwargs)
 
+    def test_frontend_stops_when_the_app_contract_fails_nuxt_typecheck(self) -> None:
+        settings = tasks.Settings(
+            backend_app="example.web:app",
+            backend_dir=Path("/configured/backend"),
+            backend_host="127.0.0.1",
+            backend_port=8000,
+            nuxt_dir=Path("/configured/nuxt"),
+            nuxt_port=3020,
+        )
+        context = tasks.Context()
+        node_environment = {"PATH": "/configured/node/bin:/usr/bin"}
+        calls: list[list[str]] = []
+
+        def run_gate(_context: tasks.Context, command: list[str], _directory: Path, **_kwargs: object) -> None:
+            calls.append(command)
+            if command == ["yarn", "typecheck"]:
+                raise tasks.Exit("renderable-html-app-contract failed")
+
+        with patch.object(
+            tasks.Settings, "from_environment", return_value=settings
+        ), patch.object(
+            tasks, "_nuxt_node_environment", return_value=node_environment
+        ), patch.object(tasks, "_run", side_effect=run_gate):
+            with self.assertRaises(tasks.Exit):
+                tasks.quality_frontend.body(context)
+
+        self.assertEqual(calls, [
+            ["yarn", "policy:check"],
+            ["yarn", "lint"],
+            ["yarn", "typecheck"],
+        ])
+
     def test_release_quality_composes_fail_fast_gates_and_immutable_visual_check(self) -> None:
         with tempfile.TemporaryDirectory() as nuxt_dir:
             nuxt_path = Path(nuxt_dir)
@@ -433,6 +539,8 @@ class InvokeTasksTest(unittest.TestCase):
                 tasks.quality_contract, "body", calls.contract
             ), patch.object(
                 tasks.quality_frontend, "body", calls.frontend
+            ), patch.object(
+                tasks, "_verify_visual_baselines", calls.visual
             ), patch.object(tasks, "_run", calls.run):
                 tasks.quality_release.body(context)
 
@@ -448,20 +556,42 @@ class InvokeTasksTest(unittest.TestCase):
                     settings.nuxt_dir,
                     env={"PATH": "/configured/nvm/versions/node/v22.22.0/bin:/usr/bin"},
                 ),
-                call.run(
-                    context,
-                    [
-                        "git",
-                        "diff",
-                        "--exit-code",
-                        "06add2bb..HEAD",
-                        "--",
-                        "nuxt/test/visual/baselines/*",
-                    ],
-                    tasks.ROOT,
-                ),
+                call.visual(tasks.ROOT),
             ],
         )
+
+    def test_visual_baseline_gate_accepts_a_clean_authority_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            authority = initialize_visual_repository(repository)
+            tasks._verify_visual_baselines(repository, authority)
+
+    def test_visual_baseline_gate_rejects_a_staged_tracked_change(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            authority = initialize_visual_repository(repository)
+            baseline = repository / "nuxt/test/visual/baselines/authority.png"
+            baseline.write_bytes(b"staged")
+            self.assertEqual(run_git(repository, "add", str(baseline)).returncode, 0)
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository, authority)
+
+    def test_visual_baseline_gate_rejects_an_unstaged_tracked_change(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            authority = initialize_visual_repository(repository)
+            (repository / "nuxt/test/visual/baselines/authority.png").write_bytes(b"unstaged")
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository, authority)
+
+    def test_visual_baseline_gate_rejects_even_an_ignored_untracked_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            authority = initialize_visual_repository(repository)
+            (repository / ".gitignore").write_text("nuxt/test/visual/baselines/new.png\n")
+            (repository / "nuxt/test/visual/baselines/new.png").write_bytes(b"untracked")
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository, authority)
 
     def test_release_quality_stops_after_the_first_failed_gate(self) -> None:
         context = tasks.Context()

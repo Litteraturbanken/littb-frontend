@@ -17,6 +17,7 @@ from invoke import Collection, Context, Exit, task
 
 
 ROOT = Path(__file__).resolve().parent
+VISUAL_BASELINE_PATH = "nuxt/test/visual/baselines"
 
 
 def _default_backend_dir() -> Path:
@@ -164,7 +165,49 @@ def _check_nuxt_contract(
             contract_file,
         ],
         settings.nuxt_dir,
+        env=_nuxt_node_environment(settings),
     )
+
+
+def _verify_visual_baselines(
+    repository: Path = ROOT,
+    authority: str = "06add2bb",
+) -> None:
+    for command, message in (
+        (
+            ["git", "diff", "--exit-code", f"{authority}..HEAD", "--", VISUAL_BASELINE_PATH],
+            "Committed visual baselines differ from the immutable authority",
+        ),
+        (
+            ["git", "diff", "--exit-code", "--cached", "--", VISUAL_BASELINE_PATH],
+            "Staged visual baseline changes are forbidden",
+        ),
+        (
+            ["git", "diff", "--exit-code", "--", VISUAL_BASELINE_PATH],
+            "Unstaged visual baseline changes are forbidden",
+        ),
+    ):
+        result = subprocess.run(
+            command,
+            cwd=repository,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            raise Exit(message)
+
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--", VISUAL_BASELINE_PATH],
+        cwd=repository,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if untracked.returncode != 0:
+        raise Exit("Unable to inspect untracked visual baselines")
+    if untracked.stdout.strip():
+        raise Exit("Untracked visual baseline files are forbidden")
 
 
 def _backend_has_v2(settings: Settings) -> bool:
@@ -324,7 +367,10 @@ def codegen_generate(context: Context) -> None:
         context,
         ["yarn", "api:generate"],
         settings.nuxt_dir,
-        env={"LBAPI_OPENAPI_SCHEMA": _openapi_schema(settings)},
+        env={
+            "LBAPI_OPENAPI_SCHEMA": _openapi_schema(settings),
+            **_nuxt_node_environment(settings),
+        },
     )
 
 
@@ -338,7 +384,10 @@ def codegen_check(context: Context) -> None:
         context,
         ["yarn", "api:check"],
         settings.nuxt_dir,
-        env={"LBAPI_OPENAPI_SCHEMA": str(snapshot)},
+        env={
+            "LBAPI_OPENAPI_SCHEMA": str(snapshot),
+            **_nuxt_node_environment(settings),
+        },
     )
 
 
@@ -424,6 +473,7 @@ def quality_contract(context: Context) -> None:
         context,
         ["yarn", "vitest", "run", "test/unit/library-contract.spec.ts"],
         settings.nuxt_dir,
+        env=_nuxt_node_environment(settings),
     )
 
 
@@ -456,18 +506,7 @@ def quality_release(context: Context) -> None:
         settings.nuxt_dir,
         env=_nuxt_node_environment(settings),
     )
-    _run(
-        context,
-        [
-            "git",
-            "diff",
-            "--exit-code",
-            "06add2bb..HEAD",
-            "--",
-            "nuxt/test/visual/baselines/*",
-        ],
-        ROOT,
-    )
+    _verify_visual_baselines(ROOT)
 
 
 @task(name="library")

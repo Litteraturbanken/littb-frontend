@@ -45,12 +45,16 @@ Renderable content is nominally typed by both kind and policy:
   capability from another policy, or arbitrary concatenation cannot retain or
   acquire a capability.
 
-`RenderableHtmlContent.vue` is the sole live Vue-owned DOM HTML renderer. The
-only detached-DOM serialization sites are the explicit sanitizer/highlighter
-allowlist in `scripts/verify-architecture-policy.mjs`; adding a site requires
-security review and a deliberate policy update. Vue raw-HTML directives,
-general capability casts, exported generic branders, lint suppressions, and
-unreviewed TypeScript suppression comments are blocking violations.
+`RenderableHtmlContent.vue` is the sole live Vue-owned DOM HTML renderer. Each
+reviewed detached-DOM operation is pinned to an exact source signature and
+cardinality in `scripts/verify-architecture-policy.mjs`; an allowlisted file is
+not allowed to introduce another DOM HTML read or write. Adding or changing an
+operation requires security review and a deliberate policy update. Capability
+issuance is likewise pinned to the exact exported issuer surface and exactly
+one private constructor assertion. Vue raw-HTML directives (including
+arguments and modifiers), capability aliases/casts/generic escapes, exported
+branders, inline ESLint configuration, and unreviewed TypeScript suppression
+comments are blocking violations.
 
 Presentation stylesheet links are authority/path capabilities. Their bodies
 remain browser-owned and are not prefetched, proxied, or rewritten by Nuxt.
@@ -86,9 +90,17 @@ and domain behavior, not implementation syntax or duplicated schema text.
 `invoke quality.backend` covers strict mypy, critical Ruff rules, and the full
 backend v2 suite. `invoke quality.contract` checks the backend OpenAPI snapshot
 and generated Nuxt client deterministically from that committed file,
-compile-checks every standalone contract including the renderable-content
-contract exactly once, and runs the focused backend and Nuxt Library contract
-tests.
+compile-checks every standalone shared/DTO contract including the
+renderable-content contract exactly once, and runs the focused backend and
+Nuxt Library contract tests. These codegen and TypeScript commands use the
+Node 22 runtime pinned by `nuxt/.nvmrc`; backend Python commands do not inherit
+that frontend runtime environment.
+
+Renderable-content types have two complementary compile lanes. Standalone
+contracts prove generated DTO and shared-module relationships in
+`invoke quality.contract`. `nuxt/test/nuxt/renderable-html-app-contract.ts` is
+included by Nuxt's `yarn typecheck` and proves exact application-level types
+for page modules, parsers, and highlighters without expected-error directives.
 
 `invoke quality.library` runs the focused backend Library model, provider, and
 API tests; the deterministic snapshot/generated-client check; the Library
@@ -97,8 +109,10 @@ Library SSR project. The full desktop/mobile browser and visual suites remain
 part of the parity gate above.
 
 Committed visual baselines are immutable relative to authority commit
-`06add2bb`. The release task performs a Git blob/diff comparison and fails if a
-baseline was edited; it never updates snapshots or generated artifacts.
+`06add2bb`. The release task compares that authority with `HEAD`, the Git
+index, and the working tree, then rejects ordinary or ignored untracked files
+under the baseline directory. It never updates snapshots or generated
+artifacts.
 
 ## Next contract tranche
 
