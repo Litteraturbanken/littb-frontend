@@ -310,6 +310,6 @@ useHead(() => {
   <div class="center_col">
     <h1>Litteraturbanken</h1>
     <h2 class="caps">Nytt <i class="no-caps">&amp;</i> anmärkningsvärt</h2>
-    <div class="home-editorial" v-html="homeContent.bodyHtml" @click="navigateManagedHtml" />
+    <div class="home-editorial" @click="navigateManagedHtml" v-html="homeContent.bodyHtml" />
   </div>
 </template>

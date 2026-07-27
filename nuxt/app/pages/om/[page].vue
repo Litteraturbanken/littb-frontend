@@ -149,10 +149,10 @@ watch(
     <div
       v-if="pageKey === 'hjalp'"
       class="help_content content unbox page-help"
-      v-html="content || ''"
       @click="navigateManagedHtml"
+      v-html="content || ''"
     />
-    <section v-else v-html="content || ''" @click="navigateManagedHtml" />
+    <section v-else @click="navigateManagedHtml" v-html="content || ''" />
     <ClientOnly>
       <Teleport v-if="pageKey === 'hjalp'" to="#toolkit">
         <div toolkit>

@@ -419,7 +419,8 @@ onBeforeUnmount(() => {
                   :value="row"
                   :disabled="row.disabled"
                 >
-                  <li :class="{
+                  <li
+:class="{
                     active: optionActive,
                     'quick-search-correction': row.correction
                   }">

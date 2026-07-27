@@ -91,9 +91,9 @@ onMounted(() => {
 
 <template>
   <component
-    ref="modalRoot"
     :is="headlessReady ? Dialog : 'div'"
     v-if="open"
+    ref="modalRoot"
     :open="headlessReady ? open : undefined"
     :initial-focus="headlessReady ? modalRoot : undefined"
     :role="headlessReady ? undefined : 'dialog'"

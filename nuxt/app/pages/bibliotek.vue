@@ -4001,9 +4001,9 @@ onUnmounted(() => {
                           <div class="header block overflow-hidden text-ellipsis whitespace-nowrap text-lg leading-tight">
                             <span class="title_inner">
                               <NuxtLink
+                                v-library-tooltip="item.titleTooltip"
                                 :data-library-latest-title="item.titleId"
                                 data-library-tooltip-kind="title"
-                                v-library-tooltip="item.titleTooltip"
                                 :to="canonicalNuxtHref(item.titleHref)"
                               >{{ item.title }}</NuxtLink>
                             </span>
@@ -4016,8 +4016,8 @@ onUnmounted(() => {
                       <div class="text-ellipsis whitespace-nowrap overflow-hidden">
                         <span class="author uppercase text-sm">
                           <NuxtLink
-                            data-library-tooltip-kind="author"
                             v-library-tooltip="item.authorTooltip"
+                            data-library-tooltip-kind="author"
                             :to="canonicalNuxtHref(item.authorHref)"
                           >{{ item.surname }}</NuxtLink><template v-if="item.roleSuffix">{{ " " }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template>
                         </span>
@@ -4152,10 +4152,10 @@ onUnmounted(() => {
                       <div class="header block overflow-hidden text-ellipsis whitespace-nowrap text-lg leading-tight">
                         <span class="title_inner">
                           <button
+                            v-library-tooltip="item.titleTooltip"
                             type="button"
                             data-library-work-toggle
                             data-library-tooltip-kind="title"
-                            v-library-tooltip="item.titleTooltip"
                             class="library-work-toggle"
                             :aria-expanded="!downloadMode && expandedWorkKey === item.key"
                             @click.stop="downloadMode ? toggleSourceWork(item) : toggleWorkActions(item)"
@@ -4189,8 +4189,8 @@ onUnmounted(() => {
                     <div class="text-ellipsis whitespace-nowrap overflow-hidden">
                       <span class="author uppercase text-sm">
                         <NuxtLink
-                          data-library-tooltip-kind="author"
                           v-library-tooltip="item.authorTooltip"
+                          data-library-tooltip-kind="author"
                           :to="canonicalNuxtHref(item.authorHref)"
                         >{{ item.surname }}</NuxtLink><template v-if="item.roleSuffix">{{ " " }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template>
                       </span>
@@ -4209,16 +4209,16 @@ onUnmounted(() => {
                 >
                   <td class="title">
                     <span class="title_inner"><NuxtLink
-                      data-library-tooltip-kind="title"
                       v-library-tooltip="item.titleTooltip"
+                      data-library-tooltip-kind="title"
                       :to="canonicalNuxtHref(item.titleHref)"
                     >{{ item.title }}</NuxtLink></span>
                   </td>
                   <td class="hidden lg:table-cell w-28">{{ item.year }}</td>
                   <td class="text-right uppercase text-sm w-40">
                     <NuxtLink
-                      data-library-tooltip-kind="author"
                       v-library-tooltip="item.authorTooltip"
+                      data-library-tooltip-kind="author"
                       :to="canonicalNuxtHref(item.authorHref)"
                     >{{ item.surname }}</NuxtLink><template v-if="item.roleSuffix">{{ " " }}<span class="text-xs text-gray-600">{{ item.roleSuffix.trim() }}</span></template>
                   </td>
@@ -4286,10 +4286,10 @@ onUnmounted(() => {
                           <span class="title_inner">
                             <NuxtLink v-slot="{ navigate }" :to="item.titleTo" custom>
                               <a
+                                v-library-tooltip="item.titleTooltip"
                                 :data-library-epub-title="currentMode === 'epub' || undefined"
                                 :data-library-pdf-title="currentMode === 'pdf' || undefined"
                                 data-library-tooltip-kind="title"
-                                v-library-tooltip="item.titleTooltip"
                                 :href="item.titleHref"
                                 @click="navigate"
                               >{{ item.title }}</a>
@@ -4309,10 +4309,10 @@ onUnmounted(() => {
                     <div class="text-ellipsis whitespace-nowrap overflow-hidden">
                       <span class="author uppercase text-sm">
                         <NuxtLink
+                          v-library-tooltip="item.authorTooltip"
                           :data-library-epub-author="currentMode === 'epub' || undefined"
                           :data-library-pdf-author="currentMode === 'pdf' || undefined"
                           data-library-tooltip-kind="author"
-                          v-library-tooltip="item.authorTooltip"
                           :to="canonicalNuxtHref(item.authorHref)"
                         >{{ item.surname }}</NuxtLink><template v-if="item.roleSuffix">{{ " " }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template>
                       </span>
@@ -4403,8 +4403,8 @@ onUnmounted(() => {
               <Teleport to="body">
                 <div
                   v-if="formatPopoverOpen"
-                  ref="formatPopoverElement"
                   id="library-format-popover"
+                  ref="formatPopoverElement"
                   data-library-format-popover
                   class="popover top block bg-white border border-gray-700"
                   role="dialog"

@@ -75,8 +75,8 @@ watch(selectedSourceIdentity, () => {
       />
     </div>
     <img
-      :key="selectedSourceIdentity"
       v-show="!imageFailed"
+      :key="selectedSourceIdentity"
       class="faksimil"
       :src="selectedSource.url"
       :srcset="sourceSet"

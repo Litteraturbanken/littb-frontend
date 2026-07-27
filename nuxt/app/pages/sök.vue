@@ -1225,7 +1225,8 @@ useHead({
       </div>
 
       <ul class="search_opts_widget inline-block">
-        <li v-for="item in [
+        <li
+v-for="item in [
           ['default', 'SÖK EFTER ORD ELLER FRAS'],
           ['lemma', 'INKLUDERA BÖJNINGSFORMER'],
           ['modernize', 'INKLUDERA ÄLDRE STAVNINGSFORMER'],

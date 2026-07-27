@@ -250,8 +250,8 @@ useHead(() => ({
         <div class="page_content">
           <div
             class="content unbox"
-            v-html="page.bodyHtml"
             @click="navigateManagedHtml"
+            v-html="page.bodyHtml"
           />
         </div>
       </template>

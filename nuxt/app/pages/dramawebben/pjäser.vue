@@ -590,7 +590,7 @@ useHead(() => ({
                 <ComboboxButton class="select2-selection__arrow" aria-label="Visa författare"><b /></ComboboxButton>
               </div>
               <ComboboxOptions class="catalog_options select2-results__options">
-                <ComboboxOption :value="null" v-slot="{ active }" as="template">
+                <ComboboxOption v-slot="{ active }" :value="null" as="template">
                   <li class="select2-results__option" :class="{ 'select2-results__option--highlighted': active }">Alla författare</li>
                 </ComboboxOption>
                 <ComboboxOption
