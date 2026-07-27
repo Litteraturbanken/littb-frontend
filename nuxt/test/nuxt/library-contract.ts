@@ -59,6 +59,12 @@ type _SearchRequestUnionExact = Expect<Equal<SearchRequest, ExpectedSearchReques
 type _SearchResponseUnionExact = Expect<Equal<SearchResponse, ExpectedSearchResponse>>
 type _CountRequestUnionExact = Expect<Equal<CountRequest, ExpectedCountRequest>>
 type _CountResponseUnionExact = Expect<Equal<CountResponse, ExpectedCountResponse>>
+type SearchMode = "all" | "authors" | "works" | "parts" | "latest" | "epub" | "pdf"
+type CountMode = "epub" | "pdf" | "works" | "parts"
+type _SearchRequestModesExact = Expect<Equal<SearchRequest["mode"], SearchMode>>
+type _SearchResponseModesExact = Expect<Equal<SearchResponse["mode"], SearchMode>>
+type _CountRequestModesExact = Expect<Equal<CountRequest["mode"], CountMode>>
+type _CountResponseModesExact = Expect<Equal<CountResponse["mode"], CountMode>>
 type GeneratedBrowseAuthorIds = NonNullable<
   components["schemas"]["LibraryBrowseCountResponse"]["author_ids"]
 >
