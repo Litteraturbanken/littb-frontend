@@ -59,6 +59,8 @@ class InvokeTasksTest(unittest.TestCase):
             "status",
             "test",
             "typecheck",
+            "quality.backend",
+            "quality.contract",
         ):
             self.assertIn(task_name, result.stdout)
 
@@ -99,14 +101,51 @@ class InvokeTasksTest(unittest.TestCase):
     def test_nuxt_and_codegen_dry_runs_delegate_to_existing_scripts(self) -> None:
         nuxt = run_invoke("--dry", "dev.nuxt", env={"NUXT_PORT": "3456"})
         generate = run_invoke("--dry", "codegen")
-        check = run_invoke("--dry", "codegen.check")
+        backend_dir = ROOT
+        check = run_invoke(
+            "--dry",
+            "codegen.check",
+            env={"LB_BACKEND_DIR": str(backend_dir)},
+        )
 
         self.assertEqual(nuxt.returncode, 0, nuxt.stderr)
         self.assertIn("yarn dev --port 3456", nuxt.stdout)
         self.assertEqual(generate.returncode, 0, generate.stderr)
         self.assertIn("yarn api:generate", generate.stdout)
         self.assertEqual(check.returncode, 0, check.stderr)
+        self.assertIn("scripts/export_v2_openapi.py --check", check.stdout)
         self.assertIn("yarn api:check", check.stdout)
+        self.assertIn(
+            f"LBAPI_OPENAPI_SCHEMA={backend_dir / 'openapi' / 'v2.json'}",
+            check.stdout,
+        )
+        self.assertLess(
+            check.stdout.index("scripts/export_v2_openapi.py --check"),
+            check.stdout.index("yarn api:check"),
+        )
+
+    def test_backend_quality_dry_run_uses_pinned_repository_tools(self) -> None:
+        result = run_invoke(
+            "--dry", "quality.backend", env={"LB_BACKEND_DIR": str(ROOT)}
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("-m mypy --config-file mypy.ini lbapi/v2", result.stdout)
+        self.assertIn("-m ruff check lbapi/v2 --select E4,E7,E9,F,S", result.stdout)
+        self.assertIn("-m pytest -q test_lbapi/v2", result.stdout)
+
+    def test_contract_quality_checks_snapshot_before_generated_client(self) -> None:
+        result = run_invoke(
+            "--dry", "quality.contract", env={"LB_BACKEND_DIR": str(ROOT)}
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("scripts/export_v2_openapi.py --check", result.stdout)
+        self.assertIn("yarn api:check", result.stdout)
+        self.assertLess(
+            result.stdout.index("scripts/export_v2_openapi.py --check"),
+            result.stdout.index("yarn api:check"),
+        )
 
     def test_e2e_dry_run_delegates_to_the_focused_nuxt_live_runner(self) -> None:
         result = run_invoke(

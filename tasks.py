@@ -116,6 +116,18 @@ def _openapi_schema(settings: Settings) -> str:
     )
 
 
+def _openapi_snapshot(settings: Settings) -> Path:
+    return settings.backend_dir / "openapi" / "v2.json"
+
+
+def _check_backend_openapi(context: Context, settings: Settings) -> None:
+    _run(
+        context,
+        [_backend_python(settings), "scripts/export_v2_openapi.py", "--check"],
+        settings.backend_dir,
+    )
+
+
 def _backend_has_v2(settings: Settings) -> bool:
     return (settings.backend_dir / "lbapi" / "v2" / "app.py").is_file()
 
@@ -281,11 +293,15 @@ def codegen_generate(context: Context) -> None:
 def codegen_check(context: Context) -> None:
     """Check that generated TypeScript API types match the OpenAPI schema."""
     settings = Settings.from_environment()
+    snapshot = _openapi_snapshot(settings)
+    _check_backend_openapi(context, settings)
+    if context.config.run.dry:
+        print(f"LBAPI_OPENAPI_SCHEMA={snapshot}")
     _run(
         context,
         ["yarn", "api:check"],
         settings.nuxt_dir,
-        env={"LBAPI_OPENAPI_SCHEMA": _openapi_schema(settings)},
+        env={"LBAPI_OPENAPI_SCHEMA": str(snapshot)},
     )
 
 
@@ -320,6 +336,34 @@ def typecheck(context: Context) -> None:
     _run(context, ["yarn", "typecheck"], settings.nuxt_dir)
 
 
+@task(name="backend")
+def quality_backend(context: Context) -> None:
+    """Run the backend v2 static checks and tests."""
+    settings = Settings.from_environment()
+    python = _backend_python(settings)
+    _run(
+        context,
+        [python, "-m", "mypy", "--config-file", "mypy.ini", "lbapi/v2"],
+        settings.backend_dir,
+    )
+    _run(
+        context,
+        [python, "-m", "ruff", "check", "lbapi/v2", "--select", "E4,E7,E9,F,S"],
+        settings.backend_dir,
+    )
+    _run(
+        context,
+        [python, "-m", "pytest", "-q", "test_lbapi/v2"],
+        settings.backend_dir,
+    )
+
+
+@task(name="contract")
+def quality_contract(context: Context) -> None:
+    """Check the committed OpenAPI snapshot and generated API client."""
+    codegen_check.body(context)
+
+
 @task
 def status(_context: Context) -> None:
     """Show configured development paths, URLs, and listener status."""
@@ -345,9 +389,14 @@ codegen = Collection("codegen")
 codegen.add_task(codegen_generate)
 codegen.add_task(codegen_check)
 
+quality = Collection("quality")
+quality.add_task(quality_backend)
+quality.add_task(quality_contract)
+
 ns = Collection()
 ns.add_collection(dev)
 ns.add_collection(codegen)
+ns.add_collection(quality)
 ns.add_task(e2e)
 ns.add_task(test_task)
 ns.add_task(typecheck)
