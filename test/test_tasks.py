@@ -61,6 +61,7 @@ class InvokeTasksTest(unittest.TestCase):
             "typecheck",
             "quality.backend",
             "quality.contract",
+            "quality.library",
         ):
             self.assertIn(task_name, result.stdout)
 
@@ -187,6 +188,177 @@ class InvokeTasksTest(unittest.TestCase):
         self.assertLess(
             result.stdout.index("scripts/export_v2_openapi.py --check"),
             result.stdout.index("yarn api:check"),
+        )
+
+    def test_library_quality_runs_focused_backend_and_nuxt_gates(self) -> None:
+        settings = tasks.Settings(
+            backend_app="example.web:app",
+            backend_dir=Path("/configured/backend"),
+            backend_host="127.0.0.1",
+            backend_port=8000,
+            nuxt_dir=Path("/configured/nuxt"),
+            nuxt_port=3020,
+        )
+        context = tasks.Context()
+
+        with patch.dict(
+            os.environ,
+            {"LB_BACKEND_PYTHON": "/configured/backend/virtual_env/bin/python"},
+        ), patch.object(
+            tasks.Settings, "from_environment", return_value=settings
+        ), patch.object(tasks, "_run") as run:
+            tasks.quality_library.body(context)
+
+        self.assertEqual(
+            run.call_args_list,
+            [
+                call(
+                    context,
+                    [
+                        "/configured/backend/virtual_env/bin/python",
+                        "-m",
+                        "pytest",
+                        "-q",
+                        "test_lbapi/v2/test_library_models.py",
+                        "test_lbapi/v2/test_library_provider.py",
+                        "test_lbapi/v2/test_library_api.py",
+                    ],
+                    settings.backend_dir,
+                ),
+                call(
+                    context,
+                    [
+                        "/configured/backend/virtual_env/bin/python",
+                        "scripts/export_v2_openapi.py",
+                        "--check",
+                    ],
+                    settings.backend_dir,
+                ),
+                call(
+                    context,
+                    ["yarn", "api:check"],
+                    settings.nuxt_dir,
+                    env={
+                        "LBAPI_OPENAPI_SCHEMA": "/configured/backend/openapi/v2.json"
+                    },
+                ),
+                call(
+                    context,
+                    [
+                        "yarn", "tsc", "--noEmit", "--skipLibCheck",
+                        "--moduleResolution", "bundler", "--module", "esnext",
+                        "--target", "es2022", "--strict",
+                        "test/nuxt/library-contract.ts",
+                    ],
+                    settings.nuxt_dir,
+                ),
+                call(context, ["yarn", "typecheck"], settings.nuxt_dir),
+                call(
+                    context,
+                    [
+                        "yarn", "vitest", "run",
+                        "test/unit/library-contract.spec.ts",
+                        "test/unit/library-navigation.spec.ts",
+                        "test/unit/library-tooltip.spec.ts",
+                        "test/unit/v2-server.spec.ts",
+                    ],
+                    settings.nuxt_dir,
+                ),
+                call(
+                    context,
+                    [
+                        "yarn", "playwright", "test",
+                        "test/ssr/library.spec.ts", "--project=ssr",
+                    ],
+                    settings.nuxt_dir,
+                ),
+            ],
+        )
+
+    def test_contract_quality_runs_all_standalone_and_library_contract_gates(self) -> None:
+        settings = tasks.Settings(
+            backend_app="example.web:app",
+            backend_dir=Path("/configured/backend"),
+            backend_host="127.0.0.1",
+            backend_port=8000,
+            nuxt_dir=Path("/configured/nuxt"),
+            nuxt_port=3020,
+        )
+        context = tasks.Context()
+
+        with patch.dict(
+            os.environ,
+            {"LB_BACKEND_PYTHON": "/configured/backend/virtual_env/bin/python"},
+        ), patch.object(
+            tasks.Settings, "from_environment", return_value=settings
+        ), patch.object(tasks, "_run") as run:
+            tasks.quality_contract.body(context)
+
+        compile_prefix = [
+            "yarn", "tsc", "--noEmit", "--skipLibCheck",
+            "--moduleResolution", "bundler", "--module", "esnext",
+            "--target", "es2022",
+        ]
+        self.assertEqual(
+            run.call_args_list,
+            [
+                call(
+                    context,
+                    [
+                        "/configured/backend/virtual_env/bin/python",
+                        "scripts/export_v2_openapi.py",
+                        "--check",
+                    ],
+                    settings.backend_dir,
+                ),
+                call(
+                    context,
+                    ["yarn", "api:check"],
+                    settings.nuxt_dir,
+                    env={
+                        "LBAPI_OPENAPI_SCHEMA": "/configured/backend/openapi/v2.json"
+                    },
+                ),
+                call(
+                    context,
+                    [
+                        *compile_prefix,
+                        "--strict",
+                        "test/nuxt/author-works-contract.ts",
+                    ],
+                    settings.nuxt_dir,
+                ),
+                call(
+                    context,
+                    [*compile_prefix, "--strict", "test/nuxt/library-contract.ts"],
+                    settings.nuxt_dir,
+                ),
+                call(
+                    context,
+                    [*compile_prefix, "--strict", "test/nuxt/reader-source-info-contract.ts"],
+                    settings.nuxt_dir,
+                ),
+                call(
+                    context,
+                    [
+                        "/configured/backend/virtual_env/bin/python",
+                        "-m",
+                        "pytest",
+                        "-q",
+                        "test_lbapi/v2/test_library_provider.py",
+                        "test_lbapi/v2/test_library_api.py",
+                    ],
+                    settings.backend_dir,
+                ),
+                call(
+                    context,
+                    [
+                        "yarn", "vitest", "run",
+                        "test/unit/library-contract.spec.ts",
+                    ],
+                    settings.nuxt_dir,
+                ),
+            ],
         )
 
     def test_e2e_dry_run_delegates_to_the_focused_nuxt_live_runner(self) -> None:

@@ -128,6 +128,31 @@ def _check_backend_openapi(context: Context, settings: Settings) -> None:
     )
 
 
+def _check_nuxt_contract(
+    context: Context,
+    settings: Settings,
+    contract_file: str,
+) -> None:
+    _run(
+        context,
+        [
+            "yarn",
+            "tsc",
+            "--noEmit",
+            "--skipLibCheck",
+            "--moduleResolution",
+            "bundler",
+            "--module",
+            "esnext",
+            "--target",
+            "es2022",
+            "--strict",
+            contract_file,
+        ],
+        settings.nuxt_dir,
+    )
+
+
 def _backend_has_v2(settings: Settings) -> bool:
     return (settings.backend_dir / "lbapi" / "v2" / "app.py").is_file()
 
@@ -358,8 +383,80 @@ def quality_backend(context: Context) -> None:
 
 @task(name="contract")
 def quality_contract(context: Context) -> None:
-    """Check the committed OpenAPI snapshot and generated API client."""
+    """Run generated, compile-time, backend, and Nuxt contract checks."""
+    settings = Settings.from_environment()
+    python = _backend_python(settings)
     codegen_check.body(context)
+    for contract_file in (
+        "test/nuxt/author-works-contract.ts",
+        "test/nuxt/library-contract.ts",
+        "test/nuxt/reader-source-info-contract.ts",
+    ):
+        _check_nuxt_contract(context, settings, contract_file)
+    _run(
+        context,
+        [
+            python,
+            "-m",
+            "pytest",
+            "-q",
+            "test_lbapi/v2/test_library_provider.py",
+            "test_lbapi/v2/test_library_api.py",
+        ],
+        settings.backend_dir,
+    )
+    _run(
+        context,
+        ["yarn", "vitest", "run", "test/unit/library-contract.spec.ts"],
+        settings.nuxt_dir,
+    )
+
+
+@task(name="library")
+def quality_library(context: Context) -> None:
+    """Run the focused typed Library backend and Nuxt quality gates."""
+    settings = Settings.from_environment()
+    python = _backend_python(settings)
+    _run(
+        context,
+        [
+            python,
+            "-m",
+            "pytest",
+            "-q",
+            "test_lbapi/v2/test_library_models.py",
+            "test_lbapi/v2/test_library_provider.py",
+            "test_lbapi/v2/test_library_api.py",
+        ],
+        settings.backend_dir,
+    )
+    codegen_check.body(context)
+    _check_nuxt_contract(context, settings, "test/nuxt/library-contract.ts")
+    _run(context, ["yarn", "typecheck"], settings.nuxt_dir)
+    _run(
+        context,
+        [
+            "yarn",
+            "vitest",
+            "run",
+            "test/unit/library-contract.spec.ts",
+            "test/unit/library-navigation.spec.ts",
+            "test/unit/library-tooltip.spec.ts",
+            "test/unit/v2-server.spec.ts",
+        ],
+        settings.nuxt_dir,
+    )
+    _run(
+        context,
+        [
+            "yarn",
+            "playwright",
+            "test",
+            "test/ssr/library.spec.ts",
+            "--project=ssr",
+        ],
+        settings.nuxt_dir,
+    )
 
 
 @task
@@ -390,6 +487,7 @@ codegen.add_task(codegen_check)
 quality = Collection("quality")
 quality.add_task(quality_backend)
 quality.add_task(quality_contract)
+quality.add_task(quality_library)
 
 ns = Collection()
 ns.add_collection(dev)
