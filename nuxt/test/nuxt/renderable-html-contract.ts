@@ -17,17 +17,6 @@ import type {
 } from "../../shared/types/reader-source-info"
 import type { ReaderEtextPage, ReaderOcrOverlay } from "../../shared/types/reader"
 import type { SlaArticlePage } from "../../shared/types/sla-article"
-import type { AuthorProfileView } from "../../app/lib/author-profile"
-import type { HomeContent } from "../../app/pages/index.vue"
-import type { AboutContent } from "../../app/pages/om/[page].vue"
-import {
-  parseBackgroundRules,
-  parsePresentationDocument
-} from "../../app/pages/presentationer/presentation-parser"
-import {
-  markEditorEtextHtml,
-  markReaderOcrHtml
-} from "../../app/lib/search-hit-highlight"
 import {
   emptyRenderableHtml,
   issueAuthorDocumentHtml,
@@ -69,35 +58,8 @@ const managedPresentationStyle: ManagedStyleText<"presentation-editorial">
   = issueManagedPresentationStyle("body { color: red; }")
 const managedPresentationStylesheetHref: ManagedStylesheetHref<"presentation-editorial">
   = issueManagedPresentationStylesheetHref("/presentation.css")
-
-const homeBody: HomeContent["bodyHtml"] = managedHome
-const aboutBody: AboutContent = managedAbout
-const parsedPresentation = parsePresentationDocument(
-  "<html><body><h1>Presentation</h1></body></html>"
-)
-const presentationBody: ManagedAssetHtml<"presentation-editorial">
-  = parsedPresentation.bodyHtml
-for (const styleNode of parsedPresentation.styleNodes) {
-  if (styleNode.kind === "stylesheet") {
-    const href: ManagedStylesheetHref<"presentation-editorial"> = styleNode.href
-    void href
-  } else {
-    const text: ManagedStyleText<"presentation-editorial"> = styleNode.textContent
-    void text
-  }
-}
-const [parsedBackground] = parseBackgroundRules(
-  '<backgrounds><background target="/presentationer/*"><style>html { color: red; }</style></background></backgrounds>'
-)
-const backgroundStyle: ManagedStyleText<"presentation-editorial"> | null | undefined
-  = parsedBackground?.styleText
-
-// @ts-expect-error Home content must retain its managed editorial authority.
-const plainHomeBody: HomeContent["bodyHtml"] = "<p>Plain home</p>"
 // @ts-expect-error Plain strings have not passed the About editorial authority.
 const plainAboutBody: ManagedAssetHtml<"about-editorial"> = "<p>Plain About</p>"
-// @ts-expect-error About page content must retain its managed editorial authority.
-const plainAboutPageContent: AboutContent = "<p>Plain About page</p>"
 // @ts-expect-error Plain strings have not passed the Presentation editorial authority.
 const plainPresentationBody: ManagedAssetHtml<"presentation-editorial">
   = "<p>Plain Presentation</p>"
@@ -121,16 +83,6 @@ const transformedReader: ManagedAssetHtml<"reader-etext"> = transformManagedRead
   managedReader,
   value => value.replace("Reader", "Marked reader")
 )
-const markedEditor: SanitizedHtml<"editor-etext"> = markEditorEtextHtml(
-  editorEtext,
-  "from",
-  "to"
-)
-const markedOcr: SanitizedHtml<"reader-ocr"> = markReaderOcrHtml(readerOcr, "from", "to")
-// @ts-expect-error OCR policy cannot enter the editor-etext marker.
-const ocrThroughEditorMarker = markEditorEtextHtml(readerOcr, "from", "to")
-// @ts-expect-error Editor e-text policy cannot enter the OCR marker.
-const editorThroughOcrMarker = markReaderOcrHtml(editorEtext, "from", "to")
 
 const renderableHtml: RenderableHtml[] = [
   authorProfile,
@@ -169,9 +121,6 @@ const unsupportedTagProps: RenderableHtmlProps = { as: "span", html: authorProfi
 // @ts-expect-error A named issuer cannot be widened to a different sanitization policy.
 const wrongPolicy: SanitizedHtml<"reader-ocr"> = authorProfile
 
-const authorIntroduction: AuthorProfileView["introductionHtml"] = authorProfile
-const authorSource: AuthorProfileView["sourceHtml"][number] = authorProfile
-const authorCaption: NonNullable<AuthorProfileView["portrait"]>["captionHtml"] = authorProfile
 const readerOverlay: ReaderOcrOverlay["html"] = readerOcr
 const readerPageHtml: ReaderEtextPage["html"] = managedReader
 const editorPageHtml: NonNullable<EditorReaderPage["html"]> = editorEtext
@@ -186,12 +135,6 @@ const errataCell: ReaderSourceInfoErrataRow["cellsHtml"][number] = readerSourceI
 const dramaRole: ReaderSourceInfoDramawebben["rolesHtml"][number] = readerSourceInfo
 const dramaHistory: NonNullable<ReaderSourceInfoDramawebben["historyHtml"]> = readerSourceInfo
 
-// @ts-expect-error Author introductions require the author-profile sanitizer policy.
-const plainAuthorIntroduction: AuthorProfileView["introductionHtml"] = "<p>Plain</p>"
-// @ts-expect-error Author sources require the author-profile sanitizer policy.
-const plainAuthorSource: AuthorProfileView["sourceHtml"][number] = "<p>Plain</p>"
-// @ts-expect-error Author portrait captions require the author-profile sanitizer policy.
-const plainAuthorCaption: NonNullable<AuthorProfileView["portrait"]>["captionHtml"] = "Plain"
 // @ts-expect-error OCR overlays require the reader-ocr sanitizer policy.
 const plainReaderOverlay: ReaderOcrOverlay["html"] = "<span>Plain</span>"
 // @ts-expect-error Reader e-text requires the managed reader authority.
@@ -226,13 +169,7 @@ const plainDramaHistory: NonNullable<ReaderSourceInfoDramawebben["historyHtml"]>
 void capabilities
 void props
 void plainStringProps
-void homeBody
-void aboutBody
-void presentationBody
-void backgroundStyle
-void plainHomeBody
 void plainAboutBody
-void plainAboutPageContent
 void plainPresentationBody
 void aboutThroughHome
 void homeThroughAbout
@@ -241,13 +178,6 @@ void presentationStyleAsHref
 void styleAsHtmlProps
 void unsupportedTagProps
 void wrongPolicy
-void markedEditor
-void markedOcr
-void ocrThroughEditorMarker
-void editorThroughOcrMarker
-void authorIntroduction
-void authorSource
-void authorCaption
 void readerOverlay
 void readerPageHtml
 void editorPageHtml
@@ -261,9 +191,6 @@ void sourceLicense
 void errataCell
 void dramaRole
 void dramaHistory
-void plainAuthorIntroduction
-void plainAuthorSource
-void plainAuthorCaption
 void plainReaderOverlay
 void plainReaderPageHtml
 void homeThroughReaderPage

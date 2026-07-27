@@ -1,6 +1,37 @@
 import { describe, expect, test } from "vitest"
 
 describe("SearchMultiSelect grouped normalization", () => {
+  test("renders flat options when option groups are omitted", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, ssrContextKey }, { default: SearchMultiSelect }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/search/SearchMultiSelect.vue")
+    ])
+    const app = createApp({
+      setup: () => () => h(SearchMultiSelect, {
+        modelValue: [],
+        options: [
+          { value: "alpha", label: "Alfa" },
+          { value: "beta", label: "Beta" }
+        ],
+        placeholder: "Platta val"
+      })
+    })
+    app.provide(ssrContextKey, { modules: new Set<string>() })
+    app.mount(target)
+    await nextTick()
+
+    target.querySelector<HTMLElement>(".multiselect")!
+      .dispatchEvent(new window.Event("focus"))
+    await nextTick()
+
+    expect([...target.querySelectorAll<HTMLElement>('[role="option"]')]
+      .map(option => option.textContent?.trim()))
+      .toEqual(["Alfa", "Beta"])
+    app.unmount()
+  })
+
   test("emits each grouped value once while preserving an unknown selection", async () => {
     const target = document.createElement("div")
     document.body.append(target)

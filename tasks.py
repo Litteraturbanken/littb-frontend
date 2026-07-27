@@ -109,6 +109,20 @@ def _nuxt_environment(settings: Settings) -> dict[str, str]:
     }
 
 
+def _nuxt_node_environment(settings: Settings) -> dict[str, str]:
+    version_file = settings.nuxt_dir / ".nvmrc"
+    if not version_file.is_file():
+        raise Exit(f"Nuxt Node version file does not exist: {version_file}")
+    version = version_file.read_text().strip().removeprefix("v")
+    if not version:
+        raise Exit(f"Nuxt Node version file is empty: {version_file}")
+    nvm_directory = Path(os.environ.get("NVM_DIR", str(Path.home() / ".nvm")))
+    node_directory = nvm_directory / "versions" / "node" / f"v{version}" / "bin"
+    return {
+        "PATH": os.pathsep.join((str(node_directory), os.environ.get("PATH", "")))
+    }
+
+
 def _openapi_schema(settings: Settings) -> str:
     return os.environ.get(
         "LBAPI_OPENAPI_SCHEMA",
@@ -391,6 +405,7 @@ def quality_contract(context: Context) -> None:
         "test/nuxt/author-works-contract.ts",
         "test/nuxt/library-contract.ts",
         "test/nuxt/reader-source-info-contract.ts",
+        "test/nuxt/renderable-html-contract.ts",
     ):
         _check_nuxt_contract(context, settings, contract_file)
     _run(
@@ -409,6 +424,49 @@ def quality_contract(context: Context) -> None:
         context,
         ["yarn", "vitest", "run", "test/unit/library-contract.spec.ts"],
         settings.nuxt_dir,
+    )
+
+
+@task(name="frontend")
+def quality_frontend(context: Context) -> None:
+    """Run every blocking Nuxt policy, static, unit, build, and SSR gate."""
+    settings = Settings.from_environment()
+    environment = _nuxt_node_environment(settings)
+    for command in (
+        ["yarn", "policy:check"],
+        ["yarn", "lint"],
+        ["yarn", "typecheck"],
+        ["yarn", "test:unit"],
+        ["yarn", "build"],
+        ["yarn", "test:ssr"],
+    ):
+        _run(context, command, settings.nuxt_dir, env=environment)
+
+
+@task(name="release")
+def quality_release(context: Context) -> None:
+    """Run the complete backend, contract, frontend, browser, and visual gate."""
+    settings = Settings.from_environment()
+    quality_backend.body(context)
+    quality_contract.body(context)
+    quality_frontend.body(context)
+    _run(
+        context,
+        ["yarn", "test:e2e"],
+        settings.nuxt_dir,
+        env=_nuxt_node_environment(settings),
+    )
+    _run(
+        context,
+        [
+            "git",
+            "diff",
+            "--exit-code",
+            "06add2bb..HEAD",
+            "--",
+            "nuxt/test/visual/baselines/*",
+        ],
+        ROOT,
     )
 
 
@@ -487,7 +545,9 @@ codegen.add_task(codegen_check)
 quality = Collection("quality")
 quality.add_task(quality_backend)
 quality.add_task(quality_contract)
+quality.add_task(quality_frontend)
 quality.add_task(quality_library)
+quality.add_task(quality_release)
 
 ns = Collection()
 ns.add_collection(dev)

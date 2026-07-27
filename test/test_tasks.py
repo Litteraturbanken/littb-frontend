@@ -61,7 +61,9 @@ class InvokeTasksTest(unittest.TestCase):
             "typecheck",
             "quality.backend",
             "quality.contract",
+            "quality.frontend",
             "quality.library",
+            "quality.release",
         ):
             self.assertIn(task_name, result.stdout)
 
@@ -340,6 +342,11 @@ class InvokeTasksTest(unittest.TestCase):
                 ),
                 call(
                     context,
+                    [*compile_prefix, "--strict", "test/nuxt/renderable-html-contract.ts"],
+                    settings.nuxt_dir,
+                ),
+                call(
+                    context,
                     [
                         "/configured/backend/virtual_env/bin/python",
                         "-m",
@@ -360,6 +367,120 @@ class InvokeTasksTest(unittest.TestCase):
                 ),
             ],
         )
+
+    def test_frontend_quality_runs_every_blocking_gate_in_order_under_node_22(self) -> None:
+        with tempfile.TemporaryDirectory() as nuxt_dir:
+            nuxt_path = Path(nuxt_dir)
+            (nuxt_path / ".nvmrc").write_text("22.22.0\n")
+            settings = tasks.Settings(
+                backend_app="example.web:app",
+                backend_dir=Path("/configured/backend"),
+                backend_host="127.0.0.1",
+                backend_port=8000,
+                nuxt_dir=nuxt_path,
+                nuxt_port=3020,
+            )
+            context = tasks.Context()
+
+            with patch.dict(
+                os.environ,
+                {"NVM_DIR": "/configured/nvm", "PATH": "/usr/bin"},
+            ), patch.object(
+                tasks.Settings, "from_environment", return_value=settings
+            ), patch.object(tasks, "_run") as run:
+                tasks.quality_frontend.body(context)
+
+        node_environment = {
+            "PATH": "/configured/nvm/versions/node/v22.22.0/bin:/usr/bin"
+        }
+        self.assertEqual(
+            run.call_args_list,
+            [
+                call(context, ["yarn", "policy:check"], settings.nuxt_dir, env=node_environment),
+                call(context, ["yarn", "lint"], settings.nuxt_dir, env=node_environment),
+                call(context, ["yarn", "typecheck"], settings.nuxt_dir, env=node_environment),
+                call(context, ["yarn", "test:unit"], settings.nuxt_dir, env=node_environment),
+                call(context, ["yarn", "build"], settings.nuxt_dir, env=node_environment),
+                call(context, ["yarn", "test:ssr"], settings.nuxt_dir, env=node_environment),
+            ],
+        )
+        for invocation in run.call_args_list:
+            self.assertNotIn("warn", invocation.kwargs)
+
+    def test_release_quality_composes_fail_fast_gates_and_immutable_visual_check(self) -> None:
+        with tempfile.TemporaryDirectory() as nuxt_dir:
+            nuxt_path = Path(nuxt_dir)
+            (nuxt_path / ".nvmrc").write_text("22.22.0\n")
+            settings = tasks.Settings(
+                backend_app="example.web:app",
+                backend_dir=Path("/configured/backend"),
+                backend_host="127.0.0.1",
+                backend_port=8000,
+                nuxt_dir=nuxt_path,
+                nuxt_port=3020,
+            )
+            context = tasks.Context()
+            calls = MagicMock()
+
+            with patch.dict(
+                os.environ,
+                {"NVM_DIR": "/configured/nvm", "PATH": "/usr/bin"},
+            ), patch.object(
+                tasks.Settings, "from_environment", return_value=settings
+            ), patch.object(
+                tasks.quality_backend, "body", calls.backend
+            ), patch.object(
+                tasks.quality_contract, "body", calls.contract
+            ), patch.object(
+                tasks.quality_frontend, "body", calls.frontend
+            ), patch.object(tasks, "_run", calls.run):
+                tasks.quality_release.body(context)
+
+        self.assertEqual(
+            calls.mock_calls,
+            [
+                call.backend(context),
+                call.contract(context),
+                call.frontend(context),
+                call.run(
+                    context,
+                    ["yarn", "test:e2e"],
+                    settings.nuxt_dir,
+                    env={"PATH": "/configured/nvm/versions/node/v22.22.0/bin:/usr/bin"},
+                ),
+                call.run(
+                    context,
+                    [
+                        "git",
+                        "diff",
+                        "--exit-code",
+                        "06add2bb..HEAD",
+                        "--",
+                        "nuxt/test/visual/baselines/*",
+                    ],
+                    tasks.ROOT,
+                ),
+            ],
+        )
+
+    def test_release_quality_stops_after_the_first_failed_gate(self) -> None:
+        context = tasks.Context()
+        failure = tasks.Exit("backend failed")
+
+        with patch.object(
+            tasks.quality_backend, "body", side_effect=failure
+        ) as backend, patch.object(
+            tasks.quality_contract, "body"
+        ) as contract, patch.object(
+            tasks.quality_frontend, "body"
+        ) as frontend, patch.object(tasks, "_run") as run:
+            with self.assertRaises(tasks.Exit):
+                tasks.quality_release.body(context)
+
+        backend.assert_called_once_with(context)
+        contract.assert_not_called()
+        frontend.assert_not_called()
+        run.assert_not_called()
 
     def test_e2e_dry_run_delegates_to_the_focused_nuxt_live_runner(self) -> None:
         result = run_invoke(
