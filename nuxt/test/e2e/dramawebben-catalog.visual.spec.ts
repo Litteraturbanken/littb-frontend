@@ -1,9 +1,14 @@
+import { readFileSync } from "node:fs"
 import { expect, test, type APIRequestContext } from "@playwright/test"
 
 import { dramawebbenCatalogExpected } from "../fixtures/dramawebben-catalog-data.mjs"
 import { waitForVisualAssets } from "../helpers/visual"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
+const catalogPageSource = readFileSync(
+  new URL("../../app/pages/dramawebben/pjäser.vue", import.meta.url),
+  "utf8"
+)
 
 type CatalogCase = {
   kind: "plays" | "authors" | "ranges"
@@ -40,6 +45,27 @@ async function catalogRequests(request: APIRequestContext) {
 
 test.beforeEach(async ({ request }) => reset(request))
 test.afterEach(async ({ request }) => reset(request))
+
+test("catalog page exposes its exact three siblings through Vue Fragment", () => {
+  expect(catalogPageSource).toContain(
+    'import { defineComponent, Fragment as VueFragment, h } from "vue"'
+  )
+  expect(catalogPageSource).toContain(
+    "return () => h(VueFragment, null, slots.default?.())"
+  )
+  const pageTemplate = catalogPageSource.match(
+    /<template>\s*([\s\S]*?)\s*<\/template>\s*<style scoped>/u
+  )?.[1]
+  expect(pageTemplate).toMatch(/^<component :is="Fragment">/u)
+  expect(pageTemplate).toMatch(/<\/component>$/u)
+
+  const hashTarget = pageTemplate?.indexOf('<span id="dw"') ?? -1
+  const shell = pageTemplate?.indexOf('<DramawebbenShell page="pjäser">') ?? -1
+  const dialog = pageTemplate?.indexOf("<ReaderSourceInfoDialog") ?? -1
+  expect(hashTarget).toBeGreaterThan(-1)
+  expect(shell).toBeGreaterThan(hashTarget)
+  expect(dialog).toBeGreaterThan(shell)
+})
 
 for (const catalogCase of catalogCases) {
   test(`matches the populated Angular Dramawebben ${catalogCase.kind} authority`, async ({
@@ -81,6 +107,21 @@ for (const catalogCase of catalogCases) {
     )
     await expect(page.locator("#mainview > .cover.show")).toHaveCount(1)
     await expect(page.locator("#mainview > .subpage")).toHaveCount(1)
+    expect(await page.locator("#dw").evaluate(hashTarget => ({
+      cover: hashTarget.nextElementSibling?.classList.contains("cover"),
+      coverShow: hashTarget.nextElementSibling?.classList.contains("show"),
+      shell: hashTarget.nextElementSibling?.nextElementSibling?.classList.contains("subpage"),
+      sameParent:
+        hashTarget.parentNode === hashTarget.nextElementSibling?.nextElementSibling?.parentNode,
+      fallbackNodeType:
+        hashTarget.nextElementSibling?.nextElementSibling?.nextSibling?.nodeType
+    }))).toEqual({
+      cover: true,
+      coverShow: true,
+      shell: true,
+      sameParent: true,
+      fallbackNodeType: 8
+    })
     await expect(page.locator(".subpage ul.links li.active a"))
       .toHaveAttribute("href", "/dramawebben/pjäser")
     await expect(page.locator(".page_content"))

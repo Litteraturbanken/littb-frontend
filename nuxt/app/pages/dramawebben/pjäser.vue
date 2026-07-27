@@ -13,12 +13,14 @@ import {
   PopoverButton,
   PopoverPanel
 } from "@headlessui/vue"
+import { defineComponent, Fragment as VueFragment, h } from "vue"
 
 import DramawebbenShell from "~/components/dramawebben/DramawebbenShell.vue"
 import ReaderSourceInfoDialog from "~/components/reader/ReaderSourceInfoDialog.vue"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import { authorProfilePath } from "~/lib/author-profile"
+import { queryWithoutKey } from "~/lib/dramawebben-query"
 import { canonicalNuxtHref } from "~/lib/internal-navigation"
 import { readerSourceInfoIsOpen } from "~/lib/reader-routes"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
@@ -36,6 +38,13 @@ type CatalogWork = components["schemas"]["DramawebbenCatalogWork"]
 type RangeKey = "female_roles" | "male_roles" | "other_roles" | "number_of_acts"
   | "number_of_pages" | "number_of_roles"
 type CatalogResult = { status: 200 | 502 | 503, catalog: Catalog | null }
+
+const Fragment = defineComponent({
+  name: "DramawebbenFragment",
+  setup(_, { slots }) {
+    return () => h(VueFragment, null, slots.default?.())
+  }
+})
 
 const rangeFields: readonly { key: RangeKey, label: string }[] = [
   { key: "number_of_acts", label: "Antal akter" },
@@ -335,7 +344,14 @@ function openCatalogSourceInfo(event: MouseEvent, media: CatalogMedia): void {
 async function closeCatalogSourceInfo(): Promise<void> {
   if (!sourceInfoOpen.value) return
   const hash = import.meta.client ? window.location.hash : route.hash
-  await pushSourceInfoQuery(sourceInfoQuery(), hash)
+  const query = queryWithoutKey(
+    queryWithoutKey(
+      queryWithoutKey(route.query, "om-boken"),
+      "authorid"
+    ),
+    "titlepath"
+  )
+  await pushSourceInfoQuery(query, hash)
   await nextTick()
   sourceInfoTrigger?.focus()
   sourceInfoTrigger = null
@@ -477,9 +493,9 @@ const filteredWorks = computed(() => {
 })
 
 async function setQuery(key: string, value: string | null, push = false) {
-  const query = { ...route.query }
-  if (value === null || value === "" || value === "all") delete query[key]
-  else query[key] = value
+  const query = value === null || value === "" || value === "all"
+    ? queryWithoutKey(route.query, key)
+    : { ...route.query, [key]: value }
   await (push ? router.push({ path: route.path, query }) : router.replace({ path: route.path, query }))
 }
 
@@ -563,8 +579,9 @@ useHead(() => ({
 </script>
 
 <template>
-  <span id="dw" class="drama_hash_target" aria-hidden="true" />
-  <DramawebbenShell page="pjäser">
+  <component :is="Fragment">
+    <span id="dw" class="drama_hash_target" aria-hidden="true" />
+    <DramawebbenShell page="pjäser">
     <div v-if="catalog" class="catalog_page" :class="{ catalog_plays: listType === 'pjäser' }">
       <p class="max-w-prose mb-8">
         I Dramawebben hittar du pjäser som har mer metadata, till exempel information om
@@ -760,14 +777,15 @@ useHead(() => ({
       </table>
     </div>
     <p v-else class="error">Innehållet kan inte visas just nu.</p>
-  </DramawebbenShell>
-  <ReaderSourceInfoDialog
-    :open="sourceInfoOpen"
-    :loading="sourceInfoLoading"
-    :failed="sourceInfoFailed"
-    :source-info="sourceInfo"
-    @close="closeCatalogSourceInfo"
-  />
+    </DramawebbenShell>
+    <ReaderSourceInfoDialog
+      :open="sourceInfoOpen"
+      :loading="sourceInfoLoading"
+      :failed="sourceInfoFailed"
+      :source-info="sourceInfo"
+      @close="closeCatalogSourceInfo"
+    />
+  </component>
 </template>
 
 <style scoped>

@@ -86,6 +86,29 @@ function normalizedText(value: string | null | undefined) {
   return value?.replace(/\s+/gu, " ").trim()
 }
 
+function expectCatalogRootSiblings(document: Document, dialogOpen: boolean) {
+  const hashTarget = document.querySelector("#dw")
+  const shellCover = document.querySelector("#mainview > .cover")
+  const shell = document.querySelector("#mainview > .subpage")
+
+  expect(hashTarget).not.toBeNull()
+  expect(shellCover).not.toBeNull()
+  expect(shell).not.toBeNull()
+  expect(hashTarget?.parentNode).toBe(shellCover?.parentNode)
+  expect(hashTarget?.parentNode).toBe(shell?.parentNode)
+  expect(hashTarget?.nextElementSibling).toBe(shellCover)
+  expect(shellCover?.nextElementSibling).toBe(shell)
+  if (dialogOpen) {
+    const dialog = document.querySelector('.modal.about[role="dialog"]')
+    expect(dialog).not.toBeNull()
+    expect(dialog?.parentNode).toBe(shell?.parentNode)
+    expect(shell?.nextElementSibling).toBe(dialog)
+  } else {
+    expect(shell?.nextElementSibling).toBeNull()
+    expect(shell?.nextSibling?.nodeType).toBe(8)
+  }
+}
+
 function expectStartShell(html: string) {
   const { document } = parseHTML(html)
 
@@ -189,6 +212,7 @@ test("SSR renders the populated catalog through one private typed request", asyn
   const html = await response.text()
   expectManagedShell(html, "pjäser", "Dömd")
   const { document } = parseHTML(html)
+  expectCatalogRootSiblings(document, false)
   const rows = [...document.querySelectorAll("table.contenttable:not(.authors) tr")]
   expect(rows.map(row => normalizedText(row.textContent))).toEqual(
     dramawebbenCatalogExpected.plays
@@ -222,6 +246,7 @@ test("SSR renders a valid catalog source-information query in the initial HTML",
 
   expect(response.status()).toBe(200)
   const { document } = parseHTML(await response.text())
+  expectCatalogRootSiblings(document, true)
   const dialog = document.querySelector('.modal.about[role="dialog"]')
   expect(dialog?.getAttribute("aria-modal")).toBe("true")
   expect(normalizedText(dialog?.textContent)).toContain("Affärer")

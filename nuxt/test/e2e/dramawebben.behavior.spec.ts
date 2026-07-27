@@ -67,6 +67,28 @@ async function expectQuery(page: Page, key: string, value: string | null) {
   await expect.poll(() => new URL(page.url()).searchParams.get(key)).toBe(value)
 }
 
+async function expectClosedCatalogRootSiblings(page: Page) {
+  expect(await page.locator("#dw").evaluate(hashTarget => {
+    const shellCover = hashTarget.nextElementSibling
+    const shell = shellCover?.nextElementSibling
+    return {
+      cover: shellCover?.classList.contains("cover"),
+      coverShow: shellCover?.classList.contains("show"),
+      sameParent: hashTarget.parentNode === shell?.parentNode,
+      shell: shell?.classList.contains("subpage"),
+      fallbackNodeType: shell?.nextSibling?.nodeType,
+      followingElement: shell?.nextElementSibling?.tagName ?? null
+    }
+  })).toEqual({
+    cover: true,
+    coverShow: true,
+    sameParent: true,
+    shell: true,
+    fallbackNodeType: 8,
+    followingElement: null
+  })
+}
+
 async function setCatalogFailure(request: APIRequestContext, failure: string) {
   const response = await request.put(`${fixture}/_dramawebben_catalog_failure`, {
     data: { failure }
@@ -311,6 +333,7 @@ test("the catalog hydrates once from SSR without a browser or legacy data reques
   )
   await expect(page.locator("#mainview > .cover.show")).toHaveCount(1)
   await expect(page.locator("#mainview > .subpage")).toHaveCount(1)
+  await expectClosedCatalogRootSiblings(page)
   await expectExactLinks(page, "pjäser")
   await expect(page.locator("table.contenttable:not(.authors) tr")).toHaveText(
     dramawebbenCatalogExpected.plays
@@ -437,15 +460,41 @@ test("direct source-information query survives hydration, Escape, Back, and Forw
   const dialog = page.getByRole("dialog", { name: "Om boken", exact: true })
   await expect(dialog).toContainText("Affärer")
   await expect(dialog).toBeFocused()
+  expect(await dialog.evaluate(element => ({
+    portalRoot: element.closest("[data-headlessui-portal]")?.parentElement?.id,
+    portalBodyOwned:
+      element.closest("[data-headlessui-portal]")?.parentElement?.parentElement === document.body,
+    mainviewOwned: document.querySelector("#mainview")?.contains(element) ?? false
+  }))).toEqual({
+    portalRoot: "headlessui-portal-root",
+    portalBodyOwned: true,
+    mainviewOwned: false
+  })
 
   await page.keyboard.press("Escape")
   await expect(dialog).toHaveCount(0)
-  expect(new URL(page.url()).search).toBe("")
+  const closed = new URL(page.url())
+  expect(closed.search).toBe("?visa=f%C3%B6rfattare&repeat=one&repeat=two")
+  expect([...closed.searchParams.entries()]).toEqual([
+    ["visa", "författare"],
+    ["repeat", "one"],
+    ["repeat", "two"]
+  ])
+  await expectClosedCatalogRootSiblings(page)
 
   await page.goBack()
   await expect(dialog).toContainText("Affärer")
+  expect([...new URL(page.url()).searchParams.entries()]).toEqual([
+    ["om-boken", ""],
+    ["authorid", "AlmlöfN"],
+    ["titlepath", "Affarer"],
+    ["visa", "författare"],
+    ["repeat", "one"],
+    ["repeat", "two"]
+  ])
   await page.goForward()
   await expect(dialog).toHaveCount(0)
+  expect(new URL(page.url()).search).toBe("?visa=f%C3%B6rfattare&repeat=one&repeat=two")
   expect(await sourceInfoRequests(request)).toHaveLength(1)
   expect(problems).toEqual([])
 })
