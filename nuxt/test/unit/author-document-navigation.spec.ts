@@ -38,7 +38,7 @@ describe.each([
     )
     expect(source).toContain("const navigateManagedHtml = useManagedHtmlNavigation()")
     expect(source).toMatch(
-      /<div\s+class="content unbox"(?=[^>]*v-html="page\.bodyHtml")(?=[^>]*@click="navigateManagedHtml")[^>]*\/>/u
+      /<div\s+class="content unbox"(?=[^>]*\s+v-html="page\.bodyHtml")(?=[^>]*\s+@click="navigateManagedHtml")[^>]*\/>/u
     )
   })
 })
