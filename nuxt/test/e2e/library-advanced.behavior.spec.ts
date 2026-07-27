@@ -1,6 +1,18 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
 
+import type { operations } from "../../app/lib/api/generated/lbapi"
+
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
+type LibrarySearchRequest = operations["v2_post_library_search"]["requestBody"]["content"]["application/json"]
+type LibraryFilters = LibrarySearchRequest["filters"]
+
+function libraryFilters(overrides: Partial<LibraryFilters> = {}): LibraryFilters {
+  return {
+    query: "", gender: null, categories: [], narrowing_categories: [],
+    about_author_ids: [], media: [], languages: [], year_from: null, year_to: null,
+    ...overrides
+  }
+}
 
 async function resetRequests(request: APIRequestContext) {
   await Promise.all([
@@ -12,17 +24,19 @@ async function resetRequests(request: APIRequestContext) {
     request.delete(`${fixture}/_library_query_delays`),
     request.delete(`${fixture}/_library_imprint_range`),
     request.delete(`${fixture}/_library_imprint_failure`),
-    request.delete(`${fixture}/_library_imprint_requests`)
+    request.delete(`${fixture}/_library_imprint_requests`),
+    request.delete(`${fixture}/_library_v2/requests`),
+    request.delete(`${fixture}/_library_v2/failures`),
+    request.delete(`${fixture}/_library_v2/delays`)
   ])
 }
 
 async function relevanceQueries(request: APIRequestContext) {
-  const response = await request.get(`${fixture}/_library_relevance_requests`)
-  const ledger = (await response.json()).requests as Array<{
-    path: string
-    query: Record<string, string>
+  const response = await request.get(`${fixture}/_library_v2/requests`)
+  const ledger = (await response.json()).search as Array<{
+    method: string, path: string, scope: string, body: LibrarySearchRequest
   }>
-  return ledger.filter(item => item.path.includes("etext,faksimil,pdf,etext-part"))
+  return ledger.filter(item => item.body.mode === "all")
 }
 
 async function waitForHydration(page: import("@playwright/test").Page) {
@@ -65,8 +79,8 @@ test("advanced disclosure and controls use push history and restore from the URL
   expect(new URL(page.url()).searchParams.has("sida")).toBe(false)
   expect(new URL(page.url()).searchParams.get("keep")).toBe("ja")
   await expect.poll(async () => (await relevanceQueries(request)).length).toBe(1)
-  expect((await relevanceQueries(request)).at(-1)?.query.q)
-    .toBe("(gender:female OR authors>(gender:female))")
+  expect((await relevanceQueries(request)).at(-1)?.body.filters)
+    .toEqual(libraryFilters({ gender: "female" }))
 
   await page.goBack()
   await expect.poll(() => new URL(page.url()).searchParams.has("kön")).toBe(false)
@@ -135,10 +149,10 @@ test("multi facets and chronology compose exact safe predicates and commit once 
   expect(params.has("sida")).toBe(false)
 
   await expect.poll(async () => (await relevanceQueries(request)).length).toBe(6)
-  expect((await relevanceQueries(request)).at(-1)?.query.q).toBe(
-    "(sort_date_imprint.date:[1900 TO 1910] OR birth.date:[1900 TO 1910] OR death.date:[1900 TO 1910]) AND " +
-    "(language:swe OR proofread:false) AND (mediatype:etext OR has_epub:true)"
-  )
+  expect((await relevanceQueries(request)).at(-1)?.body.filters).toEqual(libraryFilters({
+    media: ["mediatype:etext", "has_epub:true"],
+    languages: ["language:swe", "proofread:false"], year_from: 1900, year_to: 1910
+  }))
 
   await ranges.nth(0).evaluate((input: HTMLInputElement) => {
     input.value = "1950"
@@ -250,8 +264,11 @@ test("a delayed advanced request cannot replace a newer route-owned result", asy
   page,
   request
 }) => {
-  const delayed = "(gender:female OR authors>(gender:female))"
-  await request.put(`${fixture}/_library_relevance_delays`, { data: { [delayed]: 900 } })
+  await request.put(`${fixture}/_library_v2/delays`, { data: {
+    operation: "search",
+    body: { mode: "all", filters: libraryFilters({ gender: "female" }), sort: "relevance", reverse: false },
+    delay: 900
+  } })
   await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })
 
   await page.locator("[data-library-gender]").selectOption("female")
@@ -281,17 +298,17 @@ test("category, publisher, about-author, and narrowing collections restore throu
 
   await chooseMultiOptions(page, page.locator("[data-library-about-authors]"), ["Selma Lagerlöf"])
   await expect.poll(() => new URL(page.url()).searchParams.get("about_authors"))
-    .toBe("LagerlöfS")
+    .toBe("LagerlofS")
 
   await chooseMultiOptions(page, page.locator("[data-library-narrowing]"), ["Humoristiska verk", "Brev"])
   await expect.poll(() => new URL(page.url()).searchParams.get("keywords_aux"))
     .toBe("texttype:brev;brevsamling,keyword:Humor")
   await expect.poll(async () => (await relevanceQueries(request)).length).toBe(5)
-  expect((await relevanceQueries(request)).at(-1)?.query.q).toBe(
-    "(texttype:(brev OR brevsamling) AND keyword:(Humor)) AND " +
-    "(authorkeyword>(authorid:LagerlöfS)) AND " +
-    "(texttype:roman OR provenance.library:SA)"
-  )
+  expect((await relevanceQueries(request)).at(-1)?.body.filters).toEqual(libraryFilters({
+    categories: ["texttype:roman", "provenance.library:SA"],
+    narrowing_categories: ["texttype:brev;brevsamling", "keyword:Humor"],
+    about_author_ids: ["LagerlofS"]
+  }))
 
   await page.goBack()
   await page.goBack()

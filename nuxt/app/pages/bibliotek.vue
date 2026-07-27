@@ -5,23 +5,19 @@ import { createLbApiClient } from "~/lib/api/client"
 import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
 import { legacyPaginationItems } from "~/lib/legacy-pagination"
 import {
+  buildLibraryCountRequest,
   buildLibrarySearchRequest,
+  type LibraryCountMode,
+  type LibraryCountResponse,
   type LibraryFilterState,
   type LibraryFilters,
   type LibraryOptionsResponse,
   type LibrarySearchState
 } from "~/lib/library"
 import {
-  libraryAuthorTooltipText,
-  usefulLibraryTooltipText
-} from "~/lib/library-tooltip"
-import {
   toLibrarySearchView,
-  type BrowseAction,
   type BrowseResult,
-  type DownloadResult,
-  type LibraryPageData as LibrarySuccessPageData,
-  type SourceExport
+  type LibraryPageData as LibrarySuccessPageData
 } from "~/lib/library/view-model"
 
 definePageMeta({ alias: ["/epub"] })
@@ -76,23 +72,10 @@ type LibraryRouteState = {
   advancedFilters: LibraryAdvancedFilters
 }
 
-type EpubResult = DownloadResult
 type EpubResponse = StatefulResponse<
   Extract<LibrarySuccessPageData, { mode: "epub" | "pdf" }>["response"]
 >
-type PdfResult = DownloadResult
 type PdfResponse = EpubResponse
-
-type BrowseCandidate = BrowseResult & {
-  authorId: string
-  downloadBase: string
-  searchAuthorId: string
-  titleId: string
-  workId: string
-  mediaType: string
-  searchable: boolean
-  exportTypes: string[]
-}
 
 type BrowseResponse = StatefulResponse<
   Extract<LibrarySuccessPageData, { mode: "works" | "parts" }>["response"]
@@ -108,31 +91,6 @@ type LibraryPageData =
   | { mode: "latest", response: LatestResponse }
   | { mode: "epub", response: EpubResponse }
   | { mode: "pdf", response: PdfResponse }
-
-type UnknownRecord = Record<string, unknown>
-
-function asRecord(value: unknown): UnknownRecord | null {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? value as UnknownRecord
-    : null
-}
-
-function stringAt(record: UnknownRecord | null, key: string): string {
-  const value = record?.[key]
-  if (typeof value === "string") return value.trim()
-  return typeof value === "number" && Number.isFinite(value) ? String(value) : ""
-}
-
-function recordAt(record: UnknownRecord | null, key: string): UnknownRecord | null {
-  return asRecord(record?.[key])
-}
-
-function recordsAt(record: UnknownRecord | null, key: string): UnknownRecord[] {
-  const value = record?.[key]
-  return Array.isArray(value)
-    ? value.map(asRecord).filter((item): item is UnknownRecord => item !== null)
-    : []
-}
 
 const libraryTooltipDelay = 500
 let libraryTooltipSequence = 0
@@ -260,290 +218,12 @@ const vLibraryTooltip: ObjectDirective<HTMLElement, string> = {
   }
 }
 
-function optionalYear(record: UnknownRecord, key: string): string {
-  return stringAt(recordAt(record, key), "plain")
-}
-
-function imprintYear(record: UnknownRecord): string {
-  return optionalYear(record, "sort_date_imprint")
-}
-
 function emptyLibraryResponse(failed = false): LibraryResponse {
   return { data: [], hits: 0, suggest: [], failed }
 }
 
-function safePathSegment(value: string): string {
-  if (!value || value === "." || value === ".."
-    || /[\/\\\u0000-\u001F\u007F]/.test(value)) return ""
-  try {
-    return encodeURIComponent(value)
-  } catch {
-    return ""
-  }
-}
-
-function safeDownloadWorkId(value: string): boolean {
-  return Boolean(safePathSegment(value)) && !value.includes(",")
-}
-
-function safeQueryComponent(value: string): string {
-  if (!value || /[\\\u0000-\u001F\u007F]/.test(value)) return ""
-  try {
-    return encodeURIComponent(value)
-  } catch {
-    return ""
-  }
-}
-
-function epubStringAt(record: UnknownRecord | null, key: string): string {
-  const value = record?.[key]
-  return typeof value === "string" ? value.trim() : ""
-}
-
-function parseEpubResult(value: unknown): EpubResult | null {
-  const record = asRecord(value)
-  if (!record || record.has_epub !== true) return null
-  const title = epubStringAt(record, "shorttitle") || epubStringAt(record, "title")
-  const titleId = epubStringAt(record, "work_titleid") || epubStringAt(record, "titleid")
-  const mediaType = epubStringAt(record, "mediatype")
-  const mainAuthor = recordAt(record, "main_author")
-  const authorId = epubStringAt(mainAuthor, "authorid")
-  const fullName = epubStringAt(mainAuthor, "full_name")
-  const surname = epubStringAt(mainAuthor, "surname")
-  const year = imprintYear(record)
-  const hasEpubExport = recordsAt(record, "export")
-    .some(item => epubStringAt(item, "type") === "epub")
-  const encodedAuthor = safePathSegment(authorId)
-  const encodedTitle = safePathSegment(titleId)
-  const encodedMedia = safePathSegment(mediaType)
-  if (!title || !encodedTitle || !encodedMedia || !encodedAuthor || !fullName || !surname
-    || !year || !hasEpubExport) return null
-  const role = epubStringAt(mainAuthor, "type")
-  const roleSuffix = role === "editor" ? " (red.)" : role === "illustrator" ? " (ill.)" : ""
-  return {
-    title,
-    titleTooltip: usefulLibraryTooltipText(record.title, title),
-    year,
-    surname,
-    authorTooltip: libraryAuthorTooltipText(mainAuthor, surname),
-    roleSuffix,
-    titleHref: `/f%C3%B6rfattare/${encodedAuthor}/titlar/${encodedTitle}/${encodedMedia}?om-boken`,
-    titleTo: {
-      name: "författare-author-titlar-title-mediatype",
-      params: { author: authorId, title: titleId, mediatype: mediaType },
-      query: { "om-boken": null }
-    },
-    authorHref: `/f%C3%B6rfattare/${encodedAuthor}`,
-    downloadHref: `/txt/epub/${encodedAuthor}_${encodedTitle}.epub`,
-    downloadFilename: ""
-  }
-}
-
-function parseEpubResponse(value: unknown): EpubResponse {
-  const record = asRecord(value)
-  const suggest = record?.suggest
-  if (!record || !Array.isArray(record.data) || typeof record.hits !== "number"
-    || !Number.isFinite(record.hits) || typeof record.distinct_hits !== "number"
-    || !Number.isFinite(record.distinct_hits)
-    || (suggest !== null && suggest !== undefined && !Array.isArray(suggest))) {
-    throw new Error("Invalid Library EPUB response")
-  }
-  return {
-    data: record.data.map(parseEpubResult).filter((item): item is EpubResult => item !== null),
-    hits: record.hits,
-    distinctHits: record.distinct_hits,
-    suggest: Array.isArray(suggest) ? suggest : [],
-    failed: false
-  }
-}
-
 function emptyEpubResponse(failed = false): EpubResponse {
   return { data: [], hits: 0, distinctHits: 0, suggest: [], failed }
-}
-
-function parseBrowseResult(value: unknown, mode: "works" | "parts"): BrowseCandidate | null {
-  const record = asRecord(value)
-  if (!record) return null
-  const title = epubStringAt(record, "shorttitle") || epubStringAt(record, "title")
-  const mediaType = epubStringAt(record, "mediatype")
-  const page = epubStringAt(record, "startpagename")
-  const mainAuthor = recordAt(record, "main_author")
-  const mainAuthorId = epubStringAt(mainAuthor, "authorid")
-  const workAuthor = recordsAt(record, "work_authors")[0] ?? null
-  const indexedAuthor = recordsAt(record, "authors")[0] ?? null
-  const readerAuthor = workAuthor || indexedAuthor || mainAuthor
-  const displayAuthor = mode === "parts" ? indexedAuthor || workAuthor : mainAuthor
-  const authorId = epubStringAt(readerAuthor, "authorid")
-  const fullName = epubStringAt(displayAuthor, "full_name")
-  const surname = epubStringAt(displayAuthor, "surname") || fullName
-  const titlePath = epubStringAt(record, "titlepath")
-  const titleId = epubStringAt(record, "work_titleid") || epubStringAt(record, "titleid")
-  const workId = epubStringAt(record, "lbworkid")
-  const encodedAuthor = safePathSegment(authorId)
-  const encodedTitle = safePathSegment(titleId)
-  const encodedTitlePath = safeQueryComponent(titlePath)
-  const encodedWork = safePathSegment(workId)
-  const encodedPage = safePathSegment(page)
-  const encodedMedia = safePathSegment(mediaType === "pdf" ? "faksimil" : mediaType)
-  const displayAuthorId = safePathSegment(epubStringAt(displayAuthor, "authorid"))
-  const indexedAuthorId = safePathSegment(epubStringAt(indexedAuthor, "authorid"))
-  if (!title || !surname || !encodedAuthor || !encodedTitle || !encodedMedia
-    || !encodedWork || !encodedTitlePath || !displayAuthorId
-    || (["etext", "faksimil"].includes(mediaType) && !encodedPage)
-    || (mediaType === "infopost" && !indexedAuthorId)) {
-    return null
-  }
-  const role = epubStringAt(displayAuthor, "type")
-  const sourceExports: SourceExport[] = []
-  if ((mediaType === "etext" || mediaType === "faksimil")
-    && safeDownloadWorkId(workId)) {
-    const allowedTypes = new Set(["txt", "xml", "workdb", "pdf"])
-    for (const exportRecord of recordsAt(record, "export")) {
-      const type = epubStringAt(exportRecord, "type")
-      const size = exportRecord.size
-      if (!allowedTypes.has(type) || (type === "pdf" && mediaType !== "faksimil")
-        || typeof size !== "number" || !Number.isFinite(size) || size < 0) continue
-      sourceExports.push({
-        lbworkid: workId,
-        mediatype: mediaType,
-        type: type as SourceExport["type"],
-        size
-      })
-    }
-  }
-  const titleHref = mediaType === "infopost"
-    ? `/dramawebben/pjäser?om-boken&authorid=${indexedAuthorId}&titlepath=${encodedTitlePath}`
-    : mediaType === "pdf"
-      ? `/txt/${encodedWork}/${encodedWork}.pdf`
-    : `/f%C3%B6rfattare/${encodedAuthor}/titlar/${encodedTitle}/sida/${encodedPage}/${encodedMedia}`
-  return {
-    key: `${encodedTitlePath}:${encodedWork}`,
-    titlePath,
-    title,
-    titleTooltip: usefulLibraryTooltipText(record.title, title),
-    year: imprintYear(record),
-    surname,
-    authorTooltip: libraryAuthorTooltipText(displayAuthor, surname),
-    roleSuffix: role === "editor" ? " (red.)" : role === "illustrator" ? " (ill.)" : "",
-    titleHref,
-    authorHref: `/f%C3%B6rfattare/${displayAuthorId}`,
-    actions: [],
-    sourceExports,
-    authorId: encodedAuthor,
-    downloadBase: `${authorId}_${titleId}`,
-    searchAuthorId: safePathSegment(mainAuthorId || authorId),
-    titleId: encodedTitle,
-    workId: encodedWork,
-    mediaType: mediaType === "pdf" ? "pdf" : encodedMedia,
-    searchable: record.searchable === true,
-    exportTypes: recordsAt(record, "export").map(item => epubStringAt(item, "type"))
-      .filter(Boolean)
-  }
-}
-
-const browseMediaOrder: Record<string, number> = { etext: 0, faksimil: 1, pdf: 2 }
-
-function groupBrowseWork(candidates: BrowseCandidate[]): BrowseResult {
-  const ordered = [...candidates].sort((left, right) => (
-    (browseMediaOrder[left.mediaType] ?? 99) - (browseMediaOrder[right.mediaType] ?? 99)
-  ))
-  const primary = ordered[0]!
-  const actions: BrowseAction[] = ordered
-    .filter(item => item.mediaType !== "pdf")
-    .map(item => ({
-        kind: "read" as const,
-        label: `Läs som ${item.mediaType}`,
-        href: item.titleHref,
-        downloadFilename: ""
-      }))
-  if (ordered.some(item => item.exportTypes.includes("epub"))) {
-    actions.push({
-      kind: "download",
-      label: "Ladda ner epub",
-      href: `/txt/epub/${primary.authorId}_${primary.titleId}.epub`,
-        downloadFilename: `${primary.downloadBase}.epub`
-    })
-  }
-  if (!ordered.some(item => item.mediaType === "pdf")
-    && ordered.some(item => item.exportTypes.includes("pdf"))) {
-    actions.push({
-      kind: "download",
-      label: "Ladda ner pdf",
-      href: `/export/faksimil/${primary.workId}.pdf`,
-      downloadFilename: `${primary.downloadBase}.pdf`
-    })
-  } else {
-    const pdf = ordered.find(item => item.mediaType === "pdf")
-    if (pdf) {
-      actions.push({
-        kind: "download",
-        label: "Ladda ner pdf",
-        href: `/txt/${pdf.workId}/${pdf.workId}.pdf`,
-        downloadFilename: `${pdf.downloadBase}.pdf`
-      })
-    }
-  }
-  if (ordered.some(item => item.searchable)) {
-    actions.push({
-      kind: "search",
-      label: "Gör en sökning i verket",
-      href: `/sok?forfattare=${primary.searchAuthorId}&titlar=${primary.workId}&avancerad`,
-      downloadFilename: ""
-    })
-  }
-  const aboutRepresentation = ordered.find(item => (
-    item.mediaType === "etext" || item.mediaType === "faksimil"
-  ))
-  if (aboutRepresentation) {
-    actions.push({
-      kind: "about",
-      label: "Läs mer om verket",
-      href: `${aboutRepresentation.titleHref}?om-boken`,
-      downloadFilename: ""
-    })
-  }
-  const sourceExports = ordered.flatMap(item => item.sourceExports).filter((item, index, all) => (
-    all.findIndex(candidate => candidate.lbworkid === item.lbworkid
-      && candidate.mediatype === item.mediatype && candidate.type === item.type) === index
-  ))
-  return { ...primary, actions, sourceExports }
-}
-
-function parseBrowseResponse(value: unknown, mode: "works" | "parts"): BrowseResponse {
-  const record = asRecord(value)
-  const suggest = record?.suggest
-  if (!record || !Array.isArray(record.data) || !Array.isArray(record.author_aggregation)
-    || typeof record.hits !== "number"
-    || !Number.isFinite(record.hits) || typeof record.distinct_hits !== "number"
-    || !Number.isFinite(record.distinct_hits)
-    || (suggest !== null && suggest !== undefined && !Array.isArray(suggest))) {
-    throw new Error(`Invalid Library ${mode} response`)
-  }
-
-  const parsed = record.data.map(item => parseBrowseResult(item, mode))
-    .filter((item): item is BrowseCandidate => item !== null)
-  const grouped = new Map<string, BrowseCandidate[]>()
-  for (const item of parsed) grouped.set(item.key, [...(grouped.get(item.key) ?? []), item])
-  const data: BrowseResult[] = [...grouped.values()].map(group => mode === "works"
-    ? groupBrowseWork(group)
-    : [...group].sort((left, right) => (
-        (browseMediaOrder[left.mediaType] ?? 99) - (browseMediaOrder[right.mediaType] ?? 99)
-      ))[0]!)
-  const authorIds: string[] = []
-  for (const value of record.author_aggregation) {
-    const id = stringAt(asRecord(value), "authorid")
-    if (!safePathSegment(id)) throw new Error(`Invalid Library ${mode} author aggregation`)
-    if (authorIds.includes(id)) continue
-    authorIds.push(id)
-  }
-  return {
-    data,
-    hits: record.hits,
-    distinctHits: record.distinct_hits,
-    suggest: Array.isArray(suggest) ? suggest : [],
-    failed: false,
-    authorIds
-  }
 }
 
 function emptyBrowseResponse(failed = false): BrowseResponse {
@@ -554,170 +234,6 @@ function emptyLatestResponse(failed = false): LatestResponse {
   return { groups: [], hits: 0, distinctHits: 0, suggest: [], failed }
 }
 
-const pdfMediaTypes = new Set(["etext", "faksimil", "pdf"])
-
-type PreferredAuthor =
-  | { valid: true, id: string }
-  | { valid: false }
-
-type ParsedPdfRepresentation = PdfResult & {
-  lbworkid: string
-  mediaType: string
-  publicPdfExport: boolean
-}
-
-function pdfIdentityAt(record: UnknownRecord | null, key: string): string {
-  const value = record?.[key]
-  return typeof value === "string" && value === value.trim() ? value : ""
-}
-
-function isSafeDisplayText(value: string): boolean {
-  return Boolean(value) && !/[\u0000-\u001F\u007F]/.test(value)
-}
-
-function preferredFilenameAuthor(record: UnknownRecord, mainAuthorId: string): PreferredAuthor {
-  for (const key of ["work_authors", "authors"] as const) {
-    const value = record[key]
-    if (value === undefined) continue
-    if (!Array.isArray(value)) return { valid: false }
-    if (value.length === 0) continue
-    const author = asRecord(value[0])
-    const authorId = pdfIdentityAt(author, "authorid")
-    if (!author || !safePathSegment(authorId)) return { valid: false }
-    return { valid: true, id: authorId }
-  }
-  return { valid: true, id: mainAuthorId }
-}
-
-function hasPublicPdfExport(record: UnknownRecord): boolean {
-  if (epubStringAt(record, "license") !== "pd") return false
-  const exports = record.export
-  if (!Array.isArray(exports)) return false
-  return exports.some((value) => {
-    const descriptor = asRecord(value)
-    return epubStringAt(descriptor, "type") === "pdf"
-      && typeof descriptor?.size === "number"
-      && Number.isFinite(descriptor.size)
-      && descriptor.size > 0
-  })
-}
-
-function parsePdfRepresentation(value: unknown): ParsedPdfRepresentation | null {
-  const record = asRecord(value)
-  if (!record) return null
-  const title = epubStringAt(record, "shorttitle") || epubStringAt(record, "title")
-  const titleId = pdfIdentityAt(record, "work_titleid") || pdfIdentityAt(record, "titleid")
-  const mediaType = pdfIdentityAt(record, "mediatype")
-  const lbworkid = pdfIdentityAt(record, "lbworkid")
-  const titlepath = pdfIdentityAt(record, "titlepath")
-  const year = imprintYear(record)
-  const mainAuthor = recordAt(record, "main_author")
-  const authorId = pdfIdentityAt(mainAuthor, "authorid")
-  const fullName = epubStringAt(mainAuthor, "full_name")
-  const surname = epubStringAt(mainAuthor, "surname")
-  const encodedAuthor = safePathSegment(authorId)
-  const encodedTitle = safePathSegment(titleId)
-  const encodedMedia = safePathSegment(mediaType)
-  const encodedWork = safePathSegment(lbworkid)
-  if (!isSafeDisplayText(title) || !isSafeDisplayText(year)
-    || !isSafeDisplayText(fullName) || !isSafeDisplayText(surname)
-    || !pdfMediaTypes.has(mediaType)
-    || !encodedAuthor || !encodedTitle || !encodedMedia || !encodedWork
-    || !safePathSegment(titlepath)) return null
-
-  const filenameAuthor = preferredFilenameAuthor(record, authorId)
-  if (!filenameAuthor.valid) return null
-  const encodedFilenameAuthor = safePathSegment(filenameAuthor.id)
-  if (!encodedFilenameAuthor) return null
-  const role = epubStringAt(mainAuthor, "type")
-  const roleSuffix = role === "editor" ? " (red.)" : role === "illustrator" ? " (ill.)" : ""
-  const direct = mediaType === "pdf"
-  const aboutMedia = direct ? "faksimil" : mediaType
-  const encodedAboutMedia = safePathSegment(aboutMedia)
-  const titleHref = `/f%C3%B6rfattare/${encodedAuthor}/titlar/${encodedTitle}/${encodedAboutMedia}?om-boken`
-
-  return {
-    title,
-    titleTooltip: usefulLibraryTooltipText(record.title, title),
-    year,
-    surname,
-    authorTooltip: libraryAuthorTooltipText(mainAuthor, surname),
-    roleSuffix,
-    titleHref,
-    titleTo: {
-      name: "författare-author-titlar-title-mediatype",
-      params: { author: authorId, title: titleId, mediatype: aboutMedia },
-      query: { "om-boken": null }
-    },
-    authorHref: `/f%C3%B6rfattare/${encodedAuthor}`,
-    downloadHref: direct
-      ? `/txt/${encodedWork}/${encodedWork}.pdf`
-      : `/export/faksimil/${encodedWork}.pdf`,
-    downloadFilename: `${filenameAuthor.id}_${titleId}.pdf`,
-    lbworkid,
-    mediaType,
-    publicPdfExport: hasPublicPdfExport(record)
-  }
-}
-
-function parsePdfGroup(group: unknown[]): PdfResult | null {
-  const parsed = group.map(parsePdfRepresentation)
-    .filter((item): item is ParsedPdfRepresentation => item !== null)
-  const mediaOrder = { etext: 0, faksimil: 1, pdf: 2 } as const
-  const groupMain = [...parsed].sort((left, right) =>
-    mediaOrder[left.mediaType as keyof typeof mediaOrder]
-    - mediaOrder[right.mediaType as keyof typeof mediaOrder]
-  )[0]
-  const direct = parsed.find(item => item.mediaType === "pdf")
-  const exportSource = parsed.find(item => item.publicPdfExport)
-  if (!groupMain || (!direct && !exportSource)) return null
-  const {
-    lbworkid: _lbworkid,
-    mediaType: _mediaType,
-    publicPdfExport: _publicPdfExport,
-    ...result
-  } = groupMain
-  return direct
-    ? {
-        ...result,
-        downloadHref: direct.downloadHref,
-        downloadFilename: direct.downloadFilename
-      }
-    : result
-}
-
-function parsePdfResponse(value: unknown): PdfResponse {
-  const record = asRecord(value)
-  const suggest = record?.suggest
-  if (!record || !Array.isArray(record.data) || typeof record.hits !== "number"
-    || !Number.isFinite(record.hits) || typeof record.distinct_hits !== "number"
-    || !Number.isFinite(record.distinct_hits)
-    || (suggest !== null && suggest !== undefined && !Array.isArray(suggest))) {
-    throw new Error("Invalid Library PDF response")
-  }
-
-  const groups = new Map<string, unknown[]>()
-  for (const value of record.data) {
-    const representation = asRecord(value)
-    const titlepath = pdfIdentityAt(representation, "titlepath")
-    const lbworkid = pdfIdentityAt(representation, "lbworkid")
-    if (!representation || !safePathSegment(titlepath) || !safePathSegment(lbworkid)) continue
-    const key = JSON.stringify([titlepath, lbworkid])
-    const group = groups.get(key)
-    if (group) group.push(value)
-    else groups.set(key, [value])
-  }
-
-  return {
-    data: [...groups.values()].map(parsePdfGroup)
-      .filter((item): item is PdfResult => item !== null),
-    hits: record.hits,
-    distinctHits: record.distinct_hits,
-    suggest: Array.isArray(suggest) ? suggest : [],
-    failed: false
-  }
-}
-
 function emptyPdfResponse(failed = false): PdfResponse {
   return { data: [], hits: 0, distinctHits: 0, suggest: [], failed }
 }
@@ -725,40 +241,28 @@ function emptyPdfResponse(failed = false): PdfResponse {
 const backgroundPath = "/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg"
 const description = "Blädda bland Litteraturbankens författare och titlar."
 
-const sorts: Array<{ key: RelevanceSortKey, label: string, expression: string }> = [
-  { key: "relevans", label: "Relevans", expression: "_score|desc" },
-  { key: "forfattare", label: "Författare", expression: "main_author.name_for_index|asc,sortkey|asc" },
-  { key: "titlar", label: "Titel", expression: "sortkey|asc" },
-  { key: "kronologi", label: "Tryckår", expression: "sort_date_imprint.date|desc" }
+const sorts: Array<{ key: RelevanceSortKey, label: string }> = [
+  { key: "relevans", label: "Relevans" },
+  { key: "forfattare", label: "Författare" },
+  { key: "titlar", label: "Titel" },
+  { key: "kronologi", label: "Tryckår" }
 ]
 
-const epubResultTypes = "etext,faksimil,pdf"
-const epubExcludedFields = "text,parts,sourcedesc,pages,errata"
-const epubIncludedFields = "lbworkid,titlepath,title,titleid,work_titleid,texttype,shorttitle,mediatype,searchable,imported,sort_date_imprint.plain,main_author.authorid,main_author.surname,main_author.full_name,main_author.birth,main_author.death,main_author.name_for_index,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword"
-const pdfIncludedFields = `${epubIncludedFields},license,authors.authorid,authors.surname`
-const epubQueryPrefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
-const epubSorts: Array<{ key: EpubSortKey, label: string, expression: string }> = [
-  { key: "forfattare", label: "Författare", expression: "main_author.name_for_index|asc,sortkey|asc" },
-  { key: "titlar", label: "Titel", expression: "sortkey|asc" },
-  { key: "popularitet", label: "Populärt", expression: "popularity|desc" },
-  { key: "kronologi", label: "Tryckår", expression: "sort_date_imprint.date|desc" }
+const epubSorts: Array<{ key: EpubSortKey, label: string }> = [
+  { key: "forfattare", label: "Författare" },
+  { key: "titlar", label: "Titel" },
+  { key: "popularitet", label: "Populärt" },
+  { key: "kronologi", label: "Tryckår" }
 ]
-const authorSorts: Array<{ key: AuthorSortKey, label: string, expression: string }> = [
-  { key: "namn", label: "Namn", expression: "name_for_index|asc" },
-  { key: "popularitet", label: "Populärt", expression: "popularity|desc" },
-  { key: "kronologi", label: "Årtal", expression: "birth.date|asc" }
+const authorSorts: Array<{ key: AuthorSortKey, label: string }> = [
+  { key: "namn", label: "Namn" },
+  { key: "popularitet", label: "Populärt" },
+  { key: "kronologi", label: "Årtal" }
 ]
-const partSorts: Array<{ key: PartSortKey, label: string, expression: string }> = [
-  { key: "forfattare", label: "Författare", expression: "main_author.name_for_index|asc,sortkey|asc" },
-  { key: "titlar", label: "Titel", expression: "sortkey|asc" }
+const partSorts: Array<{ key: PartSortKey, label: string }> = [
+  { key: "forfattare", label: "Författare" },
+  { key: "titlar", label: "Titel" }
 ]
-
-function sortExpression(expression: string, reversed: boolean): string {
-  if (!reversed) return expression
-  return expression.replace(/\|(asc|desc)(?=,|$)/, (_match, direction: string) => (
-    `|${direction === "asc" ? "desc" : "asc"}`
-  ))
-}
 
 const route = useRoute()
 const router = useRouter()
@@ -987,127 +491,6 @@ function routeState(path: string, query: LocationQuery): LibraryRouteState {
   }
 }
 
-function sanitizeFilter(value: string): string {
-  return value
-    .replace(/([A-Öa-ö])[-–—]([A-Öa-ö])/g, "$1 $2")
-    .replace(/[.,!"“'”]/g, "")
-    .trim()
-}
-
-function orClauses(clauses: string[]): string {
-  if (clauses.length === 0) return ""
-  if (clauses.length === 1) return clauses[0]!
-  return `(${clauses.join(" OR ")})`
-}
-
-function wrapPredicate(clause: string): string {
-  return clause.startsWith("(") && clause.endsWith(")") ? clause : `(${clause})`
-}
-
-function languagePredicate(values: LibraryLanguage[]): string {
-  const fields = new Map<string, string[]>()
-  let translation = false
-  let original = false
-  let foreign = false
-  for (const value of values) {
-    const [field, selected] = value.split(":") as [string, string]
-    if (field === "translation") translation = true
-    else if (field === "original") original = true
-    else if (field === "foreign") foreign = true
-    else fields.set(field, [...(fields.get(field) ?? []), selected])
-  }
-  const clauses = [...fields.entries()].map(([field, selected]) => (
-    selected.length === 1
-      ? `${field}:${selected[0]}`
-      : `${field}:(${selected.join(" OR ")})`
-  ))
-  const translated = "(keyword:language-source OR keyword:translated OR (authors>(type:translator)))"
-  if (translation) clauses.push(translated)
-  if (original) clauses.push(`((NOT ${translated}) AND NOT language_source:unknown)`)
-  if (foreign) {
-    clauses.push("(_exists_:language AND NOT language:swe)")
-    clauses.push("language_source:unknown")
-  }
-  return orClauses(clauses)
-}
-
-function mediaPredicate(values: LibraryMedia[]): string {
-  const media = values
-    .filter((value): value is Exclude<LibraryMedia, "has_epub:true"> => value !== "has_epub:true")
-    .map(value => value.slice("mediatype:".length))
-  const clauses: string[] = []
-  if (media.length === 1) clauses.push(`mediatype:${media[0]}`)
-  else if (media.length > 1) clauses.push(`mediatype:(${media.join(" OR ")})`)
-  if (values.includes("has_epub:true")) clauses.push("has_epub:true")
-  return orClauses(clauses)
-}
-
-function collectionFieldMap(values: string[]): Map<string, string[]> {
-  const fields = new Map<string, string[]>()
-  for (const value of values) {
-    for (const expression of value.split("|")) {
-      const separator = expression.indexOf(":")
-      if (separator <= 0) continue
-      const field = expression.slice(0, separator)
-      const selected = expression.slice(separator + 1).split(";").filter(Boolean)
-      fields.set(field, [...(fields.get(field) ?? []), ...selected])
-    }
-  }
-  return fields
-}
-
-function ordinaryCollectionPredicate(values: string[]): string {
-  return orClauses([...collectionFieldMap(values)].map(([field, selected]) => (
-    selected.length === 1 ? `${field}:${selected[0]}` : `${field}:(${selected.join(" OR ")})`
-  )))
-}
-
-function narrowingCollectionPredicate(values: string[]): string {
-  const clauses = values.map(value => {
-    const fields = [...collectionFieldMap([value])].map(([field, selected]) => (
-      `${field}:(${selected.join(" OR ")})`
-    ))
-    return fields.length === 1 ? fields[0]! : `(${fields.join(" OR ")})`
-  })
-  if (!clauses.length) return ""
-  return clauses.length === 1 ? `(${clauses[0]})` : `(${clauses.join(" AND ")})`
-}
-
-function aboutAuthorPredicate(values: string[]): string {
-  if (values.length === 0) return ""
-  const selected = values.length === 1 ? values[0] : `(${values.join(" OR ")})`
-  return `authorkeyword>(authorid:${selected})`
-}
-
-function advancedPredicate(filters: LibraryAdvancedFilters): string {
-  const clauses: string[] = []
-  if (filters.gender) {
-    clauses.push(`(gender:${filters.gender} OR authors>(gender:${filters.gender}))`)
-  }
-  if (filters.yearRange) {
-    const [from, to] = filters.yearRange
-    clauses.push(
-      `(sort_date_imprint.date:[${from} TO ${to}] OR birth.date:[${from} TO ${to}] OR death.date:[${from} TO ${to}])`
-    )
-  }
-  const aboutAuthors = aboutAuthorPredicate(filters.aboutAuthorIds)
-  if (aboutAuthors) clauses.push(aboutAuthors)
-  const language = languagePredicate(filters.languages)
-  if (language) clauses.push(language)
-  const collections = ordinaryCollectionPredicate(filters.keywords)
-  if (collections) clauses.push(collections)
-  const media = mediaPredicate(filters.media)
-  if (media) clauses.push(media)
-  const base = clauses.length === 1 ? clauses[0]! : clauses.map(wrapPredicate).join(" AND ")
-  const narrowing = narrowingCollectionPredicate(filters.narrowingKeywords)
-  return [narrowing, base].filter(Boolean).join(" AND ")
-}
-
-function appendAdvanced(base: string, filters: LibraryAdvancedFilters): string {
-  const predicate = advancedPredicate(filters)
-  return [base, predicate].filter(Boolean).join(" AND ")
-}
-
 function emptyAuthorBrowseResponse(failed = false): AuthorBrowseResponse {
   return {
     ...emptyLibraryResponse(failed),
@@ -1115,171 +498,6 @@ function emptyAuthorBrowseResponse(failed = false): AuthorBrowseResponse {
     partCount: 0,
     workAuthorIds: [],
     partAuthorIds: []
-  }
-}
-
-function epubRequestUrl(
-  base: string,
-  filter: string,
-  selectedSort: EpubSortKey,
-  page: number,
-  advanced: LibraryAdvancedFilters,
-  reversed = false
-): string {
-  const sanitized = sanitizeFilter(filter)
-  const predicate = appendAdvanced(
-    sanitized ? `has_epub:true AND (${sanitized})` : "has_epub:true",
-    advanced
-  )
-  const params = new URLSearchParams({
-    exclude: epubExcludedFields,
-    include: epubIncludedFields,
-    partial_string: "true",
-    q: `${epubQueryPrefix} (${predicate})`,
-    sort_field: sortExpression(
-      epubSorts.find(item => item.key === selectedSort)?.expression ?? "popularity|desc",
-      reversed
-    ),
-    from: String((page - 1) * 100),
-    to: String(page * 100),
-    suggest: "true"
-  })
-  return `${base.replace(/\/$/, "")}/query_string/${epubResultTypes}?${params}`
-}
-
-function browseRequestUrl(
-  base: string,
-  mode: "works" | "parts",
-  filter: string,
-  selectedSort: BrowseSortKey,
-  page: number,
-  advanced: LibraryAdvancedFilters,
-  reversed = false,
-  sourceOnly = false
-): string {
-  const types = mode === "parts" ? "etext-part,faksimil-part" : epubResultTypes
-  const sortsForMode = mode === "parts" ? partSorts : epubSorts
-  const sanitized = sanitizeFilter(filter)
-  const basePredicate = [
-    sanitized ? `(${sanitized})` : "",
-    sourceOnly ? "export>type:(xml OR txt OR workdb)" : ""
-  ].filter(Boolean).join(" AND ")
-  const predicate = appendAdvanced(basePredicate, advanced)
-  const params = new URLSearchParams({
-    exclude: epubExcludedFields,
-    include: mode === "parts" ? `${epubIncludedFields},authors` : epubIncludedFields,
-    partial_string: "true",
-    q: `${epubQueryPrefix} ${predicate || "*"}`,
-    sort_field: sortExpression(
-      sortsForMode.find(item => item.key === selectedSort)?.expression
-        ?? (mode === "parts" ? "sortkey|asc" : "popularity|desc"),
-      reversed
-    ),
-    author_aggregation: "true",
-    from: String((page - 1) * 100),
-    to: String(page * 100),
-    suggest: "true"
-  })
-  return `${base.replace(/\/$/, "")}/query_string/${types}?${params}`
-}
-
-function countOnlyRequestUrl(url: string): string {
-  const separator = url.indexOf("?")
-  const path = separator === -1 ? url : url.slice(0, separator)
-  const params = new URLSearchParams(separator === -1 ? "" : url.slice(separator + 1))
-  params.set("from", "0")
-  params.set("to", "0")
-  return `${path}?${params}`
-}
-
-async function fetchBrowseCountResponse(
-  base: string,
-  mode: "works" | "parts",
-  filter: string,
-  advanced: LibraryAdvancedFilters,
-  signal?: AbortSignal
-): Promise<BrowseResponse | null> {
-  try {
-    const request = browseRequestUrl(
-      base,
-      mode,
-      filter,
-      mode === "parts" ? "titlar" : "popularitet",
-      1,
-      advanced
-    )
-    const response = await $fetch<unknown>(countOnlyRequestUrl(request), { signal, retry: 0 })
-    return parseBrowseResponse(response, mode)
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") throw error
-    return null
-  }
-}
-
-const pdfPredicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
-
-function pdfRequestUrl(
-  base: string,
-  filter: string,
-  selectedSort: EpubSortKey,
-  page: number,
-  advanced: LibraryAdvancedFilters,
-  reversed = false
-): string {
-  const sanitized = sanitizeFilter(filter)
-  const predicate = appendAdvanced(
-    sanitized ? `${pdfPredicate} AND (${sanitized})` : pdfPredicate,
-    advanced
-  )
-  const params = new URLSearchParams({
-    exclude: epubExcludedFields,
-    include: pdfIncludedFields,
-    partial_string: "true",
-    q: `${epubQueryPrefix} (${predicate})`,
-    sort_field: sortExpression(
-      epubSorts.find(item => item.key === selectedSort)?.expression ?? "popularity|desc",
-      reversed
-    ),
-    from: String((page - 1) * 100),
-    to: String(page * 100),
-    suggest: "true"
-  })
-  return `${base.replace(/\/$/, "")}/query_string/${epubResultTypes}?${params}`
-}
-
-async function fetchEpubCountResponse(
-  base: string,
-  filter: string,
-  advanced: LibraryAdvancedFilters,
-  signal?: AbortSignal
-): Promise<number | null> {
-  try {
-    const request = countOnlyRequestUrl(
-      epubRequestUrl(base, filter, "popularitet", 1, advanced)
-    )
-    const parsed = parseEpubResponse(await $fetch<unknown>(request, { signal, retry: 0 }))
-    return parsed.failed ? null : parsed.distinctHits
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") throw error
-    return null
-  }
-}
-
-async function fetchPdfCountResponse(
-  base: string,
-  filter: string,
-  advanced: LibraryAdvancedFilters,
-  signal?: AbortSignal
-): Promise<number | null> {
-  try {
-    const request = countOnlyRequestUrl(
-      pdfRequestUrl(base, filter, "popularitet", 1, advanced)
-    )
-    const parsed = parsePdfResponse(await $fetch<unknown>(request, { signal, retry: 0 }))
-    return parsed.failed ? null : parsed.distinctHits
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") throw error
-    return null
   }
 }
 
@@ -1371,6 +589,25 @@ function emptyPageData(mode: LibraryMode, failed = false): LibraryPageData {
 const libraryClient = createLbApiClient(
   import.meta.server ? config.apiBase : config.public.apiBase
 )
+
+async function fetchLibraryCount(
+  mode: LibraryCountMode,
+  filterValue: string,
+  advanced: LibraryAdvancedFilters,
+  signal?: AbortSignal
+): Promise<LibraryCountResponse | null> {
+  try {
+    const body = buildLibraryCountRequest(
+      mode,
+      libraryFilterState(filterValue, advanced)
+    )
+    const { data } = await libraryClient.POST("/library/counts", { body, signal })
+    return data?.mode === mode ? data : null
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error
+    return null
+  }
+}
 
 async function fetchLibraryPageData(
   state: LibraryPrimaryState,
@@ -1582,9 +819,7 @@ const initialAuthorResponse = initialData.value?.mode === "authors"
   : null
 const browseCounts = ref<BrowseCounts>({
   identity: JSON.stringify([initialFilter, initialState.advancedFilters]),
-  authors: initialAuthorResponse && !initialAuthorResponse.failed
-    ? initialAuthorResponse.hits
-    : null,
+  authors: null,
   works: initialAuthorResponse && !initialAuthorResponse.failed
     ? initialAuthorResponse.workCount
     : initialData.value?.mode === "works" && !initialData.value.response.failed
@@ -1783,17 +1018,15 @@ async function refreshInactiveDownloadCount(
   downloadCountController?.abort()
   const activeController = new AbortController()
   downloadCountController = activeController
-  const count = await (inactiveMode === "epub"
-    ? fetchEpubCountResponse(
-        config.public.libraryApiBase, filterValue, advanced, activeController.signal
-      )
-    : fetchPdfCountResponse(
-        config.public.libraryApiBase, filterValue, advanced, activeController.signal
-      )).catch(() => null)
-  if (downloadCountController === activeController) downloadCountController = null
-  if (version !== downloadCountVersion || activeController.signal.aborted || count === null
+  const result = await fetchLibraryCount(
+    inactiveMode, filterValue, advanced, activeController.signal
+  ).catch(() => null)
+  const ownsController = downloadCountController === activeController
+  if (ownsController) downloadCountController = null
+  if (!ownsController || version !== downloadCountVersion || activeController.signal.aborted
+    || result?.mode !== inactiveMode || result.total === null
     || identity !== downloadCountIdentity(filter.value, currentState().advancedFilters)) return
-  updateDownloadCount(filterValue, advanced, inactiveMode, count)
+  updateDownloadCount(filterValue, advanced, inactiveMode, result.total)
 }
 
 function invalidateBrowseCounts(filterValue: string, advanced: LibraryAdvancedFilters) {
@@ -1815,7 +1048,7 @@ function invalidateBrowseCounts(filterValue: string, advanced: LibraryAdvancedFi
 function updateBrowseCount(
   filterValue: string,
   advanced: LibraryAdvancedFilters,
-  mode: "authors" | "works" | "parts",
+  mode: "works" | "parts",
   count: number,
   authorIds?: string[]
 ) {
@@ -1869,17 +1102,19 @@ async function refreshBrowseCounts(filterValue: string, advanced: LibraryAdvance
       }
   const [works, parts] = await Promise.all([
     currentCounts.works === null || currentCounts.workAuthorIds === null
-      ? fetchBrowseCountResponse(
-          config.public.libraryApiBase, "works", filterValue, advanced, activeController.signal
+      ? fetchLibraryCount(
+          "works", filterValue, advanced, activeController.signal
         ).catch(() => null)
       : Promise.resolve(null),
     currentCounts.parts === null || currentCounts.partAuthorIds === null
-      ? fetchBrowseCountResponse(
-          config.public.libraryApiBase, "parts", filterValue, advanced, activeController.signal
+      ? fetchLibraryCount(
+          "parts", filterValue, advanced, activeController.signal
         ).catch(() => null)
       : Promise.resolve(null)
   ])
-  if (version !== countVersion || activeController.signal.aborted
+  const ownsController = countController === activeController
+  if (ownsController) countController = null
+  if (!ownsController || version !== countVersion || activeController.signal.aborted
     || identity !== browseCountIdentity(filter.value, currentState().advancedFilters)) return
   const current = browseCounts.value.identity === identity
     ? browseCounts.value
@@ -1891,19 +1126,22 @@ async function refreshBrowseCounts(filterValue: string, advanced: LibraryAdvance
         workAuthorIds: null,
         partAuthorIds: null
       }
-  const workAuthorIds = works?.authorIds ?? current.workAuthorIds
-  const partAuthorIds = parts?.authorIds ?? current.partAuthorIds
+  const workAuthorIds = works?.mode === "works" && works.author_ids !== null
+    ? works.author_ids
+    : current.workAuthorIds
+  const partAuthorIds = parts?.mode === "parts" && parts.author_ids !== null
+    ? parts.author_ids
+    : current.partAuthorIds
   browseCounts.value = {
     identity,
     authors: workAuthorIds !== null && partAuthorIds !== null
       ? new Set([...workAuthorIds, ...partAuthorIds]).size
       : current.authors,
-    works: works?.distinctHits ?? current.works,
-    parts: parts?.hits ?? current.parts,
+    works: works?.mode === "works" && works.total !== null ? works.total : current.works,
+    parts: parts?.mode === "parts" && parts.total !== null ? parts.total : current.parts,
     workAuthorIds,
     partAuthorIds
   }
-  countController = null
 }
 
 function queryFor(state: QueryState): LocationQuery {
@@ -1961,9 +1199,6 @@ async function runBrowserRequest(state: QueryState, version: number) {
   else if (pageData.mode === "authors") {
     authorResults.value = pageData.response
     if (!authorResults.value.failed) {
-      updateBrowseCount(
-        state.filter, state.advancedFilters, "authors", authorResults.value.hits
-      )
       updateBrowseCount(
         state.filter, state.advancedFilters, "works", authorResults.value.workCount
       )
@@ -2116,7 +1351,6 @@ async function loadAllAuthors() {
   if (version !== requestVersion || activeController.signal.aborted) return
   if (pageData?.mode === "authors" && !pageData.response.failed) {
     authorResults.value = pageData.response
-    updateBrowseCount(state.filter, state.advancedFilters, "authors", pageData.response.hits)
   }
   loading.value = false
   if (controller === activeController) controller = null
@@ -2230,10 +1464,11 @@ async function pushAdvancedQuery(
   value: string
 ) {
   invalidateIntent()
-  const query: LocationQuery = { ...route.query }
+  const query = Object.fromEntries(
+    Object.entries(route.query).filter(([name]) => name !== key)
+  ) as LocationQuery
   delete query.sida
   if (value) query[key] = value
-  else delete query[key]
   await router.push({ path: route.path, query })
 }
 
@@ -2646,7 +1881,11 @@ onMounted(() => {
     void router.replace({ path: route.path, query: queryFor(currentState()) })
   }
   const initialFailed = initialData.value?.response.failed ?? true
-  if (!initialFailed) void refreshBrowseCounts(filter.value, currentState().advancedFilters)
+  const state = currentState()
+  if (!initialFailed) void refreshBrowseCounts(filter.value, state.advancedFilters)
+  if (!initialFailed && (state.mode === "epub" || state.mode === "pdf")) {
+    void refreshInactiveDownloadCount(filter.value, state.advancedFilters, state.mode)
+  }
 })
 onUnmounted(() => {
   disposeLibraryRequest()

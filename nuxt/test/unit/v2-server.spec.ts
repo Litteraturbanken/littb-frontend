@@ -4108,7 +4108,7 @@ describe("v2 fixture server operations", () => {
     expect(options.status).toBe(200)
     expect(await options.json() as LibraryOptionsResponse).toEqual({
       chronology: { year_from: 1800, year_to: 2026 },
-      about_authors: [{ author_id: "LagerlofS", label: "Lagerlöf, Selma" }]
+      about_authors: [{ author_id: "LagerlofS", label: "Selma Lagerlöf" }]
     })
     for (const [index, body] of searches.entries()) {
       const scope = index % 2 ? "private-v2" : "v2"
@@ -4242,7 +4242,7 @@ describe("v2 fixture server operations", () => {
     }
     expect(await (await fetch(`${origin}/v2/library/options`)).json()).toEqual({
       chronology: null,
-      about_authors: [{ author_id: "LagerlofS", label: "Lagerlöf, Selma" }]
+      about_authors: [{ author_id: "LagerlofS", label: "Selma Lagerlöf" }]
     })
     expect((await fetch(`${origin}/v2/library/search`, {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(pdf)

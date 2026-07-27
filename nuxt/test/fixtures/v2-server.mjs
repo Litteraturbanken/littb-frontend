@@ -1335,130 +1335,350 @@ function canonicalLibraryIdentity(body) {
   return JSON.stringify({ mode: body.mode, filters })
 }
 
-const libraryFixtureAuthor = {
-  author_id: "StrindbergA",
-  full_name: "August Strindberg",
-  surname: "Strindberg",
-  role: "author",
-  birth_year: "1849",
-  death_year: "1912"
+const libraryAuthors = {
+  strindberg: { author_id: "StrindbergA", full_name: "August Strindberg", surname: "Strindberg", role: "author", birth_year: null, death_year: null },
+  lagerlof: { author_id: "LagerlofS", full_name: "Selma Lagerlöf", surname: "Lagerlöf", role: null, birth_year: "1858", death_year: "1940" },
+  soderberg: { author_id: "SöderbergH", full_name: "Hjalmar Söderberg", surname: "Söderberg", role: null, birth_year: "1869", death_year: "1941" },
+  geijer: { author_id: "GeijerEGA", full_name: "Erik Gustaf Geijer", surname: "Geijer", role: "editor", birth_year: "1783", death_year: "1847" },
+  bauer: { author_id: "BauerJ", full_name: "John Bauer", surname: "Bauer", role: "illustrator", birth_year: "1882", death_year: "1918" },
+  poet: { author_id: "PoetP", full_name: "Pia Poet", surname: "Poet", role: "editor", birth_year: null, death_year: null }
 }
 
-function librarySearchResponse(mode, filters) {
-  const empty = filters.query === "inga"
-  const paged = filters.query === "paged"
-  const bounded = filters.query === "bounded"
-  const total = empty ? 0 : bounded ? 10_001 : paged ? 201 : 1
-  if (mode === "all") return {
-    mode,
-    total_hits: empty ? 0 : 1,
-    items: empty ? [] : [{
-      kind: "text",
-      index: "etext",
-      source_label: "Roman",
-      title: "Röda rummet",
-      short_title: "Röda rummet",
-      imprint_year: "1879",
-      reader_author_id: "StrindbergA",
-      title_id: "RodaRummet",
-      page_name: "1",
-      media_type: "etext",
-      main_author: libraryFixtureAuthor
-    }]
+function libraryAllAuthor(authorId, nameForIndex, birthYear = null, deathYear = null, popularity = 0) {
+  return {
+    kind: "author", author_id: authorId, birth_year: birthYear, death_year: deathYear,
+    name_for_index: nameForIndex, popularity
   }
-  if (mode === "authors") return {
-    mode,
-    total_authors: empty ? 0 : 1,
-    total_works: empty ? 0 : 2,
-    total_parts: empty ? 0 : 1,
-    items: empty ? [] : [{
-      kind: "author", author_id: "StrindbergA", birth_year: 1849, death_year: 1912,
-      name_for_index: "Strindberg, August", popularity: 100
-    }]
-  }
-  if (mode === "latest") return {
-    mode,
-    total_hits: empty ? 0 : 1,
-    total_works: empty ? 0 : 1,
-    groups: empty ? [] : [{
-      imported_on: "2026-07-27",
-      source_count: 1,
-      items: [{
-        author: libraryFixtureAuthor,
-        author_url: "/författare/StrindbergA",
-        full_title: "Röda rummet",
-        imported_on: "2026-07-27",
-        route_author_id: "StrindbergA",
-        route_media_type: "etext",
-        route_title_id: "RodaRummet",
-        title: "Röda rummet",
-        title_url: "/författare/StrindbergA/titlar/RodaRummet/etext?om-boken",
-        year: "1879"
-      }]
-    }]
-  }
-  if (mode === "epub" || mode === "pdf") return {
-    mode,
-    total_hits: total,
-    total_works: total,
-    items: empty ? [] : [{
-      author: libraryFixtureAuthor,
-      author_url: "/författare/StrindbergA",
-      download_filename: mode === "pdf" ? "RodaRummet.pdf" : "StrindbergA_RodaRummet.epub",
-      download_url: mode === "pdf"
-        ? "/txt/lb-pdf/lb-pdf.pdf"
-        : "/txt/epub/StrindbergA_RodaRummet.epub",
-      full_title: "Röda rummet. Roman",
-      route_author_id: "StrindbergA",
-      route_media_type: mode === "pdf" ? "faksimil" : "etext",
-      route_title_id: "RodaRummet",
-      title: "Röda rummet",
-      title_url: `/författare/StrindbergA/titlar/RodaRummet/${mode === "pdf" ? "faksimil" : "etext"}?om-boken`,
-      year: "1879"
-    }]
-  }
-  const browse = {
-    actions: [
-      {
-        download_filename: null,
-        kind: "read",
-        label: "Läs som etext",
-        url: "/författare/StrindbergA/titlar/RodaRummet/sida/1/etext"
-      },
-      {
-        download_filename: "StrindbergA_RodaRummet.epub",
-        kind: "download",
-        label: "Ladda ner epub",
-        url: "/txt/epub/StrindbergA_RodaRummet.epub"
-      }
-    ],
-    author: libraryFixtureAuthor,
-    author_url: "/författare/StrindbergA",
-    full_title: "Röda rummet. Roman",
-    key: `${mode}-roda-rummet`,
-    route_author_id: "StrindbergA",
-    route_media_type: "etext",
-    route_title_id: "RodaRummet",
-    source_exports: [{ format: "xml", media_type: "etext", size: 1024, work_id: "lb-roda" }],
-    title: mode === "parts" ? "Ett utdrag ur Röda rummet" : "Röda rummet",
-    title_path: mode === "parts" ? "RodaRummetPart" : "RodaRummet",
-    title_url: "/författare/StrindbergA/titlar/RodaRummet/etext?om-boken",
-    year: "1879"
-  }
-  if (empty) {
-    return mode === "works"
-      ? { mode, items: [], total_hits: 0, total_works: 0 }
-      : { mode, items: [], total_parts: 0 }
-  }
-  return mode === "works"
-    ? { mode, items: [browse], total_hits: total, total_works: total }
-    : { mode, items: [browse], total_parts: total }
 }
 
-function libraryCountResponse(mode) {
-  return mode === "works" || mode === "parts"
-    ? { mode, total: 1, author_ids: ["LagerlofS"] }
-    : { mode, total: 1 }
+function libraryAllText({
+  title, shortTitle = title, year, author, titleId, pageName = "1", mediaType = "etext"
+}) {
+  return {
+    kind: "text", index: mediaType, source_label: "roman", title,
+    short_title: shortTitle, imprint_year: year, reader_author_id: author.author_id,
+    title_id: titleId, page_name: pageName, media_type: mediaType, main_author: author
+  }
+}
+
+function libraryBrowseItem({
+  title, fullTitle, year, author, titleId, workId = `lb-${titleId}`,
+  routeAuthorId = author.author_id, mediaType = "etext", titlePath = titleId,
+  actions = [], sourceExports = []
+}) {
+  const encodedAuthor = encodeURIComponent(author.author_id)
+  const encodedRouteAuthor = encodeURIComponent(routeAuthorId)
+  const encodedTitle = encodeURIComponent(titleId)
+  const encodedPath = encodeURIComponent(titlePath)
+  const encodedWork = encodeURIComponent(workId)
+  const titleUrl = mediaType === "pdf"
+    ? `/txt/${encodedWork}/${encodedWork}.pdf`
+    : `/f%C3%B6rfattare/${encodedRouteAuthor}/titlar/${encodedTitle}/sida/-2/${mediaType}`
+  return {
+    actions, author, author_url: `/f%C3%B6rfattare/${encodedAuthor}`,
+    full_title: fullTitle, key: `${encodedPath}:${encodedWork}`,
+    route_author_id: routeAuthorId, route_media_type: mediaType,
+    route_title_id: titleId, source_exports: sourceExports, title, title_path: titlePath,
+    title_url: titleUrl, year
+  }
+}
+
+function libraryReadAction(authorId, titleId, mediaType = "etext") {
+  const url = `/f%C3%B6rfattare/${encodeURIComponent(authorId)}/titlar/${encodeURIComponent(titleId)}/sida/-2/${mediaType}`
+  return { kind: "read", label: `Läs som ${mediaType}`, url, download_filename: null }
+}
+
+function libraryAboutAction(authorId, titleId, mediaType = "etext") {
+  const url = `/f%C3%B6rfattare/${encodeURIComponent(authorId)}/titlar/${encodeURIComponent(titleId)}/sida/-2/${mediaType}?om-boken`
+  return { kind: "about", label: "Läs mer om verket", url, download_filename: null }
+}
+
+function libraryDownloadItem({
+  title, fullTitle, year, author, titleId, mediaType = "etext",
+  downloadFilename = "", downloadUrl
+}) {
+  const encodedAuthor = encodeURIComponent(author.author_id)
+  const encodedTitle = encodeURIComponent(titleId)
+  return {
+    author, author_url: `/f%C3%B6rfattare/${encodedAuthor}`,
+    download_filename: downloadFilename,
+    download_url: downloadUrl ?? `/txt/epub/${encodedAuthor}_${encodedTitle}.epub`,
+    full_title: fullTitle, route_author_id: author.author_id,
+    route_media_type: mediaType, route_title_id: titleId, title,
+    title_url: `/f%C3%B6rfattare/${encodedAuthor}/titlar/${encodedTitle}/${mediaType}?om-boken`,
+    year
+  }
+}
+
+const doktorGlasWork = libraryBrowseItem({
+  title: "Doktor Glas", fullTitle: "Doktor Glas. Roman", year: "1905",
+  author: libraryAuthors.soderberg, titleId: "DoktorGlas",
+  actions: [
+    libraryReadAction("SöderbergH", "DoktorGlas"),
+    libraryReadAction("SöderbergH", "DoktorGlas", "faksimil"),
+    { kind: "download", label: "Ladda ner epub", url: "/txt/epub/S%C3%B6derbergH_DoktorGlas.epub", download_filename: "SöderbergH_DoktorGlas.epub" },
+    { kind: "download", label: "Ladda ner pdf", url: "/export/faksimil/lb-DoktorGlas.pdf", download_filename: "SöderbergH_DoktorGlas.pdf" },
+    { kind: "search", label: "Gör en sökning i verket", url: "/sok?forfattare=S%C3%B6derbergH&titlar=lb-DoktorGlas&avancerad", download_filename: null },
+    libraryAboutAction("SöderbergH", "DoktorGlas")
+  ],
+  sourceExports: [
+    { format: "txt", media_type: "etext", size: 1024, work_id: "lb-DoktorGlas" },
+    { format: "pdf", media_type: "faksimil", size: 730000, work_id: "lb-DoktorGlas" }
+  ]
+})
+const folkvisorWork = libraryBrowseItem({
+  title: "Svenska folkvisor", fullTitle: "Svenska folkvisor", year: "1814",
+  author: libraryAuthors.geijer, titleId: "SvenskaFolkvisor",
+  actions: [
+    libraryReadAction("GeijerEGA", "SvenskaFolkvisor"),
+    { kind: "download", label: "Ladda ner epub", url: "/txt/epub/GeijerEGA_SvenskaFolkvisor.epub", download_filename: "GeijerEGA_SvenskaFolkvisor.epub" },
+    libraryAboutAction("GeijerEGA", "SvenskaFolkvisor")
+  ],
+  sourceExports: [{ format: "xml", media_type: "etext", size: 2048, work_id: "lb-SvenskaFolkvisor" }]
+})
+const bauerWork = libraryBrowseItem({
+  title: "Bland tomtar och troll", fullTitle: "x".repeat(501), year: "1915",
+  author: libraryAuthors.bauer, titleId: "BlandTomtarOchTroll",
+  actions: [
+    libraryReadAction("BauerJ", "BlandTomtarOchTroll"),
+    { kind: "download", label: "Ladda ner epub", url: "/txt/epub/BauerJ_BlandTomtarOchTroll.epub", download_filename: "BauerJ_BlandTomtarOchTroll.epub" },
+    libraryAboutAction("BauerJ", "BlandTomtarOchTroll")
+  ],
+  sourceExports: [{ format: "workdb", media_type: "etext", size: 512, work_id: "lb-BlandTomtarOchTroll" }]
+})
+const gostaWork = libraryBrowseItem({
+  title: "Gösta Berlings saga", fullTitle: "Gösta Berlings saga. Roman", year: "1891",
+  author: libraryAuthors.lagerlof, titleId: "GostaBerlingsSaga",
+  actions: [
+    libraryReadAction("LagerlofS", "GostaBerlingsSaga"),
+    { kind: "download", label: "Ladda ner epub", url: "/txt/epub/LagerlofS_GostaBerlingsSaga.epub", download_filename: "LagerlofS_GostaBerlingsSaga.epub" },
+    libraryAboutAction("LagerlofS", "GostaBerlingsSaga")
+  ]
+})
+const partItem = {
+  actions: [], author: libraryAuthors.poet, author_url: "/f%C3%B6rfattare/PoetP",
+  full_title: "En novell i samlingen", key: "Novellsamling%2FEnNovell:lb-Novellsamling",
+  route_author_id: "NovellA", route_media_type: "etext", route_title_id: "Novellsamling",
+  source_exports: [], title: "En novell", title_path: "Novellsamling/EnNovell",
+  title_url: "/f%C3%B6rfattare/NovellA/titlar/Novellsamling/sida/7/etext", year: "1903"
+}
+
+const doktorEpub = libraryDownloadItem({
+  title: "Doktor Glas", fullTitle: "Doktor Glas. Roman", year: "1905",
+  author: libraryAuthors.soderberg, titleId: "DoktorGlas"
+})
+const folkvisorEpub = libraryDownloadItem({
+  title: "Svenska folkvisor", fullTitle: "Svenska folkvisor", year: "1814",
+  author: libraryAuthors.geijer, titleId: "SvenskaFolkvisor"
+})
+const bauerEpub = libraryDownloadItem({
+  title: "Bland tomtar och troll", fullTitle: "x".repeat(501), year: "1915",
+  author: libraryAuthors.bauer, titleId: "BlandTomtarOchTroll"
+})
+const gostaEpub = libraryDownloadItem({
+  title: "Gösta Berlings saga", fullTitle: "Gösta Berlings saga. Roman", year: "1891",
+  author: libraryAuthors.lagerlof, titleId: "GostaBerlingsSaga"
+})
+
+function libraryPdfItem(title, fullTitle, year, author, titleId, downloadFilename, downloadUrl, mediaType = "faksimil") {
+  return libraryDownloadItem({
+    title, fullTitle, year, author, titleId, mediaType, downloadFilename, downloadUrl
+  })
+}
+
+const defaultPdfItems = [
+  libraryPdfItem("Gösta Berlings saga", "Gösta Berlings saga. Roman", "1891", libraryAuthors.lagerlof, "GostaBerlingsSaga", "LagerlofS_GostaBerlingsSaga.pdf", "/export/faksimil/lb-GostaBerlingsSaga.pdf", "etext"),
+  libraryPdfItem("Svenska folkvisor", "Svenska folkvisor. Roman", "1814", { ...libraryAuthors.geijer, role: null, birth_year: null, death_year: null }, "SvenskaFolkvisor", "AfzeliusAA_SvenskaFolkvisor.pdf", "/export/faksimil/lb-SvenskaFolkvisor.pdf"),
+  libraryPdfItem("Röda rummet", "Röda rummet. Skildringar ur artist- och författarlivet", "1879", { ...libraryAuthors.strindberg, role: null }, "RodaRummet", "ArchiveA_RodaRummet.pdf", "/txt/lb-RodaRummet/lb-RodaRummet.pdf"),
+  libraryPdfItem("Nils Holgerssons underbara resa", "Nils Holgerssons underbara resa. Roman", "1906", { ...libraryAuthors.lagerlof, birth_year: null, death_year: null }, "NilsHolgersson", "DirectPdfA_NilsHolgerssonPdf.pdf", "/txt/lb-NilsHolgersson/lb-NilsHolgersson.pdf"),
+  libraryPdfItem("Jerusalem", "Jerusalem. Roman", "1901", { ...libraryAuthors.lagerlof, birth_year: null, death_year: null }, "Jerusalem", "LagerlofS_Jerusalem.pdf", "/export/faksimil/lb-Jerusalem.pdf", "etext")
+]
+const tuplePdfItems = [
+  ["Första tuple-kollisionen", "TupleA", "Första Kollision", "Kollision", "TupleCollisionOne", "/export/faksimil/c.pdf", "1903"],
+  ["Andra tuple-kollisionen", "TupleB", "Andra Kollision", "Kollision", "TupleCollisionTwo", "/export/faksimil/bc.pdf", "1904"],
+  ["Första delade sökvägen", "SamePathA", "Första delade sökvägen", "Sökväg", "SamePathOne", "/export/faksimil/lb-same-path-one.pdf", "1905"],
+  ["Andra delade sökvägen", "SamePathB", "Andra delade sökvägen", "Sökväg", "SamePathTwo", "/export/faksimil/lb-same-path-two.pdf", "1906"],
+  ["Första delade verket", "SameWorkA", "Första delade verket", "Verk", "SameWorkOne", "/export/faksimil/lb-shared-work.pdf", "1907"],
+  ["Andra delade verket", "SameWorkB", "Andra delade verket", "Verk", "SameWorkTwo", "/export/faksimil/lb-shared-work.pdf", "1908"],
+  ["Första exakta gruppen", "FirstTupleA", "Första exakta gruppen", "Första", "ExactTupleFirst", "/export/faksimil/lb-exact-tuple.pdf", "1909"],
+  ["Grupphuvud utan export", "GroupMainA", "Grupphuvud Författare", "Grupphuvud", "LaterExportGroupMain", "/export/faksimil/lb-later-export-group.pdf", "1911"]
+].map(([title, authorId, fullName, surname, titleId, url, year]) => libraryPdfItem(
+  title, `${title}. Roman`, year, { author_id: authorId, full_name: fullName, surname, role: null, birth_year: null, death_year: null },
+  titleId, `${authorId}_${titleId}.pdf`, url, title === "Grupphuvud utan export" || title === "Första exakta gruppen" ? "etext" : "faksimil"
+))
+
+function libraryLatestItem(item, importedOn, routeTitleId = item.route_title_id) {
+  const latest = Object.fromEntries(Object.entries(item).filter(([key]) => (
+    key !== "download_filename" && key !== "download_url"
+  )))
+  return { ...latest, route_title_id: routeTitleId, imported_on: importedOn }
+}
+
+const defaultLatestGroups = [
+  {
+    imported_on: "2026-07-18", source_count: 3,
+    items: [
+      libraryLatestItem(doktorEpub, "2026-07-18", "LegacyDoktorWorkId"),
+      { ...libraryLatestItem(doktorEpub, "2026-07-18", "LegacyDoktorWorkId"), route_media_type: "faksimil", title_url: "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/LegacyDoktorWorkId/faksimil?om-boken" },
+      libraryLatestItem(folkvisorEpub, "2026-07-18")
+    ]
+  },
+  { imported_on: "2026-07-17", source_count: 1, items: [libraryLatestItem(bauerEpub, "2026-07-17")] }
+]
+
+function libraryAllResponse(query) {
+  if (query === "inga") return { mode: "all", total_hits: 0, items: [] }
+  if (query === "Röda rummet") {
+    return {
+      mode: "all", total_hits: 1,
+      items: [libraryAllText({ title: "Röda rummet", year: "1879", author: libraryAuthors.strindberg, titleId: "RodaRummet" })]
+    }
+  }
+  if (query.includes("Selma")) {
+    return { mode: "all", total_hits: 1, items: [libraryAllAuthor("LagerlofS", "Lagerlöf, Selma", 1858, 1940)] }
+  }
+  if (query === "Senaste") {
+    return {
+      mode: "all", total_hits: 1,
+      items: [libraryAllText({
+        title: "Senaste träffen", year: "1901",
+        author: { author_id: "LatestA", full_name: "Senaste Författaren", surname: "Författaren", role: "author", birth_year: null, death_year: null },
+        titleId: "LatestResult"
+      })]
+    }
+  }
+  if (query === "produktionsform") {
+    return {
+      mode: "all", total_hits: 100,
+      items: [
+        ...Array.from({ length: 99 }, (_, index) => libraryAllAuthor(`FixtureA${index}`, `Fixture, ${index}`)),
+        { kind: "presentation", source_label: "Kringtexter", title: "sent på jorden (1932–1962): en samling", url: "https://litteraturbanken.se/presentationer/specialomraden/Spj_utg.html", byline: null }
+      ]
+    }
+  }
+  if (query === "titelmetadata") {
+    return {
+      mode: "all", total_hits: 4,
+      items: [
+        libraryAllText({
+          title: "Den fullständiga titeln som ska visas som verktygstips när den korta titeln kapas",
+          shortTitle: "En avsiktligt mycket lång korttitel som måste förkortas visuellt utan att flytta årtal eller författare i resultatraden",
+          year: "1905", author: { author_id: "LongA", full_name: "Lång Titel", surname: "Titel", role: "author", birth_year: null, death_year: null },
+          titleId: "LongShorttitle"
+        }),
+        { kind: "pdf", source_label: "roman", title: "Redaktörens bok", short_title: "Redaktörens bok", imprint_year: "1906", work_id: "lb-editor", main_author: { author_id: "EditorA", full_name: "Erik Redaktör", surname: "Redaktör", role: "editor", birth_year: null, death_year: null } },
+        libraryAllText({ title: "Illustratörens bok", year: "1907", author: { author_id: "IllustratorA", full_name: "Ida Illustratör", surname: "Illustratör", role: "illustrator", birth_year: null, death_year: null }, titleId: "IllustratorBook", mediaType: "faksimil" }),
+        libraryAllText({ title: "Röda rummet", year: "1879", author: libraryAuthors.strindberg, titleId: "RodaRummet" })
+      ]
+    }
+  }
+  return {
+    mode: "all", total_hits: 3,
+    items: [
+      libraryAllText({ title: "Röda rummet", year: "1879", author: libraryAuthors.strindberg, titleId: "RodaRummet" }),
+      libraryAllAuthor("StrindbergA", "Strindberg, August", 1849, 1912),
+      { kind: "presentation", source_label: "Kringtexter", title: "August Strindberg", url: "/presentationer/forfattare/StrindbergA.html", byline: "Litteraturbanken" }
+    ]
+  }
+}
+
+function libraryAuthorsResponse(query, limit) {
+  if (query === "inga") return { mode: "authors", total_authors: 0, total_works: 0, total_parts: 0, items: [] }
+  if (query.includes("Selma")) {
+    return { mode: "authors", total_authors: 1, total_works: 1, total_parts: 0, items: [libraryAllAuthor("LagerlofS", "Lagerlöf, Selma", 1858, 1940)] }
+  }
+  const total = query === "många-författare" ? 151 : 156
+  const seed = [
+    libraryAllAuthor("SöderbergH", "Söderberg, Hjalmar", 1869, 1941, 11),
+    libraryAllAuthor("BauerJ", "Bauer, John", 1882, 1918, 10),
+    libraryAllAuthor("GeijerEGA", "Geijer, Erik Gustaf", 1783, 1847, 9),
+    libraryAllAuthor("LagerlofS", "Lagerlöf, Selma", 1858, 1940, 8),
+    libraryAllAuthor("StrindbergA", "Strindberg, August", 1849, 1912, 7)
+  ]
+  const items = [...seed, ...Array.from({ length: Math.max(0, total - seed.length) }, (_, index) => (
+    libraryAllAuthor(`FixtureAuthor${index}`, `Författare, ${String(index + 1).padStart(3, "0")}`)
+  ))].slice(0, limit)
+  return { mode: "authors", total_authors: total, total_works: 3, total_parts: 201, items }
+}
+
+function libraryWorksResponse(query) {
+  if (query === "inga") return { mode: "works", total_hits: 0, total_works: 0, items: [] }
+  if (query.includes("Selma")) return { mode: "works", total_hits: 1, total_works: 1, items: [gostaWork] }
+  if (query === "unsafe-download-token") {
+    const safe = libraryBrowseItem({
+      title: "Säkert källmaterial", fullTitle: "Säkert källmaterial. Roman", year: "1905",
+      author: libraryAuthors.soderberg, titleId: "SafeDownload",
+      actions: [libraryReadAction("SöderbergH", "SafeDownload"), libraryAboutAction("SöderbergH", "SafeDownload")],
+      sourceExports: [{ format: "txt", media_type: "etext", size: 1024, work_id: "lb-SafeDownload" }]
+    })
+    const unsafe = libraryBrowseItem({
+      title: "Osäkert källmaterial", fullTitle: "Osäkert källmaterial. Roman", year: "1905",
+      author: libraryAuthors.soderberg, titleId: "UnsafeDownload", workId: "lb-Unsafe,Injected-etext-txt",
+      actions: [libraryReadAction("SöderbergH", "UnsafeDownload"), libraryAboutAction("SöderbergH", "UnsafeDownload")]
+    })
+    return { mode: "works", total_hits: 2, total_works: 2, items: [safe, unsafe] }
+  }
+  return { mode: "works", total_hits: 4, total_works: 3, items: [doktorGlasWork, folkvisorWork, bauerWork] }
+}
+
+function libraryDownloadResponse(body) {
+  const query = body.filters.query
+  if (query === "inga") return { mode: body.mode, total_hits: 0, total_works: 0, items: [] }
+  if (body.mode === "epub") {
+    const items = query.includes("Selma") || body.page === 2 || (query === "sort race" && body.reverse)
+      ? [gostaEpub] : [doktorEpub, folkvisorEpub, bauerEpub]
+    const total = query === "bounded" ? 10_001 : query === "paged" ? 201
+      : query === "pagination window" ? 1700 : query.includes("Selma") ? 1 : 201
+    return { mode: "epub", total_hits: total, total_works: total, items }
+  }
+  if (query === "tuple-collision") return { mode: "pdf", total_hits: 10, total_works: 8, items: tuplePdfItems }
+  const items = query.includes("Selma") ? [defaultPdfItems[0]]
+    : body.page === 2 ? [libraryPdfItem("Doktor Glas", "Doktor Glas. Roman", "1905", libraryAuthors.soderberg, "DoktorGlas", "SöderbergH_DoktorGlas.pdf", "/export/faksimil/lb-DoktorGlas.pdf")]
+      : defaultPdfItems
+  const totalWorks = query === "bounded" ? 10_001 : query === "paged" ? 201 : query.includes("Selma") ? 1 : 201
+  return { mode: "pdf", total_hits: query === "bounded" ? 10_001 : query.includes("Selma") ? 2 : 307, total_works: totalWorks, items }
+}
+
+function librarySearchResponse(body) {
+  const query = body.filters.query
+  if (body.mode === "all") return libraryAllResponse(query)
+  if (body.mode === "authors") return libraryAuthorsResponse(query, body.limit)
+  if (body.mode === "works") return libraryWorksResponse(query)
+  if (body.mode === "parts") {
+    return { mode: "parts", total_parts: query ? 0 : 201, items: query ? [] : [partItem] }
+  }
+  if (body.mode === "latest") {
+    const filtered = query.includes("Selma")
+    return {
+      mode: "latest", total_hits: filtered ? 1 : 4, total_works: filtered ? 1 : 4,
+      groups: filtered
+        ? [{ imported_on: "2026-07-16", source_count: 1, items: [libraryLatestItem(gostaEpub, "2026-07-16")] }]
+        : defaultLatestGroups
+    }
+  }
+  if (body.mode === "epub" || body.mode === "pdf") return libraryDownloadResponse(body)
+  throw new Error(`Unsupported Library fixture mode: ${body.mode}`)
+}
+
+function libraryCountResponse(mode, filters) {
+  const query = filters.query.toLowerCase()
+  const empty = query === "inga"
+  if (mode === "works") {
+    return {
+      mode, total: empty ? 0 : query.includes("selma") ? 1 : query === "unsafe-download-token" ? 2 : 3,
+      author_ids: empty ? [] : query.includes("selma") ? ["LagerlofS"]
+        : query === "unsafe-download-token" ? ["SöderbergH"]
+          : ["SöderbergH", "GeijerEGA", "BauerJ"]
+    }
+  }
+  if (mode === "parts") {
+    return {
+      mode, total: query ? 0 : 201,
+      author_ids: query ? [] : ["PoetP"]
+    }
+  }
+  if (mode === "pdf" && query === "invalid-hits") return { mode, total: null }
+  return { mode, total: empty ? 0 : query.includes("selma") ? 1 : 201 }
 }
 const textSearchLegacyFields = new Set([
   "author_ids", "keyword", "language", "main_author.gender", "mediatype",
@@ -4299,8 +4519,8 @@ const server = createServer(async (request, response) => {
         : { mode: body.mode, total: null })
     }
     return sendJson(response, 200, operation === "search"
-      ? librarySearchResponse(body.mode, body.filters)
-      : libraryCountResponse(body.mode))
+      ? librarySearchResponse(body)
+      : libraryCountResponse(body.mode, body.filters))
   }
 
   if (apiPathname === "/v2/text-search/chronology") {

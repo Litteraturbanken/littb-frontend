@@ -32,7 +32,10 @@ async function resetLibraryState(request: APIRequestContext) {
     request.delete(`${fixture}/_library_query_delays`),
     request.delete(`${fixture}/_library_imprint_range`),
     request.delete(`${fixture}/_library_imprint_failure`),
-    request.delete(`${fixture}/_library_imprint_requests`)
+    request.delete(`${fixture}/_library_imprint_requests`),
+    request.delete(`${fixture}/_library_v2/requests`),
+    request.delete(`${fixture}/_library_v2/failures`),
+    request.delete(`${fixture}/_library_v2/delays`)
   ])
 }
 

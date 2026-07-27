@@ -1,12 +1,35 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
 
+import type { operations } from "../../app/lib/api/generated/lbapi"
+
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
-const epubPath = "/api/query_string/etext,faksimil,pdf"
-const epubQueryPrefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
-const pdfPredicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
-const libraryDownloadExclude = "text,parts,sourcedesc,pages,errata"
-const libraryDownloadInclude = "lbworkid,titlepath,title,titleid,work_titleid,texttype,shorttitle,mediatype,searchable,imported,sort_date_imprint.plain,main_author.authorid,main_author.surname,main_author.full_name,main_author.birth,main_author.death,main_author.name_for_index,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword"
-const libraryPdfInclude = `${libraryDownloadInclude},license,authors.authorid,authors.surname`
+type LibrarySearchRequest = operations["v2_post_library_search"]["requestBody"]["content"]["application/json"]
+type LibraryCountRequest = operations["v2_post_library_counts"]["requestBody"]["content"]["application/json"]
+type LibraryFilters = LibraryCountRequest["filters"]
+
+function libraryFilters(overrides: Partial<LibraryFilters> = {}): LibraryFilters {
+  return {
+    query: "",
+    gender: null,
+    categories: [],
+    narrowing_categories: [],
+    about_author_ids: [],
+    media: [],
+    languages: [],
+    year_from: null,
+    year_to: null,
+    ...overrides
+  }
+}
+
+async function setLibraryDelay(
+  request: APIRequestContext,
+  operation: "search" | "counts",
+  body: LibrarySearchRequest | LibraryCountRequest,
+  delay = 900
+) {
+  await request.put(`${fixture}/_library_v2/delays`, { data: { operation, body, delay } })
+}
 
 async function reset(request: APIRequestContext) {
   await Promise.all([
@@ -15,54 +38,77 @@ async function reset(request: APIRequestContext) {
     request.delete(`${fixture}/_library_relevance_delays`),
     request.delete(`${fixture}/_library_query_requests`),
     request.delete(`${fixture}/_library_query_failure`),
-    request.delete(`${fixture}/_library_query_delays`)
+    request.delete(`${fixture}/_library_query_delays`),
+    request.delete(`${fixture}/_library_imprint_requests`),
+    request.delete(`${fixture}/_library_metadata_requests`),
+    request.delete(`${fixture}/_library_v2/requests`),
+    request.delete(`${fixture}/_library_v2/failures`),
+    request.delete(`${fixture}/_library_v2/delays`)
   ])
 }
 
+async function libraryV2Requests(request: APIRequestContext) {
+  return await (await request.get(`${fixture}/_library_v2/requests`)).json() as {
+    options: Array<{ method: string, path: string, scope: string }>
+    search: Array<{ method: string, path: string, scope: string, body: LibrarySearchRequest }>
+    counts: Array<{
+      method: string
+      path: string
+      scope: string
+      body: LibraryCountRequest
+    }>
+  }
+}
+
 async function allRelevanceRequests(request: APIRequestContext) {
-  return (await (await request.get(`${fixture}/_library_relevance_requests`)).json()).requests as
-    Array<{ path: string, query: Record<string, string> }>
+  return (await libraryV2Requests(request)).search.filter(entry => (
+    entry.body.mode === "all" || entry.body.mode === "authors"
+  ))
 }
 
 async function requests(request: APIRequestContext) {
-  return (await allRelevanceRequests(request)).filter(entry => entry.query.to !== "0")
+  return allRelevanceRequests(request)
 }
 
 async function epubRequests(request: APIRequestContext) {
-  return (await (await request.get(`${fixture}/_library_query_requests`)).json()).requests as
-    Array<{ path: string, query: Record<string, string> }>
+  return (await libraryV2Requests(request)).search.filter(entry => (
+    entry.body.mode !== "all" && entry.body.mode !== "authors"
+  ))
 }
 
 function publicEpubRequests(entries: Awaited<ReturnType<typeof epubRequests>>) {
-  return entries.filter(entry => entry.path === epubPath && entry.query.to !== "0")
-}
-
-function epubQuery(filter = "") {
-  const predicate = filter ? `has_epub:true AND (${filter})` : "has_epub:true"
-  return `${epubQueryPrefix} (${predicate})`
-}
-
-function pdfQuery(filter = "") {
-  const predicate = filter ? `${pdfPredicate} AND (${filter})` : pdfPredicate
-  return `${epubQueryPrefix} (${predicate})`
+  return entries.filter(entry => entry.scope === "public")
 }
 
 function publicPdfRequests(entries: Awaited<ReturnType<typeof epubRequests>>) {
-  return publicEpubRequests(entries).filter(entry => entry.query.q?.includes(pdfPredicate))
+  return publicEpubRequests(entries).filter(entry => entry.body.mode === "pdf")
 }
 
 function publicOnlyEpubRequests(entries: Awaited<ReturnType<typeof epubRequests>>) {
-  return publicEpubRequests(entries).filter(entry => !entry.query.q?.includes(pdfPredicate))
+  return publicEpubRequests(entries).filter(entry => entry.body.mode === "epub")
 }
 
-function countOnlyEpubRequests(entries: Awaited<ReturnType<typeof epubRequests>>) {
-  return entries.filter(entry => entry.path === epubPath && entry.query.to === "0"
-    && !entry.query.q?.includes(pdfPredicate))
+async function countOnlyEpubRequests(request: APIRequestContext) {
+  return (await libraryV2Requests(request)).counts.filter(entry => entry.body.mode === "epub")
 }
 
-function countOnlyPdfRequests(entries: Awaited<ReturnType<typeof epubRequests>>) {
-  return entries.filter(entry => entry.path === epubPath && entry.query.to === "0"
-    && entry.query.q?.includes(pdfPredicate))
+async function countOnlyPdfRequests(request: APIRequestContext) {
+  return (await libraryV2Requests(request)).counts.filter(entry => entry.body.mode === "pdf")
+}
+
+async function legacyLibraryRequests(request: APIRequestContext) {
+  const [relevance, query, imprint, metadata] = await Promise.all([
+    request.get(`${fixture}/_library_relevance_requests`),
+    request.get(`${fixture}/_library_query_requests`),
+    request.get(`${fixture}/_library_imprint_requests`),
+    request.get(`${fixture}/_library_metadata_requests`)
+  ])
+  return {
+    relevance: (await relevance.json()).requests,
+    query: (await query.json()).requests,
+    options: (await imprint.json()).requests,
+    metadata: (await metadata.json()).requests
+  }
 }
 
 async function pushRoute(page: import("@playwright/test").Page, path: string) {
@@ -190,7 +236,7 @@ test("client-side Library entry uses public runtime config without private-key w
   await expect(page.locator("[data-library-result]")).toHaveCount(3)
   const ledger = await requests(request)
   expect(ledger).toHaveLength(1)
-  expect(ledger[0]?.path.startsWith("/api/relevance/")).toBe(true)
+  expect(ledger[0]).toMatchObject({ path: "/v2/library/search", scope: "public" })
 })
 
 test("debounces Library input, preserves the URL, and uses the public proxy once", async ({
@@ -209,7 +255,7 @@ test("debounces Library input, preserves the URL, and uses the public proxy once
   await page.reload({ waitUntil: "networkidle" })
   const initialLedger = await requests(request)
   expect(initialLedger).toHaveLength(1)
-  expect(initialLedger[0]?.path.startsWith("/legacy-api/relevance/")).toBe(true)
+  expect(initialLedger[0]).toMatchObject({ path: "/private-v2/library/search", scope: "private" })
 
   const input = page.locator("[data-library-filter]")
   await input.fill("Selma")
@@ -220,9 +266,9 @@ test("debounces Library input, preserves the URL, and uses the public proxy once
   await expect(page.getByRole("link", { name: /Lagerlöf/ })).toBeVisible()
 
   const ledger = await requests(request)
-  const publicRequests = ledger.filter(entry => entry.path.startsWith("/api/relevance/"))
+  const publicRequests = ledger.filter(entry => entry.scope === "public")
   expect(publicRequests).toHaveLength(1)
-  expect(publicRequests[0]?.query.q).toBe("(Selma)")
+  expect(publicRequests[0]?.body).toMatchObject({ mode: "all", filters: libraryFilters({ query: "Selma" }) })
   expect(problems).toEqual([])
 })
 
@@ -240,15 +286,15 @@ test("submit before debounce persists one request and durable filter state", asy
   await expect(page.getByRole("link", { name: /Lagerlöf/ })).toBeVisible()
   await page.waitForTimeout(400)
   const ledger = await requests(request)
-  expect(ledger.filter(entry => entry.path.startsWith("/api/relevance/"))).toHaveLength(1)
+  expect(ledger.filter(entry => entry.scope === "public")).toHaveLength(1)
 })
 
 test("a delayed stale Library request cannot replace the latest results", async ({
   page,
   request
 }) => {
-  await request.put(`${fixture}/_library_relevance_delays`, {
-    data: { "(Selma)": 900 }
+  await setLibraryDelay(request, "search", {
+    mode: "all", filters: libraryFilters({ query: "Selma" }), sort: "relevance", reverse: false
   })
   await page.goto("/bibliotek", { waitUntil: "networkidle" })
 
@@ -292,15 +338,8 @@ test("Nytt owns its canonical query state and restores through browser history",
   let ledger = publicEpubRequests(await epubRequests(request))
   expect(ledger).toHaveLength(1)
   expect(ledger[0]).toMatchObject({
-    path: epubPath,
-    query: {
-      author_aggregation: "true",
-      imported_aggregation: "true",
-      q: `${epubQueryPrefix} (Selma)`,
-      sort_field: "imported|desc,main_author.name_for_index|asc,sortkey|asc,sort_date_imprint.date|asc",
-      from: "0",
-      to: "100"
-    }
+    path: "/v2/library/search", scope: "public",
+    body: { mode: "latest", filters: libraryFilters({ query: "Selma" }), reverse: false, page: 1, hide_1800: false }
   })
 
   await pushRoute(page, "/bibliotek?filter=Senaste")
@@ -316,7 +355,7 @@ test("Nytt owns its canonical query state and restores through browser history",
 
   ledger = publicEpubRequests(await epubRequests(request))
   expect(ledger).toHaveLength(3)
-  expect(ledger[2]?.query.q).toBe(`${epubQueryPrefix} (Selma) AND NOT keyword:1800`)
+  expect(ledger[2]?.body).toMatchObject({ mode: "latest", filters: libraryFilters({ query: "Selma" }), hide_1800: true })
 })
 
 test("Författare, Verk, and Dikt tabs navigate, render, and restore through history", async ({
@@ -396,7 +435,7 @@ for (const mode of ["works", "latest", "epub", "pdf"] as const) {
       await expect(page.getByRole("tooltip")).toHaveCount(0)
     }
 
-    expect((await epubRequests(request)).filter(entry => entry.query.to !== "0")).toHaveLength(1)
+    expect(await epubRequests(request)).toHaveLength(1)
     expect(problems).toEqual([])
   })
 }
@@ -437,8 +476,8 @@ test("delayed Works and Dikt transitions never relabel rows owned by the other m
   await expect(page.locator("[data-library-work-row]").filter({ hasText: "Doktor Glas" }).first())
     .toBeVisible()
 
-  await request.put(`${fixture}/_library_query_delays`, {
-    data: { [`${epubQueryPrefix} *|sortkey|asc|0|100`]: 900 }
+  await setLibraryDelay(request, "search", {
+    mode: "parts", filters: libraryFilters(), sort: "title", reverse: false, page: 1
   })
   await page.locator('[data-library-tab="parts"]').click()
   await expect(page.locator("[data-library-loading] .spinner")).toBeVisible()
@@ -454,22 +493,10 @@ test("a new filter invalidates delayed counts owned by the previous filter", asy
   page,
   request
 }) => {
-  await request.put(`${fixture}/_library_relevance_delays`, {
-    data: { "|popularity|desc": 900 }
-  })
-  await request.put(`${fixture}/_library_query_delays`, {
-    data: {
-      [`${epubQueryPrefix} *|popularity|desc|0|0`]: 900,
-      [`${epubQueryPrefix} *|sortkey|asc|0|0`]: 900
-    }
-  })
+  await setLibraryDelay(request, "counts", { mode: "works", filters: libraryFilters() })
+  await setLibraryDelay(request, "counts", { mode: "parts", filters: libraryFilters() })
   await page.goto("/bibliotek", { waitUntil: "domcontentloaded" })
-  await expect.poll(async () => (await allRelevanceRequests(request)).filter(
-    entry => entry.query.to === "0"
-  ).length).toBe(0)
-  await expect.poll(async () => (await epubRequests(request)).filter(
-    entry => entry.query.to === "0"
-  ).length).toBe(2)
+  await expect.poll(async () => (await libraryV2Requests(request)).counts.length).toBe(2)
 
   await page.locator("[data-library-filter]").fill("Selma")
   await expect(page).toHaveURL(/filter=Selma/)
@@ -490,17 +517,79 @@ test("browse tab totals use count-only requests without replacing active rows", 
   await expect(page.locator('[data-library-tab="works"]')).toContainText(": 3")
   await expect(page.locator('[data-library-tab="parts"]')).toContainText(": 201")
 
-  const countRelevance = (await allRelevanceRequests(request)).filter(
-    entry => entry.path === "/api/relevance/author" && entry.query.to === "0"
-  )
-  expect(countRelevance).toHaveLength(0)
+  expect((await libraryV2Requests(request)).counts).toEqual([
+    {
+      method: "POST",
+      path: "/v2/library/counts",
+      scope: "public",
+      body: { mode: "works", filters: libraryFilters() }
+    },
+    {
+      method: "POST",
+      path: "/v2/library/counts",
+      scope: "public",
+      body: { mode: "parts", filters: libraryFilters() }
+    }
+  ])
+})
 
-  const countQueries = (await epubRequests(request)).filter(
-    entry => entry.path.startsWith("/api/query_string/") && entry.query.to === "0"
-  )
-  expect(countQueries).toHaveLength(1)
-  expect(countQueries[0]?.path).toBe("/api/query_string/etext-part,faksimil-part")
-  expect(countQueries.every(entry => entry.query.from === "0")).toBe(true)
+test("delayed browse counts never gate rows and authors wait for both ID sets", async ({
+  page,
+  request
+}) => {
+  const filtered = libraryFilters({ query: "Selma" })
+  await setLibraryDelay(request, "counts", { mode: "works", filters: filtered })
+  await setLibraryDelay(request, "counts", { mode: "parts", filters: filtered })
+
+  await page.goto("/bibliotek?filter=Selma", { waitUntil: "domcontentloaded" })
+  await expect(page.getByRole("link", { name: /Lagerlöf/ })).toBeVisible()
+  await expect(page.locator('[data-library-tab="authors"]')).toHaveText("Författare")
+  await expect(page.locator('[data-library-tab="works"]')).toHaveText("Verk")
+  await expect(page.locator('[data-library-tab="parts"]')).toHaveText("Dikt, novell, etc.")
+
+  await expect(page.locator('[data-library-tab="works"]')).toContainText(": 1")
+  await expect(page.locator('[data-library-tab="parts"]')).toHaveText("Dikt, novell, etc.")
+  await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 1")
+})
+
+test("hydrated Authors rows do not publish an author tab count before both ID sets", async ({
+  page,
+  request
+}) => {
+  await setLibraryDelay(request, "counts", { mode: "works", filters: libraryFilters() })
+  await setLibraryDelay(request, "counts", { mode: "parts", filters: libraryFilters() })
+
+  await page.goto("/bibliotek?visa=authors&sort=namn", { waitUntil: "domcontentloaded" })
+  await expect(page.locator("[data-library-author-row]")).toHaveCount(150)
+  await expect(page.locator('[data-library-tab="authors"]')).toHaveText("Författare")
+  await expect(page.locator('[data-library-tab="works"]')).toContainText(": 3")
+  await expect(page.locator('[data-library-tab="parts"]')).toContainText(": 201")
+
+  await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 4")
+})
+
+test("nullable browse siblings retain successful totals and retry only missing IDs", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_library_v2/failures`, {
+    data: { operation: "counts", mode: "works" }
+  })
+  await page.goto("/bibliotek?visa=works&filter=Selma&sort=popularitet", {
+    waitUntil: "networkidle"
+  })
+
+  await expect(page.locator("[data-library-work-row]")).toHaveCount(1)
+  await expect(page.locator('[data-library-tab="works"]')).toContainText(": 1")
+  await expect(page.locator('[data-library-tab="parts"]')).toHaveText("Dikt, novell, etc.")
+  await expect(page.locator('[data-library-tab="authors"]')).toHaveText("Författare")
+
+  await request.delete(`${fixture}/_library_v2/failures`)
+  await reset(request)
+  await page.locator('[data-library-sort="popularitet"]').click()
+  await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 1")
+  expect((await libraryV2Requests(request)).counts.map(entry => entry.body.mode))
+    .toEqual(["works"])
 })
 
 test("Författare hydrates 150 rows and expands the legacy Visa alla disclosure", async ({
@@ -526,7 +615,7 @@ test("Författare hydrates 150 rows and expands the legacy Visa alla disclosure"
 
   const visibleRequests = await requests(request)
   expect(visibleRequests).toHaveLength(1)
-  expect(visibleRequests[0]?.query).toMatchObject({ from: "0", to: "10000" })
+  expect(visibleRequests[0]?.body).toMatchObject({ mode: "authors", limit: 151 })
 })
 
 test("Works groups representations and expands the legacy read, download, search, and about actions", async ({
@@ -603,7 +692,7 @@ test("nedladdning selects visible source works and posts the exact chosen export
   await expect(page.locator('[data-library-tab="pdf"]')).toHaveCount(0)
 
   const ledger = await epubRequests(request)
-  expect(ledger.at(-1)?.query.q).toContain("export>type:(xml OR txt OR workdb)")
+  expect(ledger.at(-1)?.body).toMatchObject({ mode: "works", source_only: true })
 
   await page.locator("[data-library-select-visible]").click()
   await expect(page.locator("[data-library-selected-work]")).toHaveCount(3)
@@ -669,8 +758,8 @@ test("delayed input cannot replace an immediate sort or reset intent", async ({
   page,
   request
 }) => {
-  await request.put(`${fixture}/_library_relevance_delays`, {
-    data: { "(Selma)|_score|desc": 900 }
+  await setLibraryDelay(request, "search", {
+    mode: "all", filters: libraryFilters({ query: "Selma" }), sort: "relevance", reverse: false
   })
   await page.goto("/bibliotek", { waitUntil: "networkidle" })
 
@@ -684,8 +773,8 @@ test("delayed input cannot replace an immediate sort or reset intent", async ({
   await expect(page.locator('[data-library-sort="titlar"]')).toHaveClass(/active/)
   await expect(page.getByRole("link", { name: /Lagerlöf/ })).toBeVisible()
 
-  await request.put(`${fixture}/_library_relevance_delays`, {
-    data: { "(Senaste)|sortkey|asc": 900 }
+  await setLibraryDelay(request, "search", {
+    mode: "all", filters: libraryFilters({ query: "Senaste" }), sort: "title", reverse: false
   })
   await input.fill("Senaste")
   await page.waitForTimeout(350)
@@ -724,7 +813,7 @@ test("Back and Forward restore filter, sort, and results without client duplicat
   await expect(page.getByRole("link", { name: "Senaste träffen" })).toBeVisible()
 
   const ledger = await requests(request)
-  expect(ledger.filter(entry => entry.path.startsWith("/api/relevance/"))).toHaveLength(2)
+  expect(ledger.filter(entry => entry.scope === "public")).toHaveLength(2)
 })
 
 test("Library EPUB tab owns route intent and makes one public request", async ({ page, request }) => {
@@ -746,13 +835,67 @@ test("Library EPUB tab owns route intent and makes one public request", async ({
   const ledger = publicEpubRequests(await epubRequests(request))
   expect(ledger).toHaveLength(1)
   expect(ledger[0]).toMatchObject({
-    path: epubPath,
-    query: {
-      q: epubQuery(),
-      sort_field: "popularity|desc",
-      from: "0",
-      to: "100"
-    }
+    path: "/v2/library/search", scope: "public",
+    body: { mode: "epub", filters: libraryFilters(), sort: "popularity", reverse: false, page: 1 }
+  })
+})
+
+test("Library modes use only generated v2 operations", async ({ page, request }) => {
+  const filters = libraryFilters()
+  await page.goto("/", { waitUntil: "networkidle" })
+  await reset(request)
+  await pushRoute(page, "/bibliotek")
+  await expect(page.locator("[data-library-result]")).toHaveCount(3)
+
+  for (const [mode, row] of [
+    ["latest", "[data-library-latest-row]"],
+    ["authors", "[data-library-author-row]"],
+    ["works", "[data-library-work-row]"],
+    ["parts", "[data-library-part-row]"],
+    ["epub", "[data-library-epub-row]"],
+    ["pdf", "[data-library-pdf-row]"]
+  ] as const) {
+    await page.locator(`[data-library-tab="${mode}"]`).click()
+    await expect(page.locator(row).first()).toBeVisible()
+  }
+
+  const ledger = await libraryV2Requests(request)
+  expect(ledger.options).toEqual([{
+    method: "GET", path: "/v2/library/options", scope: "public"
+  }])
+  expect(ledger.search).toEqual([
+    { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "all", filters, sort: "relevance", reverse: false } },
+    { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "latest", filters, reverse: false, page: 1, hide_1800: false } },
+    { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "authors", filters, sort: "popularity", reverse: false, limit: 150 } },
+    { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "works", filters, sort: "popularity", reverse: false, page: 1, source_only: false } },
+    { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "parts", filters, sort: "title", reverse: false, page: 1 } },
+    { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "epub", filters, sort: "popularity", reverse: false, page: 1 } },
+    { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "pdf", filters, sort: "popularity", reverse: false, page: 1 } }
+  ])
+  expect(ledger.counts).toEqual([
+    { method: "POST", path: "/v2/library/counts", scope: "public", body: { mode: "works", filters } },
+    { method: "POST", path: "/v2/library/counts", scope: "public", body: { mode: "parts", filters } }
+  ])
+  expect(await legacyLibraryRequests(request)).toEqual({
+    relevance: [], query: [], options: [], metadata: []
+  })
+
+  await reset(request)
+  await page.goto("/epub", { waitUntil: "networkidle" })
+  expect((await libraryV2Requests(request)).counts).toEqual([
+    { method: "POST", path: "/v2/library/counts", scope: "public", body: { mode: "pdf", filters } }
+  ])
+  expect(await legacyLibraryRequests(request)).toEqual({
+    relevance: [], query: [], options: [], metadata: []
+  })
+
+  await reset(request)
+  await page.goto("/epub?visa=pdf&sort=popularitet", { waitUntil: "networkidle" })
+  expect((await libraryV2Requests(request)).counts).toEqual([
+    { method: "POST", path: "/v2/library/counts", scope: "public", body: { mode: "epub", filters } }
+  ])
+  expect(await legacyLibraryRequests(request)).toEqual({
+    relevance: [], query: [], options: [], metadata: []
   })
 })
 
@@ -805,8 +948,8 @@ test("standalone EPUB interactions retain the standalone path", async ({ page, r
 })
 
 test("EPUB keeps committed rows visible under its loading indicator", async ({ page, request }) => {
-  await request.put(`${fixture}/_library_query_delays`, {
-    data: { [`${epubQuery("Selma")}|popularity|desc|0|100`]: 900 }
+  await setLibraryDelay(request, "search", {
+    mode: "epub", filters: libraryFilters({ query: "Selma" }), sort: "popularity", reverse: false, page: 1
   })
   await page.goto("/bibliotek?visa=epub&sort=popularitet", { waitUntil: "networkidle" })
 
@@ -843,11 +986,9 @@ test("EPUB input debounces, resets page, and sends the sanitized query", async (
 
   const ledger = publicEpubRequests(await epubRequests(request))
   expect(ledger).toHaveLength(1)
-  expect(ledger[0]?.query).toMatchObject({
-    q: epubQuery("Selma Lagerlöf saga"),
-    sort_field: "sort_date_imprint.date|desc",
-    from: "0",
-    to: "100"
+  expect(ledger[0]?.body).toEqual({
+    mode: "epub", filters: libraryFilters({ query: 'Selma–Lagerlöf, "saga"' }),
+    sort: "chronology", reverse: false, page: 1
   })
 })
 
@@ -855,11 +996,11 @@ test("each EPUB sort resets page and emits its exact expression", async ({ page,
   await page.goto("/bibliotek?visa=epub&sort=popularitet&sida=2", { waitUntil: "networkidle" })
   await reset(request)
 
-  for (const [index, [sort, expression]] of [
-    ["forfattare", "main_author.name_for_index|asc,sortkey|asc"],
-    ["titlar", "sortkey|asc"],
-    ["popularitet", "popularity|desc"],
-    ["kronologi", "sort_date_imprint.date|desc"]
+  for (const [index, [sort, wireSort]] of [
+    ["forfattare", "author"],
+    ["titlar", "title"],
+    ["popularitet", "popularity"],
+    ["kronologi", "chronology"]
   ].entries()) {
     await page.locator(`[data-library-sort="${sort}"]`).click()
     await expect.poll(async () => publicEpubRequests(await epubRequests(request)).length)
@@ -870,11 +1011,8 @@ test("each EPUB sort resets page and emits its exact expression", async ({ page,
     expect(url.searchParams.get("sort")).toBe(sort)
     expect(url.searchParams.has("sida")).toBe(false)
     const ledger = publicEpubRequests(await epubRequests(request))
-    expect(ledger.at(-1)?.query).toMatchObject({
-      q: epubQuery(),
-      sort_field: expression,
-      from: "0",
-      to: "100"
+    expect(ledger.at(-1)?.body).toEqual({
+      mode: "epub", filters: libraryFilters(), sort: wireSort, reverse: false, page: 1
     })
   }
 
@@ -900,8 +1038,8 @@ test("clicking the active EPUB sort reverses its primary field without changing 
   expect(await page.evaluate(() => history.length)).toBe(initialHistoryLength)
   await expect(item.locator(".fa-caret-up")).toBeVisible()
   await expect(item.locator(".fa-caret-down")).toHaveCount(0)
-  expect((await publicEpubRequests(await epubRequests(request))).at(-1)?.query.sort_field)
-    .toBe("sortkey|desc")
+  expect((await publicEpubRequests(await epubRequests(request))).at(-1)?.body)
+    .toMatchObject({ mode: "epub", sort: "title", reverse: true })
 
   await sort.click()
   await expect.poll(async () => publicEpubRequests(await epubRequests(request)).length).toBe(2)
@@ -910,8 +1048,8 @@ test("clicking the active EPUB sort reverses its primary field without changing 
   expect(await page.evaluate(() => history.length)).toBe(initialHistoryLength)
   await expect(item.locator(".fa-caret-down")).toBeVisible()
   await expect(item.locator(".fa-caret-up")).toHaveCount(0)
-  expect((await publicEpubRequests(await epubRequests(request))).at(-1)?.query.sort_field)
-    .toBe("sortkey|asc")
+  expect((await publicEpubRequests(await epubRequests(request))).at(-1)?.body)
+    .toMatchObject({ mode: "epub", sort: "title", reverse: false })
 })
 
 test("reversing a multi-field sort leaves its ascending tie-breaker intact", async ({
@@ -925,8 +1063,8 @@ test("reversing a multi-field sort leaves its ascending tie-breaker intact", asy
   await sort.click()
 
   await expect.poll(async () => publicEpubRequests(await epubRequests(request)).length).toBe(1)
-  expect((await publicEpubRequests(await epubRequests(request))).at(-1)?.query.sort_field)
-    .toBe("main_author.name_for_index|desc,sortkey|asc")
+  expect((await publicEpubRequests(await epubRequests(request))).at(-1)?.body)
+    .toMatchObject({ mode: "epub", sort: "author", reverse: true })
   await expect(sort.locator("..").locator(".fa-caret-up")).toBeVisible()
 })
 
@@ -940,20 +1078,20 @@ test("sort direction is isolated by sort key and between EPUB and PDF modes", as
   const epubTitleSort = page.locator('[data-library-sort="titlar"]')
   await epubTitleSort.click()
   await expect.poll(async () => publicOnlyEpubRequests(await epubRequests(request)).length).toBe(1)
-  expect((await publicOnlyEpubRequests(await epubRequests(request))).at(-1)?.query.sort_field)
-    .toBe("sortkey|desc")
+  expect((await publicOnlyEpubRequests(await epubRequests(request))).at(-1)?.body)
+    .toMatchObject({ sort: "title", reverse: true })
 
   const epubAuthorSort = page.locator('[data-library-sort="forfattare"]')
   await epubAuthorSort.click()
   await expect.poll(async () => publicOnlyEpubRequests(await epubRequests(request)).length).toBe(2)
-  expect((await publicOnlyEpubRequests(await epubRequests(request))).at(-1)?.query.sort_field)
-    .toBe("main_author.name_for_index|asc,sortkey|asc")
+  expect((await publicOnlyEpubRequests(await epubRequests(request))).at(-1)?.body)
+    .toMatchObject({ sort: "author", reverse: false })
   await expect(epubAuthorSort.locator("..").locator(".fa-caret-down")).toBeVisible()
 
   await epubTitleSort.click()
   await expect.poll(async () => publicOnlyEpubRequests(await epubRequests(request)).length).toBe(3)
-  expect((await publicOnlyEpubRequests(await epubRequests(request))).at(-1)?.query.sort_field)
-    .toBe("sortkey|desc")
+  expect((await publicOnlyEpubRequests(await epubRequests(request))).at(-1)?.body)
+    .toMatchObject({ sort: "title", reverse: true })
   await expect(epubTitleSort.locator("..").locator(".fa-caret-up")).toBeVisible()
 
   await page.locator('[data-library-tab="pdf"]').click()
@@ -962,8 +1100,8 @@ test("sort direction is isolated by sort key and between EPUB and PDF modes", as
   await pdfTitleSort.click()
 
   await expect.poll(async () => publicPdfRequests(await epubRequests(request)).length).toBe(2)
-  expect((await publicPdfRequests(await epubRequests(request))).at(-1)?.query.sort_field)
-    .toBe("sortkey|asc")
+  expect((await publicPdfRequests(await epubRequests(request))).at(-1)?.body)
+    .toMatchObject({ sort: "title", reverse: false })
   await expect(pdfTitleSort.locator("..").locator(".fa-caret-down")).toBeVisible()
 })
 
@@ -972,8 +1110,8 @@ test("two rapid active sort clicks keep the newest direction and rows", async ({
     waitUntil: "networkidle"
   })
   await reset(request)
-  await request.put(`${fixture}/_library_query_delays`, {
-    data: { [`${epubQuery("sort race")}|sortkey|desc|0|100`]: 900 }
+  await setLibraryDelay(request, "search", {
+    mode: "epub", filters: libraryFilters({ query: "sort race" }), sort: "title", reverse: true, page: 1
   })
 
   const sort = page.locator('[data-library-sort="titlar"]')
@@ -987,8 +1125,8 @@ test("two rapid active sort clicks keep the newest direction and rows", async ({
   await expect(page.getByRole("link", { name: "Doktor Glas", exact: true })).toBeVisible()
   await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toHaveCount(0)
   await expect(sort.locator("..").locator(".fa-caret-down")).toBeVisible()
-  expect((await publicEpubRequests(await epubRequests(request))).map(entry => entry.query.sort_field))
-    .toEqual(["sortkey|desc", "sortkey|asc"])
+  expect((await publicEpubRequests(await epubRequests(request))).map(entry => entry.body.reverse))
+    .toEqual([true, false])
 })
 
 test("EPUB pagination owns page state and keeps exact row anchors", async ({ page, request }) => {
@@ -1006,8 +1144,8 @@ test("EPUB pagination owns page state and keeps exact row anchors", async ({ pag
   expect(url.searchParams.get("keep")).toBe("ja")
   expect(publicEpubRequests(await epubRequests(request))).toEqual([
     expect.objectContaining({
-      path: epubPath,
-      query: expect.objectContaining({ from: "100", to: "200" })
+      path: "/v2/library/search",
+      body: expect.objectContaining({ mode: "epub", page: 2 })
     })
   ])
 
@@ -1041,10 +1179,25 @@ test("standalone EPUB keeps both format counts current without replacing active 
 
   const ledger = await epubRequests(request)
   expect(publicOnlyEpubRequests(ledger)).toHaveLength(1)
-  expect(countOnlyPdfRequests(ledger)).toHaveLength(1)
-  expect(countOnlyEpubRequests(ledger)).toHaveLength(0)
-  expect(publicOnlyEpubRequests(ledger)[0]?.query).toMatchObject({ from: "0", to: "100" })
-  expect(countOnlyPdfRequests(ledger)[0]?.query).toMatchObject({ from: "0", to: "0" })
+  expect(await countOnlyPdfRequests(request)).toHaveLength(1)
+  expect(await countOnlyEpubRequests(request)).toHaveLength(0)
+  expect(publicOnlyEpubRequests(ledger)[0]?.body).toMatchObject({ mode: "epub", page: 1 })
+  expect((await countOnlyPdfRequests(request))[0]?.body).toEqual({
+    mode: "pdf", filters: libraryFilters({ query: "Selma" })
+  })
+})
+
+test("a delayed inactive standalone count never gates the active EPUB rows", async ({
+  page,
+  request
+}) => {
+  await setLibraryDelay(request, "counts", { mode: "pdf", filters: libraryFilters() })
+  await page.goto("/epub?sort=popularitet", { waitUntil: "domcontentloaded" })
+
+  await expect(page.locator("[data-library-epub-row]")).toHaveCount(3)
+  await expect(page.locator('[data-library-tab="epub"]')).toHaveText("Epub: 201")
+  await expect(page.locator('[data-library-tab="pdf"]')).toHaveText("PDF")
+  await expect(page.locator('[data-library-tab="pdf"]')).toHaveText("PDF: 201")
 })
 
 test("a failed inactive standalone count leaves active rows and status intact", async ({ page }) => {
@@ -1070,8 +1223,8 @@ test("standalone format switches reuse counts but always fetch the selected rows
 
   const ledger = await epubRequests(request)
   expect(publicPdfRequests(ledger)).toHaveLength(1)
-  expect(countOnlyEpubRequests(ledger)).toHaveLength(0)
-  expect(countOnlyPdfRequests(ledger)).toHaveLength(0)
+  expect(await countOnlyEpubRequests(request)).toHaveLength(0)
+  expect(await countOnlyPdfRequests(request)).toHaveLength(0)
 })
 
 test("a stale standalone inactive count cannot overwrite a newer filter identity", async ({
@@ -1080,13 +1233,13 @@ test("a stale standalone inactive count cannot overwrite a newer filter identity
 }) => {
   await page.goto("/epub?sort=popularitet", { waitUntil: "networkidle" })
   await reset(request)
-  await request.put(`${fixture}/_library_query_delays`, {
-    data: { [`${pdfQuery("Selma")}|popularity|desc|0|0`]: 900 }
+  await setLibraryDelay(request, "counts", {
+    mode: "pdf", filters: libraryFilters({ query: "Selma" })
   })
 
   const input = page.locator("[data-library-filter]")
   await input.fill("Selma")
-  await expect.poll(async () => countOnlyPdfRequests(await epubRequests(request)).length).toBe(1)
+  await expect.poll(async () => (await countOnlyPdfRequests(request)).length).toBe(1)
   await input.fill("inga")
 
   await expect(page.locator("[data-library-empty]")).toBeVisible()
@@ -1123,10 +1276,9 @@ test("standalone advanced chronology refreshes both counts and preserves repeate
 
   const ledger = await epubRequests(request)
   expect(publicOnlyEpubRequests(ledger)).toHaveLength(1)
-  expect(countOnlyPdfRequests(ledger)).toHaveLength(1)
-  for (const entry of ledger) {
-    expect(entry.query.q).toContain("sort_date_imprint.date:[1900 TO 1910]")
-  }
+  expect(await countOnlyPdfRequests(request)).toHaveLength(1)
+  expect(publicOnlyEpubRequests(ledger)[0]?.body.filters).toMatchObject({ year_from: 1900, year_to: 1910 })
+  expect((await countOnlyPdfRequests(request))[0]?.body.filters).toMatchObject({ year_from: 1900, year_to: 1910 })
 })
 
 test("EPUB Back and Forward restore atomic route states once", async ({ page, request }) => {
@@ -1160,8 +1312,8 @@ test("EPUB Back and Forward restore atomic route states once", async ({ page, re
 })
 
 test("a delayed EPUB filter cannot replace the latest filter intent", async ({ page, request }) => {
-  await request.put(`${fixture}/_library_query_delays`, {
-    data: { [`${epubQuery("Selma")}|popularity|desc|0|100`]: 900 }
+  await setLibraryDelay(request, "search", {
+    mode: "epub", filters: libraryFilters({ query: "Selma" }), sort: "popularity", reverse: false, page: 1
   })
   await page.goto("/bibliotek?visa=epub&sort=popularitet", { waitUntil: "networkidle" })
 
@@ -1176,8 +1328,8 @@ test("a delayed EPUB filter cannot replace the latest filter intent", async ({ p
 })
 
 test("a delayed EPUB sort cannot replace the latest page intent", async ({ page, request }) => {
-  await request.put(`${fixture}/_library_query_delays`, {
-    data: { [`${epubQuery()}|sort_date_imprint.date|desc|0|100`]: 900 }
+  await setLibraryDelay(request, "search", {
+    mode: "epub", filters: libraryFilters(), sort: "chronology", reverse: false, page: 1
   })
   await page.goto("/bibliotek?visa=epub&sort=popularitet&sida=2", { waitUntil: "networkidle" })
 
@@ -1191,8 +1343,8 @@ test("a delayed EPUB sort cannot replace the latest page intent", async ({ page,
 })
 
 test("a delayed EPUB page cannot replace the latest sort intent", async ({ page, request }) => {
-  await request.put(`${fixture}/_library_query_delays`, {
-    data: { [`${epubQuery()}|popularity|desc|100|200`]: 900 }
+  await setLibraryDelay(request, "search", {
+    mode: "epub", filters: libraryFilters(), sort: "popularity", reverse: false, page: 2
   })
   await page.goto("/bibliotek?visa=epub&sort=popularitet", { waitUntil: "networkidle" })
 
@@ -1278,11 +1430,9 @@ test("PDF debounce, immediate submit, and reset own one request per committed st
   expect(url.searchParams.get("sort")).toBe("kronologi")
   expect(url.searchParams.has("sida")).toBe(false)
   expect(url.searchParams.getAll("keep")).toEqual([""])
-  expect(publicPdfRequests(await epubRequests(request))[0]?.query).toMatchObject({
-    q: pdfQuery("Selma Lagerlöf roman"),
-    sort_field: "sort_date_imprint.date|desc",
-    from: "0",
-    to: "100"
+  expect(publicPdfRequests(await epubRequests(request))[0]?.body).toEqual({
+    mode: "pdf", filters: libraryFilters({ query: 'Selma–Lagerlöf, "roman"' }),
+    sort: "chronology", reverse: false, page: 1
   })
 
   await input.fill("inga")
@@ -1297,7 +1447,7 @@ test("PDF debounce, immediate submit, and reset own one request per committed st
   expect(url.searchParams.has("filter")).toBe(false)
   const ledger = publicPdfRequests(await epubRequests(request))
   expect(ledger).toHaveLength(3)
-  expect(ledger.at(-1)?.query.q).toBe(pdfQuery())
+  expect(ledger.at(-1)?.body.filters).toEqual(libraryFilters())
 })
 
 test("each PDF sort resets page and PDF pagination owns numeric, previous, and next state", async ({
@@ -1309,22 +1459,19 @@ test("each PDF sort resets page and PDF pagination owns numeric, previous, and n
   })
   await reset(request)
 
-  for (const [index, [sort, expression]] of [
-    ["forfattare", "main_author.name_for_index|asc,sortkey|asc"],
-    ["titlar", "sortkey|asc"],
-    ["popularitet", "popularity|desc"],
-    ["kronologi", "sort_date_imprint.date|desc"]
+  for (const [index, [sort, wireSort]] of [
+    ["forfattare", "author"],
+    ["titlar", "title"],
+    ["popularitet", "popularity"],
+    ["kronologi", "chronology"]
   ].entries()) {
     await page.locator(`[data-library-sort="${sort}"]`).click()
     await expect.poll(async () => publicPdfRequests(await epubRequests(request)).length)
       .toBe(index + 1)
     await expect(page.locator(`[data-library-sort="${sort}"]`)).toHaveClass(/active/)
     expect(new URL(page.url()).searchParams.has("sida")).toBe(false)
-    expect(publicPdfRequests(await epubRequests(request)).at(-1)?.query).toMatchObject({
-      q: pdfQuery(),
-      sort_field: expression,
-      from: "0",
-      to: "100"
+    expect(publicPdfRequests(await epubRequests(request)).at(-1)?.body).toEqual({
+      mode: "pdf", filters: libraryFilters(), sort: wireSort, reverse: false, page: 1
     })
   }
 
@@ -1340,8 +1487,7 @@ test("each PDF sort resets page and PDF pagination owns numeric, previous, and n
   await expect.poll(async () => publicPdfRequests(await epubRequests(request)).length).toBe(7)
 
   const pagination = publicPdfRequests(await epubRequests(request)).slice(-3)
-  expect(pagination.map(entry => [entry.query.from, entry.query.to]))
-    .toEqual([["100", "200"], ["0", "100"], ["100", "200"]])
+  expect(pagination.map(entry => entry.body.page)).toEqual([2, 1, 2])
   expect(new URL(page.url()).searchParams.get("keep")).toBe("ja")
 })
 
@@ -1381,7 +1527,7 @@ test("PDF Back and Forward restore mode, filter, sort, page, and rows exactly on
   const queryLedger = await epubRequests(request)
   expect(publicPdfRequests(queryLedger)).toHaveLength(3)
   expect(publicOnlyEpubRequests(queryLedger)).toHaveLength(2)
-  expect((await requests(request)).filter(entry => entry.path.startsWith("/api/relevance/")))
+  expect((await requests(request)).filter(entry => entry.scope === "public"))
     .toHaveLength(1)
 })
 
@@ -1389,8 +1535,8 @@ test("delayed PDF intents cannot replace newer PDF, EPUB, or relevance states", 
   page,
   request
 }) => {
-  await request.put(`${fixture}/_library_query_delays`, {
-    data: { [`${pdfQuery("Selma")}|popularity|desc|0|100`]: 900 }
+  await setLibraryDelay(request, "search", {
+    mode: "pdf", filters: libraryFilters({ query: "Selma" }), sort: "popularity", reverse: false, page: 1
   })
   await page.goto("/bibliotek?visa=pdf&sort=popularitet", { waitUntil: "networkidle" })
 
@@ -1403,11 +1549,11 @@ test("delayed PDF intents cannot replace newer PDF, EPUB, or relevance states", 
   await expect(page.locator("[data-library-empty]")).toBeVisible()
   await expect(page.locator("[data-library-pdf-row]")).toHaveCount(0)
 
-  await request.delete(`${fixture}/_library_query_delays`)
+  await request.delete(`${fixture}/_library_v2/delays`)
   await page.locator("[data-library-reset]").click()
   await expect(page.locator("[data-library-pdf-row]")).toHaveCount(5)
-  await request.put(`${fixture}/_library_query_delays`, {
-    data: { [`${pdfQuery("Selma")}|popularity|desc|0|100`]: 900 }
+  await setLibraryDelay(request, "search", {
+    mode: "pdf", filters: libraryFilters({ query: "Selma" }), sort: "popularity", reverse: false, page: 1
   })
   await input.fill("Selma")
   await page.waitForTimeout(350)
@@ -1426,8 +1572,8 @@ test("delayed PDF intents cannot replace newer PDF, EPUB, or relevance states", 
   await expect(page.locator("[data-library-pdf-row]")).toHaveCount(1)
   await expect(page.getByRole("link", { name: "Gösta Berlings saga" })).toBeVisible()
 
-  await request.put(`${fixture}/_library_query_delays`, {
-    data: { [`${pdfQuery("inga")}|popularity|desc|0|100`]: 900 }
+  await setLibraryDelay(request, "search", {
+    mode: "pdf", filters: libraryFilters({ query: "inga" }), sort: "popularity", reverse: false, page: 1
   })
   await input.fill("inga")
   await page.waitForTimeout(350)
@@ -1461,7 +1607,7 @@ test("PDF hydration reuses its private payload and SPA entry makes one public re
   await page.goto("/bibliotek?visa=pdf&sort=popularitet", { waitUntil: "networkidle" })
   await expect(page.locator("[data-library-pdf-row]")).toHaveCount(5)
   const hydrated = await epubRequests(request)
-  expect(hydrated.filter(entry => entry.path.startsWith("/legacy-api/"))).toHaveLength(1)
+  expect(hydrated.filter(entry => entry.scope === "private")).toHaveLength(1)
   expect(publicPdfRequests(hydrated)).toHaveLength(0)
 
   await page.goto("/", { waitUntil: "networkidle" })
@@ -1544,23 +1690,10 @@ test("PDF empty and failed states stay generic without hydration or console erro
   await expect(page.locator("[data-library-pdf-row]")).toHaveCount(0)
 
   const input = page.locator("[data-library-filter]")
-  await input.fill("malformed-top")
-  await input.press("Enter")
-  await expect(page.locator("[data-library-error]")).toHaveText("Ett fel uppstod.")
-  await expect(page.locator("[data-library-empty]")).toHaveCount(0)
-
-  await request.put(`${fixture}/_library_query_failure`)
-  const expectedFailureUrl = new URL(epubPath, page.url())
-  expectedFailureUrl.search = new URLSearchParams({
-    exclude: libraryDownloadExclude,
-    include: libraryPdfInclude,
-    partial_string: "true",
-    q: pdfQuery("failed"),
-    sort_field: "popularity|desc",
-    from: "0",
-    to: "100",
-    suggest: "true"
-  }).toString()
+  await request.put(`${fixture}/_library_v2/failures`, {
+    data: { operation: "search", mode: "pdf" }
+  })
+  const expectedFailureUrl = new URL("/api/v2/library/search", page.url())
   await input.fill("failed")
   await input.press("Enter")
   await expect(page.locator("[data-library-error]")).toHaveText("Ett fel uppstod.")

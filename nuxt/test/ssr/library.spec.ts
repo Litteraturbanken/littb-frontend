@@ -239,7 +239,7 @@ test("SSR still renders primary results when all optional metadata is unavailabl
 
   const document = parseHTML(await (await request.get("/bibliotek?avancerat=1")).text()).document
 
-  expect(document.querySelectorAll("[data-library-result]")).toHaveLength(1)
+  expect(document.querySelectorAll("[data-library-result]")).toHaveLength(3)
   expect(document.querySelector("[data-library-about-authors]")).toBeNull()
   expect(document.querySelector("[data-library-chronology-unavailable]")?.textContent?.trim())
     .toBe("Tidslinjen kunde inte hämtas.")
@@ -289,14 +289,14 @@ test("SSR renders authors, works, parts, and latest from discriminated search re
       path: "/bibliotek?visa=authors&sort=namn",
       mode: "authors",
       selector: "[data-library-author-row]",
-      text: "Strindberg, August",
+      text: "Söderberg, Hjalmar",
       body: { mode: "authors", filters: filters(), sort: "name", reverse: false, limit: 150 }
     },
     {
       path: "/bibliotek?visa=works&sort=popularitet",
       mode: "works",
       selector: "[data-library-work-row]",
-      text: "Röda rummet",
+      text: "Doktor Glas",
       body: {
         mode: "works",
         filters: filters(),
@@ -310,14 +310,14 @@ test("SSR renders authors, works, parts, and latest from discriminated search re
       path: "/bibliotek?visa=parts&sort=titlar&sida=2",
       mode: "parts",
       selector: "[data-library-part-row]",
-      text: "Ett utdrag ur Röda rummet",
+      text: "En novell",
       body: { mode: "parts", filters: filters(), sort: "title", reverse: false, page: 2 }
     },
     {
       path: "/bibliotek?visa=latest&hide1800&sida=2",
       mode: "latest",
       selector: "[data-library-latest-row]",
-      text: "Röda rummet",
+      text: "Doktor Glas",
       body: { mode: "latest", filters: filters(), reverse: false, page: 2, hide_1800: true }
     }
   ]
@@ -333,15 +333,18 @@ test("SSR renders authors, works, parts, and latest from discriminated search re
     expect(document.querySelector(item.selector)?.textContent, item.mode).toContain(item.text)
     if (item.mode === "authors") {
       expect(document.querySelector('[data-library-tab="authors"]')?.textContent?.trim())
-        .toBe("Författare: 1")
+        .toBe("Författare")
     }
     if (item.mode === "works") {
-      expect([...document.querySelectorAll("[data-library-work-actions] a")]
-        .map(link => link.textContent?.trim())).toEqual(["Läs som etext", "Ladda ner epub"])
+      expect([...document.querySelector(item.selector)!.querySelectorAll("[data-library-work-actions] a")]
+        .map(link => link.textContent?.trim())).toEqual([
+          "Läs som etext", "Läs som faksimil", "Ladda ner epub", "Ladda ner pdf",
+          "Gör en sökning i verket", "Läs mer om verket"
+        ])
     }
     if (item.mode === "latest") {
       expect(document.querySelector("[data-library-latest-header]")?.textContent?.trim())
-        .toBe("27 juli 2026 (1 verk)")
+        .toBe("18 juli 2026 (3 verk)")
     }
 
     expect((await libraryV2Requests(request)).search).toEqual([{
@@ -363,7 +366,7 @@ test("download mode forces typed Works source-only search without changing its s
   expect(document.querySelector(".dl_mode")).not.toBeNull()
   expect(document.querySelector('[data-library-tab="works"]')?.getAttribute("aria-current"))
     .toBe("page")
-  expect(document.querySelectorAll("[data-library-source-checkbox]")).toHaveLength(1)
+  expect(document.querySelectorAll("[data-library-source-checkbox]")).toHaveLength(3)
   expect((await libraryV2Requests(request)).search[0]?.body).toEqual({
     mode: "works",
     filters: filters(),
@@ -376,7 +379,7 @@ test("download mode forces typed Works source-only search without changing its s
 
 test("SSR renders EPUB immediately with a null inactive PDF count", async ({ request }) => {
   const document = parseHTML(await (await request.get(
-    "/bibliotek?visa=epub&sort=popularitet&filter=August"
+    "/bibliotek?visa=epub&sort=popularitet&filter=Selma"
   )).text()).document
 
   expect(document.querySelector('[data-library-tab="epub"]')?.getAttribute("aria-current"))
@@ -386,22 +389,22 @@ test("SSR renders EPUB immediately with a null inactive PDF count", async ({ req
       "Alla träffar", "Nytt", "Författare", "Verk", "Dikt, novell, etc.", "Epub: 1", "PDF"
     ])
   expect(epubRows(document)).toEqual([{
-    title: "Röda rummet",
-    titleHref: "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/etext?om-boken",
-    year: "1879",
-    author: "Strindberg",
-    authorHref: "/f%C3%B6rfattare/StrindbergA",
-    downloadHref: "/txt/epub/StrindbergA_RodaRummet.epub"
+    title: "Gösta Berlings saga",
+    titleHref: "/f%C3%B6rfattare/LagerlofS/titlar/GostaBerlingsSaga/etext?om-boken",
+    year: "1891",
+    author: "Lagerlöf",
+    authorHref: "/f%C3%B6rfattare/LagerlofS",
+    downloadHref: "/txt/epub/LagerlofS_GostaBerlingsSaga.epub"
   }])
   const row = document.querySelector("[data-library-epub-row]")
   expect(row?.querySelector('[data-library-tooltip-kind="title"]')
-    ?.getAttribute("data-library-tooltip-content")).toBe("Röda rummet. Roman")
+    ?.getAttribute("data-library-tooltip-content")).toBe("Gösta Berlings saga. Roman")
   expect(row?.querySelector('[data-library-tooltip-kind="author"]')
-    ?.getAttribute("data-library-tooltip-content")).toBe("August Strindberg (1849-1912)")
+    ?.getAttribute("data-library-tooltip-content")).toBe("Selma Lagerlöf (1858-1940)")
   expect(document.querySelector('[role="tooltip"]')).toBeNull()
   expect((await libraryV2Requests(request)).search[0]?.body).toEqual({
     mode: "epub",
-    filters: filters({ query: "August" }),
+    filters: filters({ query: "Selma" }),
     sort: "popularity",
     reverse: false,
     page: 1
@@ -417,15 +420,15 @@ test("SSR renders PDF immediately with a null inactive EPUB count", async ({ req
   expect(document.querySelector('[data-library-tab="pdf"]')?.getAttribute("aria-current"))
     .toBe("page")
   expect(document.querySelector('[data-library-tab="epub"]')?.textContent?.trim()).toBe("Epub")
-  expect(document.querySelector('[data-library-tab="pdf"]')?.textContent?.trim()).toBe("PDF: 1")
+  expect(document.querySelector('[data-library-tab="pdf"]')?.textContent?.trim()).toBe("PDF: 201")
   expect(pdfRows(document)).toEqual([{
-    title: "Röda rummet",
-    titleHref: "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/faksimil?om-boken",
-    year: "1879",
-    author: "Strindberg",
-    authorHref: "/f%C3%B6rfattare/StrindbergA",
-    downloadHref: "/txt/lb-pdf/lb-pdf.pdf",
-    download: "RodaRummet.pdf",
+    title: "Doktor Glas",
+    titleHref: "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/faksimil?om-boken",
+    year: "1905",
+    author: "Söderberg",
+    authorHref: "/f%C3%B6rfattare/S%C3%B6derbergH",
+    downloadHref: "/export/faksimil/lb-DoktorGlas.pdf",
+    download: "SöderbergH_DoktorGlas.pdf",
     target: "_self"
   }])
   expect((await libraryV2Requests(request)).search[0]?.body).toEqual({
@@ -446,8 +449,8 @@ test("standalone EPUB keeps its shell and uses the same typed primary owner", as
   expect(document.documentElement.getAttribute("style")).toContain("background-image:none")
   expect(document.querySelector("h1")?.textContent?.trim()).toBe("Hämta e-böcker")
   expect([...document.querySelectorAll("[data-library-tab]")].map(tab => tab.textContent?.trim()))
-    .toEqual(["Epub: 1", "PDF"])
-  expect(epubRows(document)).toHaveLength(1)
+    .toEqual(["Epub: 201", "PDF"])
+  expect(epubRows(document)).toHaveLength(3)
   expect((await libraryV2Requests(request)).search[0]?.body).toEqual({
     mode: "epub",
     filters: filters(),
@@ -575,7 +578,7 @@ test("standalone EPUB defaults unsupported mode, sort, and page values", async (
 
   expect(document.querySelector('[data-library-tab="epub"]')?.getAttribute("aria-current"))
     .toBe("page")
-  expect(epubRows(document)).toHaveLength(1)
+  expect(epubRows(document)).toHaveLength(3)
   expect((await libraryV2Requests(request)).search[0]?.body).toEqual({
     mode: "epub",
     filters: filters(),
