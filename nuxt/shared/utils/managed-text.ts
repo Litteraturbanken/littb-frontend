@@ -24,11 +24,11 @@ function rawAbsolutePathname(value: string): string | null {
   const schemeSeparator = value.indexOf("://")
   if (schemeSeparator <= 0) return null
   const authorityStart = schemeSeparator + 3
-  const delimiters = ["/", "?", "#"]
+  const delimiters = ["/", "\\", "?", "#"]
     .map(delimiter => value.indexOf(delimiter, authorityStart))
     .filter(index => index >= 0)
   const authorityEnd = delimiters.length === 0 ? value.length : Math.min(...delimiters)
-  if (value[authorityEnd] !== "/") return "/"
+  if (value[authorityEnd] !== "/" && value[authorityEnd] !== "\\") return "/"
   const queryIndex = value.indexOf("?", authorityEnd)
   const fragmentIndex = value.indexOf("#", authorityEnd)
   const pathEnds = [queryIndex, fragmentIndex].filter(index => index >= 0)
@@ -36,11 +36,69 @@ function rawAbsolutePathname(value: string): string | null {
   return value.slice(authorityEnd, pathEnd)
 }
 
+const maximumPathDecodeLayers = 5
+
+function hasMalformedPercentEncoding(value: string): boolean {
+  for (let index = value.indexOf("%"); index >= 0; index = value.indexOf("%", index + 1)) {
+    if (!/^[\da-f]{2}$/i.test(value.slice(index + 1, index + 3))) return true
+  }
+  return false
+}
+
+function hasUnsafePathSegment(rawSegment: string): boolean {
+  let segment = rawSegment
+  for (let layer = 0; layer < maximumPathDecodeLayers; layer += 1) {
+    if (segment === "." || segment === ".." || /[\\/]/.test(segment)) return true
+    if (layer === 0 && hasMalformedPercentEncoding(segment)) return true
+    if (!/%[\da-f]{2}/i.test(segment)) return false
+
+    let decoded: string
+    try {
+      decoded = decodeURIComponent(segment)
+    } catch {
+      return true
+    }
+    if (decoded === segment) return false
+    segment = decoded
+  }
+  if (segment === "." || segment === ".." || /[\\/]/.test(segment)) return true
+  return /%[\da-f]{2}/i.test(segment)
+}
+
 function hasUnsafeEncodedPath(rawPathname: string): boolean {
-  if (/%(?:2f|5c)/i.test(rawPathname)) return true
-  return rawPathname.split("/").some(segment => (
-    /%2e/i.test(segment) && /^(?:\.|%2e){1,2}$/i.test(segment)
-  ))
+  if (rawPathname.startsWith("\\")) return true
+  return rawPathname.split("/").some(hasUnsafePathSegment)
+}
+
+function configuredAuthorityOrigin(value: string): string {
+  const error = new Error("Managed text configured authority is not allowed")
+  if (value !== value.trim()) throw error
+
+  let authority: URL
+  try {
+    authority = new URL(value)
+  } catch {
+    throw error
+  }
+  if (
+    !["http:", "https:"].includes(authority.protocol)
+    || authority.origin === "null"
+    || authority.username
+    || authority.password
+  ) {
+    throw error
+  }
+
+  const schemeSeparator = value.indexOf("://")
+  if (schemeSeparator <= 0) throw error
+  const authorityStart = schemeSeparator + 3
+  const delimiters = ["/", "\\", "?", "#"]
+    .map(delimiter => value.indexOf(delimiter, authorityStart))
+    .filter(index => index >= 0)
+  const suffixStart = delimiters.length === 0 ? value.length : Math.min(...delimiters)
+  const suffix = value.slice(suffixStart)
+  if (suffix !== "" && suffix !== "/") throw error
+  return authority.origin
 }
 
 function pathMatchesPrefix(pathname: string, rawPrefix: string): boolean {
@@ -90,6 +148,7 @@ export async function fetchManagedText(
   rules: ManagedTextRules,
   fetcher: typeof fetch = fetch
 ): Promise<string> {
+  const authorityOrigin = configuredAuthorityOrigin(rules.authorityOrigin)
   const response = await fetcher(url, { redirect: "follow" })
   let finalUrl: URL
   try {
@@ -107,7 +166,7 @@ export async function fetchManagedText(
       new Error("Managed text final URL credentials are not allowed")
     )
   }
-  if (finalUrl.origin !== new URL(rules.authorityOrigin).origin) {
+  if (finalUrl.origin !== authorityOrigin) {
     return rejectUnreadBody(response, new Error("Managed text final authority is not allowed"))
   }
   if (!rules.allowedPathPrefixes.some(prefix => pathMatchesPrefix(finalUrl.pathname, prefix))) {

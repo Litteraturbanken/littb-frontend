@@ -29,42 +29,91 @@ function responseFetcher(response: Response): ReturnType<typeof vi.fn<typeof fet
 function unreadResponse(
   options: ResponseInit & { url?: string } = {},
   cancellationError?: Error
-): { cancelled: ReturnType<typeof vi.fn>, response: Response } {
+): {
+  cancelled: ReturnType<typeof vi.fn>
+  cleanup: () => void
+  response: Response
+  unexpectedRead: Promise<void>
+} {
   const cancelled = vi.fn()
-  let closeTimer: ReturnType<typeof setTimeout> | undefined
+  let controller: ReadableStreamDefaultController<Uint8Array> | undefined
+  let signalUnexpectedRead: (() => void) | undefined
+  const unexpectedRead = new Promise<void>(resolve => {
+    signalUnexpectedRead = resolve
+  })
   const body = new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(new TextEncoder().encode("unread"))
-      closeTimer = setTimeout(() => controller.close(), 25)
+    start(streamController) {
+      controller = streamController
+      streamController.enqueue(new TextEncoder().encode("unread"))
+    },
+    pull() {
+      signalUnexpectedRead?.()
     },
     cancel(reason: unknown) {
-      if (closeTimer) clearTimeout(closeTimer)
       cancelled(reason)
       if (cancellationError) throw cancellationError
     }
   })
-  return { cancelled, response: managedResponse(body, options) }
+  return {
+    cancelled,
+    cleanup() {
+      try {
+        controller?.error(new Error("Unread response test cleanup"))
+      } catch {
+        // The expected cancellation has already closed the stream.
+      }
+    },
+    response: managedResponse(body, options),
+    unexpectedRead
+  }
 }
 
 async function expectCancelledRejection(options: {
   expected: string | typeof TypeError
   response: Response
   cancelled: ReturnType<typeof vi.fn>
+  cleanup: () => void
+  unexpectedRead: Promise<void>
   managedRules?: ManagedTextRules
 }): Promise<void> {
   const fetcher = responseFetcher(options.response)
-  const rejection = expect(fetchManagedText(
+  const operation = fetchManagedText(
     "https://assets.test/txt/work/res_00001.html",
     options.managedRules ?? rules,
     fetcher
-  )).rejects
-  if (typeof options.expected === "string") {
-    await rejection.toThrow(options.expected)
-  } else {
-    await rejection.toThrow(options.expected)
+  )
+  const outcome = await Promise.race([
+    operation.then(
+      value => ({ kind: "fulfilled" as const, value }),
+      error => ({ error, kind: "rejected" as const })
+    ),
+    options.unexpectedRead.then(() => ({ kind: "read" as const }))
+  ])
+  if (outcome.kind === "read") {
+    options.cleanup()
+    await operation.catch(() => undefined)
+    throw new Error("Managed text validation read an unread response body")
   }
-  expect(options.cancelled).toHaveBeenCalledOnce()
-  expect(fetcher).toHaveBeenCalledOnce()
+  try {
+    expect(outcome.kind).toBe("rejected")
+    if (outcome.kind !== "rejected") return
+    if (typeof options.expected === "string") {
+      expect(outcome.error).toBeInstanceOf(Error)
+      expect((outcome.error as Error).message).toContain(options.expected)
+    } else {
+      expect(outcome.error).toBeInstanceOf(options.expected)
+    }
+    expect(options.cancelled).toHaveBeenCalledOnce()
+    expect(fetcher).toHaveBeenCalledOnce()
+  } finally {
+    options.cleanup()
+  }
+}
+
+function encodeLayers(value: string, layers: number): string {
+  let encoded = value
+  for (let index = 0; index < layers; index += 1) encoded = encodeURIComponent(encoded)
+  return encoded
 }
 
 describe("managed text transport", () => {
@@ -215,12 +264,62 @@ describe("managed text transport", () => {
     "/txt/%2F..%2Fprivate",
     "/txt/%5c..%5cprivate",
     "/txt/%5C..%5Cprivate",
+    "/txt\\..\\private",
     "/txt/work/%2e%2e/page.html",
     "/txt/work/.%2E/page.html"
   ])("rejects unsafe encoded path form %s", async path => {
     const rejected = unreadResponse({
       headers: { "content-type": "text/html" },
       url: `https://assets.test${path}`
+    })
+
+    await expectCancelledRejection({
+      ...rejected,
+      expected: "Managed text final path is not allowed"
+    })
+  })
+
+  test.each([
+    "/txt/%252f..%252fprivate",
+    "/txt/%252F..%252Fprivate",
+    "/txt/%255c..%255cprivate",
+    "/txt/%255C..%255Cprivate",
+    "/txt/work/%252e%252e/page.html",
+    "/txt/work/%252E%252e/page.html",
+    "/txt/%25252f..%25252fprivate",
+    "/txt/%25252F..%25252Fprivate"
+  ])("rejects recursively encoded unsafe path form %s", async path => {
+    const rejected = unreadResponse({
+      headers: { "content-type": "text/html" },
+      url: `https://assets.test${path}`
+    })
+
+    await expectCancelledRejection({
+      ...rejected,
+      expected: "Managed text final path is not allowed"
+    })
+  })
+
+  test.each([
+    "/txt/work/%",
+    "/txt/work/%2",
+    "/txt/work/%GG"
+  ])("rejects malformed path encoding %s", async path => {
+    const rejected = unreadResponse({
+      headers: { "content-type": "text/html" },
+      url: `https://assets.test${path}`
+    })
+
+    await expectCancelledRejection({
+      ...rejected,
+      expected: "Managed text final path is not allowed"
+    })
+  })
+
+  test("rejects excessive recursive path encoding", async () => {
+    const rejected = unreadResponse({
+      headers: { "content-type": "text/html" },
+      url: `https://assets.test/txt/file${encodeLayers(" ", 9)}name.html`
     })
 
     await expectCancelledRejection({
@@ -256,10 +355,82 @@ describe("managed text transport", () => {
 
     await expect(fetchManagedText(
       "https://assets.test/txt/Sj%C3%B6%20fil%2Ehtml",
-      { ...rules, authorityOrigin: "https://assets.test:443" },
+      { ...rules, authorityOrigin: "https://assets.test:443/" },
       fetcher
     )).resolves.toBe("Sjö fil")
     expect(fetcher).toHaveBeenCalledOnce()
+  })
+
+  test.each([
+    "/txt/Sj%C3%B6.html",
+    "/txt/two%20words.html",
+    "/txt/file%2Ename.html",
+    "/txt/file%252Ename.html"
+  ])("permits safe encoded filename path %s", async path => {
+    const fetcher = responseFetcher(managedResponse("ordinary", {
+      headers: { "content-type": "text/html" },
+      url: `https://assets.test${path}`
+    }))
+
+    await expect(fetchManagedText(
+      `https://assets.test${path}`,
+      rules,
+      fetcher
+    )).resolves.toBe("ordinary")
+    expect(fetcher).toHaveBeenCalledOnce()
+  })
+
+  test.each([
+    ["malformed", "://not-an-origin"],
+    ["credentials", "https://reader:secret@assets.test"],
+    ["file scheme", "file:///tmp/assets"],
+    ["opaque scheme", "data:text/plain,assets"],
+    ["path", "https://assets.test/txt"],
+    ["normalized dot path", "https://assets.test/."],
+    ["encoded normalized dot path", "https://assets.test/%2e"],
+    ["backslash path", "https://assets.test\\txt"],
+    ["query", "https://assets.test?tenant=reader"],
+    ["empty query", "https://assets.test?"],
+    ["fragment", "https://assets.test#reader"],
+    ["empty fragment", "https://assets.test#"]
+  ])("rejects a configured authority with %s before fetching", async (_label, authorityOrigin) => {
+    const fetcher = responseFetcher(managedResponse("must not fetch", {
+      headers: { "content-type": "text/html" }
+    }))
+
+    await expect(fetchManagedText(
+      "https://assets.test/txt/work/res_00001.html",
+      { ...rules, authorityOrigin },
+      fetcher
+    )).rejects.toThrow("Managed text configured authority is not allowed")
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  test("permits a configured nondefault port and requires the final response to match it", async () => {
+    const fetcher = responseFetcher(managedResponse("port text", {
+      headers: { "content-type": "text/html" },
+      url: "https://assets.test:8443/txt/work/res_00001.html"
+    }))
+
+    await expect(fetchManagedText(
+      "https://assets.test:8443/txt/work/res_00001.html",
+      { ...rules, authorityOrigin: "https://assets.test:8443" },
+      fetcher
+    )).resolves.toBe("port text")
+    expect(fetcher).toHaveBeenCalledOnce()
+  })
+
+  test("rejects a final response whose port does not match the configured origin", async () => {
+    const rejected = unreadResponse({
+      headers: { "content-type": "text/html" },
+      url: "https://assets.test/txt/work/res_00001.html"
+    })
+
+    await expectCancelledRejection({
+      ...rejected,
+      expected: "Managed text final authority is not allowed",
+      managedRules: { ...rules, authorityOrigin: "https://assets.test:8443" }
+    })
   })
 
   test("preserves the validation error when unread-body cancellation rejects", async () => {
