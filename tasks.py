@@ -295,8 +295,6 @@ def codegen_check(context: Context) -> None:
     settings = Settings.from_environment()
     snapshot = _openapi_snapshot(settings)
     _check_backend_openapi(context, settings)
-    if context.config.run.dry:
-        print(f"LBAPI_OPENAPI_SCHEMA={snapshot}")
     _run(
         context,
         ["yarn", "api:check"],

@@ -115,13 +115,55 @@ class InvokeTasksTest(unittest.TestCase):
         self.assertEqual(check.returncode, 0, check.stderr)
         self.assertIn("scripts/export_v2_openapi.py --check", check.stdout)
         self.assertIn("yarn api:check", check.stdout)
-        self.assertIn(
-            f"LBAPI_OPENAPI_SCHEMA={backend_dir / 'openapi' / 'v2.json'}",
-            check.stdout,
-        )
         self.assertLess(
             check.stdout.index("scripts/export_v2_openapi.py --check"),
             check.stdout.index("yarn api:check"),
+        )
+
+    def test_codegen_check_passes_the_configured_snapshot_to_nuxt(self) -> None:
+        settings = tasks.Settings(
+            backend_app="example.web:app",
+            backend_dir=Path("/configured/backend"),
+            backend_host="127.0.0.1",
+            backend_port=8000,
+            nuxt_dir=Path("/configured/nuxt"),
+            nuxt_port=3020,
+        )
+        context = tasks.Context()
+
+        with patch.dict(
+            os.environ,
+            {"LB_BACKEND_PYTHON": "/configured/backend/virtual_env/bin/python"},
+        ), patch.object(
+            tasks.Settings, "from_environment", return_value=settings
+        ), patch.object(tasks, "_run") as run:
+            tasks.codegen_check.body(context)
+
+        self.assertEqual(run.call_count, 2)
+        self.assertEqual(
+            run.call_args_list[0].args,
+            (
+                context,
+                [
+                    "/configured/backend/virtual_env/bin/python",
+                    "scripts/export_v2_openapi.py",
+                    "--check",
+                ],
+                settings.backend_dir,
+            ),
+        )
+        self.assertEqual(run.call_args_list[0].kwargs, {})
+        self.assertEqual(
+            run.call_args_list[1].args,
+            (context, ["yarn", "api:check"], settings.nuxt_dir),
+        )
+        self.assertEqual(
+            run.call_args_list[1].kwargs,
+            {
+                "env": {
+                    "LBAPI_OPENAPI_SCHEMA": "/configured/backend/openapi/v2.json"
+                }
+            },
         )
 
     def test_backend_quality_dry_run_uses_pinned_repository_tools(self) -> None:
