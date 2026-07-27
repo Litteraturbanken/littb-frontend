@@ -1,7 +1,8 @@
 import { parseHTML } from "linkedom"
 
+import { hasC0OrC1Control } from "../../shared/utils/text-safety"
+
 export const maximumEditorHtmlLength = 2 * 1024 * 1024
-const controlCharacters = /[\u0000-\u001f\u007f-\u009f]/u
 const activeTags = new Set([
   "APPLET", "BASE", "EMBED", "FORM", "IFRAME", "LINK", "META", "NOSCRIPT",
   "OBJECT", "SCRIPT", "STYLE", "TEMPLATE"
@@ -142,7 +143,7 @@ export function parseEditorPageIndexes(value: unknown): {
     const pageName = sourcePage.pagename
     if (
       typeof pageName !== "string" || pageName.length === 0 || pageName.length > 100 ||
-      pageName.trim() !== pageName || controlCharacters.test(pageName) ||
+      pageName.trim() !== pageName || hasC0OrC1Control(pageName) ||
       typeof pageIndex !== "number" || !Number.isSafeInteger(pageIndex) ||
       pageIndex < 0 || pageIndex >= 100_000 || indexes.has(pageIndex)
     ) return null
@@ -153,12 +154,12 @@ export function parseEditorPageIndexes(value: unknown): {
 }
 
 function safeIdentifier(value: string): boolean {
-  return value.length > 0 && value.length <= 500 && !controlCharacters.test(value)
+  return value.length > 0 && value.length <= 500 && !hasC0OrC1Control(value)
 }
 
 function safeUrl(value: string, image: boolean): boolean {
   if (
-    value.length === 0 || value.length > 2_000 || controlCharacters.test(value) ||
+    value.length === 0 || value.length > 2_000 || hasC0OrC1Control(value) ||
     value.startsWith("//") || value.includes("\\")
   ) return false
   if (/^(?:https?:)?$/u.test(value)) return false
@@ -201,7 +202,7 @@ function sanitizeElement(element: SanitizedElement): void {
       else element.setAttribute("rel", "noopener noreferrer")
       continue
     }
-    if (value.length > 2_000 || controlCharacters.test(value)) element.removeAttribute(name)
+    if (value.length > 2_000 || hasC0OrC1Control(value)) element.removeAttribute(name)
   }
 }
 

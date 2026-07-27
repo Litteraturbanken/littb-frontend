@@ -142,7 +142,8 @@ describe("Reader source-information runtime contract", () => {
       value.dramawebben = clone(dramaSourceInfo.dramawebben)
       requiredArray(requiredRecord(value, "dramawebben"), "roles")[0] = 42
     }],
-    ["unsafe control character", (value: JsonRecord) => { value.title = "Doktor\u0000 Glas" }]
+    ["unsafe control character", (value: JsonRecord) => { value.title = "Doktor\u0000 Glas" }],
+    ["unsafe C1 character", (value: JsonRecord) => { value.title = "Doktor\u0080 Glas" }]
   ])("rejects %s recursively", (_name, mutate) => {
     const value = cloneRecord(doktorGlasSourceInfo)
     mutate(value)

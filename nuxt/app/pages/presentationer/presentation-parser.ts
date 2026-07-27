@@ -1,5 +1,7 @@
 import { DOMParser } from "linkedom"
 
+import { removeC0AndSpace } from "#shared/utils/text-safety"
+
 export { validatePresentationSegments } from "../../lib/presentation-routes"
 
 type ParsedElement = {
@@ -50,7 +52,7 @@ export function emptyPresentationDocument(): PresentationDocument {
 
 function normalizedUrl(value: string): string | null {
   const trimmed = value.trim()
-  const schemeProbe = trimmed.replace(/[\u0000-\u0020]+/g, "")
+  const schemeProbe = removeC0AndSpace(trimmed)
   if (/^(?:javascript|vbscript|data):/i.test(schemeProbe) || trimmed.includes("\\")) {
     return null
   }

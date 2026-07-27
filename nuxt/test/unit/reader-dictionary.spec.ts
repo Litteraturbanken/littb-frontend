@@ -60,6 +60,7 @@ describe("reader dictionary", () => {
     ["outside the Reader", '<span class="w"><span id="target">hund</span></span>'],
     ["a multi-word Reader target", '<section class="reader_main"><span class="w"><span id="target">två ord</span></span></section>'],
     ["a control-character Reader target", '<section class="reader_main"><span class="w"><span id="target">hu\u0007nd</span></span></section>'],
+    ["a C1-control Reader target", '<section class="reader_main"><span class="w"><span id="target">hu\u0080nd</span></span></section>'],
     ["an overlong Reader target", `<section class="reader_main"><span class="w"><span id="target">${"x".repeat(101)}</span></span></section>`],
     ["an interactive Reader target", '<section class="reader_main"><span class="w"><a id="target">hund</a></span></section>']
   ])("rejects %s", (_name, markup) => {

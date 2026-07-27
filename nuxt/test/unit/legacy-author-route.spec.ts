@@ -123,7 +123,8 @@ describe("canonical legacy route identities", () => {
     ["A\\B", 100, false],
     ["A\u0000B", 100, false],
     ["A\u0085B", 100, false],
-    ["\ud800", 100, false]
+    ["\ud800", 100, false],
+    ["\udfff", 100, false]
   ])("validates canonical identity %# at maximum %i -> %s", (value, maximum, valid) => {
     expect(validCanonicalSegment(value as string, maximum as number)).toBe(valid)
   })

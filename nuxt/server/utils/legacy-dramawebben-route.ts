@@ -2,6 +2,7 @@ import { createError, type H3Event } from "h3"
 
 import { createLbApiClient } from "../../app/lib/api/client"
 import type { components } from "../../app/lib/api/generated/lbapi"
+import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
 
 export type LegacyDramawebbenRouteRequest =
   components["schemas"]["LegacyDramawebbenRouteRequest"]
@@ -51,7 +52,11 @@ function isSafeSegment(value: string, maximum: number): boolean {
   return value.length >= 1 && value.length <= maximum
     && value === value.trim()
     && value !== "." && value !== ".."
-    && !/[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(value)
+    && !value.includes("\\")
+    && !value.includes("/")
+    && !value.includes("%")
+    && !hasC0OrC1Control(value)
+    && !hasLoneSurrogate(value)
 }
 
 export function decodeLegacyDramawebbenSegment(raw: string): string {
@@ -69,7 +74,10 @@ function isSafeLocalLocation(value: unknown, kind: "play" | "author"): value is 
     || value.length > 2048
     || !value.startsWith("/")
     || value.startsWith("//")
-    || /[\\#\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(value)
+    || value.includes("\\")
+    || value.includes("#")
+    || hasC0OrC1Control(value)
+    || hasLoneSurrogate(value)
   ) return false
 
   let url: URL

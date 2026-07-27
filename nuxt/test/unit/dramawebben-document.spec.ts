@@ -148,6 +148,7 @@ describe("Dramawebben managed XHTML parsing", () => {
     "/%2e%2e/private",
     "/%252e%252e/private",
     "/safe%0Aevil",
+    "/safe\udfff",
     "https://example.test/%2e%2e/private",
     "https://example.test/path\\evil",
     "/%ZZ/private"

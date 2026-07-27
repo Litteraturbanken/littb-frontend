@@ -115,5 +115,6 @@ describe("Editor Reader sparse page bounds", () => {
     expect(parseEditorPageIndexes([{ pagename: "last", pageindex: 99_999 }]))
       .toEqual({ indexes: [99_999], pageCount: 100_000 })
     expect(parseEditorPageIndexes([{ pagename: "too far", pageindex: 100_000 }])).toBeNull()
+    expect(parseEditorPageIndexes([{ pagename: "unsafe\u0080name", pageindex: 1 }])).toBeNull()
   })
 })

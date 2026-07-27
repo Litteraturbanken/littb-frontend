@@ -12,6 +12,7 @@ describe("rememberedLibraryHref", () => {
 
     expect(rememberedLibraryHref(href)).toBe(href)
     expect(rememberedLibraryHref(DEFAULT_LIBRARY_HREF)).toBe(DEFAULT_LIBRARY_HREF)
+    expect(rememberedLibraryHref("/bibliotek?c1=\u0080")).toBe("/bibliotek?c1=\u0080")
   })
 
   it("removes fragments while retaining the canonical query", () => {

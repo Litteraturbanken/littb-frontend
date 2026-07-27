@@ -1,5 +1,6 @@
 import type { ReaderPage, ReaderPart, ReaderPartAuthor } from "#shared/types/reader"
 import { readerAuthorContributionSuffix } from "#shared/utils/reader-author"
+import { hasC0OrC1Control } from "#shared/utils/text-safety"
 import { fetchReaderOcrOverlay } from "#server/utils/reader-ocr"
 
 import { createLbApiClient } from "../../../../../../app/lib/api/client"
@@ -9,7 +10,6 @@ type UnknownRecord = Record<string, unknown>
 const MAX_AUTHOR_IDS = 50
 const MAX_AUTHOR_ID_LENGTH = 100
 const MAX_AUTHOR_NAME_LENGTH = 2_000
-const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/u
 
 interface ResolvedPartAuthor {
   id: string
@@ -37,7 +37,7 @@ function strictString(value: unknown, maximumLength: number): value is string {
     && value.length > 0
     && value.length <= maximumLength
     && value.trim() === value
-    && !CONTROL_CHARACTERS.test(value)
+    && !hasC0OrC1Control(value)
 }
 
 function validateResolvedAuthors(

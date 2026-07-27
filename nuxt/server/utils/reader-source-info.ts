@@ -9,6 +9,11 @@ import type {
   ReaderSourceInfoMediaType,
   ReaderSourceInfoProvenance
 } from "../../shared/types/reader-source-info"
+import {
+  hasC0OrC1Control,
+  hasHtmlUnsafeCodeUnit,
+  hasLoneSurrogate
+} from "../../shared/utils/text-safety"
 
 type WorkSourceInfoResponse = components["schemas"]["WorkSourceInfoResponse"]
 type UnknownRecord = Record<string, unknown>
@@ -62,10 +67,6 @@ export interface ReaderSourceInfoStaticDefinitions {
 
 const MAX_STATIC_BYTES = 1_048_576
 const STATIC_MAX_AGE_MS = 300_000
-const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u
-const HTML_UNSAFE_CHARACTERS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\ud800-\udfff]/u
-const UNSAFE_URL_CHARACTERS = /[\\\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u
-const SAFE_DOWNLOAD_FILENAME = /^[^/\\\u0000-\u001f\u007f-\u009f]{1,500}$/u
 const SAFE_STATIC_FILENAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,499}$/u
 const allowedClassesByContext = {
   editorial: new Set(["role", "sc"]),
@@ -169,7 +170,8 @@ function boundedString(
   return typeof value === "string"
     && value.length <= maximum
     && (allowEmpty || value.length > 0)
-    && !CONTROL_CHARACTERS.test(value)
+    && !hasC0OrC1Control(value)
+    && !hasLoneSurrogate(value)
 }
 
 function optionalString(value: unknown, maximum: number): value is string | null {
@@ -184,7 +186,7 @@ function boundedHtmlString(
   return typeof value === "string"
     && value.length <= maximum
     && (allowEmpty || value.length > 0)
-    && !HTML_UNSAFE_CHARACTERS.test(value)
+    && !hasHtmlUnsafeCodeUnit(value)
 }
 
 function optionalHtmlString(value: unknown, maximum: number): value is string | null {
@@ -220,23 +222,27 @@ function hasTraversal(value: string): boolean {
   return path.split("/").some(segment => segment === "." || segment === "..")
 }
 
+function hasUnsafeUrlCodeUnit(value: string): boolean {
+  return value.includes("\\") || hasC0OrC1Control(value) || hasLoneSurrogate(value)
+}
+
 function safeRootUrl(value: unknown): value is string {
   if (!boundedString(value, 2_000) || value !== value.trim()) return false
-  if (!value.startsWith("/") || value.startsWith("//") || UNSAFE_URL_CHARACTERS.test(value)) {
+  if (!value.startsWith("/") || value.startsWith("//") || hasUnsafeUrlCodeUnit(value)) {
     return false
   }
   const decoded = fullyDecode(value)
   return decoded !== null
     && decoded.startsWith("/")
     && !decoded.startsWith("//")
-    && !UNSAFE_URL_CHARACTERS.test(decoded)
+    && !hasUnsafeUrlCodeUnit(decoded)
     && !hasTraversal(decoded)
 }
 
 function safeHttpUrl(value: unknown): value is string {
   if (!boundedString(value, 2_000) || value !== value.trim()) return false
   const decoded = fullyDecode(value)
-  if (decoded === null || UNSAFE_URL_CHARACTERS.test(decoded)) return false
+  if (decoded === null || hasUnsafeUrlCodeUnit(decoded)) return false
   try {
     const parsed = new URL(decoded)
     return (parsed.protocol === "http:" || parsed.protocol === "https:")
@@ -255,11 +261,12 @@ function safeStaticFilename(value: unknown): value is string {
     && decoded !== ".."
     && !decoded.includes("/")
     && !decoded.includes("\\")
-    && !CONTROL_CHARACTERS.test(decoded)
+    && !hasC0OrC1Control(decoded)
+    && !hasLoneSurrogate(decoded)
 }
 
 function validPublicHref(value: string): boolean {
-  if (value.startsWith("#")) return !UNSAFE_URL_CHARACTERS.test(value)
+  if (value.startsWith("#")) return !hasUnsafeUrlCodeUnit(value)
   return safeRootUrl(value) || safeHttpUrl(value)
 }
 
@@ -363,13 +370,18 @@ export function validateReaderSourceInfoResponse(
   const downloadMedia = new Set<string>()
   for (const item of downloadActions) {
     if (!isRecord(item) || !exactKeys(item, downloadActionKeys)) invalidSourceInfo()
+    const filename = String(item.filename)
     if (
       (item.media_type !== "epub" && item.media_type !== "pdf")
       || item.label !== item.media_type
       || downloadMedia.has(item.media_type)
       || !safeRootUrl(item.url)
-      || !SAFE_DOWNLOAD_FILENAME.test(String(item.filename))
-      || !String(item.filename).endsWith(`.${item.media_type}`)
+      || filename.length < 1
+      || filename.length > 500
+      || filename.includes("/")
+      || filename.includes("\\")
+      || hasC0OrC1Control(filename)
+      || !filename.endsWith(`.${item.media_type}`)
       || (item.size_bytes !== null && !safeNonnegativeInteger(item.size_bytes))
     ) invalidSourceInfo()
     const allowedUrl = item.media_type === "epub"

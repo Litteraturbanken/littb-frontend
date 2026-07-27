@@ -1,5 +1,6 @@
 import { parseHTML } from "linkedom"
 
+import { hasC0OrC1Control } from "#shared/utils/text-safety"
 import type { components } from "./api/generated/lbapi"
 
 type AuthorProfile = components["schemas"]["AuthorProfile"]
@@ -87,7 +88,6 @@ const removedSubtreeElements = new Set([
 const allowedGlobalAttributes = new Set(["class", "id", "lang", "title"])
 const allowedAnchorAttributes = new Set(["href", "rel", "target"])
 const allowedUrlProtocols = new Set(["http:", "https:", "mailto:", "tel:"])
-const unsafeCharacters = /[\\\u0000-\u001f\u007f-\u009f]/u
 const absoluteScheme = /^[a-z][a-z\d+.-]*:/iu
 
 export function encodeRfc3986Segment(value: string): string {
@@ -127,7 +127,8 @@ export function validateAuthorRouteParam(value: unknown): boolean {
 
   const decoded = repeatedlyDecode(value, maxAuthorIdLength)
   return decoded === value
-    && !unsafeCharacters.test(value)
+    && !value.includes("\\")
+    && !hasC0OrC1Control(value)
     && !value.includes("%")
     && value !== "."
     && value !== ".."
@@ -151,12 +152,18 @@ function hasTraversal(value: string): boolean {
 }
 
 function safeHref(value: string): string | null {
-  if (!value || value !== value.trim() || unsafeCharacters.test(value)) return null
+  if (
+    !value
+    || value !== value.trim()
+    || value.includes("\\")
+    || hasC0OrC1Control(value)
+  ) return null
 
   const decoded = repeatedlyDecode(value)
   if (
     decoded === null
-    || unsafeCharacters.test(decoded)
+    || decoded.includes("\\")
+    || hasC0OrC1Control(decoded)
     || value.startsWith("//")
     || decoded.startsWith("//")
     || hasTraversal(decoded)

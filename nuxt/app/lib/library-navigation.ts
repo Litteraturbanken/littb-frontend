@@ -1,3 +1,5 @@
+import { hasC0OrDelete } from "#shared/utils/text-safety"
+
 export const DEFAULT_LIBRARY_HREF = "/bibliotek"
 
 const MAX_LIBRARY_HREF_LENGTH = 8192
@@ -26,7 +28,8 @@ export function rememberedLibraryHref(value: string): string | null {
   if (path !== DEFAULT_LIBRARY_HREF) return null
 
   try {
-    if (/[\\\u0000-\u001F\u007F]/.test(decodeURIComponent(href))) return null
+    const decoded = decodeURIComponent(href)
+    if (decoded.includes("\\") || hasC0OrDelete(decoded)) return null
   }
   catch {
     return null

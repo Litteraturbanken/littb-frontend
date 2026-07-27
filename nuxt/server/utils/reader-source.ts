@@ -10,6 +10,7 @@ import type {
   ReaderWorkContributor
 } from "../../shared/types/reader"
 import { normalizeReaderAuthorContribution } from "../../shared/utils/reader-author"
+import { hasC0OrC1Control } from "../../shared/utils/text-safety"
 
 type UnknownRecord = Record<string, unknown>
 
@@ -20,7 +21,6 @@ const MAX_READER_WORK_CONTRIBUTORS = 100
 const MAX_READER_ID_LENGTH = 100
 const MAX_READER_PAGE_NAME_LENGTH = 100
 const MAX_READER_TITLE_LENGTH = 2_000
-const READER_CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/u
 
 export interface ReaderSourcePage {
   pageIndex: number
@@ -103,7 +103,7 @@ function strictReaderString(value: unknown, maximumLength: number): value is str
     && value.length > 0
     && value.length <= maximumLength
     && value.trim() === value
-    && !READER_CONTROL_CHARACTERS.test(value)
+    && !hasC0OrC1Control(value)
 }
 
 function hasNyaVagarKeyword(value: unknown): boolean {
@@ -113,7 +113,7 @@ function hasNyaVagarKeyword(value: unknown): boolean {
       typeof keyword === "string"
       && keyword.length > 0
       && keyword.length <= 200
-      && !READER_CONTROL_CHARACTERS.test(keyword)
+      && !hasC0OrC1Control(keyword)
     ))
     && value.includes("1800")
 }

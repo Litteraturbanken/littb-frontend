@@ -138,6 +138,7 @@ describe("strict author document descriptors", () => {
     "Soderberg\u007fH",
     "Soderberg\u0085H",
     "\ud800",
+    "\udfff",
     "A".repeat(101)
   ])("rejects an unsafe normalized identity before using its path %#", normalized => {
     expect(() => expectedAuthorDocumentSource(

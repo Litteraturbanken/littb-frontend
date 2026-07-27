@@ -15,6 +15,7 @@ describe("production shortcuts", () => {
       .toBe("https://urn.kb.se/resolve?urn=urn:nbn:se:lb-lb1234")
     expect(urnResolverUrl(null)).toBeNull()
     expect(urnResolverUrl("bad urn")).toBeNull()
+    expect(urnResolverUrl("urn:nbn:se:lb-\u0080")).toBeNull()
   })
 
   it("guards modifiers, composition, editable targets, and open dialogs", () => {

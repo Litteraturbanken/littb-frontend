@@ -1,8 +1,8 @@
 import { parseHTML } from "linkedom"
 
 import type { ReaderOcrOverlay } from "../../shared/types/reader"
+import { hasC0OrC1Control } from "../../shared/utils/text-safety"
 
-const controlCharacters = /[\u0000-\u001f\u007f-\u009f]/u
 const maximumOverlayLength = 512 * 1024
 const allowedOverlayTags = new Set(["BR", "DIV", "SPAN"])
 const allowedOverlayClasses = new Set(["parent", "w"])
@@ -79,7 +79,7 @@ function sanitizeOverlayElement(element: OverlayElement, root: boolean): void {
       continue
     }
     if (name === "title") {
-      if (value.length > 2_000 || controlCharacters.test(value)) {
+      if (value.length > 2_000 || hasC0OrC1Control(value)) {
         element.removeAttribute(name)
       }
       continue

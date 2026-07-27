@@ -140,6 +140,19 @@ describe("bounded SLA article sanitization", () => {
       .toEqual(["class"])
   })
 
+  test("preserves HTML-safe line controls and removes an unsafe summary control", () => {
+    const output = parseSlaArticleBody([
+      "<!doctype html><html><body>",
+      '<table id="safe" summary="tab\tline\nreturn\r"><tr><td>Safe</td></tr></table>',
+      '<table id="unsafe" summary="vertical\u000btab"><tr><td>Unsafe</td></tr></table>',
+      "</body></html>"
+    ].join(""))
+    const document = parsedBody(output)
+
+    expect(document.querySelector("#safe")?.hasAttribute("summary")).toBe(true)
+    expect(document.querySelector("#unsafe")?.hasAttribute("summary")).toBe(false)
+  })
+
   test("removes active subtrees and unwraps unknown inert elements", () => {
     const output = parseSlaArticleBody([
       "<!doctype html><html><head><title>head-probe</title></head><body>",

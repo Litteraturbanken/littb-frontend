@@ -1,6 +1,7 @@
 import type { EditorFacsimileSource, EditorReaderPage } from "#shared/types/editor-reader"
 import type { ReaderPart, ReaderPartAuthor, ReaderWorkContributor } from "#shared/types/reader"
 import { normalizeReaderAuthorContribution } from "#shared/utils/reader-author"
+import { hasC0OrC1Control } from "#shared/utils/text-safety"
 import { fetchReaderOcrOverlay } from "#server/utils/reader-ocr"
 import {
   fetchBoundedEditorJson,
@@ -13,7 +14,6 @@ import {
 
 const workIdPattern = /^[A-Za-z0-9_-]{1,100}$/
 const indexPattern = /^(?:0|[1-9]\d{0,6})$/
-const controlCharacters = /[\u0000-\u001f\u007f-\u009f]/u
 const maxMetadataLength = 2 * 1024 * 1024
 const maxPageCountLength = 64 * 1024
 
@@ -33,7 +33,7 @@ function record(value: unknown): Record<string, unknown> | null {
 
 function safeOptionalText(value: unknown, maximumLength = 2_000): string | null {
   return typeof value === "string" && value.length > 0 && value.length <= maximumLength &&
-    value.trim() === value && !controlCharacters.test(value)
+    value.trim() === value && !hasC0OrC1Control(value)
     ? value
     : null
 }

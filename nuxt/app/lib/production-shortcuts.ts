@@ -2,8 +2,8 @@ import {
   isCanonicalPastedWorkId,
   libraryWorkIdFilterHref
 } from "./library-navigation"
+import { hasC0OrC1Control, hasEcmaWhitespace } from "#shared/utils/text-safety"
 
-const controlCharacters = /[\u0000-\u001f\u007f-\u009f]/u
 const pastedLbId = /(?<![A-Za-z0-9_])lb[A-Za-z0-9_]+(?![A-Za-z0-9_])/giu
 const maximumPasteLength = 65_536
 const maximumPastedIds = 100
@@ -93,8 +93,8 @@ export function urnResolverUrl(urn: string | null): string | null {
     !urn
     || urn.length > 100
     || urn.trim() !== urn
-    || /\s/u.test(urn)
-    || controlCharacters.test(urn)
+    || hasEcmaWhitespace(urn)
+    || hasC0OrC1Control(urn)
   ) return null
   return `https://urn.kb.se/resolve?urn=${urn}`
 }

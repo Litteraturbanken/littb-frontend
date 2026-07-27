@@ -24,6 +24,7 @@ describe("Reader missing-page error payload", () => {
       "",
       "x".repeat(maximumReaderMissingPageNameLength + 1),
       "unsafe\npage",
+      "unsafe\u0080page",
       null,
       ["page"]
     ]) {

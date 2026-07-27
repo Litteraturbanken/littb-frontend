@@ -6,6 +6,7 @@ import type {
   DramawebbenDocumentKind,
   DramawebbenManagedDocument
 } from "../../shared/types/dramawebben-document"
+import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
 
 type SanitizableAttribute = { name: string }
 type SanitizableParent = { removeChild: (node: SanitizableNode) => unknown }
@@ -45,7 +46,6 @@ const removedSubtrees = new Set([
   "option", "picture", "script", "select", "source", "style", "svg", "template",
   "textarea", "video"
 ])
-const unsafeUrlCharacters = /[\\\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u
 
 function isDocumentKind(value: unknown): value is DramawebbenDocumentKind {
   return value === "om" || value === "kringtexter"
@@ -71,10 +71,14 @@ function hasTraversalSegment(value: string): boolean {
   return path.split("/").some(segment => segment === "." || segment === "..")
 }
 
+function hasUnsafeUrlCodeUnit(value: string): boolean {
+  return value.includes("\\") || hasC0OrC1Control(value) || hasLoneSurrogate(value)
+}
+
 function safeHref(value: string): boolean {
-  if (value !== value.trim() || unsafeUrlCharacters.test(value)) return false
+  if (value !== value.trim() || hasUnsafeUrlCodeUnit(value)) return false
   const decoded = fullyDecode(value)
-  if (decoded === null || unsafeUrlCharacters.test(decoded) || hasTraversalSegment(decoded)) {
+  if (decoded === null || hasUnsafeUrlCodeUnit(decoded) || hasTraversalSegment(decoded)) {
     return false
   }
   if (decoded.startsWith("#")) return true

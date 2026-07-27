@@ -84,6 +84,7 @@ describe("Presentation XHTML parser", () => {
 
   test.each([
     "javascript:alert(1)",
+    "java\u000bscript:alert(1)",
     " JAVASCRIPT:alert(1)",
     "vbscript:msgbox(1)",
     "data:text/html,<script>alert(1)</script>"

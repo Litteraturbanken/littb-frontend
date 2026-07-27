@@ -219,6 +219,10 @@ describe("reader media and exact representation selection", () => {
       { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" },
       { authorid: "HelgesonP", full_name: "Paulina\nHelgeson" }
     ]],
+    ["C1 character in contributor name", [
+      { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" },
+      { authorid: "HelgesonP", full_name: "Paulina\u0080Helgeson" }
+    ]],
     ["overlong contributor name", [
       { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" },
       { authorid: "HelgesonP", full_name: "x".repeat(2_001) }

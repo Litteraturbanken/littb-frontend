@@ -8,6 +8,7 @@ import type {
   AuthorDocumentKind,
   AuthorSupplementalPage
 } from "../../shared/types/author-document"
+import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
 
 export type AuthorDocumentDescriptor = components["schemas"]["AuthorDocumentDescriptor"]
 type UnknownRecord = Record<string, unknown>
@@ -79,8 +80,6 @@ const elementAttributes: Record<string, ReadonlySet<string>> = {
   li: new Set(["value"])
 }
 
-const unsafeCharacters = /[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u
-const unsafeUrlCharacters = /[\\\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u
 const maxGenericAuthorDocumentBytes = 1_048_576
 const maxSlaAuthorDocumentBytes = 262_144
 const slaAuthorId = "LagerlöfS"
@@ -108,7 +107,11 @@ export function validManagedSegment(value: unknown): value is string {
     && value.length >= 1 && value.length <= 100
     && value === value.trim()
     && value !== "." && value !== ".."
-    && !unsafeCharacters.test(value)
+    && !value.includes("\\")
+    && !value.includes("/")
+    && !value.includes("%")
+    && !hasC0OrC1Control(value)
+    && !hasLoneSurrogate(value)
 }
 
 function expectedSourcePath(normalized: string, kind: AuthorDocumentKind): string {
@@ -196,10 +199,14 @@ function hasTraversalSegment(value: string): boolean {
   return path.split("/").some(segment => segment === "." || segment === "..")
 }
 
+function hasUnsafeUrlCodeUnit(value: string): boolean {
+  return value.includes("\\") || hasC0OrC1Control(value) || hasLoneSurrogate(value)
+}
+
 function safeUrl(value: string, kind: "href" | "src"): boolean {
-  if (value !== value.trim() || unsafeUrlCharacters.test(value)) return false
+  if (value !== value.trim() || hasUnsafeUrlCodeUnit(value)) return false
   const decoded = fullyDecode(value)
-  if (decoded === null || unsafeUrlCharacters.test(decoded)) return false
+  if (decoded === null || hasUnsafeUrlCodeUnit(decoded)) return false
   if (decoded.startsWith("//") || hasTraversalSegment(decoded)) return false
 
   if (decoded.startsWith("#")) return kind === "href"
@@ -210,11 +217,11 @@ function safeUrl(value: string, kind: "href" | "src"): boolean {
 }
 
 function safeSlaHref(value: string): boolean {
-  if (value !== value.trim() || unsafeUrlCharacters.test(value)) return false
+  if (value !== value.trim() || hasUnsafeUrlCodeUnit(value)) return false
   if (!value.startsWith(slaHrefPrefix)) return false
   const decoded = fullyDecode(value)
   return decoded !== null
-    && !unsafeUrlCharacters.test(decoded)
+    && !hasUnsafeUrlCodeUnit(decoded)
     && decoded.startsWith(slaHrefPrefix)
     && !decoded.startsWith("//")
     && !hasTraversalSegment(decoded)

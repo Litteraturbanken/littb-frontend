@@ -112,6 +112,7 @@ describe("canonical Nuxt navigation hrefs", () => {
     ["/författare/Test%2FExtra", false],
     ["/författare/Test%252FExtra", false],
     ["/författare/Test%00", false],
+    ["/författare/Test\udfff", false],
     ["/författare/Test/titlar/Book%00", false],
     ["/författare/Test/titlar/Book/sida/1%2F2/etext", false],
     ["/hjalp", false],

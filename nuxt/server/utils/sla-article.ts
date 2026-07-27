@@ -11,6 +11,11 @@ import {
   type SlaArticleSourcePath
 } from "../../shared/types/sla-article"
 import {
+  hasC0OrC1Control,
+  hasHtmlUnsafeCodeUnit,
+  hasLoneSurrogate
+} from "../../shared/utils/text-safety"
+import {
   cancelResponseBody,
   encodeRfc3986Segment,
   fetchStatus,
@@ -107,7 +112,6 @@ const exactPdfPaths = new Set([
   "/red/om/omtexerna/ManuskriptforteckningOL.pdf"
 ])
 
-const unsafeUrlCharacters = /[\\\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u
 const safeClassToken = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/u
 const safeId = /^[A-Za-z][A-Za-z0-9._:-]{0,99}$/u
 const safeRelToken = /^[a-z][a-z0-9-]{0,31}$/u
@@ -231,10 +235,17 @@ function safeExternalHref(value: string): boolean {
 }
 
 function safeSlaArticleHref(value: string): boolean {
-  if (value !== value.trim() || unsafeUrlCharacters.test(value)) return false
+  if (
+    value !== value.trim()
+    || value.includes("\\")
+    || hasC0OrC1Control(value)
+    || hasLoneSurrogate(value)
+  ) return false
   const decoded = fullyDecode(value)
   if (decoded === null
-    || unsafeUrlCharacters.test(decoded)
+    || decoded.includes("\\")
+    || hasC0OrC1Control(decoded)
+    || hasLoneSurrogate(decoded)
     || decoded.startsWith("//")
     || hasTraversalSegment(decoded)) return false
 
@@ -253,8 +264,7 @@ function safeClassValue(value: string): boolean {
 
 function safeSummary(value: string): boolean {
   return value.length <= 512
-    && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\ud800-\udfff]/u
-      .test(value)
+    && !hasHtmlUnsafeCodeUnit(value)
 }
 
 function safeRelValue(value: string): boolean {

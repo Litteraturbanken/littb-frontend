@@ -149,6 +149,7 @@ describe("Red FTP response parsing", () => {
   test.each([
     ["x".repeat(65_537)],
     ["https://evil.test/file"],
+    ["/mnt/ftp/red/lb123/unsafe\u0080file"],
     ["/mnt/ftp/red/lb123/../secret"],
     [Array.from({ length: 51 }, () => "/mnt/ftp/red/lb123/file").join("\n")]
   ])("rejects an unsafe or oversized provider response", source => {

@@ -2,6 +2,7 @@
 import { createLbApiClient } from "../lib/api/client"
 import type { components } from "../lib/api/generated/lbapi"
 import { canonicalNuxtHref, isNuxtInternalHref } from "../lib/internal-navigation"
+import { hasC0OrDelete } from "#shared/utils/text-safety"
 
 type AuthorSummary = components["schemas"]["AuthorSummary"]
 type StoredHistory = { author: string, label: string, url: string }
@@ -10,7 +11,11 @@ useSeoMeta({ title: "History | Litteraturbanken" })
 useHead({ bodyAttrs: { class: "focus page-history ready" } })
 
 function safeHistoryUrl(value: unknown): value is string {
-  if (typeof value !== "string" || /[\\\u0000-\u001f\u007f]/.test(value)) return false
+  if (
+    typeof value !== "string"
+    || value.includes("\\")
+    || hasC0OrDelete(value)
+  ) return false
   if (!value.startsWith("/") || value.startsWith("//")) return false
   if (/%(?![0-9a-fA-F]{2})/.test(value)) return false
   try {

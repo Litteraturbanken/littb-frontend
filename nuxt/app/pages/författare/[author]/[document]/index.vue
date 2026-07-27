@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import ordinaryBackground from "~/assets/img/forf2_bkg.jpg"
 import { canonicalNuxtHref } from "~/lib/internal-navigation"
+import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 import type {
   AuthorDocumentErrorCode,
   AuthorDocumentKind,
@@ -24,7 +25,11 @@ function validRouteParam(value: unknown, maximum: number): value is string {
     && value.length >= 1 && value.length <= maximum
     && value === value.trim()
     && value !== "." && value !== ".."
-    && !/[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(value)
+    && !value.includes("\\")
+    && !value.includes("/")
+    && !value.includes("%")
+    && !hasC0OrC1Control(value)
+    && !hasLoneSurrogate(value)
 }
 
 function isDocumentKind(value: unknown): value is AuthorDocumentKind {

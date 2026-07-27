@@ -1,8 +1,8 @@
+import { hasC0OrC1Control } from "#shared/utils/text-safety"
+
 export const maximumReaderMissingPageNameLength = 160
 
 export const readerMissingPageErrorCode = "reader_page_not_found"
-
-const unsafeReaderPageCharacters = /[\u0000-\u001f\u007f-\u009f]/u
 
 type ReaderMissingPageErrorData = Readonly<{
   code: typeof readerMissingPageErrorCode
@@ -20,7 +20,7 @@ export function readerMissingPageErrorData(
     typeof value !== "string" ||
     value.length === 0 ||
     value.length > maximumReaderMissingPageNameLength ||
-    unsafeReaderPageCharacters.test(value)
+    hasC0OrC1Control(value)
   ) return null
 
   return { code: readerMissingPageErrorCode, pageName: value }

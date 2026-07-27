@@ -22,6 +22,12 @@ import { authorProfilePath } from "~/lib/author-profile"
 import { canonicalNuxtHref } from "~/lib/internal-navigation"
 import { readerSourceInfoIsOpen } from "~/lib/reader-routes"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
+import {
+  hasC0OrC1Control,
+  hasC0OrDelete,
+  hasEcmaWhitespace,
+  hasLoneSurrogate
+} from "#shared/utils/text-safety"
 
 type Catalog = components["schemas"]["DramawebbenCatalogResponse"]
 type CatalogAuthor = components["schemas"]["DramawebbenCatalogAuthor"]
@@ -77,7 +83,12 @@ function isCatalogAuthor(value: unknown): value is CatalogAuthor {
 }
 
 function isSafeCatalogMediaUrl(mediaType: string, url: string, downloadable: boolean): boolean {
-  if (!url.startsWith("/") || url.startsWith("//") || /[\u0000-\u001f\u007f\s]/u.test(url)) return false
+  if (
+    !url.startsWith("/")
+    || url.startsWith("//")
+    || hasC0OrDelete(url)
+    || hasEcmaWhitespace(url)
+  ) return false
   if (mediaType === "pdf") {
     return downloadable && /^\/txt\/[^/?#]+\/[^/?#]+\.pdf$/u.test(url)
   }
@@ -150,7 +161,11 @@ function validSourceInfoSegment(value: unknown, maximum: number): value is strin
     && value.length >= 1 && value.length <= maximum
     && value === value.trim()
     && value !== "." && value !== ".."
-    && !/[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(value)
+    && !value.includes("\\")
+    && !value.includes("/")
+    && !value.includes("%")
+    && !hasC0OrC1Control(value)
+    && !hasLoneSurrogate(value)
 }
 
 function normalizedTokens(value: string): string[] {

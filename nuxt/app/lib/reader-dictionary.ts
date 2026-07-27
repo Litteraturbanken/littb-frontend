@@ -1,5 +1,7 @@
 import { parseHTML } from "linkedom"
 
+import { hasC0OrC1Control, hasEcmaWhitespace } from "#shared/utils/text-safety"
+
 const maximumArticleLength = 200_000
 const maximumWordLength = 100
 const blockedTags = new Set([
@@ -47,8 +49,8 @@ function validatedReaderWord(value: string): string | null {
   if (
     !word
     || word.length > maximumWordLength
-    || /\s/u.test(word)
-    || /[\u0000-\u001f\u007f-\u009f]/u.test(word)
+    || hasEcmaWhitespace(word)
+    || hasC0OrC1Control(word)
   ) return null
   return word
 }

@@ -1,5 +1,6 @@
 import { validatePresentationSegments } from "./presentation-routes"
 import { isSlaArticleId } from "#shared/types/sla-article"
+import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 
 const authorPrefixes = ["/forfattare", "/författare", "/f%C3%B6rfattare"] as const
 const searchPrefixes = ["/sok", "/sök", "/s%C3%B6k"] as const
@@ -29,15 +30,17 @@ const dramawebbenPages = new Set(["pjäser", "om", "kringtexter"])
 const authorPages = new Set(["titlar", "dramawebben", "biblinfo", "mer"])
 const authorDocuments = new Set(["presentation", "bibliografi", "semer"])
 const readerMedia = new Set(["etext", "faksimil"])
-const unsafeRouteSegment = /[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u
-
 function validRouteSegment(value: string, maximumLength: number): boolean {
   return value.length > 0
     && value.length <= maximumLength
     && value === value.trim()
     && value !== "."
     && value !== ".."
-    && !unsafeRouteSegment.test(value)
+    && !value.includes("\\")
+    && !value.includes("/")
+    && !value.includes("%")
+    && !hasC0OrC1Control(value)
+    && !hasLoneSurrogate(value)
 }
 
 function isAuthorRoute(segments: string[]): boolean {

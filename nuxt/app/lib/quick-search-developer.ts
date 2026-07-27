@@ -1,3 +1,5 @@
+import { hasC0OrC1Control } from "#shared/utils/text-safety"
+
 export type DeveloperJsonValue =
   | null
   | boolean
@@ -51,7 +53,6 @@ const maximumFtpResponseLength = 65_536
 const maximumFtpEntries = 50
 const maximumFtpPathLength = 2_048
 const safeWorkId = /^lb[A-Za-z0-9._-]{0,97}$/u
-const unsafeCharacters = /[\u0000-\u0009\u000b\u000c\u000e-\u001f\u007f-\u009f]/u
 
 function boundedValue(
   value: unknown,
@@ -191,7 +192,9 @@ export function isRedFtpQuery(value: unknown): value is string {
 }
 
 export function parseRedFtpResponse(source: string): RedFtpEntry[] | null {
-  if (source.length > maximumFtpResponseLength || unsafeCharacters.test(source)) return null
+  if (source.length > maximumFtpResponseLength) return null
+  const sourceWithoutLineBreaks = source.replaceAll("\n", "").replaceAll("\r", "")
+  if (hasC0OrC1Control(sourceWithoutLineBreaks)) return null
   const lines = source.split(/\r?\n/u).filter(Boolean)
   if (lines.length > maximumFtpEntries) return null
 
