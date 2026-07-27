@@ -1232,6 +1232,18 @@ function validDistinctStringArray(value, maximum, allowed = null) {
   return validStringArray(value, maximum, allowed) && new Set(value).size === value.length
 }
 
+function validLibraryIdentifier(value) {
+  const characters = typeof value === "string" ? [...value] : []
+  return characters.length >= 1 && characters.length <= 100
+    && characters.every(character => /^[\p{L}\p{N}_-]$/u.test(character))
+}
+
+function validLibraryIdentifierArray(value) {
+  return Array.isArray(value) && value.length <= 50
+    && new Set(value).size === value.length
+    && value.every(validLibraryIdentifier)
+}
+
 function validLibraryFilters(filters) {
   const fields = [
     "query", "gender", "categories", "narrowing_categories", "about_author_ids",
@@ -1240,18 +1252,20 @@ function validLibraryFilters(filters) {
   if (filters === null || typeof filters !== "object" || Array.isArray(filters)
     || Object.keys(filters).length !== fields.length
     || fields.some(field => !Object.hasOwn(filters, field))) return false
-  if (!validBoundedString(filters.query, 200, true)) return false
+  if (typeof filters.query !== "string" || [...filters.query].length > 500
+    || /[\p{Cc}\p{Cs}]/u.test(filters.query)) return false
   if (filters.gender !== null && filters.gender !== "female" && filters.gender !== "male") return false
   if (!validDistinctStringArray(filters.categories, 38, textSearchCategories)
     || !validDistinctStringArray(filters.narrowing_categories, 38, textSearchCategories)
-    || !validDistinctStringArray(filters.about_author_ids, 50)
+    || !validLibraryIdentifierArray(filters.about_author_ids)
     || !validDistinctStringArray(filters.media, 4, libraryMedia)
     || !validDistinctStringArray(filters.languages, 13, textSearchLanguages)) return false
   for (const field of ["year_from", "year_to"]) {
     if (filters[field] !== null
-      && (!Number.isInteger(filters[field]) || filters[field] < 1000 || filters[field] > 2200)) return false
+      && (!Number.isInteger(filters[field]) || filters[field] < 1000 || filters[field] > 3000)) return false
   }
-  return filters.year_from === null || filters.year_to === null || filters.year_from <= filters.year_to
+  return (filters.year_from === null) === (filters.year_to === null)
+    && (filters.year_from === null || filters.year_from <= filters.year_to)
 }
 
 const librarySearchFields = {
@@ -1279,13 +1293,14 @@ function hasExactFields(body, fields) {
 
 function validLibrarySearchBody(body) {
   if (body === null || typeof body !== "object" || Array.isArray(body)) return false
+  if (!Object.hasOwn(librarySearchFields, body.mode)) return false
   const fields = librarySearchFields[body.mode]
   if (!fields || !hasExactFields(body, fields) || !validLibraryFilters(body.filters)
     || typeof body.reverse !== "boolean") return false
   if (body.mode !== "latest" && !librarySorts[body.mode].has(body.sort)) return false
-  if (body.mode === "authors") return Number.isInteger(body.limit) && body.limit >= 1 && body.limit <= 500
+  if (body.mode === "authors") return Number.isInteger(body.limit) && body.limit >= 150 && body.limit <= 10_000
   if (body.mode === "all") return true
-  if (!Number.isInteger(body.page) || body.page < 1 || body.page > 10_000) return false
+  if (!Number.isInteger(body.page) || body.page < 1 || body.page > 100) return false
   if (body.mode === "works") return typeof body.source_only === "boolean"
   if (body.mode === "latest") return typeof body.hide_1800 === "boolean"
   return true
@@ -4199,7 +4214,7 @@ const server = createServer(async (request, response) => {
     const identity = canonicalLibraryIdentity(body)
     const delay = libraryV2Delays[operation][identity] ?? 0
     if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay))
-    if (libraryV2Failures[operation].has(body.mode)) {
+    if (operation === "search" && libraryV2Failures.search.has(body.mode)) {
       return sendJson(response, 503, {
         error: {
           code: "library_search_unavailable",
@@ -4207,6 +4222,11 @@ const server = createServer(async (request, response) => {
           details: null
         }
       })
+    }
+    if (operation === "counts" && libraryV2Failures.counts.has(body.mode)) {
+      return sendJson(response, 200, body.mode === "works" || body.mode === "parts"
+        ? { mode: body.mode, total: null, author_ids: null }
+        : { mode: body.mode, total: null })
     }
     return sendJson(response, 200, operation === "search"
       ? librarySearchResponse(body.mode)

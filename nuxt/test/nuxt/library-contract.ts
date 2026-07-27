@@ -3,6 +3,7 @@ import type {
   operations,
   paths
 } from "../../app/lib/api/generated/lbapi"
+import type { LibraryPageData } from "../../app/lib/library/view-model"
 
 type Equal<Left, Right> =
   (<Value>() => Value extends Left ? 1 : 2) extends
@@ -28,6 +29,53 @@ type SearchResponse = SearchById["responses"][200]["content"]["application/json"
 type CountRequest = CountsById["requestBody"]["content"]["application/json"]
 type CountResponse = CountsById["responses"][200]["content"]["application/json"]
 type ApiErrorResponse = components["schemas"]["ApiErrorResponse"]
+
+type ExpectedSearchRequest =
+  | components["schemas"]["LibraryAllSearchRequest"]
+  | components["schemas"]["LibraryAuthorsSearchRequest"]
+  | components["schemas"]["LibraryWorksSearchRequest"]
+  | components["schemas"]["LibraryPartsSearchRequest"]
+  | components["schemas"]["LibraryLatestSearchRequest"]
+  | components["schemas"]["LibraryEpubSearchRequest"]
+  | components["schemas"]["LibraryPdfSearchRequest"]
+type ExpectedSearchResponse =
+  | components["schemas"]["LibraryAllSearchResponse"]
+  | components["schemas"]["LibraryAuthorsSearchResponse"]
+  | components["schemas"]["LibraryWorksSearchResponse"]
+  | components["schemas"]["LibraryPartsSearchResponse"]
+  | components["schemas"]["LibraryLatestSearchResponse"]
+  | components["schemas"]["LibraryEpubSearchResponse"]
+  | components["schemas"]["LibraryPdfSearchResponse"]
+type ExpectedCountRequest =
+  | components["schemas"]["LibraryEpubCountRequest"]
+  | components["schemas"]["LibraryPdfCountRequest"]
+  | components["schemas"]["LibraryWorksCountRequest"]
+  | components["schemas"]["LibraryPartsCountRequest"]
+type ExpectedCountResponse =
+  | components["schemas"]["LibraryDownloadCountResponse"]
+  | components["schemas"]["LibraryBrowseCountResponse"]
+
+type _SearchRequestUnionExact = Expect<Equal<SearchRequest, ExpectedSearchRequest>>
+type _SearchResponseUnionExact = Expect<Equal<SearchResponse, ExpectedSearchResponse>>
+type _CountRequestUnionExact = Expect<Equal<CountRequest, ExpectedCountRequest>>
+type _CountResponseUnionExact = Expect<Equal<CountResponse, ExpectedCountResponse>>
+type GeneratedBrowseAuthorIds = NonNullable<
+  components["schemas"]["LibraryBrowseCountResponse"]["author_ids"]
+>
+type AuthorView = Extract<LibraryPageData, { mode: "authors" }>
+type BrowseView = Extract<LibraryPageData, { mode: "works" | "parts" }>
+type _WorkAuthorIdsUseGeneratedArray = Expect<Equal<
+  AuthorView["response"]["workAuthorIds"],
+  GeneratedBrowseAuthorIds
+>>
+type _PartAuthorIdsUseGeneratedArray = Expect<Equal<
+  AuthorView["response"]["partAuthorIds"],
+  GeneratedBrowseAuthorIds
+>>
+type _BrowseAuthorIdsUseGeneratedArray = Expect<Equal<
+  BrowseView["response"]["authorIds"],
+  GeneratedBrowseAuthorIds
+>>
 
 const filters = {
   query: "Selma",

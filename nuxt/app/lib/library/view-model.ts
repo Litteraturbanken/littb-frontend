@@ -15,6 +15,9 @@ type AllItem = components["schemas"]["LibraryAllSearchResponse"]["items"][number
 type BrowseItem = components["schemas"]["LibraryBrowseItem"]
 type DownloadItem = components["schemas"]["LibraryDownloadItem"]
 type LatestItem = components["schemas"]["LibraryLatestItem"]
+type LibraryAuthorIds = NonNullable<
+  components["schemas"]["LibraryBrowseCountResponse"]["author_ids"]
+>
 
 export type LibraryResult = {
   index: "etext" | "faksimil" | "pdf" | "etext-part" | "faksimil-part" | "author" | "presentations" | "sol" | "litteraturkartan" | "wordpress"
@@ -93,8 +96,8 @@ export type LatestResult = {
 
 export type LibraryPageData =
   | { mode: "all", response: { data: LibraryResult[], hits: number, suggest: never[], failed: false } }
-  | { mode: "authors", response: { data: LibraryResult[], hits: number, workCount: number, partCount: number, workAuthorIds: never[], partAuthorIds: never[], suggest: never[], failed: false } }
-  | { mode: "works" | "parts", response: { data: BrowseResult[], hits: number, distinctHits: number, authorIds: never[], suggest: never[], failed: false } }
+  | { mode: "authors", response: { data: LibraryResult[], hits: number, workCount: number, partCount: number, workAuthorIds: LibraryAuthorIds, partAuthorIds: LibraryAuthorIds, suggest: never[], failed: false } }
+  | { mode: "works" | "parts", response: { data: BrowseResult[], hits: number, distinctHits: number, authorIds: LibraryAuthorIds, suggest: never[], failed: false } }
   | { mode: "latest", response: { groups: { imported: string, label: string, results: LatestResult[] }[], hits: number, distinctHits: number, suggest: never[], failed: false } }
   | { mode: "epub" | "pdf", response: { data: DownloadResult[], hits: number, distinctHits: number, suggest: never[], failed: false } }
 

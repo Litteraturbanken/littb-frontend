@@ -4143,6 +4143,7 @@ describe("v2 fixture server operations", () => {
     }
     const invalid = [
       { mode: "all", filters, sort: "relevance", reverse: false, extra: true },
+      { mode: "constructor" },
       { mode: "all", filters: { ...filters, categories: ["texttype:roman", "texttype:roman"] }, sort: "relevance", reverse: false },
       { mode: "works", filters, sort: "author", reverse: false, page: 1 },
       { mode: "latest", filters, reverse: false, page: 1, hide_1800: false, sort: "author" }
@@ -4155,6 +4156,72 @@ describe("v2 fixture server operations", () => {
     }
     expect((await fetch(`${origin}/v2/library/options?extra=1`)).status).toBe(422)
     expect((await fetch(`${origin}/v2/library/search`)).status).toBe(405)
+  })
+
+  test("accepts the exact upper Library query, identifier, year, limit, and page bounds", async () => {
+    const authorIds = [
+      "a",
+      "Ångström_9-",
+      "a".repeat(100),
+      ...Array.from({ length: 47 }, (_, index) => `id${index}`)
+    ]
+    const filters = {
+      query: "x".repeat(500),
+      gender: null,
+      categories: [],
+      narrowing_categories: [],
+      about_author_ids: authorIds,
+      media: [],
+      languages: [],
+      year_from: 1000,
+      year_to: 3000
+    }
+    const bodies = [
+      { mode: "all", filters, sort: "relevance", reverse: false },
+      { mode: "authors", filters, sort: "name", reverse: false, limit: 10_000 },
+      { mode: "works", filters, sort: "author", reverse: false, page: 100, source_only: false }
+    ]
+    for (const body of bodies) {
+      const response = await fetch(`${origin}/v2/library/search`, {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
+      })
+      expect(response.status).toBe(200)
+    }
+  })
+
+  test("rejects Library controls, invalid identifiers, year pairs, limits, and pages", async () => {
+    const validFilters = {
+      query: "", gender: null, categories: [], narrowing_categories: [],
+      about_author_ids: [], media: [], languages: [], year_from: null, year_to: null
+    }
+    const invalidFilters = [
+      { ...validFilters, query: "x".repeat(501) },
+      { ...validFilters, query: "control\u0000query" },
+      { ...validFilters, query: `surrogate${String.fromCharCode(0xD800)}` },
+      { ...validFilters, about_author_ids: [""] },
+      { ...validFilters, about_author_ids: ["a".repeat(101)] },
+      { ...validFilters, about_author_ids: ["invalid id"] },
+      { ...validFilters, about_author_ids: ["same", "same"] },
+      { ...validFilters, about_author_ids: Array.from({ length: 51 }, (_, index) => `id${index}`) },
+      { ...validFilters, year_from: 1000, year_to: null },
+      { ...validFilters, year_from: null, year_to: 3000 },
+      { ...validFilters, year_from: 999, year_to: 3000 },
+      { ...validFilters, year_from: 1000, year_to: 3001 },
+      { ...validFilters, year_from: 2000, year_to: 1900 }
+    ]
+    const invalidBodies = [
+      ...invalidFilters.map(filters => ({ mode: "all", filters, sort: "relevance", reverse: false })),
+      { mode: "authors", filters: validFilters, sort: "name", reverse: false, limit: 149 },
+      { mode: "authors", filters: validFilters, sort: "name", reverse: false, limit: 10_001 },
+      { mode: "works", filters: validFilters, sort: "author", reverse: false, page: 0, source_only: false },
+      { mode: "works", filters: validFilters, sort: "author", reverse: false, page: 101, source_only: false }
+    ]
+    for (const body of invalidBodies) {
+      const response = await fetch(`${origin}/v2/library/search`, {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
+      })
+      expect(response.status).toBe(422)
+    }
   })
 
   test("keeps Library option sections and search/count failure and delay controls independent", async () => {
@@ -4180,9 +4247,24 @@ describe("v2 fixture server operations", () => {
     expect((await fetch(`${origin}/v2/library/search`, {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(pdf)
     })).status).toBe(503)
-    expect((await fetch(`${origin}/v2/library/counts`, {
+    const failedCount = await fetch(`${origin}/v2/library/counts`, {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(epubCount)
-    })).status).toBe(503)
+    })
+    expect(failedCount.status).toBe(200)
+    expect(await failedCount.json()).toEqual({ mode: "epub", total: null })
+
+    await fetch(`${origin}/_library_v2/failures`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ operation: "counts", mode: "works" })
+    })
+    const worksCount = await fetch(`${origin}/v2/library/counts`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ mode: "works", filters })
+    })
+    expect(worksCount.status).toBe(200)
+    expect(await worksCount.json()).toEqual({ mode: "works", total: null, author_ids: null })
 
     await fetch(`${origin}/_library_v2/failures`, { method: "DELETE" })
     for (const delayed of [
