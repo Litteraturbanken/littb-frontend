@@ -107,14 +107,16 @@ accepted and rejected boundary set is unchanged.
 next query by removing exactly the selected key from the ordered current query,
 preserving key order and the current browser-history bytes.
 
-The second template root is the source-information dialog. It must not move
+The lint finding comes from three current top-level VNodes: the `#dw` hash
+target, `DramawebbenShell`, and the source-information dialog. The dialog must not move
 inside `DramawebbenShell`: before Headless UI is mounted, that would nest its
 fallback `<div>` beneath `.subpage .page_content` and change SSR/hydration DOM.
 The page instead exposes one lint-visible root through Vue's real `Fragment`
-symbol (or an equivalent render function returning the same two sibling
-VNodes). It adds no wrapper and preserves both siblings, fragment markers, and
-portal ownership. Tests serialize the SSR response, the pre-mounted hydration
-tree, and the mounted portal tree before and after the change.
+symbol (or an equivalent render function returning the same three sibling
+VNodes). It adds no wrapper and preserves all three siblings, `#dw` and its
+position, fragment markers, and portal ownership. Tests serialize the SSR
+response, the pre-mounted hydration tree, and the mounted portal tree before
+and after the change.
 
 Query updates remove exactly the selected controlled key through object rest
 or an ordered entry filter. Every other key, repeated value array, value, and
@@ -158,15 +160,23 @@ sanitized. Their current parsers are structural and intentionally preserve
 legacy markup, including active attributes that an allowlist sanitizer might
 remove. In accordance with the approved exact-parity decision, this tranche
 accepts that documented legacy-content risk rather than silently changing DOM.
-It adds explicit configured-authority/path checks, rejects cross-authority
-redirects, enforces bounded bytes and expected HTML/XML/CSS content types, and
-issues distinct managed-editorial capabilities only after those checks. The
-currently loaded production fixtures must be characterized first and shown to
-pass the new transport bounds byte-for-byte. Presentation `<style>`, linked
-stylesheets, and `backgrounds.xml` style text are included in the authority
-review even though they are not HTML sinks.
+Fetched HTML/XML assets gain explicit configured-authority/path checks,
+cross-authority redirect rejection, bounded bytes, and expected response
+content types. Inline style text inherits the already validated fetched
+document authority and receives its own style-text capability. Linked
+stylesheet bodies remain browser-owned and are not prefetched or proxied:
+their href capability proves only configured authority/path syntax, exactly
+preserving existing request ownership. The currently loaded production
+fixtures must be characterized first and shown to pass the new transport
+bounds byte-for-byte. Presentation `<style>`, linked stylesheets, and
+`backgrounds.xml` style text are included in the authority review even though
+they are not HTML sinks.
 
-There is no exported general-purpose branding escape hatch. Narrow helpers
+There is no exported general-purpose branding escape hatch. A sole
+non-exported capability constructor contains the one audited type assertion
+required to turn a runtime string into a nominal string; only the named,
+policy-specific issuers in that module can call it. Application sanitizers and
+loaders never cast to a capability directly. Narrow helpers
 provide a policy-branded empty value, join already branded role rows with a
 fixed `<br>`, and perform reviewed transformations without widening through
 `?? ""` or `Array.join`. Reader highlighting preserves its managed-reader
