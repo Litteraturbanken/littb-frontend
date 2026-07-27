@@ -1625,7 +1625,9 @@ test("a late shorthand resolver cannot leave the route that replaced it", async 
   await navigateClient(page, readerShorthandRouterPath)
   await expect(page).toHaveURL(readerShorthandPath)
   await expect(page.locator(".searching > .preloader")).toBeVisible()
-  await expect.poll(async () => (await readerRequests(request)).length).toBe(1)
+  await expect.poll(async () => readerMetadataRequests(request)).toEqual([
+    "/api/get_work_info?authorid=S%C3%B6derbergH&exclude=content_vector&titlepath=DoktorGlas"
+  ])
   await navigateClient(page, "/bibliotek")
 
   await expect(page).toHaveURL("/bibliotek")
