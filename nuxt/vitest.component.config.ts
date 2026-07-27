@@ -6,6 +6,9 @@ export default defineProject({
   test: {
     name: "component",
     environment: "./test/helpers/linkedom-vitest-environment.ts",
-    include: ["test/unit/search-multi-select.spec.ts"]
+    include: [
+      "test/unit/renderable-html.spec.ts",
+      "test/unit/search-multi-select.spec.ts"
+    ]
   }
 })
