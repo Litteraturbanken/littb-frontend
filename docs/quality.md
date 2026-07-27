@@ -8,6 +8,8 @@ must not duplicate payload properties in handwritten transport interfaces.
 
 ## Fast checks
 
+Run these commands from the frontend repository root:
+
 - `invoke quality.backend`
 - `invoke quality.contract`
 - `cd nuxt && yarn lint`
