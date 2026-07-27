@@ -1,59 +1,41 @@
 <script setup lang="ts">
 import type { CSSProperties, DirectiveBinding, ObjectDirective } from "vue"
-import type { LocationQuery, RouteLocationRaw } from "vue-router"
+import type { LocationQuery } from "vue-router"
+import { createLbApiClient } from "~/lib/api/client"
 import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
 import { legacyPaginationItems } from "~/lib/legacy-pagination"
+import {
+  buildLibrarySearchRequest,
+  type LibraryFilterState,
+  type LibraryFilters,
+  type LibraryOptionsResponse,
+  type LibrarySearchState
+} from "~/lib/library"
 import {
   libraryAuthorTooltipText,
   usefulLibraryTooltipText
 } from "~/lib/library-tooltip"
+import {
+  toLibrarySearchView,
+  type BrowseAction,
+  type BrowseResult,
+  type DownloadResult,
+  type LibraryPageData as LibrarySuccessPageData,
+  type SourceExport
+} from "~/lib/library/view-model"
 
 definePageMeta({ alias: ["/epub"] })
 
-type LibraryIndex =
-  | "etext"
-  | "faksimil"
-  | "pdf"
-  | "etext-part"
-  | "faksimil-part"
-  | "author"
-  | "presentations"
-  | "sol"
-  | "litteraturkartan"
-  | "wordpress"
-
-type LibraryResult = {
-  index: LibraryIndex
-  sourceLabel: string
-  primaryLabel: string
-  primaryHref: string
-  download: boolean
-  yearLabel: string
-  secondaryAuthor: string
-  authorHref: string
-  authorSurname: string
-  authorGivenNames: string
-  mobileYearLabel: string
-  authorId: string
-  authorPopularity: number
-  authorBirth: number
-  fullTitle: string
-  authorContribution: "" | "(red.)" | "(ill.)"
-}
-
-type LibraryResponse = {
-  data: LibraryResult[]
-  hits: number
+type StatefulResponse<Response> = Omit<Response, "suggest" | "failed"> & {
   suggest: unknown[]
   failed: boolean
 }
-
-type AuthorBrowseResponse = LibraryResponse & {
-  workCount: number
-  partCount: number
-  workAuthorIds: string[]
-  partAuthorIds: string[]
-}
+type LibraryResponse = StatefulResponse<
+  Extract<LibrarySuccessPageData, { mode: "all" }>["response"]
+>
+type AuthorBrowseResponse = StatefulResponse<
+  Extract<LibrarySuccessPageData, { mode: "authors" }>["response"]
+>
 
 type LibraryMode = "all" | "latest" | "authors" | "works" | "parts" | "epub" | "pdf"
 type RelevanceSortKey = "relevans" | "forfattare" | "titlar" | "kronologi"
@@ -62,20 +44,17 @@ type LatestSortKey = "nytillkommet"
 type AuthorSortKey = "namn" | "popularitet" | "kronologi"
 type PartSortKey = "forfattare" | "titlar"
 type BrowseSortKey = EpubSortKey | AuthorSortKey | PartSortKey
+const libraryPageMaximum = 100
 
 type LibraryGender = "" | "female" | "male"
-type LibraryMedia = "mediatype:etext" | "mediatype:faksimil" | "has_epub:true" | "mediatype:pdf"
-type LibraryLanguage =
-  | "modernized:true" | "modernized:false"
-  | "translation:true" | "original:true"
-  | "language:swe" | "foreign:true" | "language:eng" | "language:deu"
-  | "language:fra" | "language:lat" | "language:smi"
-  | "proofread:true" | "proofread:false"
+type LibraryCategory = NonNullable<LibraryFilters["categories"]>[number]
+type LibraryMedia = NonNullable<LibraryFilters["media"]>[number]
+type LibraryLanguage = NonNullable<LibraryFilters["languages"]>[number]
 
 type LibraryAdvancedFilters = {
   gender: LibraryGender
-  keywords: string[]
-  narrowingKeywords: string[]
+  keywords: LibraryCategory[]
+  narrowingKeywords: LibraryCategory[]
   aboutAuthorIds: string[]
   media: LibraryMedia[]
   languages: LibraryLanguage[]
@@ -97,68 +76,12 @@ type LibraryRouteState = {
   advancedFilters: LibraryAdvancedFilters
 }
 
-type EpubResult = {
-  title: string
-  titleTooltip: string
-  year: string
-  surname: string
-  authorTooltip: string
-  roleSuffix: string
-  titleHref: string
-  titleTo: RouteLocationRaw
-  authorHref: string
-  downloadHref: string
-  downloadFilename: string
-}
-
-type EpubResponse = {
-  data: EpubResult[]
-  hits: number
-  distinctHits: number
-  suggest: unknown[]
-  failed: boolean
-}
-
-type PdfResult = EpubResult & {
-  downloadFilename: string
-}
-
-type PdfResponse = {
-  data: PdfResult[]
-  hits: number
-  distinctHits: number
-  suggest: unknown[]
-  failed: boolean
-}
-
-type BrowseResult = {
-  key: string
-  titlePath: string
-  title: string
-  titleTooltip: string
-  year: string
-  surname: string
-  authorTooltip: string
-  roleSuffix: string
-  titleHref: string
-  authorHref: string
-  actions: BrowseAction[]
-  sourceExports: SourceExport[]
-}
-
-type SourceExport = {
-  lbworkid: string
-  mediatype: "etext" | "faksimil"
-  type: "txt" | "xml" | "workdb" | "pdf"
-  size: number
-}
-
-type BrowseAction = {
-  kind: "read" | "download" | "search" | "about"
-  label: string
-  href: string
-  downloadFilename: string
-}
+type EpubResult = DownloadResult
+type EpubResponse = StatefulResponse<
+  Extract<LibrarySuccessPageData, { mode: "epub" | "pdf" }>["response"]
+>
+type PdfResult = DownloadResult
+type PdfResponse = EpubResponse
 
 type BrowseCandidate = BrowseResult & {
   authorId: string
@@ -171,62 +94,22 @@ type BrowseCandidate = BrowseResult & {
   exportTypes: string[]
 }
 
-type BrowseResponse = {
-  data: BrowseResult[]
-  hits: number
-  distinctHits: number
-  suggest: unknown[]
-  failed: boolean
-  authorIds: string[]
-}
-
-type LatestResult = {
-  title: string
-  titleTooltip: string
-  titleId: string
-  year: string
-  surname: string
-  authorTooltip: string
-  roleSuffix: string
-  titleHref: string
-  authorHref: string
-  imported: string
-}
-
-type LatestGroup = {
-  imported: string
-  label: string
-  results: LatestResult[]
-}
-
-type LatestResponse = {
-  groups: LatestGroup[]
-  hits: number
-  distinctHits: number
-  suggest: unknown[]
-  failed: boolean
-}
-
+type BrowseResponse = StatefulResponse<
+  Extract<LibrarySuccessPageData, { mode: "works" | "parts" }>["response"]
+>
+type LatestResponse = StatefulResponse<
+  Extract<LibrarySuccessPageData, { mode: "latest" }>["response"]
+>
 type LibraryPageData =
   | { mode: "all", response: LibraryResponse }
   | { mode: "authors", response: AuthorBrowseResponse }
-  | { mode: "works" | "parts", response: BrowseResponse }
+  | { mode: "works", response: BrowseResponse }
+  | { mode: "parts", response: BrowseResponse }
   | { mode: "latest", response: LatestResponse }
-  | { mode: "epub", response: EpubResponse, inactiveCount?: number | null }
-  | { mode: "pdf", response: PdfResponse, inactiveCount?: number | null }
+  | { mode: "epub", response: EpubResponse }
+  | { mode: "pdf", response: PdfResponse }
 
 type UnknownRecord = Record<string, unknown>
-
-const textIndexes = new Set<LibraryIndex>([
-  "etext", "faksimil", "etext-part", "faksimil-part"
-])
-
-const wordpressLabels: Record<string, string> = {
-  ljudochbild: "Ljud och bild",
-  diktensmuseum: "Diktens museum",
-  skolan: "Skolan",
-  bibliotekariesidor: "Bibliotekariesidor"
-}
 
 function asRecord(value: unknown): UnknownRecord | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
@@ -377,230 +260,12 @@ const vLibraryTooltip: ObjectDirective<HTMLElement, string> = {
   }
 }
 
-function baseResult(index: LibraryIndex): LibraryResult {
-  return {
-    index,
-    sourceLabel: "",
-    primaryLabel: "",
-    primaryHref: "",
-    download: false,
-    yearLabel: "",
-    secondaryAuthor: "",
-    authorHref: "",
-    authorSurname: "",
-    authorGivenNames: "",
-    mobileYearLabel: "",
-    authorId: "",
-    authorPopularity: 0,
-    authorBirth: 0,
-    fullTitle: "",
-    authorContribution: ""
-  }
-}
-
-function safeProvidedDestination(value: string): string {
-  if (!value || /[\u0000-\u001F\u007F]/.test(value)) return ""
-  if (value.startsWith("/") && !value.startsWith("//") && !value.includes("\\")) {
-    const url = new URL(value, "https://litteraturbanken.se")
-    return url.origin === "https://litteraturbanken.se"
-      ? `${url.pathname}${url.search}${url.hash}`
-      : ""
-  }
-  try {
-    const url = new URL(value)
-    const expectedHost = url.hostname === "litteraturbanken.se"
-      || url.hostname.endsWith(".litteraturbanken.se")
-    return expectedHost && (url.protocol === "https:" || url.protocol === "http:")
-      ? url.href
-      : ""
-  } catch {
-    return ""
-  }
-}
-
 function optionalYear(record: UnknownRecord, key: string): string {
   return stringAt(recordAt(record, key), "plain")
 }
 
 function imprintYear(record: UnknownRecord): string {
   return optionalYear(record, "sort_date_imprint")
-}
-
-function parseMainAuthor(record: UnknownRecord): {
-  id: string
-  name: string
-  type: string
-} | null {
-  const mainAuthor = recordAt(record, "main_author")
-  const id = stringAt(mainAuthor, "authorid")
-  const name = stringAt(mainAuthor, "full_name")
-  return id && name ? { id, name, type: stringAt(mainAuthor, "type") } : null
-}
-
-function contributionLabel(type: string): "" | "(red.)" | "(ill.)" {
-  return type === "editor" ? "(red.)" : type === "illustrator" ? "(ill.)" : ""
-}
-
-function parseTextResult(record: UnknownRecord, index: LibraryIndex): LibraryResult | null {
-  const fullTitle = stringAt(record, "title")
-  const label = stringAt(record, "shorttitle") || fullTitle
-  const texttype = stringAt(record, "texttype")
-  const media = stringAt(record, "mediatype")
-  const page = stringAt(record, "startpagename")
-  const title = stringAt(record, "work_titleid") || stringAt(record, "titleid")
-  const mainAuthor = parseMainAuthor(record)
-  const workAuthor = stringAt(recordsAt(record, "work_authors")[0] ?? null, "authorid")
-  const author = index.endsWith("-part") ? workAuthor : workAuthor || mainAuthor?.id || ""
-  if (!label || !texttype || !media || !page || !title || !author || !mainAuthor) return null
-
-  return {
-    ...baseResult(index),
-    sourceLabel: texttype,
-    primaryLabel: label,
-    primaryHref: `/f%C3%B6rfattare/${encodeURIComponent(author)}/titlar/${encodeURIComponent(title)}/sida/${encodeURIComponent(page)}/${encodeURIComponent(media)}`,
-    fullTitle: fullTitle || label,
-    yearLabel: imprintYear(record),
-    secondaryAuthor: mainAuthor.name,
-    authorHref: `/f%C3%B6rfattare/${encodeURIComponent(mainAuthor.id)}`,
-    authorContribution: contributionLabel(mainAuthor.type)
-  }
-}
-
-function parsePdfResult(record: UnknownRecord): LibraryResult | null {
-  const fullTitle = stringAt(record, "title")
-  const label = stringAt(record, "shorttitle") || fullTitle
-  const texttype = stringAt(record, "texttype")
-  const id = stringAt(record, "lbworkid")
-  const mainAuthor = parseMainAuthor(record)
-  if (!label || !texttype || !id || !mainAuthor) return null
-  const encodedId = encodeURIComponent(id)
-  return {
-    ...baseResult("pdf"),
-    sourceLabel: texttype,
-    primaryLabel: label,
-    primaryHref: `/txt/${encodedId}/${encodedId}.pdf`,
-    fullTitle: fullTitle || label,
-    download: true,
-    yearLabel: imprintYear(record),
-    secondaryAuthor: mainAuthor.name,
-    authorHref: `/f%C3%B6rfattare/${encodeURIComponent(mainAuthor.id)}`,
-    authorContribution: contributionLabel(mainAuthor.type)
-  }
-}
-
-function parseAuthorResult(record: UnknownRecord): LibraryResult | null {
-  const id = stringAt(record, "authorid")
-  const label = stringAt(record, "name_for_index")
-  if (!id || !label) return null
-  const [surname, ...givenParts] = label.split(",")
-  const authorSurname = surname?.trim() ?? ""
-  const authorGivenNames = givenParts.join(",").trim()
-  if (!authorSurname) return null
-  const birth = optionalYear(record, "birth")
-  const death = optionalYear(record, "death")
-  const years = birth || death ? `${birth}–${death}` : ""
-  return {
-    ...baseResult("author"),
-    sourceLabel: "Författare",
-    primaryLabel: label,
-    primaryHref: `/f%C3%B6rfattare/${encodeURIComponent(id)}/`,
-    yearLabel: years,
-    authorSurname,
-    authorGivenNames,
-    mobileYearLabel: years ? `(${years})` : "",
-    authorId: id,
-    authorPopularity: Number(stringAt(record, "popularity")) || 0,
-    authorBirth: Number(birth) || 0
-  }
-}
-
-function parsePresentationResult(record: UnknownRecord): LibraryResult | null {
-  const label = stringAt(record, "title")
-  const href = safeProvidedDestination(stringAt(record, "url"))
-  const author = stringAt(record, "article_author")
-  if (!label || !href) return null
-  return {
-    ...baseResult("presentations"),
-    sourceLabel: "Kringtexter",
-    primaryLabel: label,
-    primaryHref: href,
-    secondaryAuthor: author
-  }
-}
-
-function parseSolResult(record: UnknownRecord): LibraryResult | null {
-  const article = recordAt(record, "article")
-  const contributor = recordAt(record, "contributors")
-  const label = stringAt(article, "ArticleName")
-  const name = stringAt(article, "URLName")
-  const firstName = stringAt(contributor, "FirstName")
-  const lastName = stringAt(contributor, "LastName")
-  if (!label || !name || !firstName || !lastName) return null
-  return {
-    ...baseResult("sol"),
-    sourceLabel: "Översättarlexikon",
-    primaryLabel: label,
-    primaryHref: `https://litteraturbanken.se/översättarlexikon/artiklar/${encodeURIComponent(name)}`,
-    secondaryAuthor: `${firstName} ${lastName}`
-  }
-}
-
-function parseMapResult(record: UnknownRecord): LibraryResult | null {
-  const label = stringAt(record, "header")
-  const place = stringAt(record, "placeid")
-  const id = stringAt(record, "id")
-  const author = stringAt(record, "article_author")
-  if (!label || !place || !id || !author) return null
-  return {
-    ...baseResult("litteraturkartan"),
-    sourceLabel: "Litteraturkartan",
-    primaryLabel: label,
-    primaryHref: `https://litteraturbanken.se/litteraturkartan/?id=${encodeURIComponent(place)}&article=${encodeURIComponent(id)}`,
-    secondaryAuthor: author
-  }
-}
-
-function parseWordpressResult(record: UnknownRecord): LibraryResult | null {
-  const label = stringAt(record, "title")
-  const href = safeProvidedDestination(stringAt(record, "link"))
-  const sourceLabel = wordpressLabels[stringAt(record, "source")] ?? ""
-  if (!label || !href || !sourceLabel) return null
-  return {
-    ...baseResult("wordpress"),
-    sourceLabel,
-    primaryLabel: label,
-    primaryHref: href
-  }
-}
-
-function parseResult(value: unknown): LibraryResult | null {
-  const record = asRecord(value)
-  if (!record) return null
-  const index = stringAt(record, "_index") as LibraryIndex
-  if (textIndexes.has(index)) return parseTextResult(record, index)
-  if (index === "pdf") return parsePdfResult(record)
-  if (index === "author") return parseAuthorResult(record)
-  if (index === "presentations") return parsePresentationResult(record)
-  if (index === "sol") return parseSolResult(record)
-  if (index === "litteraturkartan") return parseMapResult(record)
-  if (index === "wordpress") return parseWordpressResult(record)
-  return null
-}
-
-function parseLibraryResponse(value: unknown): LibraryResponse {
-  const record = asRecord(value)
-  const suggest = record?.suggest
-  if (!record || !Array.isArray(record.data) || typeof record.hits !== "number"
-    || !Number.isFinite(record.hits)
-    || (suggest !== null && suggest !== undefined && !Array.isArray(suggest))) {
-    throw new Error("Invalid Library relevance response")
-  }
-  return {
-    data: record.data.map(parseResult).filter((item): item is LibraryResult => item !== null),
-    hits: record.hits,
-    suggest: Array.isArray(suggest) ? suggest : [],
-    failed: false
-  }
 }
 
 function emptyLibraryResponse(failed = false): LibraryResponse {
@@ -885,144 +550,6 @@ function emptyBrowseResponse(failed = false): BrowseResponse {
   return { data: [], hits: 0, distinctHits: 0, suggest: [], failed, authorIds: [] }
 }
 
-const latestMediaOrder = { etext: 0, faksimil: 1, pdf: 2 } as const
-const swedishMonths = [
-  "januari", "februari", "mars", "april", "maj", "juni",
-  "juli", "augusti", "september", "oktober", "november", "december"
-]
-
-function importedDate(value: unknown): string {
-  if (typeof value === "string") {
-    const date = value.split("T")[0] ?? ""
-    return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : ""
-  }
-  if (typeof value !== "number" || !Number.isFinite(value)) return ""
-  const date = new Date(value)
-  if (Number.isNaN(date.valueOf())) return ""
-  return [
-    date.getUTCFullYear(),
-    String(date.getUTCMonth() + 1).padStart(2, "0"),
-    String(date.getUTCDate()).padStart(2, "0")
-  ].join("-")
-}
-
-function formatImportedDate(value: string): string {
-  const [year, month, day] = value.split("-").map(Number)
-  const monthLabel = month ? swedishMonths[month - 1] : undefined
-  return year && monthLabel && day ? `${day} ${monthLabel} ${year}` : value
-}
-
-function parseLatestRepresentation(value: unknown): (LatestResult & {
-  lbworkid: string
-  titlepath: string
-  mediaType: keyof typeof latestMediaOrder
-}) | null {
-  const record = asRecord(value)
-  if (!record) return null
-  const title = epubStringAt(record, "shorttitle") || epubStringAt(record, "title")
-  const titlepath = pdfIdentityAt(record, "titlepath")
-  const titleId = titlepath
-  const lbworkid = pdfIdentityAt(record, "lbworkid")
-  const mediaType = pdfIdentityAt(record, "mediatype") as keyof typeof latestMediaOrder
-  const mainAuthor = recordAt(record, "main_author")
-  const authorId = pdfIdentityAt(mainAuthor, "authorid")
-  const surname = epubStringAt(mainAuthor, "surname")
-  const year = imprintYear(record)
-  const imported = importedDate(record.imported)
-  const encodedAuthor = safePathSegment(authorId)
-  const encodedTitle = safePathSegment(titleId)
-  const encodedMedia = safePathSegment(mediaType)
-  const encodedAboutMedia = safePathSegment(mediaType === "pdf" ? "faksimil" : mediaType)
-  if (!isSafeDisplayText(title) || !isSafeDisplayText(year) || !isSafeDisplayText(surname)
-    || !safePathSegment(titlepath) || !safePathSegment(lbworkid)
-    || !(mediaType in latestMediaOrder) || !encodedAuthor || !encodedTitle || !encodedMedia
-    || !encodedAboutMedia
-    || !imported) return null
-  const role = epubStringAt(mainAuthor, "type")
-  return {
-    title,
-    titleTooltip: usefulLibraryTooltipText(record.title, title),
-    titleId,
-    year,
-    surname,
-    authorTooltip: libraryAuthorTooltipText(mainAuthor, surname),
-    roleSuffix: role === "editor" ? " (red.)" : role === "illustrator" ? " (ill.)" : "",
-    titleHref: `/f%C3%B6rfattare/${encodedAuthor}/titlar/${encodedTitle}/${encodedAboutMedia}?om-boken`,
-    authorHref: `/f%C3%B6rfattare/${encodedAuthor}`,
-    imported,
-    lbworkid,
-    titlepath,
-    mediaType
-  }
-}
-
-function parseLatestResponse(value: unknown): LatestResponse {
-  const record = asRecord(value)
-  const suggest = record?.suggest
-  const aggregations = record?.imported_aggregation
-  if (!record || !Array.isArray(record.data) || typeof record.hits !== "number"
-    || !Number.isFinite(record.hits) || typeof record.distinct_hits !== "number"
-    || !Number.isFinite(record.distinct_hits) || !Array.isArray(aggregations)
-    || (suggest !== null && suggest !== undefined && !Array.isArray(suggest))) {
-    throw new Error("Invalid Library latest response")
-  }
-
-  const counts = new Map<string, number>()
-  for (const value of aggregations) {
-    const aggregation = asRecord(value)
-    const date = importedDate(aggregation?.imported)
-    const count = aggregation?.doc_count
-    if (date && typeof count === "number" && Number.isFinite(count)) counts.set(date, count)
-  }
-
-  const representations = new Map<string, ReturnType<typeof parseLatestRepresentation>[]>()
-  for (const value of record.data) {
-    const parsed = parseLatestRepresentation(value)
-    if (!parsed) continue
-    const key = JSON.stringify([parsed.titlepath, parsed.lbworkid])
-    const group = representations.get(key)
-    if (group) group.push(parsed)
-    else representations.set(key, [parsed])
-  }
-
-  const grouped = new Map<string, LatestResult[]>()
-  for (const representationGroup of representations.values()) {
-    const selected = representationGroup
-      .filter((item): item is NonNullable<typeof item> => item !== null)
-      .sort((left, right) => latestMediaOrder[left.mediaType] - latestMediaOrder[right.mediaType])[0]
-    if (!selected) continue
-    const newestImported = representationGroup.reduce(
-      (newest, item) => item && item.imported > newest ? item.imported : newest,
-      selected.imported
-    )
-    const {
-      lbworkid: _lbworkid,
-      titlepath: _titlepath,
-      mediaType: _mediaType,
-      ...preferredResult
-    } = selected
-    const result = { ...preferredResult, imported: newestImported }
-    const dateGroup = grouped.get(result.imported)
-    if (dateGroup) dateGroup.push(result)
-    else grouped.set(result.imported, [result])
-  }
-
-  return {
-    groups: [...grouped.entries()].map(([date, results]) => {
-      const count = counts.get(date)
-      return {
-        imported: date,
-        label: `${formatImportedDate(date)}${count === undefined ? "" : ` (${count} verk)`}`,
-        results
-      }
-    }),
-    hits: record.hits,
-    distinctHits: record.distinct_hits,
-    suggest: Array.isArray(suggest) ? suggest : [],
-    failed: false
-  }
-}
-
 function emptyLatestResponse(failed = false): LatestResponse {
   return { groups: [], hits: 0, distinctHits: 0, suggest: [], failed }
 }
@@ -1195,8 +722,6 @@ function emptyPdfResponse(failed = false): PdfResponse {
   return { data: [], hits: 0, distinctHits: 0, suggest: [], failed }
 }
 
-const resultTypes = "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,litteraturkartan,wordpress"
-const excludedFields = "text,parts,sourcedesc,pages,errata,intro,workintro,content,article.ArticleText,works,intro_text,bibliography_types,wikidata.wikipedia_text,content_vector"
 const backgroundPath = "/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg"
 const description = "Blädda bland Litteraturbankens författare och titlar."
 
@@ -1309,7 +834,7 @@ const collectionOptionGroups = [
     ]
   }
 ] as const
-const collectionValues = new Set<string>(
+const collectionValues = new Set<LibraryCategory>(
   collectionOptionGroups.flatMap(group => group.options.map(option => option[0]))
 )
 const collectionSelectGroups = collectionOptionGroups.map(group => ({
@@ -1317,8 +842,6 @@ const collectionSelectGroups = collectionOptionGroups.map(group => ({
   options: group.options.map(([value, label]) => ({ value, label }))
 }))
 const collectionSelectOptions = collectionSelectGroups.flatMap(group => group.options)
-const authorExclude = "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources,intro_text,wikidata,dramawebben"
-
 const mediaOptions: ReadonlyArray<{ value: LibraryMedia, label: string, title: string }> = [
   {
     value: "mediatype:etext",
@@ -1364,87 +887,6 @@ const languageSelectOptions = languageOptions.map(({ value, label }) => ({ value
 function orderedLibraryValues<T extends string>(values: readonly string[], options: readonly { value: T }[]): T[] {
   const selected = new Set(values)
   return options.filter(option => selected.has(option.value)).map(option => option.value)
-}
-
-function safeLibraryIdentifier(value: string): boolean {
-  return /^[\p{L}\p{N}_-]+$/u.test(value) && value.length <= 100
-}
-
-function parseAboutAuthorOptions(authorsValue: unknown, idsValue: unknown): AboutAuthorOption[] {
-  const authorsRecord = asRecord(authorsValue)
-  if (!authorsRecord || !Array.isArray(authorsRecord.data) || !Array.isArray(idsValue)) {
-    throw new Error("Invalid Library about-author metadata")
-  }
-  const labels = new Map<string, string>()
-  const rejectedAuthorIds = new Set<string>()
-  for (const value of authorsRecord.data) {
-    const record = asRecord(value)
-    const id = stringAt(record, "authorid")
-    const label = stringAt(record, "full_name")
-    if (!safeLibraryIdentifier(id) || rejectedAuthorIds.has(id)) continue
-    if (!label || labels.has(id)) {
-      labels.delete(id)
-      rejectedAuthorIds.add(id)
-      continue
-    }
-    labels.set(id, label)
-  }
-  const idCounts = new Map<string, number>()
-  for (const value of idsValue) {
-    if (typeof value !== "string" || !safeLibraryIdentifier(value)) continue
-    idCounts.set(value, (idCounts.get(value) ?? 0) + 1)
-  }
-  const output: AboutAuthorOption[] = []
-  for (const [id, count] of idCounts) {
-    if (count !== 1) continue
-    const label = labels.get(id)
-    if (!label) continue
-    output.push({ id, label })
-  }
-  return output.sort((left, right) => left.label.localeCompare(right.label, "sv"))
-}
-
-async function fetchAboutAuthorOptions(base: string): Promise<AboutAuthorOption[]> {
-  try {
-    const root = base.replace(/\/$/, "")
-    const [authors, ids] = await Promise.all([
-      $fetch<unknown>(`${root}/get_authors`, {
-        query: { exclude: authorExclude }, retry: 0
-      }),
-      $fetch<unknown>(`${root}/get_authorkeywords`, { retry: 0 })
-    ])
-    return parseAboutAuthorOptions(authors, ids)
-  } catch {
-    return []
-  }
-}
-
-function parseImprintBounds(value: unknown): ImprintBounds {
-  const record = asRecord(value)
-  const fromValue = stringAt(recordAt(record, "start_year"), "value_as_string")
-  const toValue = stringAt(recordAt(record, "end_year"), "value_as_string")
-  if (!/^\d{4}$/.test(fromValue) || !/^\d{4}$/.test(toValue)) {
-    throw new Error("Invalid Library imprint range")
-  }
-  const from = Number(fromValue)
-  const to = Number(toValue)
-  if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to)
-    || from < 1000 || to > 3000 || from > to) {
-    throw new Error("Invalid Library imprint range")
-  }
-  return { from, to }
-}
-
-async function fetchImprintBounds(base: string): Promise<ImprintBounds | null> {
-  try {
-    const response = await $fetch<unknown>(
-      `${base.replace(/\/$/, "")}/imprint_range`,
-      { retry: 0 }
-    )
-    return parseImprintBounds(response)
-  } catch {
-    return null
-  }
 }
 
 function queryValue(value: unknown): string {
@@ -1537,7 +979,7 @@ function routeState(path: string, query: LocationQuery): LibraryRouteState {
       : epubSortKey(query.sort),
     page: mode === "authors"
       ? 1
-      : Number.isInteger(parsed) && parsed >= 1 ? parsed : 1,
+      : Number.isInteger(parsed) && parsed >= 1 && parsed <= libraryPageMaximum ? parsed : 1,
     hide1800: mode === "latest" && query.hide1800 !== undefined,
     downloadMode,
     advanced: query.avancerat !== undefined && queryAdvanced(query.avancerat),
@@ -1666,95 +1108,6 @@ function appendAdvanced(base: string, filters: LibraryAdvancedFilters): string {
   return [base, predicate].filter(Boolean).join(" AND ")
 }
 
-function requestUrl(
-  base: string,
-  filter: string,
-  selectedSort: RelevanceSortKey,
-  advanced: LibraryAdvancedFilters,
-  reversed = false
-): string {
-  const params = new URLSearchParams({
-    exclude: excludedFields,
-    show_all: "false",
-    sort_field: sortExpression(
-      sorts.find(item => item.key === selectedSort)?.expression ?? "_score|desc",
-      reversed
-    ),
-    from: "0",
-    to: "100",
-    vectorize: "true",
-    sid: "true"
-  })
-  const sanitized = sanitizeFilter(filter)
-  const predicate = appendAdvanced(sanitized ? `(${sanitized})` : "", advanced)
-  if (predicate) params.set("q", predicate)
-  return `${base.replace(/\/$/, "")}/relevance/${resultTypes}?${params}`
-}
-
-async function fetchResults(
-  base: string,
-  filter: string,
-  selectedSort: RelevanceSortKey,
-  advanced: LibraryAdvancedFilters,
-  signal?: AbortSignal,
-  reversed = false
-): Promise<LibraryResponse> {
-  try {
-    const response = await $fetch<unknown>(requestUrl(base, filter, selectedSort, advanced, reversed), {
-      signal,
-      retry: 0
-    })
-    return parseLibraryResponse(response)
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") throw error
-    return emptyLibraryResponse(true)
-  }
-}
-
-function authorRequestUrl(
-  base: string,
-  filter: string,
-  selectedSort: AuthorSortKey,
-  limit: number,
-  reversed = false
-): string {
-  const params = new URLSearchParams({
-    exclude: excludedFields,
-    show_all: "false",
-    sort_field: sortExpression(
-      authorSorts.find(item => item.key === selectedSort)?.expression ?? "popularity|desc",
-      reversed
-    ),
-    from: "0",
-    to: String(limit),
-    vectorize: "true",
-    sid: "true"
-  })
-  const sanitized = sanitizeFilter(filter)
-  if (sanitized) params.set("q", `(${sanitized})`)
-  return `${base.replace(/\/$/, "")}/relevance/author?${params}`
-}
-
-async function fetchRawAuthorResults(
-  base: string,
-  filter: string,
-  selectedSort: AuthorSortKey,
-  limit: number,
-  signal?: AbortSignal,
-  reversed = false
-): Promise<LibraryResponse> {
-  try {
-    const response = await $fetch<unknown>(
-      authorRequestUrl(base, filter, selectedSort, limit, reversed),
-      { signal, retry: 0 }
-    )
-    return parseLibraryResponse(response)
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") throw error
-    return emptyLibraryResponse(true)
-  }
-}
-
 function emptyAuthorBrowseResponse(failed = false): AuthorBrowseResponse {
   return {
     ...emptyLibraryResponse(failed),
@@ -1762,54 +1115,6 @@ function emptyAuthorBrowseResponse(failed = false): AuthorBrowseResponse {
     partCount: 0,
     workAuthorIds: [],
     partAuthorIds: []
-  }
-}
-
-function sortAuthorResults(
-  data: LibraryResult[],
-  selectedSort: AuthorSortKey,
-  reversed: boolean
-): LibraryResult[] {
-  const direction = reversed ? -1 : 1
-  return [...data].sort((left, right) => {
-    const primary = selectedSort === "namn"
-      ? left.primaryLabel.localeCompare(right.primaryLabel, "sv")
-      : selectedSort === "kronologi"
-        ? left.authorBirth - right.authorBirth
-        : right.authorPopularity - left.authorPopularity
-    return (primary || left.primaryLabel.localeCompare(right.primaryLabel, "sv")) * direction
-  })
-}
-
-async function fetchAuthorResults(
-  base: string,
-  filter: string,
-  selectedSort: AuthorSortKey,
-  limit: number,
-  advanced: LibraryAdvancedFilters,
-  signal?: AbortSignal,
-  reversed = false
-): Promise<AuthorBrowseResponse> {
-  const [works, parts, authors] = await Promise.all([
-    fetchBrowseCountResponse(base, "works", filter, advanced, signal),
-    fetchBrowseCountResponse(base, "parts", filter, advanced, signal),
-    fetchRawAuthorResults(base, "", selectedSort, 10_000, signal, reversed)
-  ])
-  if (!works || !parts || works.failed || parts.failed || authors.failed) {
-    return emptyAuthorBrowseResponse(true)
-  }
-  const authorIds = [...new Set([...works.authorIds, ...parts.authorIds])]
-  const selected = authors.data.filter(author => authorIds.includes(author.authorId))
-  if (selected.length !== authorIds.length) return emptyAuthorBrowseResponse(true)
-  return {
-    data: sortAuthorResults(selected, selectedSort, reversed).slice(0, limit),
-    hits: authorIds.length,
-    suggest: authors.suggest,
-    failed: false,
-    workCount: works.distinctHits,
-    partCount: parts.hits,
-    workAuthorIds: works.authorIds,
-    partAuthorIds: parts.authorIds
   }
 }
 
@@ -1840,27 +1145,6 @@ function epubRequestUrl(
     suggest: "true"
   })
   return `${base.replace(/\/$/, "")}/query_string/${epubResultTypes}?${params}`
-}
-
-async function fetchEpubResults(
-  base: string,
-  filter: string,
-  selectedSort: EpubSortKey,
-  page: number,
-  advanced: LibraryAdvancedFilters,
-  signal?: AbortSignal,
-  reversed = false
-): Promise<EpubResponse> {
-  try {
-    const response = await $fetch<unknown>(
-      epubRequestUrl(base, filter, selectedSort, page, advanced, reversed),
-      { signal, retry: 0 }
-    )
-    return parseEpubResponse(response)
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") throw error
-    return emptyEpubResponse(true)
-  }
 }
 
 function browseRequestUrl(
@@ -1899,29 +1183,6 @@ function browseRequestUrl(
   return `${base.replace(/\/$/, "")}/query_string/${types}?${params}`
 }
 
-async function fetchBrowseResults(
-  base: string,
-  mode: "works" | "parts",
-  filter: string,
-  selectedSort: BrowseSortKey,
-  page: number,
-  advanced: LibraryAdvancedFilters,
-  signal?: AbortSignal,
-  reversed = false,
-  sourceOnly = false
-): Promise<BrowseResponse> {
-  try {
-    const response = await $fetch<unknown>(
-      browseRequestUrl(base, mode, filter, selectedSort, page, advanced, reversed, sourceOnly),
-      { signal, retry: 0 }
-    )
-    return parseBrowseResponse(response, mode)
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") throw error
-    return emptyBrowseResponse(true)
-  }
-}
-
 function countOnlyRequestUrl(url: string): string {
   const separator = url.indexOf("?")
   const path = separator === -1 ? url : url.slice(0, separator)
@@ -1955,56 +1216,6 @@ async function fetchBrowseCountResponse(
   }
 }
 
-const latestSortExpression = "imported|desc,main_author.name_for_index|asc,sortkey|asc,sort_date_imprint.date|asc"
-
-function latestRequestUrl(
-  base: string,
-  filter: string,
-  page: number,
-  hide1800: boolean,
-  advanced: LibraryAdvancedFilters,
-  reversed = false
-): string {
-  const sanitized = sanitizeFilter(filter)
-  const clauses = [sanitized ? `(${sanitized})` : "", hide1800 ? "NOT keyword:1800" : ""]
-    .filter(Boolean)
-  const predicate = appendAdvanced(clauses.length ? clauses.join(" AND ") : "", advanced)
-  const params = new URLSearchParams({
-    exclude: epubExcludedFields,
-    include: epubIncludedFields,
-    partial_string: "true",
-    q: `${epubQueryPrefix} ${predicate || "*"}`,
-    sort_field: sortExpression(latestSortExpression, reversed),
-    author_aggregation: "true",
-    imported_aggregation: "true",
-    from: String((page - 1) * 100),
-    to: String(page * 100),
-    suggest: "true"
-  })
-  return `${base.replace(/\/$/, "")}/query_string/${epubResultTypes}?${params}`
-}
-
-async function fetchLatestResults(
-  base: string,
-  filter: string,
-  page: number,
-  hide1800: boolean,
-  advanced: LibraryAdvancedFilters,
-  signal?: AbortSignal,
-  reversed = false
-): Promise<LatestResponse> {
-  try {
-    const response = await $fetch<unknown>(
-      latestRequestUrl(base, filter, page, hide1800, advanced, reversed),
-      { signal, retry: 0 }
-    )
-    return parseLatestResponse(response)
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") throw error
-    return emptyLatestResponse(true)
-  }
-}
-
 const pdfPredicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
 
 function pdfRequestUrl(
@@ -2034,27 +1245,6 @@ function pdfRequestUrl(
     suggest: "true"
   })
   return `${base.replace(/\/$/, "")}/query_string/${epubResultTypes}?${params}`
-}
-
-async function fetchPdfResults(
-  base: string,
-  filter: string,
-  selectedSort: EpubSortKey,
-  page: number,
-  advanced: LibraryAdvancedFilters,
-  signal?: AbortSignal,
-  reversed = false
-): Promise<PdfResponse> {
-  try {
-    const response = await $fetch<unknown>(
-      pdfRequestUrl(base, filter, selectedSort, page, advanced, reversed),
-      { signal, retry: 0 }
-    )
-    return parsePdfResponse(response)
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") throw error
-    return emptyPdfResponse(true)
-  }
 }
 
 async function fetchEpubCountResponse(
@@ -2093,23 +1283,148 @@ async function fetchPdfCountResponse(
   }
 }
 
-const initialApiBase = import.meta.server
-  ? config.libraryApiBase
-  : config.public.libraryApiBase
-const { data: imprintBoundsData } = await useAsyncData<ImprintBounds | null>(
-  `library:imprint-range:${route.path}`,
-  () => fetchImprintBounds(initialApiBase),
-  { default: () => null }
+function libraryFilterState(
+  query: string,
+  advanced: LibraryAdvancedFilters
+): LibraryFilterState {
+  return {
+    query,
+    gender: advanced.gender || null,
+    categories: [...advanced.keywords],
+    narrowingCategories: [...advanced.narrowingKeywords],
+    aboutAuthorIds: [...advanced.aboutAuthorIds],
+    media: [...advanced.media],
+    languages: [...advanced.languages],
+    yearRange: advanced.yearRange
+  }
+}
+
+type LibraryPrimaryState = Pick<
+  LibraryRouteState,
+  "mode" | "filter" | "sort" | "page" | "hide1800" | "downloadMode" | "advancedFilters"
+>
+
+function librarySearchState(
+  state: LibraryPrimaryState,
+  reverse: boolean,
+  authorLimit = 150
+): LibrarySearchState {
+  const common = {
+    filters: libraryFilterState(state.filter, state.advancedFilters),
+    reverse
+  }
+  switch (state.mode) {
+    case "all":
+      return { ...common, mode: state.mode, sort: relevanceSortKey(state.sort) }
+    case "authors":
+      return {
+        ...common,
+        mode: state.mode,
+        sort: authorSortKey(state.sort),
+        limit: authorLimit
+      }
+    case "works":
+      return {
+        ...common,
+        mode: state.mode,
+        sort: epubSortKey(state.sort),
+        page: state.page,
+        sourceOnly: state.downloadMode
+      }
+    case "parts":
+      return {
+        ...common,
+        mode: state.mode,
+        sort: partSortKey(state.sort),
+        page: state.page
+      }
+    case "latest":
+      return {
+        ...common,
+        mode: state.mode,
+        page: state.page,
+        hide1800: state.hide1800
+      }
+    case "epub":
+    case "pdf":
+      return {
+        ...common,
+        mode: state.mode,
+        sort: epubSortKey(state.sort),
+        page: state.page
+      }
+  }
+}
+
+function emptyPageData(mode: LibraryMode, failed = false): LibraryPageData {
+  switch (mode) {
+    case "all": return { mode, response: emptyLibraryResponse(failed) }
+    case "authors": return { mode, response: emptyAuthorBrowseResponse(failed) }
+    case "works": return { mode, response: emptyBrowseResponse(failed) }
+    case "parts": return { mode, response: emptyBrowseResponse(failed) }
+    case "latest": return { mode, response: emptyLatestResponse(failed) }
+    case "epub": return { mode, response: emptyEpubResponse(failed) }
+    case "pdf": return { mode, response: emptyPdfResponse(failed) }
+  }
+}
+
+const libraryClient = createLbApiClient(
+  import.meta.server ? config.apiBase : config.public.apiBase
 )
-const chronologyBounds = computed(() => imprintBoundsData.value)
+
+async function fetchLibraryPageData(
+  state: LibraryPrimaryState,
+  signal?: AbortSignal,
+  reverse = false,
+  authorLimit = 150
+): Promise<LibraryPageData> {
+  try {
+    const body = buildLibrarySearchRequest(librarySearchState(state, reverse, authorLimit))
+    const { data } = await libraryClient.POST("/library/search", { body, signal })
+    if (!data || data.mode !== state.mode) return emptyPageData(state.mode, true)
+    const view = toLibrarySearchView(data)
+    switch (view.mode) {
+      case "all": return { mode: view.mode, response: view.response }
+      case "authors": return { mode: view.mode, response: view.response }
+      case "works": return { mode: view.mode, response: view.response }
+      case "parts": return { mode: view.mode, response: view.response }
+      case "latest": return { mode: view.mode, response: view.response }
+      case "epub": return { mode: view.mode, response: view.response }
+      case "pdf": return { mode: view.mode, response: view.response }
+    }
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error
+    return emptyPageData(state.mode, true)
+  }
+}
+
+async function fetchLibraryOptions(): Promise<LibraryOptionsResponse> {
+  try {
+    const { data } = await libraryClient.GET("/library/options")
+    return data ?? { chronology: null, about_authors: null }
+  } catch {
+    return { chronology: null, about_authors: null }
+  }
+}
+
+const { data: libraryOptionsData } = await useAsyncData<LibraryOptionsResponse>(
+  `library:options:${route.path}`,
+  fetchLibraryOptions,
+  { default: () => ({ chronology: null, about_authors: null }) }
+)
+const chronologyBounds = computed<ImprintBounds | null>(() => {
+  const chronology = libraryOptionsData.value?.chronology
+  return chronology
+    ? { from: chronology.year_from, to: chronology.year_to }
+    : null
+})
 const chronologyFloor = computed(() => chronologyBounds.value?.from ?? 0)
 const chronologyCeiling = computed(() => chronologyBounds.value?.to ?? 0)
-const { data: aboutAuthorOptionsData } = await useAsyncData<AboutAuthorOption[]>(
-  `library:about-authors:${route.path}`,
-  () => route.path === "/epub" ? Promise.resolve([]) : fetchAboutAuthorOptions(initialApiBase),
-  { default: () => [] }
-)
-const aboutAuthorOptions = computed(() => aboutAuthorOptionsData.value ?? [])
+const aboutAuthorOptions = computed<AboutAuthorOption[]>(() => (
+  (libraryOptionsData.value?.about_authors ?? [])
+    .map(author => ({ id: author.author_id, label: author.label }))
+    .sort((left, right) => left.label.localeCompare(right.label, "sv"))
+))
 const aboutAuthorIdSet = computed<ReadonlySet<string>>(
   () => new Set(aboutAuthorOptions.value.map(option => option.id))
 )
@@ -2132,84 +1447,11 @@ const initialBrowseSort = initialState.mode === "authors"
       ? initialState.sort as EpubSortKey
       : "popularitet"
 async function fetchInitialData(): Promise<LibraryPageData> {
-  if (initialState.mode === "epub") {
-    const [response, inactiveCount] = await Promise.all([
-      fetchEpubResults(
-        initialApiBase, initialFilter, initialEpubSort, initialState.page,
-        initialState.advancedFilters
-      ),
-      standalone
-        ? fetchPdfCountResponse(initialApiBase, initialFilter, initialState.advancedFilters)
-        : Promise.resolve(null)
-    ])
-    return {
-      mode: "epub",
-      response,
-      inactiveCount
-    }
-  }
-  if (initialState.mode === "pdf") {
-    const [response, inactiveCount] = await Promise.all([
-      fetchPdfResults(
-        initialApiBase, initialFilter, initialEpubSort, initialState.page,
-        initialState.advancedFilters
-      ),
-      standalone
-        ? fetchEpubCountResponse(initialApiBase, initialFilter, initialState.advancedFilters)
-        : Promise.resolve(null)
-    ])
-    return {
-      mode: "pdf",
-      response,
-      inactiveCount
-    }
-  }
-  if (initialState.mode === "latest") {
-    return {
-      mode: "latest",
-      response: await fetchLatestResults(
-        initialApiBase, initialFilter, initialState.page, initialState.hide1800,
-        initialState.advancedFilters
-      )
-    }
-  }
-  if (initialState.mode === "authors") {
-    return {
-      mode: "authors",
-      response: await fetchAuthorResults(
-        initialApiBase, initialFilter, initialBrowseSort as AuthorSortKey, 150,
-        initialState.advancedFilters
-      )
-    }
-  }
-  if (initialState.mode === "works" || initialState.mode === "parts") {
-    return {
-      mode: initialState.mode,
-      response: await fetchBrowseResults(
-        initialApiBase, initialState.mode, initialFilter, initialBrowseSort, initialState.page,
-        initialState.advancedFilters, undefined, false, initialState.downloadMode
-      )
-    }
-  }
-  return {
-    mode: "all",
-    response: await fetchResults(
-      initialApiBase, initialFilter, initialSort, initialState.advancedFilters
-    )
-  }
+  return await fetchLibraryPageData(initialState)
 }
 
 function emptyInitialData(): LibraryPageData {
-  if (initialState.mode === "epub") return { mode: "epub", response: emptyEpubResponse() }
-  if (initialState.mode === "pdf") return { mode: "pdf", response: emptyPdfResponse() }
-  if (initialState.mode === "latest") return { mode: "latest", response: emptyLatestResponse() }
-  if (initialState.mode === "authors") {
-    return { mode: "authors", response: emptyAuthorBrowseResponse() }
-  }
-  if (initialState.mode === "works" || initialState.mode === "parts") {
-    return { mode: initialState.mode, response: emptyBrowseResponse() }
-  }
-  return { mode: "all", response: emptyLibraryResponse() }
+  return emptyPageData(initialState.mode)
 }
 
 const { data: initialData } = await useAsyncData<LibraryPageData>(
@@ -2229,8 +1471,8 @@ const hide1800 = ref(initialState.hide1800)
 const downloadMode = ref(initialState.downloadMode)
 const advancedOpen = ref(initialState.advanced)
 const selectedGender = ref<LibraryGender>(initialState.advancedFilters.gender)
-const selectedKeywords = ref<string[]>([...initialState.advancedFilters.keywords])
-const selectedNarrowingKeywords = ref<string[]>([
+const selectedKeywords = ref<LibraryCategory[]>([...initialState.advancedFilters.keywords])
+const selectedNarrowingKeywords = ref<LibraryCategory[]>([
   ...initialState.advancedFilters.narrowingKeywords
 ])
 const selectedAboutAuthorIds = ref<string[]>([...initialState.advancedFilters.aboutAuthorIds])
@@ -2310,10 +1552,10 @@ const downloadCounts = ref<DownloadCounts>({
   identity: initialDownloadCountIdentity,
   epub: initialData.value?.mode === "epub" && !initialData.value.response.failed
     ? initialData.value.response.distinctHits
-    : initialData.value?.mode === "pdf" ? initialData.value.inactiveCount ?? null : null,
+    : null,
   pdf: initialData.value?.mode === "pdf" && !initialData.value.response.failed
     ? initialData.value.response.distinctHits
-    : initialData.value?.mode === "epub" ? initialData.value.inactiveCount ?? null : null
+    : null
 })
 const latestResults = ref(initialData.value?.mode === "latest"
   ? initialData.value.response
@@ -2353,16 +1595,8 @@ const browseCounts = ref<BrowseCounts>({
     : initialData.value?.mode === "parts" && !initialData.value.response.failed
       ? initialData.value.response.hits
       : null,
-  workAuthorIds: initialAuthorResponse && !initialAuthorResponse.failed
-    ? initialAuthorResponse.workAuthorIds
-    : initialData.value?.mode === "works" && !initialData.value.response.failed
-      ? initialData.value.response.authorIds
-      : null,
-  partAuthorIds: initialAuthorResponse && !initialAuthorResponse.failed
-    ? initialAuthorResponse.partAuthorIds
-    : initialData.value?.mode === "parts" && !initialData.value.response.failed
-      ? initialData.value.response.authorIds
-    : null,
+  workAuthorIds: null,
+  partAuthorIds: null,
 })
 const browseResults = computed(() => currentMode.value === "parts"
   ? partResults.value
@@ -2696,125 +1930,71 @@ function queryFor(state: QueryState): LocationQuery {
 
 async function runBrowserRequest(state: QueryState, version: number) {
   if (version !== requestVersion) return
-  controller = new AbortController()
+  const activeController = new AbortController()
+  controller = activeController
   loading.value = true
   const reversed = isSortReversed(state.mode, state.sort)
-  const response = state.mode === "epub"
-    ? await fetchEpubResults(
-        config.public.libraryApiBase,
-        state.filter,
-        state.sort as EpubSortKey,
-        state.page,
-        state.advancedFilters,
-        controller.signal,
-        reversed
-      ).catch(() => null)
-    : state.mode === "pdf"
-      ? await fetchPdfResults(
-          config.public.libraryApiBase,
-          state.filter,
-          state.sort as EpubSortKey,
-          state.page,
-          state.advancedFilters,
-          controller.signal,
-          reversed
-        ).catch(() => null)
-      : state.mode === "latest"
-        ? await fetchLatestResults(
-            config.public.libraryApiBase,
-            state.filter,
-            state.page,
-            state.hide1800,
-            state.advancedFilters,
-            controller.signal,
-            reversed
-          ).catch(() => null)
-        : state.mode === "authors"
-          ? await fetchAuthorResults(
-              config.public.libraryApiBase,
-              state.filter,
-              state.sort as AuthorSortKey,
-              150,
-              state.advancedFilters,
-              controller.signal,
-              reversed
-            ).catch(() => null)
-          : state.mode === "works" || state.mode === "parts"
-            ? await fetchBrowseResults(
-                config.public.libraryApiBase,
-                state.mode,
-                state.filter,
-                state.sort as BrowseSortKey,
-                state.page,
-                state.advancedFilters,
-                controller.signal,
-                reversed,
-                state.downloadMode
-              ).catch(() => null)
-            : await fetchResults(
-                config.public.libraryApiBase,
-                state.filter,
-                state.sort as RelevanceSortKey,
-                state.advancedFilters,
-                controller.signal,
-                reversed
-              ).catch(() => null)
-  if (version !== requestVersion || response === null) return
-  if (state.mode === "epub") {
-    epubResults.value = response as EpubResponse
+  const pageData = await fetchLibraryPageData(
+    state,
+    activeController.signal,
+    reversed
+  ).catch(() => null)
+  if (version !== requestVersion || activeController.signal.aborted
+    || pageData === null || pageData.mode !== state.mode) return
+  if (pageData.mode === "epub") {
+    epubResults.value = pageData.response
     if (!epubResults.value.failed) {
       updateDownloadCount(
         state.filter, state.advancedFilters, "epub", epubResults.value.distinctHits
       )
     }
   }
-  else if (state.mode === "pdf") {
-    pdfResults.value = response as PdfResponse
+  else if (pageData.mode === "pdf") {
+    pdfResults.value = pageData.response
     if (!pdfResults.value.failed) {
       updateDownloadCount(
         state.filter, state.advancedFilters, "pdf", pdfResults.value.distinctHits
       )
     }
   }
-  else if (state.mode === "latest") latestResults.value = response as LatestResponse
-  else if (state.mode === "authors") {
-    authorResults.value = response as AuthorBrowseResponse
+  else if (pageData.mode === "latest") latestResults.value = pageData.response
+  else if (pageData.mode === "authors") {
+    authorResults.value = pageData.response
     if (!authorResults.value.failed) {
       updateBrowseCount(
-        state.filter, state.advancedFilters, "works", authorResults.value.workCount,
-        authorResults.value.workAuthorIds
+        state.filter, state.advancedFilters, "authors", authorResults.value.hits
       )
       updateBrowseCount(
-        state.filter, state.advancedFilters, "parts", authorResults.value.partCount,
-        authorResults.value.partAuthorIds
+        state.filter, state.advancedFilters, "works", authorResults.value.workCount
+      )
+      updateBrowseCount(
+        state.filter, state.advancedFilters, "parts", authorResults.value.partCount
       )
     }
   }
-  else if (state.mode === "works") {
-    workResults.value = response as BrowseResponse
+  else if (pageData.mode === "works") {
+    workResults.value = pageData.response
     if (!workResults.value.failed) {
       updateBrowseCount(
-        state.filter, state.advancedFilters, "works", workResults.value.distinctHits,
-        workResults.value.authorIds
+        state.filter, state.advancedFilters, "works", workResults.value.distinctHits
       )
     }
     expandedWorkKey.value = workResults.value.data.find(
       item => item.titlePath === queryValue(route.query.title)
     )?.key ?? ""
   }
-  else if (state.mode === "parts") {
-    partResults.value = response as BrowseResponse
+  else if (pageData.mode === "parts") {
+    partResults.value = pageData.response
     if (!partResults.value.failed) {
       updateBrowseCount(
-        state.filter, state.advancedFilters, "parts", partResults.value.hits,
-        partResults.value.authorIds
+        state.filter, state.advancedFilters, "parts", partResults.value.hits
       )
     }
   }
-  else results.value = response as LibraryResponse
+  else results.value = pageData.response
   loading.value = false
-  controller = null
-  if (!(response as { failed: boolean }).failed) {
+  if (controller === activeController) controller = null
+  if (!pageData.response.failed) {
     void refreshBrowseCounts(state.filter, state.advancedFilters)
   }
   if (state.mode === "epub" || state.mode === "pdf") {
@@ -2927,19 +2107,16 @@ async function loadAllAuthors() {
   const activeController = new AbortController()
   controller = activeController
   loading.value = true
-  const response = await fetchAuthorResults(
-    config.public.libraryApiBase,
-    state.filter,
-    state.sort as AuthorSortKey,
-    Math.max(150, authorResults.value.hits),
-    state.advancedFilters,
+  const pageData = await fetchLibraryPageData(
+    state,
     activeController.signal,
-    isSortReversed(state.mode, state.sort)
+    isSortReversed(state.mode, state.sort),
+    Math.min(10_000, Math.max(150, authorResults.value.hits))
   ).catch(() => null)
   if (version !== requestVersion || activeController.signal.aborted) return
-  if (response !== null && !response.failed) {
-    authorResults.value = response
-    updateBrowseCount(state.filter, state.advancedFilters, "authors", response.hits)
+  if (pageData?.mode === "authors" && !pageData.response.failed) {
+    authorResults.value = pageData.response
+    updateBrowseCount(state.filter, state.advancedFilters, "authors", pageData.response.hits)
   }
   loading.value = false
   if (controller === activeController) controller = null
@@ -3383,7 +2560,7 @@ const epubTabCount = computed(() => standalone
 const pdfTabCount = computed(() => standalone
   ? downloadCounts.value.pdf
   : pdfResults.value.distinctHits)
-const pageCount = computed(() => Math.ceil(
+const pageCount = computed(() => Math.min(libraryPageMaximum, Math.ceil(
   (currentMode.value === "latest"
     ? latestResults.value.distinctHits
     : currentMode.value === "authors"
@@ -3394,7 +2571,7 @@ const pageCount = computed(() => Math.ceil(
           ? partResults.value.hits
         : downloadDistinctHits.value)
   / 100
-))
+)))
 const pages = computed(() => legacyPaginationItems(pageCount.value, currentPage.value))
 
 function epubPageHref(page: number): string {
@@ -4290,7 +3467,7 @@ onUnmounted(() => {
                                 :data-library-epub-title="currentMode === 'epub' || undefined"
                                 :data-library-pdf-title="currentMode === 'pdf' || undefined"
                                 data-library-tooltip-kind="title"
-                                :href="item.titleHref"
+                                :href="canonicalNuxtHref(item.titleHref)"
                                 @click="navigate"
                               >{{ item.title }}</a>
                             </NuxtLink>

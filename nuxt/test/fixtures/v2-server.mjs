@@ -1336,53 +1336,123 @@ function canonicalLibraryIdentity(body) {
 }
 
 const libraryFixtureAuthor = {
-  author_id: "LagerlofS",
-  full_name: "Lagerlöf, Selma",
-  surname: "Lagerlöf",
+  author_id: "StrindbergA",
+  full_name: "August Strindberg",
+  surname: "Strindberg",
   role: "author",
-  birth_year: "1858",
-  death_year: "1940"
+  birth_year: "1849",
+  death_year: "1912"
 }
 
-function librarySearchResponse(mode) {
+function librarySearchResponse(mode, filters) {
+  const empty = filters.query === "inga"
+  const paged = filters.query === "paged"
+  const bounded = filters.query === "bounded"
+  const total = empty ? 0 : bounded ? 10_001 : paged ? 201 : 1
   if (mode === "all") return {
-    mode, total_hits: 1, items: [{
-      kind: "author", author_id: "LagerlofS", birth_year: 1858, death_year: 1940,
-      name_for_index: "Lagerlöf, Selma", popularity: 100
+    mode,
+    total_hits: empty ? 0 : 1,
+    items: empty ? [] : [{
+      kind: "text",
+      index: "etext",
+      source_label: "Roman",
+      title: "Röda rummet",
+      short_title: "Röda rummet",
+      imprint_year: "1879",
+      reader_author_id: "StrindbergA",
+      title_id: "RodaRummet",
+      page_name: "1",
+      media_type: "etext",
+      main_author: libraryFixtureAuthor
     }]
   }
   if (mode === "authors") return {
-    mode, total_authors: 1, total_works: 1, total_parts: 0, items: [{
-      kind: "author", author_id: "LagerlofS", birth_year: 1858, death_year: 1940,
-      name_for_index: "Lagerlöf, Selma", popularity: 100
+    mode,
+    total_authors: empty ? 0 : 1,
+    total_works: empty ? 0 : 2,
+    total_parts: empty ? 0 : 1,
+    items: empty ? [] : [{
+      kind: "author", author_id: "StrindbergA", birth_year: 1849, death_year: 1912,
+      name_for_index: "Strindberg, August", popularity: 100
     }]
   }
   if (mode === "latest") return {
-    mode, total_hits: 1, total_works: 1,
-    groups: [{ imported_on: "2026-07-27", source_count: 1, items: [] }]
+    mode,
+    total_hits: empty ? 0 : 1,
+    total_works: empty ? 0 : 1,
+    groups: empty ? [] : [{
+      imported_on: "2026-07-27",
+      source_count: 1,
+      items: [{
+        author: libraryFixtureAuthor,
+        author_url: "/författare/StrindbergA",
+        full_title: "Röda rummet",
+        imported_on: "2026-07-27",
+        route_author_id: "StrindbergA",
+        route_media_type: "etext",
+        route_title_id: "RodaRummet",
+        title: "Röda rummet",
+        title_url: "/författare/StrindbergA/titlar/RodaRummet/etext?om-boken",
+        year: "1879"
+      }]
+    }]
   }
   if (mode === "epub" || mode === "pdf") return {
-    mode, total_hits: 1, total_works: 1, items: [{
+    mode,
+    total_hits: total,
+    total_works: total,
+    items: empty ? [] : [{
       author: libraryFixtureAuthor,
-      author_url: "/författare/LagerlofS/",
-      download_filename: `gosta.${mode}`,
-      download_url: `/${mode}/gosta.${mode}`,
-      full_title: "Gösta Berlings saga",
-      route_author_id: "LagerlofS", route_media_type: mode === "pdf" ? "pdf" : "etext",
-      route_title_id: "GostaBerlingsSaga", title: "Gösta Berlings saga",
-      title_url: "/författare/LagerlofS/titlar/GostaBerlingsSaga/", year: "1891"
+      author_url: "/författare/StrindbergA",
+      download_filename: mode === "pdf" ? "RodaRummet.pdf" : "StrindbergA_RodaRummet.epub",
+      download_url: mode === "pdf"
+        ? "/txt/lb-pdf/lb-pdf.pdf"
+        : "/txt/epub/StrindbergA_RodaRummet.epub",
+      full_title: "Röda rummet. Roman",
+      route_author_id: "StrindbergA",
+      route_media_type: mode === "pdf" ? "faksimil" : "etext",
+      route_title_id: "RodaRummet",
+      title: "Röda rummet",
+      title_url: `/författare/StrindbergA/titlar/RodaRummet/${mode === "pdf" ? "faksimil" : "etext"}?om-boken`,
+      year: "1879"
     }]
   }
   const browse = {
-    actions: [], author: libraryFixtureAuthor, author_url: "/författare/LagerlofS/",
-    full_title: "Gösta Berlings saga", key: "gosta", route_author_id: "LagerlofS",
-    route_media_type: "etext", route_title_id: "GostaBerlingsSaga", source_exports: [],
-    title: "Gösta Berlings saga", title_path: "LagerlofS/GostaBerlingsSaga",
-    title_url: "/författare/LagerlofS/titlar/GostaBerlingsSaga/", year: "1891"
+    actions: [
+      {
+        download_filename: null,
+        kind: "read",
+        label: "Läs som etext",
+        url: "/författare/StrindbergA/titlar/RodaRummet/sida/1/etext"
+      },
+      {
+        download_filename: "StrindbergA_RodaRummet.epub",
+        kind: "download",
+        label: "Ladda ner epub",
+        url: "/txt/epub/StrindbergA_RodaRummet.epub"
+      }
+    ],
+    author: libraryFixtureAuthor,
+    author_url: "/författare/StrindbergA",
+    full_title: "Röda rummet. Roman",
+    key: `${mode}-roda-rummet`,
+    route_author_id: "StrindbergA",
+    route_media_type: "etext",
+    route_title_id: "RodaRummet",
+    source_exports: [{ format: "xml", media_type: "etext", size: 1024, work_id: "lb-roda" }],
+    title: mode === "parts" ? "Ett utdrag ur Röda rummet" : "Röda rummet",
+    title_path: mode === "parts" ? "RodaRummetPart" : "RodaRummet",
+    title_url: "/författare/StrindbergA/titlar/RodaRummet/etext?om-boken",
+    year: "1879"
+  }
+  if (empty) {
+    return mode === "works"
+      ? { mode, items: [], total_hits: 0, total_works: 0 }
+      : { mode, items: [], total_parts: 0 }
   }
   return mode === "works"
-    ? { mode, items: [browse], total_hits: 1, total_works: 1 }
-    : { mode, items: [browse], total_parts: 1 }
+    ? { mode, items: [browse], total_hits: total, total_works: total }
+    : { mode, items: [browse], total_parts: total }
 }
 
 function libraryCountResponse(mode) {
@@ -4185,7 +4255,7 @@ const server = createServer(async (request, response) => {
         : { year_from: 1800, year_to: 2026 },
       about_authors: libraryV2Failures.options.has("about_authors")
         ? null
-        : [{ author_id: "LagerlofS", label: "Lagerlöf, Selma" }]
+        : [{ author_id: "LagerlofS", label: "Selma Lagerlöf" }]
     })
   }
 
@@ -4229,7 +4299,7 @@ const server = createServer(async (request, response) => {
         : { mode: body.mode, total: null })
     }
     return sendJson(response, 200, operation === "search"
-      ? librarySearchResponse(body.mode)
+      ? librarySearchResponse(body.mode, body.filters)
       : libraryCountResponse(body.mode))
   }
 
