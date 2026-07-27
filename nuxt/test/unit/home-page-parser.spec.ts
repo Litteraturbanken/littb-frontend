@@ -12,7 +12,14 @@ type HomeContent = {
 
 type ParseHomeContent = (source: string) => HomeContent
 
-async function loadParser(): Promise<ParseHomeContent> {
+type ObservedHomeParser = {
+  parseHomeContent: ParseHomeContent
+  issuedHomeHtml: () => readonly string[]
+}
+
+let parserModuleSequence = 0
+
+async function loadObservedParser(): Promise<ObservedHomeParser> {
   const pagePath = fileURLToPath(new URL("../../app/pages/index.vue", import.meta.url))
   const source = await readFile(pagePath, "utf8")
   const script = source.match(/<script lang="ts">([\s\S]*?)<\/script>/)?.[1]
@@ -31,6 +38,26 @@ async function loadParser(): Promise<ParseHomeContent> {
   const renderableHtmlModule = `data:text/javascript;base64,${Buffer.from(
     renderableHtmlJavascript
   ).toString("base64")}`
+  parserModuleSequence += 1
+  const observedRenderableHtmlJavascript = `
+    import {
+      emptyRenderableHtml as emptyRenderableHtmlImplementation,
+      issueManagedHomeHtml as issueManagedHomeHtmlImplementation
+    } from ${JSON.stringify(renderableHtmlModule)}
+
+    const issuedValues = []
+    export const emptyRenderableHtml = emptyRenderableHtmlImplementation
+    export function issueManagedHomeHtml(value) {
+      issuedValues.push(value)
+      return issueManagedHomeHtmlImplementation(value)
+    }
+    export function issuedHomeHtml() {
+      return [...issuedValues]
+    }
+  `
+  const observedRenderableHtmlModule = `data:text/javascript;base64,${Buffer.from(
+    observedRenderableHtmlJavascript
+  ).toString("base64")}#${parserModuleSequence}`
   const javascript = ts.transpileModule(script, {
     compilerOptions: {
       module: ts.ModuleKind.ESNext,
@@ -38,14 +65,37 @@ async function loadParser(): Promise<ParseHomeContent> {
     }
   }).outputText.replace(
     'from "#shared/utils/renderable-html"',
-    `from "${renderableHtmlModule}"`
-  )
+    `from "${observedRenderableHtmlModule}"`
+  ) + `
+    import { issuedHomeHtml } from ${JSON.stringify(observedRenderableHtmlModule)}
+    export { issuedHomeHtml }
+  `
   const encoded = Buffer.from(javascript).toString("base64")
-  const module = await import(`data:text/javascript;base64,${encoded}#${Date.now()}`)
-  return module.parseHomeContent as ParseHomeContent
+  const module = await import(
+    `data:text/javascript;base64,${encoded}#${parserModuleSequence}`
+  )
+  return {
+    issuedHomeHtml: module.issuedHomeHtml as () => readonly string[],
+    parseHomeContent: module.parseHomeContent as ParseHomeContent
+  }
+}
+
+async function loadParser(): Promise<ParseHomeContent> {
+  return (await loadObservedParser()).parseHomeContent
 }
 
 describe("Home editorial content parser", () => {
+  test("issues renderer authority once for only the final post-control-removal bytes", async () => {
+    const parser = await loadObservedParser()
+    const link = '<link data-ng-href="{{\'/red/css/startsida.css?\' + cacheKiller()}}">'
+    const image = '<img bkg-img color="#333" src="/red/background.jpg"></img>'
+    const source = `<main>Före</main>${link}<p>Mitten</p>${image}<footer>Efter</footer>`
+    const finalBody = "<main>Före</main><p>Mitten</p><footer>Efter</footer>"
+
+    expect(parser.parseHomeContent(source).bodyHtml).toBe(finalBody)
+    expect(parser.issuedHomeHtml()).toEqual([finalBody])
+  })
+
   test("removes only the two control-element source ranges from the frozen raw fragment", async () => {
     const parseHomeContent = await loadParser()
     const source = await readFile(

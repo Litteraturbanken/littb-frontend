@@ -243,10 +243,7 @@ function backgroundDeclaration(tag: string): {
 }
 
 export function parseHomeContent(source: string): HomeContent {
-  const output: HomeContent = {
-    ...emptyHomeContent(),
-    bodyHtml: issueManagedHomeHtml(source)
-  }
+  const output = emptyHomeContent()
   const ranges: SourceRange[] = []
 
   for (const tag of controlTags(source)) {
