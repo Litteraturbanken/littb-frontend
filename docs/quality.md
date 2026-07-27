@@ -22,7 +22,7 @@ expected to be green now.
 ## Backend test policy
 
 The backend's
-[v2 contract test matrix](https://github.com/Litteraturbanken/lb-backend/blob/codex/nuxt-v2-statistics/docs/v2-contract-test-matrix.md)
+[v2 contract test matrix](https://github.com/Litteraturbanken/lb-backend/blob/master/docs/v2-contract-test-matrix.md)
 maps requirements to their owning evidence. Tests protect observable contract
 and domain behavior, not implementation syntax or duplicated schema text.
 
