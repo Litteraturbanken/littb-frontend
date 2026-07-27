@@ -1,5 +1,5 @@
 import type { ReaderAuthorContribution } from "../utils/reader-author"
-import type { SanitizedHtml } from "./renderable-html"
+import type { ManagedAssetHtml, SanitizedHtml } from "./renderable-html"
 
 export type ReaderMediaType = "etext" | "faksimil"
 
@@ -89,7 +89,7 @@ export interface ReaderPageBase {
 }
 
 export interface ReaderEtextPage extends ReaderPageBase {
-  html: string
+  html: ManagedAssetHtml<"reader-etext">
   mediaType: "etext"
   sharedStylesheetUrl: string
   workStylesheetUrl: string

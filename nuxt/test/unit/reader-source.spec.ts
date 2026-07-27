@@ -1,17 +1,21 @@
-import { afterEach, describe, expect, test, vi } from "vitest"
+import { afterEach, describe, expect, expectTypeOf, test, vi } from "vitest"
 
 import {
   buildFacsimileSources,
   facsimileImageUrl,
   facsimileSourcePair,
+  fetchReaderPageHtml,
   isReaderMediaType,
   loadReaderMetadata,
+  maximumReaderEtextBytes,
   normalizeReaderMetadata,
   preferredFacsimileSize,
   resolveReaderPartNavigation
 } from "../../server/utils/reader-source"
 
-import type { ReaderPart } from "../../shared/types/reader"
+import type { ManagedAssetHtml } from "../../shared/types/renderable-html"
+import type { ReaderEtextPage, ReaderPart } from "../../shared/types/reader"
+import type { transformManagedReaderHtml } from "../../shared/utils/renderable-html"
 
 function representation(overrides: Record<string, unknown> = {}) {
   return {
@@ -52,6 +56,73 @@ function expectSourceError(callback: () => unknown, statusCode: number) {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+})
+
+describe("managed Reader e-text boundary", () => {
+  test("retains the Reader authority through the DTO and marker path", () => {
+    expectTypeOf<string>().not.toMatchTypeOf<ReaderEtextPage["html"]>()
+    expectTypeOf<ManagedAssetHtml<"home-editorial">>()
+      .not.toMatchTypeOf<ReaderEtextPage["html"]>()
+    expectTypeOf<ReaderEtextPage["html"]>()
+      .toEqualTypeOf<Parameters<typeof transformManagedReaderHtml>[0]>()
+  })
+
+  test("requests the exact legacy asset once and preserves decoded text for route normalization", async () => {
+    const source = `a\u00adb${"x".repeat(maximumReaderEtextBytes - 4)}`
+    expect(new TextEncoder().encode(source)).toHaveLength(maximumReaderEtextBytes)
+    const response = new Response(source, {
+      headers: {
+        "content-length": String(maximumReaderEtextBytes),
+        "content-type": "text/html; charset=utf-8"
+      }
+    })
+    Object.defineProperty(response, "url", {
+      value: "https://assets.test/txt/lb%20reader/res_00004.html?username=app"
+    })
+    const fetcher = vi.fn<typeof fetch>(async () => response)
+    vi.stubGlobal("fetch", fetcher)
+
+    await expect(fetchReaderPageHtml(
+      "https://assets.test",
+      "lb reader",
+      4
+    )).resolves.toBe(source)
+    expect(fetcher).toHaveBeenCalledOnce()
+    expect(fetcher).toHaveBeenCalledWith(
+      "https://assets.test/txt/lb%20reader/res_00004.html?username=app",
+      { redirect: "follow" }
+    )
+  })
+
+  test.each([
+    ["declared", true],
+    ["actual", false]
+  ])("rejects a %s Reader body above the exact byte budget", async (_label, declared) => {
+    const source = declared ? "small" : "x".repeat(maximumReaderEtextBytes + 1)
+    const response = new Response(source, {
+      headers: {
+        ...(declared
+          ? { "content-length": String(maximumReaderEtextBytes + 1) }
+          : {}),
+        "content-type": "text/html"
+      }
+    })
+    Object.defineProperty(response, "url", {
+      value: "https://assets.test/txt/work/res_00001.html?username=app"
+    })
+    const fetcher = vi.fn<typeof fetch>(async () => response)
+    vi.stubGlobal("fetch", fetcher)
+
+    await expect(fetchReaderPageHtml(
+      "https://assets.test",
+      "work",
+      1
+    )).rejects.toMatchObject({
+      statusCode: 502,
+      statusMessage: "Reader source unavailable"
+    })
+    expect(fetcher).toHaveBeenCalledOnce()
+  })
 })
 
 describe("reader media and exact representation selection", () => {

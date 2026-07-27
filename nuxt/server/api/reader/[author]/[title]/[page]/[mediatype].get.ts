@@ -1,5 +1,6 @@
 import type { ReaderPage, ReaderPart, ReaderPartAuthor } from "#shared/types/reader"
 import { readerAuthorContributionSuffix } from "#shared/utils/reader-author"
+import { issueManagedReaderHtml } from "#shared/utils/renderable-html"
 import { hasC0OrC1Control } from "#shared/utils/text-safety"
 import { fetchReaderOcrOverlay } from "#server/utils/reader-ocr"
 
@@ -255,11 +256,13 @@ export default defineEventHandler(async event => {
     } satisfies ReaderPage
   }
 
-  const html = (await fetchReaderPageHtml(
-    metadata.base,
-    metadata.workId,
-    currentPage.pageIndex
-  )).replaceAll("\u00ad", "-")
+  const html = issueManagedReaderHtml(
+    (await fetchReaderPageHtml(
+      metadata.base,
+      metadata.workId,
+      currentPage.pageIndex
+    )).replaceAll("\u00ad", "-")
+  )
 
   return {
     ...commonPage,

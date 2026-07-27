@@ -6,7 +6,12 @@ import type {
   ReaderFacsimileSize,
   ReaderPage
 } from "#shared/types/reader"
+import type { ManagedAssetHtml } from "#shared/types/renderable-html"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
+import {
+  emptyRenderableHtml,
+  transformManagedReaderHtml
+} from "#shared/utils/renderable-html"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import dramawebbenLogo from "~/assets/img/dramawebben_svart.svg"
 import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
@@ -410,44 +415,50 @@ function isExpectedHitResponse(
 }
 
 function markReaderHtml(
-  html: string,
+  html: ManagedAssetHtml<"reader-etext">,
   hit: WorkSearchHit,
   pageName: string,
   pageIndex: number
-): string {
+): ManagedAssetHtml<"reader-etext"> {
   if (hit.page_name !== pageName || hit.page_index !== pageIndex) return html
 
-  const { document } = parseHTML(`<div data-reader-highlight-root>${html}</div>`)
-  const root = document.querySelector("[data-reader-highlight-root]")
-  if (!root) return html
+  return transformManagedReaderHtml(html, source => {
+    const { document } = parseHTML(`<div data-reader-highlight-root>${source}</div>`)
+    const root = document.querySelector("[data-reader-highlight-root]")
+    if (!root) return source
 
-  const spans = Array.from(root.querySelectorAll("span[id]"))
-  const startMatches = spans.filter(span => span.getAttribute("id") === hit.highlight.from_word_id)
-  const endMatches = spans.filter(span => span.getAttribute("id") === hit.highlight.to_word_id)
-  if (startMatches.length === 0 || endMatches.length === 0) return html
-
-  const isValidDuplicateGroup = (matches: typeof spans): boolean => {
-    if (matches.length === 1) return true
-
-    const indexes = matches.map(match => spans.indexOf(match))
-    return matches.every((match, index) =>
-      indexes[index] === indexes[0]! + index &&
-      !match.hasAttribute("hidden") &&
-      match.getAttribute("aria-hidden") !== "true" &&
-      Boolean(match.textContent?.trim())
+    const spans = Array.from(root.querySelectorAll("span[id]"))
+    const startMatches = spans.filter(
+      span => span.getAttribute("id") === hit.highlight.from_word_id
     )
-  }
-  if (!isValidDuplicateGroup(startMatches) || !isValidDuplicateGroup(endMatches)) return html
+    const endMatches = spans.filter(
+      span => span.getAttribute("id") === hit.highlight.to_word_id
+    )
+    if (startMatches.length === 0 || endMatches.length === 0) return source
 
-  const start = spans.indexOf(startMatches[0]!)
-  const end = spans.indexOf(endMatches.at(-1)!)
-  if (start < 0 || end < start) return html
+    const isValidDuplicateGroup = (matches: typeof spans): boolean => {
+      if (matches.length === 1) return true
 
-  for (let index = start; index <= end; index += 1) {
-    spans[index]!.classList.add("markee")
-    if ((index - start) % 2 === 1) spans[index]!.classList.add("flip")
-  }
-  return root.innerHTML
+      const indexes = matches.map(match => spans.indexOf(match))
+      return matches.every((match, index) =>
+        indexes[index] === indexes[0]! + index &&
+        !match.hasAttribute("hidden") &&
+        match.getAttribute("aria-hidden") !== "true" &&
+        Boolean(match.textContent?.trim())
+      )
+    }
+    if (!isValidDuplicateGroup(startMatches) || !isValidDuplicateGroup(endMatches)) return source
+
+    const start = spans.indexOf(startMatches[0]!)
+    const end = spans.indexOf(endMatches.at(-1)!)
+    if (start < 0 || end < start) return source
+
+    for (let index = start; index <= end; index += 1) {
+      spans[index]!.classList.add("markee")
+      if ((index - start) % 2 === 1) spans[index]!.classList.add("flip")
+    }
+    return root.innerHTML
+  })
 }
 
 function routeParam(name: "author" | "title" | "page" | "mediatype"): string {
@@ -1104,9 +1115,9 @@ const nextHit = computed(() => {
     item => item.index === searchState.value!.hit + 1 && item.index <= maximumNavigableHit
   ) ?? null
 })
-const markedReaderHtml = computed(() => {
+const markedReaderHtml = computed<ManagedAssetHtml<"reader-etext">>(() => {
   const currentReader = etextReader.value
-  if (!currentReader) return ""
+  if (!currentReader) return emptyRenderableHtml()
   const hit = selectedSearchHit.value ?? activeHit.value
   if (!hit) return currentReader.html
   return markReaderHtml(
@@ -1970,7 +1981,12 @@ watch(readerRequestIdentity, () => {
         :aria-label="`${reader.title}, sida ${reader.pageName}`"
         @click="toggleFocusBar"
       >
-        <div v-if="etextReader" class="etext txt" v-html="markedReaderHtml" />
+        <RenderableHtmlContent
+          v-if="etextReader"
+          as="div"
+          :html="markedReaderHtml"
+          class="etext txt"
+        />
         <ReaderFacsimileImage
           v-else-if="markedFacsimileReader && selectedFacsimileSize"
           :page="markedFacsimileReader"

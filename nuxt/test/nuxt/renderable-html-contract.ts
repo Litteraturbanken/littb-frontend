@@ -15,7 +15,7 @@ import type {
   ReaderSourceInfoDramawebben,
   ReaderSourceInfoErrataRow
 } from "../../shared/types/reader-source-info"
-import type { ReaderOcrOverlay } from "../../shared/types/reader"
+import type { ReaderEtextPage, ReaderOcrOverlay } from "../../shared/types/reader"
 import type { SlaArticlePage } from "../../shared/types/sla-article"
 import type { AuthorProfileView } from "../../app/lib/author-profile"
 import {
@@ -125,6 +125,7 @@ const authorIntroduction: AuthorProfileView["introductionHtml"] = authorProfile
 const authorSource: AuthorProfileView["sourceHtml"][number] = authorProfile
 const authorCaption: NonNullable<AuthorProfileView["portrait"]>["captionHtml"] = authorProfile
 const readerOverlay: ReaderOcrOverlay["html"] = readerOcr
+const readerPageHtml: ReaderEtextPage["html"] = managedReader
 const editorPageHtml: NonNullable<EditorReaderPage["html"]> = editorEtext
 const editorOverlayHtml: NonNullable<EditorReaderPage["overlayHtml"]> = readerOcr
 const authorDocumentBody: AuthorSupplementalPage["bodyHtml"] = authorDocument
@@ -145,6 +146,12 @@ const plainAuthorSource: AuthorProfileView["sourceHtml"][number] = "<p>Plain</p>
 const plainAuthorCaption: NonNullable<AuthorProfileView["portrait"]>["captionHtml"] = "Plain"
 // @ts-expect-error OCR overlays require the reader-ocr sanitizer policy.
 const plainReaderOverlay: ReaderOcrOverlay["html"] = "<span>Plain</span>"
+// @ts-expect-error Reader e-text requires the managed reader authority.
+const plainReaderPageHtml: ReaderEtextPage["html"] = "<p>Plain</p>"
+// @ts-expect-error Home editorial HTML cannot enter the managed Reader DTO.
+const homeThroughReaderPage: ReaderEtextPage["html"] = managedHome
+// @ts-expect-error Home editorial HTML cannot enter the managed Reader marker.
+const homeThroughReaderMarker = transformManagedReaderHtml(managedHome, value => value)
 // @ts-expect-error Editor text requires the editor-etext sanitizer policy.
 const plainEditorPageHtml: NonNullable<EditorReaderPage["html"]> = "<p>Plain</p>"
 // @ts-expect-error Editor overlays require the reader-ocr sanitizer policy.
@@ -182,6 +189,7 @@ void authorIntroduction
 void authorSource
 void authorCaption
 void readerOverlay
+void readerPageHtml
 void editorPageHtml
 void editorOverlayHtml
 void authorDocumentBody
@@ -197,6 +205,9 @@ void plainAuthorIntroduction
 void plainAuthorSource
 void plainAuthorCaption
 void plainReaderOverlay
+void plainReaderPageHtml
+void homeThroughReaderPage
+void homeThroughReaderMarker
 void plainEditorPageHtml
 void plainEditorOverlayHtml
 void plainAuthorDocumentBody

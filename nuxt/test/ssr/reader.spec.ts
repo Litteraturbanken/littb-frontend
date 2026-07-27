@@ -145,11 +145,20 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   expect(html).toContain("Sök i verket")
   expect(html).toContain('class="reader-work-search-trigger"')
 
+  const { document } = parseHTML(html)
+  const eTextHost = document.querySelector(".reader_main > .etext.txt")
+  expect(eTextHost?.tagName).toBe("DIV")
+  expect(document.querySelectorAll(".reader_main > .etext.txt")).toHaveLength(1)
+  expect(eTextHost?.textContent).toContain("HJALMAR SÖDERBERG")
+
   const recorded = await readerRequests(request)
   expect(recorded.filter(path => path.startsWith("/api/get_work_info?"))).toHaveLength(1)
   expect(recorded.filter(path => path.startsWith(
     "/txt/lb-reader-doktor-glas/res_00002.html?"
   ))).toHaveLength(1)
+  expect((await separateReaderRequests(request)).html).toEqual([
+    "/txt/lb-reader-doktor-glas/res_00002.html?username=app"
+  ])
   expect(await readerHitRequests(request)).toEqual([])
   expect(await sourceInfoRequests(request)).toEqual([])
   expect(await sourceInfoStaticRequests(request)).toEqual([])

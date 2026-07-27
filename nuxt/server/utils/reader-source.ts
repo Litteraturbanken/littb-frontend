@@ -9,6 +9,7 @@ import type {
   ReaderPartAuthor,
   ReaderWorkContributor
 } from "../../shared/types/reader"
+import { fetchManagedText } from "../../shared/utils/managed-text"
 import { normalizeReaderAuthorContribution } from "../../shared/utils/reader-author"
 import { hasC0OrC1Control } from "../../shared/utils/text-safety"
 
@@ -21,6 +22,7 @@ const MAX_READER_WORK_CONTRIBUTORS = 100
 const MAX_READER_ID_LENGTH = 100
 const MAX_READER_PAGE_NAME_LENGTH = 100
 const MAX_READER_TITLE_LENGTH = 2_000
+export const maximumReaderEtextBytes = 2 * 1024 * 1024
 
 export interface ReaderSourcePage {
   pageIndex: number
@@ -647,15 +649,14 @@ export async function fetchReaderPageHtml(
   pageIndex: number
 ): Promise<string> {
   const filename = String(pageIndex).padStart(5, "0")
+  const url = `${base}/txt/${encodeURIComponent(workId)}/res_${filename}.html?username=app`
   try {
-    return await $fetch<string>(
-      `${base}/txt/${encodeURIComponent(workId)}/res_${filename}.html`,
-      {
-        query: { username: "app" },
-        responseType: "text",
-        retry: 0
-      }
-    )
+    return await fetchManagedText(url, {
+      authorityOrigin: new URL(base).origin,
+      allowedPathPrefixes: ["/txt/"],
+      allowedContentTypes: ["text/html"],
+      maximumBytes: maximumReaderEtextBytes
+    })
   } catch {
     throw createError({ statusCode: 502, statusMessage: "Reader source unavailable" })
   }

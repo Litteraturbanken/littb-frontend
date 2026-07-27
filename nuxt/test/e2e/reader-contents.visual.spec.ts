@@ -265,14 +265,18 @@ for (const visualCase of visualCases) {
     }
 
     const recorded = await readerRequests(request)
+    const ornamentRequest = "/bilder/ornament/reader-fixture.png"
+    // Hydration retains the server-rendered managed HTML, so the browser owns one image request.
+    expect(recorded.filter(requestPath => requestPath === ornamentRequest)).toEqual([
+      ornamentRequest
+    ])
     expect(recorded).toEqual([
       "/api/get_work_info?authorid=S%C3%B6derbergH" +
         "&exclude=content_vector&titlepath=DoktorGlasParts",
       "/txt/lb-reader-doktor-glas-parts/res_00003.html?username=app",
       "/red/css/etext.css",
       "/txt/css/lb-reader-doktor-glas-parts-etext.css",
-      "/bilder/ornament/reader-fixture.png",
-      "/bilder/ornament/reader-fixture.png"
+      ornamentRequest
     ])
     expect(await fixtureRequests(request)).toEqual({
       html: ["/txt/lb-reader-doktor-glas-parts/res_00003.html?username=app"],

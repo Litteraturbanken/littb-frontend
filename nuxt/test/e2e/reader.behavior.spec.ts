@@ -1774,7 +1774,9 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
   expect(metadata).toHaveLength(1)
   expect(new URL(metadata[0]!, fixture).searchParams.get("authorid")).toBe("SöderbergH")
   expect(new URL(metadata[0]!, fixture).searchParams.get("titlepath")).toBe("DoktorGlas")
-  expect(pages).toHaveLength(1)
+  expect(pages).toEqual([
+    "/txt/lb-reader-doktor-glas/res_00002.html?username=app"
+  ])
   expect(new URL(pages[0]!, fixture).searchParams.get("username")).toBe("app")
   expect(clientReaderRequests).toEqual([])
   expect(problems).toEqual([])
