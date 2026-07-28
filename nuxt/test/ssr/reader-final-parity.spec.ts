@@ -8,6 +8,7 @@ const nyaVagarPath = "/författare/SöderbergH/titlar/NyaVagarReader/sida/-2/ete
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_manifest_requests`),
     request.delete(`${fixture}/_reader_metadata_requests`),
     request.delete(`${fixture}/_reader_html_requests`),
     request.delete(`${fixture}/_reader_ocr_requests`),

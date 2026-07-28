@@ -1,45 +1,22 @@
 import { describe, expect, test } from "vitest"
 
 import { parseReaderOcrOverlay } from "../../server/utils/reader-ocr"
-import { normalizeReaderMetadata } from "../../server/utils/reader-source"
+import { readerManifestPartAuthorLabel } from "../../shared/utils/reader-author"
 
-function normalizeKeyword(keyword: unknown) {
-  return normalizeReaderMetadata({
-    hits: 1,
-    data: [{
-      authors: [{ authorid: "SöderbergH", full_name: "Hjalmar Söderberg" }],
-      endpagename: "-1",
-      keyword,
-      lbworkid: "lb-reader-nya-vagar",
-      mediatype: "etext",
-      pages: [
-        { pagename: "-2", pageindex: 2 },
-        { pagename: "-1", pageindex: 3 }
-      ],
-      parts: [],
-      searchable: true,
-      shorttitle: "Nya vägar Reader",
-      startpagename: "-2",
-      title: "Nya vägar Reader",
-      titlepath: "NyaVagarReader"
-    }]
-  }, "http://source.invalid", "SöderbergH", "NyaVagarReader", "etext")
-}
-
-describe("Reader final normal-parity metadata", () => {
-  test("derives Nya vägar eligibility only from exact legacy keyword 1800", () => {
-    expect(normalizeKeyword(["1800"])).toMatchObject({ hasNyaVagar: true })
-
-    for (const keyword of [
-      undefined,
-      null,
-      [],
-      ["1800-tal"],
-      [1800],
-      "1800"
-    ]) {
-      expect(normalizeKeyword(keyword)).toMatchObject({ hasNyaVagar: false })
+describe("Reader final normal-parity assets", () => {
+  test("uses generated nullable part-author names as display fallbacks only", () => {
+    const author = {
+      author_id: "MissingSummaryAuthor",
+      full_name: null,
+      surname: null
     }
+    expect(readerManifestPartAuthorLabel(author, false)).toBe("MissingSummaryAuthor")
+    expect(readerManifestPartAuthorLabel(author, true)).toBe("MissingSummaryAuthor")
+    expect(author).toEqual({
+      author_id: "MissingSummaryAuthor",
+      full_name: null,
+      surname: null
+    })
   })
 
   test("accepts bounded OCR coordinates while removing active and unknown markup", () => {
@@ -62,7 +39,9 @@ describe("Reader final normal-parity metadata", () => {
     expect(overlay?.html).toContain('class="w"')
     expect(overlay?.html).toContain('id="w3_147"')
     expect(overlay?.html).toContain("left: 20px")
-    expect(overlay?.html).not.toMatch(/script|onclick|javascript|unsafe|<a|bad id|id="root"|background|color/iu)
+    expect(overlay?.html).not.toMatch(
+      /script|onclick|javascript|unsafe|<a|bad id|id="root"|background|color/iu
+    )
   })
 
   test.each([
@@ -70,7 +49,7 @@ describe("Reader final normal-parity metadata", () => {
     "<body></body>",
     "<body><div>missing size</div></body>",
     '<body><div data-size="0x900">zero</div></body>',
-    '<body><div data-size="625x10001">too large</div></body>',
+    '<body><div data-size="625x10001">too large</div></body>'
   ])("rejects malformed OCR roots: %s", source => {
     expect(parseReaderOcrOverlay(source)).toBeNull()
   })

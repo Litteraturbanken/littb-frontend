@@ -2943,10 +2943,10 @@ const server = createServer(async (request, response) => {
   }
 
   const readerManifestMatch = request.method === "GET"
-    ? /^\/v2\/works\/([^/]+)\/([^/]+)\/manifest$/.exec(url.pathname)
+    ? /^\/v2\/works\/([^/]+)\/([^/]+)\/manifest$/.exec(apiPathname)
     : null
   const editorManifestMatch = request.method === "GET"
-    ? /^\/v2\/works\/([^/]+)\/editor-manifest$/.exec(url.pathname)
+    ? /^\/v2\/works\/([^/]+)\/editor-manifest$/.exec(apiPathname)
     : null
   if (readerManifestMatch || editorManifestMatch) {
     const validMediaQuery = url.searchParams.size === 1
@@ -2972,7 +2972,7 @@ const server = createServer(async (request, response) => {
       const authorId = decodeSegment(readerManifestMatch[1])
       const titlePath = decodeSegment(readerManifestMatch[2])
       if (authorId === null || titlePath === null) return validationError(response)
-      readerManifestRequests.push(`${url.pathname}${url.search}`)
+      readerManifestRequests.push(`${apiPathname}${url.search}`)
       if (titlePath === "UnavailableReader") {
         return sendJson(response, 503, {
           error: {
@@ -2986,7 +2986,9 @@ const server = createServer(async (request, response) => {
         const manifest = readerManifestResponse(
           titlePath,
           mediaType,
-          readerMetadataResponse(titlePath)
+          titlePath === "Rallarliv"
+            ? readerAarnsethFacsimileWorkInfoResponse
+            : readerMetadataResponse(titlePath)
         )
         if (manifest === null || manifest.author_id !== authorId) {
           return sendJson(response, 404, {
@@ -3011,7 +3013,7 @@ const server = createServer(async (request, response) => {
 
     const workId = decodeSegment(editorManifestMatch[1])
     if (workId === null) return validationError(response)
-    editorManifestRequests.push(`${url.pathname}${url.search}`)
+    editorManifestRequests.push(`${apiPathname}${url.search}`)
     if (workId === "lb-editor-unavailable") {
       return sendJson(response, 503, {
         error: {

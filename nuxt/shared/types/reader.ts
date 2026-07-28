@@ -1,3 +1,8 @@
+import type {
+  WorkManifestContributor,
+  WorkManifestPage,
+  WorkManifestPart
+} from "./work-manifest"
 import type { ReaderAuthorContribution } from "../utils/reader-author"
 import type { ManagedAssetHtml, SanitizedHtml } from "./renderable-html"
 
@@ -46,11 +51,6 @@ export interface ReaderPart {
   authors: ReaderPartAuthor[]
 }
 
-export interface ReaderPageIdentity {
-  pageIndex: number
-  pageName: string
-}
-
 export interface ReaderAlternateMedia {
   mediaType: ReaderMediaType
   pageName: string
@@ -58,8 +58,8 @@ export interface ReaderAlternateMedia {
 
 export interface ReaderPageBase {
   alternateMedia: ReaderAlternateMedia | null
-  author: ReaderWorkContributor
-  contributors: ReaderWorkContributor[]
+  author: WorkManifestContributor
+  contributors: WorkManifestContributor[]
   description: string
   editorWorkId: string | null
   fullTitle: string
@@ -73,10 +73,10 @@ export interface ReaderPageBase {
   nextPartPageName: string | null
   pageCount: number
   pageIndex: number
-  pageMap: ReaderPageIdentity[]
+  pageMap: WorkManifestPage[]
   pageName: string
   pageNames: string[]
-  parts: ReaderPart[]
+  parts: WorkManifestPart[]
   previousPageName: string | null
   previousPartPageName: string | null
   searchable: boolean
@@ -96,6 +96,7 @@ export interface ReaderEtextPage extends ReaderPageBase {
 }
 
 export interface ReaderFacsimilePage extends ReaderPageBase {
+  author: WorkManifestContributor & { name?: string }
   imageNumber: number
   mediaType: "faksimil"
   ocrOverlay: ReaderOcrOverlay | null

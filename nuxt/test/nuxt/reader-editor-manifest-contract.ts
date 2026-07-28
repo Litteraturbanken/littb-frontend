@@ -1,11 +1,15 @@
 import type { components } from "../../app/lib/api/generated/lbapi"
+import type { ReaderPage } from "../../shared/types/reader"
 import type {
   EditorManifestOperation,
   EditorManifestPath,
   EditorManifestResponse,
   ReaderManifestOperation,
   ReaderManifestPath,
-  ReaderManifestResponse
+  ReaderManifestResponse,
+  WorkManifestContributor,
+  WorkManifestPage,
+  WorkManifestPart
 } from "../../shared/types/work-manifest"
 
 type Equal<Left, Right> =
@@ -38,6 +42,18 @@ type _EditorResponseUnionExact = Expect<
 type _EditorStatusExact = Expect<
   Equal<EditorManifestResponse["status"], "complete" | "page_bounds_only">
 >
+type _ReaderContributorsAreGenerated = Expect<Equal<
+  ReaderPage["contributors"],
+  WorkManifestContributor[]
+>>
+type _ReaderPartsAreGenerated = Expect<Equal<
+  ReaderPage["parts"],
+  WorkManifestPart[]
+>>
+type _ReaderPageMapIsGenerated = Expect<Equal<
+  ReaderPage["pageMap"],
+  WorkManifestPage[]
+>>
 
 type _Reader404 = Expect<Equal<
   ReaderManifestOperation["responses"][404]["content"]["application/json"],

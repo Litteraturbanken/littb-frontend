@@ -12,6 +12,7 @@ import {
   emptyRenderableHtml,
   transformManagedReaderHtml
 } from "#shared/utils/renderable-html"
+import { readerManifestPartAuthorLabel } from "#shared/utils/reader-author"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import dramawebbenLogo from "~/assets/img/dramawebben_svart.svg"
 import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
@@ -795,8 +796,8 @@ const focusLargerSizeEnabled = computed(() => {
   )
 })
 const focusParts = computed(() => reader.value?.parts.map(part => ({
-  href: pageHref(part.startPageName),
-  label: part.navTitle || part.shortTitle || part.title
+  href: pageHref(part.start_page_name),
+  label: part.nav_title || part.short_title || part.title
 })) ?? [])
 const alternateMediaHref = computed(() => {
   const alternate = reader.value?.alternateMedia
@@ -814,14 +815,14 @@ watch(pageParam, pageName => {
 function draftAdjacentPageName(direction: -1 | 1): string | null {
   const currentReader = reader.value
   if (!currentReader) return null
-  const position = currentReader.pageMap.findIndex(page => page.pageName === pageRouteDraftName.value)
-  return currentReader.pageMap[position + direction]?.pageName ?? null
+  const position = currentReader.pageMap.findIndex(page => page.page_name === pageRouteDraftName.value)
+  return currentReader.pageMap[position + direction]?.page_name ?? null
 }
 const draftPreviousPageName = computed(() => draftAdjacentPageName(-1))
 const draftNextPageName = computed(() => draftAdjacentPageName(1))
 function queueReaderPage(pageName: string): void {
   const currentReader = reader.value
-  if (!currentReader?.pageMap.some(page => page.pageName === pageName)) return
+  if (!currentReader?.pageMap.some(page => page.page_name === pageName)) return
   const generation = ++pageNavigationGeneration
   pageRouteDraftName.value = pageName
   const href = pageHref(pageName)
@@ -842,8 +843,8 @@ function queueReaderPage(pageName: string): void {
     })
 }
 function queueReaderHref(href: string): void {
-  const target = reader.value?.pageMap.find(page => pageHref(page.pageName) === href)
-  if (target) queueReaderPage(target.pageName)
+  const target = reader.value?.pageMap.find(page => pageHref(page.page_name) === href)
+  if (target) queueReaderPage(target.page_name)
 }
 type SliderDraft = Readonly<{
   identity: string
@@ -866,7 +867,7 @@ const sliderPercent = computed(() => {
   return sliderDraftIndex.value / maximum * 100
 })
 function sliderPageName(rawIndex: number): string {
-  return reader.value?.pageMap.find(page => page.pageIndex === rawIndex)?.pageName ?? String(rawIndex)
+  return reader.value?.pageMap.find(page => page.page_index === rawIndex)?.page_name ?? String(rawIndex)
 }
 const sliderValueText = computed(() => `Sida ${sliderPageName(sliderValue.value)}`)
 const sliderBubbleStyles = computed(() => {
@@ -901,13 +902,13 @@ function commitSliderDraft(): void {
     clearSliderDraft()
     return
   }
-  const target = currentReader.pageMap.find(page => page.pageIndex === draft.rawIndex)
+  const target = currentReader.pageMap.find(page => page.page_index === draft.rawIndex)
   sliderKeyboardPending.value = false
-  if (!target || target.pageName === currentReader.pageName) {
+  if (!target || target.page_name === currentReader.pageName) {
     sliderDraft.value = null
     return
   }
-  queueReaderPage(target.pageName)
+  queueReaderPage(target.page_name)
 }
 function handleSliderChange(): void {
   if (!sliderKeyboardPending.value) commitSliderDraft()
@@ -973,16 +974,14 @@ const currentPart = computed(() => {
 })
 const currentPartLabel = computed(() => {
   const part = currentPart.value
-  return part ? (part.navTitle || part.shortTitle || part.title) : ""
+  return part ? (part.nav_title || part.short_title || part.title) : ""
 })
 
 function currentPartAuthorLabel(index: number): string {
   const part = currentPart.value
   const author = part?.authors[index]
   if (!part || !author) return ""
-  return part.authors.length === 1
-    ? (author.name ?? author.id)
-    : (author.surname ?? author.name ?? author.id)
+  return readerManifestPartAuthorLabel(author, part.authors.length > 1)
 }
 
 let activeHitRequestController: AbortController | null = null
@@ -1129,12 +1128,20 @@ const markedReaderHtml = computed<ManagedAssetHtml<"reader-etext">>(() => {
 })
 const markedFacsimileReader = computed(() => {
   const currentReader = facsimileReader.value
+  if (!currentReader) return null
+  const imageReader = {
+    ...currentReader,
+    author: {
+      ...currentReader.author,
+      name: currentReader.author.full_name
+    }
+  }
   const overlay = currentReader?.ocrOverlay
   const hit = selectedSearchHit.value ?? activeHit.value
-  if (!currentReader || !overlay || !hit) return currentReader
+  if (!overlay || !hit) return imageReader
 
   return {
-    ...currentReader,
+    ...imageReader,
     ocrOverlay: {
       ...overlay,
       html: markReaderSearchOcrHtml(
@@ -1599,8 +1606,8 @@ useHead(() => ({
       contentsOpen.value || sourceInfoOpen.value ? "modal-open" : ""
     ].filter(Boolean).join(" ")
   },
-  meta: currentPart.value?.titleId
-    ? [{ name: "part", content: currentPart.value.titleId }]
+  meta: currentPart.value?.title_id
+    ? [{ name: "part", content: currentPart.value.title_id }]
     : [],
   link: etextReader.value
     ? [
@@ -1718,7 +1725,7 @@ const titleSourceInfoTrigger = ref<HTMLAnchorElement | null>(null)
 const sidebarSourceInfoTrigger = ref<HTMLAnchorElement | null>(null)
 let sourceInfoTrigger: HTMLElement | null = null
 const contentsPartHrefs = computed(() => reader.value?.parts.map(
-  part => readerPageFullPath(rawFullPath.value, part.startPageName)
+  part => readerPageFullPath(rawFullPath.value, part.start_page_name)
 ) ?? [])
 let contentsClosePending = false
 
@@ -1801,9 +1808,9 @@ function keyboardPageTarget(event: KeyboardEvent): string | null {
   if (!forwards && !backwards) return null
 
   if (event.altKey && event.shiftKey) {
-    const draftPage = currentReader.pageMap.find(page => page.pageName === pageRouteDraftName.value)
-    const targetPageIndex = (draftPage?.pageIndex ?? currentReader.pageIndex) + (forwards ? 10 : -10)
-    return currentReader.pageMap.find(page => page.pageIndex === targetPageIndex)?.pageName
+    const draftPage = currentReader.pageMap.find(page => page.page_name === pageRouteDraftName.value)
+    const targetPageIndex = (draftPage?.page_index ?? currentReader.pageIndex) + (forwards ? 10 : -10)
+    return currentReader.pageMap.find(page => page.page_index === targetPageIndex)?.page_name
       ?? null
   }
   if (event.altKey) {
@@ -2050,10 +2057,10 @@ watch(readerRequestIdentity, () => {
                 <div class="header">
                   <template
                     v-for="(partAuthor, index) in currentPart.authors"
-                    :key="readerPartAuthorKey(partAuthor.id, index)"
+                    :key="readerPartAuthorKey(partAuthor.author_id, index)"
                   >
                     <NuxtLink
-                      :to="readerAuthorHref(partAuthor.id)"
+                      :to="readerAuthorHref(partAuthor.author_id)"
                     >{{ currentPartAuthorLabel(index) }}</NuxtLink><span
                       v-if="index < currentPart.authors.length - 1"
                     >, </span>
@@ -2278,7 +2285,7 @@ watch(readerRequestIdentity, () => {
                   <a class="disabled" aria-disabled="true" tabindex="-1">Sök i verket</a>
                 </li>
                 <li>
-                  <NuxtLink :to="{ path: '/s%C3%B6k', query: { avancerad: null, forfattare: reader.author.id } }">
+                  <NuxtLink :to="{ path: '/s%C3%B6k', query: { avancerad: null, forfattare: reader.author.author_id } }">
                     Sök i författarens texter
                   </NuxtLink>
                 </li>

@@ -1,3 +1,5 @@
+import type { WorkManifestPartAuthor } from "../types/work-manifest"
+
 export type ReaderAuthorContribution =
   | "editor"
   | "illustrator"
@@ -47,4 +49,13 @@ export function readerAuthorContributionSuffix(
     default:
       return null
   }
+}
+
+export function readerManifestPartAuthorLabel(
+  author: WorkManifestPartAuthor,
+  preferSurname: boolean
+): string {
+  return preferSurname
+    ? author.surname ?? author.full_name ?? author.author_id
+    : author.full_name ?? author.author_id
 }

@@ -22,13 +22,13 @@ export default defineEventHandler(async event => {
   const mediaType = requiredParam(event, "mediatype")
   const metadata = await loadReaderMetadata(event, author, titlePath, mediaType)
   const startPageName = metadata.startPageName
-  if (!startPageName || !metadata.pages.some(page => page.pageName === startPageName)) {
+  if (!startPageName || !metadata.pages.some(page => page.page_name === startPageName)) {
     throw createError({ statusCode: 404, statusMessage: "Reader page not found" })
   }
 
   const canonicalPath = [
     "/författare",
-    encodeRfc3986Segment(metadata.author.id),
+    encodeRfc3986Segment(metadata.author.author_id),
     "titlar",
     encodeRfc3986Segment(metadata.titlePath),
     "sida",
@@ -37,7 +37,7 @@ export default defineEventHandler(async event => {
   ].join("/")
 
   return {
-    authorId: metadata.author.id,
+    authorId: metadata.author.author_id,
     canonicalPath,
     mediaType: metadata.mediaType,
     startPageName,

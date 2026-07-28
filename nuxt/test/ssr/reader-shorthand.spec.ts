@@ -15,7 +15,7 @@ const readerStatuses = [
   ["WrongAuthorReader", 404],
   ["MissingStartReader", 404],
   ["MalformedStartReader", 502],
-  ["OutOfListStartReader", 404],
+  ["OutOfListStartReader", 502],
   ["MalformedPagesReader", 502],
   ["NullPageIndexReader", 502],
   ["FalsePageIndexReader", 502],
@@ -26,16 +26,10 @@ const readerStatuses = [
   ["MalformedReader", 502],
   ["UnavailableReader", 502]
 ] as const
-const legacyFallbackTitles = new Set([
-  "MissingReader",
-  "NoRequestedMediaReader",
-  "WrongAuthorReader",
-  "MediaMismatchReader"
-])
-
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_manifest_requests`),
     request.delete(`${fixture}/_reader_metadata_delays`),
     request.delete(`${fixture}/_source_info_requests`),
     request.delete(`${fixture}/_source_info_failure`),
@@ -46,6 +40,10 @@ async function resetReader(request: APIRequestContext) {
 
 async function readerRequests(request: APIRequestContext): Promise<string[]> {
   return (await (await request.get(`${fixture}/_reader_requests`)).json()).requests
+}
+
+async function readerManifestRequests(request: APIRequestContext): Promise<string[]> {
+  return (await (await request.get(`${fixture}/_reader_manifest_requests`)).json()).requests
 }
 
 async function sourceInfoRequests(request: APIRequestContext) {
@@ -82,14 +80,12 @@ async function startClientNavigation(page: Page, rawPath: string): Promise<void>
   }, rawPath)
 }
 
-function expectedMetadataRequest(titlePath: string) {
-  return "/api/get_work_info?authorid=S%C3%B6derbergH" +
-    `&exclude=content_vector&titlepath=${titlePath}`
-}
-
-function expectedLegacyMetadataRequest(titlePath: string) {
-  return "/legacy-api/get_work_info?authorid=S%C3%B6derbergH" +
-    `&exclude=content_vector&titlepath=${titlePath}`
+function expectedManifestRequest(
+  titlePath: string,
+  mediaType = "etext",
+  authorId = "S%C3%B6derbergH"
+) {
+  return `/v2/works/${authorId}/${titlePath}/manifest?media_type=${mediaType}`
 }
 
 test.beforeEach(async ({ request }) => resetReader(request))
@@ -104,23 +100,20 @@ test("resolves exact Reader metadata without fetching page HTML", async ({ reque
     startPageName: "-2",
     canonicalPath: "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
   })
-  expect(await readerRequests(request)).toEqual([
-    expectedMetadataRequest("DoktorGlas")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedManifestRequest("DoktorGlas")
   ])
+  expect(await readerRequests(request)).toEqual([])
 })
 
 for (const [titlePath, status] of readerStatuses) {
   test(`${titlePath} resolves with ${status}`, async ({ request }) => {
     const response = await request.get(`${resolveBase}/${titlePath}/etext`)
     expect(response.status()).toBe(status)
-    const requests = await readerRequests(request)
-    expect(requests).toEqual([
-      expectedMetadataRequest(titlePath),
-      ...(legacyFallbackTitles.has(titlePath)
-        ? [expectedLegacyMetadataRequest(titlePath)]
-        : [])
+    expect(await readerManifestRequests(request)).toEqual([
+      expectedManifestRequest(titlePath)
     ])
-    expect(requests.some(path => path.includes("/txt/"))).toBe(false)
+    expect(await readerRequests(request)).toEqual([])
   })
 }
 
@@ -141,6 +134,9 @@ test("uses uppercase RFC3986 escapes for every canonical Reader identity", async
       "/författare/O%27Neil%21%28%29%2AA/titlar/" +
       "Rfc%21Reader%27%28%29%2A/sida/-2%21%27%28%29%2A/etext"
   })
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedManifestRequest("Rfc%21Reader%27%28%29%2A", "etext", "O%27Neil%21%28%29%2AA")
+  ])
   expect((await readerRequests(request)).some(path => path.includes("/txt/"))).toBe(false)
 })
 
@@ -157,15 +153,16 @@ test("resolves the exact faksimil representation without asset IO", async ({ req
     startPageName: "3",
     titlePath: "GostaBerlingsSaga"
   })
-  expect(await readerRequests(request)).toEqual([
-    "/api/get_work_info?authorid=Lagerl%C3%B6fS" +
-      "&exclude=content_vector&titlepath=GostaBerlingsSaga"
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedManifestRequest("GostaBerlingsSaga", "faksimil", "Lagerl%C3%B6fS")
   ])
+  expect(await readerRequests(request)).toEqual([])
 })
 
 test("resolver rejects unknown media before upstream IO", async ({ request }) => {
   const response = await request.get(`${resolveBase}/DoktorGlas/pdf`)
   expect(response.status()).toBe(404)
+  expect(await readerManifestRequests(request)).toEqual([])
   expect(await readerRequests(request)).toEqual([])
 })
 
@@ -174,9 +171,10 @@ test("does not forward public query parameters upstream", async ({ request }) =>
     `${resolvePath}?om-boken&repeat=first&repeat=second&unknown=bevara`
   )
   expect(response.status()).toBe(200)
-  expect(await readerRequests(request)).toEqual([
-    expectedMetadataRequest("DoktorGlas")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedManifestRequest("DoktorGlas")
   ])
+  expect(await readerRequests(request)).toEqual([])
 })
 
 test("inherits valid sibling pages without fetching page HTML", async ({ request }) => {
@@ -190,8 +188,8 @@ test("inherits valid sibling pages without fetching page HTML", async ({ request
     canonicalPath:
       "/författare/S%C3%B6derbergH/titlar/SiblingPagesReader/sida/-2/etext"
   })
-  expect(await readerRequests(request)).toEqual([
-    expectedMetadataRequest("SiblingPagesReader")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedManifestRequest("SiblingPagesReader")
   ])
   expect((await readerRequests(request)).some(path => path.includes("/txt/"))).toBe(false)
 })
@@ -259,10 +257,10 @@ test("faksimil shorthand preserves raw duplicate and unknown query values", asyn
     "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/3/faksimil" +
       "?unknown=bevara%20mig&repeat=%2f&repeat=%2F&bare"
   )
-  expect(await readerRequests(request)).toEqual([
-    "/api/get_work_info?authorid=Lagerl%C3%B6fS" +
-      "&exclude=content_vector&titlepath=GostaBerlingsSaga"
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedManifestRequest("GostaBerlingsSaga", "faksimil", "Lagerl%C3%B6fS")
   ])
+  expect(await readerRequests(request)).toEqual([])
 })
 
 test("shorthand rejects unknown media before upstream IO", async ({ request }) => {
@@ -270,6 +268,7 @@ test("shorthand rejects unknown media before upstream IO", async ({ request }) =
     maxRedirects: 0
   })
   expect(response.status()).toBe(404)
+  expect(await readerManifestRequests(request)).toEqual([])
   expect(await readerRequests(request)).toEqual([])
 })
 
@@ -373,8 +372,10 @@ test("a bare-title alias and canonical Reader independently load source informat
   // requests; the destination owns the dialog payload it renders.
   expect(await sourceInfoRequests(request)).toHaveLength(2)
   expect(await readerRequests(request)).toEqual([
-    expectedMetadataRequest("DoktorGlas"),
     "/txt/lb-reader-doktor-glas/res_00002.html?username=app"
+  ])
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedManifestRequest("DoktorGlas")
   ])
 })
 

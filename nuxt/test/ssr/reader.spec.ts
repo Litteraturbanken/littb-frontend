@@ -22,6 +22,7 @@ const facsimileLargePath = "/txt/lb-reader-gosta-berlings-saga/" +
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_manifest_requests`),
     request.delete(`${fixture}/_reader_metadata_requests`),
     request.delete(`${fixture}/_reader_html_requests`),
     request.delete(`${fixture}/_reader_ocr_requests`),
@@ -62,6 +63,10 @@ async function separateReaderRequests(request: APIRequestContext) {
 
 async function readerRequests(request: APIRequestContext): Promise<string[]> {
   return (await (await request.get(`${fixture}/_reader_requests`)).json()).requests
+}
+
+async function readerManifestRequests(request: APIRequestContext): Promise<string[]> {
+  return (await (await request.get(`${fixture}/_reader_manifest_requests`)).json()).requests
 }
 
 async function readerHitRequests(request: APIRequestContext): Promise<Array<{
@@ -108,10 +113,6 @@ function expectSourceInfoStaticCacheLedger(requests: string[]): void {
   ]).toContainEqual(requests)
 }
 
-async function setAuthorResolveScenario(request: APIRequestContext, scenario: string) {
-  await request.put(`${fixture}/_author_resolve_scenario`, { data: { scenario } })
-}
-
 test.beforeEach(async ({ request }) => resetReader(request))
 
 test("the exact Doktor Glas page is complete in the SSR response", async ({ request }) => {
@@ -152,7 +153,15 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   expect(eTextHost?.textContent).toContain("HJALMAR SÖDERBERG")
 
   const recorded = await readerRequests(request)
-  expect(recorded.filter(path => path.startsWith("/api/get_work_info?"))).toHaveLength(1)
+  expect(await readerManifestRequests(request)).toEqual([
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+  ])
+  expect(await authorResolveRequests(request)).toEqual([])
+  expect(recorded.some(path => (
+    path.includes("get_work_info")
+    || path.includes("count_pages")
+    || path.includes("authors/resolve")
+  ))).toBe(false)
   expect(recorded.filter(path => path.startsWith(
     "/txt/lb-reader-doktor-glas/res_00002.html?"
   ))).toHaveLength(1)
@@ -206,15 +215,15 @@ test("Boye Reader API and SSR retain ordered work contributors", async ({ reques
   )
   expect(body.contributors).toEqual([
     {
-      authorType: null,
-      id: "BoyeK",
-      name: "Karin Boye",
+      author_id: "BoyeK",
+      author_type: null,
+      full_name: "Karin Boye",
       role: null
     },
     {
-      authorType: "editor",
-      id: "HelgesonP",
-      name: "Paulina Helgeson",
+      author_id: "HelgesonP",
+      author_type: "editor",
+      full_name: "Paulina Helgeson",
       role: null
     }
   ])
@@ -448,15 +457,15 @@ test("canonical API returns the exact searchable faksimil arm with selectable OC
   expect(await response.json()).toEqual({
     alternateMedia: null,
     author: {
-      authorType: null,
-      id: "LagerlöfS",
-      name: "Selma Lagerlöf",
+      author_id: "LagerlöfS",
+      author_type: null,
+      full_name: "Selma Lagerlöf",
       role: null
     },
     contributors: [{
-      authorType: null,
-      id: "LagerlöfS",
-      name: "Selma Lagerlöf",
+      author_id: "LagerlöfS",
+      author_type: null,
+      full_name: "Selma Lagerlöf",
       role: null
     }],
     description: "Gösta Berlings saga av Selma Lagerlöf, sida 3 som faksimil.",
@@ -480,23 +489,27 @@ test("canonical API returns the exact searchable faksimil arm with selectable OC
     pageCount: 3,
     pageIndex: 1,
     pageMap: [
-      { pageIndex: 0, pageName: "1" },
-      { pageIndex: 1, pageName: "3" },
-      { pageIndex: 2, pageName: "5" }
+      { page_index: 0, page_name: "1" },
+      { page_index: 1, page_name: "3" },
+      { page_index: 2, page_name: "5" }
     ],
     pageName: "3",
     pageNames: ["1", "3", "5"],
     parts: [{
-      authors: [{ id: "LagerlöfS", name: "Selma Lagerlöf", surname: "Lagerlöf" }],
-      endPageIndex: 2,
-      endPageName: "5",
-      navTitle: "Gösta Berlings saga",
-      shortTitle: "Gösta Berlings saga",
-      sourceIndex: 0,
-      startPageIndex: 0,
-      startPageName: "1",
+      authors: [{
+        author_id: "LagerlöfS",
+        full_name: "Selma Lagerlöf",
+        surname: "Lagerlöf"
+      }],
+      end_page_index: 2,
+      end_page_name: "5",
+      nav_title: "Gösta Berlings saga",
+      short_title: "Gösta Berlings saga",
+      source_index: 0,
+      start_page_index: 0,
+      start_page_name: "1",
       title: "Gösta Berlings saga",
-      titleId: "GostaBerlingsSaga"
+      title_id: "GostaBerlingsSaga"
     }],
     preferredSize: 3,
     previousPageName: "1",
@@ -540,19 +553,19 @@ test("canonical API returns the exact searchable faksimil arm with selectable OC
     workId: "lb-reader-gosta-berlings-saga"
   })
   expect(await separateReaderRequests(request)).toEqual({
-    metadata: [
-      "/api/get_work_info?authorid=Lagerl%C3%B6fS" +
-        "&exclude=content_vector&titlepath=GostaBerlingsSaga"
-    ],
+    metadata: [],
     html: [],
     ocr: ["/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"],
     jpeg: []
   })
+  expect(await readerManifestRequests(request)).toEqual([
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+  ])
   expect(await readerHitRequests(request)).toEqual([])
   expect(await authorResolveRequests(request)).toEqual([])
 })
 
-test("real faksimil search hit falls back to backend metadata when the asset source omits it", async ({
+test("Rallarliv keeps its canonical hit marquee and assets on one v2 manifest", async ({
   request
 }) => {
   const continuation =
@@ -565,6 +578,9 @@ test("real faksimil search hit falls back to backend metadata when the asset sou
   )
 
   expect(response.status()).toBe(200)
+  expect(new URL(response.url()).pathname).toBe(
+    "/f%C3%B6rfattare/AarnsethF/titlar/Rallarliv/sida/58/faksimil"
+  )
   const html = await response.text()
   expect(html).toContain("<title>Rallarliv sida 58 faksimil | Litteraturbanken</title>")
   expect(html).toContain("Rallarliv av Fredrik Aarnseth, sida 58 som faksimil.")
@@ -579,16 +595,16 @@ test("real faksimil search hit falls back to backend metadata when the asset sou
   expect(html).toContain("sida/99/faksimil?q=kyrka&amp;hit=1")
   expect(html).toContain("traff=w99_20&amp;traffslut=w99_21")
   expect(html).toContain("hit_index=1")
+  expect(await readerManifestRequests(request)).toEqual([
+    "/v2/works/AarnsethF/Rallarliv/manifest?media_type=faksimil"
+  ])
   expect(await separateReaderRequests(request)).toEqual({
-    metadata: [
-      "/api/get_work_info?authorid=AarnsethF&exclude=content_vector&titlepath=Rallarliv",
-      "/legacy-api/get_work_info?authorid=AarnsethF" +
-        "&exclude=content_vector&titlepath=Rallarliv"
-    ],
+    metadata: [],
     html: [],
     ocr: ["/txt/lb3203777/ocr_00057.html"],
     jpeg: []
   })
+  expect(await authorResolveRequests(request)).toEqual([])
   expect(await readerHitRequests(request)).toEqual([{
     path: "/private-v2/works/lb3203777/search-hits",
     query: "media_type=faksimil&query=kyrka&offset=0&limit=3" +
@@ -596,7 +612,7 @@ test("real faksimil search hit falls back to backend metadata when the asset sou
   }])
 })
 
-test("canonical API projects source-ordered nested Reader navigation and resolves missing authors once", async ({
+test("canonical API projects source-ordered generated Reader navigation without author lookup", async ({
   request
 }) => {
   const response = await request.get(
@@ -611,15 +627,15 @@ test("canonical API projects source-ordered nested Reader navigation and resolve
     nextPartPageName: "3",
     pageIndex: 4,
     pageMap: [
-      { pageIndex: 1, pageName: "-4" },
-      { pageIndex: 2, pageName: "-3" },
-      { pageIndex: 3, pageName: "-2" },
-      { pageIndex: 4, pageName: "-1" },
-      { pageIndex: 5, pageName: "1" },
-      { pageIndex: 6, pageName: "2" },
-      { pageIndex: 7, pageName: "3" },
-      { pageIndex: 8, pageName: "4" },
-      { pageIndex: 9, pageName: "5" }
+      { page_index: 1, page_name: "-4" },
+      { page_index: 2, page_name: "-3" },
+      { page_index: 3, page_name: "-2" },
+      { page_index: 4, page_name: "-1" },
+      { page_index: 5, page_name: "1" },
+      { page_index: 6, page_name: "2" },
+      { page_index: 7, page_name: "3" },
+      { page_index: 8, page_name: "4" },
+      { page_index: 9, page_name: "5" }
     ],
     pageName: "-1",
     pageNames: ["-4", "-3", "-2", "-1", "1", "2", "3", "4", "5"],
@@ -628,34 +644,35 @@ test("canonical API projects source-ordered nested Reader navigation and resolve
   })
   expect(body.parts).toEqual([
     expect.objectContaining({
-      authors: [{ id: "SöderbergH", name: "Hjalmar Söderberg", surname: "Söderberg" }],
-      sourceIndex: 0,
-      startPageName: "-4",
-      endPageName: "1"
+      authors: [{
+        author_id: "SöderbergH",
+        full_name: "Hjalmar Söderberg",
+        surname: "Söderberg"
+      }],
+      source_index: 0,
+      start_page_name: "-4",
+      end_page_name: "1"
     }),
     expect.objectContaining({
-      authors: [{ id: "MörikeE", name: "Eduard Mörike", surname: "Mörike" }],
-      sourceIndex: 1
+      authors: [{ author_id: "MörikeE", full_name: null, surname: null }],
+      source_index: 1
     }),
     expect.objectContaining({
       authors: [
-        { id: "RilkeRM", name: "Rainer Maria Rilke", surname: "Rilke" },
-        { id: "ShelleyPB", name: "Percy Bysshe Shelley", surname: "Shelley" }
+        { author_id: "RilkeRM", full_name: null, surname: null },
+        { author_id: "ShelleyPB", full_name: null, surname: null }
       ],
-      sourceIndex: 2
+      source_index: 2
     }),
-    expect.objectContaining({ sourceIndex: 3 }),
-    expect.objectContaining({ sourceIndex: 4 })
+    expect.objectContaining({ source_index: 3 }),
+    expect.objectContaining({ source_index: 4 })
   ])
-  expect(await authorResolveRequests(request)).toEqual([{
-    path: "/private-v2/authors/resolve",
-    body: { author_ids: ["MörikeE", "RilkeRM", "ShelleyPB"] }
-  }])
+  expect(await authorResolveRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([
+    "/v2/works/S%C3%B6derbergH/DoktorGlasParts/manifest?media_type=etext"
+  ])
   expect(await separateReaderRequests(request)).toEqual({
-    metadata: [
-      "/api/get_work_info?authorid=S%C3%B6derbergH" +
-        "&exclude=content_vector&titlepath=DoktorGlasParts"
-    ],
+    metadata: [],
     html: ["/txt/lb-reader-doktor-glas-parts/res_00004.html?username=app"],
     ocr: [],
     jpeg: []
@@ -717,85 +734,21 @@ for (const title of [
   })
 }
 
-for (const scenario of [
-  "primitive",
-  "wrong-container",
-  "non-array-items",
-  "oversized-items",
-  "extra-top-key",
-  "malformed-item",
-  "extra-item-key",
-  "duplicate",
-  "unrequested",
-  "empty-id",
-  "whitespace-id",
-  "control-id",
-  "overlong-id",
-  "empty-name",
-  "whitespace-name",
-  "control-name",
-  "overlong-name",
-  "wrong-surname",
-  "empty-surname",
-  "whitespace-surname",
-  "control-surname",
-  "overlong-surname",
-  "disconnect"
-] as const) {
-  test(`rejects malformed author resolver scenario ${scenario} before page IO`, async ({
-    request
-  }) => {
-    await setAuthorResolveScenario(request, scenario)
-    const response = await request.get(
-      "/api/reader/S%C3%B6derbergH/DoktorGlasParts/-1/etext"
-    )
-    expect(response.status()).toBe(502)
-    expect((await authorResolveRequests(request))).toHaveLength(1)
-    expect((await separateReaderRequests(request)).html).toEqual([])
-  })
-}
-
-test("contains an author resolver non-200 before page IO", async ({ request }) => {
-  await request.put(`${fixture}/_author_resolve_failure`)
-  const response = await request.get(
-    "/api/reader/S%C3%B6derbergH/DoktorGlasParts/-1/etext"
+test("nullable generated part-author names remain direct without author lookup", async ({
+  request
+}) => {
+  const api = await request.get(
+    "/api/reader/S%C3%B6derbergH/ReaderAuthorOmission/-1/etext"
   )
-  expect(response.status()).toBe(502)
-  expect((await authorResolveRequests(request))).toHaveLength(1)
-  expect((await separateReaderRequests(request)).html).toEqual([])
+  expect(api.status()).toBe(200)
+  expect((await api.json()).parts[0].authors).toEqual([{
+    author_id: "MissingSummaryAuthor",
+    full_name: null,
+    surname: null
+  }])
+  expect(await authorResolveRequests(request)).toEqual([])
+
 })
-
-for (const [title, expectedCalls] of [
-  ["ReaderTooManyAuthors", 0],
-  ["ReaderUnsafePartAuthor", 0]
-] as const) {
-  test(`${title} is rejected before resolver and page IO`, async ({ request }) => {
-    const response = await request.get(`/api/reader/S%C3%B6derbergH/${title}/-4/etext`)
-    expect(response.status()).toBe(502)
-    expect(await authorResolveRequests(request)).toHaveLength(expectedCalls)
-    expect((await separateReaderRequests(request)).html).toEqual([])
-  })
-}
-
-for (const [title, expectedAuthor] of [
-  [
-    "ReaderAuthorOmission",
-    { id: "MissingSummaryAuthor", name: "MissingSummaryAuthor", surname: "MissingSummaryAuthor" }
-  ],
-  [
-    "ReaderAuthorNullSurname",
-    { id: "NullSurnameAuthor", name: "Förnamn Efternamn", surname: "Förnamn Efternamn" }
-  ]
-] as const) {
-  test(`${title} completes deterministic author fallbacks`, async ({ request }) => {
-    const response = await request.get(`/api/reader/S%C3%B6derbergH/${title}/-1/etext`)
-    expect(response.status()).toBe(200)
-    const body = await response.json()
-    expect(body.parts[0].authors).toEqual([expectedAuthor])
-    expect(await authorResolveRequests(request)).toHaveLength(1)
-    expect((await separateReaderRequests(request)).html).toHaveLength(1)
-  })
-}
 
 for (const title of [
   "ReaderLocalWhitespaceName",
@@ -808,29 +761,6 @@ for (const title of [
     expect(response.status()).toBe(502)
     expect(await authorResolveRequests(request)).toEqual([])
     expect((await separateReaderRequests(request)).html).toEqual([])
-  })
-}
-
-for (const title of [
-  "ReaderLocalWhitespaceSurname",
-  "ReaderLocalControlSurname"
-] as const) {
-  test(`${title} resolves instead of trusting malformed local author text`, async ({
-    request
-  }) => {
-    const response = await request.get(`/api/reader/S%C3%B6derbergH/${title}/-1/etext`)
-    expect(response.status()).toBe(200)
-    const body = await response.json()
-    expect(body.parts[0].authors).toEqual([{
-      id: "MörikeE",
-      name: "Eduard Mörike",
-      surname: "Mörike"
-    }])
-    expect(await authorResolveRequests(request)).toEqual([{
-      path: "/private-v2/authors/resolve",
-      body: { author_ids: ["MörikeE"] }
-    }])
-    expect((await separateReaderRequests(request)).html).toHaveLength(1)
   })
 }
 
@@ -940,14 +870,14 @@ test("canonical faksimil selects the requested alternate representation", async 
     workId: "lb-reader-doktor-glas"
   })
   expect(await separateReaderRequests(request)).toEqual({
-    metadata: [
-      "/api/get_work_info?authorid=S%C3%B6derbergH" +
-        "&exclude=content_vector&titlepath=DoktorGlas"
-    ],
+    metadata: [],
     html: [],
     ocr: [],
     jpeg: []
   })
+  expect(await readerManifestRequests(request)).toEqual([
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=faksimil"
+  ])
 })
 
 test("canonical unknown media fails before reader IO", async ({ request }) => {
@@ -966,7 +896,10 @@ test("canonical missing faksimil page fails before asset IO", async ({ request }
   )
   expect(response.status()).toBe(404)
   const recorded = await separateReaderRequests(request)
-  expect(recorded.metadata).toHaveLength(1)
+  expect(recorded.metadata).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+  ])
   expect({ html: recorded.html, ocr: recorded.ocr, jpeg: recorded.jpeg }).toEqual({
     html: [], ocr: [], jpeg: []
   })
@@ -983,7 +916,10 @@ for (const titlePath of [
     )
     expect(response.status()).toBe(502)
     const recorded = await separateReaderRequests(request)
-    expect(recorded.metadata).toHaveLength(1)
+    expect(recorded.metadata).toEqual([])
+    expect(await readerManifestRequests(request)).toEqual([
+      `/v2/works/Lagerl%C3%B6fS/${titlePath}/manifest?media_type=faksimil`
+    ])
     expect({ html: recorded.html, ocr: recorded.ocr, jpeg: recorded.jpeg }).toEqual({
       html: [], ocr: [], jpeg: []
     })
@@ -1135,12 +1071,6 @@ test("a malformed hit response is contained locally", async ({ request }) => {
 
 for (const mismatch of [
   {
-    label: "faksimil index-scoped word id",
-    path: "/f%C3%B6rfattare/AarnsethF/titlar/Rallarliv/sida/58/faksimil",
-    query: "faksimil-index-word",
-    mediaType: "faksimil"
-  },
-  {
     label: "etext page-name-scoped word id",
     path: readerPath,
     query: "etext-name-word",
@@ -1266,8 +1196,10 @@ test("an unknown e-text page is a work-specific real 404", async ({ request }) =
   expect(html).toContain("Hittar ingen sida &#39;missing&#39; i verket.")
   expect(html).not.toContain("DOKTOR GLAS")
   const recorded = await readerRequests(request)
-  expect(recorded.filter(path => path.startsWith("/api/get_work_info?"))).toHaveLength(1)
   expect(recorded.filter(path => path.includes("/res_"))).toHaveLength(0)
+  expect(await readerManifestRequests(request)).toEqual([
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+  ])
 })
 
 test("an encoded faksimil page is escaped in the work-specific 404", async ({ request }) => {
