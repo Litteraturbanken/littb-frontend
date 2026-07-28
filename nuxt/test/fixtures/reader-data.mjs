@@ -616,3 +616,525 @@ export const workReaderCss = `
 .txt .titelsida { font-family: Georgia, serif; line-height: 1.9; min-width: 28rem; }
 .txt .author { letter-spacing: .04em; }
 `
+
+const manifestContributionRoles = new Map([
+  ["editor", "editor"],
+  ["redaktör", "editor"],
+  ["translator", "translator"],
+  ["översättare", "translator"],
+  ["illustrator", "illustrator"],
+  ["illustratör", "illustrator"],
+  ["photographer", "photographer"],
+  ["fotograf", "photographer"]
+])
+
+function isManifestText(value, maximum) {
+  return typeof value === "string"
+    && [...value].length >= 1
+    && [...value].length <= maximum
+    && value === value.trim()
+    && !/[\p{Cc}\p{Cs}]/u.test(value)
+}
+
+function isManifestSegment(value) {
+  return isManifestText(value, 100) && !/[\\/?#]/u.test(value)
+}
+
+function manifestRole(value) {
+  return typeof value === "string"
+    ? manifestContributionRoles.get(value.toLowerCase()) ?? null
+    : null
+}
+
+function manifestContributors(raw) {
+  const source = raw.authors ?? raw.work_authors
+    ?? (raw.main_author ? [raw.main_author] : null)
+  if (!Array.isArray(source) || source.length === 0) {
+    throw new Error("malformed manifest contributors")
+  }
+  const contributors = source.map(author => {
+    if (!isManifestSegment(author?.authorid) || !isManifestText(author.full_name, 2_000)) {
+      throw new Error("malformed manifest contributor")
+    }
+    return {
+      author_id: author.authorid,
+      full_name: author.full_name,
+      author_type: manifestRole(author.type),
+      role: manifestRole(author.role)
+    }
+  })
+  if (new Set(contributors.map(contributor => contributor.author_id)).size !== contributors.length) {
+    throw new Error("duplicate manifest contributor")
+  }
+  return contributors
+}
+
+function manifestPages(value, withImages = false) {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error("malformed manifest pages")
+  }
+  const pages = value.map(page => {
+    if (
+      !isManifestText(page?.pagename, 100)
+      || !Number.isInteger(page.pageindex)
+      || page.pageindex < 0
+      || page.pageindex >= 100_000
+      || (withImages && (
+        !Number.isInteger(page.imagenumber)
+        || page.imagenumber < 0
+        || page.imagenumber >= 100_000
+      ))
+    ) {
+      throw new Error("malformed manifest page")
+    }
+    return {
+      page_name: page.pagename,
+      page_index: page.pageindex,
+      ...(withImages ? { image_number: page.imagenumber } : {})
+    }
+  }).sort((left, right) => left.page_index - right.page_index)
+  if (
+    new Set(pages.map(page => page.page_name)).size !== pages.length
+    || new Set(pages.map(page => page.page_index)).size !== pages.length
+  ) {
+    throw new Error("duplicate manifest page")
+  }
+  return pages
+}
+
+function manifestParts(value, pages, rawContributors) {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value)) throw new Error("malformed manifest parts")
+  const pageIndexes = new Map(pages.map(page => [page.page_name, page.page_index]))
+  const contributorNames = new Map(rawContributors.map(author => [
+    author.authorid,
+    { full_name: author.full_name ?? null, surname: author.surname ?? null }
+  ]))
+  return value.map((part, sourceIndex) => {
+    const startPageIndex = pageIndexes.get(part?.startpagename)
+    const endPageIndex = pageIndexes.get(part?.endpagename)
+    if (
+      startPageIndex === undefined
+      || endPageIndex === undefined
+      || startPageIndex > endPageIndex
+      || typeof part.title !== "string"
+      || !Array.isArray(part.authors)
+    ) {
+      throw new Error("malformed manifest part")
+    }
+    return {
+      source_index: sourceIndex,
+      start_page_name: part.startpagename,
+      start_page_index: startPageIndex,
+      end_page_name: part.endpagename,
+      end_page_index: endPageIndex,
+      title: part.title,
+      nav_title: typeof part.navtitle === "string" ? part.navtitle : null,
+      short_title: typeof part.shorttitle === "string" ? part.shorttitle : null,
+      title_id: typeof part.titleid === "string" ? part.titleid : null,
+      authors: part.authors.map(author => {
+        if (typeof author?.authorid !== "string") {
+          throw new Error("malformed manifest part author")
+        }
+        const known = contributorNames.get(author.authorid)
+        return {
+          author_id: author.authorid,
+          full_name: typeof author.full_name === "string"
+            ? author.full_name
+            : known?.full_name ?? null,
+          surname: typeof author.surname === "string"
+            ? author.surname
+            : known?.surname ?? null
+        }
+      })
+    }
+  })
+}
+
+function manifestSizes(raw) {
+  if (!Array.isArray(raw.faksimil_sizes) || raw.faksimil_sizes.length === 0) {
+    throw new Error("malformed manifest sizes")
+  }
+  const sizes = raw.faksimil_sizes.map(rawSize => {
+    const size = rawSize + 1
+    const width = raw.width?.[`size_${size}`]
+    if (!Number.isInteger(rawSize) || rawSize < 0 || rawSize > 4
+      || typeof width !== "number" || !Number.isFinite(width) || width <= 0) {
+      throw new Error("malformed manifest size")
+    }
+    return { size, width }
+  }).sort((left, right) => left.size - right.size)
+  if (new Set(sizes.map(size => size.size)).size !== sizes.length) {
+    throw new Error("duplicate manifest size")
+  }
+  return sizes
+}
+
+function preferredManifestSize(sizes) {
+  if (sizes.some(size => size.size === 3)) return 3
+  const lower = sizes.filter(size => size.size < 3)
+  return lower.length > 0 ? lower.at(-1).size : sizes[0].size
+}
+
+function manifestPageStep(value) {
+  const parsed = typeof value === "string" && /^\d+$/.test(value)
+    ? Number(value)
+    : value
+  return Number.isInteger(parsed) && parsed > 0 && parsed <= 100_000 ? parsed : 1
+}
+
+function manifestNavigationName(raw, field, pages) {
+  const value = raw[field]
+  if (value === undefined || value === null) return null
+  if (typeof value !== "string" || !pages.some(page => page.page_name === value)) {
+    throw new Error("malformed manifest navigation")
+  }
+  return value
+}
+
+function buildReaderManifestFixture(records, titlePath, mediaType) {
+  if (!Array.isArray(records)) throw new Error("malformed Reader fixture envelope")
+  const exact = records.filter(record => (
+    record?.titlepath === titlePath && record.mediatype === mediaType
+  ))
+  if (exact.length === 0) return null
+  if (exact.length !== 1) throw new Error("ambiguous Reader fixture")
+  const selected = exact[0]
+  const rawContributors = selected.authors ?? selected.work_authors
+    ?? (selected.main_author ? [selected.main_author] : null)
+  const contributors = manifestContributors(selected)
+  if (!Array.isArray(rawContributors)) throw new Error("malformed contributors")
+
+  let pages
+  if (mediaType === "faksimil") {
+    pages = manifestPages(selected.pages, true)
+  } else if (selected.pages !== undefined && selected.pages !== null) {
+    pages = manifestPages(selected.pages)
+  } else {
+    const sibling = records.find(record => (
+      record !== selected
+      && record?.lbworkid === selected.lbworkid
+      && record.pages !== undefined
+      && record.pages !== null
+    ))
+    pages = manifestPages(sibling?.pages)
+  }
+
+  const alternateType = mediaType === "etext" ? "faksimil" : "etext"
+  const alternate = records.filter(record => (
+    record !== selected
+    && record?.titlepath === titlePath
+    && record.mediatype === alternateType
+  ))
+  if (alternate.length > 1) throw new Error("ambiguous alternate Reader fixture")
+  const fullTitle = selected.title
+  if (typeof selected.lbworkid !== "string" || typeof fullTitle !== "string") {
+    throw new Error("malformed Reader fixture identity")
+  }
+  const imprintYear = typeof selected.sort_date_imprint?.plain === "string"
+    ? selected.sort_date_imprint.plain
+    : typeof selected.imprintyear === "string" ? selected.imprintyear : null
+  const common = {
+    alternate_media: alternate.length === 1
+      ? { media_type: alternateType, pages: manifestPages(alternate[0].pages) }
+      : null,
+    author_id: contributors[0].author_id,
+    contributors,
+    display_title: typeof selected.shorttitle === "string" ? selected.shorttitle : fullTitle,
+    editor_work_id: typeof selected.editor_lbworkid === "string"
+      ? selected.editor_lbworkid
+      : null,
+    end_page_name: manifestNavigationName(selected, "endpagename", pages),
+    full_title: fullTitle,
+    has_dramawebben: selected.dramawebben !== null
+      && typeof selected.dramawebben === "object"
+      && !Array.isArray(selected.dramawebben),
+    has_nya_vagar: Array.isArray(selected.keyword) && selected.keyword.includes("1800"),
+    imprint_year: imprintYear,
+    is_drama: selected.texttype === "drama",
+    media_type: mediaType,
+    page_step: manifestPageStep(selected.pagestep),
+    pages,
+    parts: manifestParts(selected.parts, pages, rawContributors),
+    searchable: selected.searchable === true,
+    start_page_name: manifestNavigationName(selected, "startpagename", pages),
+    title_path: titlePath,
+    urn: typeof selected.urn === "string" ? selected.urn : null,
+    work_id: selected.lbworkid,
+    ...(Number.isInteger(selected.page_count)
+      && selected.page_count > 0
+      && selected.page_count <= 100_000
+      ? { declared_page_count: selected.page_count }
+      : {})
+  }
+  if (mediaType === "etext") return common
+  const sizes = manifestSizes(selected)
+  return {
+    ...common,
+    sizes,
+    preferred_size: preferredManifestSize(sizes)
+  }
+}
+
+export function readerManifestResponse(titlePath, mediaType, rawResponse) {
+  const raw = structuredClone(rawResponse)
+  return buildReaderManifestFixture(raw?.data, titlePath, mediaType)
+}
+
+function editorBoyeRepresentation(workId = "lb-editor-boye") {
+  return {
+    authors: structuredClone(readerBoyeContributors),
+    endpagename: "9",
+    faksimil_sizes: [2],
+    imprintyear: "2022",
+    lbworkid: workId,
+    mediatype: "faksimil",
+    page_count: 9,
+    pages: Array.from({ length: 9 }, (_, pageindex) => ({
+      pagename: String(pageindex + 1),
+      pageindex
+    })),
+    parts: [
+      {
+        authors: [{ authorid: "HelgesonP" }],
+        endpagename: "7",
+        navtitle: null,
+        shorttitle: null,
+        startpagename: "5",
+        title: "Förord",
+        titleid: "Förord"
+      },
+      {
+        authors: [],
+        endpagename: "9",
+        navtitle: null,
+        shorttitle: null,
+        startpagename: "9",
+        title: "Kronologi",
+        titleid: "Kronologi"
+      }
+    ],
+    searchable: true,
+    shorttitle: "Ett verkligt jordiskt liv. Brev",
+    startpagename: "3",
+    title: "Ett verkligt jordiskt liv. Brev",
+    titlepath: "EttVerkligtJordiskt",
+    width: { size_3: 625 }
+  }
+}
+
+function editorRawRepresentations(workId) {
+  if (workId === "lb-editor-doktor-glas") {
+    return [{
+      ...structuredClone(readerWorkInfoResponse.data[0]),
+      editor_lbworkid: "lb-editor-doktor-glas",
+      lbworkid: workId,
+      page_count: 3,
+      urn: "urn:nbn:se:lb-lb-reader-doktor-glas"
+    }]
+  }
+  if (workId === "lb-editor-no-ocr") {
+    return [{
+      ...structuredClone(readerWorkInfoResponse.data[0]),
+      lbworkid: workId,
+      mediatype: "faksimil",
+      page_count: 3,
+      parts: [],
+      mediatypes: [],
+      width: { size_2: 450, size_3: 625, size_4: 900 }
+    }]
+  }
+  if (workId === "lb-editor-mixed") {
+    const common = {
+      ...structuredClone(readerWorkInfoResponse.data[0]),
+      authors: [{ authorid: "SöderbergH", full_name: "Hjalmar Söderberg" }],
+      lbworkid: workId,
+      shorttitle: "Blandad editor",
+      startpagename: "-2",
+      titlepath: "DoktorGlas"
+    }
+    return [
+      { ...structuredClone(common), mediatype: "etext", page_count: 2 },
+      {
+        ...structuredClone(common),
+        faksimil_sizes: [3],
+        mediatype: "faksimil",
+        page_count: 5,
+        width: { size_2: 450, size_3: 625, size_4: 900 }
+      }
+    ]
+  }
+  if (workId === "lb-editor-long") {
+    return [{
+      ...structuredClone(readerWorkInfoResponse.data[0]),
+      faksimil_sizes: [3],
+      lbworkid: workId,
+      mediatype: "faksimil",
+      page_count: 25,
+      width: { size_2: 450, size_3: 625, size_4: 900 }
+    }]
+  }
+  if (workId === "lb-editor-sparse") {
+    return [{
+      ...structuredClone(readerWorkInfoResponse.data[0]),
+      lbworkid: workId,
+      mediatype: "faksimil",
+      pages: [
+        { pagename: "2", pageindex: 2 },
+        { pagename: "12", pageindex: 12 },
+        { pagename: "57", pageindex: 57 }
+      ],
+      page_count: null,
+      width: { size_3: 625 }
+    }]
+  }
+  if (workId === "lb-editor-missing-image") {
+    return [{
+      ...structuredClone(readerWorkInfoResponse.data[0]),
+      faksimil_sizes: [3],
+      lbworkid: workId,
+      mediatype: "faksimil",
+      page_count: 3,
+      width: { size_2: 450, size_3: 625, size_4: 900 }
+    }]
+  }
+  if (workId === "lb-editor-doktor") {
+    return [{
+      ...structuredClone(readerWorkInfoResponse.data[0]),
+      lbworkid: workId,
+      faksimil_sizes: [3],
+      mediatype: "faksimil",
+      page_count: 3,
+      parts: [],
+      width: { size_2: 450, size_3: 625, size_4: 900 },
+      mediatypes: [{
+        url: "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+      }]
+    }]
+  }
+  if ([
+    "lb-editor-boye",
+    "lb8345227",
+    "lb-editor-malformed-contributor",
+    "lb-editor-malformed-part"
+  ].includes(workId)) {
+    const representation = editorBoyeRepresentation(workId)
+    if (workId === "lb-editor-malformed-contributor") {
+      representation.authors.splice(1, 0, { authorid: "BrokenWithoutName" })
+    }
+    if (workId === "lb-editor-malformed-part") {
+      representation.parts.splice(1, 0, { title: "Broken without page bounds" })
+    }
+    return [representation]
+  }
+  return []
+}
+
+export function editorMetadataResponse(workId) {
+  const data = editorRawRepresentations(workId)
+  return { hits: data.length, data }
+}
+
+export function editorRawRepresentationFor(workId, mediaType) {
+  const exact = editorRawRepresentations(workId)
+    .filter(representation => representation.mediatype === mediaType)
+  return exact.length === 1 ? structuredClone(exact[0]) : null
+}
+
+function editorBounds(raw) {
+  if (Number.isInteger(raw.page_count) && raw.page_count > 0) {
+    return { kind: "dense", page_count: raw.page_count }
+  }
+  const pages = manifestPages(raw.pages)
+  return { kind: "sparse", page_indexes: pages.map(page => page.page_index) }
+}
+
+function editorPublicReaderTarget(raw) {
+  for (const media of Array.isArray(raw.mediatypes) ? raw.mediatypes : []) {
+    if (typeof media?.url !== "string") continue
+    const match = /^\/författare\/([^/]+)\/titlar\/([^/]+)\/sida\/([^/]+)\/(etext|faksimil)$/.exec(
+      decodeURI(media.url)
+    )
+    if (match) {
+      return {
+        author_id: decodeURIComponent(match[1]),
+        title_path: decodeURIComponent(match[2]),
+        start_page_name: decodeURIComponent(match[3]),
+        media_type: match[4]
+      }
+    }
+  }
+  const contributors = manifestContributors(raw)
+  if (
+    typeof raw.titlepath !== "string"
+    || typeof raw.startpagename !== "string"
+    || !["etext", "faksimil"].includes(raw.mediatype)
+  ) return null
+  return {
+    author_id: contributors[0].author_id,
+    title_path: raw.titlepath,
+    start_page_name: raw.startpagename,
+    media_type: raw.mediatype
+  }
+}
+
+function buildEditorCompleteFixture(raw, workId, mediaType, bounds) {
+  const contributors = manifestContributors(raw)
+  const rawContributors = raw.authors ?? raw.work_authors
+    ?? (raw.main_author ? [raw.main_author] : null)
+  if (!Array.isArray(rawContributors) || typeof raw.title !== "string"
+    || typeof raw.titlepath !== "string") {
+    throw new Error("malformed Editor fixture")
+  }
+  const pages = raw.pages === undefined || raw.pages === null || raw.pages.length === 0
+    ? []
+    : manifestPages(raw.pages)
+  if (bounds.kind === "sparse"
+    && pages.map(page => page.page_index).join(",") !== bounds.page_indexes.join(",")) {
+    throw new Error("mismatched Editor sparse pages")
+  }
+  const sizes = mediaType === "faksimil" ? manifestSizes(raw) : []
+  return {
+    status: "complete",
+    work_id: workId,
+    media_type: mediaType,
+    bounds,
+    display_title: typeof raw.shorttitle === "string" ? raw.shorttitle : raw.title,
+    title_path: raw.titlepath,
+    contributors,
+    pages,
+    parts: manifestParts(raw.parts, pages, rawContributors),
+    start_page_name: manifestNavigationName(raw, "startpagename", pages),
+    end_page_name: manifestNavigationName(raw, "endpagename", pages),
+    searchable: raw.searchable === true,
+    imprint_year: typeof raw.sort_date_imprint?.plain === "string"
+      ? raw.sort_date_imprint.plain
+      : typeof raw.imprintyear === "string" ? raw.imprintyear : null,
+    sizes,
+    public_reader_target: editorPublicReaderTarget(raw)
+  }
+}
+
+export function editorManifestResponse(workId, mediaType) {
+  if (workId === "lb-editor-fallback") {
+    return {
+      status: "page_bounds_only",
+      work_id: workId,
+      media_type: mediaType,
+      bounds: { kind: "dense", page_count: 3 }
+    }
+  }
+  const raw = editorRawRepresentationFor(workId, mediaType)
+  if (raw === null) return null
+  const bounds = editorBounds(raw)
+  try {
+    return buildEditorCompleteFixture(raw, workId, mediaType, bounds)
+  } catch {
+    return {
+      status: "page_bounds_only",
+      work_id: workId,
+      media_type: mediaType,
+      bounds
+    }
+  }
+}

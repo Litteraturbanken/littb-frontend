@@ -34,10 +34,13 @@ import {
   slaArticleFixtures
 } from "./sla-article-data.mjs"
 import {
+  editorMetadataResponse,
+  editorManifestResponse,
   readerAarnsethFacsimileWorkInfoResponse,
   readerBoyeWorkInfoResponse,
   readerFacsimileJpegFile,
   readerFacsimileWorkInfoResponse,
+  readerManifestResponse,
   readerPageHtmlByIndex,
   readerPartsPageHtmlByIndex,
   readerPartsWorkInfoResponse,
@@ -315,6 +318,8 @@ let readerHtmlRequests = []
 let readerOcrRequests = []
 let readerJpegRequests = []
 let readerMetadataDelays = {}
+let readerManifestRequests = []
+let editorManifestRequests = []
 let editorMetadataFailure = false
 let readerHitRequests = []
 let readerHitFailure = false
@@ -642,56 +647,6 @@ function readerRepresentation(titlePath, overrides = {}) {
     title: `${titlePath}. Roman`,
     titlepath: titlePath,
     ...overrides
-  }
-}
-
-function editorBoyeRepresentation(workId = "lb-editor-boye") {
-  return {
-    authors: [
-      { authorid: "BoyeK", full_name: "Karin Boye", surname: "Boye" },
-      {
-        authorid: "HelgesonP",
-        full_name: "Paulina Helgeson",
-        surname: "Helgeson",
-        type: "editor"
-      }
-    ],
-    endpagename: "9",
-    faksimil_sizes: [2],
-    imprintyear: "2022",
-    lbworkid: workId,
-    mediatype: "faksimil",
-    page_count: 9,
-    pages: Array.from({ length: 9 }, (_, pageindex) => ({
-      pagename: String(pageindex + 1),
-      pageindex
-    })),
-    parts: [
-      {
-        authors: [{ authorid: "HelgesonP" }],
-        endpagename: "7",
-        navtitle: null,
-        shorttitle: null,
-        startpagename: "5",
-        title: "Förord",
-        titleid: "Förord"
-      },
-      {
-        authors: [],
-        endpagename: "9",
-        navtitle: null,
-        shorttitle: null,
-        startpagename: "9",
-        title: "Kronologi",
-        titleid: "Kronologi"
-      }
-    ],
-    searchable: true,
-    shorttitle: "Ett verkligt jordiskt liv. Brev",
-    startpagename: "3",
-    title: "Ett verkligt jordiskt liv. Brev",
-    titlepath: "EttVerkligtJordiskt",
-    width: { size_3: 625 }
   }
 }
 
@@ -2971,6 +2926,8 @@ const server = createServer(async (request, response) => {
     return sendJson(response, 200, { requests: readerRequests })
   }
   for (const [controlPath, ledger] of [
+    ["/_reader_manifest_requests", readerManifestRequests],
+    ["/_editor_manifest_requests", editorManifestRequests],
     ["/_reader_metadata_requests", readerMetadataRequests],
     ["/_reader_html_requests", readerHtmlRequests],
     ["/_reader_ocr_requests", readerOcrRequests],
@@ -2983,6 +2940,98 @@ const server = createServer(async (request, response) => {
       ledger.length = 0
       return sendJson(response, 200, { requests: ledger })
     }
+  }
+
+  const readerManifestMatch = request.method === "GET"
+    ? /^\/v2\/works\/([^/]+)\/([^/]+)\/manifest$/.exec(url.pathname)
+    : null
+  const editorManifestMatch = request.method === "GET"
+    ? /^\/v2\/works\/([^/]+)\/editor-manifest$/.exec(url.pathname)
+    : null
+  if (readerManifestMatch || editorManifestMatch) {
+    const validMediaQuery = url.searchParams.size === 1
+      && url.searchParams.getAll("media_type").length === 1
+      && ["etext", "faksimil"].includes(url.searchParams.get("media_type"))
+    const decodeSegment = value => {
+      try {
+        const decoded = decodeURIComponent(value)
+        return [...decoded].length >= 1
+          && [...decoded].length <= 100
+          && decoded === decoded.trim()
+          && !/[\\/?#\p{Cc}\p{Cs}]/u.test(decoded)
+          ? decoded
+          : null
+      } catch {
+        return null
+      }
+    }
+    if (!validMediaQuery) return validationError(response)
+    const mediaType = url.searchParams.get("media_type")
+
+    if (readerManifestMatch) {
+      const authorId = decodeSegment(readerManifestMatch[1])
+      const titlePath = decodeSegment(readerManifestMatch[2])
+      if (authorId === null || titlePath === null) return validationError(response)
+      readerManifestRequests.push(`${url.pathname}${url.search}`)
+      if (titlePath === "UnavailableReader") {
+        return sendJson(response, 503, {
+          error: {
+            code: "reader_manifest_unavailable",
+            message: "Unable to load Reader manifest",
+            details: null
+          }
+        })
+      }
+      try {
+        const manifest = readerManifestResponse(
+          titlePath,
+          mediaType,
+          readerMetadataResponse(titlePath)
+        )
+        if (manifest === null || manifest.author_id !== authorId) {
+          return sendJson(response, 404, {
+            error: {
+              code: "reader_manifest_not_found",
+              message: "Reader manifest not found",
+              details: null
+            }
+          })
+        }
+        return sendJson(response, 200, manifest)
+      } catch {
+        return sendJson(response, 500, {
+          error: {
+            code: "internal_error",
+            message: "An unexpected error occurred",
+            details: null
+          }
+        })
+      }
+    }
+
+    const workId = decodeSegment(editorManifestMatch[1])
+    if (workId === null) return validationError(response)
+    editorManifestRequests.push(`${url.pathname}${url.search}`)
+    if (workId === "lb-editor-unavailable") {
+      return sendJson(response, 503, {
+        error: {
+          code: "editor_manifest_unavailable",
+          message: "Unable to load Editor manifest",
+          details: null
+        }
+      })
+    }
+    const manifest = editorManifestResponse(workId, mediaType)
+    if (manifest === null) {
+      return sendJson(response, 404, {
+        error: {
+          code: "editor_manifest_not_found",
+          message: "Editor manifest not found",
+          details: null
+        }
+      })
+    }
+    return sendJson(response, 200, manifest)
   }
   if (url.pathname === "/_reader_metadata_delays" && request.method === "GET") {
     return sendJson(response, 200, { delays: readerMetadataDelays })
@@ -3770,129 +3819,9 @@ const server = createServer(async (request, response) => {
     if (editorWorkId === "lb-editor-fallback" || editorWorkId === "lb-editor-unavailable") {
       return sendBody(response, 503, "text/plain; charset=utf-8", "editor metadata unavailable")
     }
-    if (editorWorkId === "lb-editor-doktor-glas") {
-      const representation = structuredClone(readerMetadataResponse("DoktorGlas").data[0])
-      return sendJson(response, 200, {
-        hits: 1,
-        data: [{
-          ...representation,
-          lbworkid: editorWorkId,
-          page_count: 3
-        }]
-      })
-    }
-    if (editorWorkId === "lb-editor-no-ocr") {
-      return sendJson(response, 200, {
-        hits: 1,
-        data: [{
-          ...structuredClone(readerWorkInfoResponse.data[0]),
-          lbworkid: editorWorkId,
-          mediatype: "faksimil",
-          page_count: 3,
-          parts: [],
-          mediatypes: [],
-          width: { size_2: 450, size_3: 625, size_4: 900 }
-        }]
-      })
-    }
-    if (editorWorkId === "lb-editor-mixed") {
-      const common = {
-        ...structuredClone(readerWorkInfoResponse.data[0]),
-        authors: [{ authorid: "SöderbergH", full_name: "Hjalmar Söderberg" }],
-        lbworkid: editorWorkId,
-        shorttitle: "Blandad editor",
-        startpagename: "-2",
-        titlepath: "DoktorGlas"
-      }
-      return sendJson(response, 200, {
-        hits: 2,
-        data: [
-          { ...structuredClone(common), mediatype: "etext", page_count: 2 },
-          {
-            ...structuredClone(common),
-            faksimil_sizes: [3],
-            mediatype: "faksimil",
-            page_count: 5,
-            width: { size_2: 450, size_3: 625, size_4: 900 }
-          }
-        ]
-      })
-    }
-    if (editorWorkId === "lb-editor-long") {
-      return sendJson(response, 200, {
-        hits: 1,
-        data: [{
-          ...structuredClone(readerWorkInfoResponse.data[0]),
-          faksimil_sizes: [3],
-          lbworkid: editorWorkId,
-          mediatype: "faksimil",
-          page_count: 25,
-          width: { size_2: 450, size_3: 625, size_4: 900 }
-        }]
-      })
-    }
-    if (editorWorkId === "lb-editor-sparse") {
-      return sendJson(response, 200, {
-        hits: 1,
-        data: [{
-          ...structuredClone(readerWorkInfoResponse.data[0]),
-          lbworkid: editorWorkId,
-          mediatype: "faksimil",
-          pages: [
-            { pagename: "2", pageindex: 2 },
-            { pagename: "12", pageindex: 12 },
-            { pagename: "57", pageindex: 57 }
-          ],
-          page_count: null,
-          width: { size_3: 625 }
-        }]
-      })
-    }
-    if (editorWorkId === "lb-editor-missing-image") {
-      return sendJson(response, 200, {
-        hits: 1,
-        data: [{
-          ...structuredClone(readerWorkInfoResponse.data[0]),
-          faksimil_sizes: [3],
-          lbworkid: editorWorkId,
-          mediatype: "faksimil",
-          page_count: 3,
-          width: { size_2: 450, size_3: 625, size_4: 900 }
-        }]
-      })
-    }
-    if (editorWorkId === "lb-editor-doktor") {
-      return sendJson(response, 200, {
-        hits: 1,
-        data: [{
-          ...structuredClone(readerWorkInfoResponse.data[0]),
-          lbworkid: "lb-editor-doktor",
-          faksimil_sizes: [3],
-          mediatype: "faksimil",
-          page_count: 3,
-          parts: [],
-          width: { size_2: 450, size_3: 625, size_4: 900 },
-          mediatypes: [{ url: "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext" }]
-        }]
-      })
-    }
-    if (
-      editorWorkId === "lb-editor-boye"
-      || editorWorkId === "lb8345227"
-      || editorWorkId === "lb-editor-malformed-contributor"
-      || editorWorkId === "lb-editor-malformed-part"
-    ) {
-      const representation = editorBoyeRepresentation(editorWorkId)
-      if (editorWorkId === "lb-editor-malformed-contributor") {
-        representation.authors.splice(1, 0, { authorid: "BrokenWithoutName" })
-      }
-      if (editorWorkId === "lb-editor-malformed-part") {
-        representation.parts.splice(1, 0, { title: "Broken without page bounds" })
-      }
-      return sendJson(response, 200, {
-        hits: 1,
-        data: [representation]
-      })
+    if (editorWorkId) {
+      const editorMetadata = editorMetadataResponse(editorWorkId)
+      if (editorMetadata.hits > 0) return sendJson(response, 200, editorMetadata)
     }
     await waitForReaderMetadataDelay(titlePath)
     if (titlePath === "UnavailableReader") {

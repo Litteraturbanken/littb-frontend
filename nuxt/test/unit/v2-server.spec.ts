@@ -99,6 +99,8 @@ type LibrarySearchResponse = operations["v2_post_library_search"]["responses"][2
 type LibraryCountRequest = operations["v2_post_library_counts"]["requestBody"]["content"]["application/json"]
 type LibraryCountResponse = operations["v2_post_library_counts"]["responses"][200]["content"]["application/json"]
 type LibraryOptionsResponse = operations["v2_get_library_options"]["responses"][200]["content"]["application/json"]
+type ReaderManifestResponse = operations["v2_get_reader_work_manifest"]["responses"][200]["content"]["application/json"]
+type EditorManifestResponse = operations["v2_get_editor_work_manifest"]["responses"][200]["content"]["application/json"]
 
 const generatedReaderHitContract: ReaderHitOperation = null as unknown as
   operations["v2_get_work_search_hits"]
@@ -536,6 +538,8 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_reader_hit_requests`, { method: "DELETE" }),
       fetch(`${origin}/_reader_hit_failure`, { method: "DELETE" }),
       fetch(`${origin}/_reader_hit_delays`, { method: "DELETE" }),
+      fetch(`${origin}/_reader_manifest_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_editor_manifest_requests`, { method: "DELETE" }),
       fetch(`${origin}/_export_faksimil_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_document_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_document_asset_requests`, { method: "DELETE" }),
@@ -557,6 +561,209 @@ describe("v2 fixture server operations", () => {
 
   afterEach(async () => {
     await fetch(`${origin}/_contact_defer`, { method: "DELETE" })
+  })
+
+  test("serves generated-shape Reader and Editor manifests", async () => {
+    const reader = await fetch(
+      `${origin}/v2/works/${encodeURIComponent("SöderbergH")}`
+      + "/DoktorGlas/manifest?media_type=etext"
+    )
+    expect(reader.status).toBe(200)
+    expect(await reader.json() as ReaderManifestResponse).toEqual({
+      alternate_media: {
+        media_type: "faksimil",
+        pages: [
+          { page_name: "-3", page_index: 1 },
+          { page_name: "-2", page_index: 2 },
+          { page_name: "-1", page_index: 3 }
+        ]
+      },
+      author_id: "SöderbergH",
+      contributors: [{
+        author_id: "SöderbergH",
+        full_name: "Hjalmar Söderberg",
+        author_type: null,
+        role: null
+      }],
+      display_title: "Doktor Glas",
+      editor_work_id: "lb-editor-doktor-glas",
+      end_page_name: "-1",
+      full_title: "Doktor Glas. Roman",
+      has_dramawebben: false,
+      has_nya_vagar: false,
+      imprint_year: "1905",
+      is_drama: false,
+      media_type: "etext",
+      page_step: 1,
+      pages: [
+        { page_name: "-3", page_index: 1 },
+        { page_name: "-2", page_index: 2 },
+        { page_name: "-1", page_index: 3 }
+      ],
+      parts: [{
+        source_index: 0,
+        start_page_name: "-3",
+        start_page_index: 1,
+        end_page_name: "-1",
+        end_page_index: 3,
+        title: "Doktor Glas",
+        nav_title: "Doktor Glas",
+        short_title: "Doktor Glas",
+        title_id: "DoktorGlas",
+        authors: [{
+          author_id: "SöderbergH",
+          full_name: "Hjalmar Söderberg",
+          surname: "Söderberg"
+        }]
+      }],
+      searchable: true,
+      start_page_name: "-2",
+      title_path: "DoktorGlas",
+      urn: "urn:nbn:se:lb-lb-reader-doktor-glas",
+      work_id: "lb-reader-doktor-glas"
+    })
+
+    const editor = await fetch(
+      `${origin}/v2/works/lb-editor-fallback/editor-manifest?media_type=faksimil`
+    )
+    expect(editor.status).toBe(200)
+    expect(await editor.json() as EditorManifestResponse).toEqual({
+      status: "page_bounds_only",
+      work_id: "lb-editor-fallback",
+      media_type: "faksimil",
+      bounds: { kind: "dense", page_count: 3 }
+    })
+  })
+
+  test("Reader and Editor manifests preserve facsimile and complete semantics", async () => {
+    const reader = await fetch(
+      `${origin}/v2/works/${encodeURIComponent("LagerlöfS")}`
+      + "/GostaBerlingsSaga/manifest?media_type=faksimil"
+    )
+    expect(reader.status).toBe(200)
+    expect(await reader.json() as ReaderManifestResponse).toMatchObject({
+      author_id: "LagerlöfS",
+      media_type: "faksimil",
+      pages: [
+        { page_name: "1", page_index: 0, image_number: 7 },
+        { page_name: "3", page_index: 1, image_number: 9 },
+        { page_name: "5", page_index: 2, image_number: 12 }
+      ],
+      sizes: [
+        { size: 2, width: 450 },
+        { size: 3, width: 625 },
+        { size: 4, width: 900 },
+        { size: 5, width: 1250 }
+      ],
+      preferred_size: 3
+    })
+
+    const editor = await fetch(
+      `${origin}/v2/works/lb-editor-doktor/editor-manifest?media_type=faksimil`
+    )
+    expect(editor.status).toBe(200)
+    expect(await editor.json() as EditorManifestResponse).toMatchObject({
+      status: "complete",
+      work_id: "lb-editor-doktor",
+      media_type: "faksimil",
+      bounds: { kind: "dense", page_count: 3 },
+      pages: [
+        { page_name: "-3", page_index: 1 },
+        { page_name: "-2", page_index: 2 },
+        { page_name: "-1", page_index: 3 }
+      ],
+      sizes: [{ size: 4, width: 900 }],
+      public_reader_target: {
+        author_id: "SöderbergH",
+        title_path: "DoktorGlas",
+        start_page_name: "-2",
+        media_type: "etext"
+      }
+    })
+  })
+
+  test("Reader and Editor manifests use independent ledgers without legacy traffic", async () => {
+    await fetch(`${origin}/_reader_manifest_requests`, { method: "DELETE" })
+    await fetch(`${origin}/_editor_manifest_requests`, { method: "DELETE" })
+    await fetch(
+      `${origin}/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext`
+    )
+    await fetch(
+      `${origin}/v2/works/lb-editor-fallback/editor-manifest?media_type=faksimil`
+    )
+
+    expect(await (await fetch(`${origin}/_reader_manifest_requests`)).json()).toEqual({
+      requests: [
+        "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+      ]
+    })
+    expect(await (await fetch(`${origin}/_editor_manifest_requests`)).json()).toEqual({
+      requests: [
+        "/v2/works/lb-editor-fallback/editor-manifest?media_type=faksimil"
+      ]
+    })
+    expect(await (await fetch(`${origin}/_reader_metadata_requests`)).json()).toEqual({
+      requests: []
+    })
+    expect(await (await fetch(`${origin}/_reader_requests`)).json()).toEqual({
+      requests: []
+    })
+  })
+
+  test("Reader and Editor manifests validate requests before ledgering", async () => {
+    const invalidPaths = [
+      "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest",
+      "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=pdf",
+      "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext&media_type=faksimil",
+      "/v2/works/lb-editor-fallback/editor-manifest",
+      "/v2/works/lb-editor-fallback/editor-manifest?media_type=pdf"
+    ]
+    for (const path of invalidPaths) {
+      expect((await fetch(`${origin}${path}`)).status).toBe(422)
+    }
+
+    expect((await fetch(
+      `${origin}/v2/works/MissingA/MissingReader/manifest?media_type=etext`
+    )).status).toBe(404)
+    expect((await fetch(
+      `${origin}/v2/works/S%C3%B6derbergH/UnavailableReader/manifest?media_type=etext`
+    )).status).toBe(503)
+    const malformedReader = await fetch(
+      `${origin}/v2/works/S%C3%B6derbergH/ReaderLocalWhitespaceName/manifest?media_type=etext`
+    )
+    expect(malformedReader.status).toBe(500)
+    expect(await malformedReader.json()).toEqual({
+      error: {
+        code: "internal_error",
+        message: "An unexpected error occurred",
+        details: null
+      }
+    })
+    expect((await fetch(
+      `${origin}/v2/works/lb-editor-unavailable/editor-manifest?media_type=etext`
+    )).status).toBe(503)
+    expect(await (await fetch(
+      `${origin}/v2/works/lb-editor-malformed-contributor/editor-manifest?media_type=faksimil`
+    )).json() as EditorManifestResponse).toEqual({
+      status: "page_bounds_only",
+      work_id: "lb-editor-malformed-contributor",
+      media_type: "faksimil",
+      bounds: { kind: "dense", page_count: 9 }
+    })
+
+    expect(await (await fetch(`${origin}/_reader_manifest_requests`)).json()).toEqual({
+      requests: [
+        "/v2/works/MissingA/MissingReader/manifest?media_type=etext",
+        "/v2/works/S%C3%B6derbergH/UnavailableReader/manifest?media_type=etext",
+        "/v2/works/S%C3%B6derbergH/ReaderLocalWhitespaceName/manifest?media_type=etext"
+      ]
+    })
+    expect(await (await fetch(`${origin}/_editor_manifest_requests`)).json()).toEqual({
+      requests: [
+        "/v2/works/lb-editor-unavailable/editor-manifest?media_type=etext",
+        "/v2/works/lb-editor-malformed-contributor/editor-manifest?media_type=faksimil"
+      ]
+    })
   })
 
   test("serves deterministic source information through public and private v2 paths", async () => {
