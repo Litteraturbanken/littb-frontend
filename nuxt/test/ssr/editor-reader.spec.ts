@@ -29,6 +29,20 @@ test.afterEach(async ({ request }) => {
   ))).toBe(false)
 })
 
+for (const [partition, path] of [
+  ["path", "/v2/works/%20/editor-manifest?media_type=faksimil"],
+  ["query", "/v2/works/lb-editor-fallback/editor-manifest?media_type=pdf"]
+] as const) {
+  test(`the Editor fixture ledgers one invalid ${partition} request before its 422 response`, async ({
+    request
+  }) => {
+    const response = await request.get(`${fixture}${path}`)
+
+    expect(response.status()).toBe(422)
+    expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([path])
+  })
+}
+
 test("SSR renders editor metadata, OCR, and generated page bounds", async ({ request }) => {
   const apiResponse = await request.get("/api/editor/lb-editor-doktor/1/f")
   expect(apiResponse.status()).toBe(200)

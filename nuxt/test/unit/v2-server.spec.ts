@@ -834,18 +834,47 @@ describe("v2 fixture server operations", () => {
     })
   })
 
-  test("Reader and Editor manifests validate requests before ledgering", async () => {
-    const invalidPaths = [
-      "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest",
+  test.each([
+    [
+      "Reader path",
+      "/v2/works/%20/DoktorGlas/manifest?media_type=etext",
+      "/_reader_manifest_requests",
+      "/_editor_manifest_requests"
+    ],
+    [
+      "Reader query",
       "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=pdf",
-      "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext&media_type=faksimil",
-      "/v2/works/lb-editor-fallback/editor-manifest",
-      "/v2/works/lb-editor-fallback/editor-manifest?media_type=pdf"
+      "/_reader_manifest_requests",
+      "/_editor_manifest_requests"
+    ],
+    [
+      "Editor path",
+      "/v2/works/%20/editor-manifest?media_type=faksimil",
+      "/_editor_manifest_requests",
+      "/_reader_manifest_requests"
+    ],
+    [
+      "Editor query",
+      "/v2/works/lb-editor-fallback/editor-manifest?media_type=pdf",
+      "/_editor_manifest_requests",
+      "/_reader_manifest_requests"
     ]
-    for (const path of invalidPaths) {
-      expect((await fetch(`${origin}${path}`)).status).toBe(422)
-    }
+  ])("ledgers one invalid %s manifest request before its 422 response", async (
+    _partition,
+    path,
+    ledgerPath,
+    otherLedgerPath
+  ) => {
+    expect((await fetch(`${origin}${path}`)).status).toBe(422)
+    expect(await (await fetch(`${origin}${ledgerPath}`)).json()).toEqual({
+      requests: [path]
+    })
+    expect(await (await fetch(`${origin}${otherLedgerPath}`)).json()).toEqual({
+      requests: []
+    })
+  })
 
+  test("Reader and Editor manifests preserve failure partitions after ledgering", async () => {
     expect((await fetch(
       `${origin}/v2/works/MissingA/MissingReader/manifest?media_type=etext`
     )).status).toBe(404)

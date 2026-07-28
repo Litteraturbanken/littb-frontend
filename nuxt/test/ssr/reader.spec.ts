@@ -133,6 +133,20 @@ test.afterEach(async ({ request }) => {
   expect(await editorManifestRequests(request)).toEqual([])
 })
 
+for (const [partition, path] of [
+  ["path", "/v2/works/%20/DoktorGlas/manifest?media_type=etext"],
+  ["query", "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=pdf"]
+] as const) {
+  test(`the Reader fixture ledgers one invalid ${partition} request before its 422 response`, async ({
+    request
+  }) => {
+    const response = await request.get(`${fixture}${path}`)
+
+    expect(response.status()).toBe(422)
+    expect(await readerManifestRequests(request)).toEqual([path])
+  })
+}
+
 test("the exact Doktor Glas page is complete in the SSR response", async ({ request }) => {
   const response = await request.get(readerPath)
   expect(response.status()).toBe(200)

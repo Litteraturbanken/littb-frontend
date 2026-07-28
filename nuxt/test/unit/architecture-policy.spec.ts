@@ -344,6 +344,37 @@ describe("architecture policy verifier", () => {
     )
   })
 
+  test.each([
+    [
+      "app/lib/template-identifier-bypass.ts",
+      [
+        'const prefix = "/api"',
+        'const operation = "get_work_info"',
+        'fetch(`${prefix}/${operation}`)'
+      ].join("\n")
+    ],
+    [
+      "server/utils/concatenated-identifier-bypass.ts",
+      [
+        'const root = ("/api")',
+        'const prefix = (root)',
+        'const stem = ("get_")',
+        'const operation = (stem + "work_info")',
+        'fetch((prefix + "/") + operation)'
+      ].join("\n")
+    ]
+  ])("rejects const-resolvable legacy endpoint bypass in %s", (path, source) => {
+    const root = createTree()
+    writeSource(root, path, source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "legacy Reader/Editor metadata endpoints are forbidden"
+    )
+  })
+
   test("does not combine static fragments across dynamic endpoint expressions", () => {
     const root = createTree()
     writeSource(root, "shared/safe-dynamic.ts", [
@@ -365,7 +396,14 @@ describe("architecture policy verifier", () => {
     writeSource(
       root,
       "shared/z-last.ts",
-      'const prefix = "safe"\nfetch(prefix)\nfetch("/get_" + "work_info")'
+      [
+        'const prefix = "safe"',
+        'fetch(prefix)',
+        'fetch("/get_" + "work_info")',
+        'const api = "/api"',
+        'const operation = "get_work_info"',
+        'fetch(`${api}/${operation}`)'
+      ].join("\n")
     )
     writeSource(
       root,

@@ -2954,6 +2954,9 @@ const server = createServer(async (request, response) => {
     ? /^\/v2\/works\/([^/]+)\/editor-manifest$/.exec(apiPathname)
     : null
   if (readerManifestMatch || editorManifestMatch) {
+    const manifestRequest = `${apiPathname}${url.search}`
+    if (readerManifestMatch) readerManifestRequests.push(manifestRequest)
+    else editorManifestRequests.push(manifestRequest)
     const validMediaQuery = url.searchParams.size === 1
       && url.searchParams.getAll("media_type").length === 1
       && ["etext", "faksimil"].includes(url.searchParams.get("media_type"))
@@ -2977,7 +2980,6 @@ const server = createServer(async (request, response) => {
       const authorId = decodeSegment(readerManifestMatch[1])
       const titlePath = decodeSegment(readerManifestMatch[2])
       if (authorId === null || titlePath === null) return validationError(response)
-      readerManifestRequests.push(`${apiPathname}${url.search}`)
       await waitForReaderManifestDelay(titlePath)
       if (titlePath === "UnavailableReader") {
         return sendJson(response, 503, {
@@ -3019,7 +3021,6 @@ const server = createServer(async (request, response) => {
 
     const workId = decodeSegment(editorManifestMatch[1])
     if (workId === null) return validationError(response)
-    editorManifestRequests.push(`${apiPathname}${url.search}`)
     if (workId === "lb-editor-unavailable"
       || (editorMetadataFailure && workId === "lb-editor-doktor")) {
       return sendJson(response, 503, {

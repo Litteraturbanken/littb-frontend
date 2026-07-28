@@ -336,26 +336,18 @@ function auditComments(record) {
   }
 }
 
-function staticConcatenatedString(node) {
-  const expression = unwrapExpression(node)
-  if (ts.isStringLiteralLike(expression)) return expression.text
-  if (!ts.isBinaryExpression(expression)
-    || expression.operatorToken.kind !== ts.SyntaxKind.PlusToken) return null
-  const left = staticConcatenatedString(expression.left)
-  if (left === null) return null
-  const right = staticConcatenatedString(expression.right)
-  return right === null ? null : left + right
-}
-
 function containsLegacyReaderEditorMetadata(value) {
   return legacyReaderEditorMetadataFragments.some(fragment => value.includes(fragment))
 }
 
 function auditLegacyReaderEditorMetadata(record) {
   if (!isProductionPath(record.relativePath)) return
+  let reported = false
   for (const unit of record.units) {
+    const semantic = buildSemantic(unit)
     const report = (value, node) => {
-      if (!containsLegacyReaderEditorMetadata(value)) return
+      if (reported || !containsLegacyReaderEditorMetadata(value)) return
+      reported = true
       addViolation(
         record.relativePath,
         lineNumberAt(
@@ -366,7 +358,13 @@ function auditLegacyReaderEditorMetadata(record) {
       )
     }
     const auditNode = node => {
+      if (reported) return
       if (ts.isTemplateExpression(node)) {
+        const value = constantString(node, unit, semantic, node)
+        if (value !== null) {
+          report(value, node)
+          return
+        }
         report(node.head.text, node.head)
         for (const span of node.templateSpans) {
           auditNode(span.expression)
@@ -376,7 +374,7 @@ function auditLegacyReaderEditorMetadata(record) {
       }
       if (ts.isBinaryExpression(node)
         && node.operatorToken.kind === ts.SyntaxKind.PlusToken) {
-        const value = staticConcatenatedString(node)
+        const value = constantString(node, unit, semantic, node)
         if (value !== null) {
           report(value, node)
           return
@@ -642,18 +640,33 @@ function constantString(node, unit, semantic, atNode = node, seen = new Set()) {
   const expression = unwrapExpression(node)
   if (ts.isStringLiteralLike(expression)) return expression.text
   if (ts.isNoSubstitutionTemplateLiteral(expression)) return expression.text
+  if (ts.isTemplateExpression(expression)) {
+    let value = expression.head.text
+    for (const span of expression.templateSpans) {
+      const component = constantString(span.expression, unit, semantic, atNode, seen)
+      if (component === null) return null
+      value += component + span.literal.text
+    }
+    return value
+  }
   if (ts.isBinaryExpression(expression)
     && expression.operatorToken.kind === ts.SyntaxKind.PlusToken) {
     const left = constantString(expression.left, unit, semantic, atNode, seen)
     const right = constantString(expression.right, unit, semantic, atNode, seen)
     return left === null || right === null ? null : left + right
   }
-  if (ts.isIdentifier(expression) && !seen.has(expression.text)) {
-    seen.add(expression.text)
+  if (ts.isIdentifier(expression)) {
     const entry = resolveDeclaration(expression.text, atNode, semantic)
+    if (!entry || seen.has(entry.node)) return null
     const initializer = declarationInitializer(entry, atNode, semantic)
     return initializer
-      ? constantString(initializer.expression, unit, semantic, atNode, seen)
+      ? constantString(
+          initializer.expression,
+          unit,
+          semantic,
+          atNode,
+          new Set(seen).add(entry.node)
+        )
       : null
   }
   return null
