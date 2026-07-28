@@ -658,6 +658,25 @@ describe("v2 fixture server operations", () => {
       preferred_size: 3
     })
 
+    const boyeReader = await fetch(
+      `${origin}/v2/works/BoyeK/EttVerkligtJordiskt/manifest?media_type=etext`
+    )
+    expect(boyeReader.status).toBe(200)
+    expect((await boyeReader.json() as ReaderManifestResponse).contributors).toEqual([
+      {
+        author_id: "BoyeK",
+        full_name: "Karin Boye",
+        author_type: null,
+        role: null
+      },
+      {
+        author_id: "HelgesonP",
+        full_name: "Paulina Helgeson",
+        author_type: "editor",
+        role: null
+      }
+    ])
+
     const editor = await fetch(
       `${origin}/v2/works/lb-editor-doktor/editor-manifest?media_type=faksimil`
     )
@@ -679,6 +698,52 @@ describe("v2 fixture server operations", () => {
         start_page_name: "-2",
         media_type: "etext"
       }
+    })
+
+    const boyeEditor = await fetch(
+      `${origin}/v2/works/lb-editor-boye/editor-manifest?media_type=faksimil`
+    )
+    expect(boyeEditor.status).toBe(200)
+    expect(await boyeEditor.json() as EditorManifestResponse).toMatchObject({
+      status: "complete",
+      contributors: [
+        {
+          author_id: "BoyeK",
+          full_name: "Karin Boye",
+          author_type: null,
+          role: null
+        },
+        {
+          author_id: "HelgesonP",
+          full_name: "Paulina Helgeson",
+          author_type: "editor",
+          role: null
+        }
+      ],
+      parts: [
+        {
+          source_index: 0,
+          start_page_name: "5",
+          start_page_index: 4,
+          end_page_name: "7",
+          end_page_index: 6,
+          title: "Förord",
+          authors: [{
+            author_id: "HelgesonP",
+            full_name: "Paulina Helgeson",
+            surname: "Helgeson"
+          }]
+        },
+        {
+          source_index: 1,
+          start_page_name: "9",
+          start_page_index: 8,
+          end_page_name: "9",
+          end_page_index: 8,
+          title: "Kronologi",
+          authors: []
+        }
+      ]
     })
   })
 
@@ -742,6 +807,17 @@ describe("v2 fixture server operations", () => {
     expect((await fetch(
       `${origin}/v2/works/lb-editor-unavailable/editor-manifest?media_type=etext`
     )).status).toBe(503)
+    const missingEditorMedia = await fetch(
+      `${origin}/v2/works/lb-editor-doktor/editor-manifest?media_type=etext`
+    )
+    expect(missingEditorMedia.status).toBe(404)
+    expect(await missingEditorMedia.json()).toEqual({
+      error: {
+        code: "editor_manifest_not_found",
+        message: "Editor manifest not found",
+        details: null
+      }
+    })
     expect(await (await fetch(
       `${origin}/v2/works/lb-editor-malformed-contributor/editor-manifest?media_type=faksimil`
     )).json() as EditorManifestResponse).toEqual({
@@ -761,8 +837,23 @@ describe("v2 fixture server operations", () => {
     expect(await (await fetch(`${origin}/_editor_manifest_requests`)).json()).toEqual({
       requests: [
         "/v2/works/lb-editor-unavailable/editor-manifest?media_type=etext",
+        "/v2/works/lb-editor-doktor/editor-manifest?media_type=etext",
         "/v2/works/lb-editor-malformed-contributor/editor-manifest?media_type=faksimil"
       ]
+    })
+  })
+
+  test("Reader and Editor manifests type malformed untrusted bounds as 500", async () => {
+    const response = await fetch(
+      `${origin}/v2/works/lb-editor-malformed-bounds/editor-manifest?media_type=faksimil`
+    )
+    expect(response.status).toBe(500)
+    expect(await response.json()).toEqual({
+      error: {
+        code: "internal_error",
+        message: "An unexpected error occurred",
+        details: null
+      }
     })
   })
 

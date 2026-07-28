@@ -1012,6 +1012,17 @@ function editorRawRepresentations(workId) {
       }]
     }]
   }
+  if (workId === "lb-editor-malformed-bounds") {
+    return [{
+      ...structuredClone(readerWorkInfoResponse.data[0]),
+      faksimil_sizes: [3],
+      lbworkid: workId,
+      mediatype: "faksimil",
+      page_count: null,
+      pages: null,
+      width: { size_2: 450, size_3: 625, size_4: 900 }
+    }]
+  }
   if ([
     "lb-editor-boye",
     "lb8345227",
@@ -1126,10 +1137,12 @@ export function editorManifestResponse(workId, mediaType) {
   }
   const raw = editorRawRepresentationFor(workId, mediaType)
   if (raw === null) return null
-  const bounds = editorBounds(raw)
+  let bounds = null
   try {
+    bounds = editorBounds(raw)
     return buildEditorCompleteFixture(raw, workId, mediaType, bounds)
-  } catch {
+  } catch (error) {
+    if (bounds === null) throw error
     return {
       status: "page_bounds_only",
       work_id: workId,

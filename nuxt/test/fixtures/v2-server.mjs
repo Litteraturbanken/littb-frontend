@@ -3021,17 +3021,27 @@ const server = createServer(async (request, response) => {
         }
       })
     }
-    const manifest = editorManifestResponse(workId, mediaType)
-    if (manifest === null) {
-      return sendJson(response, 404, {
+    try {
+      const manifest = editorManifestResponse(workId, mediaType)
+      if (manifest === null) {
+        return sendJson(response, 404, {
+          error: {
+            code: "editor_manifest_not_found",
+            message: "Editor manifest not found",
+            details: null
+          }
+        })
+      }
+      return sendJson(response, 200, manifest)
+    } catch {
+      return sendJson(response, 500, {
         error: {
-          code: "editor_manifest_not_found",
-          message: "Editor manifest not found",
+          code: "internal_error",
+          message: "An unexpected error occurred",
           details: null
         }
       })
     }
-    return sendJson(response, 200, manifest)
   }
   if (url.pathname === "/_reader_metadata_delays" && request.method === "GET") {
     return sendJson(response, 200, { delays: readerMetadataDelays })
