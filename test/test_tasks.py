@@ -91,6 +91,7 @@ class InvokeTaskTests(unittest.TestCase):
             "quality.contract",
             "quality.frontend",
             "quality.library",
+            "quality.reader-editor",
             "quality.release",
         ):
             self.assertIn(task_name, result.stdout)
@@ -272,6 +273,32 @@ class InvokeTaskTests(unittest.TestCase):
             result.stdout.index("yarn api:check"),
         )
 
+    def test_reader_editor_quality_dry_run_keeps_the_focused_gate_order(self) -> None:
+        result = run_invoke(
+            "--dry", "quality.reader-editor", env={"LB_BACKEND_DIR": str(ROOT)}
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        expected_steps = (
+            "-m pytest -q test_lbapi/v2/test_work_manifest_models.py "
+            "test_lbapi/v2/test_work_manifest_provider.py "
+            "test_lbapi/v2/test_work_manifest_api.py",
+            "scripts/export_v2_openapi.py --check",
+            "yarn api:check",
+            "test/nuxt/reader-editor-manifest-contract.ts",
+            "yarn typecheck",
+            "yarn lint",
+            "yarn vitest run test/unit/work-manifest-client.spec.ts "
+            "test/unit/reader-source.spec.ts test/unit/editor-reader-html.spec.ts",
+            "yarn playwright test test/ssr/reader.spec.ts "
+            "test/ssr/reader-shorthand.spec.ts test/ssr/editor-reader.spec.ts --project=ssr",
+        )
+        previous = -1
+        for step in expected_steps:
+            position = result.stdout.index(step)
+            self.assertGreater(position, previous)
+            previous = position
+
     def test_library_quality_runs_focused_backend_and_nuxt_gates(self) -> None:
         settings = tasks.Settings(
             backend_app="example.web:app",
@@ -435,6 +462,16 @@ class InvokeTaskTests(unittest.TestCase):
                 ),
                 call(
                     context,
+                    [
+                        *compile_prefix,
+                        "--strict",
+                        "test/nuxt/reader-editor-manifest-contract.ts",
+                    ],
+                    settings.nuxt_dir,
+                    env=node_environment,
+                ),
+                call(
+                    context,
                     [*compile_prefix, "--strict", "test/nuxt/reader-source-info-contract.ts"],
                     settings.nuxt_dir,
                     env=node_environment,
@@ -452,6 +489,8 @@ class InvokeTaskTests(unittest.TestCase):
                         "-m",
                         "pytest",
                         "-q",
+                        "test_lbapi/v2/test_work_manifest_provider.py",
+                        "test_lbapi/v2/test_work_manifest_api.py",
                         "test_lbapi/v2/test_library_provider.py",
                         "test_lbapi/v2/test_library_api.py",
                     ],

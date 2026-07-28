@@ -23,9 +23,11 @@ Command ownership from the repository root:
 | `invoke quality.backend` | backend v2 mypy, security-critical Ruff rules, and complete v2 pytest suite |
 | `invoke quality.contract` | OpenAPI snapshot/client drift, standalone strict TypeScript contracts, and focused backend/Nuxt contract tests |
 | `invoke quality.frontend` | policy, lint, typecheck, all units, build, and all SSR checks in order |
+| `invoke quality.reader-editor` | focused Reader/Editor manifest models, provider/API behavior, generated contract, Nuxt projections, and SSR parity |
 | `invoke quality.release` | backend, contract, frontend, full desktop/mobile E2E, and immutable visual-baseline verification |
 
-`invoke quality.library` remains the focused Library contract gate.
+`invoke quality.library` and `invoke quality.reader-editor` are the focused
+Library and Reader/Editor contract gates.
 
 ## Renderable-content capabilities
 
@@ -170,8 +172,29 @@ ordinary-untracked, ignored-untracked, or symlinked baseline files fail, as
 does a symlink in any baseline-path ancestor. The gate never updates snapshots
 or generated artifacts.
 
-## Next contract tranche
+## Reader and Editor manifest ownership
 
-The next separate tranche generates Reader and Editor manifest operations from
-FastAPI/OpenAPI and propagates those DTOs through Nuxt. It is intentionally not
-part of this zero-lint/HTML-boundary tranche.
+Reader/Editor metadata changes start in
+`lbapi/v2/work_manifest_models.py` and `work_manifest_provider.py`. Run the
+focused backend model, provider, and API tests, export `openapi/v2.json`, run
+`invoke codegen.generate`, and then consume only generated aliases in Nuxt.
+`invoke quality.reader-editor` is the focused gate; `invoke quality.release`
+is the completion gate. The focused gate uses the non-mutating
+`invoke codegen.check` workflow, so it reports snapshot or client drift without
+rewriting either artifact.
+
+The ownership layers are deliberate:
+
+| Layer | Owns |
+| --- | --- |
+| Pydantic work-manifest models | Complete versus bounds-only discrimination and dense/sparse bounds invariants |
+| Backend provider tests | Legacy-source normalization into generated Reader and Editor manifests |
+| Backend API tests | Public success, validation, not-found, invalid-source, and unavailable-source statuses |
+| `nuxt/test/nuxt/reader-editor-manifest-contract.ts` | Exact generated operation, response, nested DTO, and contribution-role equality |
+| Nuxt unit and SSR tests | Manifest projection, bounds/navigation, degradation, assets, and zero legacy metadata ownership |
+| Playwright behavior tests | Observable Reader and Editor route, navigation, search, and control parity |
+| Visual baseline gate | Immutable visual authority at commit `06add2bb` |
+
+HTML, OCR, and image bodies are not OpenAPI DTOs. They remain separately
+validated managed assets with authority, path, media-type, byte-bound,
+sanitization, and rendering tests appropriate to each asset.

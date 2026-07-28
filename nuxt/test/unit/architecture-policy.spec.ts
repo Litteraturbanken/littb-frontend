@@ -308,6 +308,39 @@ describe("architecture policy verifier", () => {
   })
 
   test.each([
+    ["app/lib/unsafe.ts", 'fetch("/api/get_work_info")'],
+    ["server/utils/unsafe.ts", 'fetch("/get_work_info")'],
+    ["shared/unsafe.ts", 'fetch("/count_pages/lb1/etext")']
+  ])("rejects legacy Reader metadata ownership in %s", (path, source) => {
+    const root = createTree()
+    writeSource(root, path, source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "legacy Reader/Editor metadata endpoints are forbidden"
+    )
+  })
+
+  test("keeps generated, fixture, test, and Angular capture sources outside the legacy endpoint scan", () => {
+    const root = createTree()
+    for (const path of [
+      "app/lib/api/generated/unsafe.ts",
+      "test/fixtures/v2-server.mjs",
+      "test/unit/legacy-endpoint.spec.ts",
+      "test/visual/capture-editor-angular.spec.ts"
+    ]) {
+      writeSource(root, path, 'fetch("/api/get_work_info")')
+    }
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test.each([
     ["Vue raw HTML directive", "app/pages/unsafe.vue", `<div ${vueHtmlDirective}="source" />`, "Vue raw-HTML directives are forbidden"],
     ["Vue raw HTML modifier", "app/pages/unsafe.vue", `<div ${vueHtmlDirective}.foo="source" />`, "Vue raw-HTML directives are forbidden"],
     ["Vue raw HTML argument", "app/pages/unsafe.vue", `<div ${vueHtmlDirective}:foo="source" />`, "Vue raw-HTML directives are forbidden"],

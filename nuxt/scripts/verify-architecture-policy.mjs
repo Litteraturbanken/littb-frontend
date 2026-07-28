@@ -22,6 +22,11 @@ const rootOutputDirectories = new Set([
   "node_modules",
   "playwright-report"
 ])
+const legacyReaderEditorMetadataFragments = [
+  "/api/get_work_info",
+  "/get_work_info",
+  "/count_pages/"
+]
 const canonicalEslintConfig = `import withNuxt from "./.nuxt/eslint.config.mjs"
 
 export default withNuxt({
@@ -328,6 +333,25 @@ function auditComments(record) {
     if (suffix.length === 0) {
       addViolation(record.relativePath, line, "expected-error directives require a description")
     }
+  }
+}
+
+function auditLegacyReaderEditorMetadata(record) {
+  if (!isProductionPath(record.relativePath)) return
+  for (const unit of record.units) {
+    visitAst(unit.sourceFile, node => {
+      if (!ts.isStringLiteralLike(node) || !legacyReaderEditorMetadataFragments.some(
+        fragment => node.text.includes(fragment)
+      )) return
+      addViolation(
+        record.relativePath,
+        lineNumberAt(
+          record.source,
+          unit.sourceOffset + node.getStart(unit.sourceFile)
+        ),
+        "legacy Reader/Editor metadata endpoints are forbidden"
+      )
+    })
   }
 }
 
@@ -2554,6 +2578,7 @@ auditEslintConfig()
 const capabilityRegistry = buildCapabilityRegistry(sourceRecords)
 for (const record of sourceRecords) {
   auditComments(record)
+  auditLegacyReaderEditorMetadata(record)
   auditVueTemplate(record)
   auditDomOperations(record)
   auditNativeVNodeCalls(record)

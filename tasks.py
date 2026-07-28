@@ -519,6 +519,7 @@ def quality_contract(context: Context) -> None:
     for contract_file in (
         "test/nuxt/author-works-contract.ts",
         "test/nuxt/library-contract.ts",
+        "test/nuxt/reader-editor-manifest-contract.ts",
         "test/nuxt/reader-source-info-contract.ts",
         "test/nuxt/renderable-html-contract.ts",
     ):
@@ -530,6 +531,8 @@ def quality_contract(context: Context) -> None:
             "-m",
             "pytest",
             "-q",
+            "test_lbapi/v2/test_work_manifest_provider.py",
+            "test_lbapi/v2/test_work_manifest_api.py",
             "test_lbapi/v2/test_library_provider.py",
             "test_lbapi/v2/test_library_api.py",
         ],
@@ -555,6 +558,55 @@ def quality_frontend(context: Context) -> None:
         ["yarn", "test:unit"],
         ["yarn", "build"],
         ["yarn", "test:ssr"],
+    ):
+        _run(context, command, settings.nuxt_dir, env=environment)
+
+
+@task(name="reader-editor")
+def quality_reader_editor(context: Context) -> None:
+    """Run the focused typed Reader and Editor contract and parity gates."""
+    settings = Settings.from_environment()
+    python = _backend_python(settings)
+    environment = _nuxt_node_environment(settings)
+    _run(
+        context,
+        [
+            python,
+            "-m",
+            "pytest",
+            "-q",
+            "test_lbapi/v2/test_work_manifest_models.py",
+            "test_lbapi/v2/test_work_manifest_provider.py",
+            "test_lbapi/v2/test_work_manifest_api.py",
+        ],
+        settings.backend_dir,
+    )
+    codegen_check.body(context)
+    _check_nuxt_contract(
+        context,
+        settings,
+        "test/nuxt/reader-editor-manifest-contract.ts",
+    )
+    for command in (
+        ["yarn", "typecheck"],
+        ["yarn", "lint"],
+        [
+            "yarn",
+            "vitest",
+            "run",
+            "test/unit/work-manifest-client.spec.ts",
+            "test/unit/reader-source.spec.ts",
+            "test/unit/editor-reader-html.spec.ts",
+        ],
+        [
+            "yarn",
+            "playwright",
+            "test",
+            "test/ssr/reader.spec.ts",
+            "test/ssr/reader-shorthand.spec.ts",
+            "test/ssr/editor-reader.spec.ts",
+            "--project=ssr",
+        ],
     ):
         _run(context, command, settings.nuxt_dir, env=environment)
 
@@ -660,6 +712,7 @@ quality.add_task(quality_backend)
 quality.add_task(quality_contract)
 quality.add_task(quality_frontend)
 quality.add_task(quality_library)
+quality.add_task(quality_reader_editor)
 quality.add_task(quality_release)
 
 ns = Collection()
