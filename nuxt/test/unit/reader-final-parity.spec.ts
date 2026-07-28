@@ -1,9 +1,29 @@
 import { describe, expect, test } from "vitest"
 
 import { parseReaderOcrOverlay } from "../../server/utils/reader-ocr"
-import { readerManifestPartAuthorLabel } from "../../shared/utils/reader-author"
+import {
+  normalizeLegacyEditorContributionRole,
+  readerManifestPartAuthorLabel
+} from "../../shared/utils/reader-author"
 
 describe("Reader final normal-parity assets", () => {
+  test.each([
+    "constructor",
+    "toString",
+    "__proto__"
+  ])("rejects inherited object key as a legacy Editor role: %s", role => {
+    expect(normalizeLegacyEditorContributionRole(role)).toBeNull()
+  })
+
+  test.each([
+    ["EDITOR", "editor"],
+    ["translator", "translator"],
+    ["FOTOGRAF", "fotograf"],
+    ["översättare", "översättare"]
+  ] as const)("normalizes supported legacy Editor role %s", (role, expected) => {
+    expect(normalizeLegacyEditorContributionRole(role)).toBe(expected)
+  })
+
   test("uses generated nullable part-author names as display fallbacks only", () => {
     const author = {
       author_id: "MissingSummaryAuthor",

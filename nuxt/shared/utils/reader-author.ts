@@ -12,25 +12,25 @@ export type LegacyEditorContributionRole =
   | "redaktör"
   | "översättare"
 
-const legacyEditorContributions: Readonly<Record<
+const legacyEditorContributions: ReadonlyMap<
   string,
   LegacyEditorContributionRole
->> = {
-  editor: "editor",
-  fotograf: "fotograf",
-  illustrator: "illustrator",
-  illustratör: "illustratör",
-  photographer: "photographer",
-  redaktör: "redaktör",
-  translator: "translator",
-  översättare: "översättare"
-}
+> = new Map([
+  ["editor", "editor"],
+  ["fotograf", "fotograf"],
+  ["illustrator", "illustrator"],
+  ["illustratör", "illustratör"],
+  ["photographer", "photographer"],
+  ["redaktör", "redaktör"],
+  ["translator", "translator"],
+  ["översättare", "översättare"]
+])
 
 export function normalizeLegacyEditorContributionRole(
   value: unknown
 ): LegacyEditorContributionRole | null {
   if (typeof value !== "string" || value.trim() !== value) return null
-  return legacyEditorContributions[value.toLowerCase()] ?? null
+  return legacyEditorContributions.get(value.toLowerCase()) ?? null
 }
 
 function contributionSuffix(
