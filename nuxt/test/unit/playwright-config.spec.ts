@@ -32,6 +32,16 @@ describe("Playwright project boundaries", () => {
     expect(matches(mobile?.testMatch, spec)).toBe(false)
   })
 
+  test("keeps the production reader asset spec in its production-build config", () => {
+    const spec = "e2e/reader-assets-production.behavior.spec.ts"
+    const desktop = config.projects?.find(project => project.name === "desktop-chromium")
+    const mobile = config.projects?.find(project => project.name === "mobile-chromium")
+
+    expect(matches(desktop?.testMatch, spec)).toBe(true)
+    expect(matches(desktop?.testIgnore, spec)).toBe(true)
+    expect(matches(mobile?.testMatch, spec)).toBe(false)
+  })
+
   test("bypasses only the Nuxt checkout lock while keeping isolated servers non-reusable", () => {
     const servers = Array.isArray(config.webServer) ? config.webServer : [config.webServer]
     const nuxtServer = servers.find(server => server?.command.includes("yarn dev"))

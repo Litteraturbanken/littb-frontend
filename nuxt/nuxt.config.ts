@@ -25,6 +25,21 @@ export default defineNuxtConfig({
     "~/assets/styles/reader.scss"
   ],
   routeRules: {
+    "/red/**": {
+      proxy: `${contentProxyTarget}/red/**`
+    },
+    "/txt/**": {
+      proxy: `${readerSourceProxyTarget}/txt/**`
+    },
+    "/bilder/**": {
+      proxy: `${readerSourceProxyTarget}/bilder/**`
+    },
+    "/export/faksimil/**": {
+      proxy: `${readerSourceProxyTarget}/export/faksimil/**`
+    },
+    "/litteraturkartan/**": {
+      proxy: `${litteraturkartanProxyTarget}/litteraturkartan/**`
+    },
     "/om/statistik": { ssr: true },
     "/om/**": { ssr: true },
     "/statistik": {

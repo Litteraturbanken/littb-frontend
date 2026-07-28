@@ -37,7 +37,8 @@ export default defineConfig({
       testMatch: /e2e\/.*\.spec\.ts/,
       testIgnore: [
         /e2e\/.*\.mobile\.behavior\.spec\.ts/,
-        /e2e\/reader-dictionary-production\.behavior\.spec\.ts/
+        /e2e\/reader-dictionary-production\.behavior\.spec\.ts/,
+        /e2e\/reader-assets-production\.behavior\.spec\.ts/
       ],
       use: {
         ...devices["Desktop Chrome"],
