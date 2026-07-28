@@ -704,47 +704,55 @@ describe("v2 fixture server operations", () => {
       `${origin}/v2/works/lb-editor-boye/editor-manifest?media_type=faksimil`
     )
     expect(boyeEditor.status).toBe(200)
-    expect(await boyeEditor.json() as EditorManifestResponse).toMatchObject({
-      status: "complete",
-      contributors: [
-        {
-          author_id: "BoyeK",
-          full_name: "Karin Boye",
-          author_type: null,
-          role: null
-        },
-        {
+    const boyeEditorManifest = await boyeEditor.json() as EditorManifestResponse
+    expect(boyeEditorManifest.status).toBe("complete")
+    if (boyeEditorManifest.status !== "complete") {
+      throw new Error("Expected complete Boye Editor manifest")
+    }
+    expect(boyeEditorManifest.contributors).toEqual([
+      {
+        author_id: "BoyeK",
+        full_name: "Karin Boye",
+        author_type: null,
+        role: null
+      },
+      {
+        author_id: "HelgesonP",
+        full_name: "Paulina Helgeson",
+        author_type: "editor",
+        role: null
+      }
+    ])
+    expect(boyeEditorManifest.parts).toEqual([
+      {
+        source_index: 0,
+        start_page_name: "5",
+        start_page_index: 4,
+        end_page_name: "7",
+        end_page_index: 6,
+        title: "Förord",
+        nav_title: null,
+        short_title: null,
+        title_id: "Förord",
+        authors: [{
           author_id: "HelgesonP",
           full_name: "Paulina Helgeson",
-          author_type: "editor",
-          role: null
-        }
-      ],
-      parts: [
-        {
-          source_index: 0,
-          start_page_name: "5",
-          start_page_index: 4,
-          end_page_name: "7",
-          end_page_index: 6,
-          title: "Förord",
-          authors: [{
-            author_id: "HelgesonP",
-            full_name: "Paulina Helgeson",
-            surname: "Helgeson"
-          }]
-        },
-        {
-          source_index: 1,
-          start_page_name: "9",
-          start_page_index: 8,
-          end_page_name: "9",
-          end_page_index: 8,
-          title: "Kronologi",
-          authors: []
-        }
-      ]
-    })
+          surname: "Helgeson"
+        }]
+      },
+      {
+        source_index: 1,
+        start_page_name: "9",
+        start_page_index: 8,
+        end_page_name: "9",
+        end_page_index: 8,
+        title: "Kronologi",
+        nav_title: null,
+        short_title: null,
+        title_id: "Kronologi",
+        authors: []
+      }
+    ])
   })
 
   test("Reader and Editor manifests use independent ledgers without legacy traffic", async () => {
