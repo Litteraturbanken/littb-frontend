@@ -9,6 +9,7 @@ import {
   loadReaderMetadata,
   maximumReaderEtextBytes,
   preferredFacsimileSize,
+  readerFacsimileMetadata,
   resolveReaderPartNavigation
 } from "../../server/utils/reader-source"
 
@@ -137,6 +138,18 @@ afterEach(() => {
 })
 
 describe("generated Reader manifest boundary", () => {
+  test("passes generated faksimil sizes directly into Reader metadata", () => {
+    const metadata = readerFacsimileMetadata(facsimileManifest, "https://assets.test")
+
+    expect(metadata.sizes).toBe(facsimileManifest.sizes)
+    expect(metadata.sizes).toEqual([
+      { size: 1, width: 300 },
+      { size: 3, width: 625 },
+      { size: 5, width: 1200 }
+    ])
+    expect(metadata.preferredSize).toBe(3)
+  })
+
   test("loads one typed v2 manifest and never calls legacy metadata", async () => {
     const fetchMock = vi.fn(async () => json(readerManifest))
     vi.stubGlobal("fetch", fetchMock)

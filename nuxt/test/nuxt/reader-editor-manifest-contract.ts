@@ -1,6 +1,9 @@
 import type { components } from "../../app/lib/api/generated/lbapi"
 import type {
   ReaderFacsimilePage,
+  ReaderFacsimileSize,
+  ReaderFacsimileSizeSource,
+  ReaderFacsimileSource,
   ReaderPart,
   ReaderPartAuthor,
   ReaderWorkContributor,
@@ -11,6 +14,7 @@ import type {
   EditorManifestOperation,
   EditorManifestPath,
   EditorManifestResponse,
+  FacsimileSize,
   ManifestContributionRole,
   ReaderManifestOperation,
   ReaderManifestPath,
@@ -70,6 +74,18 @@ type _ReaderAuthorContributionIsGenerated = Expect<Equal<
 type _ReaderFacsimileAuthorIsGenerated = Expect<Equal<
   ReaderFacsimilePage["author"],
   WorkManifestContributor
+>>
+type _LegacyNamedReaderFacsimileSizeIsGenerated = Expect<Equal<
+  ReaderFacsimileSize,
+  FacsimileSize["size"]
+>>
+type _LegacyNamedReaderFacsimileSizeSourceIsGenerated = Expect<Equal<
+  ReaderFacsimileSizeSource,
+  FacsimileSize
+>>
+type _ReaderFacsimileSourceUsesGeneratedSize = Expect<Equal<
+  Omit<ReaderFacsimileSource, "url">,
+  FacsimileSize
 >>
 type _LegacyNamedReaderContributorIsGenerated = Expect<Equal<
   ReaderWorkContributor,

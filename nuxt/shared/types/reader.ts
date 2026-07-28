@@ -1,4 +1,5 @@
 import type {
+  FacsimileSize,
   WorkManifestContributor,
   WorkManifestPage,
   WorkManifestPart,
@@ -8,14 +9,11 @@ import type { ManagedAssetHtml, SanitizedHtml } from "./renderable-html"
 
 export type ReaderMediaType = "etext" | "faksimil"
 
-export type ReaderFacsimileSize = 1 | 2 | 3 | 4 | 5
+export type ReaderFacsimileSize = FacsimileSize["size"]
 
-export interface ReaderFacsimileSizeSource {
-  size: ReaderFacsimileSize
-  width: number
-}
+export type ReaderFacsimileSizeSource = FacsimileSize
 
-export interface ReaderFacsimileSource extends ReaderFacsimileSizeSource {
+export interface ReaderFacsimileSource extends FacsimileSize {
   url: string
 }
 

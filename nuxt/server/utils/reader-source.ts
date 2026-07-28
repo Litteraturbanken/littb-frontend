@@ -202,13 +202,17 @@ function readerFacsimileSize(value: number): ReaderFacsimileSize {
   return value
 }
 
-function readerFacsimileSizes(
-  sources: Extract<ReaderManifestResponse, { media_type: "faksimil" }>["sizes"]
-): ReaderFacsimileSizeSource[] {
-  return sources.map(source => ({
-    size: readerFacsimileSize(source.size),
-    width: source.width
-  }))
+export function readerFacsimileMetadata(
+  manifest: Extract<ReaderManifestResponse, { media_type: "faksimil" }>,
+  base: string
+): ReaderFacsimileWorkMetadata {
+  return {
+    ...readerCommonMetadata(manifest, base),
+    mediaType: "faksimil",
+    pages: manifest.pages,
+    sizes: manifest.sizes,
+    preferredSize: readerFacsimileSize(manifest.preferred_size)
+  }
 }
 
 export async function loadReaderMetadata(
@@ -221,13 +225,7 @@ export async function loadReaderMetadata(
   const manifest = await fetchReaderManifest(event, authorId, titlePath, mediaType)
   const base = useRuntimeConfig(event).readerSourceBase.replace(/\/$/u, "")
   if (manifest.media_type === "faksimil") {
-    return {
-      ...readerCommonMetadata(manifest, base),
-      mediaType: "faksimil",
-      pages: manifest.pages,
-      sizes: readerFacsimileSizes(manifest.sizes),
-      preferredSize: readerFacsimileSize(manifest.preferred_size)
-    }
+    return readerFacsimileMetadata(manifest, base)
   }
   return {
     ...readerCommonMetadata(manifest, base),
