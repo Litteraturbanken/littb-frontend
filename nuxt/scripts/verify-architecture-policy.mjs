@@ -879,6 +879,44 @@ function methodReturnHasDomType(node, method, unit, semantic) {
     .test(returnType.getText(unit.sourceFile)))
 }
 
+function localTypeDeclaration(unit, name) {
+  return unit.sourceFile.statements.find(statement => (
+    (ts.isInterfaceDeclaration(statement) || ts.isTypeAliasDeclaration(statement))
+    && statement.name.text === name
+  )) ?? null
+}
+
+function isExplicitlyNonDomType(node, unit, seen = new Set()) {
+  if (!node) return false
+  if (ts.isParenthesizedTypeNode(node) || ts.isTypeOperatorNode(node)) {
+    return isExplicitlyNonDomType(node.type, unit, seen)
+  }
+  if (node.kind === ts.SyntaxKind.AnyKeyword || node.kind === ts.SyntaxKind.UnknownKeyword) {
+    return false
+  }
+  if (/(?:^|\W)(?:Document|Element|HTMLElement|SVGElement)(?:\W|$)/u
+    .test(node.getText(unit.sourceFile))) return false
+  if (ts.isTypeLiteralNode(node)) return true
+  if (!ts.isTypeReferenceNode(node) || !ts.isIdentifier(node.typeName)
+    || seen.has(node.typeName.text)) return false
+  const declaration = localTypeDeclaration(unit, node.typeName.text)
+  if (!declaration) return false
+  const nextSeen = new Set(seen).add(node.typeName.text)
+  if (ts.isTypeAliasDeclaration(declaration)) {
+    return isExplicitlyNonDomType(declaration.type, unit, nextSeen)
+  }
+  return declaration.heritageClauses === undefined
+    && !/(?:^|\W)(?:Document|Element|HTMLElement|SVGElement)(?:\W|$)/u
+      .test(declaration.getText(unit.sourceFile))
+}
+
+function isProvenNonDomReceiver(node, unit, semantic, atNode) {
+  const expression = unwrapExpression(node)
+  if (!ts.isIdentifier(expression)) return false
+  const entry = resolveDeclaration(expression.text, atNode, semantic)
+  return Boolean(entry?.node.type && isExplicitlyNonDomType(entry.node.type, unit))
+}
+
 function propertyArgumentCanBeHtml(node, unit, semantic, atNode) {
   const expression = unwrapExpression(node)
   if (ts.isNumericLiteral(expression)) return false
@@ -907,7 +945,10 @@ function collectDomOperations(unit) {
   visitAst(unit.sourceFile, node => {
     if (ts.isCallExpression(node)) {
       const identity = resolvedValueIdentity(node.expression, unit, semantic, node)
-      const target = node.arguments[0]
+      const adjacentHtml = identity?.endsWith(".insertAdjacentHTML") ?? false
+      const target = adjacentHtml
+        ? resolvedMethodReceiver(node.expression, unit, semantic, node)
+        : node.arguments[0]
       if (target && mayBeDomReceiver(target, unit, semantic, node)) {
         let mutation = false
         let computedOrigin = node
@@ -929,12 +970,15 @@ function collectDomOperations(unit) {
             node
           ))
           computedOrigin = descriptors ?? node
+        } else if (adjacentHtml) {
+          mutation = true
+          computedOrigin = node.expression
         }
         if (mutation) {
           operations.push({
             node,
             base: rootIdentifier(target),
-            computed: true,
+            computed: !adjacentHtml,
             computedOrigin,
             detached: hasOnlyDetachedLineage(target, unit, semantic, node),
             functionName: enclosingNamedFunction(node),
@@ -959,7 +1003,10 @@ function collectDomOperations(unit) {
     const dynamicDomAccess = receiver && computed && property === null
       && !ts.isNumericLiteral(unwrapExpression(node.argumentExpression))
       && mayBeDomReceiver(receiver, unit, semantic, node)
-    if (receiver && (property === "innerHTML" || dynamicDomAccess)) {
+    const staticDomAccess = receiver && property === "innerHTML"
+      && (mayBeDomReceiver(receiver, unit, semantic, node)
+        || !isProvenNonDomReceiver(receiver, unit, semantic, node))
+    if (receiver && (staticDomAccess || dynamicDomAccess)) {
       let computedOrigin = node
       if (computed && property !== null && ts.isIdentifier(node.argumentExpression)) {
         const entry = resolveDeclaration(node.argumentExpression.text, node, semantic)
@@ -1169,9 +1216,32 @@ function resolvedValueIdentity(node, unit, semantic, atNode, seen = new Set()) {
   seen.add(expression.text)
   const entry = resolveDeclaration(expression.text, atNode, semantic)
   const initializer = declarationInitializer(entry, atNode, semantic)
-  return initializer
-    ? resolvedValueIdentity(initializer.expression, unit, semantic, atNode, seen) ?? identity
-    : identity
+  if (!initializer) return identity
+  const ownerIdentity = resolvedValueIdentity(
+    initializer.expression,
+    unit,
+    semantic,
+    atNode,
+    seen
+  ) ?? identity
+  return initializer.extracted && ownerIdentity
+    ? `${ownerIdentity}.${initializer.extracted}`
+    : ownerIdentity
+}
+
+function resolvedMethodReceiver(node, unit, semantic, atNode, seen = new Set()) {
+  const expression = unwrapExpression(node)
+  if (ts.isPropertyAccessExpression(expression)
+    && expression.name.text === "insertAdjacentHTML") {
+    return expression.expression
+  }
+  if (!ts.isIdentifier(expression) || seen.has(expression.text)) return null
+  seen.add(expression.text)
+  const entry = resolveDeclaration(expression.text, atNode, semantic)
+  const initializer = declarationInitializer(entry, atNode, semantic)
+  if (!initializer) return null
+  if (initializer.extracted === "insertAdjacentHTML") return initializer.expression
+  return resolvedMethodReceiver(initializer.expression, unit, semantic, atNode, seen)
 }
 
 function recordConstantOrigin(record, name, expected) {
@@ -1253,8 +1323,26 @@ function isNativeDynamicComponent(node, record) {
           ? recordConstantExpression(record, property.exp.content)
           : null
       )
-      return Boolean(value && /^[a-z][a-z0-9-]*$/u.test(value))
+      if (value) return /^[a-z][a-z0-9-]*$/u.test(value)
+      if (property.exp?.content && recordHasComponentOnlyBinding(record, property.exp.content)) {
+        return false
+      }
+      return true
     }
+  }
+  return true
+}
+
+function recordHasComponentOnlyBinding(record, expression) {
+  if (!/^[A-Za-z_$][\w$]*$/u.test(expression)) return false
+  for (const unit of record.units) {
+    const semantic = buildSemantic(unit)
+    const entry = resolveDeclaration(expression, unit.sourceFile, semantic)
+    if (!entry || !ts.isImportClause(entry.node) || !entry.node.name) continue
+    const declaration = entry.node.parent
+    if (ts.isImportDeclaration(declaration)
+      && ts.isStringLiteralLike(declaration.moduleSpecifier)
+      && declaration.moduleSpecifier.text.endsWith(".vue")) return true
   }
   return false
 }

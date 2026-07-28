@@ -11,7 +11,8 @@ const deeplyEncodedTraversal = encodeLayers("../admin.html", 8)
 async function resetPresentation(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_presentation_requests`),
-    request.delete(`${fixture}/_presentation_failures`)
+    request.delete(`${fixture}/_presentation_failures`),
+    request.delete(`${fixture}/_presentation_production_shape`)
   ])
 }
 
@@ -27,6 +28,28 @@ async function failPresentation(
 }
 
 test.beforeEach(async ({ request }) => resetPresentation(request))
+
+test("production-sized Presentation XHTML and text/xml background render during SSR", async ({
+  request
+}) => {
+  await request.put(`${fixture}/_presentation_production_shape`)
+
+  const response = await request.get(
+    "/presentationer/specialomraden/ProductionSized.html"
+  )
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+
+  expect(html).toContain("Production-sized Presentation")
+  expect(html).toContain("The complete article remains rendered.")
+  expect(html).toMatch(/<body[^>]*class="focus page-presentation ready subpage bkg-production-sized bkg-measured"/u)
+  expect(html).toContain("html { background-color: #123456; }")
+  expect(html).toMatch(/<html[^>]*style="[^"]*rostratt_a\.jpg/u)
+  expect(await presentationRequests(request)).toEqual([
+    "/red/presentationer/specialomraden/ProductionSized.html",
+    backgroundsPath
+  ])
+})
 
 test("Presentation index renders its exact SSR shell without background XML", async ({ request }) => {
   const response = await request.get("/presentationer")

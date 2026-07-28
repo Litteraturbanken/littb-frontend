@@ -2,6 +2,8 @@ import { describe, expect, test, vi } from "vitest"
 
 import {
   fetchManagedText,
+  managedPresentationBackgroundTextRules,
+  managedPresentationDocumentTextRules,
   type ManagedTextRules
 } from "../../shared/utils/managed-text"
 
@@ -117,6 +119,38 @@ function encodeLayers(value: string, layers: number): string {
 }
 
 describe("managed text transport", () => {
+  test("accepts the largest measured production Presentation document", async () => {
+    const documentPath = "/red/presentationer/specialomraden/ProductionSized.html"
+    const document = "x".repeat(75_220)
+    const documentResponse = managedResponse(document, {
+      headers: { "content-type": "text/html; charset=utf-8" },
+      url: `https://assets.test${documentPath}`
+    })
+
+    await expect(fetchManagedText(
+      `https://assets.test${documentPath}`,
+      managedPresentationDocumentTextRules("https://assets.test"),
+      responseFetcher(documentResponse)
+    )).resolves.toBe(document)
+  })
+
+  test.each(["text/xml; charset=utf-8", "application/xml"])(
+    "accepts the measured production Presentation background as %s",
+    async contentType => {
+      const backgroundPath = "/red/bilder/bakgrundsbilder/backgrounds.xml"
+      const background = "x".repeat(4_741)
+      const backgroundResponse = managedResponse(background, {
+        headers: { "content-type": contentType },
+        url: `https://assets.test${backgroundPath}`
+      })
+      await expect(fetchManagedText(
+        `https://assets.test${backgroundPath}`,
+        managedPresentationBackgroundTextRules("https://assets.test"),
+        responseFetcher(backgroundResponse)
+      )).resolves.toBe(background)
+    }
+  )
+
   test("decodes the exact UTF-8 bytes from one allowed HTML request", async () => {
     const bytes = new TextEncoder().encode("Sjö\n<p>text</p>")
     const fetcher = responseFetcher(managedResponse(bytes, {

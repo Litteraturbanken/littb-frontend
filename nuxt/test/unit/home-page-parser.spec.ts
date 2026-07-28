@@ -1,128 +1,22 @@
 import { readFile } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
-import ts from "typescript"
 import { describe, expect, test } from "vitest"
 
-type HomeContent = {
-  bodyHtml: string
-  stylesheetPath: string | null
-  backgroundImagePath: string | null
-  backgroundColor: string | null
-}
+import { parseHomeContent } from "../../app/lib/home-content"
 
-type ParseHomeContent = (source: string) => HomeContent
-
-type ObservedHomeParser = {
-  parseHomeContent: ParseHomeContent
-  issuedHomeHtml: () => readonly string[]
-}
-
-let parserModuleSequence = 0
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-}
-
-function isHomeContent(value: unknown): value is HomeContent {
-  return isRecord(value)
-    && Object.keys(value).length === 4
-    && typeof value.bodyHtml === "string"
-    && (value.stylesheetPath === null || typeof value.stylesheetPath === "string")
-    && (value.backgroundImagePath === null || typeof value.backgroundImagePath === "string")
-    && (value.backgroundColor === null || typeof value.backgroundColor === "string")
-}
-
-async function loadObservedParser(): Promise<ObservedHomeParser> {
-  const pagePath = fileURLToPath(new URL("../../app/pages/index.vue", import.meta.url))
-  const source = await readFile(pagePath, "utf8")
-  const script = source.match(/<script lang="ts">([\s\S]*?)<\/script>/)?.[1]
-  if (!script) throw new Error("Home page must expose its page-local parser from a normal TypeScript script")
-  const renderableHtmlSource = await readFile(
-    fileURLToPath(new URL("../../shared/utils/renderable-html.ts", import.meta.url)),
-    "utf8"
-  )
-  const compilerOptions = {
-    module: ts.ModuleKind.ESNext,
-    target: ts.ScriptTarget.ES2022
-  } as const
-  const renderableHtmlJavascript = ts.transpileModule(renderableHtmlSource, {
-    compilerOptions
-  }).outputText
-  const renderableHtmlModule = `data:text/javascript;base64,${Buffer.from(
-    renderableHtmlJavascript
-  ).toString("base64")}`
-  parserModuleSequence += 1
-  const observedRenderableHtmlJavascript = `
-    import {
-      emptyRenderableHtml as emptyRenderableHtmlImplementation,
-      issueManagedHomeHtml as issueManagedHomeHtmlImplementation
-    } from ${JSON.stringify(renderableHtmlModule)}
-
-    const issuedValues = []
-    export const emptyRenderableHtml = emptyRenderableHtmlImplementation
-    export function issueManagedHomeHtml(value) {
-      issuedValues.push(value)
-      return issueManagedHomeHtmlImplementation(value)
-    }
-    export function issuedHomeHtml() {
-      return [...issuedValues]
-    }
-  `
-  const observedRenderableHtmlModule = `data:text/javascript;base64,${Buffer.from(
-    observedRenderableHtmlJavascript
-  ).toString("base64")}#${parserModuleSequence}`
-  const javascript = ts.transpileModule(script, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022
-    }
-  }).outputText.replace(
-    'from "#shared/utils/renderable-html"',
-    `from "${observedRenderableHtmlModule}"`
-  ) + `
-    import { issuedHomeHtml } from ${JSON.stringify(observedRenderableHtmlModule)}
-    export { issuedHomeHtml }
-  `
-  const encoded = Buffer.from(javascript).toString("base64")
-  const imported: unknown = await import(
-    `data:text/javascript;base64,${encoded}#${parserModuleSequence}`
-  )
-  if (!isRecord(imported)
-    || typeof imported.issuedHomeHtml !== "function"
-    || typeof imported.parseHomeContent !== "function") {
-    throw new TypeError("Observed home parser module has an invalid export surface")
-  }
-  const issuedHomeHtml = (): readonly string[] => {
-    const values: unknown = imported.issuedHomeHtml()
-    if (!Array.isArray(values) || !values.every(value => typeof value === "string")) {
-      throw new TypeError("Observed home HTML issuer returned an invalid value")
-    }
-    return values
-  }
-  const parseHomeContent: ParseHomeContent = source => {
-    const value: unknown = imported.parseHomeContent(source)
-    if (!isHomeContent(value)) {
-      throw new TypeError("Observed home parser returned an invalid value")
-    }
-    return value
-  }
-  return { issuedHomeHtml, parseHomeContent }
-}
-
-async function loadParser(): Promise<ParseHomeContent> {
-  return (await loadObservedParser()).parseHomeContent
+async function loadParser(): Promise<typeof parseHomeContent> {
+  return parseHomeContent
 }
 
 describe("Home editorial content parser", () => {
-  test("issues renderer authority once for only the final post-control-removal bytes", async () => {
-    const parser = await loadObservedParser()
+  test("returns only the final post-control-removal bytes", async () => {
+    const parser = await loadParser()
     const link = '<link data-ng-href="{{\'/red/css/startsida.css?\' + cacheKiller()}}">'
     const image = '<img bkg-img color="#333" src="/red/background.jpg"></img>'
     const source = `<main>Före</main>${link}<p>Mitten</p>${image}<footer>Efter</footer>`
     const finalBody = "<main>Före</main><p>Mitten</p><footer>Efter</footer>"
 
-    expect(parser.parseHomeContent(source).bodyHtml).toBe(finalBody)
-    expect(parser.issuedHomeHtml()).toEqual([finalBody])
+    expect(parser(source).bodyHtml).toBe(finalBody)
   })
 
   test("removes only the two control-element source ranges from the frozen raw fragment", async () => {

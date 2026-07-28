@@ -697,6 +697,60 @@ describe("architecture policy verifier", () => {
   })
 
   test.each([
+    ["Reflect.set", "const { set: mutate } = Reflect\nmutate(document.body, key, unsafe)"],
+    [
+      "Reflect.defineProperty",
+      "const { defineProperty: mutate } = Reflect\nmutate(document.body, key, { value: unsafe })"
+    ],
+    [
+      "Object.defineProperty",
+      "const { defineProperty: mutate } = Object\nmutate(document.body, key, { value: unsafe })"
+    ],
+    ["Object.assign", "const { assign: mutate } = Object\nmutate(document.body, props)"],
+    [
+      "Object.defineProperties",
+      "const { defineProperties: mutate } = Object\nmutate(document.body, descriptors)"
+    ]
+  ])("rejects DOM mutation through a destructured %s alias", (_name, source) => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("DOM HTML mutation API is forbidden")
+  })
+
+  test.each([
+    ["direct method", "document.body.insertAdjacentHTML('beforeend', unsafe)"],
+    [
+      "destructured method",
+      "const { insertAdjacentHTML: mutate } = document.body\nmutate('beforeend', unsafe)"
+    ]
+  ])("rejects live insertAdjacentHTML through a %s", (_name, source) => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("DOM HTML mutation API is forbidden")
+  })
+
+  test("allows a non-DOM insertAdjacentHTML-shaped method", () => {
+    const root = createTree()
+    writeSource(root, "app/lib/safe.ts", [
+      "declare const formatter: { insertAdjacentHTML(position: string, value: string): void }",
+      "formatter.insertAdjacentHTML('beforeend', value)"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test.each([
     ["h dynamic bag", "h('div', JSON.parse(raw))"],
     ["h computed HTML key", "h('div', { [key]: unsafe })"],
     ["createVNode dynamic bag", "createVNode('div', props)"],
@@ -740,6 +794,67 @@ describe("architecture policy verifier", () => {
 
     expect(result.status).toBe(1)
     expect(result.stderr).toMatch(/(?:native object v-bind|dynamic Vue argument|DOM HTML access)/u)
+  })
+
+  test.each([
+    ['<component :is="target" v-bind="props" />', "native object v-bind"],
+    ['<component :is="target" :[key]="source" />', "dynamic Vue argument"],
+    ['<component :is="target" :innerHTML="source" />', "DOM HTML access"]
+  ])("rejects an unresolved dynamic-component sink %s", (source, expected) => {
+    const root = createTree()
+    writeSource(root, "app/pages/unsafe.vue", `<template>${source}</template>`)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(expected)
+  })
+
+  test.each([
+    '<component is="SafeComponent" v-bind="props" />',
+    [
+      '<script setup lang="ts">',
+      'import SafeComponent from "~/components/SafeComponent.vue"',
+      "</script>",
+      '<template><component :is="SafeComponent" v-bind="props" /></template>'
+    ].join("\n")
+  ])("allows a proven component-only dynamic target %s", source => {
+    const root = createTree()
+    writeSource(root, "app/pages/safe.vue", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test.each([
+    [
+      "inline DTO type",
+      "function read(payload: { innerHTML: string }) { return payload.innerHTML }"
+    ],
+    [
+      "named DTO type",
+      "interface Payload { innerHTML: string }\ndeclare const payload: Payload\nvoid payload.innerHTML"
+    ]
+  ])("allows an ordinary %s innerHTML read", (_name, source) => {
+    const root = createTree()
+    writeSource(root, "app/lib/safe.ts", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("keeps an unresolved innerHTML receiver conservative", () => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", "function read(payload) { return payload.innerHTML }")
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("DOM HTML access is not in the reviewed allowlist")
   })
 
   test("rejects no-argument object v-bind on a native Vue element", () => {

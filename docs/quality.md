@@ -57,13 +57,17 @@ cannot introduce another DOM HTML read or write. Static or runtime-computed DOM
 HTML keys, including binding and assignment destructuring, aliased
 `Reflect.set`, `Reflect.defineProperty`, `Object.defineProperty`,
 `Object.defineProperties`, and `Object.assign`, are forbidden on every possibly
-live receiver. Receiver provenance includes indexed collections, typed function
+live receiver. `insertAdjacentHTML` is audited under the same rule, including
+destructured method aliases. Receiver provenance includes indexed collections, typed function
 returns, and every control-flow reaching definition; a detached value is
 trusted only when all reaching definitions remain detached. Vue raw-HTML
-directives, dynamic native `<component>` targets, dynamic native bindings,
+directives, unresolved dynamic `<component>` targets that can be native,
+dynamic native bindings,
 object `v-bind` on native elements, and imported, namespaced, or locally aliased
 native `h`/`createVNode` prop bags are forbidden; component-only attribute
-forwarding remains allowed. A
+forwarding remains allowed. Static `innerHTML` reads on explicitly typed local
+non-DOM DTOs remain ordinary data access; unresolved receivers stay
+conservative. A
 3,000-interpolation fixture bounds repeated Vue expression parsing without
 source-sized padding per expression.
 Adding or changing an operation requires security review and a deliberate
@@ -93,6 +97,17 @@ reviewed generated-source exception.
 
 Presentation stylesheet links are authority/path capabilities. Their bodies
 remain browser-owned and are not prefetched, proxied, or rewritten by Nuxt.
+
+Presentation editorial transport limits are based on a complete measurement of
+the current production allowlist at `red.litteraturbanken.se`: 58 documents
+(the index plus 57 linked articles) were fetched successfully. The largest
+observed XHTML document was `40taletOch40talisterna.html` at 75,220 bytes,
+followed by `DiktOchAra.html` at 71,137 bytes; `backgrounds.xml` was 4,741 bytes
+and was served as `text/xml; charset=utf-8`. The finite managed limits are
+therefore 96 KiB for Presentation XHTML and 8 KiB for the exact background XML
+path. That XML path accepts both `text/xml` and `application/xml`; authority,
+path, UTF-8, and structural validation remain unchanged. Production-shaped
+unit, SSR, and browser fixtures pin the measured upper-size case and MIME type.
 
 ## Backend test policy
 

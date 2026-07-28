@@ -7,7 +7,8 @@ const backgroundsPath = "/red/bilder/bakgrundsbilder/backgrounds.xml"
 async function resetPresentation(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_presentation_requests`),
-    request.delete(`${fixture}/_presentation_failures`)
+    request.delete(`${fixture}/_presentation_failures`),
+    request.delete(`${fixture}/_presentation_production_shape`)
   ])
 }
 
@@ -84,6 +85,31 @@ function contentRequests(requests: string[]) {
 
 test.beforeEach(async ({ request }) => resetPresentation(request))
 test.afterEach(async ({ request }) => resetPresentation(request))
+
+test("production-sized Presentation XHTML and text/xml background hydrate intact", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_presentation_production_shape`)
+
+  await page.goto("/presentationer/specialomraden/ProductionSized.html", {
+    waitUntil: "networkidle"
+  })
+
+  await expect(page.getByRole("heading", { name: "Production-sized Presentation" }))
+    .toBeVisible()
+  await expect(page.locator("#production-sized-document-marker"))
+    .toHaveText("The complete article remains rendered.")
+  await expect(page.locator("body")).toHaveClass(/\bbkg-production-sized\b/u)
+  await expect(page.locator("body")).toHaveClass(/\bbkg-measured\b/u)
+  expect(await documentStyleText(page)).toContain("html { background-color: #123456; }")
+  await expect(page.locator("html")).toHaveAttribute("style", /rostratt_a\.jpg/u)
+  expect(await presentationRequests(request)).toEqual([
+    "/red/presentationer/specialomraden/ProductionSized.html",
+    backgroundsPath,
+    "/red/bilder/bakgrundsbilder/rostratt_a.jpg"
+  ])
+})
 
 test("direct Presentation ankare scrolls after hydration with one index request and no XML", async ({ page, request }) => {
   const problems = captureBrowserProblems(page)

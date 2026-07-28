@@ -1,5 +1,5 @@
 import type { AuthorProfileView } from "../../app/lib/author-profile"
-import type { HomeContent } from "../../app/pages/index.vue"
+import type { HomeContent } from "../../app/lib/home-content"
 import type { AboutContent } from "../../app/pages/om/[page].vue"
 import type {
   parseBackgroundRules,

@@ -56,6 +56,10 @@ import {
 } from "./reader-source-info-data.mjs"
 import { popularEpubs, popularWorks, stats } from "./statistics-data.mjs"
 import {
+  productionSizedPresentationBackground,
+  productionSizedPresentationDocument
+} from "./presentation-boundary-data.mjs"
+import {
   textSearchAboutAuthors,
   textSearchAuthors,
   textSearchBackgroundBase64
@@ -123,6 +127,7 @@ const presentationContent = new Map([
   ["/red/presentationer/specialomraden/Rostratt.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/Rostratt.html", import.meta.url))]],
   ["/red/presentationer/specialomraden/FigurdiktenSomBarockBlandkonst.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/FigurdiktenSomBarockBlandkonst.html", import.meta.url))]],
   ["/red/presentationer/vandringar/VandringElam.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/VandringElam.html", import.meta.url))]],
+  ["/red/presentationer/specialomraden/ProductionSized.html", ["xhtml", "text/html; charset=utf-8", productionSizedPresentationDocument]],
   ["/red/bilder/bakgrundsbilder/backgrounds.xml", ["xml", "application/xml; charset=utf-8", readFileSync(new URL("./presentation-content/backgrounds.xml", import.meta.url))]],
   ["/red/presentationer/specialomraden/Rostratt.css", ["asset", "text/css; charset=utf-8", readFileSync(new URL("./presentation-content/Rostratt.css", import.meta.url))]],
   ["/app/style/litteraturbanken.css", ["asset", "text/css; charset=utf-8", readFileSync(new URL("./presentation-content/app-style-litteraturbanken.css", import.meta.url))]],
@@ -302,6 +307,7 @@ let homeRequests = []
 let homeFailure = false
 let presentationRequests = []
 let presentationFailures = new Set()
+let presentationProductionShape = false
 let litteraturkartanRequests = []
 let readerRequests = []
 let readerMetadataRequests = []
@@ -2939,6 +2945,17 @@ const server = createServer(async (request, response) => {
     presentationFailures = new Set()
     return sendJson(response, 200, { failures: [] })
   }
+  if (url.pathname === "/_presentation_production_shape" && request.method === "GET") {
+    return sendJson(response, 200, { enabled: presentationProductionShape })
+  }
+  if (url.pathname === "/_presentation_production_shape" && request.method === "PUT") {
+    presentationProductionShape = true
+    return sendJson(response, 200, { enabled: presentationProductionShape })
+  }
+  if (url.pathname === "/_presentation_production_shape" && request.method === "DELETE") {
+    presentationProductionShape = false
+    return sendJson(response, 200, { enabled: presentationProductionShape })
+  }
   if (url.pathname === "/_litteraturkartan_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: litteraturkartanRequests })
   }
@@ -4260,9 +4277,16 @@ const server = createServer(async (request, response) => {
         error: { code: "not_found", message: "Resource not found", details: null }
       })
     }
-    const [resource, contentType, body] = content
+    let [resource, contentType, body] = content
     if (presentationFailures.has(resource)) {
       return sendBody(response, 503, "text/plain; charset=utf-8", `${resource} unavailable`)
+    }
+    if (
+      presentationProductionShape
+      && url.pathname === "/red/bilder/bakgrundsbilder/backgrounds.xml"
+    ) {
+      contentType = "text/xml; charset=utf-8"
+      body = productionSizedPresentationBackground
     }
     return sendBody(response, 200, contentType, body)
   }

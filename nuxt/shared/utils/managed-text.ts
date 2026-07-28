@@ -8,8 +8,8 @@ export type ManagedTextRules = Readonly<{
 
 export const maximumHomeEditorialBytes = 8_192
 export const maximumAboutEditorialBytes = 32_768
-export const maximumPresentationEditorialBytes = 65_536
-export const maximumPresentationBackgroundBytes = 2_048
+export const maximumPresentationEditorialBytes = 96 * 1_024
+export const maximumPresentationBackgroundBytes = 8 * 1_024
 
 const homeEditorialPath = "/red/om/start/startsida-ny.html"
 const aboutEditorialPaths = [
@@ -68,7 +68,7 @@ export function managedPresentationBackgroundTextRules(
     authorityOrigin,
     allowedPaths: [presentationBackgroundPath],
     allowedPathPrefixes: [],
-    allowedContentTypes: ["application/xml"],
+    allowedContentTypes: ["text/xml", "application/xml"],
     maximumBytes: maximumPresentationBackgroundBytes
   }
 }
