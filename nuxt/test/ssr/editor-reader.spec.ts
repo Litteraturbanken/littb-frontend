@@ -235,7 +235,7 @@ test("SSR selects the requested representation and uses its typed close target",
     .toBe("4")
   expect([...document.querySelectorAll('a[href*="/f%C3%B6rfattare/"]')]
     .find(link => link.textContent?.includes("Stäng editor"))?.getAttribute("href")).toBe(
-    "/f%C3%B6rfattare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
   )
   expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
     "/v2/works/lb-editor-mixed/editor-manifest?media_type=faksimil"

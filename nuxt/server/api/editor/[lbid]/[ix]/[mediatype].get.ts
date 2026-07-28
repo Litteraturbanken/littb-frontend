@@ -1,6 +1,5 @@
 import type { EditorFacsimileSource, EditorReaderPage } from "#shared/types/editor-reader"
 import type {
-  EditorManifestResponse,
   EditorPageBounds,
   FacsimileSize,
   WorkManifestPart
@@ -12,7 +11,10 @@ import {
   maximumEditorHtmlLength,
   sanitizeEditorEtextHtml
 } from "#server/utils/editor-reader-html"
-import { fetchEditorManifest } from "#server/utils/work-manifest-client"
+import {
+  editorCloseHref,
+  fetchEditorManifest
+} from "#server/utils/work-manifest-client"
 
 const workIdPattern = /^[A-Za-z0-9_-]{1,100}$/
 const indexPattern = /^(?:0|[1-9]\d{0,6})$/
@@ -95,21 +97,6 @@ function editorFacsimileSources(
     sources.push({ size: 3, url: editorFacsimileUrl(workId, 3, pageIndex), width: null })
   }
   return sources.sort((left, right) => left.size - right.size)
-}
-
-function editorCloseHref(
-  target: Extract<EditorManifestResponse, { status: "complete" }>["public_reader_target"]
-): string | null {
-  if (target === null) return null
-  return [
-    "/f%C3%B6rfattare",
-    target.author_id,
-    "titlar",
-    target.title_path,
-    "sida",
-    target.start_page_name,
-    target.media_type
-  ].join("/")
 }
 
 export default defineEventHandler(async (event): Promise<EditorReaderPage> => {

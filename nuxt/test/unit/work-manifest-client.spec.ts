@@ -2,6 +2,7 @@ import type { H3Event } from "h3"
 import { afterEach, describe, expect, test, vi } from "vitest"
 
 import {
+  editorCloseHref,
   fetchEditorManifest,
   fetchReaderManifest
 } from "../../server/utils/work-manifest-client"
@@ -84,6 +85,45 @@ afterEach(() => {
 })
 
 describe("generated Editor manifest client", () => {
+  test.each([
+    [
+      "a literal percent",
+      {
+        author_id: "A%2FB",
+        title_path: "PercentTitle",
+        start_page_name: "1",
+        media_type: "etext"
+      },
+      "/f%C3%B6rfattare/A%252FB/titlar/PercentTitle/sida/1/etext"
+    ],
+    [
+      "Unicode",
+      {
+        author_id: "SöderbergH",
+        title_path: "Öppen",
+        start_page_name: "första",
+        media_type: "faksimil"
+      },
+      "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/%C3%96ppen/sida/f%C3%B6rsta/faksimil"
+    ],
+    [
+      "spaces",
+      {
+        author_id: "Space Author",
+        title_path: "Title Path",
+        start_page_name: "first page",
+        media_type: "etext"
+      },
+      "/f%C3%B6rfattare/Space%20Author/titlar/Title%20Path/sida/first%20page/etext"
+    ]
+  ] as const)("RFC3986-encodes %s in a structured Editor close target", (
+    _case,
+    target,
+    expected
+  ) => {
+    expect(editorCloseHref(target)).toBe(expected)
+  })
+
   test("returns the exact bounds-only Editor arm from the generated endpoint", async () => {
     const fetchMock = vi.fn(async () => json(boundsOnlyManifest))
     vi.stubGlobal("fetch", fetchMock)

@@ -51,6 +51,21 @@ const manifestPathSerializer: PathSerializer = (pathname, pathParams) => (
   })
 )
 
+export function editorCloseHref(
+  target: Extract<EditorManifestResponse, { status: "complete" }>["public_reader_target"]
+): string | null {
+  if (target === null) return null
+  return [
+    "/f%C3%B6rfattare",
+    encodeRfc3986Segment(target.author_id),
+    "titlar",
+    encodeRfc3986Segment(target.title_path),
+    "sida",
+    encodeRfc3986Segment(target.start_page_name),
+    encodeRfc3986Segment(target.media_type)
+  ].join("/")
+}
+
 export async function fetchReaderManifest(
   event: H3Event,
   authorId: string,

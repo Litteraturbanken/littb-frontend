@@ -17,7 +17,7 @@ test("editor Reader resolves compact media aliases with legacy asset URLs and ra
   )
   await expect(page.getByRole("link", { name: "Stäng editor" })).toHaveAttribute(
     "href",
-    "/f%C3%B6rfattare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
   )
   await expect(page.getByRole("link", { name: "Hjalmar Söderberg" })).toHaveAttribute(
     "href", "/f%C3%B6rfattare/S%C3%B6derbergH"
