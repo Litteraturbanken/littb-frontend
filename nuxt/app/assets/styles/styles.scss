@@ -1038,6 +1038,11 @@ form {
     }
     text-align : right;
     text-transform: uppercase;
+    > li > a {
+        box-sizing: border-box;
+        display: block;
+        min-height: 24px;
+    }
     .sla {
         height: 35px;
         margin-top: 0.5em;

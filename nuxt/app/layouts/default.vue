@@ -63,21 +63,23 @@ onBeforeUnmount(() => {
           </g>
         </svg>
       </NuxtLink>
-      <ul role="navigation" class="mainnav">
-        <li><NuxtLink :to="libraryHref">Biblioteket</NuxtLink></li>
-        <QuickSearch />
-        <li><NuxtLink :to="textSearchHref">Sök i texterna</NuxtLink></li>
-        <li><NuxtLink to="/epub?visa=epub&amp;sort=popularitet">Hämta e-böcker</NuxtLink></li>
-        <li><NuxtLink to="/presentationer">Presentationer</NuxtLink></li>
-        <li><a href="https://litteraturbanken.se/diktensmuseum/">Diktens museum</a></li>
-        <li><a href="/litteraturkartan/">Litteraturkartan</a></li>
-        <li><a href="/översättarlexikon/">Översättarlexikon</a></li>
-        <li><a href="/bibliotekariesidor/shared-reading/">Shared reading</a></li>
-        <li><NuxtLink to="/dramawebben">Dramawebben</NuxtLink></li>
-        <li><a href="/ljudochbild/">Ljud <em>&amp;</em> bild</a></li>
-        <li><a href="/skolan/">Skolan</a></li>
-        <li><NuxtLink to="/om/ide">Om LB</NuxtLink></li>
-      </ul>
+      <nav aria-label="Huvudnavigation">
+        <ul class="mainnav">
+          <li><NuxtLink :to="libraryHref">Biblioteket</NuxtLink></li>
+          <QuickSearch />
+          <li><NuxtLink :to="textSearchHref">Sök i texterna</NuxtLink></li>
+          <li><NuxtLink to="/epub?visa=epub&amp;sort=popularitet">Hämta e-böcker</NuxtLink></li>
+          <li><NuxtLink to="/presentationer">Presentationer</NuxtLink></li>
+          <li><a href="https://litteraturbanken.se/diktensmuseum/">Diktens museum</a></li>
+          <li><a href="/litteraturkartan/">Litteraturkartan</a></li>
+          <li><a href="/översättarlexikon/">Översättarlexikon</a></li>
+          <li><a href="/bibliotekariesidor/shared-reading/">Shared reading</a></li>
+          <li><NuxtLink to="/dramawebben">Dramawebben</NuxtLink></li>
+          <li><a href="/ljudochbild/">Ljud <em>&amp;</em> bild</a></li>
+          <li><a href="/skolan/">Skolan</a></li>
+          <li><NuxtLink to="/om/ide">Om LB</NuxtLink></li>
+        </ul>
+      </nav>
       <ul class="start-only uppercase text-sm align-right antialiased mt-2 text-right mr-32 font-display">
         <li><a href="/skolan/lararsida/">Lärare</a></li>
         <li><a href="/bibliotekariesidor/">Bibliotekarier</a></li>
