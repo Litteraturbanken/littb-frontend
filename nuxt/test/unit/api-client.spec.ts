@@ -1,6 +1,10 @@
 import { describe, expect, test, vi } from "vitest"
 
 import { createLbApiClient } from "../../app/lib/api/client"
+import type {
+  EditorManifestResponse,
+  ReaderManifestResponse
+} from "../../shared/types/work-manifest"
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -8,7 +12,106 @@ const json = (body: unknown, status = 200) =>
     headers: { "content-type": "application/json" }
   })
 
+const readerManifestFixture = {
+  media_type: "etext",
+  author_id: "SöderbergH",
+  title_path: "DoktorGlas",
+  work_id: "lb-reader-doktor-glas",
+  editor_work_id: null,
+  contributors: [{
+    author_id: "SöderbergH",
+    full_name: "Hjalmar Söderberg",
+    author_type: null,
+    role: null
+  }],
+  display_title: "Doktor Glas",
+  full_title: "Doktor Glas. Roman",
+  imprint_year: "1905",
+  urn: null,
+  pages: [{ page_name: "-2", page_index: 0 }],
+  declared_page_count: 1,
+  page_step: 1,
+  start_page_name: "-2",
+  end_page_name: "-2",
+  parts: [],
+  alternate_media: null,
+  searchable: true,
+  is_drama: false,
+  has_dramawebben: false,
+  has_nya_vagar: false
+} satisfies ReaderManifestResponse
+
+const editorManifestFixture = {
+  status: "page_bounds_only",
+  work_id: "lb-editor-doktor-glas",
+  media_type: "etext",
+  bounds: { kind: "sparse", page_indexes: [0, 2] }
+} satisfies EditorManifestResponse
+
 describe("generated LB API client", () => {
+  test("encodes the exact typed Reader manifest identity", async () => {
+    const fetchMock = vi.fn(async () => json(readerManifestFixture))
+    const client = createLbApiClient("http://example.test/v2", fetchMock)
+
+    await client.GET("/works/{author_id}/{title_path}/manifest", {
+      params: {
+        path: { author_id: "SöderbergH", title_path: "DoktorGlas" },
+        query: { media_type: "etext" }
+      }
+    })
+
+    expect(fetchMock.mock.calls[0][0].url).toBe(
+      "http://example.test/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+    )
+  })
+
+  test("returns typed Editor bounds and unavailable errors", async () => {
+    const successFetchMock = vi.fn(async () => json(editorManifestFixture))
+    const client = createLbApiClient("http://example.test/v2", successFetchMock)
+
+    const { data, error } = await client.GET(
+      "/works/{work_id}/editor-manifest",
+      {
+        params: {
+          path: { work_id: "lb-editor-doktor-glas" },
+          query: { media_type: "etext" }
+        }
+      }
+    )
+
+    expect(error).toBeUndefined()
+    expect(data?.status).toBe("page_bounds_only")
+    expect(data?.bounds.kind).toBe("sparse")
+
+    const unavailableFetchMock = vi.fn(async () =>
+      json({
+        error: {
+          code: "editor_manifest_unavailable",
+          message: "Unable to load Editor manifest",
+          details: null
+        }
+      }, 503)
+    )
+    const unavailableClient = createLbApiClient(
+      "http://example.test/v2",
+      unavailableFetchMock
+    )
+    const unavailable = await unavailableClient.GET(
+      "/works/{work_id}/editor-manifest",
+      {
+        params: {
+          path: { work_id: "lb-editor-doktor-glas" },
+          query: { media_type: "etext" }
+        }
+      }
+    )
+
+    if (!unavailable.error) {
+      throw new Error("Expected an Editor manifest error body")
+    }
+    expect(unavailable.error.error.code).toBe("editor_manifest_unavailable")
+  })
+
   test("calls the schema-relative stats path under the supplied v2 base", async () => {
     const fetchMock = vi.fn(async (_request: Request) =>
       json({

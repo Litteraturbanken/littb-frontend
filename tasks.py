@@ -135,6 +135,14 @@ def _openapi_snapshot(settings: Settings) -> Path:
     return settings.backend_dir / "openapi" / "v2.json"
 
 
+def _export_backend_openapi(context: Context, settings: Settings) -> None:
+    _run(
+        context,
+        [_backend_python(settings), "scripts/export_v2_openapi.py"],
+        settings.backend_dir,
+    )
+
+
 def _check_backend_openapi(context: Context, settings: Settings) -> None:
     _run(
         context,
@@ -420,12 +428,13 @@ def dev_all(_context: Context) -> None:
 def codegen_generate(context: Context) -> None:
     """Regenerate the TypeScript API types from the backend OpenAPI schema."""
     settings = Settings.from_environment()
+    _export_backend_openapi(context, settings)
     _run(
         context,
         ["yarn", "api:generate"],
         settings.nuxt_dir,
         env={
-            "LBAPI_OPENAPI_SCHEMA": _openapi_schema(settings),
+            "LBAPI_OPENAPI_SCHEMA": str(_openapi_snapshot(settings)),
             **_nuxt_node_environment(settings),
         },
     )

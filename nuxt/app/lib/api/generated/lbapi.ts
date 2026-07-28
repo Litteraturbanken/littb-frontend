@@ -361,6 +361,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/works/{author_id}/{title_path}/manifest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Reader Work Manifest */
+        get: operations["v2_get_reader_work_manifest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/works/{author_id}/{title_path}/source-info": {
         parameters: {
             query?: never;
@@ -370,6 +387,23 @@ export interface paths {
         };
         /** Get Work Source Info */
         get: operations["v2_get_work_source_info"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/works/{work_id}/editor-manifest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Editor Work Manifest */
+        get: operations["v2_get_editor_work_manifest"];
         put?: never;
         post?: never;
         delete?: never;
@@ -450,6 +484,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AlternateManifestMedia */
+        AlternateManifestMedia: {
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "etext" | "faksimil";
+            /** Pages */
+            pages: components["schemas"]["WorkManifestPage"][];
+        };
         /** ApiError */
         ApiError: {
             /** Code */
@@ -718,6 +762,16 @@ export interface components {
             /** Sender Name */
             sender_name?: string | null;
         };
+        /** DenseEditorPageBounds */
+        DenseEditorPageBounds: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "dense";
+            /** Page Count */
+            page_count: number;
+        };
         /** DictionaryArticleResponse */
         DictionaryArticleResponse: {
             /** Article Html */
@@ -801,12 +855,77 @@ export interface components {
             /** Source Html */
             source_html: string[];
         };
+        /** EditorCompleteManifest */
+        EditorCompleteManifest: {
+            /** Bounds */
+            bounds: components["schemas"]["DenseEditorPageBounds"] | components["schemas"]["SparseEditorPageBounds"];
+            /** Contributors */
+            contributors: components["schemas"]["WorkManifestContributor"][];
+            /** Display Title */
+            display_title: string;
+            /** End Page Name */
+            end_page_name: string | null;
+            /** Imprint Year */
+            imprint_year: string | null;
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "etext" | "faksimil";
+            /** Pages */
+            pages: components["schemas"]["WorkManifestPage"][];
+            /** Parts */
+            parts: components["schemas"]["WorkManifestPart"][];
+            public_reader_target: components["schemas"]["PublicReaderTarget"] | null;
+            /** Searchable */
+            searchable: boolean;
+            /** Sizes */
+            sizes: components["schemas"]["FacsimileSize"][];
+            /** Start Page Name */
+            start_page_name: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "complete";
+            /** Title Path */
+            title_path: string;
+            /** Work Id */
+            work_id: string;
+        };
+        /** EditorPageBoundsOnlyManifest */
+        EditorPageBoundsOnlyManifest: {
+            /** Bounds */
+            bounds: components["schemas"]["DenseEditorPageBounds"] | components["schemas"]["SparseEditorPageBounds"];
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "etext" | "faksimil";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "page_bounds_only";
+            /** Work Id */
+            work_id: string;
+        };
         /** ErrorDetail */
         ErrorDetail: {
             /** Field */
             field: string | null;
             /** Message */
             message: string;
+        };
+        /** FacsimileSize */
+        FacsimileSize: {
+            /**
+             * Size
+             * @enum {integer}
+             */
+            size: 1 | 2 | 3 | 4 | 5;
+            /** Width */
+            width: number;
         };
         /** LegacyAuthorRouteRequest */
         LegacyAuthorRouteRequest: {
@@ -1435,6 +1554,11 @@ export interface components {
             /** Total Works */
             total_works: number;
         };
+        /**
+         * ManifestContributionRole
+         * @enum {string}
+         */
+        ManifestContributionRole: "editor" | "translator" | "illustrator" | "photographer";
         /** MediaCounts */
         MediaCounts: {
             /** Etext */
@@ -1482,6 +1606,20 @@ export interface components {
             /** Url */
             url: string;
         };
+        /** PublicReaderTarget */
+        PublicReaderTarget: {
+            /** Author Id */
+            author_id: string;
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "etext" | "faksimil";
+            /** Start Page Name */
+            start_page_name: string;
+            /** Title Path */
+            title_path: string;
+        };
         /** QuickSearchItem */
         QuickSearchItem: {
             /**
@@ -1507,6 +1645,104 @@ export interface components {
             correction: string | null;
             /** Items */
             items: components["schemas"]["QuickSearchItem"][];
+        };
+        /** ReaderEtextManifest */
+        ReaderEtextManifest: {
+            alternate_media: components["schemas"]["AlternateManifestMedia"] | null;
+            /** Author Id */
+            author_id: string;
+            /** Contributors */
+            contributors: components["schemas"]["WorkManifestContributor"][];
+            /** Declared Page Count */
+            declared_page_count?: number | null;
+            /** Display Title */
+            display_title: string;
+            /** Editor Work Id */
+            editor_work_id: string | null;
+            /** End Page Name */
+            end_page_name: string | null;
+            /** Full Title */
+            full_title: string;
+            /** Has Dramawebben */
+            has_dramawebben: boolean;
+            /** Has Nya Vagar */
+            has_nya_vagar: boolean;
+            /** Imprint Year */
+            imprint_year: string | null;
+            /** Is Drama */
+            is_drama: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            media_type: "etext";
+            /** Page Step */
+            page_step: number;
+            /** Pages */
+            pages: components["schemas"]["WorkManifestPage"][];
+            /** Parts */
+            parts: components["schemas"]["WorkManifestPart"][];
+            /** Searchable */
+            searchable: boolean;
+            /** Start Page Name */
+            start_page_name: string | null;
+            /** Title Path */
+            title_path: string;
+            /** Urn */
+            urn: string | null;
+            /** Work Id */
+            work_id: string;
+        };
+        /** ReaderFacsimileManifest */
+        ReaderFacsimileManifest: {
+            alternate_media: components["schemas"]["AlternateManifestMedia"] | null;
+            /** Author Id */
+            author_id: string;
+            /** Contributors */
+            contributors: components["schemas"]["WorkManifestContributor"][];
+            /** Declared Page Count */
+            declared_page_count?: number | null;
+            /** Display Title */
+            display_title: string;
+            /** Editor Work Id */
+            editor_work_id: string | null;
+            /** End Page Name */
+            end_page_name: string | null;
+            /** Full Title */
+            full_title: string;
+            /** Has Dramawebben */
+            has_dramawebben: boolean;
+            /** Has Nya Vagar */
+            has_nya_vagar: boolean;
+            /** Imprint Year */
+            imprint_year: string | null;
+            /** Is Drama */
+            is_drama: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            media_type: "faksimil";
+            /** Page Step */
+            page_step: number;
+            /** Pages */
+            pages: components["schemas"]["WorkManifestFacsimilePage"][];
+            /** Parts */
+            parts: components["schemas"]["WorkManifestPart"][];
+            /** Preferred Size */
+            preferred_size: number;
+            /** Searchable */
+            searchable: boolean;
+            /** Sizes */
+            sizes: components["schemas"]["FacsimileSize"][];
+            /** Start Page Name */
+            start_page_name: string | null;
+            /** Title Path */
+            title_path: string;
+            /** Urn */
+            urn: string | null;
+            /** Work Id */
+            work_id: string;
         };
         /** SearchHitHighlight */
         SearchHitHighlight: {
@@ -1671,6 +1907,16 @@ export interface components {
             media_type: "etext" | "faksimil";
             /** Url */
             url: string;
+        };
+        /** SparseEditorPageBounds */
+        SparseEditorPageBounds: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "sparse";
+            /** Page Indexes */
+            page_indexes: number[];
         };
         /** StatsResponse */
         StatsResponse: {
@@ -2016,6 +2262,63 @@ export interface components {
         WorkLookupResponse: {
             /** Items */
             items: components["schemas"]["WorkLookupItem"][];
+        };
+        /** WorkManifestContributor */
+        WorkManifestContributor: {
+            /** Author Id */
+            author_id: string;
+            author_type: components["schemas"]["ManifestContributionRole"] | null;
+            /** Full Name */
+            full_name: string;
+            role: components["schemas"]["ManifestContributionRole"] | null;
+        };
+        /** WorkManifestFacsimilePage */
+        WorkManifestFacsimilePage: {
+            /** Image Number */
+            image_number: number;
+            /** Page Index */
+            page_index: number;
+            /** Page Name */
+            page_name: string;
+        };
+        /** WorkManifestPage */
+        WorkManifestPage: {
+            /** Page Index */
+            page_index: number;
+            /** Page Name */
+            page_name: string;
+        };
+        /** WorkManifestPart */
+        WorkManifestPart: {
+            /** Authors */
+            authors: components["schemas"]["WorkManifestPartAuthor"][];
+            /** End Page Index */
+            end_page_index: number;
+            /** End Page Name */
+            end_page_name: string;
+            /** Nav Title */
+            nav_title: string | null;
+            /** Short Title */
+            short_title: string | null;
+            /** Source Index */
+            source_index: number;
+            /** Start Page Index */
+            start_page_index: number;
+            /** Start Page Name */
+            start_page_name: string;
+            /** Title */
+            title: string;
+            /** Title Id */
+            title_id: string | null;
+        };
+        /** WorkManifestPartAuthor */
+        WorkManifestPartAuthor: {
+            /** Author Id */
+            author_id: string;
+            /** Full Name */
+            full_name: string | null;
+            /** Surname */
+            surname: string | null;
         };
         /** WorkRepresentation */
         WorkRepresentation: {
@@ -3205,6 +3508,67 @@ export interface operations {
             };
         };
     };
+    v2_get_reader_work_manifest: {
+        parameters: {
+            query: {
+                media_type: "etext" | "faksimil";
+            };
+            header?: never;
+            path: {
+                author_id: string;
+                title_path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderEtextManifest"] | components["schemas"]["ReaderFacsimileManifest"];
+                };
+            };
+            /** @description Work manifest not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     v2_get_work_source_info: {
         parameters: {
             query?: {
@@ -3229,6 +3593,66 @@ export interface operations {
                 };
             };
             /** @description Work not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_editor_work_manifest: {
+        parameters: {
+            query: {
+                media_type: "etext" | "faksimil";
+            };
+            header?: never;
+            path: {
+                work_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EditorCompleteManifest"] | components["schemas"]["EditorPageBoundsOnlyManifest"];
+                };
+            };
+            /** @description Work manifest not found */
             404: {
                 headers: {
                     [name: string]: unknown;

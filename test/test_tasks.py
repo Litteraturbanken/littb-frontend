@@ -54,7 +54,7 @@ def initialize_visual_repository(repository: Path) -> str:
     return run_git(repository, "rev-parse", "HEAD").stdout.strip()
 
 
-class InvokeTasksTest(unittest.TestCase):
+class InvokeTaskTests(unittest.TestCase):
     def test_default_backend_dir_is_discovered_from_the_main_repository(self) -> None:
         git_result = subprocess.CompletedProcess(
             args=[],
@@ -201,7 +201,7 @@ class InvokeTasksTest(unittest.TestCase):
             },
         )
 
-    def test_codegen_generate_uses_the_configured_node_runtime(self) -> None:
+    def test_codegen_generate_exports_snapshot_before_types(self) -> None:
         settings = tasks.Settings(
             backend_app="example.web:app",
             backend_dir=Path("/configured/backend"),
@@ -213,21 +213,40 @@ class InvokeTasksTest(unittest.TestCase):
         context = tasks.Context()
         node_environment = {"PATH": "/configured/node/bin:/usr/bin"}
 
-        with patch.object(
+        with patch.dict(
+            os.environ,
+            {
+                "LB_BACKEND_PYTHON": "/configured/backend/virtual_env/bin/python",
+                "LBAPI_OPENAPI_SCHEMA": "https://live.example.test/v2/openapi.json",
+            },
+        ), patch.object(
             tasks.Settings, "from_environment", return_value=settings
         ), patch.object(
             tasks, "_nuxt_node_environment", return_value=node_environment
         ), patch.object(tasks, "_run") as run:
             tasks.codegen_generate.body(context)
 
-        run.assert_called_once_with(
-            context,
-            ["yarn", "api:generate"],
-            settings.nuxt_dir,
-            env={
-                "LBAPI_OPENAPI_SCHEMA": "http://127.0.0.1:8000/v2/openapi.json",
-                **node_environment,
-            },
+        self.assertEqual(
+            run.call_args_list,
+            [
+                call(
+                    context,
+                    [
+                        "/configured/backend/virtual_env/bin/python",
+                        "scripts/export_v2_openapi.py",
+                    ],
+                    settings.backend_dir,
+                ),
+                call(
+                    context,
+                    ["yarn", "api:generate"],
+                    settings.nuxt_dir,
+                    env={
+                        "LBAPI_OPENAPI_SCHEMA": "/configured/backend/openapi/v2.json",
+                        **node_environment,
+                    },
+                ),
+            ],
         )
 
     def test_backend_quality_dry_run_uses_pinned_repository_tools(self) -> None:
