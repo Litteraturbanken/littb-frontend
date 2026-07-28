@@ -587,6 +587,7 @@ describe("v2 fixture server operations", () => {
         author_type: null,
         role: null
       }],
+      declared_page_count: null,
       display_title: "Doktor Glas",
       editor_work_id: "lb-editor-doktor-glas",
       end_page_name: "-1",

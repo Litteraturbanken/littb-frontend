@@ -31,11 +31,15 @@ type Equal<Left, Right> =
     ? true
     : false
 type Expect<Value extends true> = Value
+type RequiredKey<ObjectType, Key extends keyof ObjectType> =
+  Pick<ObjectType, Key> extends Required<Pick<ObjectType, Key>> ? true : false
 
 type ApiErrorResponse = components["schemas"]["ApiErrorResponse"]
+type ReaderEtextManifest = components["schemas"]["ReaderEtextManifest"]
+type ReaderFacsimileManifest = components["schemas"]["ReaderFacsimileManifest"]
 type ExpectedReaderResponse =
-  | components["schemas"]["ReaderEtextManifest"]
-  | components["schemas"]["ReaderFacsimileManifest"]
+  | ReaderEtextManifest
+  | ReaderFacsimileManifest
 type ExpectedEditorResponse =
   | components["schemas"]["EditorCompleteManifest"]
   | components["schemas"]["EditorPageBoundsOnlyManifest"]
@@ -49,6 +53,20 @@ type _EditorPathMatchesOperation = Expect<
 type _ReaderResponseUnionExact = Expect<
   Equal<ReaderManifestResponse, ExpectedReaderResponse>
 >
+type _ReaderEtextDeclaredPageCountIsRequired = Expect<
+  RequiredKey<ReaderEtextManifest, "declared_page_count">
+>
+type _ReaderFacsimileDeclaredPageCountIsRequired = Expect<
+  RequiredKey<ReaderFacsimileManifest, "declared_page_count">
+>
+type _ReaderEtextDeclaredPageCountIsExact = Expect<Equal<
+  ReaderEtextManifest["declared_page_count"],
+  number | null
+>>
+type _ReaderFacsimileDeclaredPageCountIsExact = Expect<Equal<
+  ReaderFacsimileManifest["declared_page_count"],
+  number | null
+>>
 type _EditorResponseUnionExact = Expect<
   Equal<EditorManifestResponse, ExpectedEditorResponse>
 >
@@ -137,6 +155,7 @@ const readerEtext = {
   alternate_media: null,
   author_id: "SoderbergH",
   contributors: [],
+  declared_page_count: null,
   display_title: "Doktor Glas",
   editor_work_id: "lb1728740",
   end_page_name: "159",
@@ -160,6 +179,7 @@ const readerFacsimile = {
   alternate_media: null,
   author_id: "SoderbergH",
   contributors: [],
+  declared_page_count: null,
   display_title: "Doktor Glas",
   editor_work_id: "lb1728740",
   end_page_name: "159",

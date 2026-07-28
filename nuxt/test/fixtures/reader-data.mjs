@@ -859,6 +859,11 @@ function buildReaderManifestFixture(records, titlePath, mediaType) {
       : null,
     author_id: contributors[0].author_id,
     contributors,
+    declared_page_count: Number.isInteger(selected.page_count)
+      && selected.page_count > 0
+      && selected.page_count <= 100_000
+      ? selected.page_count
+      : null,
     display_title: typeof selected.shorttitle === "string" ? selected.shorttitle : fullTitle,
     editor_work_id: typeof selected.editor_lbworkid === "string"
       ? selected.editor_lbworkid
@@ -879,12 +884,7 @@ function buildReaderManifestFixture(records, titlePath, mediaType) {
     start_page_name: manifestNavigationName(selected, "startpagename", pages),
     title_path: titlePath,
     urn: typeof selected.urn === "string" ? selected.urn : null,
-    work_id: selected.lbworkid,
-    ...(Number.isInteger(selected.page_count)
-      && selected.page_count > 0
-      && selected.page_count <= 100_000
-      ? { declared_page_count: selected.page_count }
-      : {})
+    work_id: selected.lbworkid
   }
   if (mediaType === "etext") return common
   const sizes = manifestSizes(selected)

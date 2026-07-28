@@ -1654,7 +1654,7 @@ export interface components {
             /** Contributors */
             contributors: components["schemas"]["WorkManifestContributor"][];
             /** Declared Page Count */
-            declared_page_count?: number | null;
+            declared_page_count: number | null;
             /** Display Title */
             display_title: string;
             /** Editor Work Id */
@@ -1701,7 +1701,7 @@ export interface components {
             /** Contributors */
             contributors: components["schemas"]["WorkManifestContributor"][];
             /** Declared Page Count */
-            declared_page_count?: number | null;
+            declared_page_count: number | null;
             /** Display Title */
             display_title: string;
             /** Editor Work Id */
