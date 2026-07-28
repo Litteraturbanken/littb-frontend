@@ -510,7 +510,9 @@ const { data, error } = await useAsyncData<CurrentReaderPage>(
     const requestParts = JSON.parse(identity) as [string, string, string, string]
     const readerApiUrl = requestParts.map(encodeURIComponent).join("/")
     try {
-      const currentReader = await requestFetch<ReaderPage>(`/api/reader/${readerApiUrl}`)
+      const currentReader = await requestFetch<ReaderPage>(`/api/reader/${readerApiUrl}`, {
+        retry: 0
+      })
       return { status: "success" as const, identity, reader: currentReader }
     } catch (requestError) {
       if (import.meta.server) throw requestError

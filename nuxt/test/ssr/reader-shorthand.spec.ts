@@ -26,18 +26,6 @@ const readerStatuses = [
   ["MalformedReader", 502],
   ["UnavailableReader", 502]
 ] as const
-const duplicateErrorManifestTitles = new Set([
-  "MalformedStartReader",
-  "OutOfListStartReader",
-  "MalformedPagesReader",
-  "NullPageIndexReader",
-  "FalsePageIndexReader",
-  "EmptyPageIndexReader",
-  "StringPageIndexReader",
-  "UnsafePageIndexReader",
-  "MalformedReader",
-  "UnavailableReader"
-])
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
@@ -243,9 +231,9 @@ test("canonical Reader rejects present malformed start metadata", async ({ reque
     "/författare/SöderbergH/titlar/MalformedStartReader/sida/-2/etext"
   )
   expect(response.status()).toBe(502)
-  expect(await readerManifestRequests(request)).toEqual(Array(2).fill(
+  expect(await readerManifestRequests(request)).toEqual([
     expectedManifestRequest("MalformedStartReader")
-  ))
+  ])
   expect((await readerRequests(request)).some(path => path.includes("/res_"))).toBe(false)
 })
 
@@ -275,9 +263,9 @@ for (const [titlePath, resolverStatus] of readerStatuses) {
       maxRedirects: 0
     })
     expect(response.status()).toBe(expectedStatus)
-    expect(await readerManifestRequests(request)).toEqual(Array(
-      duplicateErrorManifestTitles.has(titlePath) ? 2 : 1
-    ).fill(expectedManifestRequest(titlePath)))
+    expect(await readerManifestRequests(request)).toEqual([
+      expectedManifestRequest(titlePath)
+    ])
   })
 }
 

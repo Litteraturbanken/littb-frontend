@@ -52,7 +52,8 @@ const requestFetch = useRequestFetch()
 const config = useRuntimeConfig()
 function requestPage(): Promise<EditorReaderPage> {
   return requestFetch<EditorReaderPage>(
-    `/api/editor/${encodeURIComponent(workId.value)}/${index.value}/${alias.value}`
+    `/api/editor/${encodeURIComponent(workId.value)}/${index.value}/${alias.value}`,
+    { retry: 0 }
   )
 }
 const initialIdentity = requestIdentity.value

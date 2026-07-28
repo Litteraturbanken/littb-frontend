@@ -154,9 +154,9 @@ test("SSR reports an unavailable editor when both metadata and page count fail",
   request
 }) => {
   expect((await request.get("/editor/lb-editor-unavailable/ix/1/f")).status()).toBe(502)
-  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(2).fill(
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
     "/v2/works/lb-editor-unavailable/editor-manifest?media_type=faksimil"
-  ))
+  ])
 })
 
 test("SSR sanitizes bounded editor e-text before it enters the DTO", async ({ request }) => {
@@ -177,7 +177,7 @@ test("SSR fails clearly when the selected editor facsimile asset is missing", as
 }) => {
   expect((await request.get("/api/editor/lb-editor-missing-image/1/f")).status()).toBe(502)
   expect((await request.get("/editor/lb-editor-missing-image/ix/1/f")).status()).toBe(502)
-  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(3).fill(
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(2).fill(
     "/v2/works/lb-editor-missing-image/editor-manifest?media_type=faksimil"
   ))
 })

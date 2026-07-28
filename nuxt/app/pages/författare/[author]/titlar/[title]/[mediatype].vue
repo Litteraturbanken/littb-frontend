@@ -87,7 +87,7 @@ async function resolveReaderShorthand(): Promise<void> {
       encodeURIComponent(requestedTitle),
       encodeURIComponent(requestedMediaType)
     ].join("/")
-    const resolution = await requestFetch<unknown>(resolverPath)
+    const resolution = await requestFetch<unknown>(resolverPath, { retry: 0 })
     if (!isExpectedResolution(resolution)) {
       throw createError({ statusCode: 502, statusMessage: "Reader page unavailable" })
     }

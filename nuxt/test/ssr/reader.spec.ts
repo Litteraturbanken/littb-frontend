@@ -1396,7 +1396,7 @@ test("a malformed Reader source stays a generic 502", async ({ request }) => {
   expect(html).toContain("<title>Ett fel inträffade | Litteraturbanken</title>")
   expect(html).toContain("Ett fel inträffade. Vänligen försök igen senare.")
   expect(html).not.toContain("Hittar ingen sida")
-  expect(await readerManifestRequests(request)).toEqual(Array(2).fill(
+  expect(await readerManifestRequests(request)).toEqual([
     expectedReaderManifest("SöderbergH", "MalformedReader")
-  ))
+  ])
 })
