@@ -375,6 +375,36 @@ describe("architecture policy verifier", () => {
     )
   })
 
+  test("resolves a const alias at its lexical declaration site", () => {
+    const root = createTree()
+    writeSource(
+      root,
+      "app/lib/lexical-shadow-bypass.ts",
+      'const operation="get_"; const alias=operation; { const operation=getOperation(); fetch(`/api/${alias}work_info`) }'
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "legacy Reader/Editor metadata endpoints are forbidden"
+    )
+  })
+
+  test("does not treat a reassigned mutable binding as constant", () => {
+    const root = createTree()
+    writeSource(
+      root,
+      "server/utils/mutable-operation.ts",
+      'let operation="get_"; operation=getOperation(); fetch(`/api/${operation}work_info`)'
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
   test("does not combine static fragments across dynamic endpoint expressions", () => {
     const root = createTree()
     writeSource(root, "shared/safe-dynamic.ts", [

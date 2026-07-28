@@ -657,17 +657,18 @@ function constantString(node, unit, semantic, atNode = node, seen = new Set()) {
   }
   if (ts.isIdentifier(expression)) {
     const entry = resolveDeclaration(expression.text, atNode, semantic)
-    if (!entry || seen.has(entry.node)) return null
-    const initializer = declarationInitializer(entry, atNode, semantic)
-    return initializer
-      ? constantString(
-          initializer.expression,
-          unit,
-          semantic,
-          atNode,
-          new Set(seen).add(entry.node)
-        )
-      : null
+    if (!entry || seen.has(entry.node)
+      || !ts.isVariableDeclaration(entry.node)
+      || !ts.isVariableDeclarationList(entry.node.parent)
+      || !(entry.node.parent.flags & ts.NodeFlags.Const)
+      || !entry.node.initializer) return null
+    return constantString(
+      entry.node.initializer,
+      unit,
+      semantic,
+      entry.node.initializer,
+      new Set(seen).add(entry.node)
+    )
   }
   return null
 }
