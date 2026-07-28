@@ -104,15 +104,15 @@ function href(pageIndex: number): string {
 }
 function partLabel(): string {
   const part = page.value?.currentPart
-  return part?.navTitle || part?.shortTitle || part?.title || ""
+  return part?.nav_title || part?.short_title || part?.title || ""
 }
 function currentPartAuthorLabel(index: number): string {
   const part = page.value?.currentPart
   const author = part?.authors[index]
   if (!part || !author) return ""
   return part.authors.length === 1
-    ? (author.name ?? author.id)
-    : (author.surname ?? author.name ?? author.id)
+    ? (author.full_name ?? author.author_id)
+    : (author.surname ?? author.full_name ?? author.author_id)
 }
 function browserFullPath(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`
@@ -280,7 +280,7 @@ const contentsHref = computed(() => readerContentsHref(rawFullPath.value))
 const contentsNeutralHref = computed(() => readerContentsNeutralFullPath(rawFullPath.value))
 const contentsTrigger = ref<HTMLAnchorElement | null>(null)
 const contentsPartHrefs = computed(() => page.value?.parts.map(part => (
-  readerContentsNeutralFullPath(href(part.startPageIndex))
+  readerContentsNeutralFullPath(href(part.start_page_index))
 )) ?? [])
 let contentsClosePending = false
 
@@ -301,9 +301,9 @@ async function closeContents(): Promise<void> {
 }
 
 function selectContentsPage(pageName: string): void {
-  const part = page.value?.parts.find(item => item.startPageName === pageName)
+  const part = page.value?.parts.find(item => item.start_page_name === pageName)
   if (!part) return
-  void navigateRawFullPath(href(part.startPageIndex))
+  void navigateRawFullPath(href(part.start_page_index))
 }
 
 const sourceInfoRequested = computed(() => readerSourceInfoIsOpen(route.query["om-boken"]))
@@ -402,8 +402,8 @@ const focusReaderStyle = computed(() => focusMode.value && page.value?.mediaType
     }
   : undefined)
 const focusParts = computed(() => page.value?.parts.map(part => ({
-  href: href(part.startPageIndex),
-  label: part.navTitle || part.shortTitle || part.title
+  href: href(part.start_page_index),
+  label: part.nav_title || part.short_title || part.title
 })) ?? [])
 function activateFocus(): void {
   focusBarVisible.value = true
@@ -1071,9 +1071,9 @@ useHead(() => ({
                 <div class="header">
                   <template
                     v-for="(partAuthor, partAuthorIndex) in page.currentPart.authors"
-                    :key="`${partAuthor.id}:${partAuthorIndex}`"
+                    :key="`${partAuthor.author_id}:${partAuthorIndex}`"
                   >
-                    <NuxtLink :to="`/f%C3%B6rfattare/${encodeURIComponent(partAuthor.id)}`">{{ currentPartAuthorLabel(partAuthorIndex) }}</NuxtLink><span
+                    <NuxtLink :to="`/f%C3%B6rfattare/${encodeURIComponent(partAuthor.author_id)}`">{{ currentPartAuthorLabel(partAuthorIndex) }}</NuxtLink><span
                       v-if="partAuthorIndex < page.currentPart.authors.length - 1"
                     >, </span>
                   </template>
@@ -1187,8 +1187,8 @@ useHead(() => ({
             <div class="header">
               <template
                 v-for="(partAuthor, partAuthorIndex) in page.currentPart.authors"
-                :key="`${partAuthor.id}:${partAuthorIndex}`"
-              ><NuxtLink :to="`/f%C3%B6rfattare/${encodeURIComponent(partAuthor.id)}`">{{ currentPartAuthorLabel(partAuthorIndex) }}</NuxtLink><span
+                :key="`${partAuthor.author_id}:${partAuthorIndex}`"
+              ><NuxtLink :to="`/f%C3%B6rfattare/${encodeURIComponent(partAuthor.author_id)}`">{{ currentPartAuthorLabel(partAuthorIndex) }}</NuxtLink><span
                   v-if="partAuthorIndex < page.currentPart.authors.length - 1"
                 >, </span></template>
             </div>

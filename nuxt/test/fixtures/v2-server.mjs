@@ -3014,7 +3014,8 @@ const server = createServer(async (request, response) => {
     const workId = decodeSegment(editorManifestMatch[1])
     if (workId === null) return validationError(response)
     editorManifestRequests.push(`${apiPathname}${url.search}`)
-    if (workId === "lb-editor-unavailable") {
+    if (workId === "lb-editor-unavailable"
+      || (editorMetadataFailure && workId === "lb-editor-doktor")) {
       return sendJson(response, 503, {
         error: {
           code: "editor_manifest_unavailable",
@@ -3825,9 +3826,6 @@ const server = createServer(async (request, response) => {
     readerMetadataRequests.push(recordedRequest)
     const titlePath = url.searchParams.get("titlepath") || ""
     const editorWorkId = url.searchParams.get("lbworkid")
-    if (editorMetadataFailure && editorWorkId === "lb-editor-doktor") {
-      return sendBody(response, 503, "text/plain; charset=utf-8", "editor metadata unavailable")
-    }
     if (editorWorkId === "lb-editor-fallback" || editorWorkId === "lb-editor-unavailable") {
       return sendBody(response, 503, "text/plain; charset=utf-8", "editor metadata unavailable")
     }

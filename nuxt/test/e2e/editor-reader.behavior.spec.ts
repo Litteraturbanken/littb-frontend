@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test"
 
 const editorFaksimil = "/editor/lb-editor-doktor/ix/1/f"
-const editorEtext = "/editor/lb-editor-doktor/ix/1/e"
+const editorEtext = "/editor/lb-editor-doktor-glas/ix/1/e"
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 
 test("editor Reader resolves compact media aliases with legacy asset URLs and raw-index navigation", async ({ page }) => {
@@ -410,12 +410,12 @@ test("editor Reader suppresses non-atomic contributor and part metadata", async 
   }
 })
 
-test("contextual editor e-text route renders the current ordinary Reader page", async ({
+test("contextual editor e-text route renders the exact Editor representation", async ({
   page
 }) => {
-  await page.goto("/editor/lb-reader-doktor-glas/ix/2/e", { waitUntil: "networkidle" })
+  await page.goto("/editor/lb-editor-doktor-glas/ix/2/e", { waitUntil: "networkidle" })
 
-  await expect(page.locator(".editor-reader .etext")).toContainText("DOKTOR GLAS")
+  await expect(page.locator(".editor-reader .etext")).toContainText("EDITORSSIDA 2")
   await expect(page.locator(".editor-reader .reader-error")).toHaveCount(0)
 })
 

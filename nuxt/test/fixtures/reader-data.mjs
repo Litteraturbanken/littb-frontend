@@ -1002,7 +1002,7 @@ function editorRawRepresentations(workId) {
     return [{
       ...structuredClone(readerWorkInfoResponse.data[0]),
       lbworkid: workId,
-      faksimil_sizes: [3],
+      faksimil_sizes: [1, 2, 3],
       mediatype: "faksimil",
       page_count: 3,
       parts: [],
@@ -1060,36 +1060,45 @@ function editorBounds(raw) {
   return { kind: "sparse", page_indexes: pages.map(page => page.page_index) }
 }
 
-function editorPublicReaderTarget(raw) {
-  for (const media of Array.isArray(raw.mediatypes) ? raw.mediatypes : []) {
-    if (typeof media?.url !== "string") continue
-    const match = /^\/författare\/([^/]+)\/titlar\/([^/]+)\/sida\/([^/]+)\/(etext|faksimil)$/.exec(
-      decodeURI(media.url)
-    )
-    if (match) {
-      return {
-        author_id: decodeURIComponent(match[1]),
-        title_path: decodeURIComponent(match[2]),
-        start_page_name: decodeURIComponent(match[3]),
-        media_type: match[4]
+function editorPublicReaderTarget(records) {
+  const ordered = [...records].sort((left, right) => {
+    const order = value => value === "etext" ? 0 : value === "faksimil" ? 1 : 2
+    return order(left.mediatype) - order(right.mediatype)
+  })
+  for (const raw of ordered) {
+    for (const media of Array.isArray(raw.mediatypes) ? raw.mediatypes : []) {
+      if (typeof media?.url !== "string") continue
+      const match = /^\/författare\/([^/]+)\/titlar\/([^/]+)\/sida\/([^/]+)\/(etext|faksimil)$/.exec(
+        decodeURI(media.url)
+      )
+      if (match) {
+        return {
+          author_id: decodeURIComponent(match[1]),
+          title_path: decodeURIComponent(match[2]),
+          start_page_name: decodeURIComponent(match[3]),
+          media_type: match[4]
+        }
       }
     }
   }
-  const contributors = manifestContributors(raw)
-  if (
-    typeof raw.titlepath !== "string"
-    || typeof raw.startpagename !== "string"
-    || !["etext", "faksimil"].includes(raw.mediatype)
-  ) return null
-  return {
-    author_id: contributors[0].author_id,
-    title_path: raw.titlepath,
-    start_page_name: raw.startpagename,
-    media_type: raw.mediatype
+  for (const raw of ordered) {
+    const contributors = manifestContributors(raw)
+    if (
+      typeof raw.titlepath !== "string"
+      || typeof raw.startpagename !== "string"
+      || !["etext", "faksimil"].includes(raw.mediatype)
+    ) continue
+    return {
+      author_id: contributors[0].author_id,
+      title_path: raw.titlepath,
+      start_page_name: raw.startpagename,
+      media_type: raw.mediatype
+    }
   }
+  return null
 }
 
-function buildEditorCompleteFixture(raw, workId, mediaType, bounds) {
+function buildEditorCompleteFixture(raw, workId, mediaType, bounds, publicReaderTarget) {
   const contributors = manifestContributors(raw)
   const rawContributors = raw.authors ?? raw.work_authors
     ?? (raw.main_author ? [raw.main_author] : null)
@@ -1122,7 +1131,7 @@ function buildEditorCompleteFixture(raw, workId, mediaType, bounds) {
       ? raw.sort_date_imprint.plain
       : typeof raw.imprintyear === "string" ? raw.imprintyear : null,
     sizes,
-    public_reader_target: editorPublicReaderTarget(raw)
+    public_reader_target: publicReaderTarget
   }
 }
 
@@ -1135,12 +1144,20 @@ export function editorManifestResponse(workId, mediaType) {
       bounds: { kind: "dense", page_count: 3 }
     }
   }
-  const raw = editorRawRepresentationFor(workId, mediaType)
+  const records = editorRawRepresentations(workId)
+  const exact = records.filter(representation => representation.mediatype === mediaType)
+  const raw = exact.length === 1 ? structuredClone(exact[0]) : null
   if (raw === null) return null
   let bounds = null
   try {
     bounds = editorBounds(raw)
-    return buildEditorCompleteFixture(raw, workId, mediaType, bounds)
+    return buildEditorCompleteFixture(
+      raw,
+      workId,
+      mediaType,
+      bounds,
+      editorPublicReaderTarget(records)
+    )
   } catch (error) {
     if (bounds === null) throw error
     return {

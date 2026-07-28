@@ -691,7 +691,11 @@ describe("v2 fixture server operations", () => {
         { page_name: "-2", page_index: 2 },
         { page_name: "-1", page_index: 3 }
       ],
-      sizes: [{ size: 4, width: 900 }],
+      sizes: [
+        { size: 2, width: 450 },
+        { size: 3, width: 625 },
+        { size: 4, width: 900 }
+      ],
       public_reader_target: {
         author_id: "SöderbergH",
         title_path: "DoktorGlas",

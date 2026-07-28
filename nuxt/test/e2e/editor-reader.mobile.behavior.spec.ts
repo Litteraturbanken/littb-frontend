@@ -3,8 +3,8 @@ import { expect, test } from "@playwright/test"
 const editorFaksimil = "/editor/lb-editor-doktor/ix/1/f"
 
 test("mobile Editor renders contextual content and honest fallback state", async ({ page }) => {
-  await page.goto("/editor/lb-reader-doktor-glas/ix/2/e", { waitUntil: "networkidle" })
-  await expect(page.locator(".editor-reader .etext")).toContainText("DOKTOR GLAS")
+  await page.goto("/editor/lb-editor-doktor-glas/ix/2/e", { waitUntil: "networkidle" })
+  await expect(page.locator(".editor-reader .etext")).toContainText("EDITORSSIDA 2")
 
   await page.goto("/editor/lb-editor-fallback/ix/1/f", { waitUntil: "networkidle" })
   await expect(page.locator(".editor-reader .reader_main")).toBeVisible()

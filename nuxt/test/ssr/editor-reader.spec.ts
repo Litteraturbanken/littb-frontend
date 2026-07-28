@@ -1,15 +1,45 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type APIRequestContext } from "@playwright/test"
 import { parseHTML } from "linkedom"
 
-test("SSR renders editor metadata, OCR, and raw page bounds", async ({ request }) => {
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
+
+async function resetEditorRequests(request: APIRequestContext): Promise<void> {
+  await Promise.all([
+    request.delete(`${fixture}/_editor_manifest_requests`),
+    request.delete(`${fixture}/_reader_metadata_requests`),
+    request.delete(`${fixture}/_reader_requests`)
+  ])
+}
+
+async function requestLedger(
+  request: APIRequestContext,
+  path: string
+): Promise<string[]> {
+  const response = await request.get(`${fixture}${path}`)
+  return (await response.json() as { requests: string[] }).requests
+}
+
+test.beforeEach(async ({ request }) => resetEditorRequests(request))
+
+test("SSR renders editor metadata, OCR, and generated page bounds", async ({ request }) => {
   const apiResponse = await request.get("/api/editor/lb-editor-doktor/1/f")
   expect(apiResponse.status()).toBe(200)
+  expect(apiResponse.headers()["cache-control"]).toBe("no-store")
   expect(await apiResponse.json()).toMatchObject({
     endPageName: "-1",
     imprintYear: "1905",
     metadataAvailable: true,
     pageName: null
   })
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-doktor/editor-manifest?media_type=faksimil"
+  ])
+  expect(await requestLedger(request, "/_reader_metadata_requests")).toEqual([])
+  expect((await requestLedger(request, "/_reader_requests")).some(path => (
+    path.includes("get_work_info") || path.includes("count_pages")
+  ))).toBe(false)
+
+  await resetEditorRequests(request)
 
   const response = await request.get("/editor/lb-editor-doktor/ix/1/f")
   expect(response.status()).toBe(200)
@@ -33,21 +63,34 @@ test("SSR renders editor metadata, OCR, and raw page bounds", async ({ request }
     .toBe(" (1905)")
   expect(document.querySelector(".reader-context-ssr .pages")?.textContent)
     .toBe("av -1")
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-doktor/editor-manifest?media_type=faksimil"
+  ])
+  expect(await requestLedger(request, "/_reader_metadata_requests")).toEqual([])
 
   expect((await request.get("/editor/lb-editor-doktor/ix/3/f")).status()).toBe(404)
 })
 
-test("SSR falls back to count_pages when editor metadata is unavailable", async ({
+test("SSR renders typed bounds-only navigation without metadata controls", async ({
   request
 }) => {
   const apiResponse = await request.get("/api/editor/lb-editor-fallback/1/f")
   expect(apiResponse.status()).toBe(200)
+  expect(apiResponse.headers()["cache-control"]).toBe("no-store")
   expect(await apiResponse.json()).toMatchObject({
     endPageName: null,
     imprintYear: null,
     metadataAvailable: false,
+    pageCount: 3,
+    pageIndexes: null,
     pageName: null
   })
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-fallback/editor-manifest?media_type=faksimil"
+  ])
+  expect(await requestLedger(request, "/_reader_metadata_requests")).toEqual([])
+
+  await resetEditorRequests(request)
 
   const response = await request.get("/editor/lb-editor-fallback/ix/1/f")
   expect(response.status()).toBe(200)
@@ -71,6 +114,10 @@ test("SSR falls back to count_pages when editor metadata is unavailable", async 
     .not.toContain("999999999999")
   expect(document.querySelector(".reader-context-ssr .editor-metadata-controls")).toBeNull()
   expect(document.querySelector('.reader-context-ssr a[rel="next"]')).not.toBeNull()
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-fallback/editor-manifest?media_type=faksimil"
+  ])
+  expect(await requestLedger(request, "/_reader_metadata_requests")).toEqual([])
 
   expect((await request.get("/editor/lb-editor-fallback/ix/3/f")).status()).toBe(404)
 })
@@ -93,7 +140,7 @@ test("SSR reports an unavailable editor when both metadata and page count fail",
 })
 
 test("SSR sanitizes bounded editor e-text before it enters the DTO", async ({ request }) => {
-  const response = await request.get("/api/editor/lb-editor-doktor/1/e")
+  const response = await request.get("/api/editor/lb-editor-doktor-glas/1/e")
   expect(response.status()).toBe(200)
   const body = await response.json()
 
@@ -109,35 +156,40 @@ test("SSR fails clearly when the selected editor facsimile asset is missing", as
   expect((await request.get("/editor/lb-editor-missing-image/ix/1/f")).status()).toBe(502)
 })
 
-test("SSR derives editor page count from a valid pages array", async ({ request }) => {
-  const apiResponse = await request.get("/api/editor/lb-reader-doktor-glas/2/e")
+test("SSR uses generated dense bounds for the exact e-text representation", async ({ request }) => {
+  const apiResponse = await request.get("/api/editor/lb-editor-doktor-glas/2/e")
   expect(apiResponse.status()).toBe(200)
   expect(await apiResponse.json()).toMatchObject({
     metadataAvailable: true,
-    pageCount: 4,
+    pageCount: 3,
     pageIndex: 2
   })
 
-  const response = await request.get("/editor/lb-reader-doktor-glas/ix/2/e")
+  const response = await request.get("/editor/lb-editor-doktor-glas/ix/2/e")
   expect(response.status()).toBe(200)
-  expect((await response.text())).toContain("DOKTOR")
+  expect((await response.text())).toContain("EDITORSSIDA 2")
 })
 
-test("SSR derives sparse raw Editor bounds from the largest page index", async ({ request }) => {
+test("SSR derives sparse typed Editor bounds from the largest page index", async ({ request }) => {
   const response = await request.get("/api/editor/lb-editor-sparse/12/f")
 
   expect(response.status()).toBe(200)
   expect(await response.json()).toMatchObject({
     pageCount: 58,
     pageIndex: 12,
+    pageIndexes: [2, 12, 57],
     nextIndex: 57,
     previousIndex: 2
   })
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-sparse/editor-manifest?media_type=faksimil"
+  ])
+  expect(await requestLedger(request, "/_reader_metadata_requests")).toEqual([])
 
   expect((await request.get("/api/editor/lb-editor-sparse/13/f")).status()).toBe(404)
 })
 
-test("SSR selects the requested representation and derives the close target from raw works", async ({
+test("SSR selects the requested representation and uses its typed close target", async ({
   request
 }) => {
   const response = await request.get("/editor/lb-editor-mixed/ix/4/f")
@@ -151,7 +203,7 @@ test("SSR selects the requested representation and derives the close target from
     .toBe("4")
   expect([...document.querySelectorAll('a[href*="/f%C3%B6rfattare/"]')]
     .find(link => link.textContent?.includes("Stäng editor"))?.getAttribute("href")).toBe(
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
+    "/f%C3%B6rfattare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
   )
 })
 
@@ -175,8 +227,13 @@ test("SSR exposes bounded Editor contributors, mapped readable bounds, and part 
   expect(apiResponse.status()).toBe(200)
   expect(await apiResponse.json()).toMatchObject({
     contributors: [
-      { authorType: null, id: "BoyeK", name: "Karin Boye", role: null },
-      { authorType: "editor", id: "HelgesonP", name: "Paulina Helgeson", role: null }
+      { author_id: "BoyeK", author_type: null, full_name: "Karin Boye", role: null },
+      {
+        author_id: "HelgesonP",
+        author_type: "editor",
+        full_name: "Paulina Helgeson",
+        role: null
+      }
     ],
     currentPart: null,
     firstReadableIndex: 2,

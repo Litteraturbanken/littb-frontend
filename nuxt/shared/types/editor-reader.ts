@@ -1,5 +1,5 @@
-import type { ReaderPart, ReaderWorkContributor } from "./reader"
 import type { SanitizedHtml } from "./renderable-html"
+import type { WorkManifestContributor, WorkManifestPart } from "./work-manifest"
 
 export interface EditorFacsimileSource {
   size: number
@@ -11,8 +11,8 @@ export interface EditorReaderPage {
   authorId: string | null
   authorName: string | null
   closeHref: string | null
-  contributors: ReaderWorkContributor[]
-  currentPart: ReaderPart | null
+  contributors: WorkManifestContributor[]
+  currentPart: WorkManifestPart | null
   endPageName: string | null
   facsimileSources: EditorFacsimileSource[]
   firstReadableIndex: number
@@ -32,7 +32,7 @@ export interface EditorReaderPage {
   pageCount: number | null
   pageIndex: number
   pageName: string | null
-  parts: ReaderPart[]
+  parts: WorkManifestPart[]
   previousIndex: number | null
   previousPartIndex: number | null
   searchable: boolean
