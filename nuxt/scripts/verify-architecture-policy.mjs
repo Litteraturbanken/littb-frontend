@@ -385,6 +385,28 @@ function auditLegacyReaderEditorMetadata(record) {
     }
     auditNode(unit.sourceFile)
   }
+  if (reported || !record.template) return
+  const auditTemplateNode = node => {
+    if (reported) return
+    if (node.type === NodeTypes.ELEMENT) {
+      for (const property of node.props) {
+        if (property.type !== NodeTypes.ATTRIBUTE || !property.value
+          || !containsLegacyReaderEditorMetadata(property.value.content)) continue
+        reported = true
+        addViolation(
+          record.relativePath,
+          lineNumberAt(
+            record.source,
+            record.template.start + property.value.loc.start.offset
+          ),
+          "legacy Reader/Editor metadata endpoints are forbidden"
+        )
+        return
+      }
+    }
+    for (const child of node.children ?? []) auditTemplateNode(child)
+  }
+  auditTemplateNode(record.template.ast)
 }
 
 function visitAst(node, callback) {

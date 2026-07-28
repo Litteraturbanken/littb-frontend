@@ -405,6 +405,59 @@ describe("architecture policy verifier", () => {
     expect(result.stderr).toBe("")
   })
 
+  test.each([
+    ["href", '<a href="/count_pages/lb1/etext">Read</a>'],
+    ["action", '<form action="/api/get_work_info"></form>'],
+    ["ordinary attribute", '<div data-endpoint="/get_work_info"></div>']
+  ])("rejects a legacy endpoint in a static Vue %s", (_kind, element) => {
+    const root = createTree()
+    writeSource(root, "app/pages/static-endpoint.vue", [
+      "<template>",
+      `  ${element}`,
+      "</template>"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toBe(
+      "app/pages/static-endpoint.vue:2: legacy Reader/Editor metadata endpoints are forbidden\n"
+    )
+  })
+
+  test("accepts harmless static Vue attributes", () => {
+    const root = createTree()
+    writeSource(root, "app/pages/static-safe.vue", [
+      "<template>",
+      '  <a href="/api/v2/works/lb1" class="count_pages" data-operation="get_work_info">Read</a>',
+      "</template>"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("reports one Vue source violation across static, directive, and script literals", () => {
+    const root = createTree()
+    writeSource(root, "app/pages/static-and-directive.vue", [
+      "<script setup>",
+      'const endpoint = "/get_work_info"',
+      "</script>",
+      "<template>",
+      '  <a href="/count_pages/lb1/etext" :data-endpoint="\'/api/get_work_info\'">Read</a>',
+      "</template>"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toBe(
+      "app/pages/static-and-directive.vue:2: legacy Reader/Editor metadata endpoints are forbidden\n"
+    )
+  })
+
   test("does not combine static fragments across dynamic endpoint expressions", () => {
     const root = createTree()
     writeSource(root, "shared/safe-dynamic.ts", [
