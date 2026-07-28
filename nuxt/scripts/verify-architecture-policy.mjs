@@ -336,13 +336,26 @@ function auditComments(record) {
   }
 }
 
+function staticConcatenatedString(node) {
+  const expression = unwrapExpression(node)
+  if (ts.isStringLiteralLike(expression)) return expression.text
+  if (!ts.isBinaryExpression(expression)
+    || expression.operatorToken.kind !== ts.SyntaxKind.PlusToken) return null
+  const left = staticConcatenatedString(expression.left)
+  if (left === null) return null
+  const right = staticConcatenatedString(expression.right)
+  return right === null ? null : left + right
+}
+
+function containsLegacyReaderEditorMetadata(value) {
+  return legacyReaderEditorMetadataFragments.some(fragment => value.includes(fragment))
+}
+
 function auditLegacyReaderEditorMetadata(record) {
   if (!isProductionPath(record.relativePath)) return
   for (const unit of record.units) {
-    visitAst(unit.sourceFile, node => {
-      if (!ts.isStringLiteralLike(node) || !legacyReaderEditorMetadataFragments.some(
-        fragment => node.text.includes(fragment)
-      )) return
+    const report = (value, node) => {
+      if (!containsLegacyReaderEditorMetadata(value)) return
       addViolation(
         record.relativePath,
         lineNumberAt(
@@ -351,7 +364,28 @@ function auditLegacyReaderEditorMetadata(record) {
         ),
         "legacy Reader/Editor metadata endpoints are forbidden"
       )
-    })
+    }
+    const auditNode = node => {
+      if (ts.isTemplateExpression(node)) {
+        report(node.head.text, node.head)
+        for (const span of node.templateSpans) {
+          auditNode(span.expression)
+          report(span.literal.text, span.literal)
+        }
+        return
+      }
+      if (ts.isBinaryExpression(node)
+        && node.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+        const value = staticConcatenatedString(node)
+        if (value !== null) {
+          report(value, node)
+          return
+        }
+      }
+      if (ts.isStringLiteralLike(node)) report(node.text, node)
+      ts.forEachChild(node, auditNode)
+    }
+    auditNode(unit.sourceFile)
   }
 }
 

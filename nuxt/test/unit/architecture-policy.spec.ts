@@ -323,6 +323,71 @@ describe("architecture policy verifier", () => {
     )
   })
 
+  test.each([
+    [
+      "app/lib/template-bypass.ts",
+      "const id = getId()\nfetch(`/count_pages/${id}/etext`)"
+    ],
+    [
+      "server/utils/concatenation-bypass.ts",
+      'fetch(("/api/" + "get_") + ("work" + "_info"))'
+    ]
+  ])("rejects statically recoverable legacy endpoint bypass in %s", (path, source) => {
+    const root = createTree()
+    writeSource(root, path, source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "legacy Reader/Editor metadata endpoints are forbidden"
+    )
+  })
+
+  test("does not combine static fragments across dynamic endpoint expressions", () => {
+    const root = createTree()
+    writeSource(root, "shared/safe-dynamic.ts", [
+      'const suffix = getSuffix()',
+      'const dynamicConcatenation = "/api/get_" + suffix',
+      'const dynamicTemplate = `/count_${suffix}pages/`',
+      'const incompleteLiteral = "/count_pages"',
+      'void [dynamicConcatenation, dynamicTemplate, incompleteLiteral]'
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("reports one deterministic sorted legacy-endpoint violation per source", () => {
+    const root = createTree()
+    writeSource(
+      root,
+      "shared/z-last.ts",
+      'const prefix = "safe"\nfetch(prefix)\nfetch("/get_" + "work_info")'
+    )
+    writeSource(
+      root,
+      "app/a-first.ts",
+      'const id = getId()\nfetch(`/count_pages/${id}/etext`)'
+    )
+    writeSource(root, "server/middle.ts", 'fetch("/api/get_work_info")')
+
+    const first = runVerifier(root)
+    const second = runVerifier(root)
+    const expected = [
+      "app/a-first.ts:2: legacy Reader/Editor metadata endpoints are forbidden",
+      "server/middle.ts:1: legacy Reader/Editor metadata endpoints are forbidden",
+      "shared/z-last.ts:3: legacy Reader/Editor metadata endpoints are forbidden"
+    ].join("\n") + "\n"
+
+    expect(first.status).toBe(1)
+    expect(first.stderr).toBe(expected)
+    expect(second.status).toBe(1)
+    expect(second.stderr).toBe(expected)
+  })
+
   test("keeps generated, fixture, test, and Angular capture sources outside the legacy endpoint scan", () => {
     const root = createTree()
     for (const path of [
