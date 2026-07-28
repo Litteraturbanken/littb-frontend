@@ -1,6 +1,47 @@
 import { describe, expect, test } from "vitest"
 
 describe("SearchMultiSelect grouped normalization", () => {
+  test("forwards only the reviewed class and Library marker attributes", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, ssrContextKey }, { default: SearchMultiSelect }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/search/SearchMultiSelect.vue")
+    ])
+    let hostileClicks = 0
+    const markers = [
+      "data-library-about-authors",
+      "data-library-keywords",
+      "data-library-languages",
+      "data-library-media",
+      "data-library-narrowing"
+    ] as const
+    const app = createApp({
+      setup: () => () => h(SearchMultiSelect, {
+        modelValue: [],
+        options: [],
+        placeholder: "Säkra attribut",
+        class: "consumer-class",
+        ...Object.fromEntries(markers.map(marker => [marker, ""])),
+        innerHTML: "<strong>hostile</strong>",
+        textContent: "hostile text",
+        onClick: () => { hostileClicks += 1 }
+      })
+    })
+    app.provide(ssrContextKey, { modules: new Set<string>() })
+    app.mount(target)
+    await nextTick()
+
+    const root = target.querySelector<HTMLElement>(".filter_select")!
+    expect(root.classList.contains("consumer-class")).toBe(true)
+    for (const marker of markers) expect(root.hasAttribute(marker)).toBe(true)
+    expect(root.innerHTML).not.toContain("hostile")
+    expect(root.textContent).not.toContain("hostile text")
+    root.click()
+    expect(hostileClicks).toBe(0)
+    app.unmount()
+  })
+
   test("renders flat options when option groups are omitted", async () => {
     const target = document.createElement("div")
     document.body.append(target)

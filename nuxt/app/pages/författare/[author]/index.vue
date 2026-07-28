@@ -33,6 +33,10 @@ const authorId = computed(() => {
 })
 const asyncKey = computed(() => `author-profile:ordinary:${authorId.value}`)
 const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
+const profileHandoffs = useState<Partial<Record<string, ProfileResponse>>>(
+  "author-profile-handoffs",
+  () => ({})
+)
 
 function clientAuthorPath(path: string): string {
   return path.replace(/^\/författare(?=\/|$)/u, "/f%C3%B6rfattare")
@@ -41,6 +45,12 @@ function clientAuthorPath(path: string): string {
 const { data } = await useAsyncData<ProfileResponse>(
   asyncKey,
   async () => {
+    const handoffKey = `ordinary:${authorId.value}`
+    const handoff = profileHandoffs.value[handoffKey]
+    if (handoff) {
+      profileHandoffs.value[handoffKey] = undefined
+      return handoff
+    }
     try {
       const { data: profile, response } = await client.GET("/authors/{author_id}", {
         params: { path: { author_id: authorId.value } }
@@ -59,9 +69,6 @@ const { data } = await useAsyncData<ProfileResponse>(
     } catch {
       return { view: null, status: 503, canonicalPath: "", hasDramawebben: false }
     }
-  },
-  {
-    getCachedData: (key, nuxtApp) => nuxtApp.payload.data[key] as ProfileResponse | undefined
   }
 )
 
@@ -85,8 +92,7 @@ if (response.value.canonicalPath) {
       && response.value.hasDramawebben
       && canonicalPath === authorProfilePath(authorId.value, "dramawebben")
     ) {
-      const nuxtApp = useNuxtApp()
-      nuxtApp.payload.data[`author-profile:dramawebben:${authorId.value}`] = response.value
+      profileHandoffs.value[`dramawebben:${authorId.value}`] = response.value
     }
     await navigateTo(
       { path: canonicalPath, query: route.query },

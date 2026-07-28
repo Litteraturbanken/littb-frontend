@@ -97,7 +97,12 @@ onMounted(() => {
 
 <template>
   <span
-    v-bind="$attrs"
+    :class="$attrs.class"
+    :data-library-about-authors="$attrs['data-library-about-authors']"
+    :data-library-keywords="$attrs['data-library-keywords']"
+    :data-library-languages="$attrs['data-library-languages']"
+    :data-library-media="$attrs['data-library-media']"
+    :data-library-narrowing="$attrs['data-library-narrowing']"
     class="filter_select select2 select2-container select2-container--default"
   >
     <VueMultiselect

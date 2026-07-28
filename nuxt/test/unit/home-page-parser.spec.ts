@@ -19,6 +19,19 @@ type ObservedHomeParser = {
 
 let parserModuleSequence = 0
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isHomeContent(value: unknown): value is HomeContent {
+  return isRecord(value)
+    && Object.keys(value).length === 4
+    && typeof value.bodyHtml === "string"
+    && (value.stylesheetPath === null || typeof value.stylesheetPath === "string")
+    && (value.backgroundImagePath === null || typeof value.backgroundImagePath === "string")
+    && (value.backgroundColor === null || typeof value.backgroundColor === "string")
+}
+
 async function loadObservedParser(): Promise<ObservedHomeParser> {
   const pagePath = fileURLToPath(new URL("../../app/pages/index.vue", import.meta.url))
   const source = await readFile(pagePath, "utf8")
@@ -71,13 +84,29 @@ async function loadObservedParser(): Promise<ObservedHomeParser> {
     export { issuedHomeHtml }
   `
   const encoded = Buffer.from(javascript).toString("base64")
-  const module = await import(
+  const imported: unknown = await import(
     `data:text/javascript;base64,${encoded}#${parserModuleSequence}`
   )
-  return {
-    issuedHomeHtml: module.issuedHomeHtml as () => readonly string[],
-    parseHomeContent: module.parseHomeContent as ParseHomeContent
+  if (!isRecord(imported)
+    || typeof imported.issuedHomeHtml !== "function"
+    || typeof imported.parseHomeContent !== "function") {
+    throw new TypeError("Observed home parser module has an invalid export surface")
   }
+  const issuedHomeHtml = (): readonly string[] => {
+    const values: unknown = imported.issuedHomeHtml()
+    if (!Array.isArray(values) || !values.every(value => typeof value === "string")) {
+      throw new TypeError("Observed home HTML issuer returned an invalid value")
+    }
+    return values
+  }
+  const parseHomeContent: ParseHomeContent = source => {
+    const value: unknown = imported.parseHomeContent(source)
+    if (!isHomeContent(value)) {
+      throw new TypeError("Observed home parser returned an invalid value")
+    }
+    return value
+  }
+  return { issuedHomeHtml, parseHomeContent }
 }
 
 async function loadParser(): Promise<ParseHomeContent> {

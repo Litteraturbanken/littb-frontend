@@ -33,10 +33,20 @@ const authorId = computed(() => {
 })
 const asyncKey = computed(() => `author-profile:dramawebben:${authorId.value}`)
 const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
+const profileHandoffs = useState<Partial<Record<string, ProfileResponse>>>(
+  "author-profile-handoffs",
+  () => ({})
+)
 
 const { data } = await useAsyncData<ProfileResponse>(
   asyncKey,
   async () => {
+    const handoffKey = `dramawebben:${authorId.value}`
+    const handoff = profileHandoffs.value[handoffKey]
+    if (handoff) {
+      profileHandoffs.value[handoffKey] = undefined
+      return handoff
+    }
     try {
       const { data: profile, response } = await client.GET("/authors/{author_id}", {
         params: { path: { author_id: authorId.value } }
@@ -53,9 +63,6 @@ const { data } = await useAsyncData<ProfileResponse>(
     } catch {
       return { view: null, status: 503, canonicalPath: "", hasDramawebben: false }
     }
-  },
-  {
-    getCachedData: (key, nuxtApp) => nuxtApp.payload.data[key] as ProfileResponse | undefined
   }
 )
 
@@ -72,8 +79,7 @@ if (import.meta.server && response.value.status !== 200) {
 
 if (response.value.status === 200 && !response.value.hasDramawebben) {
   if (import.meta.client) {
-    const nuxtApp = useNuxtApp()
-    nuxtApp.payload.data[`author-profile:ordinary:${authorId.value}`] = response.value
+    profileHandoffs.value[`ordinary:${authorId.value}`] = response.value
   }
   await navigateTo(
     { path: authorProfilePath(authorId.value), query: route.query },

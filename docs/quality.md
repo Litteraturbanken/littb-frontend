@@ -46,20 +46,35 @@ Renderable content is nominally typed by both kind and policy:
   acquire a capability.
 
 `RenderableHtmlContent.vue` is the sole live Vue-owned DOM HTML renderer. Each
-reviewed detached-DOM operation is pinned to executable-token provenance, an
-exact source signature, and cardinality in
-`scripts/verify-architecture-policy.mjs`; comments and string literals cannot
-satisfy the review, and an allowlisted file cannot introduce another DOM HTML
-read or write. Computed DOM HTML keys and dynamic Vue arguments are forbidden.
+reviewed detached-DOM operation is pinned by TypeScript and Vue compiler ASTs
+to scope-correct executable provenance, exact function/receiver/issuer shape,
+and cardinality in `scripts/verify-architecture-policy.mjs`. Dead declarations,
+same-name shadows, comments, strings, template data, and regex literals cannot
+satisfy the review, while executable template-literal and Vue interpolation
+expressions remain audited. Parser and issuer names must resolve to their
+reviewed imports; a local same-name binding is not trusted. An allowlisted file
+cannot introduce another DOM HTML read or write. Static or runtime-computed DOM
+HTML keys, including binding and assignment destructuring, Vue raw-HTML
+directives, dynamic native bindings, and object `v-bind` on native elements are
+forbidden; component-only attribute forwarding remains allowed.
 Adding or changing an operation requires security review and a deliberate
 policy update. Capability issuance is likewise pinned to exact issuer
 declarations and calls, the exact export surface, and exactly one private
-constructor assertion. The policy traces imported aliases, derived/indexed
-types, issuer values, and generic assertions. Vue raw-HTML directives
-(including arguments and modifiers), capability casts or generic escapes,
-exported branders, inline ESLint configuration, and unreviewed TypeScript
-suppression comments are blocking violations. The ESLint configuration itself
-must byte-for-byte equal the reviewed canonical file.
+constructor assertion. The policy traces imported aliases, `ReturnType`,
+`typeof`, wrappers, unions/intersections, function types, generic constraints
+and value aliases, and the exact branded fields of real frontend DTOs through
+TypeScript assertions, including angle assertions and Vue template casts.
+Capability casts or generic escapes, exported branders, inline ESLint
+configuration, and unreviewed
+TypeScript suppression comments are blocking violations. The issuer module is
+compared structurally by AST, while the ESLint configuration itself must
+byte-for-byte equal the reviewed canonical file.
+
+Generated/output exclusions are root-only and exact: nested `.nuxt`,
+`.output`, `coverage`, `false`, `node_modules`, `playwright-report`, or
+`test-results*` directories below `app`, `server`, `shared`, `scripts`, or
+`test` remain audited. Only the exact `app/lib/api/generated` subtree is the
+reviewed generated-source exception.
 
 Presentation stylesheet links are authority/path capabilities. Their bodies
 remain browser-owned and are not prefetched, proxied, or rewritten by Nuxt.
@@ -115,12 +130,15 @@ runtime pinned by `nuxt/.nvmrc`. The full desktop/mobile browser and visual
 suites remain part of the parity gate above.
 
 Committed visual baselines are immutable relative to authority commit
-`06add2bb`. From the resolved repository root, the release task reads the
-authority tree's blob set and byte-compares it directly with the current
-filesystem baseline tree. This is independent of index flags such as
-assume-unchanged and skip-worktree, and it rejects changed, missing, added,
-ordinary-untracked, ignored-untracked, or symlinked baseline files. It never
-updates snapshots or generated artifacts.
+`06add2bb`. From the resolved repository root, the release task independently
+compares the authority with committed `HEAD`, the staged index, and the current
+filesystem. It then reads the authority tree's exact blob set and byte-compares
+it with the filesystem baseline tree. This remains effective when working bytes
+hide a committed or staged change and is independent of index flags such as
+assume-unchanged and skip-worktree. Changed, missing, added,
+ordinary-untracked, ignored-untracked, or symlinked baseline files fail, as
+does a symlink in any baseline-path ancestor. The gate never updates snapshots
+or generated artifacts.
 
 ## Next contract tranche
 

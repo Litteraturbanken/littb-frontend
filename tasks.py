@@ -193,6 +193,26 @@ def _verify_visual_baselines(
     if authority_result.returncode != 0:
         raise Exit("The immutable visual-baseline authority is invalid")
 
+    committed_result = subprocess.run(
+        ["git", "diff", "--quiet", f"{authority}..HEAD", "--", VISUAL_BASELINE_PATH],
+        cwd=repository_root,
+        check=False,
+    )
+    if committed_result.returncode == 1:
+        raise Exit("Committed visual baselines differ from the immutable authority")
+    if committed_result.returncode != 0:
+        raise Exit("Unable to compare committed visual baselines with the authority")
+
+    staged_result = subprocess.run(
+        ["git", "diff", "--cached", "--quiet", authority, "--", VISUAL_BASELINE_PATH],
+        cwd=repository_root,
+        check=False,
+    )
+    if staged_result.returncode == 1:
+        raise Exit("Staged visual baselines differ from the immutable authority")
+    if staged_result.returncode != 0:
+        raise Exit("Unable to compare staged visual baselines with the authority")
+
     tree_result = subprocess.run(
         ["git", "ls-tree", "-r", "-z", "--full-tree", authority, "--", VISUAL_BASELINE_PATH],
         cwd=repository_root,
@@ -217,8 +237,13 @@ def _verify_visual_baselines(
         authority_blobs[relative_path] = object_id
 
     baseline_root = repository_root / VISUAL_BASELINE_PATH
-    if baseline_root.is_symlink():
-        raise Exit("Visual baseline symlinks are forbidden")
+    component = repository_root
+    for part in Path(VISUAL_BASELINE_PATH).parts:
+        component /= part
+        if component.is_symlink():
+            raise Exit("Visual baseline symlinks are forbidden")
+        if not component.exists():
+            break
     filesystem_files: dict[str, Path] = {}
     if baseline_root.exists():
         for path in baseline_root.rglob("*"):

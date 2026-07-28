@@ -64,90 +64,129 @@ const detachedDomAllowlist = [
 
 const reviewedDomSources: Readonly<Record<string, string>> = {
   "app/components/global/RenderableHtmlContent.vue": [
-    "const forwardedAttrs = Object.fromEntries(",
-    "  Object.entries(attrs).filter(([name]) => name !== \"innerHTML\" && name !== \"textContent\")",
-    ")",
-    "return h(props.as, {",
-    "  ...forwardedAttrs,",
-    `  ${domHtmlProperty}: props.html`,
-    "})"
+    "<script lang=\"ts\">",
+    "export default defineComponent((props, { attrs }) => () => {",
+    "  const forwardedAttrs = Object.fromEntries(",
+    "    Object.entries(attrs).filter(([name]) => name !== \"innerHTML\" && name !== \"textContent\")",
+    "  )",
+    "  return h(props.as, {",
+    "    ...forwardedAttrs,",
+    `    ${domHtmlProperty}: props.html`,
+    "  })",
+    "})",
+    "</script>"
   ].join("\n"),
   "app/lib/author-profile.ts": [
     "import { parseHTML } from \"linkedom\"",
-    "const { document } = parseHTML(\"<!doctype html><html><body></body></html>\")",
-    "const container = document.createElement(\"div\")",
-    `container.${domHtmlProperty} = value`,
-    `issueAuthorProfileHtml(container.${domHtmlProperty})`
+    "import { issueAuthorProfileHtml } from \"#shared/utils/renderable-html\"",
+    "export function sanitizeAuthorHtml(value: string) {",
+    "  const { document } = parseHTML(\"<!doctype html><html><body></body></html>\")",
+    "  const container = document.createElement(\"div\")",
+    `  container.${domHtmlProperty} = value`,
+    `  return issueAuthorProfileHtml(container.${domHtmlProperty})`,
+    "}"
   ].join("\n"),
   "app/lib/reader-dictionary.ts": [
     "import { parseHTML } from \"linkedom\"",
-    "const { document } = parseHTML(`<div data-dictionary-root>${markup}</div>`)",
-    "const root = document.querySelector(\"[data-dictionary-root]\")",
-    `const html = root.${domHtmlProperty}`
+    "export function sanitizeDictionaryArticle(markup: string) {",
+    "  const { document } = parseHTML(`<div data-dictionary-root>${markup}</div>`)",
+    "  const root = document.querySelector(\"[data-dictionary-root]\")!",
+    `  const html = root.${domHtmlProperty}`,
+    "  return issueDictionaryArticleHtml(html)",
+    "}"
   ].join("\n"),
   "app/lib/search-hit-highlight.ts": [
     "import { parseHTML } from \"linkedom\"",
-    "const { document } = parseHTML(`<div data-editor-highlight-root>${html}</div>`)",
-    "const root = document.querySelector(\"[data-editor-highlight-root]\")",
-    `return root.${domHtmlProperty}`,
-    "const { document } = parseHTML(`<div data-reader-highlight-root>${html}</div>`)",
-    "const root = document.querySelector(\"[data-reader-highlight-root]\")",
-    `issueReaderOcrHtml(root.${domHtmlProperty})`
+    "import { issueReaderOcrHtml } from \"#shared/utils/renderable-html\"",
+    "function markSimpleContiguousWords(html: string) {",
+    "  const { document } = parseHTML(`<div data-editor-highlight-root>${html}</div>`)",
+    "  const root = document.querySelector(\"[data-editor-highlight-root]\")!",
+    `  return root.${domHtmlProperty}`,
+    "}",
+    "export function markReaderSearchOcrHtml(html: string) {",
+    "  const { document } = parseHTML(`<div data-reader-highlight-root>${html}</div>`)",
+    "  const root = document.querySelector(\"[data-reader-highlight-root]\")!",
+    `  return issueReaderOcrHtml(root.${domHtmlProperty})`,
+    "}"
   ].join("\n"),
   "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue": [
+    "<script setup lang=\"ts\">",
     "import { parseHTML } from \"linkedom\"",
-    "const { document } = parseHTML(`<div data-reader-highlight-root>${source}</div>`)",
-    "const root = document.querySelector(\"[data-reader-highlight-root]\")",
-    `return root.${domHtmlProperty}`
+    "function markReaderHtml(source: string) {",
+    "  return transformManagedReaderHtml(source, value => {",
+    "    const { document } = parseHTML(`<div data-reader-highlight-root>${value}</div>`)",
+    "    const root = document.querySelector(\"[data-reader-highlight-root]\")!",
+    `    return root.${domHtmlProperty}`,
+    "  })",
+    "}",
+    "</script>"
   ].join("\n"),
   "app/pages/presentationer/presentation-parser.ts": [
     "import { DOMParser } from \"linkedom\"",
-    `${domHtmlProperty}: string`,
-    "const document = new DOMParser().parseFromString(source, \"text/html\") as unknown as ParsedDocument",
-    "const body = document.querySelector(\"body\")",
-    `issueManagedPresentationHtml(body.${domHtmlProperty})`,
-    "const document = new DOMParser().parseFromString(source, \"text/xml\") as unknown as ParsedDocument"
+    "import { issueManagedPresentationHtml } from \"#shared/utils/renderable-html\"",
+    "export function parsePresentationDocument(source: string) {",
+    "  const document = new DOMParser().parseFromString(source, \"text/html\") as unknown as ParsedDocument",
+    "  const body = document.querySelector(\"body\")!",
+    `  return issueManagedPresentationHtml(body.${domHtmlProperty})`,
+    "}"
   ].join("\n"),
   "server/utils/author-document.ts": [
     "import { parseHTML } from \"linkedom\"",
-    `${domHtmlProperty}: string`,
-    "({ document } = parseHTML(source) as unknown as { document: ParsedAuthorDocument })",
-    "const bodies = [...document.querySelectorAll(\"body\")]",
-    "const body = bodies[0]!",
-    `issueAuthorDocumentHtml(body.${domHtmlProperty})`
+    "import { issueAuthorDocumentHtml } from \"#shared/utils/renderable-html\"",
+    "export function parseAuthorDocumentBody(source: string) {",
+    "  let document: ParsedAuthorDocument",
+    "  ({ document } = parseHTML(source) as unknown as { document: ParsedAuthorDocument })",
+    "  const bodies = [...document.querySelectorAll(\"body\")]",
+    "  const body = bodies[0]!",
+    `  return issueAuthorDocumentHtml(body.${domHtmlProperty})`,
+    "}"
   ].join("\n"),
   "server/utils/dramawebben-document.ts": [
     "import { parseHTML } from \"linkedom\"",
-    `${domHtmlProperty}: string`,
-    "({ document } = parseHTML(source) as unknown as { document: ParsedDramawebbenDocument })",
-    "const bodies = [...document.querySelectorAll(\"body\")]",
-    "const body = bodies[0]!",
-    `issueDramawebbenDocumentHtml(body.${domHtmlProperty})`
+    "import { issueDramawebbenDocumentHtml } from \"#shared/utils/renderable-html\"",
+    "export function parseDramawebbenDocumentBody(source: string) {",
+    "  let document: ParsedDramawebbenDocument",
+    "  ({ document } = parseHTML(source) as unknown as { document: ParsedDramawebbenDocument })",
+    "  const bodies = [...document.querySelectorAll(\"body\")]",
+    "  const body = bodies[0]!",
+    `  return issueDramawebbenDocumentHtml(body.${domHtmlProperty})`,
+    "}"
   ].join("\n"),
   "server/utils/editor-reader-html.ts": [
     "import { parseHTML } from \"linkedom\"",
-    "const { document } = parseHTML(source) as unknown as { document: {",
-    `body: { ${domHtmlProperty}: string, querySelectorAll:`,
-    `const html = document.body.${domHtmlProperty}`
+    "export function sanitizeEditorEtextHtml(source: string) {",
+    "  const { document } = parseHTML(source)",
+    `  const html = document.body.${domHtmlProperty}`,
+    "  return issueEditorEtextHtml(html)",
+    "}"
   ].join("\n"),
   "server/utils/reader-source-info.ts": [
     "import { parseHTML } from \"linkedom\"",
-    `${domHtmlProperty}: string`,
-    "({ document } = parseHTML(source) as unknown as { document: ParsedDocument })",
-    "const bodies = [...document.querySelectorAll(\"body\")]",
-    "const body = bodies[0]!",
-    `issueReaderSourceInfoHtml(body.${domHtmlProperty})`,
-    "({ document } = parseHTML(source) as unknown as { document: ParsedDocument })",
-    "const texts = [...document.querySelectorAll(\"text\")]",
-    `return texts[0]!.${domHtmlProperty}`
+    "import { issueReaderSourceInfoHtml } from \"#shared/utils/renderable-html\"",
+    "export function sanitizeReaderSourceInfoHtml(source: string) {",
+    "  let document: ParsedDocument",
+    "  ({ document } = parseHTML(source) as unknown as { document: ParsedDocument })",
+    "  const bodies = [...document.querySelectorAll(\"body\")]",
+    "  const body = bodies[0]!",
+    `  return issueReaderSourceInfoHtml(body.${domHtmlProperty})`,
+    "}",
+    "function unwrapLicenseText(source: string) {",
+    "  let document: ParsedDocument",
+    "  ({ document } = parseHTML(source) as unknown as { document: ParsedDocument })",
+    "  const texts = [...document.querySelectorAll(\"text\")]",
+    `  return texts[0]!.${domHtmlProperty}`,
+    "}"
   ].join("\n"),
   "server/utils/sla-article.ts": [
     "import { parseHTML } from \"linkedom\"",
-    `${domHtmlProperty}: string`,
-    "({ document } = parseHTML(source) as unknown as { document: ParsedSlaArticle })",
-    "const bodies = [...document.querySelectorAll(\"body\")]",
-    "const body = bodies[0]!",
-    `issueSlaArticleHtml(body.${domHtmlProperty})`
+    "import { issueSlaArticleHtml } from \"#shared/utils/renderable-html\"",
+    "export function parseSlaArticleBody(source: string) {",
+    "  let document: ParsedSlaArticle",
+    "  ({ document } = parseHTML(source) as unknown as { document: ParsedSlaArticle })",
+    "  const bodies = [...document.querySelectorAll(\"body\")]",
+    "  const body = bodies[0]!",
+    `  return issueSlaArticleHtml(body.${domHtmlProperty})`,
+    "}"
   ].join("\n")
 }
 
@@ -203,6 +242,18 @@ function createTree(): string {
     "shared/utils/renderable-html.ts",
     reviewedCapabilityModule()
   )
+  writeSource(root, "shared/types/policy-dtos.ts", [
+    `interface ReaderOcrOverlay { html: ${sanitizedHtmlType}<"reader-ocr">; width: number }`,
+    `interface ReaderEtextPage { html: ${managedAssetHtmlType}<"reader-etext">; mediaType: "etext" }`,
+    `interface EditorReaderPage { html: ${sanitizedHtmlType}<"editor-etext"> | null; workId: string }`,
+    `interface AuthorProfileView { introductionHtml: ${sanitizedHtmlType}<"author-profile">; authorId: string }`,
+    `interface PresentationDocument { bodyHtml: ${managedAssetHtmlType}<"presentation-editorial">; title: string }`,
+    `interface ReaderSourceInfoErrataRow { cellsHtml: ${sanitizedHtmlType}<"reader-source-info">[] }`,
+    `interface ReaderSourceInfoDramawebben { historyHtml: ${sanitizedHtmlType}<"reader-source-info"> | null }`,
+    `interface AuthorSupplementalPage { bodyHtml: ${sanitizedHtmlType}<"author-document">; documentKind: string }`,
+    `interface DramawebbenManagedDocument { bodyHtml: ${sanitizedHtmlType}<"dramawebben-document">; documentKind: string }`,
+    `interface SlaArticlePage { bodyHtml: ${sanitizedHtmlType}<"sla-article">; articleId: string }`
+  ].join("\n"))
   for (const [path, source] of Object.entries(reviewedDomSources)) {
     writeSource(root, path, source)
   }
@@ -299,10 +350,15 @@ describe("architecture policy verifier", () => {
     [path, `window.document.documentElement.${domHtmlProperty} = unsafe`]
   ]))("rejects an extra live DOM sink in reviewed detached context %s", (path, liveSink) => {
     const root = createTree()
-    writeSource(root, path, `${reviewedDomSources[path]}\n${liveSink}`)
+    const source = path.endsWith(".vue")
+      ? reviewedDomSources[path]!.replace("\n</script>", `\n${liveSink}\n</script>`)
+      : `${reviewedDomSources[path]}\n${liveSink}`
+    writeSource(root, path, source)
 
     const result = runVerifier(root)
-    const liveSinkLine = reviewedDomSources[path]!.split("\n").length + 1
+    const liveSinkLine = path.endsWith(".vue")
+      ? reviewedDomSources[path]!.split("\n").length
+      : reviewedDomSources[path]!.split("\n").length + 1
 
     expect(result.status).toBe(1)
     expect(result.stderr).toContain(`${path}:${liveSinkLine}: DOM HTML access does not match the reviewed signature`)
@@ -311,18 +367,32 @@ describe("architecture policy verifier", () => {
   test("rejects an extra live DOM sink beside the sole renderer setter", () => {
     const root = createTree()
     const path = "app/components/global/RenderableHtmlContent.vue"
-    writeSource(root, path, `${reviewedDomSources[path]}\ndocument.body.${domHtmlProperty} = unsafe`)
+    writeSource(
+      root,
+      path,
+      reviewedDomSources[path]!.replace(
+        "\n</script>",
+        `\ndocument.body.${domHtmlProperty} = unsafe\n</script>`
+      )
+    )
 
     const result = runVerifier(root)
 
     expect(result.status).toBe(1)
-    expect(result.stderr).toContain(`${path}:8: DOM HTML access does not match the reviewed signature`)
+    expect(result.stderr).toContain(`${path}:11: DOM HTML access does not match the reviewed signature`)
   })
 
   test("rejects duplicated reviewed DOM operations by cardinality", () => {
     const root = createTree()
     const path = "app/lib/author-profile.ts"
-    writeSource(root, path, `${reviewedDomSources[path]}\ncontainer.${domHtmlProperty} = value`)
+    writeSource(
+      root,
+      path,
+      reviewedDomSources[path]!.replace(
+        `  return issueAuthorProfileHtml(container.${domHtmlProperty})`,
+        `  container.${domHtmlProperty} = value\n  return issueAuthorProfileHtml(container.${domHtmlProperty})`
+      )
+    )
 
     const result = runVerifier(root)
 
@@ -370,12 +440,19 @@ describe("architecture policy verifier", () => {
   test("rejects a computed live setter beside the sole renderer setter", () => {
     const root = createTree()
     const path = "app/components/global/RenderableHtmlContent.vue"
-    writeSource(root, path, `${reviewedDomSources[path]}\ndocument.body["inner" + "HTML"] = unsafe`)
+    writeSource(
+      root,
+      path,
+      reviewedDomSources[path]!.replace(
+        "\n</script>",
+        "\ndocument.body[\"inner\" + \"HTML\"] = unsafe\n</script>"
+      )
+    )
 
     const result = runVerifier(root)
 
     expect(result.status).toBe(1)
-    expect(result.stderr).toContain(`${path}:8: computed DOM HTML access is forbidden`)
+    expect(result.stderr).toContain(`${path}:11: computed DOM HTML access is forbidden`)
   })
 
   test.each([
@@ -439,9 +516,225 @@ describe("architecture policy verifier", () => {
   })
 
   test.each([
-    ["multiline assertion", `const reviewed = value\n  ${castKeyword}\n  ${sanitizedHtmlType}<"author-profile">`],
+    ["await regex", "const matched = await /[!']+/u.test(value)"],
+    ["unary-plus regex", "const numeric = +/[!']+/u.test(value)"],
+    ["for-of regex", "for (const matcher of [/[!']+/u]) matcher.test(value)"],
+    ["template interpolation", "const rendered = `${document.body.innerHTML}`"]
+  ])("parses the executable body after %s", (_name, prefix) => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", [
+      prefix,
+      `document.body.${domHtmlProperty} = unsafe`
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "app/lib/unsafe.ts:2: DOM HTML access is not in the reviewed allowlist"
+    )
+  })
+
+  test("audits executable expressions inside Vue template interpolation", () => {
+    const root = createTree()
+    writeSource(root, "app/pages/unsafe.vue", [
+      "<template>",
+      `  <div>{{ document.body.${domHtmlProperty} }}</div>`,
+      "</template>"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "app/pages/unsafe.vue:2: DOM HTML access is not in the reviewed allowlist"
+    )
+  })
+
+  test("audits suppression comments inside template-literal expressions", () => {
+    const root = createTree()
+    writeSource(
+      root,
+      "app/lib/unsafe.ts",
+      `const rendered = \`${"${"}(() => { /* ${lintDisable} */ return safe })()}\``
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "app/lib/unsafe.ts:1: ESLint inline configuration comments are forbidden"
+    )
+  })
+
+  test("rejects an indirect computed DOM property access, not only its key declaration", () => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", [
+      "const key = \"inner\" + \"HTML\"",
+      "document.body[key] = unsafe"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "app/lib/unsafe.ts:2: DOM HTML access is not in the reviewed allowlist"
+    )
+  })
+
+  test("rejects a runtime-computed property on a live DOM receiver", () => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", [
+      "const key = getPropertyName()",
+      "document.body[key] = unsafe"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "app/lib/unsafe.ts:2: computed DOM HTML access is forbidden"
+    )
+    expect(result.stderr).toContain(
+      "app/lib/unsafe.ts:2: DOM HTML access is not in the reviewed allowlist"
+    )
+  })
+
+  test("rejects innerHTML read through object destructuring", () => {
+    const root = createTree()
+    writeSource(
+      root,
+      "app/lib/unsafe.ts",
+      `const { ${domHtmlProperty}: serialized } = document.body`
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "app/lib/unsafe.ts:1: DOM HTML access is not in the reviewed allowlist"
+    )
+  })
+
+  test("rejects a runtime-computed DOM key in a destructuring assignment", () => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", [
+      "const key = getPropertyName()",
+      "let serialized",
+      "({ [key]: serialized } = document.body)"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "app/lib/unsafe.ts:3: computed DOM HTML access is forbidden"
+    )
+    expect(result.stderr).toContain(
+      "app/lib/unsafe.ts:3: DOM HTML access is not in the reviewed allowlist"
+    )
+  })
+
+  test("rejects no-argument object v-bind on a native Vue element", () => {
+    const root = createTree()
+    writeSource(root, "app/pages/unsafe.vue", [
+      "<template>",
+      "  <div v-bind=\"attrs\" />",
+      "</template>"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "app/pages/unsafe.vue:2: native object v-bind can forward raw HTML properties"
+    )
+  })
+
+  test("allows component-only attrs forwarding", () => {
+    const root = createTree()
+    writeSource(root, "app/pages/safe.vue", [
+      "<template>",
+      "  <SafeComponent v-bind=\"$attrs\" />",
+      "</template>"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("rejects dead detached provenance beside a live same-name shadow", () => {
+    const root = createTree()
+    const path = "app/lib/author-profile.ts"
+    writeSource(root, path, [
+      "import { parseHTML } from \"linkedom\"",
+      "export function sanitizeAuthorHtml(value: string) {",
+      "  {",
+      "    const { document } = parseHTML(\"<body></body>\")",
+      "    const container = document.createElement(\"div\")",
+      "    void container",
+      "  }",
+      "  const container = globalThis.document.body",
+      `  container.${domHtmlProperty} = value`,
+      `  return issueAuthorProfileHtml(container.${domHtmlProperty})`,
+      "}"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}: reviewed detached DOM provenance changed`)
+  })
+
+  test("rejects a local parseHTML shadow at a reviewed detached-DOM boundary", () => {
+    const root = createTree()
+    const path = "app/lib/author-profile.ts"
+    writeSource(
+      root,
+      path,
+      reviewedDomSources[path]!.replace(
+        "export function sanitizeAuthorHtml(value: string) {",
+        [
+          "export function sanitizeAuthorHtml(value: string) {",
+          "  const parseHTML = () => ({ document: globalThis.document })"
+        ].join("\n")
+      )
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}: reviewed detached DOM provenance changed`)
+  })
+
+  test("rejects a local capability-issuer shadow at a reviewed DOM boundary", () => {
+    const root = createTree()
+    const path = "app/lib/author-profile.ts"
+    writeSource(
+      root,
+      path,
+      reviewedDomSources[path]!.replace(
+        "export function sanitizeAuthorHtml(value: string) {",
+        [
+          "export function sanitizeAuthorHtml(value: string) {",
+          "  const issueAuthorProfileHtml = (source: string) => source"
+        ].join("\n")
+      )
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}: reviewed DOM HTML signature cardinality changed`)
+  })
+
+  test.each([
+    ["multiline assertion", `const reviewed = value ${castKeyword}\n  ${sanitizedHtmlType}<"author-profile">`],
     ["comment-separated import alias", `import type { ${sanitizedHtmlType} /* reviewed */ ${castKeyword} Reviewed } from "../../shared/types/renderable-html"\nconst reviewed = value ${castKeyword} Reviewed`],
     ["ReturnType issuer alias", `import { issueAuthorProfileHtml } from "../../shared/utils/renderable-html"\ntype Reviewed = ReturnType<typeof issueAuthorProfileHtml>\nconst reviewed = value ${castKeyword} Reviewed`],
+    ["tuple-index wrapper", `const reviewed = value ${castKeyword} [${sanitizedHtmlType}<"author-profile">][0]`],
     ["indexed policy DTO field", `import type { AuthorProfileView } from "../author-profile"\ntype Reviewed = AuthorProfileView["introductionHtml"]\nconst reviewed = value ${castKeyword} Reviewed`],
     ["typeof issuer value", `const branded = issueAuthorProfileHtml(value)\ntype Reviewed = typeof branded\nconst reviewed = value ${castKeyword} Reviewed`],
     ["function-expression derived cast", `type Reviewed = ReturnType<typeof issueAuthorProfileHtml>\nconst brand = function (value: string) { return value ${castKeyword} Reviewed }`],
@@ -460,6 +753,93 @@ describe("architecture policy verifier", () => {
   })
 
   test.each([
+    ["Reader OCR overlay", "ReaderOcrOverlay", "html"],
+    ["Reader e-text page", "ReaderEtextPage", "html"],
+    ["Editor Reader page", "EditorReaderPage", "html"],
+    ["Author profile introduction", "AuthorProfileView", "introductionHtml"],
+    ["Presentation body", "PresentationDocument", "bodyHtml"],
+    ["Reader errata cells", "ReaderSourceInfoErrataRow", "cellsHtml"],
+    ["Reader source history", "ReaderSourceInfoDramawebben", "historyHtml"],
+    ["Author supplemental body", "AuthorSupplementalPage", "bodyHtml"],
+    ["Dramawebben body", "DramawebbenManagedDocument", "bodyHtml"],
+    ["SLA body", "SlaArticlePage", "bodyHtml"]
+  ])("rejects an indexed cast through the real branded DTO field: %s", (_name, dto, field) => {
+    const root = createTree()
+    writeSource(
+      root,
+      "app/lib/unsafe.ts",
+      `const reviewed = value ${castKeyword} ${dto}["${field}"]`
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "capability assertions are limited to the private capability helper"
+    )
+  })
+
+  test("allows an indexed cast through an unbranded field on a capability-bearing DTO", () => {
+    const root = createTree()
+    writeSource(root, "app/lib/safe.ts", "const width = value as ReaderOcrOverlay[\"width\"]")
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test.each([
+    [
+      "lowercase second generic in a function expression",
+      `const brand = function <safe, forged>(value: string): forged { return value ${castKeyword} forged }\nbrand<string, ${sanitizedHtmlType}<"author-profile">>(value)`
+    ],
+    [
+      "lowercase second generic in an object method",
+      `const brander = { brand<safe, forged>(value: string): forged { return value ${castKeyword} forged } }\nbrander.brand<string, ${sanitizedHtmlType}<"author-profile">>(value)`
+    ],
+    [
+      "angle cast in a generic arrow",
+      `const brand = <forged>(value: string): forged => <forged>value\nbrand<${sanitizedHtmlType}<"author-profile">>(value)`
+    ],
+    [
+      "template interpolation cast",
+      `const rendered = \`${"${"}(value ${castKeyword} ${sanitizedHtmlType}<"author-profile">)}\``
+    ]
+  ])("rejects an AST-hidden capability forgery: %s", (_name, source) => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "capability assertions are limited to the private capability helper"
+    )
+  })
+
+  test.each([
+    [
+      "generic constraint",
+      `function forge<T extends ${sanitizedHtmlType}<"author-profile">>(value: string): T { return value ${castKeyword} T }`
+    ],
+    [
+      "generic function value alias",
+      `function forge<T>(value: string): T { return value ${castKeyword} T }\nconst alias = forge\nalias<${sanitizedHtmlType}<"author-profile">>(value)`
+    ]
+  ])("rejects capability forgery through a %s", (_name, source) => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "capability assertions are limited to the private capability helper"
+    )
+  })
+
+  test.each([
     [
       "generic issuer replacement",
       (source: string) => source.replace(
@@ -470,7 +850,9 @@ describe("architecture policy verifier", () => {
     ["Object.assign escape", (source: string) => `${source}\nObject.assign(issueAuthorProfileHtml, { brand: capability })`],
     ["comment-separated helper alias", (source: string) => `${source}\nconst brand = /* reviewed */ capability`],
     ["aliased re-export", (source: string) => `${source}\nexport { issueAuthorProfileHtml as brand }`],
-    ["default export", (source: string) => `${source}\nexport default issueAuthorProfileHtml`]
+    ["default export", (source: string) => `${source}\nexport default issueAuthorProfileHtml`],
+    ["Reflect helper escape", (source: string) => `${source}\nReflect.apply(capability, null, [value])`],
+    ["template interpolation helper escape", (source: string) => `${source}\nconst leaked = \`${"${"}capability(value)}\``]
   ])("rejects an issuer-module structural escape: %s", (_name, mutate) => {
     const root = createTree()
     writeSource(root, "shared/utils/renderable-html.ts", mutate(reviewedCapabilityModule()))
@@ -580,6 +962,25 @@ describe("architecture policy verifier", () => {
     expect(result.stderr).toBe("")
   })
 
+  test("treats regexes, strings, and template data as data while parsing their executable contexts", () => {
+    const root = createTree()
+    writeSource(root, "app/lib/safe-parser-contexts.ts", [
+      "async function inspect(value: string) {",
+      "  const awaited = await /[!'@ts-ignore]+/u.test(value)",
+      "  const numeric = +/[!'eslint-disable]+/u.test(value)",
+      "  for (const entry of [/[!'innerHTML]+/u, \"v-html\", `RenderableCapability`]) {",
+      "    entry.toString()",
+      "  }",
+      "  return `${awaited}:${numeric}:${value}`",
+      "}"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
   test("counts LF, CRLF, CR, and Unicode line separators exactly once", () => {
     const root = createTree()
     writeSource(
@@ -606,6 +1007,24 @@ describe("architecture policy verifier", () => {
 
     expect(result.error).toBeUndefined()
     expect(result.status).toBe(0)
+  })
+
+  test("reports many violations without quadratic line rescanning", () => {
+    const root = createTree()
+    const violationCount = 30_000
+    writeSource(
+      root,
+      "app/lib/many-violations.ts",
+      Array.from({ length: violationCount }, () => `/* ${lintDisable} */`).join(" ")
+    )
+
+    const result = runVerifier(root, 2_000)
+
+    expect(result.error).toBeUndefined()
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "app/lib/many-violations.ts:1: ESLint inline configuration comments are forbidden"
+    )
   })
 
   test("reports every violation in stable path and line order", () => {
@@ -647,6 +1066,28 @@ describe("architecture policy verifier", () => {
 
     expect(result.status).toBe(1)
     expect(result.stderr).toContain(expectedMessage)
+  })
+
+  test.each(
+    ["app", "server", "shared", "scripts", "test"].flatMap(sourceRoot =>
+      [
+        ".nuxt",
+        ".output",
+        "node_modules",
+        "coverage",
+        "playwright-report",
+        "test-results-backdoor",
+        "app/lib/api/generated"
+      ].map(outputFamily => [`${sourceRoot}/${outputFamily}/unsafe.ts`, sourceRoot, outputFamily])
+    )
+  )("does not ignore nested output-family path %s", (path, _sourceRoot, _outputFamily) => {
+    const root = createTree()
+    writeSource(root, path, `// ${tsIgnore}`)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}:1: TypeScript ignore comments are forbidden`)
   })
 
   test("rejects an unaudited source symlink instead of traversing outside the root", () => {

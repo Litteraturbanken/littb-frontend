@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -584,6 +585,7 @@ class InvokeTasksTest(unittest.TestCase):
                 run_git(repository, "commit", "-qm", "change visual baseline").returncode,
                 0,
             )
+            baseline.write_bytes(b"authority")
 
             with self.assertRaises(tasks.Exit):
                 tasks._verify_visual_baselines(repository, authority)
@@ -595,6 +597,7 @@ class InvokeTasksTest(unittest.TestCase):
             baseline = repository / "nuxt/test/visual/baselines/authority.png"
             baseline.write_bytes(b"staged")
             self.assertEqual(run_git(repository, "add", str(baseline)).returncode, 0)
+            baseline.write_bytes(b"authority")
             with self.assertRaises(tasks.Exit):
                 tasks._verify_visual_baselines(repository, authority)
 
@@ -668,6 +671,32 @@ class InvokeTasksTest(unittest.TestCase):
 
             with self.assertRaises(tasks.Exit):
                 tasks._verify_visual_baselines(repository, "not-an-authority")
+
+    def test_visual_baseline_gate_rejects_a_file_symlink_with_authority_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            authority = initialize_visual_repository(repository)
+            baseline = repository / "nuxt/test/visual/baselines/authority.png"
+            target = repository / "authority-copy.png"
+            target.write_bytes(b"authority")
+            baseline.unlink()
+            baseline.symlink_to(target)
+
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository, authority)
+
+    def test_visual_baseline_gate_rejects_a_symlinked_ancestor_with_authority_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            authority = initialize_visual_repository(repository)
+            visual = repository / "nuxt/test/visual"
+            external_visual = repository / "external-visual"
+            shutil.copytree(visual, external_visual)
+            shutil.rmtree(visual)
+            visual.symlink_to(external_visual, target_is_directory=True)
+
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository, authority)
 
     def test_release_quality_stops_after_the_first_failed_gate(self) -> None:
         context = tasks.Context()

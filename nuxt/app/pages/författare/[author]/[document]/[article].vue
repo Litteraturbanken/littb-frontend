@@ -151,11 +151,7 @@ const { data } = await useAsyncData<PageResult>(
     return await loadPageResult(fetcher, author, document, article, identity)
   },
   {
-    lazy: true,
-    getCachedData: (key, nuxtApp) => {
-      const cached = nuxtApp.payload.data[key] as PageResult | undefined
-      return cached?.identity === currentIdentity.value ? cached : undefined
-    }
+    lazy: true
   }
 )
 

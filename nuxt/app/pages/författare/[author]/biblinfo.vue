@@ -110,12 +110,6 @@ const { data } = await useAsyncData<InitialResult>(
   async () => {
     const identity = currentIdentity.value
     return await loadInitial(authorId.value, identity)
-  },
-  {
-    getCachedData: (key, nuxtApp) => {
-      const cached = nuxtApp.payload.data[key] as InitialResult | undefined
-      return cached?.identity === currentIdentity.value ? cached : undefined
-    }
   }
 )
 
