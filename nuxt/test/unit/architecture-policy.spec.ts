@@ -551,6 +551,23 @@ describe("architecture policy verifier", () => {
     )
   })
 
+  test("resolves script import aliases inside Vue template capability assertions", () => {
+    const root = createTree()
+    writeSource(root, "app/pages/unsafe.vue", [
+      "<script setup lang=\"ts\">",
+      `import type { ${sanitizedHtmlType} ${castKeyword} Reviewed } from "#shared/types/renderable-html"`,
+      "</script>",
+      `<template>{{ value ${castKeyword} Reviewed }}</template>`
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "capability assertions are limited to the private capability helper"
+    )
+  })
+
   test("audits suppression comments inside template-literal expressions", () => {
     const root = createTree()
     writeSource(
@@ -635,6 +652,96 @@ describe("architecture policy verifier", () => {
     )
   })
 
+  test.each([
+    ["Reflect.set static key", `Reflect.set(document.body, "${domHtmlProperty}", unsafe)`],
+    ["Reflect.set dynamic key", "Reflect.set(document.body, key, unsafe)"],
+    [
+      "Object.defineProperty static key",
+      `Object.defineProperty(document.body, "${domHtmlProperty}", { value: unsafe })`
+    ],
+    [
+      "Object.defineProperty dynamic key",
+      "Object.defineProperty(document.body, key, { value: unsafe })"
+    ],
+    [
+      "Reflect.defineProperty static key",
+      `Reflect.defineProperty(document.body, "${domHtmlProperty}", { value: unsafe })`
+    ],
+    ["Object.assign dynamic bag", "Object.assign(document.body, JSON.parse(raw))"],
+    [
+      "querySelectorAll indexed receiver",
+      "document.querySelectorAll('div')[0]![key] = unsafe"
+    ],
+    [
+      "typed function-return receiver",
+      "function target(): HTMLElement { return document.body }\ntarget()[key] = unsafe"
+    ],
+    ["aliased Reflect.set", "const set = Reflect.set\nset(document.body, key, unsafe)"],
+    [
+      "typed method-return receiver",
+      "declare const api: { target(): HTMLElement }\nReflect.set(api.target(), key, unsafe)"
+    ],
+    [
+      "Object.defineProperties dynamic bag",
+      "const descriptors = JSON.parse(raw)\nObject.defineProperties(document.body, descriptors)"
+    ]
+  ])("rejects DOM mutation through %s", (_name, source) => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("app/lib/unsafe.ts:")
+    expect(result.stderr).toMatch(/DOM HTML (?:access|mutation)/u)
+  })
+
+  test.each([
+    ["h dynamic bag", "h('div', JSON.parse(raw))"],
+    ["h computed HTML key", "h('div', { [key]: unsafe })"],
+    ["createVNode dynamic bag", "createVNode('div', props)"],
+    ["createVNode computed HTML key", "createVNode('div', { [key]: unsafe })"],
+    ["aliased Vue h", "import { h as render } from 'vue'\nrender('div', props)"],
+    ["namespaced Vue h", "import * as Vue from 'vue'\nVue.h('div', props)"]
+  ])("rejects native vnode props through %s", (_name, source) => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("native vnode props can forward raw HTML properties")
+  })
+
+  test.each([
+    "h('div', null)",
+    "h('div', { class: 'safe' })",
+    "createVNode('span', { title: 'safe' })"
+  ])("allows an explicit safe native vnode prop bag %s", source => {
+    const root = createTree()
+    writeSource(root, "app/lib/safe.ts", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test.each([
+    '<component is="div" v-bind="$attrs" />',
+    '<component :is="\'div\'" v-bind="props" />',
+    '<component is="div" :innerHTML="source" />',
+    '<component :is="\'div\'" :[key]="source" />'
+  ])("rejects native dynamic-component sink %s", source => {
+    const root = createTree()
+    writeSource(root, "app/pages/unsafe.vue", `<template>${source}</template>`)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toMatch(/(?:native object v-bind|dynamic Vue argument|DOM HTML access)/u)
+  })
+
   test("rejects no-argument object v-bind on a native Vue element", () => {
     const root = createTree()
     writeSource(root, "app/pages/unsafe.vue", [
@@ -663,6 +770,36 @@ describe("architecture policy verifier", () => {
 
     expect(result.status).toBe(0)
     expect(result.stderr).toBe("")
+  })
+
+  test("rejects a const-bound native dynamic-component sink", () => {
+    const root = createTree()
+    writeSource(root, "app/pages/unsafe.vue", [
+      "<script setup lang=\"ts\">",
+      "const tag = 'div'",
+      "</script>",
+      "<template><component :is=\"tag\" v-bind=\"props\" /></template>"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("native object v-bind can forward raw HTML properties")
+  })
+
+  test("rejects a constant-member native dynamic-component sink", () => {
+    const root = createTree()
+    writeSource(root, "app/pages/unsafe.vue", [
+      "<script setup lang=\"ts\">",
+      "const tags = { root: 'div' } as const",
+      "</script>",
+      "<template><component :is=\"tags.root\" v-bind=\"props\" /></template>"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("native object v-bind can forward raw HTML properties")
   })
 
   test("rejects dead detached provenance beside a live same-name shadow", () => {
@@ -728,6 +865,93 @@ describe("architecture policy verifier", () => {
 
     expect(result.status).toBe(1)
     expect(result.stderr).toContain(`${path}: reviewed DOM HTML signature cardinality changed`)
+  })
+
+  test("rejects a reviewed receiver with one live reaching definition", () => {
+    const root = createTree()
+    const path = "app/lib/author-profile.ts"
+    writeSource(root, path, [
+      "import { parseHTML } from \"linkedom\"",
+      "import { issueAuthorProfileHtml } from \"#shared/utils/renderable-html\"",
+      "export function sanitizeAuthorHtml(value: string, live: boolean) {",
+      "  let container",
+      "  if (live) container = document.body",
+      "  else {",
+      "    const { document } = parseHTML(\"<body></body>\")",
+      "    container = document.createElement(\"div\")",
+      "  }",
+      `  container.${domHtmlProperty} = value`,
+      `  return issueAuthorProfileHtml(container.${domHtmlProperty})`,
+      "}"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}: reviewed detached DOM provenance changed`)
+  })
+
+  test("rejects a live reaching definition followed textually by a non-DOM branch", () => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", [
+      "let target",
+      "if (flag) target = document.body",
+      "else target = {}",
+      "Reflect.set(target, key, unsafe)"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("computed DOM HTML access is forbidden")
+    expect(result.stderr).toContain("DOM HTML mutation API is forbidden")
+  })
+
+  test("allows a reviewed receiver when every reaching definition is detached", () => {
+    const root = createTree()
+    const path = "app/lib/author-profile.ts"
+    writeSource(root, path, [
+      "import { parseHTML } from \"linkedom\"",
+      "import { issueAuthorProfileHtml } from \"#shared/utils/renderable-html\"",
+      "export function sanitizeAuthorHtml(value: string, first: boolean) {",
+      "  let container",
+      "  if (first) {",
+      "    const { document } = parseHTML(\"<body></body>\")",
+      "    container = document.createElement(\"div\")",
+      "  } else {",
+      "    const { document } = parseHTML(\"<main></main>\")",
+      "    container = document.createElement(\"main\")",
+      "  }",
+      `  container.${domHtmlProperty} = value`,
+      `  return issueAuthorProfileHtml(container.${domHtmlProperty})`,
+      "}"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("allows a reviewed receiver after an unconditional detached overwrite", () => {
+    const root = createTree()
+    const path = "app/lib/author-profile.ts"
+    writeSource(root, path, [
+      "import { parseHTML } from 'linkedom'",
+      "import { issueAuthorProfileHtml } from '#shared/utils/renderable-html'",
+      "export function sanitizeAuthorHtml(value: string) {",
+      "  let container = document.body",
+      "  const { document: parsed } = parseHTML('<body></body>')",
+      "  container = parsed.createElement('div')",
+      `  container.${domHtmlProperty} = value`,
+      `  return issueAuthorProfileHtml(container.${domHtmlProperty})`,
+      "}"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
   })
 
   test.each([
@@ -837,6 +1061,172 @@ describe("architecture policy verifier", () => {
     expect(result.stderr).toContain(
       "capability assertions are limited to the private capability helper"
     )
+  })
+
+  test.each([
+    [
+      "wrapper function ReturnType",
+      `function wrapped() { return issueAuthorProfileHtml(value) }\ntype Reviewed = ReturnType<typeof wrapped>\nconst forged = value ${castKeyword} Reviewed`
+    ],
+    [
+      "wrapper arrow ReturnType",
+      `const wrapped = () => issueAuthorProfileHtml(value)\ntype Reviewed = ReturnType<typeof wrapped>\nconst forged = value ${castKeyword} Reviewed`
+    ],
+    [
+      "Parameters consumer extraction",
+      `function consume(value: ${sanitizedHtmlType}<"author-profile">) {}\ntype Reviewed = Parameters<typeof consume>[0]\nconst forged = value ${castKeyword} Reviewed`
+    ],
+    [
+      "mapped property",
+      `type Fields = { [Key in "html"]: ${sanitizedHtmlType}<"author-profile"> }\nconst forged = value ${castKeyword} Fields["html"]`
+    ],
+    [
+      "conditional inferred return",
+      `type Result<Value> = Value extends () => infer Output ? Output : never\ntype Reviewed = Result<() => ${sanitizedHtmlType}<"author-profile">>\nconst forged = value ${castKeyword} Reviewed`
+    ],
+    [
+      "generic object alias",
+      `type Box<Value> = { html: Value }\ntype Reviewed = Box<${sanitizedHtmlType}<"author-profile">>["html"]\nconst forged = value ${castKeyword} Reviewed`
+    ],
+    [
+      "nested generic object alias",
+      `type Box<Value> = { nested: { html: Value } }\ntype Reviewed = Box<${sanitizedHtmlType}<"author-profile">>["nested"]["html"]\nconst forged = value ${castKeyword} Reviewed`
+    ],
+    [
+      "destructured generic method",
+      `const brander = { forge<Value>(value: string): Value { return value ${castKeyword} Value } }\nconst { forge } = brander\nforge<${sanitizedHtmlType}<"author-profile">>(value)`
+    ],
+    [
+      "instantiation expression",
+      `function forge<Value>(value: string): Value { return value ${castKeyword} Value }\nconst brand = forge<${sanitizedHtmlType}<"author-profile">>\nbrand(value)`
+    ],
+    [
+      "namespace wrapper typeof",
+      `import * ${castKeyword} Html from "#shared/utils/renderable-html"\nconst wrapped = { issue: Html.issueAuthorProfileHtml }\ntype Reviewed = ReturnType<typeof wrapped.issue>\nconst forged = value ${castKeyword} Reviewed`
+    ]
+  ])("rejects type-derived capability forgery through %s", (_name, source) => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "capability assertions are limited to the private capability helper"
+    )
+  })
+
+  test.each([
+    `const forged: ${sanitizedHtmlType}<"author-profile"> = JSON.parse(raw)`,
+    `declare function parse(value: string): any\nconst forged: ${sanitizedHtmlType}<"author-profile"> = parse(raw)`,
+    `function forge(): ${sanitizedHtmlType}<"author-profile"> { return JSON.parse(raw) }`,
+    `const forge = (): ${sanitizedHtmlType}<"author-profile"> => JSON.parse(raw)`,
+    `let forged: ${sanitizedHtmlType}<"author-profile">\nforged = JSON.parse(raw)`,
+    `declare const target: { html: ${sanitizedHtmlType}<"author-profile"> }\ntarget.html = JSON.parse(raw)`,
+    `declare const payload: any\nconst forged: ${sanitizedHtmlType}<"author-profile"> = payload.html`,
+    `declare const target: { html: ${sanitizedHtmlType}<"author-profile"> }\ntarget["html"] = JSON.parse(raw)`,
+    `type Loose = any\ndeclare const payload: Loose\nconst forged: ${sanitizedHtmlType}<"author-profile"> = payload`,
+    `declare const payload: { html: any }\nconst forged: ${sanitizedHtmlType}<"author-profile"> = payload.html`,
+    `declare const parser: { parse(): any }\nconst forged: ${sanitizedHtmlType}<"author-profile"> = parser.parse()`,
+    `declare const state: { target: { html: ${sanitizedHtmlType}<"author-profile"> } }\nstate.target.html = JSON.parse(raw)`
+  ])("rejects any-valued direct capability flow %s", source => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "capability values must originate from a reviewed issuer"
+    )
+  })
+
+  test.each([
+    "type Overlay = ReaderOcrOverlay\nconst width = value as Overlay[\"width\"]",
+    "const width = value as NonNullable<ReaderOcrOverlay>[\"width\"]",
+    `type Fields = { [Key in "html" | "width"]: Key extends "html" ? ${sanitizedHtmlType}<"author-profile"> : number }\nconst width = value ${castKeyword} Fields["width"]`,
+    `type Box<Value> = { nested: { html: Value, width: number } }\nconst width = value ${castKeyword} Box<${sanitizedHtmlType}<"author-profile">>["nested"]["width"]`,
+    `type Selected<Key> = Key extends "html" ? ${sanitizedHtmlType}<"author-profile"> : number\nconst width = value ${castKeyword} Selected<"width">`
+  ])("allows safe indexed DTO wrapper %s", source => {
+    const root = createTree()
+    writeSource(root, "app/lib/safe.ts", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("keeps same-named module-local safe and capability types independent", () => {
+    const root = createTree()
+    writeSource(root, "app/lib/capability.ts", [
+      `type Payload = { html: ${sanitizedHtmlType}<"author-profile"> }`,
+      "export {}"
+    ].join("\n"))
+    writeSource(root, "app/lib/safe.ts", [
+      "type Payload = { width: number }",
+      `const width = value ${castKeyword} Payload`,
+      "export {}"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("resolves an imported safe type independently of a same-named capability type", () => {
+    const root = createTree()
+    writeSource(root, "app/lib/capability.ts", [
+      `export type Payload = { html: ${sanitizedHtmlType}<"author-profile"> }`
+    ].join("\n"))
+    writeSource(root, "app/lib/safe-type.ts", "export type Payload = { width: number }")
+    writeSource(root, "app/lib/safe.ts", [
+      "import type { Payload } from './safe-type'",
+      `const width = value ${castKeyword} Payload`
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("rejects capability derivation through a renamed default import", () => {
+    const root = createTree()
+    writeSource(
+      root,
+      "app/lib/cap-default.ts",
+      `export default interface InternalCapability { html: ${sanitizedHtmlType}<"author-profile"> }`
+    )
+    writeSource(root, "app/lib/unsafe.ts", [
+      "import Payload from './cap-default'",
+      `const forged = value ${castKeyword} Payload["html"]`
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "capability assertions are limited to the private capability helper"
+    )
+  })
+
+  test.each([
+    `const reviewed: ${sanitizedHtmlType}<"author-profile"> = issueAuthorProfileHtml(value)`,
+    `let reviewed: ${sanitizedHtmlType}<"author-profile">\nreviewed = issueAuthorProfileHtml(value)`,
+    `function issue(value: string): ${sanitizedHtmlType}<"author-profile"> { return issueAuthorProfileHtml(value) }\nconst reviewed: ${sanitizedHtmlType}<"author-profile"> = issue(value)`,
+    `declare function useRequestFetch(): any\nconst requestFetch = useRequestFetch()\ninterface Page { html: ${sanitizedHtmlType}<"author-profile"> }\nfunction requestPage(): Promise<Page> { return requestFetch<Page>("/api") }`,
+    `function consume(width: number, html: ${sanitizedHtmlType}<"author-profile">) {}\nconst safe = value ${castKeyword} Parameters<typeof consume>[0]`,
+    `type Box<Value> = { width: number, html: Value }\nconst safe = value ${castKeyword} Box<${sanitizedHtmlType}<"author-profile">>["width"]`
+  ])("allows an issuer-backed or exact safe-field capability flow %s", source => {
+    const root = createTree()
+    writeSource(root, "app/lib/safe.ts", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
   })
 
   test.each([
@@ -1025,6 +1415,20 @@ describe("architecture policy verifier", () => {
     expect(result.stderr).toContain(
       "app/lib/many-violations.ts:1: ESLint inline configuration comments are forbidden"
     )
+  })
+
+  test("audits 3,000 Vue interpolations without source-sized padding per expression", () => {
+    const root = createTree()
+    writeSource(root, "app/pages/many-interpolations.vue", [
+      "<template>",
+      ...Array.from({ length: 3_000 }, (_value, index) => `  <span>{{ safe${index} }}</span>`),
+      "</template>"
+    ].join("\n"))
+
+    const result = runVerifier(root, 2_000)
+
+    expect(result.error).toBeUndefined()
+    expect(result.status).toBe(0)
   })
 
   test("reports every violation in stable path and line order", () => {

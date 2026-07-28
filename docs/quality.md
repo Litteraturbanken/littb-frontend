@@ -54,17 +54,32 @@ satisfy the review, while executable template-literal and Vue interpolation
 expressions remain audited. Parser and issuer names must resolve to their
 reviewed imports; a local same-name binding is not trusted. An allowlisted file
 cannot introduce another DOM HTML read or write. Static or runtime-computed DOM
-HTML keys, including binding and assignment destructuring, Vue raw-HTML
-directives, dynamic native bindings, and object `v-bind` on native elements are
-forbidden; component-only attribute forwarding remains allowed.
+HTML keys, including binding and assignment destructuring, aliased
+`Reflect.set`, `Reflect.defineProperty`, `Object.defineProperty`,
+`Object.defineProperties`, and `Object.assign`, are forbidden on every possibly
+live receiver. Receiver provenance includes indexed collections, typed function
+returns, and every control-flow reaching definition; a detached value is
+trusted only when all reaching definitions remain detached. Vue raw-HTML
+directives, dynamic native `<component>` targets, dynamic native bindings,
+object `v-bind` on native elements, and imported, namespaced, or locally aliased
+native `h`/`createVNode` prop bags are forbidden; component-only attribute
+forwarding remains allowed. A
+3,000-interpolation fixture bounds repeated Vue expression parsing without
+source-sized padding per expression.
 Adding or changing an operation requires security review and a deliberate
 policy update. Capability issuance is likewise pinned to exact issuer
 declarations and calls, the exact export surface, and exactly one private
-constructor assertion. The policy traces imported aliases, `ReturnType`,
-`typeof`, wrappers, unions/intersections, function types, generic constraints
-and value aliases, and the exact branded fields of real frontend DTOs through
-TypeScript assertions, including angle assertions and Vue template casts.
-Capability casts or generic escapes, exported branders, inline ESLint
+constructor assertion. The policy traces imported and namespace aliases,
+`ReturnType`, `Parameters`, `typeof`, wrappers, unions/intersections, mapped and
+conditional types, function types, generic constraints and instantiations,
+destructured generic methods, default/named/namespace imports, value aliases,
+and the exact branded fields of real frontend DTOs through TypeScript
+assertions, including angle assertions and Vue template casts. Direct
+assignment or return of an explicitly `any`-valued expression—including member
+and method results—to a capability-bearing target is rejected; exact safe DTO
+fields and concretely safe mapped/conditional instantiations remain usable.
+Capability casts or generic escapes, exported
+branders, inline ESLint
 configuration, and unreviewed
 TypeScript suppression comments are blocking violations. The issuer module is
 compared structurally by AST, while the ESLint configuration itself must

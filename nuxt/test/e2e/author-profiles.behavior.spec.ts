@@ -34,6 +34,49 @@ async function routerPush(page: Page, path: string) {
   }, path)
 }
 
+async function beginRouterPush(page: Page, path: string) {
+  await page.evaluate(target => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: {
+        config: {
+          globalProperties: {
+            $router: { push: (path: string) => Promise<void> }
+          }
+        }
+      }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    void router?.push(target)
+  }, path)
+}
+
+async function installTransitionLedger(page: Page) {
+  await page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: {
+        config: {
+          globalProperties: {
+            $router: {
+              afterEach: (callback: (to: { fullPath: string }) => void) => void
+            }
+          }
+        }
+      }
+    }
+    const statefulWindow = window as typeof window & { __authorTransitions?: string[] }
+    statefulWindow.__authorTransitions = []
+    root.__vue_app__?.config.globalProperties.$router.afterEach(to => {
+      statefulWindow.__authorTransitions?.push(to.fullPath)
+    })
+  })
+}
+
+async function transitionLedger(page: Page): Promise<string[]> {
+  return await page.evaluate(() => (
+    window as typeof window & { __authorTransitions?: string[] }
+  ).__authorTransitions ?? [])
+}
+
 function collectProblems(page: Page): string[] {
   const problems: string[] = []
   page.on("pageerror", error => problems.push(error.message))
@@ -123,6 +166,87 @@ test("client author navigation uses one public request and replaces every profil
   expect(problems).toEqual([])
 })
 
+test("a delayed Strindberg-to-Lagerlöf navigation never renders August at the new URL", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
+  await reset(request)
+
+  let releaseResponse = () => {}
+  const responseGate = new Promise<void>(resolve => {
+    releaseResponse = resolve
+  })
+  let markRequestStarted = () => {}
+  const requestStarted = new Promise<void>(resolve => {
+    markRequestStarted = resolve
+  })
+  let markResponseDelivered = () => {}
+  const responseDelivered = new Promise<void>(resolve => {
+    markResponseDelivered = resolve
+  })
+  await page.route("**/v2/authors/Lagerl%C3%B6fS", async route => {
+    const response = await route.fetch()
+    markRequestStarted()
+    await responseGate
+    await route.fulfill({ response })
+    markResponseDelivered()
+  })
+
+  await beginRouterPush(page, "/f%C3%B6rfattare/Lagerl%C3%B6fS")
+  await requestStarted
+  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/Lagerl%C3%B6fS$/u)
+  await expect(page.locator("body")).not.toContainText("August Strindberg")
+
+  releaseResponse()
+  await responseDelivered
+  await expect(page.locator("h1")).toContainText("Selma Lagerlöf")
+  await expect(page.locator("body")).not.toContainText("August Strindberg")
+  expect(problems).toEqual([])
+})
+
+test("a late obsolete canonical response cannot redirect or hand off over the current author", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/Lagerl%C3%B6fS", { waitUntil: "networkidle" })
+  await reset(request)
+
+  let releaseResponse = () => {}
+  const responseGate = new Promise<void>(resolve => {
+    releaseResponse = resolve
+  })
+  let markRequestStarted = () => {}
+  const requestStarted = new Promise<void>(resolve => {
+    markRequestStarted = resolve
+  })
+  let markResponseDelivered = () => {}
+  const responseDelivered = new Promise<void>(resolve => {
+    markResponseDelivered = resolve
+  })
+  await page.route("**/v2/authors/DramaOnly", async route => {
+    const response = await route.fetch()
+    markRequestStarted()
+    await responseGate
+    await route.fulfill({ response })
+    markResponseDelivered()
+  })
+
+  await beginRouterPush(page, "/f%C3%B6rfattare/DramaOnly")
+  await requestStarted
+  await beginRouterPush(page, "/f%C3%B6rfattare/Lagerl%C3%B6fS")
+  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/Lagerl%C3%B6fS$/u)
+
+  releaseResponse()
+  await responseDelivered
+  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/Lagerl%C3%B6fS$/u)
+  await expect(page.locator("h1")).toContainText("Selma Lagerlöf")
+  await expect(page.locator("body")).not.toContainText("Dramatikern")
+  expect(problems).toEqual([])
+})
+
 test("ordinary and Dramawebben navigation cleans metadata, background, and active content", async ({
   page
 }) => {
@@ -200,6 +324,46 @@ test("ordinary client navigation to a Dramawebben-only canonical profile uses on
 
   await page.goBack()
   await expect(page).toHaveURL(/\/$/)
+  expect(problems).toEqual([])
+})
+
+test("reused ordinary profile redirects to Dramawebben once with one request", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
+  await reset(request)
+  await installTransitionLedger(page)
+
+  await routerPush(page, "/f%C3%B6rfattare/DramaOnly?fran=reused")
+  await expect(page).toHaveURL(
+    /\/f%C3%B6rfattare\/DramaOnly\/dramawebben\?fran=reused$/u
+  )
+  await expect(page.locator("h1")).toContainText("Dramatikern")
+  expect((await transitionLedger(page)).filter(path => (
+    path === "/f%C3%B6rfattare/DramaOnly/dramawebben?fran=reused"
+  ))).toHaveLength(1)
+  expect(await profileRequests(request)).toEqual(["/v2/authors/DramaOnly"])
+  expect(problems).toEqual([])
+})
+
+test("reused Dramawebben profile redirects to ordinary once with one request", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/StrindbergA/dramawebben", { waitUntil: "networkidle" })
+  await reset(request)
+  await installTransitionLedger(page)
+
+  await routerPush(page, "/f%C3%B6rfattare/Lagerl%C3%B6fS/dramawebben?fran=reused")
+  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/Lagerl%C3%B6fS\?fran=reused$/u)
+  await expect(page.locator("h1")).toContainText("Selma Lagerlöf")
+  expect((await transitionLedger(page)).filter(path => (
+    path === "/f%C3%B6rfattare/Lagerl%C3%B6fS?fran=reused"
+  ))).toHaveLength(1)
+  expect(await profileRequests(request)).toEqual(["/v2/authors/Lagerl%C3%B6fS"])
   expect(problems).toEqual([])
 })
 

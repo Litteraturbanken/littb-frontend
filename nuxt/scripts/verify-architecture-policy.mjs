@@ -123,6 +123,7 @@ const violations = []
 const violationKeys = new Set()
 const sourceRecords = []
 const lineStartsBySource = new Map()
+const checkerContexts = new WeakMap()
 let auditedFileCount = 0
 
 function normalizedRelativePath(absolutePath) {
@@ -181,23 +182,17 @@ function scriptKindFor(relativePath, language) {
   return ts.ScriptKind.TS
 }
 
-function paddedSource(source, start, content) {
-  return source.slice(0, start).replace(/[^\r\n\u2028\u2029]/g, " ") + content
-}
-
 function createScriptUnit(record, content, start, language, kind = "script") {
-  const text = start === 0 && content === record.source
-    ? content
-    : paddedSource(record.source, start, content)
   const scriptKind = scriptKindFor(record.relativePath, language)
   return {
     kind,
     record,
     commentSource: content,
     commentOffset: start,
+    sourceOffset: start,
     sourceFile: ts.createSourceFile(
       record.relativePath,
-      text,
+      content,
       ts.ScriptTarget.Latest,
       true,
       scriptKind
@@ -538,6 +533,53 @@ function declarationInitializer(entry, useNode, semantic) {
     : assignmentInitializer(entry, useNode, semantic)
 }
 
+function definitionInitializers(entry, useNode, semantic) {
+  if (!entry) return []
+  const definitions = []
+  if (ts.isBindingElement(entry.node)) {
+    let owner = entry.node.parent.parent
+    while (ts.isBindingElement(owner)) owner = owner.parent.parent
+    if (owner.initializer) {
+      const extracted = entry.node.propertyName && (
+        ts.isIdentifier(entry.node.propertyName)
+        || ts.isStringLiteralLike(entry.node.propertyName)
+      )
+        ? entry.node.propertyName.text
+        : entry.identifier.text
+      definitions.push({ expression: owner.initializer, extracted, atNode: owner })
+    }
+  } else if (entry.node.initializer) {
+    definitions.push({ expression: entry.node.initializer, extracted: null, atNode: entry.node })
+  }
+  const assignments = semantic.assignments.filter(assignment => (
+    assignment.name === entry.identifier.text
+    && assignment.node.pos < useNode.pos
+    && resolveDeclaration(assignment.name, assignment.node, semantic)?.node === entry.node
+  ))
+  const unconditional = assignments.filter(assignment => {
+    let current = assignment.node.parent
+    while (current && current !== entry.scope) {
+      if (ts.isIfStatement(current) || ts.isConditionalExpression(current)
+        || ts.isSwitchStatement(current) || ts.isForStatement(current)
+        || ts.isForInStatement(current) || ts.isForOfStatement(current)
+        || ts.isWhileStatement(current) || ts.isDoStatement(current)
+        || ts.isTryStatement(current) || ts.isCatchClause(current)) return false
+      current = current.parent
+    }
+    return current === entry.scope
+  }).sort((left, right) => right.node.pos - left.node.pos)[0]
+  if (unconditional) definitions.splice(0)
+  for (const assignment of assignments) {
+    if (unconditional && assignment.node.pos < unconditional.node.pos) continue
+    definitions.push({
+      expression: assignment.node.right,
+      extracted: assignedProperty(assignment.node.left, entry.identifier.text),
+      atNode: assignment.node
+    })
+  }
+  return definitions
+}
+
 function constantString(node, unit, semantic, atNode = node, seen = new Set()) {
   const expression = unwrapExpression(node)
   if (ts.isStringLiteralLike(expression)) return expression.text
@@ -559,18 +601,30 @@ function constantString(node, unit, semantic, atNode = node, seen = new Set()) {
   return null
 }
 
-function expressionLineage(node, unit, semantic, atNode = node, seen = new Set()) {
+function expressionLineages(node, unit, semantic, atNode = node, seen = new Set()) {
   const expression = unwrapExpression(node)
-  if (!expression) return null
+  if (!expression || seen.has(expression)) return new Set()
+  const nextSeen = new Set(seen).add(expression)
   if (ts.isIdentifier(expression)) {
     const entry = resolveDeclaration(expression.text, atNode, semantic)
-    if (!entry || seen.has(entry.node)) return null
-    seen.add(entry.node)
-    const initializer = declarationInitializer(entry, atNode, semantic)
-    if (!initializer) return null
-    const kind = expressionLineage(initializer.expression, unit, semantic, atNode, seen)
-    if (initializer.extracted === "document" && kind === "parse-result") return "document"
-    return kind
+    if (!entry) return expression.text === "document"
+      ? new Set(["live-document"])
+      : new Set()
+    const lineages = new Set()
+    for (const initializer of definitionInitializers(entry, atNode, semantic)) {
+      for (const kind of expressionLineages(
+        initializer.expression,
+        unit,
+        semantic,
+        initializer.atNode,
+        nextSeen
+      )) {
+        lineages.add(initializer.extracted === "document" && kind === "parse-result"
+          ? "document"
+          : kind)
+      }
+    }
+    return lineages
   }
   if (ts.isCallExpression(expression)) {
     if (ts.isIdentifier(expression.expression)
@@ -581,7 +635,7 @@ function expressionLineage(node, unit, semantic, atNode = node, seen = new Set()
         semantic,
         expression.expression
       )) {
-      return "parse-result"
+      return new Set(["parse-result"])
     }
     if (ts.isPropertyAccessExpression(expression.expression)) {
       const method = expression.expression.name.text
@@ -595,35 +649,104 @@ function expressionLineage(node, unit, semantic, atNode = node, seen = new Set()
           unit,
           semantic,
           unwrapExpression(receiver).expression
-        )) return "document"
-      const receiverKind = expressionLineage(receiver, unit, semantic, atNode, seen)
-      if (method === "createElement" && receiverKind === "document") return "element"
-      if (method === "querySelector" && ["document", "element"].includes(receiverKind)) return "element"
-      if (method === "querySelectorAll" && ["document", "element"].includes(receiverKind)) return "collection"
-      if (method === "filter" && receiverKind === "collection") return "collection"
+        )) return new Set(["document"])
+      const receiverKinds = expressionLineages(receiver, unit, semantic, atNode, nextSeen)
+      const result = new Set()
+      for (const receiverKind of receiverKinds) {
+        const live = receiverKind.startsWith("live-")
+        const base = live ? receiverKind.slice("live-".length) : receiverKind
+        const prefix = live ? "live-" : ""
+        if (method === "createElement" && base === "document") result.add(`${prefix}element`)
+        if (method === "querySelector" && ["document", "element"].includes(base)) {
+          result.add(`${prefix}element`)
+        }
+        if (method === "querySelectorAll" && ["document", "element"].includes(base)) {
+          result.add(`${prefix}collection`)
+        }
+        if (method === "filter" && base === "collection") result.add(`${prefix}collection`)
+      }
+      if (result.size > 0) return result
+    }
+    const target = unwrapExpression(expression.expression)
+    if (ts.isIdentifier(target)) {
+      const entry = resolveDeclaration(target.text, expression, semantic)
+      const declaration = entry?.node
+      const functionNode = declaration && ts.isFunctionDeclaration(declaration)
+        ? declaration
+        : declaration && ts.isVariableDeclaration(declaration)
+          && declaration.initializer && ts.isFunctionLike(declaration.initializer)
+          ? declaration.initializer
+          : null
+      const returnType = functionNode?.type ?? (
+        declaration && ts.isVariableDeclaration(declaration) ? declaration.type : null
+      )
+      const typeText = returnType?.getText(unit.sourceFile) ?? ""
+      if (/(?:^|\W)(?:HTML|SVG)?Element(?:\W|$)/u.test(typeText)) {
+        return new Set(["live-element"])
+      }
+      if (/(?:^|\W)Document(?:\W|$)/u.test(typeText)) return new Set(["live-document"])
     }
   }
   if (ts.isPropertyAccessExpression(expression)) {
-    const receiverKind = expressionLineage(expression.expression, unit, semantic, atNode, seen)
-    if (expression.name.text === "document" && receiverKind === "parse-result") return "document"
-    if (expression.name.text === "body" && receiverKind === "document") return "element"
-    return receiverKind
+    const owner = unwrapExpression(expression.expression)
+    if (expression.name.text === "document" && ts.isIdentifier(owner)
+      && ["globalThis", "window"].includes(owner.text)) return new Set(["live-document"])
+    const result = new Set()
+    for (const receiverKind of expressionLineages(
+      expression.expression,
+      unit,
+      semantic,
+      atNode,
+      nextSeen
+    )) {
+      const live = receiverKind.startsWith("live-")
+      const base = live ? receiverKind.slice("live-".length) : receiverKind
+      const prefix = live ? "live-" : ""
+      if (expression.name.text === "document" && base === "parse-result") {
+        result.add("document")
+      } else if (["body", "documentElement"].includes(expression.name.text)
+        && base === "document") {
+        result.add(`${prefix}element`)
+      } else {
+        result.add(receiverKind)
+      }
+    }
+    return result
   }
   if (ts.isElementAccessExpression(expression)) {
-    const receiverKind = expressionLineage(expression.expression, unit, semantic, atNode, seen)
-    return receiverKind === "collection" ? "element" : receiverKind
+    const result = new Set()
+    for (const receiverKind of expressionLineages(
+      expression.expression,
+      unit,
+      semantic,
+      atNode,
+      nextSeen
+    )) {
+      const live = receiverKind.startsWith("live-")
+      const base = live ? receiverKind.slice("live-".length) : receiverKind
+      result.add(base === "collection" ? `${live ? "live-" : ""}element` : receiverKind)
+    }
+    return result
   }
   if (ts.isArrayLiteralExpression(expression)) {
+    const result = new Set()
     for (const element of expression.elements) {
       const candidate = ts.isSpreadElement(element) ? element.expression : element
-      const kind = expressionLineage(candidate, unit, semantic, atNode, seen)
-      if (kind) return kind
+      for (const kind of expressionLineages(candidate, unit, semantic, atNode, nextSeen)) {
+        result.add(kind)
+      }
     }
+    return result
   }
   if (ts.isSpreadElement(expression)) {
-    return expressionLineage(expression.expression, unit, semantic, atNode, seen)
+    return expressionLineages(expression.expression, unit, semantic, atNode, nextSeen)
   }
-  return null
+  return new Set()
+}
+
+function hasOnlyDetachedLineage(node, unit, semantic, atNode = node) {
+  const lineages = expressionLineages(node, unit, semantic, atNode)
+  return lineages.size > 0 && [...lineages].every(kind => !kind.startsWith("live-"))
 }
 
 function enclosingNamedFunction(node) {
@@ -700,10 +823,7 @@ function mayBeDomReceiver(node, unit, semantic, atNode = node, seen = new Set())
     if (!entry) return false
     if (entry.node.type && /(?:^|\W)(?:Document|Element|HTMLElement|SVGElement)(?:\W|$)/u
       .test(entry.node.type.getText(unit.sourceFile))) return true
-    const initializer = declarationInitializer(entry, atNode, semantic)
-    return initializer
-      ? mayBeDomReceiver(initializer.expression, unit, semantic, atNode, seen)
-      : expressionLineage(expression, unit, semantic, atNode) !== null
+    return expressionLineages(expression, unit, semantic, atNode).size > 0
   }
   if (ts.isPropertyAccessExpression(expression)) {
     if (expression.name.text === "document") {
@@ -722,20 +842,109 @@ function mayBeDomReceiver(node, unit, semantic, atNode = node, seen = new Set())
     return false
   }
   if (ts.isElementAccessExpression(expression)) {
-    return expressionLineage(expression, unit, semantic, atNode) !== null
+    return expressionLineages(expression, unit, semantic, atNode).size > 0
   }
   if (ts.isCallExpression(expression) && ts.isPropertyAccessExpression(expression.expression)) {
     const method = expression.expression.name.text
+    const owner = unwrapExpression(expression.expression.expression)
+    if (ts.isIdentifier(owner)) {
+      const entry = resolveDeclaration(owner.text, atNode, semantic)
+      if (entry?.node.type && methodReturnHasDomType(
+        entry.node.type,
+        method,
+        unit,
+        semantic
+      )) return true
+    }
     return /^(?:createElement|getElementById|querySelector|closest)$/u.test(method)
       && mayBeDomReceiver(expression.expression.expression, unit, semantic, atNode, seen)
   }
-  return expressionLineage(expression, unit, semantic, atNode) !== null
+  return expressionLineages(expression, unit, semantic, atNode).size > 0
+}
+
+function methodReturnHasDomType(node, method, unit, semantic) {
+  if (ts.isParenthesizedTypeNode(node) || ts.isTypeOperatorNode(node)) {
+    return methodReturnHasDomType(node.type, method, unit, semantic)
+  }
+  if (!ts.isTypeLiteralNode(node)) return false
+  const member = node.members.find(candidate => candidate.name
+    && propertyNameText(candidate.name, unit, semantic, candidate) === method)
+  const returnType = member && (ts.isMethodSignature(member) || ts.isMethodDeclaration(member))
+    ? member.type
+    : member && ts.isPropertySignature(member) && member.type
+      && ts.isFunctionTypeNode(member.type)
+      ? member.type.type
+      : null
+  return Boolean(returnType && /(?:^|\W)(?:Document|Element|HTMLElement|SVGElement)(?:\W|$)/u
+    .test(returnType.getText(unit.sourceFile)))
+}
+
+function propertyArgumentCanBeHtml(node, unit, semantic, atNode) {
+  const expression = unwrapExpression(node)
+  if (ts.isNumericLiteral(expression)) return false
+  const property = constantString(expression, unit, semantic, atNode)
+  return property === "innerHTML" || property === null
+}
+
+function propBagCanContainHtml(node, unit, semantic, atNode) {
+  const expression = unwrapExpression(node)
+  if (expression.kind === ts.SyntaxKind.NullKeyword) return false
+  if (!ts.isObjectLiteralExpression(expression)) return true
+  for (const property of expression.properties) {
+    if (ts.isSpreadAssignment(property)) return true
+    if (!property.name) return true
+    const name = propertyNameText(property.name, unit, semantic, atNode)
+    if (name === "innerHTML" || (name === null && ts.isComputedPropertyName(property.name))) {
+      return true
+    }
+  }
+  return false
 }
 
 function collectDomOperations(unit) {
   const semantic = buildSemantic(unit)
   const operations = []
   visitAst(unit.sourceFile, node => {
+    if (ts.isCallExpression(node)) {
+      const identity = resolvedValueIdentity(node.expression, unit, semantic, node)
+      const target = node.arguments[0]
+      if (target && mayBeDomReceiver(target, unit, semantic, node)) {
+        let mutation = false
+        let computedOrigin = node
+        if (["Reflect.set", "Reflect.defineProperty", "Object.defineProperty"].includes(identity)) {
+          const property = node.arguments[1]
+          mutation = Boolean(property && propertyArgumentCanBeHtml(property, unit, semantic, node))
+          if (property) computedOrigin = property
+        } else if (identity === "Object.assign") {
+          mutation = node.arguments.slice(1).some(source => (
+            propBagCanContainHtml(source, unit, semantic, node)
+          ))
+          computedOrigin = node.arguments[1] ?? node
+        } else if (identity === "Object.defineProperties") {
+          const descriptors = node.arguments[1]
+          mutation = Boolean(descriptors && propBagCanContainHtml(
+            descriptors,
+            unit,
+            semantic,
+            node
+          ))
+          computedOrigin = descriptors ?? node
+        }
+        if (mutation) {
+          operations.push({
+            node,
+            base: rootIdentifier(target),
+            computed: true,
+            computedOrigin,
+            detached: hasOnlyDetachedLineage(target, unit, semantic, node),
+            functionName: enclosingNamedFunction(node),
+            issuer: null,
+            kind: "mutation",
+            unit
+          })
+        }
+      }
+    }
     let receiver = null
     let property = null
     let computed = false
@@ -761,7 +970,7 @@ function collectDomOperations(unit) {
         base: rootIdentifier(receiver),
         computed,
         computedOrigin,
-        detached: expressionLineage(receiver, unit, semantic, node) !== null,
+        detached: hasOnlyDetachedLineage(receiver, unit, semantic, node),
         functionName: enclosingNamedFunction(node),
         issuer: directIssuer(node, unit, semantic),
         kind: operationKind(node),
@@ -786,7 +995,7 @@ function collectDomOperations(unit) {
           computed: computedBinding,
           computedOrigin: node.propertyName ?? node,
           detached: bindingReceiver
-            ? expressionLineage(bindingReceiver, unit, semantic, node) !== null
+            ? hasOnlyDetachedLineage(bindingReceiver, unit, semantic, node)
             : false,
           functionName: enclosingNamedFunction(node),
           issuer: null,
@@ -812,7 +1021,7 @@ function collectDomOperations(unit) {
           base: rootIdentifier(assignment.right),
           computed: computedProperty,
           computedOrigin: node.name,
-          detached: expressionLineage(assignment.right, unit, semantic, node) !== null,
+          detached: hasOnlyDetachedLineage(assignment.right, unit, semantic, node),
           functionName: enclosingNamedFunction(node),
           issuer: null,
           kind: "read",
@@ -841,14 +1050,14 @@ function collectDomOperations(unit) {
 function operationLine(operation) {
   return lineNumberAt(
     operation.unit.record.source,
-    operation.node.getStart(operation.unit.sourceFile)
+    operation.unit.sourceOffset + operation.node.getStart(operation.unit.sourceFile)
   )
 }
 
 function operationComputedLine(operation) {
   return lineNumberAt(
     operation.unit.record.source,
-    operation.computedOrigin.getStart(operation.unit.sourceFile)
+    operation.unit.sourceOffset + operation.computedOrigin.getStart(operation.unit.sourceFile)
   )
 }
 
@@ -868,7 +1077,9 @@ function auditDomOperations(record) {
       addViolation(
         record.relativePath,
         operationLine(operation),
-        "DOM HTML access is not in the reviewed allowlist"
+        operation.kind === "mutation"
+          ? "DOM HTML mutation API is forbidden"
+          : "DOM HTML access is not in the reviewed allowlist"
       )
     }
     return
@@ -906,10 +1117,61 @@ function auditDomOperations(record) {
       addViolation(
         record.relativePath,
         operationLine(operation),
-        "DOM HTML access does not match the reviewed signature"
+        operation.kind === "mutation"
+          ? "DOM HTML mutation API is forbidden"
+          : "DOM HTML access does not match the reviewed signature"
       )
     }
   }
+}
+
+function auditNativeVNodeCalls(record) {
+  if (!isProductionPath(record.relativePath)) return
+  for (const unit of record.units) {
+    const semantic = buildSemantic(unit)
+    visitAst(unit.sourceFile, node => {
+      if (!ts.isCallExpression(node)) return
+      const identity = resolvedValueIdentity(node.expression, unit, semantic, node)
+      if (!["h", "createVNode"].includes(identity) || node.arguments.length < 2) return
+      const tag = constantString(node.arguments[0], unit, semantic, node)
+      if (!tag || !/^[a-z][a-z0-9-]*$/u.test(tag)) return
+      if (!propBagCanContainHtml(node.arguments[1], unit, semantic, node)) return
+      addViolation(
+        record.relativePath,
+        lineNumberAt(
+          record.source,
+          unit.sourceOffset + node.getStart(unit.sourceFile)
+        ),
+        "native vnode props can forward raw HTML properties"
+      )
+    })
+  }
+}
+
+function resolvedValueIdentity(node, unit, semantic, atNode, seen = new Set()) {
+  const expression = unwrapExpression(node)
+  const identity = callIdentity(expression)
+  if (ts.isPropertyAccessExpression(expression)
+    && ts.isIdentifier(unwrapExpression(expression.expression))) {
+    const owner = unwrapExpression(expression.expression)
+    const entry = resolveDeclaration(owner.text, atNode, semantic)
+    let declaration = entry?.node
+    while (declaration && !ts.isImportDeclaration(declaration)) declaration = declaration.parent
+    if (entry && ts.isNamespaceImport(entry.node) && declaration
+      && ts.isStringLiteralLike(declaration.moduleSpecifier)
+      && declaration.moduleSpecifier.text === "vue") {
+      return expression.name.text
+    }
+  }
+  if (!ts.isIdentifier(expression) || seen.has(expression.text)) return identity
+  const binding = importedBinding(expression.text, unit, semantic, atNode)
+  if (binding?.moduleSpecifier === "vue") return binding.importedName
+  seen.add(expression.text)
+  const entry = resolveDeclaration(expression.text, atNode, semantic)
+  const initializer = declarationInitializer(entry, atNode, semantic)
+  return initializer
+    ? resolvedValueIdentity(initializer.expression, unit, semantic, atNode, seen) ?? identity
+    : identity
 }
 
 function recordConstantOrigin(record, name, expected) {
@@ -925,12 +1187,84 @@ function recordConstantOrigin(record, name, expected) {
   return null
 }
 
+function vueConstantString(expression) {
+  if (!expression?.content) return null
+  const sourceFile = ts.createSourceFile(
+    "template-expression.ts",
+    `const value = ${expression.content}`,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  )
+  const statement = sourceFile.statements[0]
+  return statement && ts.isVariableStatement(statement)
+    && statement.declarationList.declarations[0]?.initializer
+    && ts.isStringLiteralLike(statement.declarationList.declarations[0].initializer)
+    ? statement.declarationList.declarations[0].initializer.text
+    : null
+}
+
+function recordConstantString(record, name) {
+  for (const unit of record.units) {
+    const semantic = buildSemantic(unit)
+    for (const entry of semantic.declarations.get(name) ?? []) {
+      const value = constantString(entry.identifier, unit, semantic, entry.identifier)
+      if (value !== null) return value
+    }
+  }
+  return null
+}
+
+function recordConstantExpression(record, expression) {
+  if (/^[A-Za-z_$][\w$]*$/u.test(expression)) {
+    return recordConstantString(record, expression)
+  }
+  const match = /^([A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)$/u.exec(expression)
+  if (!match) return null
+  const [, ownerName, propertyName] = match
+  for (const unit of record.units) {
+    const semantic = buildSemantic(unit)
+    for (const entry of semantic.declarations.get(ownerName) ?? []) {
+      const initializer = declarationInitializer(entry, entry.identifier, semantic)
+      const value = initializer && unwrapExpression(initializer.expression)
+      if (!value || !ts.isObjectLiteralExpression(value)) continue
+      const property = value.properties.find(candidate => candidate.name
+        && propertyNameText(candidate.name, unit, semantic, candidate) === propertyName)
+      if (property && ts.isPropertyAssignment(property)) {
+        const constant = constantString(property.initializer, unit, semantic, property)
+        if (constant !== null) return constant
+      }
+    }
+  }
+  return null
+}
+
+function isNativeDynamicComponent(node, record) {
+  if (node.tag !== "component") return false
+  for (const property of node.props) {
+    if (property.type === NodeTypes.ATTRIBUTE && property.name === "is") {
+      return Boolean(property.value?.content
+        && /^[a-z][a-z0-9-]*$/u.test(property.value.content))
+    }
+    if (property.type === NodeTypes.DIRECTIVE && property.name === "bind"
+      && property.arg?.isStatic && property.arg.content === "is") {
+      const value = vueConstantString(property.exp) ?? (
+        property.exp?.content
+          ? recordConstantExpression(record, property.exp.content)
+          : null
+      )
+      return Boolean(value && /^[a-z][a-z0-9-]*$/u.test(value))
+    }
+  }
+  return false
+}
+
 function auditVueTemplate(record) {
   if (!record.template) return
   const { ast, start } = record.template
   const visit = node => {
     if (node.type === NodeTypes.ELEMENT) {
-      const native = node.tagType === ElementTypes.ELEMENT
+      const native = node.tagType === ElementTypes.ELEMENT || isNativeDynamicComponent(node, record)
       for (const property of node.props) {
         if (property.type !== NodeTypes.DIRECTIVE) continue
         const line = lineNumberAt(record.source, start + property.loc.start.offset)
@@ -946,7 +1280,10 @@ function auditVueTemplate(record) {
           if (origin) {
             addViolation(
               record.relativePath,
-              lineNumberAt(record.source, origin.node.getStart(origin.unit.sourceFile)),
+              lineNumberAt(
+                record.source,
+                origin.unit.sourceOffset + origin.node.getStart(origin.unit.sourceFile)
+              ),
               "computed DOM HTML access is forbidden"
             )
           }
@@ -967,6 +1304,9 @@ function importAliases(unit) {
   const namespaces = new Set()
   for (const statement of unit.sourceFile.statements) {
     if (!ts.isImportDeclaration(statement) || !statement.importClause) continue
+    if (statement.importClause.name) {
+      aliases.set(statement.importClause.name.text, statement.importClause.name.text)
+    }
     const bindings = statement.importClause.namedBindings
     if (bindings && ts.isNamedImports(bindings)) {
       for (const specifier of bindings.elements) {
@@ -1042,18 +1382,85 @@ function enclosingFunction(node) {
 
 function buildCapabilityRegistry(records) {
   const units = records.flatMap(record => record.units)
+  const recordImports = new Map(records.map(record => {
+    const aliases = new Map()
+    const namespaces = new Set()
+    for (const unit of record.units) {
+      const imported = importAliases(unit)
+      for (const [localName, importedName] of imported.aliases) {
+        aliases.set(localName, importedName)
+      }
+      for (const namespace of imported.namespaces) namespaces.add(namespace)
+    }
+    return [record, { aliases, namespaces }]
+  }))
   const unitContexts = new Map(units.map(unit => [unit, {
-    ...importAliases(unit),
+    ...recordImports.get(unit.record),
     semantic: buildSemantic(unit),
     taintedGenericParameters: new Map()
   }]))
   const declarations = []
   const taintedNames = new Set(capabilityTypes)
+  const taintedDeclarations = new Set()
   for (const unit of units) {
     visitAst(unit.sourceFile, node => {
       const name = typeDeclarationName(node)
       if (name) declarations.push({ name, node, unit })
     })
+  }
+
+  const importedTypeTarget = (localName, unit) => {
+    for (const candidateUnit of unit.record.units) {
+      for (const statement of candidateUnit.sourceFile.statements) {
+        if (!ts.isImportDeclaration(statement) || !statement.importClause
+          || !ts.isStringLiteralLike(statement.moduleSpecifier)) continue
+        const isDefault = statement.importClause.name?.text === localName
+        const bindings = statement.importClause.namedBindings
+        const specifier = bindings && ts.isNamedImports(bindings)
+          ? bindings.elements.find(element => element.name.text === localName)
+          : null
+        if ((!isDefault && !specifier) || !statement.moduleSpecifier.text.startsWith(".")) continue
+        const base = resolve(
+          "/",
+          dirname(unit.record.relativePath),
+          statement.moduleSpecifier.text
+        ).slice(1)
+        const targetRecord = records.find(record => [
+          base,
+          `${base}.ts`,
+          `${base}.tsx`,
+          `${base}.vue`,
+          `${base}/index.ts`
+        ].includes(record.relativePath))
+        if (targetRecord) {
+          return {
+            default: isDefault,
+            name: specifier?.propertyName?.text ?? specifier?.name.text ?? null,
+            record: targetRecord
+          }
+        }
+      }
+    }
+    return null
+  }
+
+  const declarationsFor = (name, unit, localName = name) => {
+    const local = declarations.filter(declaration => (
+      declaration.name === name && declaration.unit.record === unit.record
+    ))
+    if (local.length > 0) return local
+    const target = importedTypeTarget(localName, unit)
+    if (target) {
+      return declarations.filter(declaration => (
+        declaration.unit.record === target.record
+        && (target.default
+          ? declaration.node.modifiers?.some(modifier => (
+              modifier.kind === ts.SyntaxKind.DefaultKeyword
+            ))
+          : declaration.name === target.name)
+      ))
+    }
+    return declarations.filter(declaration => declaration.name === name)
   }
 
   const declaredMembers = declaration => {
@@ -1082,17 +1489,78 @@ function buildCapabilityRegistry(records) {
       : null
   }
 
-  const typeCarries = (node, unit, atNode = node, seen = new Set()) => {
+  const typeCarries = (
+    node,
+    unit,
+    atNode = node,
+    seen = new Set(),
+    substitutions = new Map()
+  ) => {
     if (!node) return false
     const context = unitContexts.get(unit)
     if (ts.isParenthesizedTypeNode(node) || ts.isTypeOperatorNode(node)
       || ts.isOptionalTypeNode(node) || ts.isRestTypeNode(node)) {
-      return typeCarries(node.type, unit, atNode, seen)
+      return typeCarries(node.type, unit, atNode, seen, substitutions)
     }
     if (ts.isTypeReferenceNode(node)) {
       const localName = simpleTypeName(node.typeName)
       const originalName = localName ? context.aliases.get(localName) ?? localName : null
-      if (originalName && taintedNames.has(originalName)) return true
+      const substitution = localName ? substitutions.get(localName) : null
+      if (substitution) {
+        return substitution.literal === undefined
+          ? typeCarries(
+              substitution.node,
+              substitution.unit,
+              substitution.node,
+              seen,
+              substitutions
+            )
+          : false
+      }
+      if (originalName === "ReturnType" && node.typeArguments?.length === 1
+        && ts.isTypeQueryNode(node.typeArguments[0])) {
+        return entityNameCarries(node.typeArguments[0].exprName, unit, atNode, seen)
+      }
+      const matchingDeclarations = originalName
+        ? declarationsFor(originalName, unit, localName ?? originalName)
+        : []
+      if (matchingDeclarations.length > 0) {
+        const instantiated = node.typeArguments?.length
+          ? matchingDeclarations.filter(declaration => declaration.node.typeParameters?.length)
+          : []
+        if (instantiated.length > 0) {
+          return instantiated.some(declaration => {
+            if (seen.has(declaration.node)) return false
+            const instantiatedSeen = new Set(seen).add(declaration.node)
+            const instantiatedSubstitutions = new Map(substitutions)
+            declaration.node.typeParameters?.forEach((parameter, index) => {
+              const argument = node.typeArguments?.[index]
+              if (argument) {
+                instantiatedSubstitutions.set(parameter.name.text, { node: argument, unit })
+              }
+            })
+            if (ts.isTypeAliasDeclaration(declaration.node)) {
+              return typeCarries(
+                declaration.node.type,
+                declaration.unit,
+                declaration.node,
+                instantiatedSeen,
+                instantiatedSubstitutions
+              )
+            }
+            return declaredMembers(declaration).some(member => member.type && typeCarries(
+              member.type,
+              declaration.unit,
+              member,
+              instantiatedSeen,
+              instantiatedSubstitutions
+            ))
+          })
+        }
+        if (matchingDeclarations.some(declaration => taintedDeclarations.has(declaration))) {
+          return true
+        }
+      } else if (originalName && taintedNames.has(originalName)) return true
       const owner = enclosingFunction(atNode)
       const taintedParameters = owner ? context.taintedGenericParameters.get(owner) : null
       if (localName && taintedParameters?.has(localName)) return true
@@ -1100,61 +1568,103 @@ function buildCapabilityRegistry(records) {
         ? owner?.typeParameters?.find(parameter => parameter.name.text === localName)
         : null
       if (constrainedParameter?.constraint
-        && typeCarries(constrainedParameter.constraint, unit, constrainedParameter, seen)) {
+        && typeCarries(
+          constrainedParameter.constraint,
+          unit,
+          constrainedParameter,
+          seen,
+          substitutions
+        )) {
         return true
       }
-      return node.typeArguments?.some(argument => typeCarries(argument, unit, atNode, seen)) ?? false
+      return node.typeArguments?.some(argument => (
+        typeCarries(argument, unit, atNode, seen, substitutions)
+      )) ?? false
     }
     if (ts.isImportTypeNode(node)) {
       if (node.qualifier && taintedNames.has(simpleTypeName(node.qualifier))) return true
-      return node.typeArguments?.some(argument => typeCarries(argument, unit, atNode, seen)) ?? false
+      return node.typeArguments?.some(argument => (
+        typeCarries(argument, unit, atNode, seen, substitutions)
+      )) ?? false
     }
     if (ts.isTypeQueryNode(node)) {
-      const name = simpleTypeName(node.exprName)
-      if (name && capabilityIssuers.has(context.aliases.get(name) ?? name)) return true
-      if (name) return valueCarriesIdentifier(name, unit, atNode, new Set())
-      return false
+      return entityNameCarries(node.exprName, unit, atNode, seen)
     }
     if (ts.isIndexedAccessTypeNode(node)) {
       const property = indexedPropertyName(node.indexType)
-      const object = ts.isTypeReferenceNode(node.objectType)
-        ? simpleTypeName(node.objectType.typeName)
-        : null
-      const originalObject = object ? context.aliases.get(object) ?? object : null
-      if (property && originalObject) {
-        const matchingDeclarations = declarations.filter(declaration =>
-          declaration.name === originalObject
+      if (property !== null) {
+        const exactProperty = propertyCarries(
+          node.objectType,
+          property,
+          unit,
+          atNode,
+          seen,
+          substitutions
         )
-        const matchingMembers = matchingDeclarations.flatMap(declaration =>
-          declaredMembers(declaration)
-            .filter(member => declaredPropertyName(member) === property)
-            .map(member => ({ declaration, member }))
-        )
-        if (matchingMembers.length > 0) {
-          return matchingMembers.some(({ declaration, member }) => member.type
-            && typeCarries(member.type, declaration.unit, member, seen))
-        }
+        if (exactProperty !== null) return exactProperty
       }
-      return typeCarries(node.objectType, unit, atNode, seen)
+      return typeCarries(node.objectType, unit, atNode, seen, substitutions)
     }
     if (ts.isFunctionTypeNode(node) || ts.isConstructorTypeNode(node)) {
-      return typeCarries(node.type, unit, atNode, seen)
+      return typeCarries(node.type, unit, atNode, seen, substitutions)
     }
     if (ts.isTypeLiteralNode(node)) {
-      return node.members.some(member => member.type && typeCarries(member.type, unit, atNode, seen))
+      return node.members.some(member => member.type
+        && typeCarries(member.type, unit, atNode, seen, substitutions))
+    }
+    if (ts.isMappedTypeNode(node)) return Boolean(node.type
+      && typeCarries(node.type, unit, atNode, seen, substitutions))
+    if (ts.isConditionalTypeNode(node)) {
+      const check = concreteLiteralType(node.checkType, substitutions)
+      const compared = concreteLiteralType(node.extendsType, substitutions)
+      if (check !== null && compared !== null) {
+        return typeCarries(
+          check === compared ? node.trueType : node.falseType,
+          unit,
+          atNode,
+          seen,
+          substitutions
+        )
+      }
+      return typeCarries(node.checkType, unit, atNode, seen, substitutions)
+        || typeCarries(node.extendsType, unit, atNode, seen, substitutions)
+        || typeCarries(node.trueType, unit, atNode, seen, substitutions)
+        || typeCarries(node.falseType, unit, atNode, seen, substitutions)
+    }
+    if (ts.isInferTypeNode(node)) {
+      return Boolean(node.typeParameter.constraint
+        && typeCarries(node.typeParameter.constraint, unit, atNode, seen, substitutions))
     }
     if (ts.isUnionTypeNode(node) || ts.isIntersectionTypeNode(node)) {
-      return node.types.some(type => typeCarries(type, unit, atNode, seen))
+      return node.types.some(type => typeCarries(type, unit, atNode, seen, substitutions))
     }
     if (ts.isTupleTypeNode(node)) {
-      return node.elements.some(type => typeCarries(type, unit, atNode, seen))
+      return node.elements.some(type => typeCarries(type, unit, atNode, seen, substitutions))
     }
-    if (ts.isArrayTypeNode(node)) return typeCarries(node.elementType, unit, atNode, seen)
+    if (ts.isArrayTypeNode(node)) {
+      return typeCarries(node.elementType, unit, atNode, seen, substitutions)
+    }
     return false
   }
 
+  function concreteLiteralType(node, substitutions) {
+    if (ts.isLiteralTypeNode(node)
+      && (ts.isStringLiteralLike(node.literal) || ts.isNumericLiteral(node.literal))) {
+      return node.literal.text
+    }
+    if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) {
+      const substitution = substitutions.get(node.typeName.text)
+      if (!substitution) return null
+      if (substitution.literal !== undefined) return substitution.literal
+      return substitution.node
+        ? concreteLiteralType(substitution.node, substitutions)
+        : null
+    }
+    return null
+  }
+
   const declarationCarries = declaration => {
-    if (seenDeclaration(declaration, taintedNames)) return true
+    if (taintedDeclarations.has(declaration)) return true
     if (ts.isTypeAliasDeclaration(declaration.node)) {
       return typeCarries(declaration.node.type, declaration.unit, declaration.node)
     }
@@ -1169,35 +1679,374 @@ function buildCapabilityRegistry(records) {
     return false
   }
 
-  function seenDeclaration(declaration, names) {
-    return names.has(declaration.name)
-  }
-
   function valueCarriesIdentifier(name, unit, atNode, seen) {
     const context = unitContexts.get(unit)
     const entry = resolveDeclaration(name, atNode, context.semantic)
     if (!entry || seen.has(entry.node)) return false
     seen.add(entry.node)
-    if (entry.node.type && typeCarries(entry.node.type, unit, entry.node)) return true
+    if (entry.node.type && typeCarries(entry.node.type, unit, entry.node, seen)) return true
+    if (ts.isFunctionDeclaration(entry.node)) {
+      if (entry.node.body) {
+        let carries = false
+        visitAst(entry.node.body, candidate => {
+          if (ts.isReturnStatement(candidate) && candidate.expression
+            && expressionCarries(candidate.expression, unit, candidate, seen)) carries = true
+        })
+        if (carries) return true
+      }
+      return false
+    }
     const initializer = declarationInitializer(entry, atNode, context.semantic)
     if (!initializer) return false
-    const expression = unwrapExpression(initializer.expression)
+    return expressionCarries(initializer.expression, unit, atNode, seen, initializer.extracted)
+  }
+
+  function entityNameParts(name) {
+    return ts.isIdentifier(name)
+      ? [name.text]
+      : [...entityNameParts(name.left), name.right.text]
+  }
+
+  function entityNameCarries(name, unit, atNode, seen) {
+    const parts = entityNameParts(name)
+    const context = unitContexts.get(unit)
+    if (parts.length === 1) {
+      const original = context.aliases.get(parts[0]) ?? parts[0]
+      if (capabilityIssuers.has(original)) return true
+      return valueCarriesIdentifier(parts[0], unit, atNode, new Set(seen))
+    }
+    if (context.namespaces.has(parts[0]) && capabilityIssuers.has(parts.at(-1))) return true
+    return valueCarriesProperty(parts, unit, atNode, seen)
+  }
+
+  function valueCarriesProperty(parts, unit, atNode, seen) {
+    const context = unitContexts.get(unit)
+    const entry = resolveDeclaration(parts[0], atNode, context.semantic)
+    const initializer = declarationInitializer(entry, atNode, context.semantic)
+    if (!initializer) return false
+    let expression = unwrapExpression(initializer.expression)
+    for (const part of parts.slice(1)) {
+      if (!ts.isObjectLiteralExpression(expression)) return false
+      const property = expression.properties.find(candidate => candidate.name
+        && propertyNameText(candidate.name, unit, context.semantic, candidate) === part)
+      if (!property) return false
+      if (ts.isPropertyAssignment(property)) expression = unwrapExpression(property.initializer)
+      else if (ts.isMethodDeclaration(property)) expression = property
+      else return false
+    }
+    return expressionCarries(expression, unit, atNode, seen)
+  }
+
+  function expressionCarries(node, unit, atNode, seen, extracted = null) {
+    const expression = unwrapExpression(node)
+    const context = unitContexts.get(unit)
+    if (extracted && ts.isIdentifier(expression)) {
+      return valueCarriesProperty([expression.text, extracted], unit, atNode, seen)
+    }
     if (ts.isCallExpression(expression)) {
       const identity = callIdentity(expression.expression)
       const original = identity ? context.aliases.get(identity) ?? identity : null
       if (original && capabilityIssuers.has(original)) return true
     }
     if (ts.isIdentifier(expression)) {
-      return valueCarriesIdentifier(expression.text, unit, expression, seen)
+      return valueCarriesIdentifier(expression.text, unit, expression, new Set(seen))
+    }
+    if (ts.isPropertyAccessExpression(expression)) {
+      return entityNameCarries(expression.name, unit, expression, seen)
+        || valueCarriesProperty(
+          expression.getText(unit.sourceFile).split("."),
+          unit,
+          expression,
+          seen
+        )
+    }
+    if (ts.isArrowFunction(expression) || ts.isFunctionExpression(expression)
+      || ts.isMethodDeclaration(expression)) {
+      if (expression.type && typeCarries(expression.type, unit, expression, seen)) return true
+      if (ts.isBlock(expression.body)) {
+        let carries = false
+        visitAst(expression.body, candidate => {
+          if (ts.isReturnStatement(candidate) && candidate.expression
+            && expressionCarries(candidate.expression, unit, candidate, seen)) carries = true
+        })
+        return carries
+      }
+      return expressionCarries(expression.body, unit, expression, seen)
+    }
+    if (ts.isAsExpression(expression) || ts.isTypeAssertionExpression(expression)) {
+      return typeCarries(expression.type, unit, expression, seen)
     }
     return false
+  }
+
+  function functionParameterCarries(name, index, unit, atNode, seen) {
+    const parts = entityNameParts(name)
+    if (parts.length !== 1) return false
+    const context = unitContexts.get(unit)
+    const entry = resolveDeclaration(parts[0], atNode, context.semantic)
+    let functionNode = entry?.node
+    if (functionNode && ts.isVariableDeclaration(functionNode)) {
+      functionNode = functionNode.initializer
+    }
+    return Boolean(functionNode && ts.isFunctionLike(functionNode)
+      && functionNode.parameters[index]?.type
+      && typeCarries(functionNode.parameters[index].type, unit, functionNode.parameters[index], seen))
+  }
+
+  function selectedPropertyType(
+    objectType,
+    property,
+    unit,
+    atNode,
+    seen,
+    substitutions
+  ) {
+    if (ts.isParenthesizedTypeNode(objectType) || ts.isTypeOperatorNode(objectType)) {
+      return selectedPropertyType(
+        objectType.type,
+        property,
+        unit,
+        atNode,
+        seen,
+        substitutions
+      )
+    }
+    if (ts.isTypeLiteralNode(objectType)) {
+      const member = objectType.members.find(candidate => (
+        declaredPropertyName(candidate) === property
+      ))
+      return member?.type
+        ? { node: member.type, unit, substitutions }
+        : null
+    }
+    if (!ts.isTypeReferenceNode(objectType)) return null
+    const context = unitContexts.get(unit)
+    const localName = simpleTypeName(objectType.typeName)
+    const originalName = localName ? context.aliases.get(localName) ?? localName : null
+    if (!originalName) return null
+    if (["NonNullable", "Readonly", "Required", "Partial"].includes(originalName)
+      && objectType.typeArguments?.[0]) {
+      return selectedPropertyType(
+        objectType.typeArguments[0],
+        property,
+        unit,
+        atNode,
+        seen,
+        substitutions
+      )
+    }
+    for (const declaration of declarationsFor(originalName, unit, localName ?? originalName)) {
+      if (ts.isTypeAliasDeclaration(declaration.node)
+        && !ts.isTypeLiteralNode(declaration.node.type)) {
+        const nested = selectedPropertyType(
+          declaration.node.type,
+          property,
+          declaration.unit,
+          declaration.node,
+          seen,
+          substitutions
+        )
+        if (nested) return nested
+        continue
+      }
+      const member = declaredMembers(declaration)
+        .find(candidate => declaredPropertyName(candidate) === property)
+      if (!member?.type) continue
+      const memberSubstitutions = new Map(substitutions)
+      declaration.node.typeParameters?.forEach((parameter, index) => {
+        const argument = objectType.typeArguments?.[index]
+        if (argument) memberSubstitutions.set(parameter.name.text, { node: argument, unit })
+      })
+      return { node: member.type, unit: declaration.unit, substitutions: memberSubstitutions }
+    }
+    return null
+  }
+
+  function propertyCarries(
+    objectType,
+    property,
+    unit,
+    atNode,
+    seen,
+    substitutions = new Map()
+  ) {
+    const context = unitContexts.get(unit)
+    if (ts.isParenthesizedTypeNode(objectType) || ts.isTypeOperatorNode(objectType)) {
+      return propertyCarries(objectType.type, property, unit, atNode, seen, substitutions)
+    }
+    if (ts.isUnionTypeNode(objectType) || ts.isIntersectionTypeNode(objectType)) {
+      const results = objectType.types.map(type => (
+        propertyCarries(type, property, unit, atNode, seen, substitutions)
+      ))
+      return results.some(result => result === null) ? null : results.some(Boolean)
+    }
+    if (ts.isIndexedAccessTypeNode(objectType)) {
+      const selectedProperty = indexedPropertyName(objectType.indexType)
+      if (selectedProperty === null) return null
+      const selection = selectedPropertyType(
+        objectType.objectType,
+        selectedProperty,
+        unit,
+        atNode,
+        seen,
+        substitutions
+      )
+      return selection
+        ? propertyCarries(
+            selection.node,
+            property,
+            selection.unit,
+            selection.node,
+            seen,
+            selection.substitutions
+          )
+        : null
+    }
+    if (ts.isTypeLiteralNode(objectType)) {
+      const member = objectType.members.find(candidate => declaredPropertyName(candidate) === property)
+      return member ? Boolean(member.type
+        && typeCarries(member.type, unit, member, seen, substitutions)) : false
+    }
+    if (!ts.isTypeReferenceNode(objectType)) return null
+    const localName = simpleTypeName(objectType.typeName)
+    const originalName = localName ? context.aliases.get(localName) ?? localName : null
+    if (!originalName) return null
+    if (["NonNullable", "Readonly", "Required", "Partial"].includes(originalName)
+      && objectType.typeArguments?.[0]) {
+      return propertyCarries(
+        objectType.typeArguments[0],
+        property,
+        unit,
+        atNode,
+        seen,
+        substitutions
+      )
+    }
+    if (originalName === "Parameters" && objectType.typeArguments?.[0]
+      && ts.isTypeQueryNode(objectType.typeArguments[0]) && /^\d+$/u.test(property)) {
+      return functionParameterCarries(
+        objectType.typeArguments[0].exprName,
+        Number(property),
+        unit,
+        atNode,
+        seen
+      )
+    }
+    const matchingDeclarations = declarationsFor(originalName, unit, localName ?? originalName)
+    if (matchingDeclarations.length === 0) return null
+    let resolved = false
+    for (const declaration of matchingDeclarations) {
+      if (ts.isTypeAliasDeclaration(declaration.node)) {
+        if (ts.isMappedTypeNode(declaration.node.type)) {
+          const mappedSubstitutions = new Map(substitutions)
+          mappedSubstitutions.set(declaration.node.type.typeParameter.name.text, {
+            literal: property
+          })
+          resolved = resolved || Boolean(declaration.node.type.type
+            && typeCarries(
+              declaration.node.type.type,
+              declaration.unit,
+              declaration.node,
+              seen,
+              mappedSubstitutions
+            ))
+          continue
+        }
+        if (!ts.isTypeLiteralNode(declaration.node.type)) {
+          const nested = propertyCarries(
+            declaration.node.type,
+            property,
+            declaration.unit,
+            declaration.node,
+            seen,
+            substitutions
+          )
+          if (nested !== null) resolved = resolved || nested
+          continue
+        }
+      }
+      const member = declaredMembers(declaration)
+        .find(candidate => declaredPropertyName(candidate) === property)
+      if (!member?.type) continue
+      const memberSubstitutions = new Map(substitutions)
+      declaration.node.typeParameters?.forEach((parameter, index) => {
+        const argument = objectType.typeArguments?.[index]
+        if (argument) memberSubstitutions.set(parameter.name.text, { node: argument, unit })
+      })
+      resolved = resolved || typeCarries(
+        member.type,
+        declaration.unit,
+        member,
+        seen,
+        memberSubstitutions
+      )
+    }
+    return resolved
+  }
+
+  function assignmentTargetCarries(target, unit, atNode) {
+    const context = unitContexts.get(unit)
+    const properties = []
+    let current = unwrapExpression(target)
+    while (ts.isPropertyAccessExpression(current) || ts.isElementAccessExpression(current)) {
+      const property = ts.isPropertyAccessExpression(current)
+        ? current.name.text
+        : current.argumentExpression
+          ? constantString(current.argumentExpression, unit, context.semantic, atNode)
+          : null
+      properties.unshift(property)
+      current = unwrapExpression(current.expression)
+    }
+    if (!ts.isIdentifier(current)) return null
+    const entry = resolveDeclaration(current.text, atNode, context.semantic)
+    if (!entry?.node.type) return null
+    if (properties.length === 0) return typeCarries(entry.node.type, unit, atNode)
+    let selection = {
+      node: entry.node.type,
+      substitutions: new Map(),
+      unit
+    }
+    for (let index = 0; index < properties.length; index += 1) {
+      const property = properties[index]
+      if (property === null) {
+        return typeCarries(
+          selection.node,
+          selection.unit,
+          atNode,
+          new Set(),
+          selection.substitutions
+        )
+      }
+      if (index === properties.length - 1) {
+        return propertyCarries(
+          selection.node,
+          property,
+          selection.unit,
+          atNode,
+          new Set(),
+          selection.substitutions
+        )
+      }
+      const next = selectedPropertyType(
+        selection.node,
+        property,
+        selection.unit,
+        atNode,
+        new Set(),
+        selection.substitutions
+      )
+      if (!next) return null
+      selection = next
+    }
+    return null
   }
 
   let changed = true
   while (changed) {
     changed = false
     for (const declaration of declarations) {
-      if (!taintedNames.has(declaration.name) && declarationCarries(declaration)) {
+      if (!taintedDeclarations.has(declaration) && declarationCarries(declaration)) {
+        taintedDeclarations.add(declaration)
         taintedNames.add(declaration.name)
         changed = true
       }
@@ -1224,20 +2073,26 @@ function buildCapabilityRegistry(records) {
     const context = unitContexts.get(unit)
     const entry = resolveDeclaration(target.text, atNode, context.semantic)
     const initializer = declarationInitializer(entry, atNode, context.semantic)
-    return initializer
-      ? resolvedCallIdentity(initializer.expression, unit, atNode, seen) ?? identity
-      : identity
+    if (!initializer) return identity
+    const resolved = resolvedCallIdentity(initializer.expression, unit, atNode, seen) ?? identity
+    return initializer.extracted ? `${resolved}.${initializer.extracted}` : resolved
   }
 
   for (const unit of units) {
     visitAst(unit.sourceFile, node => {
-      if (!ts.isCallExpression(node) || !node.typeArguments?.length) return
-      const identity = resolvedCallIdentity(node.expression, unit, node)
+      const application = ts.isCallExpression(node) && node.typeArguments?.length
+        ? { expression: node.expression, typeArguments: node.typeArguments }
+        : ts.isExpressionWithTypeArguments(node) && node.typeArguments?.length
+          && !ts.isHeritageClause(node.parent)
+          ? { expression: node.expression, typeArguments: node.typeArguments }
+          : null
+      if (!application) return
+      const identity = resolvedCallIdentity(application.expression, unit, node)
       if (!identity) return
       for (const declaration of genericFunctions.get(identity) ?? []) {
         const targetContext = unitContexts.get(declaration.unit)
         const names = targetContext.taintedGenericParameters.get(declaration.node) ?? new Set()
-        node.typeArguments.forEach((argument, index) => {
+        application.typeArguments.forEach((argument, index) => {
           if (typeCarries(argument, unit, node)) {
             const parameter = declaration.node.typeParameters?.[index]
             if (parameter) names.add(parameter.name.text)
@@ -1248,7 +2103,7 @@ function buildCapabilityRegistry(records) {
     })
   }
 
-  return { typeCarries, unitContexts }
+  return { assignmentTargetCarries, propertyCarries, typeCarries, unitContexts }
 }
 
 function auditCapabilityAssertions(record, registry) {
@@ -1259,8 +2114,271 @@ function auditCapabilityAssertions(record, registry) {
       if (!registry.typeCarries(node.type, unit, node)) return
       addViolation(
         record.relativePath,
-        lineNumberAt(record.source, node.getStart(unit.sourceFile)),
+        lineNumberAt(
+          record.source,
+          unit.sourceOffset + node.getStart(unit.sourceFile)
+        ),
         "capability assertions are limited to the private capability helper"
+      )
+    })
+  }
+}
+
+function checkerTypeIsAny(unit, node) {
+  let context = checkerContexts.get(unit)
+  if (!context) {
+    const virtualPath = resolve(
+      root,
+      ".architecture-policy",
+      `${unit.record.relativePath.replace(/[^a-zA-Z0-9_.-]/gu, "_")}-${unit.sourceOffset}.ts`
+    )
+    const options = {
+      allowJs: true,
+      checkJs: true,
+      noEmit: true,
+      noResolve: true,
+      skipLibCheck: true,
+      strict: true,
+      target: ts.ScriptTarget.ESNext
+    }
+    const host = ts.createCompilerHost(options)
+    const defaultGetSourceFile = host.getSourceFile.bind(host)
+    host.fileExists = fileName => fileName === virtualPath || ts.sys.fileExists(fileName)
+    host.readFile = fileName => fileName === virtualPath
+      ? unit.sourceFile.text
+      : ts.sys.readFile(fileName)
+    host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) => (
+      fileName === virtualPath
+        ? ts.createSourceFile(
+            virtualPath,
+            unit.sourceFile.text,
+            languageVersion,
+            true,
+            unit.scriptKind
+          )
+        : defaultGetSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile)
+    )
+    const program = ts.createProgram([virtualPath], options, host)
+    context = {
+      checker: program.getTypeChecker(),
+      sourceFile: program.getSourceFile(virtualPath)
+    }
+    checkerContexts.set(unit, context)
+  }
+  if (!context.sourceFile) return false
+  const expectedStart = node.getStart(unit.sourceFile)
+  let matchingNode = null
+  visitAst(context.sourceFile, candidate => {
+    if (matchingNode || candidate.kind !== node.kind) return
+    if (candidate.getStart(context.sourceFile) === expectedStart) matchingNode = candidate
+  })
+  return Boolean(matchingNode
+    && (context.checker.getTypeAtLocation(matchingNode).flags & ts.TypeFlags.Any) !== 0)
+}
+
+function explicitAnyType(node, unit, semantic, seen = new Set()) {
+  if (!node) return false
+  if (node.kind === ts.SyntaxKind.AnyKeyword) return true
+  if (ts.isParenthesizedTypeNode(node) || ts.isTypeOperatorNode(node)
+    || ts.isOptionalTypeNode(node) || ts.isRestTypeNode(node)) {
+    return explicitAnyType(node.type, unit, semantic, seen)
+  }
+  if (ts.isUnionTypeNode(node) || ts.isIntersectionTypeNode(node)) {
+    return node.types.some(type => explicitAnyType(type, unit, semantic, seen))
+  }
+  if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)
+    && !seen.has(node.typeName.text)) {
+    const nextSeen = new Set(seen).add(node.typeName.text)
+    let alias = null
+    visitAst(unit.sourceFile, candidate => {
+      if (!alias && ts.isTypeAliasDeclaration(candidate)
+        && candidate.name.text === node.typeName.text) alias = candidate
+    })
+    return Boolean(alias && explicitAnyType(alias.type, unit, semantic, nextSeen))
+  }
+  return false
+}
+
+function propertyTypeIsExplicitAny(node, property, unit, semantic, seen = new Set()) {
+  if (!node) return false
+  if (ts.isParenthesizedTypeNode(node) || ts.isTypeOperatorNode(node)) {
+    return propertyTypeIsExplicitAny(node.type, property, unit, semantic, seen)
+  }
+  if (ts.isTypeLiteralNode(node)) {
+    const member = node.members.find(candidate => candidate.name
+      && propertyNameText(candidate.name, unit, semantic, candidate) === property)
+    return Boolean(member?.type && explicitAnyType(member.type, unit, semantic, seen))
+  }
+  if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)
+    && !seen.has(node.typeName.text)) {
+    const nextSeen = new Set(seen).add(node.typeName.text)
+    let alias = null
+    visitAst(unit.sourceFile, candidate => {
+      if (!alias && ts.isTypeAliasDeclaration(candidate)
+        && candidate.name.text === node.typeName.text) alias = candidate
+    })
+    return Boolean(alias
+      && propertyTypeIsExplicitAny(alias.type, property, unit, semantic, nextSeen))
+  }
+  return false
+}
+
+function methodReturnIsExplicitAny(node, method, unit, semantic, seen = new Set()) {
+  if (!node) return false
+  if (ts.isParenthesizedTypeNode(node) || ts.isTypeOperatorNode(node)) {
+    return methodReturnIsExplicitAny(node.type, method, unit, semantic, seen)
+  }
+  if (ts.isTypeLiteralNode(node)) {
+    const member = node.members.find(candidate => candidate.name
+      && propertyNameText(candidate.name, unit, semantic, candidate) === method)
+    if (member && (ts.isMethodSignature(member) || ts.isMethodDeclaration(member))) {
+      return explicitAnyType(member.type, unit, semantic, seen)
+    }
+    if (member && ts.isPropertySignature(member) && member.type
+      && ts.isFunctionTypeNode(member.type)) {
+      return explicitAnyType(member.type.type, unit, semantic, seen)
+    }
+    return false
+  }
+  if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)
+    && !seen.has(node.typeName.text)) {
+    const nextSeen = new Set(seen).add(node.typeName.text)
+    let alias = null
+    visitAst(unit.sourceFile, candidate => {
+      if (!alias && ts.isTypeAliasDeclaration(candidate)
+        && candidate.name.text === node.typeName.text) alias = candidate
+    })
+    return Boolean(alias
+      && methodReturnIsExplicitAny(alias.type, method, unit, semantic, nextSeen))
+  }
+  return false
+}
+
+function declarationExplicitlyReturnsAny(node, unit, semantic) {
+  if (ts.isFunctionLike(node)) return explicitAnyType(node.type, unit, semantic)
+  if (!ts.isVariableDeclaration(node)) return false
+  if (node.type && ts.isFunctionTypeNode(node.type)) {
+    return explicitAnyType(node.type.type, unit, semantic)
+  }
+  const initializer = node.initializer && unwrapExpression(node.initializer)
+  return Boolean(initializer && ts.isFunctionLike(initializer)
+    && explicitAnyType(initializer.type, unit, semantic))
+}
+
+function expressionIsAny(node, unit, semantic, atNode = node, seen = new Set()) {
+  if (ts.isAsExpression(node) || ts.isTypeAssertionExpression(node)) {
+    if (node.type.kind === ts.SyntaxKind.AnyKeyword) return true
+    return expressionIsAny(node.expression, unit, semantic, atNode, seen)
+  }
+  const expression = unwrapExpression(node)
+  if (ts.isCallExpression(expression)
+    && callIdentity(expression.expression) === "JSON.parse") return true
+  if (ts.isPropertyAccessExpression(expression)) {
+    const owner = unwrapExpression(expression.expression)
+    if (ts.isIdentifier(owner)) {
+      const entry = resolveDeclaration(owner.text, atNode, semantic)
+      if (entry?.node.type && propertyTypeIsExplicitAny(
+        entry.node.type,
+        expression.name.text,
+        unit,
+        semantic
+      )) return true
+    }
+    return expressionIsAny(expression.expression, unit, semantic, atNode, seen)
+  }
+  if (ts.isElementAccessExpression(expression)) {
+    const owner = unwrapExpression(expression.expression)
+    const property = expression.argumentExpression
+      ? constantString(expression.argumentExpression, unit, semantic, atNode)
+      : null
+    if (property !== null && ts.isIdentifier(owner)) {
+      const entry = resolveDeclaration(owner.text, atNode, semantic)
+      if (entry?.node.type && propertyTypeIsExplicitAny(
+        entry.node.type,
+        property,
+        unit,
+        semantic
+      )) return true
+    }
+    return expressionIsAny(expression.expression, unit, semantic, atNode, seen)
+  }
+  if (ts.isAwaitExpression(expression)) {
+    return expressionIsAny(expression.expression, unit, semantic, atNode, seen)
+  }
+  if (ts.isConditionalExpression(expression)) {
+    return expressionIsAny(expression.whenTrue, unit, semantic, atNode, new Set(seen))
+      || expressionIsAny(expression.whenFalse, unit, semantic, atNode, new Set(seen))
+  }
+  if (ts.isCallExpression(expression) && ts.isIdentifier(expression.expression)) {
+    const entry = resolveDeclaration(expression.expression.text, expression, semantic)
+    if (entry && !ts.isImportSpecifier(entry.node)
+      && declarationExplicitlyReturnsAny(entry.node, unit, semantic)
+      && checkerTypeIsAny(unit, expression)) {
+      return true
+    }
+  }
+  if (ts.isCallExpression(expression)
+    && ts.isPropertyAccessExpression(expression.expression)) {
+    const owner = unwrapExpression(expression.expression.expression)
+    if (ts.isIdentifier(owner)) {
+      const entry = resolveDeclaration(owner.text, atNode, semantic)
+      if (entry?.node.type && methodReturnIsExplicitAny(
+        entry.node.type,
+        expression.expression.name.text,
+        unit,
+        semantic
+      )) return true
+    }
+  }
+  if (ts.isIdentifier(expression) && !seen.has(expression.text)) {
+    seen.add(expression.text)
+    const entry = resolveDeclaration(expression.text, atNode, semantic)
+    if (entry?.node.type && explicitAnyType(entry.node.type, unit, semantic)) return true
+    const initializer = declarationInitializer(entry, atNode, semantic)
+    return Boolean(initializer
+      && expressionIsAny(initializer.expression, unit, semantic, atNode, seen))
+  }
+  return false
+}
+
+function auditDirectCapabilityFlows(record, registry) {
+  if (!isProductionPath(record.relativePath) || record.relativePath === capabilityPath) return
+  for (const unit of record.units) {
+    const semantic = buildSemantic(unit)
+    visitAst(unit.sourceFile, node => {
+      let targetType = null
+      let exactTargetCarries = null
+      let source = null
+      if (ts.isVariableDeclaration(node) && node.type && node.initializer) {
+        targetType = node.type
+        source = node.initializer
+      } else if (ts.isArrowFunction(node) && node.type && !ts.isBlock(node.body)) {
+        targetType = node.type
+        source = node.body
+      } else if (ts.isReturnStatement(node) && node.expression) {
+        targetType = enclosingFunction(node)?.type ?? null
+        source = node.expression
+      } else if (ts.isBinaryExpression(node)
+        && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
+        && (ts.isIdentifier(unwrapExpression(node.left))
+          || ts.isPropertyAccessExpression(unwrapExpression(node.left))
+          || ts.isElementAccessExpression(unwrapExpression(node.left)))) {
+        const target = unwrapExpression(node.left)
+        exactTargetCarries = registry.assignmentTargetCarries(target, unit, node)
+        source = node.right
+      }
+      const targetCarries = exactTargetCarries ?? Boolean(
+        targetType && registry.typeCarries(targetType, unit, node)
+      )
+      if (!targetCarries || !source
+        || !expressionIsAny(source, unit, semantic, node)) return
+      addViolation(
+        record.relativePath,
+        lineNumberAt(
+          record.source,
+          unit.sourceOffset + node.getStart(unit.sourceFile)
+        ),
+        "capability values must originate from a reviewed issuer"
       )
     })
   }
@@ -1350,8 +2468,12 @@ for (const record of sourceRecords) {
   auditComments(record)
   auditVueTemplate(record)
   auditDomOperations(record)
+  auditNativeVNodeCalls(record)
   if (record.relativePath === capabilityPath) auditCapabilityUtility(record)
-  else auditCapabilityAssertions(record, capabilityRegistry)
+  else {
+    auditCapabilityAssertions(record, capabilityRegistry)
+    auditDirectCapabilityFlows(record, capabilityRegistry)
+  }
 }
 
 violations.sort((left, right) => left.path.localeCompare(right.path, "en")
