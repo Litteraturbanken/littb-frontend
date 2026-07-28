@@ -3,7 +3,7 @@ import type {
   WorkManifestPage,
   WorkManifestPart
 } from "./work-manifest"
-import type { ReaderAuthorContribution } from "../utils/reader-author"
+import type { LegacyEditorContributionRole } from "../utils/reader-author"
 import type { ManagedAssetHtml, SanitizedHtml } from "./renderable-html"
 
 export type ReaderMediaType = "etext" | "faksimil"
@@ -32,10 +32,10 @@ export interface ReaderPartAuthor {
 }
 
 export interface ReaderWorkContributor {
-  authorType: ReaderAuthorContribution | null
+  authorType: LegacyEditorContributionRole | null
   id: string
   name: string
-  role: ReaderAuthorContribution | null
+  role: LegacyEditorContributionRole | null
 }
 
 export interface ReaderPart {
@@ -96,7 +96,6 @@ export interface ReaderEtextPage extends ReaderPageBase {
 }
 
 export interface ReaderFacsimilePage extends ReaderPageBase {
-  author: WorkManifestContributor & { name?: string }
   imageNumber: number
   mediaType: "faksimil"
   ocrOverlay: ReaderOcrOverlay | null

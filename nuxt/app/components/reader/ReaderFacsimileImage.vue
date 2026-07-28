@@ -5,8 +5,12 @@ import type {
   ReaderFacsimileSource
 } from "#shared/types/reader"
 
+type ReaderFacsimileImagePage = Omit<ReaderFacsimilePage, "author"> & {
+  author: ReaderFacsimilePage["author"] & { name: string }
+}
+
 const props = defineProps<{
-  page: ReaderFacsimilePage
+  page: ReaderFacsimileImagePage
   selectedSize: ReaderFacsimileSize
 }>()
 

@@ -369,12 +369,31 @@ describe("managed Reader e-text boundary", () => {
     )
   })
 
-  test("rejects a Reader body above the exact byte budget", async () => {
+  test("rejects an oversized declared Content-Length", async () => {
     const response = new Response("small", {
       headers: {
         "content-length": String(maximumReaderEtextBytes + 1),
         "content-type": "text/html"
       }
+    })
+    Object.defineProperty(response, "url", {
+      value: "https://assets.test/txt/work/res_00001.html?username=app"
+    })
+    vi.stubGlobal("fetch", vi.fn(async () => response))
+
+    await expect(fetchReaderPageHtml(
+      "https://assets.test",
+      "work",
+      1
+    )).rejects.toMatchObject({
+      statusCode: 502,
+      statusMessage: "Reader source unavailable"
+    })
+  })
+
+  test("rejects streamed body bytes above the exact byte budget", async () => {
+    const response = new Response("x".repeat(maximumReaderEtextBytes + 1), {
+      headers: { "content-type": "text/html" }
     })
     Object.defineProperty(response, "url", {
       value: "https://assets.test/txt/work/res_00001.html?username=app"

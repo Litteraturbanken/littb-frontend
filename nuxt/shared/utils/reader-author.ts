@@ -1,39 +1,42 @@
-import type { WorkManifestPartAuthor } from "../types/work-manifest"
+import type {
+  ManifestContributionRole,
+  WorkManifestPartAuthor
+} from "../types/work-manifest"
 
-export type ReaderAuthorContribution =
-  | "editor"
-  | "illustrator"
-  | "photographer"
-  | "translator"
+export type ReaderAuthorContribution = ManifestContributionRole
+
+export type LegacyEditorContributionRole =
+  | ReaderAuthorContribution
   | "fotograf"
   | "illustratör"
   | "redaktör"
   | "översättare"
 
-const contributions = new Set<ReaderAuthorContribution>([
-  "editor",
-  "illustrator",
-  "photographer",
-  "translator",
-  "fotograf",
-  "illustratör",
-  "redaktör",
-  "översättare"
-])
-
-export function normalizeReaderAuthorContribution(
-  value: unknown
-): ReaderAuthorContribution | null {
-  if (typeof value !== "string" || value.trim() !== value) return null
-  const normalized = value.toLowerCase() as ReaderAuthorContribution
-  return contributions.has(normalized) ? normalized : null
+const legacyEditorContributions: Readonly<Record<
+  string,
+  LegacyEditorContributionRole
+>> = {
+  editor: "editor",
+  fotograf: "fotograf",
+  illustrator: "illustrator",
+  illustratör: "illustratör",
+  photographer: "photographer",
+  redaktör: "redaktör",
+  translator: "translator",
+  översättare: "översättare"
 }
 
-export function readerAuthorContributionSuffix(
-  authorType: ReaderAuthorContribution | null,
-  role: ReaderAuthorContribution | null
+export function normalizeLegacyEditorContributionRole(
+  value: unknown
+): LegacyEditorContributionRole | null {
+  if (typeof value !== "string" || value.trim() !== value) return null
+  return legacyEditorContributions[value.toLowerCase()] ?? null
+}
+
+function contributionSuffix(
+  contribution: LegacyEditorContributionRole | null
 ): string | null {
-  switch (authorType ?? role) {
+  switch (contribution) {
     case "editor":
     case "redaktör":
       return "red."
@@ -49,6 +52,20 @@ export function readerAuthorContributionSuffix(
     default:
       return null
   }
+}
+
+export function readerAuthorContributionSuffix(
+  authorType: ReaderAuthorContribution | null,
+  role: ReaderAuthorContribution | null
+): string | null {
+  return contributionSuffix(authorType ?? role)
+}
+
+export function legacyEditorContributionSuffix(
+  authorType: LegacyEditorContributionRole | null,
+  role: LegacyEditorContributionRole | null
+): string | null {
+  return contributionSuffix(authorType ?? role)
 }
 
 export function readerManifestPartAuthorLabel(

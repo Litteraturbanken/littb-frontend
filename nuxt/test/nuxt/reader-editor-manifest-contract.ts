@@ -1,9 +1,14 @@
 import type { components } from "../../app/lib/api/generated/lbapi"
-import type { ReaderPage } from "../../shared/types/reader"
+import type {
+  ReaderFacsimilePage,
+  ReaderPage
+} from "../../shared/types/reader"
+import type { ReaderAuthorContribution } from "../../shared/utils/reader-author"
 import type {
   EditorManifestOperation,
   EditorManifestPath,
   EditorManifestResponse,
+  ManifestContributionRole,
   ReaderManifestOperation,
   ReaderManifestPath,
   ReaderManifestResponse,
@@ -53,6 +58,14 @@ type _ReaderPartsAreGenerated = Expect<Equal<
 type _ReaderPageMapIsGenerated = Expect<Equal<
   ReaderPage["pageMap"],
   WorkManifestPage[]
+>>
+type _ReaderAuthorContributionIsGenerated = Expect<Equal<
+  ReaderAuthorContribution,
+  ManifestContributionRole
+>>
+type _ReaderFacsimileAuthorIsGenerated = Expect<Equal<
+  ReaderFacsimilePage["author"],
+  WorkManifestContributor
 >>
 
 type _Reader404 = Expect<Equal<

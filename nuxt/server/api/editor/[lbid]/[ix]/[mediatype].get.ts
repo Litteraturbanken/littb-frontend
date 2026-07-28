@@ -1,6 +1,6 @@
 import type { EditorFacsimileSource, EditorReaderPage } from "#shared/types/editor-reader"
 import type { ReaderPart, ReaderPartAuthor, ReaderWorkContributor } from "#shared/types/reader"
-import { normalizeReaderAuthorContribution } from "#shared/utils/reader-author"
+import { normalizeLegacyEditorContributionRole } from "#shared/utils/reader-author"
 import { hasC0OrC1Control } from "#shared/utils/text-safety"
 import { fetchReaderOcrOverlay } from "#server/utils/reader-ocr"
 import {
@@ -97,10 +97,10 @@ function editorContributors(value: unknown): ReaderWorkContributor[] | null {
     if (!id || !name || ids.has(id)) return null
     ids.add(id)
     contributors.push({
-      authorType: normalizeReaderAuthorContribution(contributor?.type),
+      authorType: normalizeLegacyEditorContributionRole(contributor?.type),
       id,
       name,
-      role: normalizeReaderAuthorContribution(contributor?.role)
+      role: normalizeLegacyEditorContributionRole(contributor?.role)
     })
   }
   return contributors

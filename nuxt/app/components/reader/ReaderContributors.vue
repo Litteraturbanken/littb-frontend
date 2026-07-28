@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { ReaderWorkContributor } from "#shared/types/reader"
 import type { WorkManifestContributor } from "#shared/types/work-manifest"
-import { readerAuthorContributionSuffix } from "#shared/utils/reader-author"
+import {
+  legacyEditorContributionSuffix,
+  readerAuthorContributionSuffix
+} from "#shared/utils/reader-author"
 import { readerAuthorHref } from "~/lib/reader-routes"
 
 type Contributor = ReaderWorkContributor | WorkManifestContributor
@@ -19,10 +22,9 @@ function contributorName(contributor: Contributor): string {
 }
 
 function suffix(contributor: Contributor): string | null {
-  const authorType = "author_type" in contributor
-    ? contributor.author_type
-    : contributor.authorType
-  return readerAuthorContributionSuffix(authorType, contributor.role)
+  return "author_type" in contributor
+    ? readerAuthorContributionSuffix(contributor.author_type, contributor.role)
+    : legacyEditorContributionSuffix(contributor.authorType, contributor.role)
 }
 </script>
 

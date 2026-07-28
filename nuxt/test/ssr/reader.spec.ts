@@ -1074,7 +1074,18 @@ for (const mismatch of [
     label: "etext page-name-scoped word id",
     path: readerPath,
     query: "etext-name-word",
-    mediaType: "etext"
+    mediaType: "etext",
+    stableContent: ["DOKTOR"]
+  },
+  {
+    label: "faksimil index-scoped word id",
+    path: "/f%C3%B6rfattare/AarnsethF/titlar/Rallarliv/sida/58/faksimil",
+    query: "faksimil-index-word",
+    mediaType: "faksimil",
+    stableContent: [
+      "<title>Rallarliv sida 58 faksimil | Litteraturbanken</title>",
+      'src="/txt/lb3203777/lb3203777_3/lb3203777_3_0058.jpeg"'
+    ]
   }
 ]) {
   test(`${mismatch.label} is rejected before hit presentation`, async ({ request }) => {
@@ -1082,6 +1093,9 @@ for (const mismatch of [
     expect(response.status()).toBe(200)
     const html = await response.text()
 
+    for (const content of mismatch.stableContent) {
+      expect(html).toContain(content)
+    }
     expect(html).toContain("Sökträffen kunde inte hämtas.")
     expect(html).not.toContain("reader-search-position")
     expect(html).not.toContain("reader-hit-navigation")
