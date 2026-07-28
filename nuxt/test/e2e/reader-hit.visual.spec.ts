@@ -10,6 +10,9 @@ type ReaderHitRequest = { path: string, query: string }
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_manifest_requests`),
+    request.delete(`${fixture}/_editor_manifest_requests`),
+    request.delete(`${fixture}/_reader_metadata_requests`),
     request.delete(`${fixture}/_reader_hit_requests`),
     request.delete(`${fixture}/_reader_hit_failure`),
     request.delete(`${fixture}/_reader_hit_delays`)
@@ -18,6 +21,10 @@ async function resetReader(request: APIRequestContext) {
 
 async function readerRequests(request: APIRequestContext): Promise<string[]> {
   return (await (await request.get(`${fixture}/_reader_requests`)).json()).requests
+}
+
+async function fixtureRequests(request: APIRequestContext, ledger: string): Promise<string[]> {
+  return (await (await request.get(`${fixture}/${ledger}`)).json()).requests
 }
 
 async function readerHitRequests(request: APIRequestContext): Promise<ReaderHitRequest[]> {
@@ -158,7 +165,11 @@ for (const visualCase of visualCases) {
     }
 
     const documents = await readerRequests(request)
-    expect(documents.filter(path => path.startsWith("/api/get_work_info?"))).toHaveLength(1)
+    expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+      "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+    ])
+    expect(await fixtureRequests(request, "_reader_metadata_requests")).toEqual([])
+    expect(await fixtureRequests(request, "_editor_manifest_requests")).toEqual([])
     expect(documents.filter(path => path.startsWith(
       "/txt/lb-reader-doktor-glas/res_00002.html?username=app"
     ))).toHaveLength(1)

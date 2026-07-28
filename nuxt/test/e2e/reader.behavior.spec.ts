@@ -62,11 +62,13 @@ type StoredPageView = {
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_manifest_requests`),
+    request.delete(`${fixture}/_editor_manifest_requests`),
     request.delete(`${fixture}/_reader_metadata_requests`),
     request.delete(`${fixture}/_reader_html_requests`),
     request.delete(`${fixture}/_reader_ocr_requests`),
     request.delete(`${fixture}/_reader_jpeg_requests`),
-    request.delete(`${fixture}/_reader_metadata_delays`),
+    request.delete(`${fixture}/_reader_manifest_delays`),
     request.delete(`${fixture}/_reader_hit_requests`),
     request.delete(`${fixture}/_reader_hit_failure`),
     request.delete(`${fixture}/_reader_hit_delays`),
@@ -87,6 +89,14 @@ async function readerRequests(request: APIRequestContext): Promise<string[]> {
 
 async function readerMetadataRequests(request: APIRequestContext): Promise<string[]> {
   return (await (await request.get(`${fixture}/_reader_metadata_requests`)).json()).requests
+}
+
+async function readerManifestRequests(request: APIRequestContext): Promise<string[]> {
+  return (await (await request.get(`${fixture}/_reader_manifest_requests`)).json()).requests
+}
+
+async function editorManifestRequests(request: APIRequestContext): Promise<string[]> {
+  return (await (await request.get(`${fixture}/_editor_manifest_requests`)).json()).requests
 }
 
 async function readerHtmlRequests(request: APIRequestContext): Promise<string[]> {
@@ -279,6 +289,10 @@ async function expectBoyeContributors(container: Locator) {
 }
 
 test.beforeEach(async ({ request }) => resetReader(request))
+test.afterEach(async ({ request }) => {
+  expect(await readerMetadataRequests(request)).toEqual([])
+  expect(await editorManifestRequests(request)).toEqual([])
+})
 
 test("part-rich sidebar exposes truthful authors, metadata, and raw-preserving targets", async ({
   page
@@ -843,7 +857,7 @@ test("external query removal closes source information without refetching Reader
   await navigateClient(page, `${readerEncodedPath}${rawQuery}`)
   await expect(page.getByRole("dialog", { name: "Om boken" })).toHaveCount(0)
 
-  expect(await readerMetadataRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([])
   expect(await readerHitRequests(request)).toEqual([])
   expect(await rawStoredPageViews(page)).toBe(historyBefore)
   expect(await sourceInfoRequests(request)).toHaveLength(1)
@@ -868,7 +882,7 @@ test("Back and Forward restore cached source-information query state", async ({ 
   await expect(dialog).toHaveCount(0)
 
   expect(await sourceInfoRequests(request)).toEqual([])
-  expect(await readerMetadataRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([])
   expect(await readerHitRequests(request)).toEqual([])
   expect(problems).toEqual([])
 })
@@ -1476,13 +1490,13 @@ test("contents-only query transitions reuse hit state and leave Reader history u
   await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
   await expect(page.locator("#w2_1.markee")).toHaveCount(1)
   expect(await readerHitRequests(request)).toEqual([])
-  expect(await readerMetadataRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([])
   expect(await rawStoredPageViews(page)).toBe(historyBefore)
 
   await navigateClient(page, `${readerEncodedPath}${rawQuery}&innehall`)
   await expect(page).toHaveURL(`${readerPath}${rawQuery}&innehall`)
   expect(await readerHitRequests(request)).toEqual([])
-  expect(await readerMetadataRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([])
   expect(await rawStoredPageViews(page)).toBe(historyBefore)
 
   await navigateClient(page, `${readerEncodedPath}?q=doktor%20glas&hit=2&x=one&x=two`)
@@ -1499,7 +1513,7 @@ test("Library EPUB shorthand navigation shows only its preloader and replaces Hi
 }) => {
   const problems = captureBrowserProblems(page)
   const shorthandDocumentRequests: string[] = []
-  await request.put(`${fixture}/_reader_metadata_delays`, {
+  await request.put(`${fixture}/_reader_manifest_delays`, {
     data: { DoktorGlas: 300 }
   })
   await page.goto("/bibliotek?visa=epub&sort=popularitet", { waitUntil: "networkidle" })
@@ -1543,7 +1557,7 @@ test("client shorthand navigation preserves the raw route fullPath query", async
   const problems = captureBrowserProblems(page)
   const rawQuery = "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
   const normalizedQuery = "?bare&empty=&plus=a+b&percent=a+b&repeat=/&repeat=/"
-  await request.put(`${fixture}/_reader_metadata_delays`, {
+  await request.put(`${fixture}/_reader_manifest_delays`, {
     data: { DoktorGlas: 200 }
   })
   await page.goto("/bibliotek", { waitUntil: "networkidle" })
@@ -1612,7 +1626,7 @@ test("a late shorthand resolver cannot leave the route that replaced it", async 
   request
 }) => {
   const problems = captureBrowserProblems(page)
-  await request.put(`${fixture}/_reader_metadata_delays`, {
+  await request.put(`${fixture}/_reader_manifest_delays`, {
     data: { DoktorGlas: 350 }
   })
   await page.goto("/", { waitUntil: "networkidle" })
@@ -1625,8 +1639,8 @@ test("a late shorthand resolver cannot leave the route that replaced it", async 
   await navigateClient(page, readerShorthandRouterPath)
   await expect(page).toHaveURL(readerShorthandPath)
   await expect(page.locator(".searching > .preloader")).toBeVisible()
-  await expect.poll(async () => readerMetadataRequests(request)).toEqual([
-    "/api/get_work_info?authorid=S%C3%B6derbergH&exclude=content_vector&titlepath=DoktorGlas"
+  await expect.poll(async () => readerManifestRequests(request)).toEqual([
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
   ])
   await navigateClient(page, "/bibliotek")
 
@@ -1767,13 +1781,12 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
     .toHaveCount(1)
 
   const recorded = await readerRequests(request)
-  const metadata = recorded.filter(path => path.startsWith("/api/get_work_info?"))
   const pages = recorded.filter(path => path.startsWith(
     "/txt/lb-reader-doktor-glas/res_00002.html?"
   ))
-  expect(metadata).toHaveLength(1)
-  expect(new URL(metadata[0]!, fixture).searchParams.get("authorid")).toBe("SöderbergH")
-  expect(new URL(metadata[0]!, fixture).searchParams.get("titlepath")).toBe("DoktorGlas")
+  expect(await readerManifestRequests(request)).toEqual([
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+  ])
   expect(pages).toEqual([
     "/txt/lb-reader-doktor-glas/res_00002.html?username=app"
   ])
@@ -1800,7 +1813,7 @@ for (const focusPath of [readerPath, facsimilePath] as const) {
     await expect(page.locator(".reader_main")).not.toHaveClass(/\bfocus\b/u)
     expect(await historyMutationCounts(page)).toEqual({ pushState: 0, replaceState: 1 })
     expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
-    expect(await readerMetadataRequests(request)).toEqual([])
+    expect(await readerManifestRequests(request)).toEqual([])
     expect(await readerHitRequests(request)).toEqual([])
     expect(problems).toEqual([])
   })
@@ -2010,7 +2023,7 @@ test("faksimil page navigation preserves queries and restores scan identity", as
   const query = "?q=scan&hit=2&s_mode=phrase&repeat=first&repeat=second&unknown=value"
   await page.goto(`${facsimilePath}${query}`, { waitUntil: "networkidle" })
   documentRequests.length = 0
-  await request.delete(`${fixture}/_reader_metadata_requests`)
+  await request.delete(`${fixture}/_reader_manifest_requests`)
 
   const image = page.locator("img.faksimil")
   await activateReaderLink(page, "Föregående sida", facsimilePageHref("1", query))
@@ -2037,7 +2050,9 @@ test("faksimil page navigation preserves queries and restores scan identity", as
   await expect(page.getByRole("link", { name: "Nästa sida" })).toHaveCount(0)
 
   expect(documentRequests).toEqual([])
-  expect(await readerMetadataRequests(request)).toHaveLength(5)
+  expect(await readerManifestRequests(request)).toEqual(Array(5).fill(
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+  ))
   expect(problems).toEqual([])
 })
 
@@ -2047,7 +2062,7 @@ test("faksimil size replacement changes exact sources and stops at both edges", 
 }) => {
   const problems = captureBrowserProblems(page)
   await page.goto(facsimilePath, { waitUntil: "networkidle" })
-  await request.delete(`${fixture}/_reader_metadata_requests`)
+  await request.delete(`${fixture}/_reader_manifest_requests`)
 
   const image = page.locator("img.faksimil")
   const wrapper = page.locator(".img_area")
@@ -2087,7 +2102,7 @@ test("faksimil size replacement changes exact sources and stops at both edges", 
   await expect(smaller).toBeDisabled()
 
   expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
-  expect(await readerMetadataRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([])
   expect(problems).toEqual([])
 })
 
@@ -3627,7 +3642,7 @@ test("rapid page intents push every draft route and debounce only the final cont
   })
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
-    request.delete(`${fixture}/_reader_metadata_requests`),
+    request.delete(`${fixture}/_reader_manifest_requests`),
     request.delete(`${fixture}/_reader_html_requests`)
   ])
   await page.evaluate(() => {
@@ -3654,7 +3669,7 @@ test("rapid page intents push every draft route and debounce only the final cont
   await expect(page.locator(".reader-context[data-rapid-sidebar-sentinel=stable]")).toHaveCount(1)
   await expect(page.locator(".reader-primary-loading, [data-reader-loading]")).toHaveCount(0)
 
-  await expect.poll(async () => readerMetadataRequests(request), { timeout: 2_000 })
+  await expect.poll(async () => readerManifestRequests(request), { timeout: 2_000 })
     .toHaveLength(1)
   await expect.poll(async () => readerHtmlRequests(request), { timeout: 2_000 })
     .toHaveLength(1)
@@ -3916,7 +3931,7 @@ test("page-position slider clears committed drafts across A-B-A and aligns the h
   request
 }) => {
   await page.goto(sparseSliderReaderPath, { waitUntil: "networkidle" })
-  await request.put(`${fixture}/_reader_metadata_delays`, {
+  await request.put(`${fixture}/_reader_manifest_delays`, {
     data: { SparseKeyboardReader: 350 }
   })
   const slider = page.getByRole("slider", { name: "Gå till sida" })

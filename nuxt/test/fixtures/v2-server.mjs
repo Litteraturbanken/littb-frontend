@@ -318,6 +318,7 @@ let readerHtmlRequests = []
 let readerOcrRequests = []
 let readerJpegRequests = []
 let readerMetadataDelays = {}
+let readerManifestDelays = {}
 let readerManifestRequests = []
 let editorManifestRequests = []
 let editorMetadataFailure = false
@@ -619,6 +620,10 @@ function waitForReaderHitDelay(input) {
 
 function waitForReaderMetadataDelay(titlePath) {
   return new Promise(resolve => setTimeout(resolve, readerMetadataDelays[titlePath] || 0))
+}
+
+function waitForReaderManifestDelay(titlePath) {
+  return new Promise(resolve => setTimeout(resolve, readerManifestDelays[titlePath] || 0))
 }
 
 function waitForAuthorDocumentDelay() {
@@ -2973,6 +2978,7 @@ const server = createServer(async (request, response) => {
       const titlePath = decodeSegment(readerManifestMatch[2])
       if (authorId === null || titlePath === null) return validationError(response)
       readerManifestRequests.push(`${apiPathname}${url.search}`)
+      await waitForReaderManifestDelay(titlePath)
       if (titlePath === "UnavailableReader") {
         return sendJson(response, 503, {
           error: {
@@ -3059,6 +3065,20 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/_reader_metadata_delays" && request.method === "DELETE") {
     readerMetadataDelays = {}
     return sendJson(response, 200, { delays: readerMetadataDelays })
+  }
+  if (url.pathname === "/_reader_manifest_delays" && request.method === "GET") {
+    return sendJson(response, 200, { delays: readerManifestDelays })
+  }
+  if (url.pathname === "/_reader_manifest_delays" && request.method === "PUT") {
+    const body = await readJson(request)
+    readerManifestDelays = Object.fromEntries(
+      Object.entries(body).map(([titlePath, delay]) => [titlePath, Number(delay)])
+    )
+    return sendJson(response, 200, { delays: readerManifestDelays })
+  }
+  if (url.pathname === "/_reader_manifest_delays" && request.method === "DELETE") {
+    readerManifestDelays = {}
+    return sendJson(response, 200, { delays: readerManifestDelays })
   }
   if (url.pathname === "/_reader_hit_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: readerHitRequests })

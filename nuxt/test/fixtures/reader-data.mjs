@@ -207,7 +207,11 @@ export const readerPartsWorkInfoResponse = {
           titleid: "outer"
         },
         {
-          authors: [{ authorid: "MörikeE" }],
+          authors: [{
+            authorid: "MörikeE",
+            full_name: "Eduard Mörike",
+            surname: "Mörike"
+          }],
           endpagename: "-2",
           navtitle: "Mellandelen",
           shorttitle: "Mellan",
@@ -216,7 +220,18 @@ export const readerPartsWorkInfoResponse = {
           titleid: "nested"
         },
         {
-          authors: [{ authorid: "RilkeRM" }, { authorid: "ShelleyPB" }],
+          authors: [
+            {
+              authorid: "RilkeRM",
+              full_name: "Rainer Maria Rilke",
+              surname: "Rilke"
+            },
+            {
+              authorid: "ShelleyPB",
+              full_name: "Percy Bysshe Shelley",
+              surname: "Shelley"
+            }
+          ],
           endpagename: "1",
           navtitle: "Överlappningen",
           shorttitle: "Överlapp",
@@ -234,7 +249,11 @@ export const readerPartsWorkInfoResponse = {
           titleid: "later"
         },
         {
-          authors: [{ authorid: "MörikeE" }],
+          authors: [{
+            authorid: "MörikeE",
+            full_name: "Eduard Mörike",
+            surname: "Mörike"
+          }],
           endpagename: "4",
           navtitle: "Samma start",
           shorttitle: "Samma",

@@ -49,6 +49,8 @@ type AuthorResolveRequest = {
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_manifest_requests`),
+    request.delete(`${fixture}/_editor_manifest_requests`),
     request.delete(`${fixture}/_reader_metadata_requests`),
     request.delete(`${fixture}/_reader_html_requests`),
     request.delete(`${fixture}/_reader_ocr_requests`),
@@ -72,6 +74,10 @@ async function fixtureRequests(request: APIRequestContext): Promise<FixtureReque
     ] as const)
   )
   return Object.fromEntries(entries) as FixtureRequests
+}
+
+async function requestLedger(request: APIRequestContext, ledger: string): Promise<string[]> {
+  return (await (await request.get(`${fixture}/${ledger}`)).json()).requests
 }
 
 async function readerHitRequests(request: APIRequestContext): Promise<unknown[]> {
@@ -271,8 +277,6 @@ for (const visualCase of visualCases) {
       ornamentRequest
     ])
     expect(recorded).toEqual([
-      "/api/get_work_info?authorid=S%C3%B6derbergH" +
-        "&exclude=content_vector&titlepath=DoktorGlasParts",
       "/txt/lb-reader-doktor-glas-parts/res_00003.html?username=app",
       "/red/css/etext.css",
       "/txt/css/lb-reader-doktor-glas-parts-etext.css",
@@ -281,17 +285,15 @@ for (const visualCase of visualCases) {
     expect(await fixtureRequests(request)).toEqual({
       html: ["/txt/lb-reader-doktor-glas-parts/res_00003.html?username=app"],
       jpeg: [],
-      metadata: [
-        "/api/get_work_info?authorid=S%C3%B6derbergH" +
-          "&exclude=content_vector&titlepath=DoktorGlasParts"
-      ],
+      metadata: [],
       ocr: []
     })
+    expect(await requestLedger(request, "_reader_manifest_requests")).toEqual([
+      "/v2/works/S%C3%B6derbergH/DoktorGlasParts/manifest?media_type=etext"
+    ])
+    expect(await requestLedger(request, "_editor_manifest_requests")).toEqual([])
     expect(await readerHitRequests(request)).toEqual([])
-    expect(await authorResolveRequests(request)).toEqual([{
-      path: "/private-v2/authors/resolve",
-      body: { author_ids: ["MörikeE", "RilkeRM", "ShelleyPB"] }
-    }])
+    expect(await authorResolveRequests(request)).toEqual([])
     expect(unexpectedBrowserDataRequests).toEqual([])
 
     await waitForVisualAssets(page)

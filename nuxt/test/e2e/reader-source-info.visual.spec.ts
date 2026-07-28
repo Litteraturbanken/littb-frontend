@@ -63,6 +63,8 @@ async function assertBaselineManifest(manifest: Record<string, string>) {
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_manifest_requests`),
+    request.delete(`${fixture}/_editor_manifest_requests`),
     request.delete(`${fixture}/_reader_metadata_requests`),
     request.delete(`${fixture}/_reader_html_requests`),
     request.delete(`${fixture}/_reader_ocr_requests`),
@@ -212,12 +214,14 @@ const visualCases = [
     name: "closed-normal",
     route: normalPath,
     mode: "closed",
+    manifest: "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext",
     sourceRequest: null
   },
   {
     name: "normal",
     route: `${normalPath}?om-boken`,
     mode: "normal",
+    manifest: "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext",
     sourceRequest: {
       scope: "private",
       path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
@@ -228,6 +232,7 @@ const visualCases = [
     name: "drama",
     route: `${dramaPath}?om-boken`,
     mode: "drama",
+    manifest: "/v2/works/Alml%C3%B6fN/Affarer/manifest?media_type=faksimil",
     sourceRequest: {
       scope: "private",
       path: "/private-v2/works/Alml%C3%B6fN/Affarer/source-info",
@@ -238,6 +243,7 @@ const visualCases = [
     name: "long-scroll",
     route: `${longPath}?om-boken`,
     mode: "long-scroll",
+    manifest: "/v2/works/LongErrataA/LongErrata/manifest?media_type=etext",
     sourceRequest: {
       scope: "private",
       path: "/private-v2/works/LongErrataA/LongErrata/source-info",
@@ -407,7 +413,11 @@ for (const visualCase of visualCases) {
       }
     }
 
-    expect(await fixtureRequests(request, "_reader_metadata_requests")).toHaveLength(1)
+    expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+      visualCase.manifest
+    ])
+    expect(await fixtureRequests(request, "_reader_metadata_requests")).toEqual([])
+    expect(await fixtureRequests(request, "_editor_manifest_requests")).toEqual([])
     expect(await fixtureRequests(request, "_reader_html_requests")).toEqual(
       visualCase.mode === "drama"
         ? []

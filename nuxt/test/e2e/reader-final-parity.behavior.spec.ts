@@ -8,6 +8,8 @@ const nyaVagarPath = "/författare/SöderbergH/titlar/NyaVagarReader/sida/-2/ete
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_manifest_requests`),
+    request.delete(`${fixture}/_editor_manifest_requests`),
     request.delete(`${fixture}/_reader_metadata_requests`),
     request.delete(`${fixture}/_reader_html_requests`),
     request.delete(`${fixture}/_reader_ocr_requests`),
@@ -17,7 +19,7 @@ async function resetReader(request: APIRequestContext) {
 
 async function fixtureRequests(
   request: APIRequestContext,
-  ledger: "metadata" | "html" | "ocr" | "jpeg"
+  ledger: "metadata" | "manifest" | "html" | "ocr" | "jpeg"
 ): Promise<string[]> {
   const response = await request.get(`${fixture}/_reader_${ledger}_requests`)
   return (await response.json() as { requests: string[] }).requests
@@ -35,6 +37,11 @@ function captureBrowserProblems(page: Page): string[] {
 }
 
 test.beforeEach(async ({ request }) => resetReader(request))
+test.afterEach(async ({ request }) => {
+  expect(await fixtureRequests(request, "metadata")).toEqual([])
+  const editorResponse = await request.get(`${fixture}/_editor_manifest_requests`)
+  expect((await editorResponse.json() as { requests: string[] }).requests).toEqual([])
+})
 
 test("Läsfokus replaces its query state and exposes text, night, and page controls", async ({
   page,
@@ -44,8 +51,11 @@ test("Läsfokus replaces its query state and exposes text, night, and page contr
   const initial = `${etextPath}?bare&repeat=%2f&repeat=%2F#focus`
   const response = await page.goto(initial, { waitUntil: "networkidle" })
   expect(response?.status()).toBe(200)
-  const metadataBefore = await fixtureRequests(request, "metadata")
+  const manifestBefore = await fixtureRequests(request, "manifest")
   const htmlBefore = await fixtureRequests(request, "html")
+  expect(manifestBefore).toEqual([
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+  ])
   const historyLength = await page.evaluate(() => window.history.length)
 
   const trigger = page.getByRole("link", { name: "Läsfokus", exact: true })
@@ -55,7 +65,7 @@ test("Läsfokus replaces its query state and exposes text, night, and page contr
     `${etextPath}?bare&repeat=%2f&repeat=%2F&fokus#focus`
   )
   expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
-  expect(await fixtureRequests(request, "metadata")).toEqual(metadataBefore)
+  expect(await fixtureRequests(request, "manifest")).toEqual(manifestBefore)
   expect(await fixtureRequests(request, "html")).toEqual(htmlBefore)
 
   const reader = page.locator(".reader_main")
@@ -128,6 +138,9 @@ test("normal faksimil OCR inspection fetches the page-index overlay and preserve
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html",
     "/txt/lb-reader-gosta-berlings-saga/ocr_00002.html"
   ])
+  expect(await fixtureRequests(request, "manifest")).toEqual(Array(2).fill(
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+  ))
   expect(problems).toEqual([])
 })
 
@@ -170,11 +183,15 @@ test("ordinary searchable faksimil keeps a transparent selectable OCR layer thro
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html",
     "/txt/lb-reader-gosta-berlings-saga/ocr_00002.html"
   ])
+  expect(await fixtureRequests(request, "manifest")).toEqual(Array(2).fill(
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+  ))
   expect(problems).toEqual([])
 })
 
 test("Nya vägar is an exact eligible-work link and is absent from ordinary works", async ({
-  page
+  page,
+  request
 }) => {
   const eligibleResponse = await page.goto(nyaVagarPath, { waitUntil: "networkidle" })
   expect(eligibleResponse?.status()).toBe(200)
@@ -190,4 +207,8 @@ test("Nya vägar is an exact eligible-work link and is absent from ordinary work
 
   await page.goto(etextPath, { waitUntil: "networkidle" })
   await expect(page.getByRole("link", { name: "Logotyp för Nya vägar" })).toHaveCount(0)
+  expect(await fixtureRequests(request, "manifest")).toEqual([
+    "/v2/works/S%C3%B6derbergH/NyaVagarReader/manifest?media_type=etext",
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+  ])
 })

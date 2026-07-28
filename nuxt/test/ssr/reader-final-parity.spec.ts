@@ -9,6 +9,7 @@ async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
     request.delete(`${fixture}/_reader_manifest_requests`),
+    request.delete(`${fixture}/_editor_manifest_requests`),
     request.delete(`${fixture}/_reader_metadata_requests`),
     request.delete(`${fixture}/_reader_html_requests`),
     request.delete(`${fixture}/_reader_ocr_requests`),
@@ -21,7 +22,16 @@ async function ocrRequests(request: APIRequestContext): Promise<string[]> {
   return (await response.json() as { requests: string[] }).requests
 }
 
+async function fixtureRequests(request: APIRequestContext, ledger: string): Promise<string[]> {
+  const response = await request.get(`${fixture}/${ledger}`)
+  return (await response.json() as { requests: string[] }).requests
+}
+
 test.beforeEach(async ({ request }) => resetReader(request))
+test.afterEach(async ({ request }) => {
+  expect(await fixtureRequests(request, "_reader_metadata_requests")).toEqual([])
+  expect(await fixtureRequests(request, "_editor_manifest_requests")).toEqual([])
+})
 
 test("canonical faksimil OCR API returns one sanitized optional overlay", async ({
   request
@@ -41,6 +51,9 @@ test("canonical faksimil OCR API returns one sanitized optional overlay", async 
   expect(await ocrRequests(request)).toEqual([
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"
   ])
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+  ])
 })
 
 test("searchable facsimile API always returns OCR while non-searchable facsimile skips it", async ({
@@ -57,6 +70,9 @@ test("searchable facsimile API always returns OCR while non-searchable facsimile
   expect(await ocrRequests(request)).toEqual([
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"
   ])
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+  ])
 
   await resetReader(request)
   const inert = await request.get(
@@ -65,6 +81,9 @@ test("searchable facsimile API always returns OCR while non-searchable facsimile
   expect(inert.status()).toBe(200)
   expect(await inert.json()).toMatchObject({ searchable: false, ocrOverlay: null })
   expect(await ocrRequests(request)).toEqual([])
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    "/v2/works/Lagerl%C3%B6fS/UnsearchableFacsimileReader/manifest?media_type=faksimil"
+  ])
 })
 
 test("direct public OCR mode is server rendered without sacrificing the scan", async ({
@@ -80,6 +99,9 @@ test("direct public OCR mode is server rendered without sacrificing the scan", a
   expect(await ocrRequests(request)).toEqual([
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"
   ])
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+  ])
 })
 
 test("direct Läsfokus mode is represented truthfully in SSR markup", async ({ request }) => {
@@ -89,6 +111,9 @@ test("direct Läsfokus mode is represented truthfully in SSR markup", async ({ r
 
   expect(html).toMatch(/class="reader_main[^"]*\bfocus\b/u)
   expect(html).toContain("Läsfokus")
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+  ])
 })
 
 test("eligible Reader SSR exposes the exact Nya vägar authority link", async ({ request }) => {
@@ -100,6 +125,9 @@ test("eligible Reader SSR exposes the exact Nya vägar authority link", async ({
     'href="https://litteraturbanken.se/diktensmuseum/nya-vagar-inledning/"'
   )
   expect(html).toContain('alt="Logotyp för Nya vägar"')
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    "/v2/works/S%C3%B6derbergH/NyaVagarReader/manifest?media_type=etext"
+  ])
 })
 
 test("ordinary Reader SSR has no empty Nya vägar handoff", async ({ request }) => {
@@ -109,4 +137,7 @@ test("ordinary Reader SSR has no empty Nya vägar handoff", async ({ request }) 
 
   expect(html).not.toContain("nya-vagar-inledning")
   expect(html).not.toContain("Logotyp för Nya vägar")
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+  ])
 })

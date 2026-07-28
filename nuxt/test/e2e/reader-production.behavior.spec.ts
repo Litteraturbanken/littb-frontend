@@ -1,8 +1,23 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type APIRequestContext } from "@playwright/test"
 
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+const readerManifest = "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
 
-test.beforeEach(async ({ page }) => {
+async function resetReader(request: APIRequestContext) {
+  await Promise.all([
+    request.delete(`${fixture}/_reader_manifest_requests`),
+    request.delete(`${fixture}/_editor_manifest_requests`),
+    request.delete(`${fixture}/_reader_metadata_requests`)
+  ])
+}
+
+async function fixtureRequests(request: APIRequestContext, ledger: string): Promise<string[]> {
+  return (await (await request.get(`${fixture}/${ledger}`)).json()).requests
+}
+
+test.beforeEach(async ({ page, request }) => {
+  await resetReader(request)
   await page.addInitScript(() => {
     const scope = window as typeof window & { __copiedValues?: string[] }
     scope.__copiedValues = []
@@ -19,8 +34,15 @@ test.beforeEach(async ({ page }) => {
     })
   })
 })
+test.afterEach(async ({ request }) => {
+  expect(await fixtureRequests(request, "_reader_metadata_requests")).toEqual([])
+  expect(await fixtureRequests(request, "_editor_manifest_requests")).toEqual([])
+})
 
-test("one selected Reader word opens the sanitized legacy dictionary dialog", async ({ page }) => {
+test("one selected Reader word opens the sanitized legacy dictionary dialog", async ({
+  page,
+  request
+}) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
   await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().dblclick()
 
@@ -53,9 +75,15 @@ test("one selected Reader word opens the sanitized legacy dictionary dialog", as
   await expect(close).toBeFocused()
   await close.click()
   await expect(dialog).toHaveCount(0)
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    readerManifest
+  ])
 })
 
-test("a collapsed OCR double-click recovers the nested Reader word without a stale timer", async ({ page }) => {
+test("a collapsed OCR double-click recovers the nested Reader word without a stale timer", async ({
+  page,
+  request
+}) => {
   await page.addInitScript(() => {
     document.addEventListener("dblclick", () => {
       window.getSelection()?.removeAllRanges()
@@ -76,9 +104,15 @@ test("a collapsed OCR double-click recovers the nested Reader word without a sta
   await expect(indicator).toBeVisible()
   await page.waitForTimeout(650)
   await expect(indicator).toBeVisible()
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    "/v2/works/BoyeK/EttVerkligtJordiskt/manifest?media_type=faksimil"
+  ])
 })
 
-test("manual one-word selection retains delayed mouseup inspection", async ({ page }) => {
+test("manual one-word selection retains delayed mouseup inspection", async ({
+  page,
+  request
+}) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
   await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().evaluate(word => {
     const range = document.createRange()
@@ -91,9 +125,15 @@ test("manual one-word selection retains delayed mouseup inspection", async ({ pa
 
   await expect(page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" }))
     .toBeVisible()
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    readerManifest
+  ])
 })
 
-test("double-clicking Reader whitespace clears stale selection and its pending inspection", async ({ page }) => {
+test("double-clicking Reader whitespace clears stale selection and its pending inspection", async ({
+  page,
+  request
+}) => {
   await page.addInitScript(() => {
     document.addEventListener("dblclick", event => {
       const target = event.target
@@ -119,9 +159,15 @@ test("double-clicking Reader whitespace clears stale selection and its pending i
   await expect(indicator).toBeHidden()
   await page.waitForTimeout(650)
   await expect(indicator).toBeHidden()
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    readerManifest
+  ])
 })
 
-test("Reader production keys copy typed values and push alternate media history", async ({ page }) => {
+test("Reader production keys copy typed values and push alternate media history", async ({
+  page,
+  request
+}) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
 
   await page.keyboard.press("i")
@@ -148,9 +194,17 @@ test("Reader production keys copy typed values and push alternate media history"
   await page.goBack()
   await expect(page).toHaveURL(readerPath)
   await expect(page.locator(".reader_main .etext")).toBeVisible()
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    readerManifest,
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=faksimil",
+    readerManifest
+  ])
 })
 
-test("editable fields guard Reader keys and author i copies the normalized id", async ({ page }) => {
+test("editable fields guard Reader keys and author i copies the normalized id", async ({
+  page,
+  request
+}) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
   await page.locator(".reader-work-search-trigger").click()
   const input = page.getByRole("searchbox", { name: "Sök i verket" })
@@ -167,4 +221,7 @@ test("editable fields guard Reader keys and author i copies the normalized id", 
   expect(await page.evaluate(() => (
     window as typeof window & { __copiedValues?: string[] }
   ).__copiedValues)).toEqual(["StrindbergA"])
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    readerManifest
+  ])
 })

@@ -30,7 +30,9 @@ async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
     request.delete(`${fixture}/_reader_manifest_requests`),
-    request.delete(`${fixture}/_reader_metadata_delays`),
+    request.delete(`${fixture}/_editor_manifest_requests`),
+    request.delete(`${fixture}/_reader_metadata_requests`),
+    request.delete(`${fixture}/_reader_manifest_delays`),
     request.delete(`${fixture}/_source_info_requests`),
     request.delete(`${fixture}/_source_info_failure`),
     request.delete(`${fixture}/_source_info_delays`),
@@ -44,6 +46,10 @@ async function readerRequests(request: APIRequestContext): Promise<string[]> {
 
 async function readerManifestRequests(request: APIRequestContext): Promise<string[]> {
   return (await (await request.get(`${fixture}/_reader_manifest_requests`)).json()).requests
+}
+
+async function fixtureRequests(request: APIRequestContext, ledger: string): Promise<string[]> {
+  return (await (await request.get(`${fixture}/${ledger}`)).json()).requests
 }
 
 async function sourceInfoRequests(request: APIRequestContext) {
@@ -89,6 +95,10 @@ function expectedManifestRequest(
 }
 
 test.beforeEach(async ({ request }) => resetReader(request))
+test.afterEach(async ({ request }) => {
+  expect(await fixtureRequests(request, "_reader_metadata_requests")).toEqual([])
+  expect(await fixtureRequests(request, "_editor_manifest_requests")).toEqual([])
+})
 
 test("resolves exact Reader metadata without fetching page HTML", async ({ request }) => {
   const response = await request.get(resolvePath)

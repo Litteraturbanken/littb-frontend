@@ -16,6 +16,8 @@ const ocrPath = "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_manifest_requests`),
+    request.delete(`${fixture}/_editor_manifest_requests`),
     request.delete(`${fixture}/_reader_metadata_requests`),
     request.delete(`${fixture}/_reader_html_requests`),
     request.delete(`${fixture}/_reader_ocr_requests`),
@@ -159,10 +161,11 @@ for (const visualCase of visualCases) {
     }
 
     expect(scanRequests).toEqual([selectedBrowserScan, selectedBrowserScan])
-    expect(await fixtureRequests(request, "_reader_metadata_requests")).toEqual([
-      "/api/get_work_info?authorid=Lagerl%C3%B6fS" +
-        "&exclude=content_vector&titlepath=GostaBerlingsSaga"
+    expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+      "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
     ])
+    expect(await fixtureRequests(request, "_reader_metadata_requests")).toEqual([])
+    expect(await fixtureRequests(request, "_editor_manifest_requests")).toEqual([])
     expect(await fixtureRequests(request, "_reader_html_requests")).toEqual([])
     expect(await fixtureRequests(request, "_reader_ocr_requests")).toEqual([ocrPath])
     expect(await fixtureRequests(request, "_reader_jpeg_requests")).toEqual([

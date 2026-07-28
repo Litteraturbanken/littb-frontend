@@ -532,6 +532,7 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_library_download_requests`, { method: "DELETE" }),
       fetch(`${origin}/_reader_requests`, { method: "DELETE" }),
       fetch(`${origin}/_reader_metadata_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_reader_metadata_delays`, { method: "DELETE" }),
       fetch(`${origin}/_reader_html_requests`, { method: "DELETE" }),
       fetch(`${origin}/_reader_ocr_requests`, { method: "DELETE" }),
       fetch(`${origin}/_reader_jpeg_requests`, { method: "DELETE" }),
@@ -539,6 +540,7 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_reader_hit_failure`, { method: "DELETE" }),
       fetch(`${origin}/_reader_hit_delays`, { method: "DELETE" }),
       fetch(`${origin}/_reader_manifest_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_reader_manifest_delays`, { method: "DELETE" }),
       fetch(`${origin}/_editor_manifest_requests`, { method: "DELETE" }),
       fetch(`${origin}/_export_faksimil_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_document_requests`, { method: "DELETE" }),
@@ -677,6 +679,23 @@ describe("v2 fixture server operations", () => {
       }
     ])
 
+    const partsReader = await fetch(
+      `${origin}/v2/works/S%C3%B6derbergH/DoktorGlasParts/manifest?media_type=etext`
+    )
+    expect(partsReader.status).toBe(200)
+    expect((await partsReader.json() as ReaderManifestResponse).parts.map(part => (
+      part.authors
+    ))).toEqual([
+      [{ author_id: "SöderbergH", full_name: "Hjalmar Söderberg", surname: "Söderberg" }],
+      [{ author_id: "MörikeE", full_name: "Eduard Mörike", surname: "Mörike" }],
+      [
+        { author_id: "RilkeRM", full_name: "Rainer Maria Rilke", surname: "Rilke" },
+        { author_id: "ShelleyPB", full_name: "Percy Bysshe Shelley", surname: "Shelley" }
+      ],
+      [{ author_id: "SöderbergH", full_name: "Hjalmar Söderberg", surname: "Söderberg" }],
+      [{ author_id: "MörikeE", full_name: "Eduard Mörike", surname: "Mörike" }]
+    ])
+
     const editor = await fetch(
       `${origin}/v2/works/lb-editor-doktor/editor-manifest?media_type=faksimil`
     )
@@ -784,6 +803,34 @@ describe("v2 fixture server operations", () => {
     })
     expect(await (await fetch(`${origin}/_reader_requests`)).json()).toEqual({
       requests: []
+    })
+  })
+
+  test("Reader manifest delays are independent from legacy metadata delays", async () => {
+    expect((await fetch(`${origin}/_reader_manifest_delays`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ DoktorGlas: 50 })
+    })).status).toBe(200)
+    expect(await (await fetch(`${origin}/_reader_manifest_delays`)).json()).toEqual({
+      delays: { DoktorGlas: 50 }
+    })
+    expect(await (await fetch(`${origin}/_reader_metadata_delays`)).json()).toEqual({
+      delays: {}
+    })
+
+    const startedAt = Date.now()
+    const response = await fetch(
+      `${origin}/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext`
+    )
+    expect(response.status).toBe(200)
+    expect(Date.now() - startedAt).toBeGreaterThanOrEqual(40)
+
+    expect((await fetch(`${origin}/_reader_manifest_delays`, {
+      method: "DELETE"
+    })).status).toBe(200)
+    expect(await (await fetch(`${origin}/_reader_manifest_delays`)).json()).toEqual({
+      delays: {}
     })
   })
 

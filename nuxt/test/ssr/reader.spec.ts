@@ -23,6 +23,7 @@ async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
     request.delete(`${fixture}/_reader_manifest_requests`),
+    request.delete(`${fixture}/_editor_manifest_requests`),
     request.delete(`${fixture}/_reader_metadata_requests`),
     request.delete(`${fixture}/_reader_html_requests`),
     request.delete(`${fixture}/_reader_ocr_requests`),
@@ -67,6 +68,10 @@ async function readerRequests(request: APIRequestContext): Promise<string[]> {
 
 async function readerManifestRequests(request: APIRequestContext): Promise<string[]> {
   return (await (await request.get(`${fixture}/_reader_manifest_requests`)).json()).requests
+}
+
+async function editorManifestRequests(request: APIRequestContext): Promise<string[]> {
+  return (await (await request.get(`${fixture}/_editor_manifest_requests`)).json()).requests
 }
 
 async function readerHitRequests(request: APIRequestContext): Promise<Array<{
@@ -114,6 +119,10 @@ function expectSourceInfoStaticCacheLedger(requests: string[]): void {
 }
 
 test.beforeEach(async ({ request }) => resetReader(request))
+test.afterEach(async ({ request }) => {
+  expect((await separateReaderRequests(request)).metadata).toEqual([])
+  expect(await editorManifestRequests(request)).toEqual([])
+})
 
 test("the exact Doktor Glas page is complete in the SSR response", async ({ request }) => {
   const response = await request.get(readerPath)
@@ -654,13 +663,17 @@ test("canonical API projects source-ordered generated Reader navigation without 
       end_page_name: "1"
     }),
     expect.objectContaining({
-      authors: [{ author_id: "MörikeE", full_name: null, surname: null }],
+      authors: [{
+        author_id: "MörikeE",
+        full_name: "Eduard Mörike",
+        surname: "Mörike"
+      }],
       source_index: 1
     }),
     expect.objectContaining({
       authors: [
-        { author_id: "RilkeRM", full_name: null, surname: null },
-        { author_id: "ShelleyPB", full_name: null, surname: null }
+        { author_id: "RilkeRM", full_name: "Rainer Maria Rilke", surname: "Rilke" },
+        { author_id: "ShelleyPB", full_name: "Percy Bysshe Shelley", surname: "Shelley" }
       ],
       source_index: 2
     }),

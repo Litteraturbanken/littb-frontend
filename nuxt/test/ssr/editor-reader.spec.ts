@@ -6,6 +6,7 @@ const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 async function resetEditorRequests(request: APIRequestContext): Promise<void> {
   await Promise.all([
     request.delete(`${fixture}/_editor_manifest_requests`),
+    request.delete(`${fixture}/_reader_manifest_requests`),
     request.delete(`${fixture}/_reader_metadata_requests`),
     request.delete(`${fixture}/_reader_requests`)
   ])
@@ -20,6 +21,10 @@ async function requestLedger(
 }
 
 test.beforeEach(async ({ request }) => resetEditorRequests(request))
+test.afterEach(async ({ request }) => {
+  expect(await requestLedger(request, "/_reader_manifest_requests")).toEqual([])
+  expect(await requestLedger(request, "/_reader_metadata_requests")).toEqual([])
+})
 
 test("SSR renders editor metadata, OCR, and generated page bounds", async ({ request }) => {
   const apiResponse = await request.get("/api/editor/lb-editor-doktor/1/f")
