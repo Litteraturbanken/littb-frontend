@@ -1131,19 +1131,12 @@ const markedReaderHtml = computed<ManagedAssetHtml<"reader-etext">>(() => {
 const markedFacsimileReader = computed(() => {
   const currentReader = facsimileReader.value
   if (!currentReader) return null
-  const imageReader = {
-    ...currentReader,
-    author: {
-      ...currentReader.author,
-      name: currentReader.author.full_name
-    }
-  }
   const overlay = currentReader?.ocrOverlay
   const hit = selectedSearchHit.value ?? activeHit.value
-  if (!overlay || !hit) return imageReader
+  if (!overlay || !hit) return currentReader
 
   return {
-    ...imageReader,
+    ...currentReader,
     ocrOverlay: {
       ...overlay,
       html: markReaderSearchOcrHtml(

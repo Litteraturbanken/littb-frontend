@@ -1,9 +1,9 @@
 import type {
   WorkManifestContributor,
   WorkManifestPage,
-  WorkManifestPart
+  WorkManifestPart,
+  WorkManifestPartAuthor
 } from "./work-manifest"
-import type { LegacyEditorContributionRole } from "../utils/reader-author"
 import type { ManagedAssetHtml, SanitizedHtml } from "./renderable-html"
 
 export type ReaderMediaType = "etext" | "faksimil"
@@ -25,31 +25,9 @@ export interface ReaderOcrOverlay {
   height: number
 }
 
-export interface ReaderPartAuthor {
-  id: string
-  name: string | null
-  surname: string | null
-}
-
-export interface ReaderWorkContributor {
-  authorType: LegacyEditorContributionRole | null
-  id: string
-  name: string
-  role: LegacyEditorContributionRole | null
-}
-
-export interface ReaderPart {
-  sourceIndex: number
-  startPageName: string
-  startPageIndex: number
-  endPageName: string
-  endPageIndex: number
-  title: string
-  navTitle: string | null
-  shortTitle: string | null
-  titleId: string | null
-  authors: ReaderPartAuthor[]
-}
+export type ReaderPartAuthor = WorkManifestPartAuthor
+export type ReaderWorkContributor = WorkManifestContributor
+export type ReaderPart = WorkManifestPart
 
 export interface ReaderAlternateMedia {
   mediaType: ReaderMediaType

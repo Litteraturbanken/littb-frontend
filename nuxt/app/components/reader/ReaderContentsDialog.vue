@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/vue"
 
-import type { ReaderPart, ReaderWorkContributor } from "#shared/types/reader"
 import type {
   WorkManifestContributor,
   WorkManifestPart,
@@ -10,16 +9,12 @@ import type {
 import { readerManifestPartAuthorLabel } from "#shared/utils/reader-author"
 import { readerAuthorHref, readerPartAuthorKey } from "~/lib/reader-routes"
 
-type ContentsContributor = ReaderWorkContributor | WorkManifestContributor
-type ContentsPart = ReaderPart | WorkManifestPart
-type ContentsPartAuthor = ReaderPart["authors"][number] | WorkManifestPartAuthor
-
 defineProps<{
   open: boolean
-  contributors: readonly ContentsContributor[]
+  contributors: readonly WorkManifestContributor[]
   title: string
   imprintYear: string | null
-  parts: readonly ContentsPart[]
+  parts: readonly WorkManifestPart[]
   partHrefs: readonly string[]
 }>()
 
@@ -28,28 +23,12 @@ const emit = defineEmits<{
   "select-page": [pageName: string]
 }>()
 
-function partSourceIndex(part: ContentsPart): number {
-  return "source_index" in part ? part.source_index : part.sourceIndex
+function partLabel(part: WorkManifestPart): string {
+  return part.nav_title || part.short_title || part.title
 }
 
-function partStartPageName(part: ContentsPart): string {
-  return "start_page_name" in part ? part.start_page_name : part.startPageName
-}
-
-function partLabel(part: ContentsPart): string {
-  return "nav_title" in part
-    ? part.nav_title || part.short_title || part.title
-    : part.navTitle || part.shortTitle || part.title
-}
-
-function authorId(author: ContentsPartAuthor): string {
-  return "author_id" in author ? author.author_id : author.id
-}
-
-function authorLabel(author: ContentsPartAuthor): string {
-  return "author_id" in author
-    ? readerManifestPartAuthorLabel(author, true)
-    : author.surname ?? author.name ?? author.id
+function authorLabel(author: WorkManifestPartAuthor): string {
+  return readerManifestPartAuthorLabel(author, true)
 }
 
 const dialogPanel = ref<HTMLElement | null>(null)
@@ -85,15 +64,15 @@ const dialogPanel = ref<HTMLElement | null>(null)
           <ul class="part_menu">
             <li
               v-for="(part, partIndex) in parts"
-              :key="partSourceIndex(part)"
+              :key="part.source_index"
               :title="part.title"
             >
               <span>
                 <span
                   v-for="(author, authorIndex) in part.authors"
-                  :key="readerPartAuthorKey(authorId(author), authorIndex)"
+                  :key="readerPartAuthorKey(author.author_id, authorIndex)"
                   class="author"
-                ><NuxtLink :to="readerAuthorHref(authorId(author))">{{ authorLabel(author) }}</NuxtLink><span
+                ><NuxtLink :to="readerAuthorHref(author.author_id)">{{ authorLabel(author) }}</NuxtLink><span
                   v-if="authorIndex < part.authors.length - 1"
                 >, </span>{{ " " }}</span>
               </span><span class="title">
@@ -103,7 +82,7 @@ const dialogPanel = ref<HTMLElement | null>(null)
                   :to="partHrefs[partIndex]"
                 ><a
                   :href="href || partHrefs[partIndex] || ''"
-                  @click.prevent.stop="emit('select-page', partStartPageName(part))"
+                  @click.prevent.stop="emit('select-page', part.start_page_name)"
                 >{{ partLabel(part) }}</a></NuxtLink>
               </span>
             </li>

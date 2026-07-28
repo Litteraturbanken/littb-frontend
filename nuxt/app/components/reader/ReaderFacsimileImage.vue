@@ -5,12 +5,8 @@ import type {
   ReaderFacsimileSource
 } from "#shared/types/reader"
 
-type ReaderFacsimileImagePage = Omit<ReaderFacsimilePage, "author"> & {
-  author: ReaderFacsimilePage["author"] & { name: string }
-}
-
 const props = defineProps<{
-  page: ReaderFacsimileImagePage
+  page: ReaderFacsimilePage
   selectedSize: ReaderFacsimileSize
 }>()
 
@@ -86,7 +82,7 @@ watch(selectedSourceIdentity, () => {
       :src="selectedSource.url"
       :srcset="sourceSet"
       :width="selectedSource.width"
-      :alt="`${page.title} av ${page.author.name}, sida ${page.pageName}`"
+      :alt="`${page.title} av ${page.author.full_name}, sida ${page.pageName}`"
       :style="{
         width: `${selectedSource.width}px`,
         maxWidth: `${selectedSource.width}px`,

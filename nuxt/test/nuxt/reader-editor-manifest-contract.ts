@@ -1,6 +1,9 @@
 import type { components } from "../../app/lib/api/generated/lbapi"
 import type {
   ReaderFacsimilePage,
+  ReaderPart,
+  ReaderPartAuthor,
+  ReaderWorkContributor,
   ReaderPage
 } from "../../shared/types/reader"
 import type { ReaderAuthorContribution } from "../../shared/utils/reader-author"
@@ -14,7 +17,8 @@ import type {
   ReaderManifestResponse,
   WorkManifestContributor,
   WorkManifestPage,
-  WorkManifestPart
+  WorkManifestPart,
+  WorkManifestPartAuthor
 } from "../../shared/types/work-manifest"
 
 type Equal<Left, Right> =
@@ -66,6 +70,18 @@ type _ReaderAuthorContributionIsGenerated = Expect<Equal<
 type _ReaderFacsimileAuthorIsGenerated = Expect<Equal<
   ReaderFacsimilePage["author"],
   WorkManifestContributor
+>>
+type _LegacyNamedReaderContributorIsGenerated = Expect<Equal<
+  ReaderWorkContributor,
+  WorkManifestContributor
+>>
+type _LegacyNamedReaderPartIsGenerated = Expect<Equal<
+  ReaderPart,
+  WorkManifestPart
+>>
+type _LegacyNamedReaderPartAuthorIsGenerated = Expect<Equal<
+  ReaderPartAuthor,
+  WorkManifestPartAuthor
 >>
 
 type _Reader404 = Expect<Equal<
