@@ -19,6 +19,15 @@ const facsimileLargePath = "/txt/lb-reader-gosta-berlings-saga/" +
   "lb-reader-gosta-berlings-saga_4/" +
   "lb-reader-gosta-berlings-saga_4_0009.jpeg"
 
+function expectedReaderManifest(
+  authorId: string,
+  titlePath: string,
+  mediaType: "etext" | "faksimil" = "etext"
+): string {
+  return `/v2/works/${encodeURIComponent(authorId)}/${encodeURIComponent(titlePath)}`
+    + `/manifest?media_type=${mediaType}`
+}
+
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
@@ -194,6 +203,10 @@ test("canonical Reader API projects exact work searchability", async ({ request 
   )
   expect(inert.status()).toBe(200)
   expect((await inert.json()).searchable).toBe(false)
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas"),
+    expectedReaderManifest("SöderbergH", "UnsearchableEtextReader")
+  ])
 })
 
 test("legacy main-author contribution is present in the Reader SSR fallback", async ({
@@ -211,6 +224,9 @@ test("legacy main-author contribution is present in the Reader SSR fallback", as
   expect(link?.getAttribute("href")).toBe("/f%C3%B6rfattare/LongErrataA")
   expect(link?.textContent?.trim()).toBe("Rita Redaktör red.")
   expect(link?.querySelector(".authortype")?.textContent).toBe("red.")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("LongErrataA", "LongErrata")
+  ])
 })
 
 test("Boye Reader API and SSR retain ordered work contributors", async ({ request }) => {
@@ -260,6 +276,9 @@ test("Boye Reader API and SSR retain ordered work contributors", async ({ reques
   )
   expect(ocrLayer?.getAttribute("style")).toContain("width:625px")
   expect(ocrLayer?.querySelector('[data-size="625x900"]')?.textContent).toBe("Boye OCR")
+  expect(await readerManifestRequests(request)).toEqual(Array(2).fill(
+    expectedReaderManifest("BoyeK", "EttVerkligtJordiskt", "faksimil")
+  ))
 })
 
 test("direct bare source-information SSR renders the Reader and complete modal once", async ({
@@ -340,6 +359,9 @@ test("direct bare source-information SSR renders the Reader and complete modal o
     query: "?media_type=etext"
   }])
   expectSourceInfoStaticCacheLedger(await sourceInfoStaticRequests(request))
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 test("exact empty source-information assignment remains closed and makes no request", async ({
@@ -352,6 +374,9 @@ test("exact empty source-information assignment remains closed and makes no requ
   expect(html).not.toContain("Ett fel har uppstått.")
   expect(await sourceInfoRequests(request)).toEqual([])
   expect(await sourceInfoStaticRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 test("source-information failure stays modal-local on a successful Reader SSR", async ({
@@ -365,6 +390,9 @@ test("source-information failure stays modal-local on a successful Reader SSR", 
   expect(html).toContain('class="modal about fade in"')
   expect(html).toContain("Ett fel har uppstått.")
   expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 test("the Nitro source-information boundary rejects a non-public canonical author", async ({
@@ -381,6 +409,7 @@ test("the Nitro source-information boundary rejects a non-public canonical autho
     query: "?media_type=etext"
   }])
   expect(await sourceInfoStaticRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([])
 })
 
 test("source information has presentation priority when both dialog keys are direct", async ({
@@ -392,6 +421,9 @@ test("source information has presentation priority when both dialog keys are dir
   expect(html).toContain('class="modal about fade in"')
   expect(html).not.toContain('class="modal chapters fade in"')
   expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 test("drama Reader projects closed copy and complete source-information facts", async ({
@@ -432,6 +464,9 @@ test("drama Reader projects closed copy and complete source-information facts", 
     "SPAN"
   ])
   expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(await readerManifestRequests(request)).toEqual(Array(2).fill(
+    expectedReaderManifest("AlmlöfN", "Affarer", "faksimil")
+  ))
 })
 
 test("partful SSR exposes one raw-preserving contents trigger without a dialog tree", async ({
@@ -454,6 +489,10 @@ test("partful SSR exposes one raw-preserving contents trigger without a dialog t
   )
   expect(partless.status()).toBe(200)
   expect(await partless.text()).not.toContain(">Innehållsförteckning</a>")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlasParts"),
+    expectedReaderManifest("SöderbergH", "PartlessReader")
+  ])
 })
 
 test("canonical API returns the exact searchable faksimil arm with selectable OCR", async ({
@@ -702,6 +741,9 @@ test("navigation projection keeps a page gap empty and chooses the first same-st
     previousPartPageName: "-2",
     nextPartPageName: "3"
   })
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlasParts")
+  ])
 
   await resetReader(request)
   const tie = await request.get("/api/reader/S%C3%B6derbergH/DoktorGlasParts/3/etext")
@@ -711,6 +753,9 @@ test("navigation projection keeps a page gap empty and chooses the first same-st
     previousPartPageName: "-2",
     nextPartPageName: null
   })
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlasParts")
+  ])
 })
 
 test("partless metadata publishes empty navigation without calling the author resolver", async ({
@@ -727,6 +772,9 @@ test("partless metadata publishes empty navigation without calling the author re
     previousPartPageName: null
   })
   expect(await authorResolveRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "PartlessReader")
+  ])
 })
 
 for (const title of [
@@ -744,6 +792,9 @@ for (const title of [
     expect(ledgers.html).toEqual([])
     expect(ledgers.ocr).toEqual([])
     expect(ledgers.jpeg).toEqual([])
+    expect(await readerManifestRequests(request)).toEqual([
+      expectedReaderManifest("SöderbergH", title)
+    ])
   })
 }
 
@@ -760,7 +811,9 @@ test("nullable generated part-author names remain direct without author lookup",
     surname: null
   }])
   expect(await authorResolveRequests(request)).toEqual([])
-
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "ReaderAuthorOmission")
+  ])
 })
 
 for (const title of [
@@ -774,6 +827,9 @@ for (const title of [
     expect(response.status()).toBe(502)
     expect(await authorResolveRequests(request)).toEqual([])
     expect((await separateReaderRequests(request)).html).toEqual([])
+    expect(await readerManifestRequests(request)).toEqual([
+      expectedReaderManifest("SöderbergH", title)
+    ])
   })
 }
 
@@ -788,6 +844,9 @@ for (const title of [
     expect(response.status()).toBe(502)
     expect(await authorResolveRequests(request)).toEqual([])
     expect((await separateReaderRequests(request)).html).toEqual([])
+    expect(await readerManifestRequests(request)).toEqual([
+      expectedReaderManifest("SöderbergH", title)
+    ])
   })
 }
 
@@ -825,6 +884,9 @@ test("the exact faksimil page renders its fixed scan without e-text output", asy
   expect(html).not.toContain('href="/red/css/etext.css"')
   expect(html).not.toContain("-etext.css")
   expect(await readerHitRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("LagerlöfS", "GostaBerlingsSaga", "faksimil")
+  ])
 })
 
 test("faksimil preserves search-shaped and invalid size queries with faksimil hits", async ({
@@ -852,6 +914,9 @@ test("faksimil preserves search-shaped and invalid size queries with faksimil hi
     query: "media_type=faksimil&query=doktor&offset=0&limit=3" +
       "&word_forms=false&include_older_spellings=true&prefix=false&suffix=false"
   }])
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("LagerlöfS", "GostaBerlingsSaga", "faksimil")
+  ])
 })
 
 test("an advertised direct faksimil size is server-rendered without a density pair", async ({
@@ -867,6 +932,9 @@ test("an advertised direct faksimil size is server-rendered without a density pa
   expect(html).not.toMatch(/<img[^>]*class="faksimil"[^>]*srcset=/)
   expect(html).toContain("/sida/1/faksimil?storlek=4")
   expect(html).toContain("/sida/5/faksimil?storlek=4")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("LagerlöfS", "GostaBerlingsSaga", "faksimil")
+  ])
 })
 
 test("canonical faksimil selects the requested alternate representation", async ({ request }) => {
@@ -901,6 +969,7 @@ test("canonical unknown media fails before reader IO", async ({ request }) => {
   expect(await separateReaderRequests(request)).toEqual({
     metadata: [], html: [], ocr: [], jpeg: []
   })
+  expect(await readerManifestRequests(request)).toEqual([])
 })
 
 test("canonical missing faksimil page fails before asset IO", async ({ request }) => {
@@ -972,6 +1041,9 @@ test("canonical search state fetches one private hit window and marks its exact 
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext" +
     "?q=doktor+glas&amp;hit=2&amp;unknown=bevara+mig\""
   )
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 test("work-scoped word ids are bound to the Reader work and mark the exact live range", async ({
@@ -993,6 +1065,9 @@ test("work-scoped word ids are bound to the Reader work and mark the exact live 
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/WorkScopedIdsReader/sida/-1/etext" +
     "?q=kyrka&amp;hit=1\""
   )
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "WorkScopedIdsReader")
+  ])
 })
 
 test("canonical flags map exactly to the generated hit request", async ({ request }) => {
@@ -1005,6 +1080,9 @@ test("canonical flags map exactly to the generated hit request", async ({ reques
     query: "media_type=etext&query=glas&offset=0&limit=3" +
       "&word_forms=true&include_older_spellings=false&prefix=true&suffix=true"
   }])
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 test("repeated unknown query values survive page and hit links only", async ({ request }) => {
@@ -1024,6 +1102,9 @@ test("repeated unknown query values survive page and hit links only", async ({ r
   ]) {
     expect(html).toContain(target)
   }
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 for (const invalidQuery of [
@@ -1047,6 +1128,9 @@ for (const invalidQuery of [
     expect(html).not.toContain("Sökträff ")
     expect(html).not.toContain("markee")
     expect(await readerHitRequests(request)).toEqual([])
+    expect(await readerManifestRequests(request)).toEqual([
+      expectedReaderManifest("SöderbergH", "DoktorGlas")
+    ])
   })
 }
 
@@ -1060,6 +1144,9 @@ test("an out-of-range cursor keeps readable content with a bounded message", asy
   expect(html).toContain("Ingen sådan sökträff.")
   expect(html).not.toContain("markee")
   expect((await readerHitRequests(request))[0]?.query).toContain("offset=98&limit=3")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 test("a failed hit enhancement keeps the valid Reader page", async ({ request }) => {
@@ -1071,6 +1158,9 @@ test("a failed hit enhancement keeps the valid Reader page", async ({ request })
   expect(html).toContain("Sökträffen kunde inte hämtas.")
   expect(html).not.toContain("markee")
   expect(await readerHitRequests(request)).toHaveLength(1)
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 test("a malformed hit response is contained locally", async ({ request }) => {
@@ -1080,6 +1170,9 @@ test("a malformed hit response is contained locally", async ({ request }) => {
   expect(html).toContain("DOKTOR")
   expect(html).toContain("Sökträffen kunde inte hämtas.")
   expect(html).not.toContain("markee")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 for (const mismatch of [
@@ -1119,6 +1212,11 @@ for (const mismatch of [
         `media_type=${mismatch.mediaType}&query=${mismatch.query}`
       )
     })])
+    expect(await readerManifestRequests(request)).toEqual([
+      mismatch.mediaType === "etext"
+        ? expectedReaderManifest("SöderbergH", "DoktorGlas")
+        : expectedReaderManifest("AarnsethF", "Rallarliv", "faksimil")
+    ])
   })
 }
 
@@ -1131,6 +1229,9 @@ test("page-mismatch preserves the original Reader HTML without a marker", async 
   expect(html).toContain("DOKTOR")
   expect(html).toContain("Sökträff 1 av 1")
   expect(html).not.toContain("markee")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 test("a leading-zero w page identity is rejected as malformed hit data", async ({
@@ -1145,6 +1246,9 @@ test("a leading-zero w page identity is rejected as malformed hit data", async (
   expect(html).toContain("FÖREGÅENDE")
   expect(html).toContain("Sökträffen kunde inte hämtas.")
   expect(html).not.toContain("markee")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 for (const query of [
@@ -1160,6 +1264,9 @@ for (const query of [
     expect(html).toContain("DEN")
     expect(html).toContain("Sökträffen kunde inte hämtas.")
     expect(html).not.toContain("markee")
+    expect(await readerManifestRequests(request)).toEqual([
+      expectedReaderManifest("SöderbergH", "WorkScopedIdsReader")
+    ])
   })
 }
 
@@ -1171,6 +1278,9 @@ for (const query of ["reversed-range"]) {
     expect(html).toContain("DOKTOR")
     expect(html).toContain("Sökträffen kunde inte hämtas.")
     expect(html).not.toContain("markee")
+    expect(await readerManifestRequests(request)).toEqual([
+      expectedReaderManifest("SöderbergH", "DoktorGlas")
+    ])
   })
 }
 
@@ -1181,6 +1291,9 @@ test("an unsafe missing range is rejected as malformed enhancement data", async 
   expect(html).toContain("DOKTOR")
   expect(html).toContain("Sökträffen kunde inte hämtas.")
   expect(html).not.toContain("markee")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 for (const query of ["safe-missing-range", "duplicate-range"]) {
@@ -1193,6 +1306,9 @@ for (const query of ["safe-missing-range", "duplicate-range"]) {
     expect(html).toContain("Sökträff 1 av 1")
     expect(html).not.toContain("Sökträffen kunde inte hämtas.")
     expect(html).not.toContain("markee")
+    expect(await readerManifestRequests(request)).toEqual([
+      expectedReaderManifest("SöderbergH", "DoktorGlas")
+    ])
   })
 }
 
@@ -1211,6 +1327,9 @@ test("the maximum valid cursor never links to an unrequestable next hit", async 
   expect(html).not.toContain(
     "/sida/-2/etext?q=max-edge&amp;hit=1000002"
   )
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
 })
 
 test("an unknown e-text page is a work-specific real 404", async ({ request }) => {
@@ -1241,6 +1360,9 @@ test("an encoded faksimil page is escaped in the work-specific 404", async ({ re
   )
   expect(html).not.toContain("<script>alert(1)</script>")
   expect(html).not.toContain("onerror=")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas", "faksimil")
+  ])
 })
 
 test("an unbounded Reader page name falls back to the generic 404 copy", async ({ request }) => {
@@ -1260,6 +1382,9 @@ test("an unbounded Reader page name falls back to the generic 404 copy", async (
   const html = await response.text()
   expect(html).toContain("Du har angett en adress som inte finns på Litteraturbanken.")
   expect(html).not.toContain("Hittar ingen sida")
+  expect(await readerManifestRequests(request)).toEqual(Array(2).fill(
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ))
 })
 
 test("a malformed Reader source stays a generic 502", async ({ request }) => {
@@ -1271,4 +1396,7 @@ test("a malformed Reader source stays a generic 502", async ({ request }) => {
   expect(html).toContain("<title>Ett fel inträffade | Litteraturbanken</title>")
   expect(html).toContain("Ett fel inträffade. Vänligen försök igen senare.")
   expect(html).not.toContain("Hittar ingen sida")
+  expect(await readerManifestRequests(request)).toEqual(Array(2).fill(
+    expectedReaderManifest("SöderbergH", "MalformedReader")
+  ))
 })

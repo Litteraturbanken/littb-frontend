@@ -26,6 +26,18 @@ const readerStatuses = [
   ["MalformedReader", 502],
   ["UnavailableReader", 502]
 ] as const
+const duplicateErrorManifestTitles = new Set([
+  "MalformedStartReader",
+  "OutOfListStartReader",
+  "MalformedPagesReader",
+  "NullPageIndexReader",
+  "FalsePageIndexReader",
+  "EmptyPageIndexReader",
+  "StringPageIndexReader",
+  "UnsafePageIndexReader",
+  "MalformedReader",
+  "UnavailableReader"
+])
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
@@ -209,6 +221,9 @@ test("canonical Reader rejects a wrong returned author", async ({ request }) => 
     "/författare/SöderbergH/titlar/WrongAuthorReader/sida/-2/etext"
   )
   expect(response.status()).toBe(404)
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedManifestRequest("WrongAuthorReader")
+  ])
   expect((await readerRequests(request)).some(path => path.includes("/res_"))).toBe(false)
 })
 
@@ -218,6 +233,9 @@ test("canonical Reader accepts a valid page without start metadata", async ({ re
   )
   expect(response.status()).toBe(200)
   expect(await response.text()).toContain("DOKTOR")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedManifestRequest("MissingStartReader")
+  ])
 })
 
 test("canonical Reader rejects present malformed start metadata", async ({ request }) => {
@@ -225,6 +243,9 @@ test("canonical Reader rejects present malformed start metadata", async ({ reque
     "/författare/SöderbergH/titlar/MalformedStartReader/sida/-2/etext"
   )
   expect(response.status()).toBe(502)
+  expect(await readerManifestRequests(request)).toEqual(Array(2).fill(
+    expectedManifestRequest("MalformedStartReader")
+  ))
   expect((await readerRequests(request)).some(path => path.includes("/res_"))).toBe(false)
 })
 
@@ -241,6 +262,9 @@ test("SSR preserves the raw shorthand query in a canonical redirect", async ({ r
     "?innehall&repeat=one&repeat=two&bare&empty=&plus=a+b&percent=a%20b" +
       "&slash=%2f&slash=%2F"
   )
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedManifestRequest("DoktorGlas")
+  ])
   expect((await readerRequests(request)).some(path => path.includes("/res_"))).toBe(false)
 })
 
@@ -251,6 +275,9 @@ for (const [titlePath, resolverStatus] of readerStatuses) {
       maxRedirects: 0
     })
     expect(response.status()).toBe(expectedStatus)
+    expect(await readerManifestRequests(request)).toEqual(Array(
+      duplicateErrorManifestTitles.has(titlePath) ? 2 : 1
+    ).fill(expectedManifestRequest(titlePath)))
   })
 }
 
@@ -300,6 +327,7 @@ test("source-information resolver selects the default readable representation", 
     path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
     query: ""
   }])
+  expect(await readerManifestRequests(request)).toEqual([])
   expect(await sourceInfoStaticRequests(request)).toEqual([])
 })
 
@@ -323,6 +351,7 @@ test("source-information resolver selects requested media when available", async
     path: "/private-v2/works/Alml%C3%B6fN/Affarer/source-info",
     query: "?media_type=faksimil"
   }])
+  expect(await readerManifestRequests(request)).toEqual([])
 })
 
 test("source-information resolver accepts the backend requested-media fallback", async ({
@@ -338,6 +367,7 @@ test("source-information resolver accepts the backend requested-media fallback",
     path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
     query: "?media_type=faksimil"
   }])
+  expect(await readerManifestRequests(request)).toEqual([])
 })
 
 for (const [alias, destination] of [
@@ -363,6 +393,7 @@ for (const [alias, destination] of [
     )
     expect(response.status()).toBe(307)
     expect(response.headers().location).toBe(destination)
+    expect(await readerManifestRequests(request)).toEqual([])
     expect(await sourceInfoRequests(request)).toHaveLength(1)
     expect(await sourceInfoStaticRequests(request)).toEqual([])
   })
@@ -413,6 +444,7 @@ test("a late source-information alias cannot leave the route that replaced it", 
   expect((await resolverResponse).status()).toBe(200)
   await page.waitForTimeout(400)
   await expect(page).toHaveURL("/")
+  expect(await readerManifestRequests(request)).toEqual([])
 })
 
 for (const [alias, expectedStatus] of [
@@ -426,6 +458,7 @@ for (const [alias, expectedStatus] of [
   test(`${alias} maps resolver failures to ${expectedStatus}`, async ({ request }) => {
     const response = await request.get(alias, { maxRedirects: 0 })
     expect(response.status()).toBe(expectedStatus)
+    expect(await readerManifestRequests(request)).toEqual([])
   })
 }
 
@@ -438,4 +471,5 @@ test("source-information aliases map upstream unavailability to the public 502",
     { maxRedirects: 0 }
   )
   expect(response.status()).toBe(502)
+  expect(await readerManifestRequests(request)).toEqual([])
 })

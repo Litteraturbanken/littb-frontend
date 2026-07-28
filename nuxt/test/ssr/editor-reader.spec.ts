@@ -24,6 +24,9 @@ test.beforeEach(async ({ request }) => resetEditorRequests(request))
 test.afterEach(async ({ request }) => {
   expect(await requestLedger(request, "/_reader_manifest_requests")).toEqual([])
   expect(await requestLedger(request, "/_reader_metadata_requests")).toEqual([])
+  expect((await requestLedger(request, "/_reader_requests")).some(path => (
+    path.includes("get_work_info") || path.includes("count_pages")
+  ))).toBe(false)
 })
 
 test("SSR renders editor metadata, OCR, and generated page bounds", async ({ request }) => {
@@ -74,6 +77,9 @@ test("SSR renders editor metadata, OCR, and generated page bounds", async ({ req
   expect(await requestLedger(request, "/_reader_metadata_requests")).toEqual([])
 
   expect((await request.get("/editor/lb-editor-doktor/ix/3/f")).status()).toBe(404)
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(2).fill(
+    "/v2/works/lb-editor-doktor/editor-manifest?media_type=faksimil"
+  ))
 })
 
 test("SSR renders typed bounds-only navigation without metadata controls", async ({
@@ -125,6 +131,9 @@ test("SSR renders typed bounds-only navigation without metadata controls", async
   expect(await requestLedger(request, "/_reader_metadata_requests")).toEqual([])
 
   expect((await request.get("/editor/lb-editor-fallback/ix/3/f")).status()).toBe(404)
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(2).fill(
+    "/v2/works/lb-editor-fallback/editor-manifest?media_type=faksimil"
+  ))
 })
 
 test("SSR keeps the facsimile useful when optional OCR is unavailable", async ({
@@ -136,12 +145,18 @@ test("SSR keeps the facsimile useful when optional OCR is unavailable", async ({
 
   expect(document.querySelector(".editor-reader .faksimil")).not.toBeNull()
   expect(document.querySelector(".editor-reader .overlay")).toBeNull()
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-no-ocr/editor-manifest?media_type=faksimil"
+  ])
 })
 
 test("SSR reports an unavailable editor when both metadata and page count fail", async ({
   request
 }) => {
   expect((await request.get("/editor/lb-editor-unavailable/ix/1/f")).status()).toBe(502)
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(2).fill(
+    "/v2/works/lb-editor-unavailable/editor-manifest?media_type=faksimil"
+  ))
 })
 
 test("SSR sanitizes bounded editor e-text before it enters the DTO", async ({ request }) => {
@@ -152,6 +167,9 @@ test("SSR sanitizes bounded editor e-text before it enters the DTO", async ({ re
   expect(body.html).toContain("EDITORSSIDA 1")
   expect(body.html).toContain('<em class="emphasis">bevarad</em>')
   expect(body.html).not.toMatch(/script|onclick|javascript:/iu)
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-doktor-glas/editor-manifest?media_type=etext"
+  ])
 })
 
 test("SSR fails clearly when the selected editor facsimile asset is missing", async ({
@@ -159,6 +177,9 @@ test("SSR fails clearly when the selected editor facsimile asset is missing", as
 }) => {
   expect((await request.get("/api/editor/lb-editor-missing-image/1/f")).status()).toBe(502)
   expect((await request.get("/editor/lb-editor-missing-image/ix/1/f")).status()).toBe(502)
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(3).fill(
+    "/v2/works/lb-editor-missing-image/editor-manifest?media_type=faksimil"
+  ))
 })
 
 test("SSR uses generated dense bounds for the exact e-text representation", async ({ request }) => {
@@ -173,6 +194,9 @@ test("SSR uses generated dense bounds for the exact e-text representation", asyn
   const response = await request.get("/editor/lb-editor-doktor-glas/ix/2/e")
   expect(response.status()).toBe(200)
   expect((await response.text())).toContain("EDITORSSIDA 2")
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(2).fill(
+    "/v2/works/lb-editor-doktor-glas/editor-manifest?media_type=etext"
+  ))
 })
 
 test("SSR derives sparse typed Editor bounds from the largest page index", async ({ request }) => {
@@ -192,6 +216,9 @@ test("SSR derives sparse typed Editor bounds from the largest page index", async
   expect(await requestLedger(request, "/_reader_metadata_requests")).toEqual([])
 
   expect((await request.get("/api/editor/lb-editor-sparse/13/f")).status()).toBe(404)
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(2).fill(
+    "/v2/works/lb-editor-sparse/editor-manifest?media_type=faksimil"
+  ))
 })
 
 test("SSR selects the requested representation and uses its typed close target", async ({
@@ -210,6 +237,9 @@ test("SSR selects the requested representation and uses its typed close target",
     .find(link => link.textContent?.includes("Stäng editor"))?.getAttribute("href")).toBe(
     "/f%C3%B6rfattare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
   )
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-mixed/editor-manifest?media_type=faksimil"
+  ])
 })
 
 test("SSR keeps the exact raw query spelling in editor page links", async ({ request }) => {
@@ -222,6 +252,9 @@ test("SSR keeps the exact raw query spelling in editor page links", async ({ req
   expect(document.querySelector('a[rel="next"]')?.getAttribute("href")).toBe(
     "/editor/lb-editor-doktor/ix/2/f?bare&repeat=%2f&repeat=%2F"
   )
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-doktor/editor-manifest?media_type=faksimil"
+  ])
 })
 
 test("SSR exposes bounded Editor contributors, mapped readable bounds, and part navigation", async ({
@@ -278,6 +311,9 @@ test("SSR exposes bounded Editor contributors, mapped readable bounds, and part 
     .toContain("Paulina Helgeson")
   expect(partDocument.querySelector(".reader-context-ssr .current_part .navtitle")?.textContent)
     .toBe("Förord")
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(3).fill(
+    "/v2/works/lb-editor-boye/editor-manifest?media_type=faksimil"
+  ))
 })
 
 test("SSR renders a requested Editor source-information dialog", async ({ request }) => {
@@ -288,6 +324,9 @@ test("SSR renders a requested Editor source-information dialog", async ({ reques
   expect(dialog?.textContent).toContain("Doktor Glas. Roman")
   expect(dialog?.querySelector('a[href="/f%C3%B6rfattare/S%C3%B6derbergH"]')?.textContent)
     .toContain("Hjalmar Söderberg")
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-doktor/editor-manifest?media_type=faksimil"
+  ])
 })
 
 test("SSR restores a serialized Editor search hit and marquee", async ({ request }) => {
@@ -301,6 +340,9 @@ test("SSR restores a serialized Editor search hit and marquee", async ({ request
   expect(document.querySelector("#search_nav")?.textContent).toContain("Träff 1, sida 5")
   expect(document.querySelector("#w5_1.markee")).not.toBeNull()
   expect(document.querySelector("#w5_2.markee.flip")).not.toBeNull()
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb8345227/editor-manifest?media_type=faksimil"
+  ])
 })
 
 test("SSR restores a live-style bare prefix Editor search session", async ({ request }) => {
@@ -319,6 +361,9 @@ test("SSR restores a live-style bare prefix Editor search session", async ({ req
       "&s_word_form_only=true&s_include_modernized=true&s_prefix=true" +
       "&hit_index=1&traff=w6_1&traffslut=w6_1"
   )
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb8345227/editor-manifest?media_type=faksimil"
+  ])
 })
 
 test("SSR rejects partial Editor contributor and part metadata atomically", async ({ request }) => {
@@ -359,4 +404,10 @@ test("SSR rejects partial Editor contributor and part metadata atomically", asyn
     expect(document.querySelector('.reader-context-ssr a[rel="next"]')?.getAttribute("href"))
       .toBe(`/editor/${workId}/ix/1/f`)
   }
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-malformed-contributor/editor-manifest?media_type=faksimil",
+    "/v2/works/lb-editor-malformed-contributor/editor-manifest?media_type=faksimil",
+    "/v2/works/lb-editor-malformed-part/editor-manifest?media_type=faksimil",
+    "/v2/works/lb-editor-malformed-part/editor-manifest?media_type=faksimil"
+  ])
 })
