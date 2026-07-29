@@ -1,0 +1,13 @@
+.git
+node_modules
+.nuxt
+.output
+output
+coverage
+test
+test-results
+test-results-visual-extra
+playwright-report
+lighthouse
+.playwright-cli
+.playwright-mcp
