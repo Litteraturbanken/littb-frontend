@@ -87,7 +87,7 @@ test("staging Nomad service exposes the SHA-pinned Nuxt runtime through public i
   expect(jobspec).toContain('"caddy-host=${var.caddy_host}"')
   expect(jobspec).toContain('"caddy-ingress=public"')
   expect(jobspec).toContain('"caddy-https=on"')
-  expect(jobspec).toContain('"caddy-tls=internal"')
+  expect(jobspec).not.toContain('"caddy-tls=internal"')
   expect(normalizedJobspec).toContain('path = "/robots.txt"')
   expect(normalizedJobspec).toContain('interval = "10s"')
   expect(normalizedJobspec).toContain('timeout = "3s"')
