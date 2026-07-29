@@ -735,15 +735,15 @@ def stage(
 @task(
     help={
         "dry_run": "List safe staging checks without contacting services.",
-        "fault_test": "Optional controlled fault: alert or opensearch.",
-        "allow_disruption": "Required explicit opt-in for the opensearch fault.",
+        "write_probes": "Explicitly write synthetic ingestion/correlation probes.",
+        "fault_test": "Optional controlled alert firing/recovery test.",
     },
 )
 def observability(
     context: Context,
     dry_run: bool = False,
+    write_probes: bool = False,
     fault_test: str = "",
-    allow_disruption: bool = False,
 ) -> None:
     """Run the unified staging observability verification harness."""
     infra_dir = _infra_dir()
@@ -752,10 +752,10 @@ def observability(
     command = [sys.executable, str(verifier)]
     if dry_run:
         command.append("--dry-run")
+    if write_probes:
+        command.append("--write-probes")
     if fault_test:
         command.extend(("--fault-test", fault_test))
-    if allow_disruption:
-        command.append("--allow-disruption")
     _run(context, command, infra_dir)
 
 
