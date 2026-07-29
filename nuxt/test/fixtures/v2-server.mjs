@@ -1313,17 +1313,19 @@ const libraryAuthors = {
 function libraryAllAuthor(authorId, nameForIndex, birthYear = null, deathYear = null, popularity = 0) {
   return {
     kind: "author", author_id: authorId, birth_year: birthYear, death_year: deathYear,
-    name_for_index: nameForIndex, popularity
+    name_for_index: nameForIndex, popularity, highlights: []
   }
 }
 
 function libraryAllText({
-  title, shortTitle = title, year, author, titleId, pageName = "1", mediaType = "etext"
+  title, shortTitle = title, year, author, titleId, pageName = "1", mediaType = "etext",
+  highlights = []
 }) {
   return {
     kind: "text", index: mediaType, source_label: "roman", title,
     short_title: shortTitle, imprint_year: year, reader_author_id: author.author_id,
-    title_id: titleId, page_name: pageName, media_type: mediaType, main_author: author
+    title_id: titleId, page_name: pageName, media_type: mediaType, main_author: author,
+    highlights
   }
 }
 
@@ -1497,7 +1499,15 @@ function libraryAllResponse(query) {
   if (query === "Röda rummet") {
     return {
       mode: "all", total_hits: 1,
-      items: [libraryAllText({ title: "Röda rummet", year: "1879", author: libraryAuthors.strindberg, titleId: "RodaRummet" })]
+      items: [libraryAllText({
+        title: "Röda rummet", year: "1879", author: libraryAuthors.strindberg,
+        titleId: "RodaRummet",
+        highlights: [
+          { segments: [{ text: "Röda ", hit: false }, { text: "rummet", hit: true }] },
+          { segments: [{ text: "August ", hit: false }, { text: "Strindberg", hit: true }] },
+          { segments: [{ text: "<script>farligt</script><img src=x>", hit: false }] }
+        ]
+      })]
     }
   }
   if (query.includes("Selma")) {
@@ -1518,7 +1528,7 @@ function libraryAllResponse(query) {
       mode: "all", total_hits: 100,
       items: [
         ...Array.from({ length: 99 }, (_, index) => libraryAllAuthor(`FixtureA${index}`, `Fixture, ${index}`)),
-        { kind: "presentation", source_label: "Kringtexter", title: "sent på jorden (1932–1962): en samling", url: "https://litteraturbanken.se/presentationer/specialomraden/Spj_utg.html", byline: null }
+        { kind: "presentation", source_label: "Kringtexter", title: "sent på jorden (1932–1962): en samling", url: "https://litteraturbanken.se/presentationer/specialomraden/Spj_utg.html", byline: null, highlights: [] }
       ]
     }
   }
@@ -1532,7 +1542,7 @@ function libraryAllResponse(query) {
           year: "1905", author: { author_id: "LongA", full_name: "Lång Titel", surname: "Titel", role: "author", birth_year: null, death_year: null },
           titleId: "LongShorttitle"
         }),
-        { kind: "pdf", source_label: "roman", title: "Redaktörens bok", short_title: "Redaktörens bok", imprint_year: "1906", work_id: "lb-editor", main_author: { author_id: "EditorA", full_name: "Erik Redaktör", surname: "Redaktör", role: "editor", birth_year: null, death_year: null } },
+        { kind: "pdf", source_label: "roman", title: "Redaktörens bok", short_title: "Redaktörens bok", imprint_year: "1906", work_id: "lb-editor", main_author: { author_id: "EditorA", full_name: "Erik Redaktör", surname: "Redaktör", role: "editor", birth_year: null, death_year: null }, highlights: [] },
         libraryAllText({ title: "Illustratörens bok", year: "1907", author: { author_id: "IllustratorA", full_name: "Ida Illustratör", surname: "Illustratör", role: "illustrator", birth_year: null, death_year: null }, titleId: "IllustratorBook", mediaType: "faksimil" }),
         libraryAllText({ title: "Röda rummet", year: "1879", author: libraryAuthors.strindberg, titleId: "RodaRummet" })
       ]
@@ -1543,7 +1553,7 @@ function libraryAllResponse(query) {
     items: [
       libraryAllText({ title: "Röda rummet", year: "1879", author: libraryAuthors.strindberg, titleId: "RodaRummet" }),
       libraryAllAuthor("StrindbergA", "Strindberg, August", 1849, 1912),
-      { kind: "presentation", source_label: "Kringtexter", title: "August Strindberg", url: "/presentationer/forfattare/StrindbergA.html", byline: "Litteraturbanken" }
+      { kind: "presentation", source_label: "Kringtexter", title: "August Strindberg", url: "/presentationer/forfattare/StrindbergA.html", byline: "Litteraturbanken", highlights: [] }
     ]
   }
 }

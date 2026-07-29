@@ -107,6 +107,14 @@ test("SSR renders the default Library slice from typed private options and searc
   expect(document.querySelectorAll("[data-library-result]")).toHaveLength(1)
   expect(document.querySelector('[data-library-result] a[href*="RodaRummet"]')?.textContent?.trim())
     .toBe("Röda rummet")
+  expect(document.querySelectorAll("[data-library-highlight]")).toHaveLength(3)
+  expect(document.querySelector("[data-library-highlight-hit]")?.textContent).toBe("rummet")
+  expect([...document.querySelectorAll("[data-library-highlight-hit]")]
+    .map(node => node.textContent)).toContain("Strindberg")
+  expect(document.querySelector("[data-library-highlight] script")).toBeNull()
+  expect(document.querySelector("[data-library-highlight] img")).toBeNull()
+  expect(document.querySelectorAll("[data-library-highlight]")[2]?.textContent)
+    .toContain("<script>farligt</script><img src=x>")
 
   const ledger = await libraryV2Requests(request)
   expect(ledger.options).toEqual([{

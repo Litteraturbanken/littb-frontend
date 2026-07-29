@@ -99,7 +99,11 @@ describe("typed Library boundary", () => {
           short_title: "Gösta Berling",
           source_label: "E-text",
           imprint_year: "1891",
-          main_author: author
+          main_author: author,
+          highlights: [{ segments: [
+            { text: "Selma ", hit: false },
+            { text: "Lagerlöf", hit: true }
+          ] }]
         },
         {
           kind: "pdf",
@@ -108,7 +112,8 @@ describe("typed Library boundary", () => {
           short_title: null,
           source_label: "PDF",
           imprint_year: null,
-          main_author: author
+          main_author: author,
+          highlights: []
         }
       ]
     } satisfies LibrarySearchResponse
@@ -121,6 +126,34 @@ describe("typed Library boundary", () => {
       authorContribution: "(red.)"
     })
     expect(view.response.data[1].primaryHref).toBe("/txt/lb9999999/lb9999999.pdf")
+    expect(view.response.data[0].highlights).toEqual([{ segments: [
+      { text: "Selma ", hit: false },
+      { text: "Lagerlöf", hit: true }
+    ] }])
+  })
+
+  test("defensively hides zero author lifespan sentinels", () => {
+    const response = {
+      mode: "all",
+      total_hits: 1,
+      items: [{
+        kind: "author",
+        author_id: "UnknownA",
+        name_for_index: "Okänd",
+        popularity: 0,
+        birth_year: 0,
+        death_year: 0,
+        highlights: []
+      }]
+    } satisfies LibrarySearchResponse
+
+    const view = toLibrarySearchView(response)
+    if (view.mode !== "all") throw new Error("expected all view")
+    expect(view.response.data[0]).toMatchObject({
+      yearLabel: "",
+      mobileYearLabel: "",
+      authorBirth: 0
+    })
   })
 
   test("maps download URLs, RouteLocationRaw and spaced role suffix", () => {

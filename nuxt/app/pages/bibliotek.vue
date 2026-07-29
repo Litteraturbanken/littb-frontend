@@ -2372,6 +2372,26 @@ onUnmounted(() => {
                         </template>
                         <template v-else>{{ item.primaryLabel }}</template>
                       </NuxtLink>
+                      <ul
+                        v-if="item.highlights.length"
+                        class="highlight list-none p-0 m-0"
+                      >
+                        <li
+                          v-for="(fragment, fragmentIndex) in item.highlights"
+                          :key="fragmentIndex"
+                          data-library-highlight
+                          class="text-xs relative z-10"
+                        >
+                          {{ "”… " }}<template
+                            v-for="(segment, segmentIndex) in fragment.segments"
+                            :key="segmentIndex"
+                          ><em
+                            v-if="segment.hit"
+                            data-library-highlight-hit
+                            class="hit"
+                          >{{ segment.text }}</em><template v-else>{{ segment.text }}</template></template>{{ " …”" }}
+                        </li>
+                      </ul>
                     </td>
                     <td class="lg:text-right hidden lg:table-cell text-base w-28 whitespace-nowrap">{{ item.yearLabel }}</td>
                     <td class="lg:text-right lg:uppercase lg:text-sm lg:pl-4 order-1 lg:max-w-40">

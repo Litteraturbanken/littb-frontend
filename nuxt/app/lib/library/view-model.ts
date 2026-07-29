@@ -18,6 +18,7 @@ type LatestItem = components["schemas"]["LibraryLatestItem"]
 type LibraryAuthorIds = NonNullable<
   components["schemas"]["LibraryBrowseCountResponse"]["author_ids"]
 >
+export type LibraryHighlightFragment = components["schemas"]["LibraryHighlightFragment"]
 
 export type LibraryResult = {
   index: "etext" | "faksimil" | "pdf" | "etext-part" | "faksimil-part" | "author" | "presentations" | "sol" | "litteraturkartan" | "wordpress"
@@ -36,6 +37,7 @@ export type LibraryResult = {
   authorBirth: number
   fullTitle: string
   authorContribution: "" | "(red.)" | "(ill.)"
+  highlights: LibraryHighlightFragment[]
 }
 
 export type DownloadResult = {
@@ -110,7 +112,10 @@ function roleSuffix(role: LibraryAuthor["role"]): string {
   return label ? ` ${label}` : ""
 }
 
-function baseResult(index: LibraryResult["index"]): LibraryResult {
+function baseResult(
+  index: LibraryResult["index"],
+  highlights: LibraryHighlightFragment[] = []
+): LibraryResult {
   return {
     index,
     sourceLabel: "",
@@ -127,7 +132,8 @@ function baseResult(index: LibraryResult["index"]): LibraryResult {
     authorPopularity: 0,
     authorBirth: 0,
     fullTitle: "",
-    authorContribution: ""
+    authorContribution: "",
+    highlights
   }
 }
 
@@ -135,12 +141,16 @@ function authorHref(authorId: string): string {
   return `/f%C3%B6rfattare/${encodeURIComponent(authorId)}`
 }
 
+function knownYear(value: number | null): string {
+  return typeof value === "number" && value > 0 ? String(value) : ""
+}
+
 function mapAllItem(item: AllItem): LibraryResult {
   switch (item.kind) {
     case "text": {
       const primaryLabel = item.short_title ?? item.title
       return {
-        ...baseResult(item.index),
+        ...baseResult(item.index, item.highlights),
         sourceLabel: item.source_label,
         primaryLabel,
         primaryHref: `${authorHref(item.reader_author_id)}/titlar/${encodeURIComponent(item.title_id)}/sida/${encodeURIComponent(item.page_name)}/${encodeURIComponent(item.media_type)}`,
@@ -155,7 +165,7 @@ function mapAllItem(item: AllItem): LibraryResult {
       const primaryLabel = item.short_title ?? item.title
       const encodedWorkId = encodeURIComponent(item.work_id)
       return {
-        ...baseResult("pdf"),
+        ...baseResult("pdf", item.highlights),
         sourceLabel: item.source_label,
         primaryLabel,
         primaryHref: `/txt/${encodedWorkId}/${encodedWorkId}.pdf`,
@@ -169,11 +179,11 @@ function mapAllItem(item: AllItem): LibraryResult {
     }
     case "author": {
       const [surname = "", ...givenNames] = item.name_for_index.split(",")
-      const birth = item.birth_year === null ? "" : String(item.birth_year)
-      const death = item.death_year === null ? "" : String(item.death_year)
+      const birth = knownYear(item.birth_year)
+      const death = knownYear(item.death_year)
       const years = birth || death ? `${birth}–${death}` : ""
       return {
-        ...baseResult("author"),
+        ...baseResult("author", item.highlights),
         sourceLabel: "Författare",
         primaryLabel: item.name_for_index,
         primaryHref: `${authorHref(item.author_id)}/`,
@@ -187,13 +197,13 @@ function mapAllItem(item: AllItem): LibraryResult {
       }
     }
     case "presentation":
-      return { ...baseResult("presentations"), sourceLabel: item.source_label, primaryLabel: item.title, primaryHref: item.url, secondaryAuthor: item.byline ?? "" }
+      return { ...baseResult("presentations", item.highlights), sourceLabel: item.source_label, primaryLabel: item.title, primaryHref: item.url, secondaryAuthor: item.byline ?? "" }
     case "translator_lexicon":
-      return { ...baseResult("sol"), sourceLabel: item.source_label, primaryLabel: item.title, primaryHref: item.url, secondaryAuthor: item.byline ?? "" }
+      return { ...baseResult("sol", item.highlights), sourceLabel: item.source_label, primaryLabel: item.title, primaryHref: item.url, secondaryAuthor: item.byline ?? "" }
     case "literature_map":
-      return { ...baseResult("litteraturkartan"), sourceLabel: item.source_label, primaryLabel: item.title, primaryHref: item.url, secondaryAuthor: item.byline ?? "" }
+      return { ...baseResult("litteraturkartan", item.highlights), sourceLabel: item.source_label, primaryLabel: item.title, primaryHref: item.url, secondaryAuthor: item.byline ?? "" }
     case "wordpress":
-      return { ...baseResult("wordpress"), sourceLabel: item.source_label, primaryLabel: item.title, primaryHref: item.url, secondaryAuthor: item.byline ?? "" }
+      return { ...baseResult("wordpress", item.highlights), sourceLabel: item.source_label, primaryLabel: item.title, primaryHref: item.url, secondaryAuthor: item.byline ?? "" }
     default:
       return assertNever(item)
   }
