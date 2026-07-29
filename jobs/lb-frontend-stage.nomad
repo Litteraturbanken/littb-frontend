@@ -30,6 +30,11 @@ variable "http_port" {
   default = 3020
 }
 
+variable "observability_hmac_secret_path" {
+  type    = string
+  default = "/etc/nomad/secrets/lb_observability_hmac_secret"
+}
+
 job "lb-frontend-stage" {
   type        = "service"
   datacenters = var.datacenters
@@ -102,6 +107,9 @@ job "lb-frontend-stage" {
         GIT_SHA                     = var.git_sha
         IMAGE_REF                   = var.image
         NUXT_DEPLOYMENT_ENVIRONMENT = "staging"
+        NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT = "stage"
+        NUXT_PUBLIC_OBSERVABILITY_GIT_SHA     = var.git_sha
+        NUXT_OBSERVABILITY_HMAC_SECRET_FILE   = "/secrets/lb_observability_hmac_secret"
         NUXT_API_BASE               = "http://lb-backend-stage.service.consul:5003/v2"
         NUXT_LIBRARY_API_BASE       = "http://lb-backend-stage.service.consul:5003"
         NUXT_CONTENT_BASE           = "https://red.litteraturbanken.se"
@@ -113,6 +121,9 @@ job "lb-frontend-stage" {
         force_pull   = true
         network_mode = "host"
         ports        = ["http"]
+        volumes = [
+          format("%s:/secrets/lb_observability_hmac_secret:ro", var.observability_hmac_secret_path),
+        ]
 
         entrypoint = ["/bin/sh", "-ec"]
         args = [<<-EOT
