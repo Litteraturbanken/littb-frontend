@@ -156,6 +156,28 @@ const nullableAuthor = {
   death_year: null
 } satisfies components["schemas"]["LibraryAuthor"]
 
+const highlightedTextResult = {
+  kind: "text",
+  index: "etext",
+  source_label: "E-text",
+  title: "Röda rummet",
+  short_title: null,
+  imprint_year: "1879",
+  reader_author_id: "StrindbergA",
+  title_id: "RodaRummet",
+  page_name: "1",
+  media_type: "etext",
+  main_author: nullableAuthor,
+  highlights: [{
+    segments: [
+      { text: "August ", hit: false },
+      { text: "Strindberg", hit: true }
+    ]
+  }]
+} satisfies components["schemas"]["LibraryAllTextItem"]
+
+void highlightedTextResult
+
 type _Options422 = Expect<Equal<
   OptionsById["responses"][422]["content"]["application/json"],
   ApiErrorResponse

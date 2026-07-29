@@ -987,6 +987,8 @@ export interface components {
             birth_year: number | null;
             /** Death Year */
             death_year: number | null;
+            /** Highlights */
+            highlights: components["schemas"]["LibraryHighlightFragment"][];
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -1001,6 +1003,8 @@ export interface components {
         LibraryAllExternalItem: {
             /** Byline */
             byline: string | null;
+            /** Highlights */
+            highlights: components["schemas"]["LibraryHighlightFragment"][];
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -1015,6 +1019,8 @@ export interface components {
         };
         /** LibraryAllPdfItem */
         LibraryAllPdfItem: {
+            /** Highlights */
+            highlights: components["schemas"]["LibraryHighlightFragment"][];
             /** Imprint Year */
             imprint_year: string | null;
             /**
@@ -1066,6 +1072,8 @@ export interface components {
         };
         /** LibraryAllTextItem */
         LibraryAllTextItem: {
+            /** Highlights */
+            highlights: components["schemas"]["LibraryHighlightFragment"][];
             /** Imprint Year */
             imprint_year: string | null;
             /**
@@ -1161,7 +1169,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            mode: "works" | "parts";
+            mode: "parts" | "works";
             /** Total */
             total: number | null;
         };
@@ -1311,6 +1319,18 @@ export interface components {
             year_from?: number | null;
             /** Year To */
             year_to?: number | null;
+        };
+        /** LibraryHighlightFragment */
+        LibraryHighlightFragment: {
+            /** Segments */
+            segments: components["schemas"]["LibraryHighlightSegment"][];
+        };
+        /** LibraryHighlightSegment */
+        LibraryHighlightSegment: {
+            /** Hit */
+            hit: boolean;
+            /** Text */
+            text: string;
         };
         /** LibraryLatestGroup */
         LibraryLatestGroup: {
