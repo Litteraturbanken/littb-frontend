@@ -1021,11 +1021,11 @@ function editorRawRepresentations(workId) {
     return [{
       ...structuredClone(readerWorkInfoResponse.data[0]),
       lbworkid: workId,
-      faksimil_sizes: [1, 2, 3],
+      faksimil_sizes: [1, 2, 3, 4],
       mediatype: "faksimil",
       page_count: 3,
       parts: [],
-      width: { size_2: 450, size_3: 625, size_4: 900 },
+      width: { size_2: 450, size_3: 625, size_4: 900, size_5: 1250 },
       mediatypes: [{
         url: "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
       }]

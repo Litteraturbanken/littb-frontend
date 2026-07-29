@@ -124,7 +124,7 @@ async function main() {
   const stamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-")
 
   try {
-    await waitForPage(readerUrl)
+    await waitForPage(new URL("/robots.txt", readerUrl).href)
 
     for (let index = 0; index < options.runs; index += 1) {
       const reportBase = resolve(outputDirectory, `${stamp}-reader-run-${index + 1}`)

@@ -40,7 +40,7 @@ function workContributorText(contributors: ReaderPage["contributors"]): string {
   return `${labels.slice(0, -1).join(", ")} & ${labels.at(-1)}`
 }
 
-export default defineEventHandler(async event => {
+const readerPageHandler = defineEventHandler(async event => {
   setHeader(event, "cache-control", "no-store")
   const author = requiredParam(event, "author")
   const titlePath = requiredParam(event, "title")
@@ -126,19 +126,29 @@ export default defineEventHandler(async event => {
     } satisfies ReaderPage
   }
 
-  const html = issueManagedReaderHtml(
-    (await fetchReaderPageHtml(
+  const [pageHtml, sharedStylesheetCss, workStylesheetCss] = await Promise.all([
+    fetchReaderPageHtml(
       metadata.base,
       metadata.workId,
       currentPage.page_index
-    )).replaceAll("\u00ad", "-")
-  )
+    ),
+    fetchReaderSharedStylesheet(useRuntimeConfig(event).contentBase.replace(/\/$/u, "")),
+    fetchReaderWorkStylesheet(metadata.base, metadata.workId)
+  ])
+  const html = issueManagedReaderHtml(pageHtml.replaceAll("\u00ad", "-"))
 
   return {
     ...commonPage,
     html,
     mediaType: metadata.mediaType,
+    sharedStylesheetCss,
     sharedStylesheetUrl: "/red/css/etext.css",
+    workStylesheetCss,
     workStylesheetUrl: `/txt/css/${encodeURIComponent(metadata.workId)}-etext.css`
   } satisfies ReaderPage
+})
+
+export default defineCachedEventHandler(readerPageHandler, {
+  maxAge: 60 * 60,
+  shouldBypassCache: () => import.meta.dev
 })

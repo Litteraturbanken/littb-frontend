@@ -62,6 +62,25 @@ const visualCases = [
 test.beforeEach(async ({ request }) => resetReader(request))
 test.afterEach(async ({ request }) => resetReader(request))
 
+test("narrow reader keeps the live corridor gap between its logo and facsimile", async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 665, height: 1000 })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+
+  const leftCorridor = page.locator("#leftCorridor")
+  const logo = leftCorridor.locator(".logo_link_monogram")
+  const facsimile = page.locator(".reader_main img.faksimil")
+  await expect(facsimile).toBeVisible()
+  await expect(leftCorridor).toHaveCSS("margin-right", "80px")
+
+  const logoBox = await logo.boundingBox()
+  const facsimileBox = await facsimile.boundingBox()
+  expect(logoBox).not.toBeNull()
+  expect(facsimileBox).not.toBeNull()
+  expect(facsimileBox!.x - (logoBox!.x + logoBox!.width)).toBeGreaterThanOrEqual(40)
+})
+
 for (const visualCase of visualCases) {
   test(`matches the Angular faksimil Reader ${visualCase.name} authority`, async ({
     page,

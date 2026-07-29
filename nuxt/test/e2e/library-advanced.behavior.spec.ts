@@ -55,6 +55,31 @@ async function chooseMultiOptions(
 
 test.beforeEach(async ({ request }) => resetRequests(request))
 
+test("advanced Library placeholders retain the production baseline at each breakpoint", async ({
+  page
+}) => {
+  await page.goto(
+    "/bibliotek?avancerat=1&keywords_aux="
+      + "texttype%3Anovellsamling%3Bnovell,texttype%3Areseskildring",
+    { waitUntil: "networkidle" }
+  )
+  await waitForHydration(page)
+
+  const isNarrow = page.viewportSize()!.width <= 767
+  await expect(page.locator(
+    "[data-library-about-authors] .search-multiselect__main-trigger"
+  )).toHaveCSS("padding-top", isNarrow ? "4px" : "5px")
+  await expect(page.locator(
+    "[data-library-about-authors] .search-multiselect__main-trigger"
+  )).toHaveCSS("padding-bottom", isNarrow ? "6px" : "5px")
+  await expect(page.locator(
+    "[data-library-narrowing] .search-multiselect__input-row"
+  )).toHaveCSS("padding-top", isNarrow ? "5px" : "4px")
+  await expect(page.locator(
+    "[data-library-narrowing] .search-multiselect__input-row"
+  )).toHaveCSS("padding-bottom", isNarrow ? "5px" : "6px")
+})
+
 test("advanced disclosure and controls use push history and restore from the URL", async ({
   page,
   request

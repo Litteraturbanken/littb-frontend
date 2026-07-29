@@ -681,7 +681,9 @@ test("nedladdning selects visible source works and posts the exact chosen export
   await request.delete(`${fixture}/_library_download_requests`)
   await reset(request)
 
-  await page.locator("[data-library-download-mode]").click()
+  const downloadMode = page.locator("[data-library-download-mode]")
+  await downloadMode.focus()
+  await page.keyboard.press("Space")
   await expect(page).toHaveURL(/(?:\?|&)nedladdning=1(?:&|$)/)
   await expect(page.locator('[data-library-tab="works"]')).toHaveAttribute("aria-current", "page")
   await expect(page.locator("[data-library-source-checkbox]")).toHaveCount(3)

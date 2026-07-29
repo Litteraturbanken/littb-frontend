@@ -17,6 +17,8 @@ import { defineComponent, Fragment as VueFragment, h } from "vue"
 
 import DramawebbenShell from "~/components/dramawebben/DramawebbenShell.vue"
 import ReaderSourceInfoDialog from "~/components/reader/ReaderSourceInfoDialog.vue"
+import dramawebbenBackground from "~/assets/img/dramawebben.jpg"
+import dramawebbenSubpageBackground from "~/assets/img/dramawebben_fade.jpg"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import { authorProfilePath } from "~/lib/author-profile"
@@ -573,7 +575,11 @@ useHead(() => ({
   bodyAttrs: {
     class: sourceInfoOpen.value
       ? "focus page-dramaweb drama-dramasubpage ready modal-open"
-      : "focus page-dramaweb drama-dramasubpage ready"
+      : "focus page-dramaweb drama-dramasubpage ready",
+    style: [
+      `--dramawebben-background-image: url('${dramawebbenBackground}')`,
+      `--dramawebben-subpage-background-image: url('${dramawebbenSubpageBackground}')`
+    ].join("; ")
   }
 }))
 </script>

@@ -1,0 +1,35 @@
+/*
+ * Font Awesome 4.4.0 by Dave Gandy — http://fontawesome.io
+ * Font: SIL OFL 1.1; CSS: MIT License.
+ * Keep the existing class API while serving only the modern WOFF2 font.
+ */
+@import "font-awesome/scss/variables";
+@import "font-awesome/scss/mixins";
+
+@font-face {
+  font-family: "FontAwesome";
+  src: url("/assets/fonts/font-awesome/fontawesome-littb.woff2") format("woff2");
+  font-style: normal;
+  font-weight: normal;
+  font-display: block;
+}
+
+@import "font-awesome/scss/core";
+@import "font-awesome/scss/animated";
+
+.fa-angle-double-right::before { content: $fa-var-angle-double-right; }
+.fa-angle-left::before { content: $fa-var-angle-left; }
+.fa-angle-right::before { content: $fa-var-angle-right; }
+.fa-caret-down::before { content: $fa-var-caret-down; }
+.fa-caret-right::before { content: $fa-var-caret-right; }
+.fa-caret-up::before { content: $fa-var-caret-up; }
+.fa-check::before { content: $fa-var-check; }
+.fa-clock-o::before { content: $fa-var-clock-o; }
+.fa-download::before { content: $fa-var-download; }
+.fa-list-ul::before { content: $fa-var-list-ul; }
+.fa-play::before { content: $fa-var-play; }
+.fa-search::before { content: $fa-var-search; }
+.fa-search-minus::before { content: $fa-var-search-minus; }
+.fa-search-plus::before { content: $fa-var-search-plus; }
+.fa-spinner::before { content: $fa-var-spinner; }
+.fa-times::before { content: $fa-var-times; }

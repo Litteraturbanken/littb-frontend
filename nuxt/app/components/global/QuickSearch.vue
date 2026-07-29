@@ -42,6 +42,15 @@ type DeveloperOutput =
   | { kind: "info", value: string }
   | { kind: "ftp", entries: RedFtpEntry[], status: string | null }
 
+const props = withDefaults(defineProps<{
+  initiallyOpen?: boolean
+}>(), {
+  initiallyOpen: false
+})
+const emit = defineEmits<{
+  closed: []
+}>()
+
 const commands: Command[] = [
   { label: "Start", url: "/" },
   { label: "Bibliotek", url: "/bibliotek" },
@@ -61,7 +70,7 @@ const commands: Command[] = [
 ]
 
 const trigger = ref<HTMLAnchorElement | null>(null)
-const isOpen = ref(false)
+const isOpen = ref(props.initiallyOpen)
 const query = ref("")
 const remoteItems = ref<QuickSearchItem[]>([])
 const correction = ref<string | null>(null)
@@ -241,6 +250,7 @@ function close() {
   developerOutput.value = null
   document.body.classList.remove("modal-open")
   void nextTick(() => trigger.value?.focus())
+  emit("closed")
 }
 
 function onGlobalKeydown(event: KeyboardEvent) {
@@ -362,6 +372,9 @@ async function runDeveloperAction(
 }
 
 onMounted(() => window.addEventListener("keydown", onGlobalKeydown))
+onMounted(() => {
+  if (isOpen.value) void nextTick(() => inputElement()?.focus())
+})
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", onGlobalKeydown)
   cancelPendingSearch()
@@ -370,18 +383,18 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <li>
-    <a
-      ref="trigger"
-      role="button"
-      tabindex="0"
-      class="quick-search-trigger"
-      title="Snabbkommando: 's'"
-      @click="open"
-      @keydown.enter.prevent="open"
-      @keydown.space.prevent="open"
-    >Snabbsökning</a>
-    <ClientOnly>
+  <a
+    v-if="!initiallyOpen"
+    ref="trigger"
+    role="button"
+    tabindex="0"
+    class="quick-search-trigger"
+    title="Snabbkommando: 's'"
+    @click="open"
+    @keydown.enter.prevent="open"
+    @keydown.space.prevent="open"
+  >Snabbsökning</a>
+  <ClientOnly>
       <Dialog
       v-if="isOpen"
       :open="isOpen"
@@ -473,12 +486,11 @@ onBeforeUnmount(() => {
               role="status"
             >{{ developerOutput.status }}</p>
             <div class="footer">
-              <span>Gå till <NuxtLink class="sc" to="/bibliotek" @click="close">biblioteket</NuxtLink> om du vill utföra mer avancerade sökningar</span>
+              <span>Gå till <NuxtLink class="sc" to="/bibliotek" no-prefetch @click="close">biblioteket</NuxtLink> om du vill utföra mer avancerade sökningar</span>
             </div>
           </div>
         </DialogPanel>
       </div>
       </Dialog>
-    </ClientOnly>
-  </li>
+  </ClientOnly>
 </template>

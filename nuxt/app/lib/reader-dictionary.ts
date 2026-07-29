@@ -1,11 +1,10 @@
-import { parseHTML } from "linkedom"
-
 import { hasC0OrC1Control, hasEcmaWhitespace } from "#shared/utils/text-safety"
 import type { SanitizedHtml } from "#shared/types/renderable-html"
 import {
   emptyRenderableHtml,
   issueDictionaryArticleHtml
 } from "#shared/utils/renderable-html"
+import { parseHtmlDocument } from "./html-document"
 
 const maximumArticleLength = 200_000
 const maximumWordLength = 100
@@ -22,7 +21,7 @@ function isAllowedTag(tag: string): boolean {
 
 export function sanitizeDictionaryArticle(markup: string): SanitizedHtml<"dictionary-article"> {
   if (!markup || markup.length > maximumArticleLength) return emptyRenderableHtml()
-  const { document } = parseHTML(`<div data-dictionary-root>${markup}</div>`)
+  const document = parseHtmlDocument(`<div data-dictionary-root>${markup}</div>`)
   const root = document.querySelector("[data-dictionary-root]")
   if (!root) return emptyRenderableHtml()
 

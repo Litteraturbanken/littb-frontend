@@ -199,7 +199,8 @@ for (const [resource, failure, status, message] of [
     expect(document.body.className).toBe("focus page-authorInfo site-sla ready")
     expect(document.querySelector(".error")?.textContent?.replace(/\s+/gu, " ").trim())
       .toBe(message)
-    expect(document.querySelector("h1, nav, .page_content")).toBeNull()
+    expect(document.querySelector('nav[aria-label="Huvudnavigation"]')).not.toBeNull()
+    expect(document.querySelector("h1, .page_content")).toBeNull()
     expect(body).not.toMatch(/private-v2|red\/sla|upstream-provider-payload-probe/iu)
   })
 }

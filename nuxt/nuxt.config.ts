@@ -1,3 +1,5 @@
+import { resolve } from "node:path"
+
 const apiProxyTarget = process.env.LBAPI_PROXY_TARGET || "http://127.0.0.1:8000"
 const contentProxyTarget = process.env.LITTB_CONTENT_PROXY_TARGET || "https://red.litteraturbanken.se"
 const litteraturkartanProxyTarget = process.env.LITTERATURKARTAN_PROXY_TARGET || "https://litteraturbanken.se"
@@ -15,19 +17,31 @@ export default defineNuxtConfig({
     }
   },
   devtools: { enabled: false },
+  features: {
+    inlineStyles: true
+  },
+  nitro: {
+    compressPublicAssets: true,
+    publicAssets: [
+      {
+        dir: resolve("app/assets/styles/fonts/601526"),
+        baseURL: "/assets/styles/fonts/601526",
+        maxAge: 31_536_000
+      },
+      {
+        dir: resolve("app/assets/styles/fonts/font-awesome"),
+        baseURL: "/assets/fonts/font-awesome",
+        maxAge: 31_536_000
+      }
+    ]
+  },
   css: [
     "~/assets/styles/bootstrap.scss",
     "~/assets/styles/tailwind.css",
-    "font-awesome/css/font-awesome.css",
-    "vue-multiselect/dist/vue-multiselect.css",
-    "~/assets/styles/styles.scss",
-    "~/assets/styles/nuxt.scss",
-    "~/assets/styles/reader.scss"
+    "~/assets/styles/font-awesome.scss",
+    "~/assets/styles/nuxt.scss"
   ],
   routeRules: {
-    "/red/**": {
-      proxy: `${contentProxyTarget}/red/**`
-    },
     "/txt/**": {
       proxy: `${readerSourceProxyTarget}/txt/**`
     },
@@ -125,6 +139,9 @@ export default defineNuxtConfig({
         { rel: "icon", type: "image/png", sizes: "32x32", href: "/assets/img/favicons/favicon-32x32.png" },
         { rel: "icon", type: "image/png", sizes: "16x16", href: "/assets/img/favicons/favicon-16x16.png" }
       ],
+      noscript: [{
+        innerHTML: '<link rel="stylesheet" href="/assets/styles/fonts/601526/32FBEBA806C948833.css">'
+      }],
       meta: [{ name: "theme-color", content: "#ffffff" }]
     }
   }

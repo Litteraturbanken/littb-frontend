@@ -714,7 +714,8 @@ describe("v2 fixture server operations", () => {
       sizes: [
         { size: 2, width: 450 },
         { size: 3, width: 625 },
-        { size: 4, width: 900 }
+        { size: 4, width: 900 },
+        { size: 5, width: 1250 }
       ],
       public_reader_target: {
         author_id: "SöderbergH",

@@ -103,6 +103,15 @@ describe("Editor Reader bounded source transport", () => {
       })
     })).rejects.toThrow()
   })
+
+  test("rejects a successful non-image facsimile response", async () => {
+    await expect(fetchTimedEditorHead("https://source.test/page.jpeg", {
+      fetcher: async () => new Response(null, {
+        status: 200,
+        headers: { "content-type": "text/html; charset=utf-8" }
+      })
+    })).rejects.toThrow("image response")
+  })
 })
 
 describe("Editor Reader sparse page bounds", () => {

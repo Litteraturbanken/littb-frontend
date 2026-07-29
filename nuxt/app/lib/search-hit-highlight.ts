@@ -1,17 +1,16 @@
-import { parseHTML } from "linkedom"
-
 import type { SanitizedHtml } from "#shared/types/renderable-html"
 import {
   issueEditorEtextHtml,
   issueReaderOcrHtml
 } from "#shared/utils/renderable-html"
+import { parseHtmlDocument } from "./html-document"
 
 function markSimpleContiguousWords(
   html: string,
   fromWordId: string,
   toWordId: string
 ): string | null {
-  const { document } = parseHTML(`<div data-editor-highlight-root>${html}</div>`)
+  const document = parseHtmlDocument(`<div data-editor-highlight-root>${html}</div>`)
   const root = document.querySelector("[data-editor-highlight-root]")
   if (!root) return null
   const spans = Array.from(root.querySelectorAll("span[id]"))
@@ -60,7 +59,7 @@ export function markReaderSearchOcrHtml(
     return html
   }
 
-  const { document } = parseHTML(`<div data-reader-highlight-root>${html}</div>`)
+  const document = parseHtmlDocument(`<div data-reader-highlight-root>${html}</div>`)
   const root = document.querySelector("[data-reader-highlight-root]")
   if (!root) return html
 

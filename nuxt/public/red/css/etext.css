@@ -1,0 +1,294 @@
+/**
+ Stilmallen påverkar hur texten i textfönstret renderas
+
+ $Id: etext.css 349715 2024-10-02 10:28:48Z johan $
+
+*/
+
+@media all {
+
+div.indfirst {
+	text-indent: 1.2em;
+}
+
+div.pindcont {
+	text-indent: 0em;
+}
+
+/* ------------------------------------------------------------------------  */
+/* LYRIK */
+/* ------------------------------------------------------------------------  */
+div.poem {
+	position: relative;
+	margin-left: 1.5em;
+}
+
+div.poem ._lg {
+	position: relative;
+	left: 0em;
+}
+
+._lg {
+	position: relative;
+	left: 1.2em;
+	padding-top: 0.2em;
+}
+
+._lg ._lg {
+	position: relative;
+}
+
+/* ------------------------------------------------------------------------  */
+/* KAPITEL och andra indelningar */
+/* ------------------------------------------------------------------------  */
+div.chapter {
+	position: relative;
+	top: 5%;
+	width: 100%;
+}
+
+div.chaptercont {
+	position: absolute;
+	top: 0em;
+}
+
+/* ------------------------------------------------------------------------  */
+/* TABELLER */
+/* ------------------------------------------------------------------------  */
+
+.etext table {
+	position: static;
+	width: 90%;
+}
+
+.etext td {
+	vertical-align: text-top;
+}
+
+div.contents {
+	position: absolute;
+	left: 0px;
+	top: 10em;
+	width: 100%;
+}
+
+caption {
+	font-size: 130%;
+}
+
+table.contents td {
+	padding: 1em 2em;
+}
+
+td.pagenumber {
+	text-align: right;
+}
+
+/* ------------------------------------------------------------------------  */
+/* FOTNOTER */
+/* ------------------------------------------------------------------------  */
+
+/*
+span._ptr {
+	font-size: 0.8em;
+	vertical-align: super;
+}
+*/
+
+span.notenumber {
+	text-indent : 0;
+	margin-right : 1.2em;
+}
+
+span.notenumber + ._note {
+}
+
+span.notenumber + ._note > div:first-child {
+	display : inline;
+}
+
+span.note {
+	position: relative;
+}
+
+/* -------------------------------------------------------------------------  */
+/* Oplacerat (hittills)                                                       */
+/* -------------------------------------------------------------------------  */
+
+div.separator {
+	padding-top: 2em;
+	padding-bottom: 2em;
+	text-align: center;
+}
+
+.cont {
+  text-align: justify;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Generella stilningar rörande indrag, typsnitts-utseende & -placering       */
+/* -------------------------------------------------------------------------- */
+
+.hang	{
+	padding-left: 1.2em;
+	text-indent: -1.2em;
+}
+
+.ind { padding-left: 1.2em; }
+.ind1 { padding-left: 1.2em; }
+.ind2 { padding-left: 2.4em; }
+.ind3 { padding-left: 3.6em; }
+.ind4 { padding-left: 4.8em; }
+.ind5 { padding-left: 6em; }
+.ind6 { padding-left: 7.2em; }
+.ind7 { padding-left: 8.4em; }
+.ind8 { padding-left: 9.6em; }
+.ind9 { padding-left: 10.8em; }
+.ind10 { padding-left: 12em; }
+.ind11 { padding-left: 13.2em; }
+.ind12 { padding-left: 14.4em; }
+.ind13 { padding-left: 15.6em; }
+.ind14 { padding-left: 16.8em; }
+.ind15 { padding-left: 18em; }
+.ind16 { padding-left: 19.2em; }
+.ind17 { padding-left: 20.4em; }
+.ind18 { padding-left: 21.6em; }
+.ind19 { padding-left: 22.8em; }
+.ind20 { padding-left: 24em; }
+.ind21 { padding-left: 25.2em; }
+.ind22 { padding-left: 26.4em; }
+.ind23 { padding-left: 27.6em; }
+.ind24 { padding-left: 28.8em; }
+
+.lyrikind { padding-left: 1.2em; }
+.lyrikind1 { padding-left: 1.2em; }
+.lyrikind2 { padding-left: 2.4em; }
+.lyrikind3 { padding-left: 3.6em; }
+.lyrikind4 { padding-left: 4.8em; }
+.lyrikind5 { padding-left: 6em; }
+.lyrikind6 { padding-left: 7.2em; }
+.lyrikind7 { padding-left: 8.4em; }
+.lyrikind8 { padding-left: 9.6em; }
+.lyrikind9 { padding-left: 10.8em; }
+.lyrikind10 { padding-left: 12em; }
+.lyrikind11 { padding-left: 13.2em; }
+.lyrikind12 { padding-left: 14.4em; }
+.lyrikind13 { padding-left: 15.6em; }
+.lyrikind14 { padding-left: 16.8em; }
+.lyrikind15 { padding-left: 18em; }
+.lyrikind16 { padding-left: 19.2em; }
+.lyrikind17 { padding-left: 20.4em; }
+.lyrikind18 { padding-left: 21.6em; }
+.lyrikind19 { padding-left: 22.8em; }
+.lyrikind20 { padding-left: 24em; }
+.lyrikind21 { padding-left: 25.2em; }
+.lyrikind22 { padding-left: 26.4em; }
+.lyrikind23 { padding-left: 27.6em; }
+.lyrikind24 { padding-left: 28.8em; }
+
+div.b {
+	font-weight: bolder;
+}
+
+div.i {
+	font-style: italic;
+}
+
+.s {
+	text-decoration: line-through;
+}
+
+.u {
+	text-decoration: underline;
+}
+
+.ca {
+	font-family: "Requiem Text SC A", "Requiem Text SC B";
+}
+
+.sup {
+	vertical-align: super;
+	font-size: smaller;
+	line-height: normal;
+}
+
+.sub {
+	vertical-align: sub;
+	font-size: smaller;
+	line-height: normal;
+}
+
+.big {
+	font-size: larger;
+}
+
+
+.small {
+	font-size: smaller;
+}
+
+.spaced {
+	letter-spacing: 0.2em;
+}
+
+div.decorInit	{
+	font-size: 1.6em;
+	line-height: 1;
+}
+
+span.decorInit	{
+	font-size: 1.6em;
+	line-height: 1;
+}
+
+.sansserif	{
+	font-family: "Verlag A", "Verlag B", sans-serif;
+}
+
+.center {
+	text-align: center;
+}
+
+.inline {
+  display: inline;
+}
+
+.inline div {
+  display: inline;
+}
+
+div.docAuthor {
+	position: absolute;
+	width: 100%;
+	text-align: center;
+}
+
+div.docTitle {
+	position: absolute;
+	top: 5em;
+	width: 100%;
+	text-align: center;
+}
+
+div.docImprint {
+	position: absolute;
+	width: 100%;
+	top: 27em;
+	text-align: center;
+}
+
+div.literal_separator	{ /* behövs för att separator-entiteter inte ska ge radbrytning */
+	display: inline;
+}
+
+div.graphic_separator	{
+	text-align: center;
+}
+
+.upsidedown {
+	-webkit-transform:rotate(-180deg);
+	    -ms-transform:rotate(-180deg);
+	        transform:rotate(-180deg);
+}
+
+}

@@ -17,6 +17,7 @@ import { fetchManagedText } from "../../shared/utils/managed-text"
 import { fetchReaderManifest } from "./work-manifest-client"
 
 export const maximumReaderEtextBytes = 2 * 1024 * 1024
+export const maximumReaderStylesheetBytes = 256 * 1024
 
 export type ReaderSourcePage = WorkManifestPage
 export type ReaderFacsimileSourcePage = WorkManifestFacsimilePage
@@ -250,5 +251,36 @@ export async function fetchReaderPageHtml(
     })
   } catch {
     throw createError({ statusCode: 502, statusMessage: "Reader source unavailable" })
+  }
+}
+
+export async function fetchReaderWorkStylesheet(
+  base: string,
+  workId: string
+): Promise<string | null> {
+  const url = `${base}/txt/css/${encodeURIComponent(workId)}-etext.css`
+  try {
+    return await fetchManagedText(url, {
+      authorityOrigin: new URL(base).origin,
+      allowedPathPrefixes: ["/txt/css/"],
+      allowedContentTypes: ["text/css"],
+      maximumBytes: maximumReaderStylesheetBytes
+    })
+  } catch {
+    return null
+  }
+}
+
+export async function fetchReaderSharedStylesheet(base: string): Promise<string | null> {
+  const url = `${base}/red/css/etext.css`
+  try {
+    return await fetchManagedText(url, {
+      authorityOrigin: new URL(base).origin,
+      allowedPathPrefixes: ["/red/css/"],
+      allowedContentTypes: ["text/css"],
+      maximumBytes: maximumReaderStylesheetBytes
+    })
+  } catch {
+    return null
   }
 }

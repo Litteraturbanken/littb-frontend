@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { parseHTML } from "linkedom"
 import type { LocationQueryRaw, RouteLocationRaw } from "vue-router"
 
 import type {
@@ -14,10 +13,10 @@ import {
 } from "#shared/utils/renderable-html"
 import { readerManifestPartAuthorLabel } from "#shared/utils/reader-author"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
-import dramawebbenLogo from "~/assets/img/dramawebben_svart.svg"
 import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
+import { parseHtmlDocument } from "~/lib/html-document"
 import { usefulLibraryTooltipText } from "~/lib/library-tooltip"
 import { markReaderSearchOcrHtml } from "~/lib/search-hit-highlight"
 import { toBoundedDeveloperValue } from "~/lib/quick-search-developer"
@@ -50,6 +49,7 @@ import {
 } from "~/lib/reader-routes"
 
 definePageMeta({
+  layout: "reader",
   key: route => [route.params.author, route.params.title, route.params.mediatype].join(":"),
   validate: route => {
     const values = [
@@ -424,7 +424,7 @@ function markReaderHtml(
   if (hit.page_name !== pageName || hit.page_index !== pageIndex) return html
 
   return transformManagedReaderHtml(html, source => {
-    const { document } = parseHTML(`<div data-reader-highlight-root>${source}</div>`)
+    const document = parseHtmlDocument(`<div data-reader-highlight-root>${source}</div>`)
     const root = document.querySelector("[data-reader-highlight-root]")
     if (!root) return source
 
@@ -1606,9 +1606,28 @@ useHead(() => ({
     : [],
   link: etextReader.value
     ? [
-        { rel: "stylesheet", href: etextReader.value.sharedStylesheetUrl },
-        { rel: "stylesheet", href: etextReader.value.workStylesheetUrl }
+        ...(etextReader.value.sharedStylesheetCss === null
+          ? [{ rel: "stylesheet", href: etextReader.value.sharedStylesheetUrl }]
+          : []),
+        ...(etextReader.value.workStylesheetCss === null
+          ? [{ rel: "stylesheet", href: etextReader.value.workStylesheetUrl }]
+          : [])
       ]
+    : [],
+  style: etextReader.value
+    ? [...(etextReader.value.sharedStylesheetCss
+        ? [{
+            key: "reader-shared-styles",
+            textContent: etextReader.value.sharedStylesheetCss,
+            "data-reader-shared-styles": ""
+          }]
+        : []), ...(etextReader.value.workStylesheetCss
+        ? [{
+            key: "reader-work-styles",
+            textContent: etextReader.value.workStylesheetCss,
+            "data-reader-work-styles": ""
+          }]
+        : [])]
     : []
 }))
 
@@ -2280,16 +2299,15 @@ watch(readerRequestIdentity, () => {
                   <a class="disabled" aria-disabled="true" tabindex="-1">Sök i verket</a>
                 </li>
                 <li>
-                  <NuxtLink :to="{ path: '/s%C3%B6k', query: { avancerad: null, forfattare: reader.author.author_id } }">
+                  <NuxtLink
+                    :to="{ path: '/s%C3%B6k', query: { avancerad: null, forfattare: reader.author.author_id } }"
+                    no-prefetch
+                  >
                     Sök i författarens texter
                   </NuxtLink>
                 </li>
                 <li v-if="reader.hasDramawebben">
-                  <NuxtLink class="inline-block" to="/dramawebben"><img
-                    class="dw_logo"
-                    :src="dramawebbenLogo"
-                    alt="Dramawebben logotyp"
-                  ></NuxtLink>
+                  <LazyReaderDramawebbenLink />
                 </li>
                 <li v-if="reader.hasNyaVagar" class="-ml-px">
                   <a
@@ -2410,11 +2428,10 @@ watch(readerRequestIdentity, () => {
               :class="{ disabled: !reader.searchable || !etextReader }"
             >Sök i verket</span>
             <!-- Progressive-enhancement fallback: native before hydration. -->
-            <a v-if="reader.hasDramawebben" href="/dramawebben"><img
-              class="dw_logo"
-              :src="dramawebbenLogo"
-              alt="Dramawebben logotyp"
-            ></a>
+            <LazyReaderDramawebbenLink
+              v-if="reader.hasDramawebben"
+              :client-navigation="false"
+            />
             <a
               v-if="reader.hasNyaVagar"
               class="reader-nya-vagar"
@@ -2467,3 +2484,7 @@ watch(readerRequestIdentity, () => {
     >Läsarsidan kunde inte hämtas.</p>
   </div>
 </template>
+
+<style lang="scss">
+@use "~/assets/styles/reader";
+</style>

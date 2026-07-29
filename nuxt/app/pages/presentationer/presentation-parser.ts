@@ -1,5 +1,3 @@
-import { DOMParser } from "linkedom"
-
 import type {
   ManagedAssetHtml,
   ManagedStyleText,

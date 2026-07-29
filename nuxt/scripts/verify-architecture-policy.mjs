@@ -9,6 +9,7 @@ const root = resolve(process.argv[2] ?? process.cwd())
 const sourceExtensions = new Set([".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx", ".vue"])
 const capabilityPath = "shared/utils/renderable-html.ts"
 const rendererPath = "app/components/global/RenderableHtmlContent.vue"
+const htmlDocumentPath = "app/lib/html-document.ts"
 const contractAllowlist = new Set([
   "test/nuxt/author-works-contract.ts",
   "test/nuxt/reader-source-info-contract.ts",
@@ -546,6 +547,24 @@ function isTrustedLinkedomBinding(localName, importedName, unit, semantic, atNod
   return binding?.importedName === importedName && binding.moduleSpecifier === "linkedom"
 }
 
+function isTrustedDomParserConstructor(localName, unit, semantic, atNode) {
+  if (isTrustedLinkedomBinding(localName, "DOMParser", unit, semantic, atNode)) return true
+  return localName === "DOMParser" && !resolveDeclaration(localName, atNode, semantic)
+}
+
+function isTrustedHtmlDocumentBinding(localName, unit, semantic, atNode) {
+  const binding = importedBinding(localName, unit, semantic, atNode)
+  if (binding?.importedName !== "parseHtmlDocument") return false
+  if (binding.moduleSpecifier === "~/lib/html-document") return true
+  if (!binding.moduleSpecifier.startsWith(".")) return false
+  const importedPath = resolve(
+    "/",
+    dirname(unit.record.relativePath),
+    binding.moduleSpecifier
+  ).slice(1).replace(/\.(?:[cm]?[jt]sx?)$/u, "")
+  return importedPath === htmlDocumentPath.replace(/\.ts$/u, "")
+}
+
 function isTrustedCapabilityIssuer(localName, unit, semantic, atNode) {
   const binding = importedBinding(localName, unit, semantic, atNode)
   if (!binding || !capabilityIssuers.has(binding.importedName)) return null
@@ -731,15 +750,23 @@ function expressionLineages(node, unit, semantic, atNode = node, seen = new Set(
       )) {
       return new Set(["parse-result"])
     }
+    if (ts.isIdentifier(expression.expression)
+      && isTrustedHtmlDocumentBinding(
+        expression.expression.text,
+        unit,
+        semantic,
+        expression.expression
+      )) {
+      return new Set(["document"])
+    }
     if (ts.isPropertyAccessExpression(expression.expression)) {
       const method = expression.expression.name.text
       const receiver = expression.expression.expression
       if (method === "parseFromString"
         && ts.isNewExpression(unwrapExpression(receiver))
         && ts.isIdentifier(unwrapExpression(receiver).expression)
-        && isTrustedLinkedomBinding(
+        && isTrustedDomParserConstructor(
           unwrapExpression(receiver).expression.text,
-          "DOMParser",
           unit,
           semantic,
           unwrapExpression(receiver).expression

@@ -67,7 +67,9 @@ export interface ReaderPageBase {
 export interface ReaderEtextPage extends ReaderPageBase {
   html: ManagedAssetHtml<"reader-etext">
   mediaType: "etext"
+  sharedStylesheetCss: string | null
   sharedStylesheetUrl: string
+  workStylesheetCss: string | null
   workStylesheetUrl: string
 }
 

@@ -127,6 +127,13 @@ export async function fetchTimedEditorHead(
       signal: controller.signal
     })
     if (!response.ok) throw new Error("Invalid Editor source response")
+    const contentType = response.headers.get("content-type")
+      ?.split(";", 1)[0]
+      ?.trim()
+      .toLowerCase()
+    if (contentType !== "image/jpeg") {
+      throw new Error("Invalid Editor image response")
+    }
   } finally {
     clearTimeout(timer)
   }

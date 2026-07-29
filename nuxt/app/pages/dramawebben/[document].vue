@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import DramawebbenShell from "~/components/dramawebben/DramawebbenShell.vue"
+import dramawebbenBackground from "~/assets/img/dramawebben.jpg"
+import dramawebbenSubpageBackground from "~/assets/img/dramawebben_fade.jpg"
 import type {
   DramawebbenDocumentErrorCode,
   DramawebbenDocumentKind,
@@ -128,7 +130,13 @@ useSeoMeta({
   description: "På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."
 })
 useHead({
-  bodyAttrs: { class: "focus page-dramaweb drama-dramasubpage ready" }
+  bodyAttrs: {
+    class: "focus page-dramaweb drama-dramasubpage ready",
+    style: [
+      `--dramawebben-background-image: url('${dramawebbenBackground}')`,
+      `--dramawebben-subpage-background-image: url('${dramawebbenSubpageBackground}')`
+    ].join("; ")
+  }
 })
 </script>
 

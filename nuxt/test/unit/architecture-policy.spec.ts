@@ -307,6 +307,124 @@ describe("architecture policy verifier", () => {
     expect(result.stdout).toMatch(/^Architecture policy passed: audited \d+ files\.\n$/u)
   })
 
+  test("accepts the exact imported HTML document helper as detached provenance", () => {
+    const root = createTree()
+    const path = "app/lib/author-profile.ts"
+    writeSource(
+      root,
+      path,
+      reviewedDomSources[path]!
+        .replace(
+          'import { parseHTML } from "linkedom"',
+          'import { parseHtmlDocument } from "./html-document"'
+        )
+        .replace(
+          'const { document } = parseHTML("<!doctype html><html><body></body></html>")',
+          'const document = parseHtmlDocument("<!doctype html><html><body></body></html>")'
+        )
+    )
+    writeSource(
+      root,
+      "app/lib/html-document.ts",
+      [
+        "export function parseHtmlDocument(markup: string): Document {",
+        '  return new DOMParser().parseFromString(markup, "text/html")',
+        "}"
+      ].join("\n")
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("accepts the Nuxt alias for the exact HTML document helper", () => {
+    const root = createTree()
+    const path = "app/lib/author-profile.ts"
+    writeSource(
+      root,
+      path,
+      reviewedDomSources[path]!
+        .replace(
+          'import { parseHTML } from "linkedom"',
+          'import { parseHtmlDocument } from "~/lib/html-document"'
+        )
+        .replace(
+          'const { document } = parseHTML("<!doctype html><html><body></body></html>")',
+          'const document = parseHtmlDocument("<!doctype html><html><body></body></html>")'
+        )
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("rejects an identically named HTML document helper from another module", () => {
+    const root = createTree()
+    const path = "app/lib/author-profile.ts"
+    writeSource(
+      root,
+      path,
+      reviewedDomSources[path]!
+        .replace(
+          'import { parseHTML } from "linkedom"',
+          'import { parseHtmlDocument } from "./unsafe-html-document"'
+        )
+        .replace(
+          'const { document } = parseHTML("<!doctype html><html><body></body></html>")',
+          'const document = parseHtmlDocument("<!doctype html><html><body></body></html>")'
+        )
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}: reviewed detached DOM provenance changed`)
+  })
+
+  test("accepts the unshadowed platform DOMParser as detached provenance", () => {
+    const root = createTree()
+    const path = "app/pages/presentationer/presentation-parser.ts"
+    writeSource(
+      root,
+      path,
+      reviewedDomSources[path]!.replace('import { DOMParser } from "linkedom"\n', "")
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("rejects a local DOMParser shadow at a reviewed detached-DOM boundary", () => {
+    const root = createTree()
+    const path = "app/pages/presentationer/presentation-parser.ts"
+    writeSource(
+      root,
+      path,
+      reviewedDomSources[path]!
+        .replace('import { DOMParser } from "linkedom"\n', "")
+        .replace(
+          "export function parsePresentationDocument(source: string) {",
+          [
+            "export function parsePresentationDocument(source: string) {",
+            "  const DOMParser = class {",
+            "    parseFromString() { return globalThis.document }",
+            "  }"
+          ].join("\n")
+        )
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}: reviewed detached DOM provenance changed`)
+  })
+
   test.each([
     ["app/lib/unsafe.ts", 'fetch("/api/get_work_info")'],
     ["server/utils/unsafe.ts", 'fetch("/get_work_info")'],

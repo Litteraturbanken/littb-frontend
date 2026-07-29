@@ -2144,6 +2144,9 @@ function textSearchCountResponse(body) {
   if (body.query === "overflow") {
     return { query: body.query, total_documents: 64, total_highlights: 512 }
   }
+  if (body.facet_author_id) {
+    return { query: body.query, total_documents: 1, total_highlights: 1 }
+  }
   return { query: body.query, total_documents: 2, total_highlights: 3 }
 }
 

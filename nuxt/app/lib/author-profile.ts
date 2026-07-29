@@ -1,11 +1,10 @@
-import { parseHTML } from "linkedom"
-
 import { hasC0OrC1Control } from "#shared/utils/text-safety"
 import type { SanitizedHtml } from "#shared/types/renderable-html"
 import {
   emptyRenderableHtml,
   issueAuthorProfileHtml
 } from "#shared/utils/renderable-html"
+import { parseHtmlDocument } from "./html-document"
 import type { components } from "./api/generated/lbapi"
 
 type AuthorProfile = components["schemas"]["AuthorProfile"]
@@ -255,7 +254,7 @@ export function sanitizeAuthorHtml(
 ): SanitizedHtml<"author-profile"> {
   if (!value) return emptyRenderableHtml()
 
-  const { document } = parseHTML("<!doctype html><html><body></body></html>")
+  const document = parseHtmlDocument("<!doctype html><html><body></body></html>")
   const container = document.createElement("div")
   container.innerHTML = value
   for (const child of [...container.childNodes]) sanitizeNode(child)

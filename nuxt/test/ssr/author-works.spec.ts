@@ -272,7 +272,7 @@ test("SSR accepts an RFC3986 author route once without double-encoding links", a
 
   expect(document.title).toBe("Pat O'Neil (A), Tillgängliga verk | Litteraturbanken")
   expect(document.querySelector("h1")?.textContent?.trim()).toBe("Pat O'Neil (A)")
-  expect(hrefs(document, "nav a")).toEqual([
+  expect(hrefs(document, 'nav[aria-label="Författarsidor"] a')).toEqual([
     "/f%C3%B6rfattare/O%27Neil%28A",
     "/f%C3%B6rfattare/O%27Neil%28A/titlar",
     "/f%C3%B6rfattare/O%27Neil%28A/dramawebben",
@@ -293,7 +293,8 @@ test("SSR returns a local non-leaking 404 for an unknown author", async ({ reque
 
   expect(document.querySelector(".error")).not.toBeNull()
   expect(document.querySelector(".error code")?.textContent).toBe("Okänd")
-  expect(document.querySelector("h1, nav, .page_content")).toBeNull()
+  expect(document.querySelector('nav[aria-label="Huvudnavigation"]')).not.toBeNull()
+  expect(document.querySelector("h1, .page_content")).toBeNull()
   expect(html).not.toContain("Resource not found")
   expect(html).not.toContain('"code":"not_found"')
   expect(html).not.toContain("/semer")
@@ -311,7 +312,8 @@ test("SSR maps an Author Works provider failure to a non-leaking 503", async ({ 
   const { document } = parseHTML(html)
 
   expect(document.querySelector(".error")).not.toBeNull()
-  expect(document.querySelector("h1, nav, .page_content")).toBeNull()
+  expect(document.querySelector('nav[aria-label="Huvudnavigation"]')).not.toBeNull()
+  expect(document.querySelector("h1, .page_content")).toBeNull()
   expect(html).not.toContain("backend_unavailable")
   expect(html).not.toContain("Search backend unavailable")
   expect(html).not.toContain("/semer")
@@ -325,7 +327,8 @@ test("SSR rejects malformed Author Works before serializing provider data", asyn
   const { document } = parseHTML(html)
 
   expect(document.querySelector(".error")).not.toBeNull()
-  expect(document.querySelector("h1, nav, .page_content")).toBeNull()
+  expect(document.querySelector('nav[aria-label="Huvudnavigation"]')).not.toBeNull()
+  expect(document.querySelector("h1, .page_content")).toBeNull()
   expect(html).not.toContain('"full_name":42')
   expect(html).not.toContain('\\"full_name\\":42')
   expect(html).not.toContain("Författare utan tillgängliga verk")
@@ -342,7 +345,8 @@ test("SSR rejects a structurally valid response for the wrong author identity", 
   const { document } = parseHTML(html)
 
   expect(document.querySelector(".error")).not.toBeNull()
-  expect(document.querySelector("h1, nav, .page_content")).toBeNull()
+  expect(document.querySelector('nav[aria-label="Huvudnavigation"]')).not.toBeNull()
+  expect(document.querySelector("h1, .page_content")).toBeNull()
   expect(html).not.toContain("August Strindberg")
   expect(html).not.toContain("Röda rummet")
   expect(html).not.toContain('\\"author_id\\":\\"StrindbergA\\"')

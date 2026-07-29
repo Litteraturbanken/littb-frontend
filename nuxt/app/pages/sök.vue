@@ -371,6 +371,47 @@ watch([primaryData, primaryIdentity], ([candidate, identity]) => {
 const results = computed(() => displayPrimary.value?.status === 200
   ? displayPrimary.value.results
   : null)
+const navigatorIdentity = computed(() => {
+  if (!state.value.phrase) return "empty"
+  const request = buildTextSearchResultsRequest({
+    ...state.value,
+    page: 1,
+    facetAuthorId: null
+  })
+  return textSearchResultsRequestIdentity(request)
+})
+const navigatorSnapshot = shallowRef<Readonly<{
+  identity: string
+  facets: readonly SearchFacetView[]
+  totalWorks: number
+}> | null>(null)
+watch(
+  [displayPrimary, primaryIdentity, navigatorIdentity, () => state.value.facetAuthorId],
+  ([candidate, identity, stableIdentity, facetAuthorId]) => {
+    if (
+      facetAuthorId !== null
+      || candidate?.identity !== identity
+      || candidate.status !== 200
+      || candidate.results === null
+    ) return
+    navigatorSnapshot.value = {
+      identity: stableIdentity,
+      facets: candidate.results.facets,
+      totalWorks: candidate.results.totalWorks
+    }
+  },
+  { immediate: true, flush: "sync" }
+)
+const navigatorFacets = computed(() => (
+  navigatorSnapshot.value?.identity === navigatorIdentity.value
+    ? navigatorSnapshot.value.facets
+    : results.value?.facets ?? []
+))
+const mainSearchTotalWorks = computed(() => (
+  navigatorSnapshot.value?.identity === navigatorIdentity.value
+    ? navigatorSnapshot.value.totalWorks
+    : results.value?.totalWorks ?? 0
+))
 const currentPrimaryFacets = computed(() => (
   displayPrimary.value?.identity === primaryIdentity.value
     ? displayPrimary.value.results?.facets ?? []
@@ -385,14 +426,20 @@ const countCache = useState<Record<string, CountView>>(
   () => ({})
 )
 const countIdentity = computed(() => state.value.phrase
-  ? textSearchCountRequestIdentity(buildTextSearchCountRequest(state.value))
+  ? textSearchCountRequestIdentity(buildTextSearchCountRequest({
+      ...state.value,
+      facetAuthorId: null
+    }))
   : "empty")
 const countInFlight = new Map<string, AbortController>()
 let countVersion = 0
 let countController: AbortController | null = null
 
 async function loadCount() {
-  const requestedState = state.value
+  const requestedState = {
+    ...state.value,
+    facetAuthorId: null
+  }
   if (!requestedState.phrase) return
   const identity = countIdentity.value
   if (Object.hasOwn(countCache.value, identity) || countInFlight.has(identity)) return
@@ -1002,11 +1049,11 @@ const resultRows = computed<readonly ResultRowView[]>(() => {
   return rows
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil((results.value?.totalWorks ?? 0) / 30)))
-const displayedTotalPages = computed(() => Math.ceil((results.value?.totalWorks ?? 0) / 30))
+const totalPages = computed(() => Math.max(1, Math.ceil(mainSearchTotalWorks.value / 30)))
+const displayedTotalPages = computed(() => Math.ceil(mainSearchTotalWorks.value / 30))
 const firstVisibleWork = computed(() => (state.value.page - 1) * 30 + 1)
-const lastVisibleWork = computed(() => results.value?.totalWorks
-  ? Math.min(state.value.page * 30, results.value.totalWorks)
+const lastVisibleWork = computed(() => mainSearchTotalWorks.value
+  ? Math.min(state.value.page * 30, mainSearchTotalWorks.value)
   : "")
 
 function goToPage(page: number) {
@@ -1546,7 +1593,7 @@ v-for="item in [
           {{ count?.documents ?? results?.totalWorks ?? 0 }}, sida {{ state.page }} av
           {{ displayedTotalPages }}.
 
-          <ul v-if="(results?.totalWorks ?? 0) > 1" class="ctrl">
+          <ul v-if="mainSearchTotalWorks > 1" class="ctrl">
             <li class="arrows">
               <button
                 type="button"
@@ -1602,7 +1649,7 @@ v-for="item in [
           </ul>
         </div>
       </div>
-      <ul v-if="results?.works.length" class="hidden md:block navigator">
+      <ul v-if="results?.works.length" class="hidden sm:block navigator">
         <li>
           <a
             role="button"
@@ -1613,7 +1660,7 @@ v-for="item in [
             @keydown.space.prevent="setFacet(null)"
           >Visa alla</a>
         </li>
-        <li v-for="facet in results.facets" :key="facet.key">
+        <li v-for="facet in navigatorFacets" :key="facet.key">
           <a
             role="button"
             tabindex="0"

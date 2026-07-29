@@ -1,4 +1,4 @@
-import { validatePresentationSegments } from "../../app/pages/presentationer/presentation-parser"
+import { validatePresentationSegments } from "../../app/lib/presentation-routes"
 
 const folders = {
   s: "specialomraden",

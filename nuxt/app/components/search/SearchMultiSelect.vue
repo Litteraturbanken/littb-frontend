@@ -25,6 +25,10 @@ type VueMultiselectOptionGroup = Readonly<{
   options: readonly VueMultiselectOption[]
 }>
 
+type ToggleableMultiselect = Readonly<{
+  toggle: () => void
+}>
+
 const props = withDefaults(defineProps<{
   modelValue: readonly string[]
   options: readonly SearchMultiSelectOption[]
@@ -32,6 +36,7 @@ const props = withDefaults(defineProps<{
   placeholder: string
   accessibleName?: string
   searchable?: boolean
+  internalSearch?: boolean
   loading?: boolean
   spaceAfterRemove?: boolean
   persistentInputRow?: boolean
@@ -39,6 +44,7 @@ const props = withDefaults(defineProps<{
   optionGroups: () => [],
   accessibleName: undefined,
   searchable: false,
+  internalSearch: false,
   loading: false,
   spaceAfterRemove: true,
   persistentInputRow: false
@@ -50,6 +56,7 @@ const emit = defineEmits<{
 }>()
 
 const multiselect = ref<InstanceType<typeof VueMultiselect> | null>(null)
+const isOpen = ref(false)
 const controlName = computed(() => props.accessibleName ?? props.placeholder)
 const flatOptions = computed(() => props.optionGroups.length > 0
   ? props.optionGroups.flatMap(group => group.options)
@@ -82,15 +89,16 @@ function update(value: readonly VueMultiselectOption[] | null) {
   emit("update:modelValue", [...known, ...unknown])
 }
 
-function openOptions(event: MouseEvent) {
-  const target = event.target
-  if (!(target instanceof HTMLElement) || target.closest("button, input")) return
-  multiselect.value?.activate()
+function toggleOptions() {
+  const toggleable = multiselect.value as unknown as ToggleableMultiselect | null
+  toggleable?.toggle()
 }
 
 onMounted(() => {
-  const search = multiselect.value?.$el.querySelector("input.multiselect__input")
-  search?.classList.add("select2-search__field")
+  const search = multiselect.value?.$el.querySelector(
+    "input.multiselect__input:not(.search-multiselect__input-row)"
+  )
+  search?.classList.add("select2-search__field", "search-multiselect__native-search")
   search?.setAttribute("aria-label", controlName.value)
 })
 </script>
@@ -117,7 +125,7 @@ onMounted(() => {
       :group-select="false"
       :placeholder="placeholder"
       :searchable="searchable"
-      :internal-search="false"
+      :internal-search="internalSearch"
       :loading="loading"
       :multiple="true"
       track-by="value"
@@ -126,11 +134,31 @@ onMounted(() => {
       :hide-selected="false"
       :show-labels="false"
       :allow-empty="true"
-      @mousedown="openOptions"
       @update:model-value="update"
       @search-change="emit('query', $event)"
+      @open="isOpen = true"
+      @close="isOpen = false"
     >
       <template #caret="{ toggle }">
+        <input
+          v-if="selectedOptions.length === 0 && searchable && !isOpen"
+          class="multiselect__input search-multiselect__input-row search-multiselect__main-trigger"
+          type="search"
+          role="textbox"
+          :placeholder="placeholder"
+          readonly
+          :tabindex="searchable && !internalSearch ? -1 : undefined"
+          :aria-hidden="searchable && !internalSearch ? 'true' : undefined"
+          @mousedown.prevent.stop
+          @click.prevent.stop="toggle"
+        >
+        <span
+          v-else-if="selectedOptions.length === 0 && !searchable"
+          class="multiselect__input search-multiselect__input-row search-multiselect__main-trigger"
+          aria-hidden="true"
+          @mousedown.prevent.stop
+          @click.prevent.stop="toggle"
+        >{{ placeholder }}</span>
         <button
           type="button"
           class="select2-selection__arrow multiselect__select"
@@ -143,7 +171,23 @@ onMounted(() => {
       </template>
 
       <template #selection="{ values, remove }">
-        <div v-if="values.length" class="multiselect__tags-wrap">
+        <input
+          v-if="values.length && persistentInputRow && (!searchable || !isOpen)"
+          class="multiselect__input search-multiselect__input-row"
+          type="search"
+          :placeholder="placeholder"
+          readonly
+          tabindex="-1"
+          aria-hidden="true"
+          @mousedown.prevent.stop
+          @click.prevent.stop="toggleOptions"
+        >
+        <div
+          v-if="values.length"
+          class="multiselect__tags-wrap"
+          @mousedown.prevent.stop
+          @click.prevent.stop="toggleOptions"
+        >
           <span
             v-for="option in values"
             :key="option.value"
@@ -159,15 +203,6 @@ onMounted(() => {
             >{{ "×" }}</button>{{ spaceAfterRemove ? " " : "" }}{{ selectedLabel(option) }}
           </span>
         </div>
-        <input
-          v-if="persistentInputRow && !searchable"
-          class="multiselect__input search-multiselect__input-row"
-          type="search"
-          :placeholder="placeholder"
-          readonly
-          tabindex="-1"
-          aria-hidden="true"
-        >
       </template>
 
       <template #option="{ option }">
@@ -192,3 +227,5 @@ onMounted(() => {
     </VueMultiselect>
   </span>
 </template>
+
+<style src="vue-multiselect/dist/vue-multiselect.css"></style>

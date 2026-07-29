@@ -10,6 +10,14 @@ const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 const libraryStateBaselineManifest = {
   "library-advanced-desktop.png": "d60838f909cd640f394edbfb84a66128e7fea89b2dd6fd1d2a1fe97979128768",
   "library-advanced-mobile.png": "74ebe521951d1741038e5b350a32414dcf3d17405cd8cc662275298b4a6f6f51",
+  "library-advanced-selected-controls-desktop.png": "aab6a0814bace9cbd91caa926c188e11ebe5d2c171f49c5628231ddce220cd72",
+  "library-advanced-selected-controls-mobile.png": "cf28926f511754316ea0d9527451b196447ce7398d14cfb05465a61422e397e7",
+  "library-gender-filter-desktop.png": "b608ee8b8732815d05cae9a59b8563303c1f563be75f53cd330f997ccd3cd746",
+  "library-keywords-dropdown-open-desktop.png": "edf418ed8a8a30ca9395706dfdfba806dce558fafc1d519491d32d1ddfb8e08b",
+  "library-narrowing-input-desktop.png": "253e4e90490e53674c19ad93e2d3644d710225c2a589174cb18eb9d319b1cdfe",
+  "library-download-mode-control-desktop.png": "40d1328ea54b7c8b0d8ceb57ac0d09804b0593ceeacc9fe16fc47859fb2cc789",
+  "library-about-author-input-desktop.png": "4433893fe7dbe4317ce28232feb87aa1b6a25b8d27767c26189f131db1265619",
+  "library-about-author-selected-desktop.png": "545a2a517da5b2e8c26da3492abf58cbd63c20dc020b3f9389efcd27429b2860",
   "library-download-desktop.png": "15b446a0cb02e00f38db8c588e84c479569ee4368aceb084babb26c642bf6b26",
   "library-download-mobile.png": "803bb2bde7462065e766f7c4ccc14bd80adec3b8af5a8ddf677e3cdabe14f2d7"
 } as const
@@ -316,12 +324,15 @@ for (const visualCase of [
     const multiselects = page.locator("[data-library-advanced-panel] .multiselect")
     await expect(multiselects).toHaveCount(5)
     for (const multiselect of await multiselects.all()) {
-      await expect(multiselect).toHaveCSS("background-color", "rgb(255, 255, 255)")
-      await expect(multiselect).toHaveCSS("border-top-width", "1px")
-      await expect(multiselect).toHaveCSS("border-top-color", "rgb(211, 211, 211)")
+      await expect(multiselect).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
+      await expect(multiselect).toHaveCSS("border-top-width", "0px")
       await expect(multiselect).toHaveCSS("font-size", "12.8px")
       await expect(multiselect).toHaveCSS("font-family", /Requiem Text SC/)
       await expect(multiselect).toHaveCSS("margin-top", "0px")
+      const visibleField = multiselect.locator(".search-multiselect__input-row")
+      await expect(visibleField).toHaveCSS("border-top-width", "1px")
+      await expect(visibleField).toHaveCSS("border-top-color", "rgb(153, 153, 153)")
+      await expect(visibleField).toHaveCSS("font-size", "16px")
     }
     const assertFullPageAuthority = async () => {
       await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
@@ -352,8 +363,8 @@ for (const visualCase of [
       await expect(group).toHaveCSS("font-weight", "400")
       const roman = keywords.getByRole("option", { name: "Romaner", exact: true })
         .locator(".multiselect__option")
-      await expect(roman).toHaveCSS("padding", "6px")
-      await expect(roman).toHaveCSS("min-height", "0px")
+      await expect(roman).toHaveCSS("padding", "6px 6px 6px 8px")
+      await expect(roman).toHaveCSS("min-height", "31.1875px")
       await roman.click()
       const chip = keywords.locator('.select2-selection__choice[title="Romaner"]')
       await expect(chip).toHaveCSS("text-transform", "lowercase")
@@ -375,3 +386,118 @@ for (const visualCase of [
     expect(problems).toEqual([])
   })
 }
+
+test("matches production selected Library filter placement at desktop and mobile", async ({
+  page
+}, testInfo) => {
+  await page.goto(
+    "/bibliotek?avancerat=1&keywords=" +
+      "texttype%3Aess%C3%A4%3Bess%C3%A4samling," +
+      "texttype%3Asakprosa%3Bkringtexter%3Bavhandling%3Breferensverk" +
+      "&keywords_aux=" +
+      "texttype%3Anovellsamling%3Bnovell,texttype%3Areseskildring",
+    { waitUntil: "networkidle" }
+  )
+  await page.locator('[data-library-mounted="true"]').waitFor({ state: "attached" })
+  await waitForVisualAssets(page)
+
+  const mobile = testInfo.project.name === "mobile-chromium"
+  const panel = page.locator("[data-library-advanced-panel]")
+  const panelBox = await panel.boundingBox()
+  expect(panelBox).not.toBeNull()
+  expect(panelBox!.width).toBeCloseTo(mobile ? 354 : 979, 1)
+  expect(panelBox!.height).toBeCloseTo(320.5625, 1)
+  if (!mobile) {
+    await expect(page.locator("[data-library-gender-visual]")).toHaveScreenshot(
+      "library-gender-filter-desktop.png",
+      {
+        animations: "disabled",
+        caret: "hide",
+        scale: "css",
+        threshold: 0.01,
+        maxDiffPixels: 10
+      }
+    )
+    await expect(
+      page.locator("[data-library-narrowing] .search-multiselect__input-row")
+    ).toHaveScreenshot("library-narrowing-input-desktop.png", {
+      animations: "disabled",
+      caret: "hide",
+      scale: "css",
+      threshold: 0.01,
+      maxDiffPixels: 10
+    })
+    await expect(page.locator("[data-library-download-mode]")).toHaveScreenshot(
+      "library-download-mode-control-desktop.png",
+      {
+        animations: "disabled",
+        caret: "hide",
+        scale: "css",
+        threshold: 0.01,
+        maxDiffPixels: 10
+      }
+    )
+    await expect(
+      page.locator("[data-library-about-authors] .search-multiselect__main-trigger")
+    ).toHaveScreenshot("library-about-author-input-desktop.png", {
+      animations: "disabled",
+      caret: "hide",
+      scale: "css",
+      threshold: 0.01,
+      maxDiffPixels: 10
+    })
+  }
+  await expect(panel).toHaveScreenshot(
+    `library-advanced-selected-controls-${mobile ? "mobile" : "desktop"}.png`,
+    {
+      animations: "disabled",
+      caret: "hide",
+      scale: "css",
+      threshold: 0.01,
+      maxDiffPixels: 10
+    }
+  )
+  if (!mobile) {
+    const keywords = page.locator("[data-library-keywords]")
+    await keywords.locator(".search-multiselect__input-row").click()
+    await keywords.getByRole("option", { name: "Essäer", exact: true })
+      .locator(".multiselect__option")
+      .hover()
+    await expect(keywords.locator(".multiselect__content-wrapper")).toHaveScreenshot(
+      "library-keywords-dropdown-open-desktop.png",
+      {
+        animations: "disabled",
+        caret: "hide",
+        scale: "css",
+        threshold: 0.1,
+        maxDiffPixelRatio: 0.005
+      }
+    )
+  }
+})
+
+test("matches the production selected searchable Library author control", async ({
+  page
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-chromium")
+
+  await page.goto("/bibliotek?avancerat=1&about_authors=LagerlofS", {
+    waitUntil: "networkidle"
+  })
+  await page.locator('[data-library-mounted="true"]').waitFor({ state: "attached" })
+  await waitForVisualAssets(page)
+
+  const container = page.locator(".about_container")
+  await expect(container.locator(".select2-selection__choice")).toHaveCount(1)
+  await expect(container.locator(".search-multiselect__input-row")).toHaveCSS(
+    "position",
+    "static"
+  )
+  await expect(container).toHaveScreenshot("library-about-author-selected-desktop.png", {
+    animations: "disabled",
+    caret: "hide",
+    scale: "css",
+    threshold: 0.01,
+    maxDiffPixels: 10
+  })
+})

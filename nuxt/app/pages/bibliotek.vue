@@ -1976,7 +1976,7 @@ onUnmounted(() => {
             class="more_container show_more mt-2 mb-4"
           >
             <div class="title_select_container">
-              <label>
+              <label class="library-gender-control select2-container select2-container--default">
                 <span class="sr-only">Författarkön</span>
                 <select
                   :value="selectedGender"
@@ -1990,6 +1990,22 @@ onUnmounted(() => {
                   <option value="female" :selected="selectedGender === 'female'">Kvinnliga författare</option>
                   <option value="male" :selected="selectedGender === 'male'">Manliga författare</option>
                 </select>
+                <span class="selection" aria-hidden="true">
+                  <span
+                    data-library-gender-visual
+                    class="select2-selection select2-selection--single"
+                  >
+                    <span
+                      class="select2-selection__rendered"
+                      :title="selectedGender === '' ? 'Alla författare' : undefined"
+                    >{{ selectedGender === "female"
+                      ? "Kvinnliga författare"
+                      : selectedGender === "male"
+                        ? "Manliga författare"
+                        : "Filtrera: kvinnliga / manliga / alla" }}</span>
+                    <span class="select2-selection__arrow"><b /></span>
+                  </span>
+                </span>
               </label>
             </div>
             <div class="title_select_container">
@@ -1998,10 +2014,12 @@ onUnmounted(() => {
                 <SearchMultiSelect
                   data-library-keywords
                   class="keyword_select"
+                  persistent-input-row
                   accessible-name="Filtrera: Kategorier / Utgivare"
                   :model-value="selectedKeywords"
                   :options="collectionSelectOptions"
                   :option-groups="collectionSelectGroups"
+                  :space-after-remove="false"
                   placeholder="Filtrera: Kategorier / Utgivare"
                   @update:model-value="commitKeywords"
                 />
@@ -2018,6 +2036,8 @@ onUnmounted(() => {
                   :options="aboutAuthorOptions.map(author => ({ value: author.id, label: author.label }))"
                   placeholder="Om ett författarskap"
                   searchable
+                  internal-search
+                  persistent-input-row
                   @update:model-value="commitAboutAuthors"
                 />
               </label>
@@ -2032,10 +2052,12 @@ onUnmounted(() => {
                 <SearchMultiSelect
                   data-library-narrowing
                   class="keyword_select block"
+                  persistent-input-row
                   accessible-name="Avgränsa sökningen"
                   :model-value="selectedNarrowingKeywords"
                   :options="collectionSelectOptions"
                   :option-groups="narrowingSelectGroups"
+                  :space-after-remove="false"
                   placeholder="Avgränsa sökningen"
                   @update:model-value="commitNarrowingKeywords"
                 />
@@ -2047,9 +2069,11 @@ onUnmounted(() => {
                 <SearchMultiSelect
                   data-library-media
                   class="keyword_select"
+                  persistent-input-row
                   accessible-name="Utgivningsformat"
                   :model-value="selectedMedia"
                   :options="mediaSelectOptions"
+                  :space-after-remove="false"
                   placeholder="Utgivningsformat"
                   @update:model-value="commitMedia"
                 />
@@ -2061,24 +2085,27 @@ onUnmounted(() => {
                 <SearchMultiSelect
                   data-library-languages
                   class="keyword_select"
+                  persistent-input-row
                   accessible-name="Språk …"
                   :model-value="selectedLanguages"
                   :options="languageSelectOptions"
+                  :space-after-remove="false"
                   placeholder="Språk …"
                   @update:model-value="commitLanguages"
                 />
               </label>
             </div>
             <div v-if="!standalone" class="more ml-[2px] relative" :class="{ show_more: downloadMode }">
-              <button
-                type="button"
+              <a
                 data-library-download-mode
-                class="bg-transparent border-0 p-0 text-primary"
-                @click="toggleDownloadMode"
+                role="button"
+                tabindex="0"
+                @click.prevent="toggleDownloadMode"
+                @keydown.enter.prevent="toggleDownloadMode"
+                @keydown.space.prevent="toggleDownloadMode"
               >
-                <i class="fa fa-download color-black mr-1 text-xs" />
-                {{ downloadMode ? "Stäng källmaterial" : "Ladda ner källmaterial" }}
-              </button>
+                <i class="fa fa-download color-black mr-1 text-xs" />{{ " " }}<span>{{ downloadMode ? "Stäng källmaterial" : "Ladda ner källmaterial" }}</span>
+              </a>
             </div>
             <div
               v-if="downloadMode"
@@ -2925,16 +2952,85 @@ onUnmounted(() => {
   margin-bottom: 5px;
   font-family: "Requiem Text SC A", "Requiem Text SC B";
   font-size: 0.8em;
+  line-height: 1.2;
   text-transform: lowercase;
   color: #444;
   background: white;
-  border: 1px solid lightgrey;
+  border: 1px solid #999;
 }
 
-[data-library-advanced-panel] select.library-select-placeholder,
+.library-gender-control {
+  position: relative;
+  display: block;
+  width: 350px;
+  max-width: 100%;
+  height: 31px;
+  margin: 5px 0;
+}
+
+[data-library-advanced-panel] .library-gender-control select[data-library-gender] {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 31px;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.library-gender-control .selection {
+  display: block;
+  height: 31px;
+}
+
+.library-gender-control [data-library-gender-visual] {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: 31px;
+}
+
+.library-gender-control .select2-selection__rendered {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0;
+  overflow: visible;
+  line-height: 28px;
+}
+
+.library-gender-control .select2-selection__arrow {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  display: block;
+  width: 20px;
+  height: 26px;
+}
+
+.library-gender-control .select2-selection__arrow b {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  margin-top: -2px;
+  margin-left: -4px;
+  border-color: #888 transparent transparent;
+  border-style: solid;
+  border-width: 5px 4px 0;
+}
+
+[data-library-advanced-panel] select.library-select-placeholder {
+  color: #999 !important;
+  opacity: 1;
+}
+
 [data-library-advanced-panel] :deep(.multiselect__input::placeholder),
 [data-library-advanced-panel] :deep(.search-multiselect__input-row) {
-  color: #999 !important;
+  color: #9e9e9e !important;
   opacity: 1;
 }
 

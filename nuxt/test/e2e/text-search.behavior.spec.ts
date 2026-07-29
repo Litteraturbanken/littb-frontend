@@ -154,7 +154,7 @@ test("advanced vue-multiselect SSR hydration renders without browser warnings", 
   expect(problems).toEqual([])
 })
 
-test("selected advanced multiselects keep chips above a distinct labeled row", async ({ page }) => {
+test("selected advanced multiselects keep chips beside a distinct labeled row", async ({ page }) => {
   await openSearch(
     page,
     "/s%C3%B6k?avancerad=1&forfattare=StrindbergA&titlar=lb238704" +
@@ -172,8 +172,9 @@ test("selected advanced multiselects keep chips above a distinct labeled row", a
       chip.boundingBox(),
       row.boundingBox()
     ])
-    expect(rootBox?.height).toBeGreaterThan(45)
-    expect(rowBox!.y).toBeGreaterThanOrEqual(chipBox!.y + chipBox!.height)
+    expect(rootBox?.height).toBeLessThan(45)
+    expect(chipBox!.x + chipBox!.width).toBeLessThanOrEqual(rowBox!.x)
+    expect(Math.abs(chipBox!.y - rowBox!.y)).toBeLessThan(8)
   }
 })
 
@@ -824,16 +825,55 @@ test("vue-multiselect filters traverse by keyboard and remove accessibly", async
 
 test("author facets and Visa alla own only sok_filter", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet&utm=keep")
-  await page.locator(".navigator").getByRole("button", { name: "Strindberg, August" }).click()
+  const navigator = page.locator(".navigator")
+  const navigatorButtons = navigator.getByRole("button")
+  const expectedAuthors = ["Visa alla", "Strindberg, August", "Lagerlöf, Selma"]
+  await expect(navigatorButtons).toHaveText(expectedAuthors)
+
+  await navigator.getByRole("button", { name: "Strindberg, August" }).click()
   await expect.poll(() => new URL(page.url()).searchParams.get("sok_filter")).toBe("StrindbergA")
   expect(new URL(page.url()).searchParams.get("utm")).toBe("keep")
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
   await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toHaveCount(0)
   expect((await requests(request, "results")).at(-1)?.body.facet_author_id).toBe("StrindbergA")
+  await expect(navigatorButtons).toHaveText(expectedAuthors)
+  await expect(navigator.getByRole("button", { name: "Strindberg, August" })).toHaveClass(/selected/)
 
-  await page.locator(".navigator").getByRole("button", { name: "Visa alla" }).click()
+  await navigator.getByRole("button", { name: "Visa alla" }).click()
   await expect.poll(() => new URL(page.url()).searchParams.has("sok_filter")).toBe(false)
   await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
+})
+
+test("author filtering keeps the main search pager totals", async ({ page, request }) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+  const pager = page.locator("#toolkit .littb_pager")
+  await expect(pager.locator(".hits")).toHaveText("3")
+  await expect(pager).toContainText("Visar verk 1-2 av 2, sida 1 av 1.")
+  await expect.poll(async () => (await requests(request, "count")).length).toBe(1)
+
+  await page.locator(".navigator")
+    .getByRole("button", { name: "Strindberg, August" })
+    .click()
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toHaveCount(0)
+  await page.waitForTimeout(100)
+
+  await expect(pager.locator(".hits")).toHaveText("3")
+  await expect(pager).toContainText("Visar verk 1-2 av 2, sida 1 av 1.")
+  expect(await requests(request, "count")).toHaveLength(1)
+  expect((await requests(request, "count"))[0]?.body).not.toHaveProperty("facet_author_id")
+})
+
+test("author navigator remains available in the narrow desktop search layout", async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 665, height: 1000 })
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+
+  const navigator = page.locator(".navigator")
+  await expect(navigator).toBeVisible()
+  await expect(navigator.getByRole("button", { name: "Visa alla" })).toBeVisible()
+  await expect(navigator.getByRole("button", { name: "Strindberg, August" })).toBeVisible()
 })
 
 test("Visa fler is scoped to its work and keeps original Reader route ownership", async ({

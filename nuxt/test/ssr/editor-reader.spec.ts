@@ -70,6 +70,10 @@ test("SSR renders editor metadata, OCR, and generated page bounds", async ({ req
   expect(document.querySelector(".editor-reader .faksimil")?.getAttribute("src")).toBe(
     "/txt/lb-editor-doktor/lb-editor-doktor_3/lb-editor-doktor_3_0002.jpeg"
   )
+  expect(document.querySelector(".editor-reader .faksimil")?.getAttribute("srcset")).toBe(
+    "/txt/lb-editor-doktor/lb-editor-doktor_3/lb-editor-doktor_3_0002.jpeg 1x, "
+    + "/txt/lb-editor-doktor/lb-editor-doktor_5/lb-editor-doktor_5_0002.jpeg 2x"
+  )
   expect(document.querySelector(".editor-reader .img_area")?.getAttribute("style"))
     .toContain("width:625px")
   const overlay = document.querySelector(".editor-reader .overlay")
@@ -300,9 +304,7 @@ test("SSR exposes bounded Editor contributors, mapped readable bounds, and part 
   expect(response.status()).toBe(200)
   const { document } = parseHTML(await response.text())
   expect(document.querySelector(".reader-context-ssr .author")?.textContent)
-    .toContain("Karin Boye")
-  expect(document.querySelector(".reader-context-ssr .author")?.textContent)
-    .toContain("Paulina Helgeson red.")
+    .toBe("Karin Boye & Paulina Helgeson red.")
   expect(document.querySelector('.reader-context-ssr a[href="/editor/lb-editor-boye/ix/2/f"]')
     ?.textContent).toContain("Gå till första sidan")
   expect(document.querySelector('.reader-context-ssr a[href="/editor/lb-editor-boye/ix/4/f"]')

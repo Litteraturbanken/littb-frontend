@@ -3604,7 +3604,7 @@ grundform-clean {
 
 .page-dramaweb {
     
-    background-image: url("../img/dramawebben.jpg") !important;
+    background-image: var(--dramawebben-background-image, none) !important;
     background-repeat: no-repeat;
     background-size: cover;
     // background-position: -100px -80px;
@@ -3615,7 +3615,7 @@ grundform-clean {
 
     &.drama-dramasubpage {
         // background-image: url("../img/start_bkg_apr2018_light.jpg") !important;
-        background-image: url("../img/dramawebben_fade.jpg") !important;
+        background-image: var(--dramawebben-subpage-background-image, none) !important;
 
         .page_content {
             a {

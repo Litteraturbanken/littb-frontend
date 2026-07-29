@@ -7,7 +7,7 @@ const nuxtOrigin = `http://127.0.0.1:${nuxtPort}`
 
 export default defineConfig({
   testDir: "./test/e2e",
-  testMatch: /reader-assets-production\.behavior\.spec\.ts/,
+  testMatch: /reader-(?:asset-graph|assets-production)\.behavior\.spec\.ts/,
   fullyParallel: false,
   workers: 1,
   reporter: "list",

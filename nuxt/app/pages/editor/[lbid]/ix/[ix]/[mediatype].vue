@@ -19,6 +19,7 @@ import {
 } from "~/lib/reader-routes"
 
 definePageMeta({
+  layout: "reader",
   validate: route => typeof route.params.lbid === "string" &&
     /^(?:0|[1-9]\d*)$/.test(String(route.params.ix)) &&
     (route.params.mediatype === "e" || route.params.mediatype === "f")
@@ -231,6 +232,12 @@ const rotation = ref(editorHistoryNumber("editorRotation") ?? 0)
 const selectedFacsimileSource = computed(() => page.value?.facsimileSources.find(
   source => source.size === facsimileSize.value
 ) ?? page.value?.facsimileSources.find(source => source.size === 3) ?? null)
+const selectedFacsimileSrcset = computed(() => {
+  const selected = selectedFacsimileSource.value
+  if (!selected || selected.size >= 4) return undefined
+  const retina = page.value?.facsimileSources.find(source => source.size === selected.size + 2)
+  return retina ? `${selected.url} 1x, ${retina.url} 2x` : undefined
+})
 const smallerFacsimileSource = computed(() => [...(page.value?.facsimileSources ?? [])]
   .reverse().find(source => source.size < facsimileSize.value) ?? null)
 const largerFacsimileSource = computed(() => page.value?.facsimileSources.find(
@@ -985,7 +992,7 @@ useHead(() => ({
           :html="markedOverlayHtml"
         />
       </div>
-      <div v-if="selectedFacsimileSource" class="img_area" :style="selectedFacsimileSource.width ? { width: `${selectedFacsimileSource.width}px` } : undefined"><img ref="facsimileImage" class="faksimil transform transition duration-200" :style="{ ...(selectedFacsimileSource.width ? { width: `${selectedFacsimileSource.width}px`, maxWidth: `${selectedFacsimileSource.width}px` } : {}), transform: `rotate(${rotation}deg)` }" :src="selectedFacsimileSource.url" :alt="`Sida ${page.pageIndex}`" @load="updateImageWidth"></div>
+      <div v-if="selectedFacsimileSource" class="img_area" :style="selectedFacsimileSource.width ? { width: `${selectedFacsimileSource.width}px` } : undefined"><img ref="facsimileImage" class="faksimil transform transition duration-200" :style="{ ...(selectedFacsimileSource.width ? { width: `${selectedFacsimileSource.width}px`, maxWidth: `${selectedFacsimileSource.width}px` } : {}), transform: `rotate(${rotation}deg)` }" :src="selectedFacsimileSource.url" :srcset="selectedFacsimileSrcset" :alt="`Sida ${page.pageIndex}`" @load="updateImageWidth"></div>
     </section>
     <ClientOnly>
       <ReaderFocusControls
@@ -1243,6 +1250,8 @@ useHead(() => ({
     />
   </div>
 </template>
+
+<style lang="scss" src="~/assets/styles/reader.scss"></style>
 
 <style scoped>
 .editor-reader-context .expl {

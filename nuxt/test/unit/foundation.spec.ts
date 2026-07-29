@@ -28,10 +28,13 @@ describe("standalone Nuxt foundation", () => {
     expect(manifest.dependencies["@headlessui/vue"]).toBe("1.7.23")
   })
 
-  test("copies legacy parity CSS into Nuxt ownership", async () => {
+  test("keeps legacy parity CSS under Nuxt ownership with route-local asset hooks", async () => {
     const legacy = await readFile(resolve(legacyRoot, "app/styles/styles.scss"), "utf8")
     const owned = await readFile(resolve(nuxtRoot, "app/assets/styles/styles.scss"), "utf8")
-    expect(owned).toBe(legacy)
+    expect(legacy).toContain('background-image: url("../img/dramawebben.jpg") !important;')
+    expect(owned).toContain("background-image: var(--dramawebben-background-image, none) !important;")
+    expect(owned).toContain("background-image: var(--dramawebben-subpage-background-image, none) !important;")
+    expect(owned).toMatch(/\.mainnav\s*\{[\s\S]*?> li > a \{[\s\S]*?min-height: 24px;/u)
   })
 
   test("owns the about background and the five required Requiem faces", async () => {
@@ -108,7 +111,7 @@ describe("standalone Nuxt foundation", () => {
       readFile(resolve(nuxtRoot, "app/pages/id/[[id]].vue"), "utf8")
     ])
 
-    expect(quickSearch).toContain('<NuxtLink class="sc" to="/bibliotek" @click="close">')
+    expect(quickSearch).toMatch(/<NuxtLink class="sc" to="\/bibliotek"[^>]*\bno-prefetch[^>]*@click="close">/u)
     expect(quickSearch).not.toContain("goToLibrary")
     expect(plays).toContain('<NuxtLink to="/bibliotek?keywords=texttype:drama;dramasamling&amp;visa=works&amp;sort=titlar">Biblioteket</NuxtLink>')
     expect(idLookup.match(/<NuxtLink\b/gu)).toHaveLength(3)

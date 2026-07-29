@@ -117,7 +117,7 @@ describe("SearchMultiSelect grouped normalization", () => {
     app.unmount()
   })
 
-  test("keeps selected chips above a persistent labeled control row", async () => {
+  test("keeps persistent controls and selected chips in production order", async () => {
     const target = document.createElement("div")
     document.body.append(target)
     const [{ createApp, h, nextTick, ssrContextKey }, { default: SearchMultiSelect }] = await Promise.all([
@@ -150,8 +150,8 @@ describe("SearchMultiSelect grouped normalization", () => {
     const fixedRow = fixed!.querySelector(".search-multiselect__input-row")
     expect(fixedTags?.textContent).toContain("Alfa")
     expect((fixedRow as HTMLInputElement | null)?.placeholder).toBe("Författarskap")
-    expect([...fixedTags!.parentElement!.children].indexOf(fixedTags!))
-      .toBeLessThan([...fixedRow!.parentElement!.children].indexOf(fixedRow!))
+    expect([...fixedRow!.parentElement!.children].indexOf(fixedRow!))
+      .toBeLessThan([...fixedTags!.parentElement!.children].indexOf(fixedTags!))
 
     const searchableTags = searchable!.querySelector(".multiselect__tags-wrap")
     const searchableInput = searchable!.querySelector<HTMLInputElement>("input.multiselect__input")

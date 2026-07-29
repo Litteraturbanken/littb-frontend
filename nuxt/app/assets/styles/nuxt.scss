@@ -1,5 +1,3 @@
-@use "fonts/601526/32FBEBA806C948833.css" as authority-fonts;
-
 #__nuxt,
 .site-shell {
     display: contents;
@@ -132,15 +130,20 @@
     }
 
     .multiselect__tags {
+        align-items: center;
+        display: inline-flex;
         min-height: 30px;
         padding: 0;
         border: 0;
         border-radius: 0;
         background: transparent;
+        overflow: visible;
     }
 
     .multiselect__tags-wrap {
-        display: inline;
+        align-items: center;
+        display: inline-flex;
+        flex: none;
     }
 
     .select2-selection__choice {
@@ -159,13 +162,21 @@
         line-height: 19px;
     }
 
+    .search-multiselect__main-trigger {
+        cursor: text;
+        left: 0;
+        position: absolute !important;
+        top: 0;
+        z-index: 2;
+    }
+
     .multiselect.select2-selection--multiple::after {
         display: none;
     }
 
     .select2-selection__arrow.multiselect__select {
         position: absolute;
-        z-index: 1;
+        z-index: 3;
         top: 1px;
         right: 1px;
         width: 20px;
@@ -227,17 +238,204 @@
     }
 }
 
-[data-library-advanced-panel] .filter_select .multiselect__input {
-    display: block;
+[data-library-advanced-panel] .filter_select {
+    .multiselect.select2-selection--multiple {
+        border: 0 !important;
+        background: transparent;
+    }
+
+    .multiselect__input,
+    .search-multiselect__input-row {
+        box-sizing: border-box;
+        display: block;
+        flex: 0 0 350px;
+        width: 350px !important;
+        min-width: 200px;
+        height: 31.1875px;
+        min-height: 31.1875px;
+        padding: 5px 5px 5px 10px;
+        margin: 0 8px 0 0 !important;
+        border: 1px solid #999 !important;
+        border-radius: 0;
+        background: white;
+        font-family: "Requiem Text SC A", "Requiem Text SC B";
+        font-size: 1rem !important;
+        line-height: 1.2 !important;
+    }
+
+    .search-multiselect__main-trigger {
+        margin-right: 0 !important;
+    }
+
+    .multiselect:has(.select2-selection__choice),
+    .multiselect:has(.select2-selection__choice) .multiselect__tags {
+        width: 350px;
+        height: 34.1875px;
+        min-height: 34.1875px;
+    }
+
+    .select2-selection__choice {
+        box-sizing: border-box;
+        display: list-item;
+        height: 25.1875px;
+        padding: 0 5px 2px;
+        margin: 5px 6px 4px 0;
+        list-style: none;
+        font-size: 1rem !important;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .select2-selection__choice__remove {
+        font-weight: 700;
+    }
+
+    .multiselect:not(:has(.select2-selection__choice))::after {
+        content: "";
+        position: absolute;
+        z-index: 4;
+        top: 50%;
+        right: 7px;
+        display: block;
+        width: 0;
+        height: 0;
+        margin-top: -2px;
+        margin-left: -4px;
+        pointer-events: none;
+        border-color: #888 transparent transparent;
+        border-style: solid;
+        border-width: 5px 4px 0;
+    }
+
+    .multiselect:not(:has(.select2-selection__choice))
+        .select2-selection__arrow.multiselect__select b {
+        display: none;
+    }
+
+    .multiselect:has(.select2-selection__choice) .select2-selection__arrow.multiselect__select b {
+        display: none;
+    }
+
+    .multiselect__content-wrapper {
+        box-sizing: border-box;
+        max-height: 501px !important;
+        border-top: 0;
+        border-right: 1px solid #333;
+        border-bottom: 1px solid #333;
+        border-left: 1px solid #333;
+    }
+
+    .multiselect__content {
+        display: block;
+        width: 100%;
+    }
+
+    .multiselect__element:has(.select2-results__group) {
+        display: flow-root;
+    }
+
+    .multiselect__option:has(.select2-results__group) {
+        min-height: 0;
+        padding: 0;
+        background: transparent !important;
+    }
+
+    .select2-results__group {
+        box-sizing: border-box;
+        display: block;
+        padding: 6px 6px 0;
+        margin: 16px 0 0 10px;
+        color: #999;
+        font-family: "Requiem Text SC A", "Requiem Text SC B";
+        font-size: 1.1rem;
+        font-weight: 400;
+        line-height: 1.2;
+        text-transform: lowercase;
+    }
+
+    .multiselect__element:not(:has(.select2-results__group)) .multiselect__option {
+        box-sizing: border-box;
+        display: list-item;
+        width: calc(100% - 16px);
+        height: 31.1875px;
+        min-height: 31.1875px;
+        padding: 6px 6px 6px 8px;
+        margin-left: 16px;
+        list-style: none;
+        color: #333;
+        font-family: "Requiem Text SC A", "Requiem Text SC B";
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.2;
+        text-transform: lowercase;
+    }
+
+    .multiselect__element:not(:has(.select2-results__group))
+        .multiselect__option--selected {
+        background: #ddd;
+        color: #333;
+        font-weight: 400;
+    }
+
+    .multiselect__element:not(:has(.select2-results__group))
+        .multiselect__option--highlight {
+        background: #ededed;
+        color: #000;
+    }
+}
+
+[data-library-advanced-panel] [data-library-narrowing] .search-multiselect__input-row {
+    padding-top: 4px;
+    padding-bottom: 6px;
+}
+
+@media (max-width: 767px) {
+    [data-library-advanced-panel]
+        [data-library-about-authors]
+        .search-multiselect__main-trigger {
+        padding-top: 4px;
+        padding-bottom: 6px;
+    }
+
+    [data-library-advanced-panel] [data-library-narrowing] .search-multiselect__input-row {
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+}
+
+[data-library-advanced-panel] input.search-multiselect__main-trigger {
+    position: static !important;
+}
+
+[data-library-advanced-panel] [data-library-about-authors] .search-multiselect__input-row {
+    position: static !important;
+}
+
+[data-library-advanced-panel]
+    [data-library-about-authors]
+    .multiselect:not(.multiselect--active):has(.select2-selection__choice)
+    .search-multiselect__native-search {
+    display: none;
+}
+
+[data-library-advanced-panel]
+    [data-library-about-authors]
+    .multiselect--active:has(.select2-selection__choice)
+    .search-multiselect__native-search {
+    position: static !important;
+    flex: 0 0 350px;
     width: 350px !important;
-    min-width: 200px;
-    min-height: 28px;
-    padding: 5px 5px 5px 10px;
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-    background: white;
-    font: inherit;
+    height: 31.1875px;
+    min-height: 31.1875px;
+    padding: 5px 5px 5px 10px !important;
+    margin: 0 8px 0 0 !important;
+    order: -1;
+}
+
+[data-library-advanced-panel]
+    .multiselect:has(> input.search-multiselect__main-trigger)
+    .multiselect__tags {
+    display: none;
 }
 
 .page-search .filter_select {
@@ -257,6 +455,7 @@
         display: flex;
         flex-wrap: wrap;
         min-height: 30px;
+        order: 1;
     }
 
     .select2-selection__choice {
@@ -304,6 +503,7 @@
         min-height: 28px;
         padding: 5px 5px 5px 10px;
         margin: 0;
+        order: 2;
         border: 1px solid lightgrey;
         border-radius: 0;
         background: white;

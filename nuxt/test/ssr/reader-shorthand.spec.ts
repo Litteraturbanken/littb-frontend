@@ -401,7 +401,9 @@ test("a bare-title alias and canonical Reader independently load source informat
   // requests; the destination owns the dialog payload it renders.
   expect(await sourceInfoRequests(request)).toHaveLength(2)
   expect(await readerRequests(request)).toEqual([
-    "/txt/lb-reader-doktor-glas/res_00002.html?username=app"
+    "/txt/lb-reader-doktor-glas/res_00002.html?username=app",
+    "/red/css/etext.css",
+    "/txt/css/lb-reader-doktor-glas-etext.css"
   ])
   expect(await readerManifestRequests(request)).toEqual([
     expectedManifestRequest("DoktorGlas")
