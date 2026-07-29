@@ -924,11 +924,14 @@ separator, dot, control, DEL/C1, surrogate, and exact maximum rules.
 
 Assert exact Location/query for Lagerlof profile and Söderberg/Förvillelser
 Reader; author 100/101 and title 100/101/200/201 limits; unsupported safe suffix
-author-only resolution; single/double-encoded slash, traversal, malformed
-percent, control, and surrogate rejection; 404, malformed 200, and 503 mapping;
-GET/HEAD only; no `/författare` loop; byte-exact duplicate/ordered raw query;
-and one private resolver request. Then follow redirects and assert rendered
-Selma profile and Förvillelser Reader text, not only URL changes.
+author-only resolution; an exact Reader path whose structural segment is encoded
+as `%74itlar`, proving a 200-character title is accepted and a 201-character
+title is rejected locally before the resolver request; single/double-encoded
+slash, traversal, malformed percent, control, and surrogate rejection; 404,
+malformed 200, and 503 mapping; GET/HEAD only; no `/författare` loop; byte-exact
+duplicate/ordered raw query; and one private resolver request. Then follow
+redirects and assert rendered Selma profile and Förvillelser Reader text, not
+only URL changes.
 
 - [ ] **Step 6: Run GREEN and commit Task 4**
 
