@@ -5,6 +5,7 @@ import type { operations } from "../../app/lib/api/generated/lbapi"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 type LibrarySearchRequest = operations["v2_post_library_search"]["requestBody"]["content"]["application/json"]
+type LibraryCountRequest = operations["v2_post_library_counts"]["requestBody"]["content"]["application/json"]
 type LibraryFilters = LibrarySearchRequest["filters"]
 
 async function reset(request: APIRequestContext) {
@@ -36,7 +37,7 @@ async function libraryV2Requests(request: APIRequestContext) {
       scope: string
       body: LibrarySearchRequest
     }>
-    counts: unknown[]
+    counts: Array<{ method: string, path: string, scope: string, body: LibraryCountRequest }>
   }
 }
 
@@ -103,7 +104,10 @@ test("SSR renders the default Library slice from typed private options and searc
   expect(document.querySelector<HTMLInputElement>("[data-library-filter]")?.value)
     .toBe("Röda rummet")
   expect([...document.querySelectorAll("[data-library-tab]")].map(node => node.textContent?.trim()))
-    .toEqual(["Alla träffar", "Nytt", "Författare", "Verk", "Dikt, novell, etc.", "Epub", "PDF"])
+    .toEqual([
+      "Alla träffar", "Nytt", "Författare: 156", "Verk: 3",
+      "Dikt, novell, etc.: 0", "Epub: 201", "PDF: 201"
+    ])
   expect(document.querySelectorAll("[data-library-result]")).toHaveLength(1)
   expect(document.querySelector('[data-library-result] a[href*="RodaRummet"]')?.textContent?.trim())
     .toBe("Röda rummet")
@@ -122,20 +126,57 @@ test("SSR renders the default Library slice from typed private options and searc
     path: "/private-v2/library/options",
     scope: "private"
   }])
-  expect(ledger.search).toEqual([{
+  expect(ledger.search.map(entry => entry.body)).toEqual([{
+    mode: "all",
+    filters: filters({ query: "Röda rummet" }),
+    sort: "relevance",
+    reverse: false
+  }, {
+    mode: "authors",
+    filters: filters({ query: "Röda rummet" }),
+    sort: "popularity",
+    reverse: false,
+    limit: 150
+  }])
+  expect(ledger.counts.map(entry => entry.body)).toEqual([
+    { mode: "works", filters: filters({ query: "Röda rummet" }) },
+    { mode: "parts", filters: filters({ query: "Röda rummet" }) },
+    { mode: "epub", filters: filters({ query: "Röda rummet" }) },
+    { mode: "pdf", filters: filters({ query: "Röda rummet" }) }
+  ])
+  expect(ledger.search[0]).toMatchObject({
     method: "POST",
     path: "/private-v2/library/search",
-    scope: "private",
-    body: {
-      mode: "all",
-      filters: filters({ query: "Röda rummet" }),
-      sort: "relevance",
-      reverse: false
-    }
-  }])
-  expect(ledger.counts).toEqual([])
+    scope: "private"
+  })
   expect(await legacyRelevanceRequests(request)).toEqual([])
   expect(await legacyQueryRequests(request)).toEqual([])
+})
+
+test("SSR owns every ordinary Strindberg tab summary under one filter", async ({ request }) => {
+  const response = await request.get("/bibliotek?filter=strindberg")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  const tabText = (mode: string) => document
+    .querySelector(`[data-library-tab="${mode}"]`)?.textContent?.trim()
+  expect(tabText("authors")).toBe("Författare: 7")
+  expect(tabText("works")).toBe("Verk: 465")
+  expect(tabText("parts")).toBe("Dikt, novell, etc.: 1039")
+  expect(tabText("epub")).toBe("Epub: 136")
+  expect(tabText("pdf")).toBe("PDF: 265")
+
+  const ledger = await libraryV2Requests(request)
+  expect(ledger.search.map(entry => entry.body)).toEqual(expect.arrayContaining([
+    { mode: "all", filters: filters({ query: "strindberg" }), sort: "relevance", reverse: false },
+    { mode: "authors", filters: filters({ query: "strindberg" }), sort: "popularity", reverse: false, limit: 150 }
+  ]))
+  expect(ledger.counts.map(entry => entry.body)).toEqual(expect.arrayContaining([
+    { mode: "works", filters: filters({ query: "strindberg" }) },
+    { mode: "parts", filters: filters({ query: "strindberg" }) },
+    { mode: "epub", filters: filters({ query: "strindberg" }) },
+    { mode: "pdf", filters: filters({ query: "strindberg" }) }
+  ]))
 })
 
 test("SSR sends advanced Library filters as one exact typed body", async ({ request }) => {
@@ -172,27 +213,44 @@ test("SSR sends advanced Library filters as one exact typed body", async ({ requ
   )].map(input => [input.getAttribute("min"), input.getAttribute("max"), input.value]))
     .toEqual([["1800", "2026", "1900"], ["1800", "2026", "1910"]])
 
-  expect((await libraryV2Requests(request)).search).toEqual([{
+  const searchBodies = (await libraryV2Requests(request)).search.map(entry => entry.body)
+  expect(searchBodies).toEqual([{
+    mode: "all",
+    filters: filters({
+      query: "Röda",
+      gender: "female",
+      categories: ["texttype:roman", "provenance.library:SA"],
+      narrowing_categories: ["keyword:Humor", "texttype:brev;brevsamling"],
+      about_author_ids: ["LagerlofS"],
+      media: ["mediatype:etext", "has_epub:true"],
+      languages: ["language:swe", "proofread:false"],
+      year_from: 1900,
+      year_to: 1910
+    }),
+    sort: "author",
+    reverse: false
+  }, {
+    mode: "authors",
+    filters: filters({
+      query: "Röda",
+      gender: "female",
+      categories: ["texttype:roman", "provenance.library:SA"],
+      narrowing_categories: ["keyword:Humor", "texttype:brev;brevsamling"],
+      about_author_ids: ["LagerlofS"],
+      media: ["mediatype:etext", "has_epub:true"],
+      languages: ["language:swe", "proofread:false"],
+      year_from: 1900,
+      year_to: 1910
+    }),
+    sort: "popularity",
+    reverse: false,
+    limit: 150
+  }])
+  expect((await libraryV2Requests(request)).search[0]).toMatchObject({
     method: "POST",
     path: "/private-v2/library/search",
-    scope: "private",
-    body: {
-      mode: "all",
-      filters: filters({
-        query: "Röda",
-        gender: "female",
-        categories: ["texttype:roman", "provenance.library:SA"],
-        narrowing_categories: ["keyword:Humor", "texttype:brev;brevsamling"],
-        about_author_ids: ["LagerlofS"],
-        media: ["mediatype:etext", "has_epub:true"],
-        languages: ["language:swe", "proofread:false"],
-        year_from: 1900,
-        year_to: 1910
-      }),
-      sort: "author",
-      reverse: false
-    }
-  }])
+    scope: "private"
+  })
 })
 
 test("SSR keeps chronology available when only about-author options fail", async ({ request }) => {
@@ -251,7 +309,7 @@ test("SSR still renders primary results when all optional metadata is unavailabl
   expect(document.querySelector("[data-library-about-authors]")).toBeNull()
   expect(document.querySelector("[data-library-chronology-unavailable]")?.textContent?.trim())
     .toBe("Tidslinjen kunde inte hämtas.")
-  expect((await libraryV2Requests(request)).search).toHaveLength(1)
+  expect((await libraryV2Requests(request)).search).toHaveLength(2)
 })
 
 test("SSR distinguishes a typed empty success from a typed primary failure", async ({ request }) => {
@@ -270,16 +328,17 @@ test("SSR distinguishes a typed empty success from a typed primary failure", asy
     .toBe("Ett fel uppstod.")
   expect(failed.querySelector("[data-library-empty]")).toBeNull()
   expect(failed.querySelectorAll("[data-library-result]")).toHaveLength(0)
-  expect((await libraryV2Requests(request)).search).toEqual([{
-    method: "POST",
-    path: "/private-v2/library/search",
-    scope: "private",
-    body: {
+  expect((await libraryV2Requests(request)).search.map(entry => entry.body)).toEqual([{
       mode: "all",
       filters: filters({ query: "failed" }),
       sort: "relevance",
       reverse: false
-    }
+  }, {
+    mode: "authors",
+    filters: filters({ query: "failed" }),
+    sort: "popularity",
+    reverse: false,
+    limit: 150
   }])
 })
 
@@ -341,7 +400,7 @@ test("SSR renders authors, works, parts, and latest from discriminated search re
     expect(document.querySelector(item.selector)?.textContent, item.mode).toContain(item.text)
     if (item.mode === "authors") {
       expect(document.querySelector('[data-library-tab="authors"]')?.textContent?.trim())
-        .toBe("Författare")
+        .toBe("Författare: 156")
     }
     if (item.mode === "works") {
       expect([...document.querySelector(item.selector)!.querySelectorAll("[data-library-work-actions] a")]
@@ -355,12 +414,11 @@ test("SSR renders authors, works, parts, and latest from discriminated search re
         .toBe("18 juli 2026 (3 verk)")
     }
 
-    expect((await libraryV2Requests(request)).search).toEqual([{
-      method: "POST",
-      path: "/private-v2/library/search",
-      scope: "private",
-      body: item.body
-    }])
+    const searchBodies = (await libraryV2Requests(request)).search.map(entry => entry.body)
+    expect(searchBodies).toContainEqual(item.body)
+    expect(searchBodies).toContainEqual({
+      mode: "authors", filters: filters(), sort: "popularity", reverse: false, limit: 150
+    })
   }
 })
 
@@ -394,7 +452,8 @@ test("SSR renders EPUB immediately with a null inactive PDF count", async ({ req
     .toBe("page")
   expect([...document.querySelectorAll("[data-library-tab]")].map(node => node.textContent?.trim()))
     .toEqual([
-      "Alla träffar", "Nytt", "Författare", "Verk", "Dikt, novell, etc.", "Epub: 1", "PDF"
+      "Alla träffar", "Nytt", "Författare: 1", "Verk: 1",
+      "Dikt, novell, etc.: 0", "Epub: 1", "PDF: 1"
     ])
   expect(epubRows(document)).toEqual([{
     title: "Gösta Berlings saga",
@@ -427,7 +486,7 @@ test("SSR renders PDF immediately with a null inactive EPUB count", async ({ req
 
   expect(document.querySelector('[data-library-tab="pdf"]')?.getAttribute("aria-current"))
     .toBe("page")
-  expect(document.querySelector('[data-library-tab="epub"]')?.textContent?.trim()).toBe("Epub")
+  expect(document.querySelector('[data-library-tab="epub"]')?.textContent?.trim()).toBe("Epub: 201")
   expect(document.querySelector('[data-library-tab="pdf"]')?.textContent?.trim()).toBe("PDF: 201")
   expect(pdfRows(document)).toEqual([{
     title: "Doktor Glas",

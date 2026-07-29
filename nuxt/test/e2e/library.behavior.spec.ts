@@ -67,7 +67,7 @@ async function allRelevanceRequests(request: APIRequestContext) {
 }
 
 async function requests(request: APIRequestContext) {
-  return allRelevanceRequests(request)
+  return (await allRelevanceRequests(request)).filter(entry => entry.body.mode === "all")
 }
 
 async function epubRequests(request: APIRequestContext) {
@@ -122,6 +122,32 @@ async function pushRoute(page: import("@playwright/test").Page, path: string) {
 
 test.beforeEach(async ({ request }) => reset(request))
 test.afterEach(async ({ request }) => reset(request))
+
+test("ordinary Strindberg tabs retain counts and expose authors EPUB and PDF", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?filter=strindberg", { waitUntil: "networkidle" })
+
+  await expect(page.locator('[data-library-tab="authors"]')).toHaveText("Författare: 7")
+  await expect(page.locator('[data-library-tab="works"]')).toHaveText("Verk: 465")
+  await expect(page.locator('[data-library-tab="parts"]')).toHaveText("Dikt, novell, etc.: 1039")
+  await expect(page.locator('[data-library-tab="epub"]')).toHaveText("Epub: 136")
+  await expect(page.locator('[data-library-tab="pdf"]')).toHaveText("PDF: 265")
+
+  await page.locator('[data-library-tab="authors"]').click()
+  await expect(page.locator("[data-library-author-row]")).toHaveCount(7)
+  const authorRows = (await page.locator("[data-library-author-row]").allTextContents()).join(" ")
+  expect(authorRows).not.toContain("0–0")
+  expect(authorRows).not.toContain("0–")
+
+  await page.locator('[data-library-tab="epub"]').click()
+  await expect(page.locator("[data-library-epub-row]")).toHaveCount(1)
+  await expect(page).not.toHaveURL(/nedladdning/u)
+
+  await page.locator('[data-library-tab="pdf"]').click()
+  await expect(page.locator("[data-library-pdf-row]")).toHaveCount(1)
+  await expect(page).not.toHaveURL(/nedladdning/u)
+})
 
 test("SSR starts global Library navigation from the clean default", async ({ request }) => {
   const response = await request.get(
@@ -489,70 +515,93 @@ test("delayed Works and Dikt transitions never relabel rows owned by the other m
   await expect(page.locator("[data-library-work-row]")).toHaveCount(0)
 })
 
-test("a new filter invalidates delayed counts owned by the previous filter", async ({
+test("a Selma filter invalidates a delayed Strindberg summary", async ({
   page,
   request
 }) => {
-  await setLibraryDelay(request, "counts", { mode: "works", filters: libraryFilters() })
-  await setLibraryDelay(request, "counts", { mode: "parts", filters: libraryFilters() })
-  await page.goto("/bibliotek", { waitUntil: "domcontentloaded" })
-  await expect.poll(async () => (await libraryV2Requests(request)).counts.length).toBe(2)
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  await reset(request)
+  const delayed = libraryFilters({ query: "strindberg" })
+  await setLibraryDelay(request, "search", {
+    mode: "authors", filters: delayed, sort: "popularity", reverse: false, limit: 150
+  })
+  for (const mode of ["works", "parts", "epub", "pdf"] as const) {
+    await setLibraryDelay(request, "counts", { mode, filters: delayed })
+  }
+  const input = page.locator("[data-library-filter]")
+  await input.fill("strindberg")
+  await expect.poll(async () => (await libraryV2Requests(request)).counts.length).toBe(4)
 
-  await page.locator("[data-library-filter]").fill("Selma")
+  await input.fill("Selma")
   await expect(page).toHaveURL(/filter=Selma/)
   await expect(page.locator('[data-library-tab="works"]')).toContainText(": 1")
   await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 1")
+  await expect(page.locator('[data-library-tab="epub"]')).toContainText(": 1")
+  await expect(page.locator('[data-library-tab="pdf"]')).toContainText(": 1")
   await page.waitForTimeout(900)
   await expect(page.locator('[data-library-tab="works"]')).toContainText(": 1")
+  await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 1")
 })
 
-test("browse tab totals use count-only requests without replacing active rows", async ({
+test("ordinary tab totals use one author search and four counts without replacing active rows", async ({
   page,
   request
 }) => {
   await page.goto("/bibliotek?visa=works&sort=popularitet", { waitUntil: "networkidle" })
 
   await expect(page.locator("[data-library-work-row]")).toHaveCount(3)
-  await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 4")
+  await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 156")
   await expect(page.locator('[data-library-tab="works"]')).toContainText(": 3")
   await expect(page.locator('[data-library-tab="parts"]')).toContainText(": 201")
 
   expect((await libraryV2Requests(request)).counts).toEqual([
     {
       method: "POST",
-      path: "/v2/library/counts",
-      scope: "public",
+      path: "/private-v2/library/counts",
+      scope: "private",
       body: { mode: "works", filters: libraryFilters() }
     },
     {
       method: "POST",
-      path: "/v2/library/counts",
-      scope: "public",
+      path: "/private-v2/library/counts",
+      scope: "private",
       body: { mode: "parts", filters: libraryFilters() }
+    },
+    {
+      method: "POST",
+      path: "/private-v2/library/counts",
+      scope: "private",
+      body: { mode: "epub", filters: libraryFilters() }
+    },
+    {
+      method: "POST",
+      path: "/private-v2/library/counts",
+      scope: "private",
+      body: { mode: "pdf", filters: libraryFilters() }
     }
   ])
 })
 
-test("delayed browse counts never gate rows and authors wait for both ID sets", async ({
+test("delayed ordinary summaries never gate active rows", async ({
   page,
   request
 }) => {
   const filtered = libraryFilters({ query: "Selma" })
   await setLibraryDelay(request, "counts", { mode: "works", filters: filtered })
   await setLibraryDelay(request, "counts", { mode: "parts", filters: filtered })
+  await setLibraryDelay(request, "counts", { mode: "epub", filters: filtered })
+  await setLibraryDelay(request, "counts", { mode: "pdf", filters: filtered })
 
   await page.goto("/bibliotek?filter=Selma", { waitUntil: "domcontentloaded" })
   await expect(page.getByRole("link", { name: /Lagerlöf/ })).toBeVisible()
-  await expect(page.locator('[data-library-tab="authors"]')).toHaveText("Författare")
-  await expect(page.locator('[data-library-tab="works"]')).toHaveText("Verk")
-  await expect(page.locator('[data-library-tab="parts"]')).toHaveText("Dikt, novell, etc.")
-
-  await expect(page.locator('[data-library-tab="works"]')).toContainText(": 1")
-  await expect(page.locator('[data-library-tab="parts"]')).toHaveText("Dikt, novell, etc.")
   await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 1")
+  await expect(page.locator('[data-library-tab="works"]')).toContainText(": 1")
+  await expect(page.locator('[data-library-tab="parts"]')).toContainText(": 0")
+  await expect(page.locator('[data-library-tab="epub"]')).toContainText(": 1")
+  await expect(page.locator('[data-library-tab="pdf"]')).toContainText(": 1")
 })
 
-test("hydrated Authors rows do not publish an author tab count before both ID sets", async ({
+test("hydrated Authors rows publish the authoritative author response count", async ({
   page,
   request
 }) => {
@@ -561,14 +610,14 @@ test("hydrated Authors rows do not publish an author tab count before both ID se
 
   await page.goto("/bibliotek?visa=authors&sort=namn", { waitUntil: "domcontentloaded" })
   await expect(page.locator("[data-library-author-row]")).toHaveCount(150)
-  await expect(page.locator('[data-library-tab="authors"]')).toHaveText("Författare")
+  await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 156")
   await expect(page.locator('[data-library-tab="works"]')).toContainText(": 3")
   await expect(page.locator('[data-library-tab="parts"]')).toContainText(": 201")
 
-  await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 4")
+  await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 156")
 })
 
-test("nullable browse siblings retain successful totals and retry only missing IDs", async ({
+test("a nullable summary count retains the active row total", async ({
   page,
   request
 }) => {
@@ -581,15 +630,35 @@ test("nullable browse siblings retain successful totals and retry only missing I
 
   await expect(page.locator("[data-library-work-row]")).toHaveCount(1)
   await expect(page.locator('[data-library-tab="works"]')).toContainText(": 1")
-  await expect(page.locator('[data-library-tab="parts"]')).toHaveText("Dikt, novell, etc.")
-  await expect(page.locator('[data-library-tab="authors"]')).toHaveText("Författare")
+  await expect(page.locator('[data-library-tab="parts"]')).toContainText(": 0")
+  await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 1")
 
   await request.delete(`${fixture}/_library_v2/failures`)
   await reset(request)
   await page.locator('[data-library-sort="popularitet"]').click()
   await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 1")
   expect((await libraryV2Requests(request)).counts.map(entry => entry.body.mode))
-    .toEqual(["works"])
+    .toEqual([])
+})
+
+test("a failed ordinary PDF summary leaves active search rows and sibling counts intact", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  await reset(request)
+  await request.put(`${fixture}/_library_v2/failures`, {
+    data: { operation: "counts", mode: "pdf" }
+  })
+
+  await page.locator("[data-library-filter]").fill("Selma")
+  await expect(page.getByRole("link", { name: /Lagerlöf/ })).toBeVisible()
+  await expect(page.locator("[data-library-error]")).toHaveCount(0)
+  await expect(page.locator('[data-library-tab="authors"]')).toHaveText("Författare: 1")
+  await expect(page.locator('[data-library-tab="works"]')).toHaveText("Verk: 1")
+  await expect(page.locator('[data-library-tab="parts"]')).toHaveText("Dikt, novell, etc.: 0")
+  await expect(page.locator('[data-library-tab="epub"]')).toHaveText("Epub: 1")
+  await expect(page.locator('[data-library-tab="pdf"]')).toHaveText("PDF")
 })
 
 test("Författare hydrates 150 rows and expands the legacy Visa alla disclosure", async ({
@@ -613,7 +682,9 @@ test("Författare hydrates 150 rows and expands the legacy Visa alla disclosure"
   await expect(page.locator("[data-library-author-row]")).toHaveCount(151)
   await expect(showAll).toHaveCount(0)
 
-  const visibleRequests = await requests(request)
+  const visibleRequests = (await allRelevanceRequests(request)).filter(
+    entry => entry.body.mode === "authors"
+  )
   expect(visibleRequests).toHaveLength(1)
   expect(visibleRequests[0]?.body).toMatchObject({ mode: "authors", limit: 151 })
 })
@@ -867,6 +938,7 @@ test("Library modes use only generated v2 operations", async ({ page, request })
   }])
   expect(ledger.search).toEqual([
     { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "all", filters, sort: "relevance", reverse: false } },
+    { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "authors", filters, sort: "popularity", reverse: false, limit: 150 } },
     { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "latest", filters, reverse: false, page: 1, hide_1800: false } },
     { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "authors", filters, sort: "popularity", reverse: false, limit: 150 } },
     { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "works", filters, sort: "popularity", reverse: false, page: 1, source_only: false } },
@@ -876,7 +948,9 @@ test("Library modes use only generated v2 operations", async ({ page, request })
   ])
   expect(ledger.counts).toEqual([
     { method: "POST", path: "/v2/library/counts", scope: "public", body: { mode: "works", filters } },
-    { method: "POST", path: "/v2/library/counts", scope: "public", body: { mode: "parts", filters } }
+    { method: "POST", path: "/v2/library/counts", scope: "public", body: { mode: "parts", filters } },
+    { method: "POST", path: "/v2/library/counts", scope: "public", body: { mode: "epub", filters } },
+    { method: "POST", path: "/v2/library/counts", scope: "public", body: { mode: "pdf", filters } }
   ])
   expect(await legacyLibraryRequests(request)).toEqual({
     relevance: [], query: [], options: [], metadata: []

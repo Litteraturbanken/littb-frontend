@@ -92,6 +92,20 @@ type LibraryPageData =
   | { mode: "epub", response: EpubResponse }
   | { mode: "pdf", response: PdfResponse }
 
+type LibrarySummary = {
+  identity: string
+  authors: number | null
+  works: number | null
+  parts: number | null
+  epub: number | null
+  pdf: number | null
+}
+
+type LibraryInitialData = {
+  page: LibraryPageData
+  summary: LibrarySummary | null
+}
+
 const libraryTooltipDelay = 500
 let libraryTooltipSequence = 0
 
@@ -635,6 +649,60 @@ async function fetchLibraryPageData(
   }
 }
 
+function librarySummaryIdentity(
+  filterValue: string,
+  advanced: LibraryAdvancedFilters
+): string {
+  return JSON.stringify([filterValue, advanced])
+}
+
+function emptyLibrarySummary(
+  filterValue: string,
+  advanced: LibraryAdvancedFilters
+): LibrarySummary {
+  return {
+    identity: librarySummaryIdentity(filterValue, advanced),
+    authors: null,
+    works: null,
+    parts: null,
+    epub: null,
+    pdf: null
+  }
+}
+
+async function fetchLibrarySummary(
+  filterValue: string,
+  advanced: LibraryAdvancedFilters,
+  signal?: AbortSignal
+): Promise<LibrarySummary> {
+  const authorState: LibraryPrimaryState = {
+    mode: "authors",
+    filter: filterValue,
+    sort: "popularitet",
+    page: 1,
+    hide1800: false,
+    downloadMode: false,
+    advancedFilters: advanced
+  }
+  const [authors, works, parts, epub, pdf] = await Promise.all([
+    fetchLibraryPageData(authorState, signal).catch(() => null),
+    fetchLibraryCount("works", filterValue, advanced, signal).catch(() => null),
+    fetchLibraryCount("parts", filterValue, advanced, signal).catch(() => null),
+    fetchLibraryCount("epub", filterValue, advanced, signal).catch(() => null),
+    fetchLibraryCount("pdf", filterValue, advanced, signal).catch(() => null)
+  ])
+  return {
+    identity: librarySummaryIdentity(filterValue, advanced),
+    authors: authors?.mode === "authors" && !authors.response.failed
+      ? authors.response.hits
+      : null,
+    works: works?.mode === "works" ? works.total : null,
+    parts: parts?.mode === "parts" ? parts.total : null,
+    epub: epub?.mode === "epub" ? epub.total : null,
+    pdf: pdf?.mode === "pdf" ? pdf.total : null
+  }
+}
+
 async function fetchLibraryOptions(): Promise<LibraryOptionsResponse> {
   try {
     const { data } = await libraryClient.GET("/library/options")
@@ -683,19 +751,25 @@ const initialBrowseSort = initialState.mode === "authors"
     : initialState.mode === "works"
       ? initialState.sort as EpubSortKey
       : "popularitet"
-async function fetchInitialData(): Promise<LibraryPageData> {
-  return await fetchLibraryPageData(initialState)
+async function fetchInitialData(): Promise<LibraryInitialData> {
+  const pagePromise = fetchLibraryPageData(initialState)
+  const summaryPromise = initialState.standalone || initialState.downloadMode
+    ? Promise.resolve(null)
+    : fetchLibrarySummary(initialState.filter, initialState.advancedFilters)
+  const [page, summary] = await Promise.all([pagePromise, summaryPromise])
+  return { page, summary }
 }
 
-function emptyInitialData(): LibraryPageData {
-  return emptyPageData(initialState.mode)
+function emptyInitialData(): LibraryInitialData {
+  return { page: emptyPageData(initialState.mode), summary: null }
 }
 
-const { data: initialData } = await useAsyncData<LibraryPageData>(
+const { data: initialData } = await useAsyncData<LibraryInitialData>(
   `library:${route.path}:${mode}:${initialFilter}:${initialState.sort}:${initialState.page}:${initialState.hide1800}:${initialState.downloadMode}:${JSON.stringify(initialState.advancedFilters)}`,
   fetchInitialData,
   { default: emptyInitialData }
 )
+const initialPageData = initialData.value?.page ?? emptyPageData(initialState.mode)
 
 const filter = ref(initialFilter)
 const selectedSort = ref(initialSort)
@@ -768,13 +842,13 @@ const hasActiveFilters = computed(() => (
     || queryYearRange(`${chronologyFromDraft.value},${chronologyToDraft.value}`))
 ))
 const results = ref(
-  initialData.value?.mode === "all" ? initialData.value.response : emptyLibraryResponse()
+  initialPageData.mode === "all" ? initialPageData.response : emptyLibraryResponse()
 )
-const epubResults = ref(initialData.value?.mode === "epub"
-  ? initialData.value.response
+const epubResults = ref(initialPageData.mode === "epub"
+  ? initialPageData.response
   : emptyEpubResponse())
-const pdfResults = ref(initialData.value?.mode === "pdf"
-  ? initialData.value.response
+const pdfResults = ref(initialPageData.mode === "pdf"
+  ? initialPageData.response
   : emptyPdfResponse())
 type DownloadCounts = {
   identity: string
@@ -787,52 +861,54 @@ const initialDownloadCountIdentity = JSON.stringify([
 ])
 const downloadCounts = ref<DownloadCounts>({
   identity: initialDownloadCountIdentity,
-  epub: initialData.value?.mode === "epub" && !initialData.value.response.failed
-    ? initialData.value.response.distinctHits
+  epub: initialPageData.mode === "epub" && !initialPageData.response.failed
+    ? initialPageData.response.distinctHits
     : null,
-  pdf: initialData.value?.mode === "pdf" && !initialData.value.response.failed
-    ? initialData.value.response.distinctHits
+  pdf: initialPageData.mode === "pdf" && !initialPageData.response.failed
+    ? initialPageData.response.distinctHits
     : null
 })
-const latestResults = ref(initialData.value?.mode === "latest"
-  ? initialData.value.response
+const latestResults = ref(initialPageData.mode === "latest"
+  ? initialPageData.response
   : emptyLatestResponse())
-const authorResults = ref(initialData.value?.mode === "authors"
-  ? initialData.value.response
+const authorResults = ref(initialPageData.mode === "authors"
+  ? initialPageData.response
   : emptyAuthorBrowseResponse())
-const workResults = ref(initialData.value?.mode === "works"
-  ? initialData.value.response
+const workResults = ref(initialPageData.mode === "works"
+  ? initialPageData.response
   : emptyBrowseResponse())
-const partResults = ref(initialData.value?.mode === "parts"
-  ? initialData.value.response
+const partResults = ref(initialPageData.mode === "parts"
+  ? initialPageData.response
   : emptyBrowseResponse())
-type BrowseCounts = {
-  identity: string
-  authors: number | null
-  works: number | null
-  parts: number | null
-  workAuthorIds: string[] | null
-  partAuthorIds: string[] | null
+function initialLibrarySummaryValue(): LibrarySummary {
+  const summary = initialData.value?.summary
+    ?? emptyLibrarySummary(initialFilter, initialState.advancedFilters)
+  if (initialState.standalone || initialState.downloadMode || initialPageData.response.failed) {
+    return summary
+  }
+  switch (initialPageData.mode) {
+    case "all":
+    case "latest":
+      return summary
+    case "authors":
+      return {
+        ...summary,
+        authors: initialPageData.response.hits,
+        works: initialPageData.response.workCount,
+        parts: initialPageData.response.partCount
+      }
+    case "works":
+      return { ...summary, works: initialPageData.response.distinctHits }
+    case "parts":
+      return { ...summary, parts: initialPageData.response.hits }
+    case "epub":
+      return { ...summary, epub: initialPageData.response.distinctHits }
+    case "pdf":
+      return { ...summary, pdf: initialPageData.response.distinctHits }
+  }
 }
-const initialAuthorResponse = initialData.value?.mode === "authors"
-  ? initialData.value.response
-  : null
-const browseCounts = ref<BrowseCounts>({
-  identity: JSON.stringify([initialFilter, initialState.advancedFilters]),
-  authors: null,
-  works: initialAuthorResponse && !initialAuthorResponse.failed
-    ? initialAuthorResponse.workCount
-    : initialData.value?.mode === "works" && !initialData.value.response.failed
-      ? initialData.value.response.distinctHits
-      : null,
-  parts: initialAuthorResponse && !initialAuthorResponse.failed
-    ? initialAuthorResponse.partCount
-    : initialData.value?.mode === "parts" && !initialData.value.response.failed
-      ? initialData.value.response.hits
-      : null,
-  workAuthorIds: null,
-  partAuthorIds: null,
-})
+
+const librarySummary = ref<LibrarySummary>(initialLibrarySummaryValue())
 const browseResults = computed(() => currentMode.value === "parts"
   ? partResults.value
   : workResults.value)
@@ -875,8 +951,8 @@ const loading = ref(false)
 let timer: ReturnType<typeof setTimeout> | null = null
 let controller: AbortController | null = null
 let requestVersion = 0
-let countVersion = 0
-let countController: AbortController | null = null
+let summaryVersion = 0
+let summaryController: AbortController | null = null
 let downloadCountVersion = 0
 let downloadCountController: AbortController | null = null
 let ownedNavigation: { key: string, version: number } | null = null
@@ -970,10 +1046,6 @@ function invalidateIntent(): number {
   return ++requestVersion
 }
 
-function browseCountIdentity(filterValue: string, advanced: LibraryAdvancedFilters): string {
-  return JSON.stringify([filterValue, advanced])
-}
-
 function downloadCountIdentity(filterValue: string, advanced: LibraryAdvancedFilters): string {
   return JSON.stringify([filterValue, advanced])
 }
@@ -1029,118 +1101,108 @@ async function refreshInactiveDownloadCount(
   updateDownloadCount(filterValue, advanced, inactiveMode, result.total)
 }
 
-function invalidateBrowseCounts(filterValue: string, advanced: LibraryAdvancedFilters) {
-  const identity = browseCountIdentity(filterValue, advanced)
-  if (browseCounts.value.identity === identity) return
-  countVersion += 1
-  countController?.abort()
-  countController = null
-  browseCounts.value = {
-    identity,
-    authors: null,
-    works: null,
-    parts: null,
-    workAuthorIds: null,
-    partAuthorIds: null
+function invalidateLibrarySummary(
+  filterValue: string,
+  advanced: LibraryAdvancedFilters
+) {
+  const identity = librarySummaryIdentity(filterValue, advanced)
+  if (librarySummary.value.identity === identity) return
+  summaryVersion += 1
+  summaryController?.abort()
+  summaryController = null
+  librarySummary.value = emptyLibrarySummary(filterValue, advanced)
+}
+
+function updateLibrarySummaryFromPage(
+  state: QueryState,
+  pageData: LibraryPageData
+) {
+  if (standalone || state.downloadMode || pageData.response.failed) return
+  const identity = librarySummaryIdentity(state.filter, state.advancedFilters)
+  if (librarySummary.value.identity !== identity
+    || identity !== librarySummaryIdentity(filter.value, currentState().advancedFilters)) return
+  switch (pageData.mode) {
+    case "all":
+    case "latest":
+      return
+    case "authors":
+      librarySummary.value = {
+        ...librarySummary.value,
+        authors: pageData.response.hits,
+        works: pageData.response.workCount,
+        parts: pageData.response.partCount
+      }
+      return
+    case "works":
+      librarySummary.value = {
+        ...librarySummary.value,
+        works: pageData.response.distinctHits
+      }
+      return
+    case "parts":
+      librarySummary.value = {
+        ...librarySummary.value,
+        parts: pageData.response.hits
+      }
+      return
+    case "epub":
+      librarySummary.value = {
+        ...librarySummary.value,
+        epub: pageData.response.distinctHits
+      }
+      return
+    case "pdf":
+      librarySummary.value = {
+        ...librarySummary.value,
+        pdf: pageData.response.distinctHits
+      }
   }
 }
 
-function updateBrowseCount(
+async function refreshLibrarySummary(
   filterValue: string,
   advanced: LibraryAdvancedFilters,
-  mode: "works" | "parts",
-  count: number,
-  authorIds?: string[]
+  sourceDownloadMode = false
 ) {
-  const identity = browseCountIdentity(filterValue, advanced)
-  if (identity !== browseCountIdentity(filter.value, currentState().advancedFilters)) return
-  const current = browseCounts.value.identity === identity
-    ? browseCounts.value
-    : {
-        identity,
-        authors: null,
-        works: null,
-        parts: null,
-        workAuthorIds: null,
-        partAuthorIds: null
-      }
-  const next: BrowseCounts = {
-    ...current,
-    identity,
-    [mode]: count,
-    ...(mode === "works" && authorIds ? { workAuthorIds: [...authorIds] } : {}),
-    ...(mode === "parts" && authorIds ? { partAuthorIds: [...authorIds] } : {})
+  const identity = librarySummaryIdentity(filterValue, advanced)
+  if (standalone || sourceDownloadMode
+    || identity !== librarySummaryIdentity(filter.value, currentState().advancedFilters)) return
+  if (librarySummary.value.identity !== identity) {
+    invalidateLibrarySummary(filterValue, advanced)
   }
-  if (next.workAuthorIds !== null && next.partAuthorIds !== null) {
-    next.authors = new Set([...next.workAuthorIds, ...next.partAuthorIds]).size
-  }
-  browseCounts.value = next
-}
+  if ([
+    librarySummary.value.authors,
+    librarySummary.value.works,
+    librarySummary.value.parts,
+    librarySummary.value.epub,
+    librarySummary.value.pdf
+  ].every(value => value !== null)) return
 
-async function refreshBrowseCounts(filterValue: string, advanced: LibraryAdvancedFilters) {
-  const identity = browseCountIdentity(filterValue, advanced)
-  if (standalone || identity !== browseCountIdentity(filter.value, currentState().advancedFilters)) {
-    return
-  }
-  if (browseCounts.value.identity !== identity) invalidateBrowseCounts(filterValue, advanced)
-  if (browseCounts.value.works !== null && browseCounts.value.parts !== null
-    && browseCounts.value.workAuthorIds !== null
-    && browseCounts.value.partAuthorIds !== null) return
-  const version = ++countVersion
-  countController?.abort()
+  const version = ++summaryVersion
+  summaryController?.abort()
   const activeController = new AbortController()
-  countController = activeController
-  const currentCounts = browseCounts.value.identity === identity
-    ? browseCounts.value
-    : {
-        identity,
-        authors: null,
-        works: null,
-        parts: null,
-        workAuthorIds: null,
-        partAuthorIds: null
-      }
-  const [works, parts] = await Promise.all([
-    currentCounts.works === null || currentCounts.workAuthorIds === null
-      ? fetchLibraryCount(
-          "works", filterValue, advanced, activeController.signal
-        ).catch(() => null)
-      : Promise.resolve(null),
-    currentCounts.parts === null || currentCounts.partAuthorIds === null
-      ? fetchLibraryCount(
-          "parts", filterValue, advanced, activeController.signal
-        ).catch(() => null)
-      : Promise.resolve(null)
-  ])
-  const ownsController = countController === activeController
-  if (ownsController) countController = null
-  if (!ownsController || version !== countVersion || activeController.signal.aborted
-    || identity !== browseCountIdentity(filter.value, currentState().advancedFilters)) return
-  const current = browseCounts.value.identity === identity
-    ? browseCounts.value
-    : {
-        identity,
-        authors: null,
-        works: null,
-        parts: null,
-        workAuthorIds: null,
-        partAuthorIds: null
-      }
-  const workAuthorIds = works?.mode === "works" && works.author_ids !== null
-    ? works.author_ids
-    : current.workAuthorIds
-  const partAuthorIds = parts?.mode === "parts" && parts.author_ids !== null
-    ? parts.author_ids
-    : current.partAuthorIds
-  browseCounts.value = {
+  summaryController = activeController
+  const summary = await fetchLibrarySummary(
+    filterValue,
+    advanced,
+    activeController.signal
+  ).catch(() => null)
+  const ownsController = summaryController === activeController
+  if (ownsController) summaryController = null
+  if (!ownsController || version !== summaryVersion || activeController.signal.aborted
+    || summary === null || summary.identity !== identity
+    || identity !== librarySummaryIdentity(filter.value, currentState().advancedFilters)
+    || currentState().downloadMode) return
+  const current = librarySummary.value.identity === identity
+    ? librarySummary.value
+    : emptyLibrarySummary(filterValue, advanced)
+  librarySummary.value = {
     identity,
-    authors: workAuthorIds !== null && partAuthorIds !== null
-      ? new Set([...workAuthorIds, ...partAuthorIds]).size
-      : current.authors,
-    works: works?.mode === "works" && works.total !== null ? works.total : current.works,
-    parts: parts?.mode === "parts" && parts.total !== null ? parts.total : current.parts,
-    workAuthorIds,
-    partAuthorIds
+    authors: summary.authors ?? current.authors,
+    works: summary.works ?? current.works,
+    parts: summary.parts ?? current.parts,
+    epub: summary.epub ?? current.epub,
+    pdf: summary.pdf ?? current.pdf
   }
 }
 
@@ -1181,7 +1243,7 @@ async function runBrowserRequest(state: QueryState, version: number) {
     || pageData === null || pageData.mode !== state.mode) return
   if (pageData.mode === "epub") {
     epubResults.value = pageData.response
-    if (!epubResults.value.failed) {
+    if (standalone && !epubResults.value.failed) {
       updateDownloadCount(
         state.filter, state.advancedFilters, "epub", epubResults.value.distinctHits
       )
@@ -1189,49 +1251,30 @@ async function runBrowserRequest(state: QueryState, version: number) {
   }
   else if (pageData.mode === "pdf") {
     pdfResults.value = pageData.response
-    if (!pdfResults.value.failed) {
+    if (standalone && !pdfResults.value.failed) {
       updateDownloadCount(
         state.filter, state.advancedFilters, "pdf", pdfResults.value.distinctHits
       )
     }
   }
   else if (pageData.mode === "latest") latestResults.value = pageData.response
-  else if (pageData.mode === "authors") {
-    authorResults.value = pageData.response
-    if (!authorResults.value.failed) {
-      updateBrowseCount(
-        state.filter, state.advancedFilters, "works", authorResults.value.workCount
-      )
-      updateBrowseCount(
-        state.filter, state.advancedFilters, "parts", authorResults.value.partCount
-      )
-    }
-  }
+  else if (pageData.mode === "authors") authorResults.value = pageData.response
   else if (pageData.mode === "works") {
     workResults.value = pageData.response
-    if (!workResults.value.failed) {
-      updateBrowseCount(
-        state.filter, state.advancedFilters, "works", workResults.value.distinctHits
-      )
-    }
     expandedWorkKey.value = workResults.value.data.find(
       item => item.titlePath === queryValue(route.query.title)
     )?.key ?? ""
   }
-  else if (pageData.mode === "parts") {
-    partResults.value = pageData.response
-    if (!partResults.value.failed) {
-      updateBrowseCount(
-        state.filter, state.advancedFilters, "parts", partResults.value.hits
-      )
-    }
-  }
+  else if (pageData.mode === "parts") partResults.value = pageData.response
   else results.value = pageData.response
+  updateLibrarySummaryFromPage(state, pageData)
   loading.value = false
   if (controller === activeController) controller = null
-  if (!pageData.response.failed) {
-    void refreshBrowseCounts(state.filter, state.advancedFilters)
-  }
+  if (!pageData.response.failed) void refreshLibrarySummary(
+    state.filter,
+    state.advancedFilters,
+    state.downloadMode
+  )
   if (state.mode === "epub" || state.mode === "pdf") {
     void refreshInactiveDownloadCount(state.filter, state.advancedFilters, state.mode)
   }
@@ -1256,7 +1299,7 @@ function beginIntent(state: QueryState, delay = 0) {
   const captured = Object.freeze({ ...state })
   const version = invalidateIntent()
   currentMode.value = captured.mode
-  invalidateBrowseCounts(captured.filter, captured.advancedFilters)
+  invalidateLibrarySummary(captured.filter, captured.advancedFilters)
   invalidateDownloadCounts(captured.filter, captured.advancedFilters)
   filter.value = captured.filter
   currentPage.value = captured.page
@@ -1642,7 +1685,7 @@ watch(
     const state = requestState(parsedRoute)
     syncAdvancedControls(parsedRoute)
     currentMode.value = state.mode
-    invalidateBrowseCounts(state.filter, state.advancedFilters)
+    invalidateLibrarySummary(state.filter, state.advancedFilters)
     invalidateDownloadCounts(state.filter, state.advancedFilters)
     filter.value = state.filter
     currentPage.value = state.page
@@ -1791,10 +1834,10 @@ const downloadDistinctHits = computed(() => currentMode.value === "pdf"
   : epubResults.value.distinctHits)
 const epubTabCount = computed(() => standalone
   ? downloadCounts.value.epub
-  : epubResults.value.distinctHits)
+  : librarySummary.value.epub)
 const pdfTabCount = computed(() => standalone
   ? downloadCounts.value.pdf
-  : pdfResults.value.distinctHits)
+  : librarySummary.value.pdf)
 const pageCount = computed(() => Math.min(libraryPageMaximum, Math.ceil(
   (currentMode.value === "latest"
     ? latestResults.value.distinctHits
@@ -1848,9 +1891,9 @@ function toggleWorkActions(item: BrowseResult) {
 
 function disposeLibraryRequest() {
   requestVersion += 1
-  countVersion += 1
-  countController?.abort()
-  countController = null
+  summaryVersion += 1
+  summaryController?.abort()
+  summaryController = null
   downloadCountVersion += 1
   downloadCountController?.abort()
   downloadCountController = null
@@ -1880,9 +1923,13 @@ onMounted(() => {
   if (currentMode.value === "authors" && route.query.sida !== undefined) {
     void router.replace({ path: route.path, query: queryFor(currentState()) })
   }
-  const initialFailed = initialData.value?.response.failed ?? true
+  const initialFailed = initialPageData.response.failed
   const state = currentState()
-  if (!initialFailed) void refreshBrowseCounts(filter.value, state.advancedFilters)
+  if (!initialFailed) void refreshLibrarySummary(
+    filter.value,
+    state.advancedFilters,
+    state.downloadMode
+  )
   if (!initialFailed && (state.mode === "epub" || state.mode === "pdf")) {
     void refreshInactiveDownloadCount(filter.value, state.advancedFilters, state.mode)
   }
@@ -2236,11 +2283,11 @@ onUnmounted(() => {
                 class="sc btn btn-small text-base"
                 :class="{
                   active: currentMode === 'authors',
-                  'library-tab-disabled-look': downloadMode || browseCounts.authors === 0
+                  'library-tab-disabled-look': downloadMode || librarySummary.authors === 0
                 }"
                 :aria-disabled="downloadMode || undefined"
                 @click.prevent="!downloadMode && selectMode('authors')"
-              >Författare<span v-if="browseCounts.authors !== null" class="num_hits">: {{ browseCounts.authors }}</span></a>
+              >Författare<span v-if="librarySummary.authors !== null" class="num_hits">: {{ librarySummary.authors }}</span></a>
               <template v-if="currentMode !== 'all'">{{ " " }}</template>
               <a
                 data-library-tab="works"
@@ -2249,7 +2296,7 @@ onUnmounted(() => {
                 class="sc btn btn-small text-base"
                 :class="{ active: currentMode === 'works' }"
                 @click.prevent="selectMode('works')"
-              >Verk<span v-if="browseCounts.works" class="num_hits">: {{ browseCounts.works }}</span></a>
+              >Verk<span v-if="librarySummary.works !== null" class="num_hits">: {{ librarySummary.works }}</span></a>
               <template v-if="currentMode !== 'all'">{{ " " }}</template>
               <a
                 v-if="!downloadMode"
@@ -2259,10 +2306,10 @@ onUnmounted(() => {
                 class="sc btn btn-small text-base"
                 :class="{
                   active: currentMode === 'parts',
-                  'library-tab-disabled-look': browseCounts.parts === 0
+                  'library-tab-disabled-look': librarySummary.parts === 0
                 }"
                 @click.prevent="selectMode('parts')"
-              >Dikt, novell, etc.<span v-if="browseCounts.parts" class="parts num_hits">: {{ browseCounts.parts }}</span></a>
+              >Dikt, novell, etc.<span v-if="librarySummary.parts !== null" class="parts num_hits">: {{ librarySummary.parts }}</span></a>
               <template v-if="!downloadMode && currentMode !== 'all'">{{ " " }}</template>
               <a
                 v-if="!downloadMode"
@@ -2272,10 +2319,10 @@ onUnmounted(() => {
                 class="sc btn btn-small text-base"
                 :class="{
                   active: currentMode === 'epub',
-                  'relevance-unavailable': currentMode === 'all' && !epubResults.distinctHits
+                  'relevance-unavailable': currentMode === 'all' && !epubTabCount
                 }"
                 @click.prevent="selectMode('epub')"
-              >Epub<span v-if="epubResults.distinctHits" class="num_hits">: {{ epubResults.distinctHits }}</span></a>
+              >Epub<span v-if="epubTabCount !== null" class="num_hits">: {{ epubTabCount }}</span></a>
               <template v-if="!downloadMode && currentMode !== 'all'">{{ " " }}</template>
               <a
                 v-if="!downloadMode"
@@ -2285,10 +2332,10 @@ onUnmounted(() => {
                 class="sc btn btn-small text-base"
                 :class="{
                   active: currentMode === 'pdf',
-                  'relevance-unavailable': currentMode !== 'pdf' && !pdfResults.distinctHits
+                  'relevance-unavailable': currentMode !== 'pdf' && !pdfTabCount
                 }"
                 @click.prevent="selectMode('pdf')"
-              >PDF<span v-if="pdfResults.distinctHits" class="num_hits">: {{ pdfResults.distinctHits }}</span></a>
+              >PDF<span v-if="pdfTabCount !== null" class="num_hits">: {{ pdfTabCount }}</span></a>
             </template>
           </div>
         </form>

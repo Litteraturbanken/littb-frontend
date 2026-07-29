@@ -1560,6 +1560,21 @@ function libraryAllResponse(query) {
 
 function libraryAuthorsResponse(query, limit) {
   if (query === "inga") return { mode: "authors", total_authors: 0, total_works: 0, total_parts: 0, items: [] }
+  if (query.toLowerCase() === "strindberg") {
+    const items = [
+      libraryAllAuthor("StrindbergA", "Strindberg, August", 1849, 1912, 20),
+      libraryAllAuthor("StrindbergE", "Strindberg, Erik", 1844, 1910, 12),
+      libraryAllAuthor("StrindbergF", "Strindberg, Frida", 1872, 1943, 10),
+      libraryAllAuthor("StrindbergN", "Strindberg, Nils", 1872, 1897, 8),
+      libraryAllAuthor("StrindbergO", "Strindberg, Oskar", null, null, 7),
+      libraryAllAuthor("StrindbergT", "Strindberg, Tore", 1882, 1968, 5),
+      libraryAllAuthor("StrindbergV", "Strindberg, Vera", 1881, 1944, 4)
+    ]
+    return {
+      mode: "authors", total_authors: 7, total_works: 465, total_parts: 1039,
+      items: items.slice(0, limit)
+    }
+  }
   if (query.includes("Selma")) {
     return { mode: "authors", total_authors: 1, total_works: 1, total_parts: 0, items: [libraryAllAuthor("LagerlofS", "Lagerlöf, Selma", 1858, 1940)] }
   }
@@ -1579,6 +1594,14 @@ function libraryAuthorsResponse(query, limit) {
 
 function libraryWorksResponse(query) {
   if (query === "inga") return { mode: "works", total_hits: 0, total_works: 0, items: [] }
+  if (query.toLowerCase() === "strindberg") {
+    return { mode: "works", total_hits: 611, total_works: 465, items: [
+      libraryBrowseItem({
+        title: "Röda rummet", fullTitle: "Röda rummet", year: "1879",
+        author: libraryAuthors.strindberg, titleId: "RodaRummet"
+      })
+    ] }
+  }
   if (query.includes("Selma")) return { mode: "works", total_hits: 1, total_works: 1, items: [gostaWork] }
   if (query === "unsafe-download-token") {
     const safe = libraryBrowseItem({
@@ -1601,11 +1624,29 @@ function libraryDownloadResponse(body) {
   const query = body.filters.query
   if (query === "inga") return { mode: body.mode, total_hits: 0, total_works: 0, items: [] }
   if (body.mode === "epub") {
+    if (query.toLowerCase() === "strindberg") {
+      return {
+        mode: "epub", total_hits: 136, total_works: 136,
+        items: [libraryDownloadItem({
+          title: "Röda rummet", fullTitle: "Röda rummet", year: "1879",
+          author: libraryAuthors.strindberg, titleId: "RodaRummet"
+        })]
+      }
+    }
     const items = query.includes("Selma") || body.page === 2 || (query === "sort race" && body.reverse)
       ? [gostaEpub] : [doktorEpub, folkvisorEpub, bauerEpub]
     const total = query === "bounded" ? 10_001 : query === "paged" ? 201
       : query === "pagination window" ? 1700 : query.includes("Selma") ? 1 : 201
     return { mode: "epub", total_hits: total, total_works: total, items }
+  }
+  if (query.toLowerCase() === "strindberg") {
+    return {
+      mode: "pdf", total_hits: 265, total_works: 265,
+      items: [libraryPdfItem(
+        "Röda rummet", "Röda rummet", "1879", libraryAuthors.strindberg,
+        "RodaRummet", "StrindbergA_RodaRummet.pdf", "/export/faksimil/lb-RodaRummet.pdf"
+      )]
+    }
   }
   if (query === "tuple-collision") return { mode: "pdf", total_hits: 10, total_works: 8, items: tuplePdfItems }
   const items = query.includes("Selma") ? [defaultPdfItems[0]]
@@ -1621,6 +1662,9 @@ function librarySearchResponse(body) {
   if (body.mode === "authors") return libraryAuthorsResponse(query, body.limit)
   if (body.mode === "works") return libraryWorksResponse(query)
   if (body.mode === "parts") {
+    if (query.toLowerCase() === "strindberg") {
+      return { mode: "parts", total_parts: 1039, items: [] }
+    }
     return { mode: "parts", total_parts: query ? 0 : 201, items: query ? [] : [partItem] }
   }
   if (body.mode === "latest") {
@@ -1641,19 +1685,21 @@ function libraryCountResponse(mode, filters) {
   const empty = query === "inga"
   if (mode === "works") {
     return {
-      mode, total: empty ? 0 : query.includes("selma") ? 1 : query === "unsafe-download-token" ? 2 : 3,
+      mode, total: empty ? 0 : query === "strindberg" ? 465 : query.includes("selma") ? 1 : query === "unsafe-download-token" ? 2 : 3,
       author_ids: empty ? [] : query.includes("selma") ? ["LagerlofS"]
+        : query === "strindberg" ? ["StrindbergA", "StrindbergE", "StrindbergF", "StrindbergN", "StrindbergO", "StrindbergT", "StrindbergV"]
         : query === "unsafe-download-token" ? ["SöderbergH"]
           : ["SöderbergH", "GeijerEGA", "BauerJ"]
     }
   }
   if (mode === "parts") {
     return {
-      mode, total: query ? 0 : 201,
-      author_ids: query ? [] : ["PoetP"]
+      mode, total: query === "strindberg" ? 1039 : query ? 0 : 201,
+      author_ids: query === "strindberg" ? ["StrindbergA"] : query ? [] : ["PoetP"]
     }
   }
   if (mode === "pdf" && query === "invalid-hits") return { mode, total: null }
+  if (query === "strindberg") return { mode, total: mode === "epub" ? 136 : 265 }
   return { mode, total: empty ? 0 : query.includes("selma") ? 1 : 201 }
 }
 const textSearchLegacyFields = new Set([
