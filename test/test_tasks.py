@@ -537,6 +537,12 @@ class InvokeTaskTests(unittest.TestCase):
                 ),
                 call(
                     context,
+                    [*compile_prefix, "--strict", "test/nuxt/observability-contract.ts"],
+                    settings.nuxt_dir,
+                    env=node_environment,
+                ),
+                call(
+                    context,
                     [
                         *compile_prefix,
                         "--strict",

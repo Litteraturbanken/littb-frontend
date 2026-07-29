@@ -37,15 +37,6 @@ const validReaderPageEvent = {
   }
 } satisfies ReaderPageEvent
 
-const forbiddenReaderPageEvent: ReaderPageEvent = {
-  ...validReaderPageEvent,
-  attributes: {
-    ...validReaderPageEvent.attributes,
-    // @ts-expect-error Raw selected text is forbidden by the generated contract.
-    selected_text: "private word"
-  }
-}
-
 describe("generated observability contract", () => {
   test("narrows attributes using event_name", () => {
     const event: ObservabilityEvent = validReaderPageEvent
@@ -54,6 +45,5 @@ describe("generated observability contract", () => {
       throw new Error("Expected a reader-page event")
     }
     expect(event.attributes.media_type).toBe("etext")
-    expect(forbiddenReaderPageEvent.event_name).toBe("business.reader_page")
   })
 })

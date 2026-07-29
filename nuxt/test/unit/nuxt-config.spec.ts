@@ -22,7 +22,7 @@ type NuxtConfig = {
   }
 }
 
-const legacyProxyPattern = "^/api/(?!v2(?:/|$)|reader(?:/|$)|editor(?:/|$)|dev(?:/|$)|author-documents(?:/|$)|dramawebben(?:/|$))"
+const legacyProxyPattern = "^/api/(?!v2(?:/|$)|reader(?:/|$)|editor(?:/|$)|dev(?:/|$)|author-documents(?:/|$)|dramawebben(?:/|$)|observability(?:/|$))"
 
 async function loadConfig(): Promise<NuxtConfig> {
   vi.stubGlobal("defineNuxtConfig", (config: NuxtConfig) => config)

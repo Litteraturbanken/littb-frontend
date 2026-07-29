@@ -531,6 +531,7 @@ def quality_contract(context: Context) -> None:
     for contract_file in (
         "test/nuxt/author-works-contract.ts",
         "test/nuxt/library-contract.ts",
+        "test/nuxt/observability-contract.ts",
         "test/nuxt/reader-editor-manifest-contract.ts",
         "test/nuxt/reader-source-info-contract.ts",
         "test/nuxt/renderable-html-contract.ts",

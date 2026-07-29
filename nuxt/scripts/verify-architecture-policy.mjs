@@ -12,6 +12,7 @@ const rendererPath = "app/components/global/RenderableHtmlContent.vue"
 const htmlDocumentPath = "app/lib/html-document.ts"
 const contractAllowlist = new Set([
   "test/nuxt/author-works-contract.ts",
+  "test/nuxt/observability-contract.ts",
   "test/nuxt/reader-source-info-contract.ts",
   "test/nuxt/renderable-html-contract.ts"
 ])
