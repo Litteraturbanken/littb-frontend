@@ -12,45 +12,76 @@ interface StoredCorrelation {
   expiresAt: number
 }
 
-const correlations = new Map<string, StoredCorrelation>()
+export class CorrelationTokenStore {
+  readonly #entries = new Map<string, StoredCorrelation>()
+  readonly #maxTokens: number
+  readonly #ttlMs: number
+  #lastExpiresAt = 0
 
-function prune(now: number): void {
-  for (const [token, stored] of correlations) {
-    if (stored.expiresAt <= now) correlations.delete(token)
+  constructor(maxTokens = MAX_TOKENS, ttlMs = TOKEN_TTL_MS) {
+    this.#maxTokens = maxTokens
+    this.#ttlMs = ttlMs
   }
-  while (correlations.size >= MAX_TOKENS) {
-    const oldest = correlations.keys().next().value
-    if (oldest === undefined) break
-    correlations.delete(oldest)
+
+  #pruneExpired(now: number): void {
+    while (this.#entries.size > 0) {
+      const oldest = this.#entries.entries().next().value as
+        | [string, StoredCorrelation]
+        | undefined
+      if (!oldest || oldest[1].expiresAt > now) break
+      this.#entries.delete(oldest[0])
+    }
+  }
+
+  issue(context: ObservabilityContext, now = Date.now()): string {
+    this.#pruneExpired(now)
+    while (this.#entries.size >= this.#maxTokens) {
+      const oldest = this.#entries.keys().next().value
+      if (oldest === undefined) break
+      this.#entries.delete(oldest)
+    }
+    const token = randomUUID()
+    const expiresAt = Math.max(now + this.#ttlMs, this.#lastExpiresAt)
+    this.#lastExpiresAt = expiresAt
+    this.#entries.set(token, {
+      context: { ...context },
+      expiresAt
+    })
+    return token
+  }
+
+  resolve(token: string | null, now = Date.now()): ObservabilityContext | undefined {
+    if (!token || !TOKEN_PATTERN.test(token)) return undefined
+    const stored = this.#entries.get(token)
+    if (!stored || stored.expiresAt <= now) {
+      this.#entries.delete(token)
+      return undefined
+    }
+    return { ...stored.context }
+  }
+
+  reset(): void {
+    this.#entries.clear()
+    this.#lastExpiresAt = 0
   }
 }
+
+const correlations = new CorrelationTokenStore()
 
 export function issueCorrelationToken(
   context: ObservabilityContext,
   now = Date.now()
 ): string {
-  prune(now)
-  const token = randomUUID()
-  correlations.set(token, {
-    context: { ...context },
-    expiresAt: now + TOKEN_TTL_MS
-  })
-  return token
+  return correlations.issue(context, now)
 }
 
 export function resolveCorrelationToken(
   token: string | null,
   now = Date.now()
 ): ObservabilityContext | undefined {
-  if (!token || !TOKEN_PATTERN.test(token)) return undefined
-  const stored = correlations.get(token)
-  if (!stored || stored.expiresAt <= now) {
-    correlations.delete(token)
-    return undefined
-  }
-  return { ...stored.context }
+  return correlations.resolve(token, now)
 }
 
 export function resetCorrelationTokens(): void {
-  correlations.clear()
+  correlations.reset()
 }

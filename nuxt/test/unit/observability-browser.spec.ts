@@ -239,4 +239,51 @@ describe("browser event delivery", () => {
       vi.useRealTimers()
     }
   })
+
+  test("reschedules an event queued during an in-flight flush", async () => {
+    const firstEvent = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new Error("discarded-a"),
+      component: "FirstComponent",
+      resourceKind: "unknown",
+      route: "/bibliotek",
+      environment: "stage",
+      deploymentGitSha: GIT_SHA
+    })
+    const secondEvent = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new Error("discarded-b"),
+      component: "SecondComponent",
+      resourceKind: "unknown",
+      route: "/bibliotek",
+      environment: "stage",
+      deploymentGitSha: GIT_SHA
+    })
+    vi.useFakeTimers()
+    try {
+      let releaseFirst: (() => void) | undefined
+      const firstDelivery = new Promise<Response>((resolve) => {
+        releaseFirst = () => resolve(new Response(null, { status: 202 }))
+      })
+      const fetchMock = vi.fn()
+        .mockImplementationOnce(() => firstDelivery)
+        .mockResolvedValueOnce(new Response(null, { status: 202 }))
+      const reporter = new BrowserObservabilityReporter(reporterOptions({
+        fetch: fetchMock,
+        autoFlush: true
+      }))
+
+      reporter.enqueue(firstEvent)
+      const activeFlush = reporter.flush()
+      reporter.enqueue(secondEvent)
+      await vi.advanceTimersByTimeAsync(1_000)
+      releaseFirst?.()
+      await activeFlush
+      await vi.advanceTimersByTimeAsync(1_000)
+
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

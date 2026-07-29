@@ -1,8 +1,36 @@
+import { Readable } from "node:stream"
+
+import type { H3Event } from "h3"
 import { describe, expect, test } from "vitest"
 
-import { ObservabilityIntakeGuard } from "../../server/utils/observability-intake"
+import {
+  ObservabilityIntakeGuard,
+  readBoundedRequestBody
+} from "../../server/utils/observability-intake"
 
 describe("observability intake guard", () => {
+  test("stops buffering a streamed request at the configured limit", async () => {
+    const request = Readable.from([
+      Buffer.alloc(10, 1),
+      Buffer.alloc(7, 2),
+      Buffer.alloc(1_000, 3)
+    ])
+    const event = { node: { req: request } } as unknown as H3Event
+
+    await expect(readBoundedRequestBody(event, 16)).rejects.toMatchObject({
+      statusCode: 413
+    })
+  })
+
+  test("accepts a streamed request exactly at the configured limit", async () => {
+    const request = Readable.from([Buffer.from("12345678"), Buffer.from("abcdefgh")])
+    const event = { node: { req: request } } as unknown as H3Event
+
+    await expect(readBoundedRequestBody(event, 16)).resolves.toEqual(
+      Buffer.from("12345678abcdefgh")
+    )
+  })
+
   test("enforces a per-client window and recovers after it", () => {
     const guard = new ObservabilityIntakeGuard()
     for (let index = 0; index < 60; index += 1) {

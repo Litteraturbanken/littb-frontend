@@ -7,7 +7,6 @@ import {
   getRequestHost,
   getRequestIP,
   getRequestProtocol,
-  readRawBody,
   setResponseStatus,
   type H3Event
 } from "h3"
@@ -288,6 +287,25 @@ function clientKey(event: H3Event): string {
   return createHash("sha256").update(address).digest("hex")
 }
 
+export async function readBoundedRequestBody(
+  event: H3Event,
+  maxBytes = MAX_BODY_BYTES
+): Promise<Buffer> {
+  const chunks: Buffer[] = []
+  let bytesRead = 0
+  for await (const value of event.node.req) {
+    const chunk = typeof value === "string"
+      ? Buffer.from(value)
+      : Buffer.from(value as Uint8Array)
+    bytesRead += chunk.byteLength
+    if (bytesRead > maxBytes) {
+      throw createError({ statusCode: 413, statusMessage: "Event batch too large" })
+    }
+    chunks.push(chunk)
+  }
+  return Buffer.concat(chunks, bytesRead)
+}
+
 export async function handleObservabilityIntake(
   event: H3Event,
   config: ObservabilityIntakeConfig,
@@ -310,10 +328,7 @@ export async function handleObservabilityIntake(
   if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
     throw createError({ statusCode: 413, statusMessage: "Event batch too large" })
   }
-  const body = await readRawBody(event, false) ?? Buffer.alloc(0)
-  if (body.byteLength > MAX_BODY_BYTES) {
-    throw createError({ statusCode: 413, statusMessage: "Event batch too large" })
-  }
+  const body = await readBoundedRequestBody(event)
   const batch = parseBatch(body)
   const guard = options.guard ?? intakeGuard
   const now = (options.now ?? Date.now)()

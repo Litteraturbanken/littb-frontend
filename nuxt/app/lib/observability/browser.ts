@@ -259,6 +259,7 @@ export class BrowserObservabilityReporter {
       await this.#flushing
     } finally {
       this.#flushing = undefined
+      if (this.#queue.length > 0) this.#scheduleFlush(FLUSH_DELAY_MS)
     }
   }
 
