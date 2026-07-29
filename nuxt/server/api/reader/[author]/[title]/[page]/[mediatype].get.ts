@@ -148,7 +148,4 @@ const readerPageHandler = defineEventHandler(async event => {
   } satisfies ReaderPage
 })
 
-export default defineCachedEventHandler(readerPageHandler, {
-  maxAge: 60 * 60,
-  shouldBypassCache: () => import.meta.dev
-})
+export default readerPageHandler

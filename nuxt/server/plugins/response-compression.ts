@@ -7,6 +7,7 @@ import {
   removeResponseHeader,
   setResponseHeader
 } from "h3"
+import { acceptsBrotliEncoding } from "#server/utils/response-compression"
 
 const minimumCompressibleCharacters = 1_024
 
@@ -18,8 +19,7 @@ export default defineNitroPlugin((nitroApp) => {
       || event.path.startsWith("/__nuxt_error")
       || response.body.length < minimumCompressibleCharacters
       || getResponseHeader(event, "content-encoding")
-      || !getRequestHeader(event, "accept-encoding")?.split(",")
-        .some(encoding => encoding.trim().split(";", 1)[0] === "br")
+      || !acceptsBrotliEncoding(getRequestHeader(event, "accept-encoding"))
     ) return
 
     const contentType = getResponseHeader(event, "content-type")

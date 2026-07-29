@@ -19,6 +19,50 @@ import { fetchReaderManifest } from "./work-manifest-client"
 export const maximumReaderEtextBytes = 2 * 1024 * 1024
 export const maximumReaderStylesheetBytes = 256 * 1024
 
+function rebaseStylesheetReference(reference: string, stylesheetUrl: string): string {
+  if (
+    !reference
+    || reference.startsWith("/")
+    || reference.startsWith("#")
+    || /^[a-z][a-z\d+.-]*:/iu.test(reference)
+  ) return reference
+
+  const resolved = new URL(reference, new URL(stylesheetUrl, "https://reader.invalid"))
+  return resolved.href.slice(resolved.origin.length)
+}
+
+function rebaseStylesheetSegment(segment: string, stylesheetUrl: string): string {
+  const rebasedUrls = segment.replace(
+    /\burl\(\s*(?:(["'])([^"']*)\1|([^"'()]*?))\s*\)/giu,
+    (full, _quote: string | undefined, quoted: string | undefined, unquoted: string | undefined) => {
+      const reference = quoted ?? unquoted ?? ""
+      const rebased = rebaseStylesheetReference(reference.trim(), stylesheetUrl)
+      if (rebased === reference.trim()) return full
+      const referenceIndex = full.indexOf(reference)
+      return `${full.slice(0, referenceIndex)}${rebased}${full.slice(referenceIndex + reference.length)}`
+    }
+  )
+
+  return rebasedUrls.replace(
+    /(@import\s+)(["'])([^"']+)\2/giu,
+    (full, prefix: string, quote: string, reference: string) => {
+      const rebased = rebaseStylesheetReference(reference, stylesheetUrl)
+      return rebased === reference ? full : `${prefix}${quote}${rebased}${quote}`
+    }
+  )
+}
+
+export function rebaseRelativeStylesheetReferences(
+  stylesheet: string,
+  stylesheetUrl: string
+): string {
+  return stylesheet.split(/(\/\*[\s\S]*?\*\/)/gu)
+    .map((segment, index) => (
+      index % 2 === 0 ? rebaseStylesheetSegment(segment, stylesheetUrl) : segment
+    ))
+    .join("")
+}
+
 export type ReaderSourcePage = WorkManifestPage
 export type ReaderFacsimileSourcePage = WorkManifestFacsimilePage
 
@@ -260,12 +304,16 @@ export async function fetchReaderWorkStylesheet(
 ): Promise<string | null> {
   const url = `${base}/txt/css/${encodeURIComponent(workId)}-etext.css`
   try {
-    return await fetchManagedText(url, {
+    const stylesheet = await fetchManagedText(url, {
       authorityOrigin: new URL(base).origin,
       allowedPathPrefixes: ["/txt/css/"],
       allowedContentTypes: ["text/css"],
       maximumBytes: maximumReaderStylesheetBytes
     })
+    return rebaseRelativeStylesheetReferences(
+      stylesheet,
+      `/txt/css/${encodeURIComponent(workId)}-etext.css`
+    )
   } catch {
     return null
   }
@@ -274,12 +322,13 @@ export async function fetchReaderWorkStylesheet(
 export async function fetchReaderSharedStylesheet(base: string): Promise<string | null> {
   const url = `${base}/red/css/etext.css`
   try {
-    return await fetchManagedText(url, {
+    const stylesheet = await fetchManagedText(url, {
       authorityOrigin: new URL(base).origin,
       allowedPathPrefixes: ["/red/css/"],
       allowedContentTypes: ["text/css"],
       maximumBytes: maximumReaderStylesheetBytes
     })
+    return rebaseRelativeStylesheetReferences(stylesheet, "/red/css/etext.css")
   } catch {
     return null
   }

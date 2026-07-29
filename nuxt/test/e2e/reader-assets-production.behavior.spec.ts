@@ -49,6 +49,9 @@ test("the production reader loads its stylesheets without console errors", async
   const sharedStyles = page.locator("style[data-reader-shared-styles]")
   await expect(sharedStyles).toHaveCount(1)
   expect(await sharedStyles.textContent()).toContain(".txt .title")
+  expect(await sharedStyles.textContent()).toContain(
+    'url("/red/bilder/reader-rebase-fixture.png")'
+  )
   await expect(page.locator(
     'link[href="/txt/css/lb-reader-doktor-glas-etext.css"]'
   )).toHaveCount(0)
@@ -58,27 +61,50 @@ test("the production reader loads its stylesheets without console errors", async
   expect(consoleErrors).toEqual([])
 })
 
-test("Nitro compresses generated reader HTML when the browser accepts Brotli", async ({ request }) => {
-  const response = await request.get(
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext",
-    { headers: { "accept-encoding": "br" } }
-  )
+for (const [acceptEncoding, accepted] of [
+  ["br", true],
+  ["br;q=0", false],
+  ["gzip;q=0.9, br;q=0.2", true],
+  ["gzip;q=1, br;q=0", false],
+  ["BR", true],
+  ["br;q=bogus", false],
+  ["br;q=1.1", false]
+] as const) {
+  test(`Nitro negotiates Brotli for ${acceptEncoding}`, async ({ request }) => {
+    const response = await request.get(
+      "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext",
+      { headers: { "accept-encoding": acceptEncoding } }
+    )
 
-  expect(response.status()).toBe(200)
-  expect(response.headers()["content-encoding"]).toBe("br")
-  expect(response.headers().vary).toContain("Accept-Encoding")
-})
+    expect(response.status()).toBe(200)
+    expect(response.headers()["content-encoding"]).toBe(accepted ? "br" : undefined)
+    if (accepted) expect(response.headers().vary).toContain("Accept-Encoding")
+  })
+}
 
-test("immutable reader API pages are conditionally cacheable in production", async ({ request }) => {
+test("mutable reader API pages are never shared or browser cacheable", async ({ request }) => {
   const path = "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext"
   const first = await request.get(path)
 
   expect(first.status()).toBe(200)
-  expect(first.headers()["cache-control"]).toContain("max-age=3600")
-  expect(first.headers().etag).toBeTruthy()
+  expect(first.headers()["cache-control"]).toBe("no-store")
 
   const conditional = await request.get(path, {
-    headers: { "if-none-match": first.headers().etag! }
+    headers: { "if-none-match": first.headers().etag ?? '"stale-reader-response"' }
   })
-  expect(conditional.status()).toBe(304)
+  expect(conditional.status()).toBe(200)
+  expect(conditional.headers()["cache-control"]).toBe("no-store")
+})
+
+test("staging refuses indexing through robots and response metadata", async ({ request }) => {
+  const robots = await request.get("/robots.txt")
+  expect(robots.status()).toBe(200)
+  expect(await robots.text()).toBe("User-agent: *\nDisallow: /\n")
+  expect(robots.headers()["x-robots-tag"]).toBe("noindex, nofollow")
+
+  const page = await request.get(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
+  )
+  expect(page.status()).toBe(200)
+  expect(page.headers()["x-robots-tag"]).toBe("noindex, nofollow")
 })

@@ -214,6 +214,7 @@ test("canonical Reader API projects exact work searchability", async ({ request 
     "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext"
   )
   expect(searchable.status()).toBe(200)
+  expect(searchable.headers()["cache-control"]).toBe("no-store")
   expect((await searchable.json()).searchable).toBe(true)
 
   const inert = await request.get(

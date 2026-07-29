@@ -9,6 +9,7 @@ import {
   loadReaderMetadata,
   maximumReaderEtextBytes,
   preferredFacsimileSize,
+  rebaseRelativeStylesheetReferences,
   readerFacsimileMetadata,
   resolveReaderPartNavigation
 } from "../../server/utils/reader-source"
@@ -349,6 +350,40 @@ describe("Reader part navigation", () => {
 })
 
 describe("managed Reader e-text boundary", () => {
+  test("rebases quoted and unquoted stylesheet references against their source URL", () => {
+    expect(rebaseRelativeStylesheetReferences(`
+@import "theme/base.css" screen;
+@import url('../print.css');
+.quoted { src: url("../fonts/font.woff2?#iefix"); }
+.unquoted { background: url(images/paper.png); }
+`, "/red/css/etext.css")).toBe(`
+@import "/red/css/theme/base.css" screen;
+@import url('/red/print.css');
+.quoted { src: url("/red/fonts/font.woff2?#iefix"); }
+.unquoted { background: url(/red/css/images/paper.png); }
+`)
+  })
+
+  test("leaves root, data, HTTP, protocol-relative, and hash references unchanged", () => {
+    const stylesheet = `
+.root { background: url('/images/root.png'); }
+.data { background: url(data:image/png;base64,AAAA); }
+.http { background: url(https://assets.test/image.png); }
+.protocol { background: url(//assets.test/image.png); }
+.hash { clip-path: url(#mask); }
+@import "http://assets.test/base.css";
+`
+    expect(rebaseRelativeStylesheetReferences(stylesheet, "/txt/css/work.css"))
+      .toBe(stylesheet)
+  })
+
+  test("uses the work stylesheet directory for /txt/css references", () => {
+    expect(rebaseRelativeStylesheetReferences(
+      ".work { background: url(../bilder/ornament.png); }",
+      "/txt/css/lb-work-etext.css"
+    )).toBe(".work { background: url(/txt/bilder/ornament.png); }")
+  })
+
   test("retains the Reader authority through the DTO and marker path", () => {
     expectTypeOf<string>().not.toMatchTypeOf<ReaderEtextPage["html"]>()
     expectTypeOf<ManagedAssetHtml<"home-editorial">>()

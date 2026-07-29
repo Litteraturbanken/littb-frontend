@@ -629,6 +629,7 @@ export function readerSearchHitResponse(
 export const sharedReaderCss = `
 .txt .center { text-align: center; }
 .txt .title { font-size: 2rem; letter-spacing: .08em; }
+.reader-rebase-fixture { background-image: url("../bilder/reader-rebase-fixture.png"); }
 `
 
 export const workReaderCss = `
