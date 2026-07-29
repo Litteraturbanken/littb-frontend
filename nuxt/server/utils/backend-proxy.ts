@@ -3,8 +3,23 @@ import {
   createError,
   getRequestURL,
   proxyRequest,
+  setResponseHeader,
   type H3Event
 } from "h3"
+
+type ProxyMethod = "GET" | "HEAD" | "POST"
+
+export function assertProxyMethod(
+  event: H3Event,
+  methods: readonly ProxyMethod[]
+): void {
+  try {
+    assertMethod(event, [...methods])
+  } catch (error) {
+    setResponseHeader(event, "Allow", methods.join(", "))
+    throw error
+  }
+}
 
 function invalidBackendPath(): never {
   throw createError({
@@ -36,7 +51,7 @@ export async function proxyBackendRequest(
   base: string,
   path: string | undefined
 ): Promise<unknown> {
-  assertMethod(event, ["GET", "HEAD", "POST"])
+  assertProxyMethod(event, ["GET", "HEAD", "POST"])
   const safePath = safeBackendPath(path)
   const target = `${base.replace(/\/$/u, "")}/${safePath}${getRequestURL(event).search}`
   return await proxyRequest(event, target)

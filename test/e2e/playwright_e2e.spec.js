@@ -17,6 +17,34 @@ async function openNuxtRoute(page, route) {
     return response
 }
 
+function waitForSameOriginPost(page, pathname) {
+    return page.waitForResponse(response => {
+        const url = new URL(response.url())
+        return url.pathname === pathname && response.request().method() === "POST"
+    })
+}
+
+async function successfulJsonResponse(page, responsePromise, pathname) {
+    const response = await responsePromise
+    const responseUrl = new URL(response.url())
+
+    expect(responseUrl.origin, `${pathname} must stay on the Nuxt origin`).toBe(
+        new URL(page.url()).origin
+    )
+    expect(response.status(), `${pathname} must return HTTP 200`).toBe(200)
+    expect(response.headers()["content-type"]).toContain("application/json")
+    return response.json()
+}
+
+function expectDefiningTextSearchResults(body) {
+    expect(body).toMatchObject({ query: "kyrka", page: 1, page_size: 30 })
+    expect(body.total_work_hits).toBeGreaterThan(0)
+    expect(body.works.length).toBeGreaterThan(0)
+    expect(body.works.some(work => work.highlights.some(highlight =>
+        highlight.match.some(word => word.word.toLocaleLowerCase("sv") === "kyrka")
+    ))).toBe(true)
+}
+
 test.describe("Nuxt whole-site staging smoke", () => {
     test.beforeEach(async ({ page }) => {
         const errors = []
@@ -68,6 +96,26 @@ test.describe("Nuxt whole-site staging smoke", () => {
         await expect(page.locator('[data-library-sort="popularitet"]')).toHaveClass(
             /active/
         )
+        const libraryResponse = waitForSameOriginPost(page, "/api/v2/library/search")
+        await page.locator("[data-library-filter]").fill("Doktor Glas")
+        const libraryBody = await successfulJsonResponse(
+            page,
+            libraryResponse,
+            "/api/v2/library/search"
+        )
+        expect(libraryBody.mode).toBe("works")
+        expect(libraryBody.total_works).toBeGreaterThan(0)
+        expect(libraryBody.items.length).toBeGreaterThan(0)
+        expect(libraryBody.items).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                route_author_id: "SöderbergH",
+                route_title_id: "DoktorGlas"
+            })
+        ]))
+        await expect(page.locator("[data-library-error]")).toHaveCount(0)
+        await expect(page.locator("[data-library-work-row]").first()).toBeVisible()
+        await expect(page.getByRole("button", { name: "Doktor Glas", exact: true }))
+            .toBeVisible()
         const advanced = page.locator("[data-library-advanced]")
         await expect(advanced).toHaveAttribute("aria-expanded", "true")
         await expect(page.locator("[data-library-advanced-panel]")).toBeVisible()
@@ -79,7 +127,18 @@ test.describe("Nuxt whole-site staging smoke", () => {
     })
 
     test("hydrates simple text search with its route query", async ({ page }) => {
+        const searchResponse = waitForSameOriginPost(
+            page,
+            "/api/v2/text-search/results"
+        )
         await openNuxtRoute(page, "/sök?fras=kyrka")
+
+        const searchBody = await successfulJsonResponse(
+            page,
+            searchResponse,
+            "/api/v2/text-search/results"
+        )
+        expectDefiningTextSearchResults(searchBody)
 
         const search = page.locator('[data-search-root][data-search-mounted="true"]')
         await expect(search).toBeVisible()
@@ -92,10 +151,24 @@ test.describe("Nuxt whole-site staging smoke", () => {
             "title",
             "Utökad sökning"
         )
+        await expect(page.locator("[data-search-error]")).toHaveCount(0)
+        await expect(page.locator("#results table.results tbody tr").first()).toBeVisible()
+        await expect(page.locator("#results td.match").first()).toContainText(/kyrka/i)
     })
 
     test("hydrates advanced text search with its route query", async ({ page }) => {
+        const searchResponse = waitForSameOriginPost(
+            page,
+            "/api/v2/text-search/results"
+        )
         await openNuxtRoute(page, "/sök?fras=kyrka&avancerad=1")
+
+        const searchBody = await successfulJsonResponse(
+            page,
+            searchResponse,
+            "/api/v2/text-search/results"
+        )
+        expectDefiningTextSearchResults(searchBody)
 
         const search = page.locator('[data-search-root][data-search-mounted="true"]')
         await expect(search).toBeVisible()
@@ -106,6 +179,9 @@ test.describe("Nuxt whole-site staging smoke", () => {
             "title",
             "Enkel sökning"
         )
+        await expect(page.locator("[data-search-error]")).toHaveCount(0)
+        await expect(page.locator("#results table.results tbody tr").first()).toBeVisible()
+        await expect(page.locator("#results td.match").first()).toContainText(/kyrka/i)
     })
 
     test("loads and hydrates Hjalmar Söderberg's author route", async ({ page }) => {

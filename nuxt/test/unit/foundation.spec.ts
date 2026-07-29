@@ -18,6 +18,49 @@ async function sourceFiles(directory: string): Promise<string[]> {
   return nested.flat().filter(path => [".ts", ".vue", ".js", ".mjs"].includes(extname(path)))
 }
 
+function normalizedScss(source: string): string {
+  return source.replace(/[ \t]+$/gmu, "")
+}
+
+function replaceExactlyOnce(source: string, before: string, after: string): string {
+  expect(source.split(before)).toHaveLength(2)
+  return source.replace(before, after)
+}
+
+function mechanicallyOwnedStyles(legacy: string): string {
+  const mainnavBefore = `    text-align : right;
+    text-transform: uppercase;
+    .sla {`
+  const mainnavAfter = `    text-align : right;
+    text-transform: uppercase;
+    > li > a {
+        box-sizing: border-box;
+        display: block;
+        min-height: 24px;
+    }
+    .sla {`
+  return replaceExactlyOnce(
+    replaceExactlyOnce(
+      replaceExactlyOnce(legacy, mainnavBefore, mainnavAfter),
+      'background-image: url("../img/dramawebben.jpg") !important;',
+      "background-image: var(--dramawebben-background-image, none) !important;"
+    ),
+    'background-image: url("../img/dramawebben_fade.jpg") !important;',
+    "background-image: var(--dramawebben-subpage-background-image, none) !important;"
+  )
+}
+
+function exactReaderPartition(owned: string): string {
+  const pageStart = owned.indexOf("\n.page-start {\n")
+  const license = owned.indexOf("\n.license img {\n")
+  const history = owned.indexOf("\n.page-history {\n")
+  const sharedImports = owned.indexOf('\n@include meta.load-css("modals");')
+  expect([pageStart, license, history, sharedImports].every(index => index >= 0)).toBe(true)
+  return owned.slice(0, pageStart)
+    + owned.slice(license, history)
+    + owned.slice(sharedImports + 1)
+}
+
 describe("standalone Nuxt foundation", () => {
   test("pins the parity stack without Angular", async () => {
     const manifest = JSON.parse(await readFile(resolve(nuxtRoot, "package.json"), "utf8"))
@@ -28,13 +71,19 @@ describe("standalone Nuxt foundation", () => {
     expect(manifest.dependencies["@headlessui/vue"]).toBe("1.7.23")
   })
 
-  test("keeps legacy parity CSS under Nuxt ownership with route-local asset hooks", async () => {
-    const legacy = await readFile(resolve(legacyRoot, "app/styles/styles.scss"), "utf8")
-    const owned = await readFile(resolve(nuxtRoot, "app/assets/styles/styles.scss"), "utf8")
-    expect(legacy).toContain('background-image: url("../img/dramawebben.jpg") !important;')
-    expect(owned).toContain("background-image: var(--dramawebben-background-image, none) !important;")
-    expect(owned).toContain("background-image: var(--dramawebben-subpage-background-image, none) !important;")
-    expect(owned).toMatch(/\.mainnav\s*\{[\s\S]*?> li > a \{[\s\S]*?min-height: 24px;/u)
+  test("keeps the exact mechanically transformed legacy and Reader CSS partitions", async () => {
+    const legacy = normalizedScss(
+      await readFile(resolve(legacyRoot, "app/styles/styles.scss"), "utf8")
+    )
+    const owned = normalizedScss(
+      await readFile(resolve(nuxtRoot, "app/assets/styles/styles.scss"), "utf8")
+    )
+    const reader = normalizedScss(
+      await readFile(resolve(nuxtRoot, "app/assets/styles/reader-base.scss"), "utf8")
+    )
+
+    expect(owned).toBe(mechanicallyOwnedStyles(legacy))
+    expect(reader).toBe(exactReaderPartition(owned))
   })
 
   test("owns the about background and the five required Requiem faces", async () => {

@@ -8,6 +8,7 @@ test("generated staging artifacts are ignored while authored Nuxt files remain v
   const generated = [
     "output/playwright/local.png",
     ".superpowers/brainstorm/.last-port",
+    ".superpowers/sdd/2026-07-29-lb-frontend-staging/final-fix-wave-report.md",
     "nuxt/output/lighthouse/report.json",
     "nuxt/test-results-visual-extra/result/error-context.md",
     "nuxt/.playwright-cli/console.log",
@@ -28,4 +29,15 @@ test("generated staging artifacts are ignored while authored Nuxt files remain v
   })
 
   expect(authored.status).not.toBe(0)
+})
+
+test("root policy owns ignored SDD execution evidence", () => {
+  const report = ".superpowers/sdd/2026-07-29-lb-frontend-staging/final-fix-wave-report.md"
+  const ignored = spawnSync("git", ["check-ignore", "-v", report], {
+    cwd: repositoryRoot,
+    encoding: "utf8"
+  })
+
+  expect(ignored.status).toBe(0)
+  expect(ignored.stdout).toMatch(/^\.gitignore:\d+:\/\.superpowers\/sdd\//u)
 })

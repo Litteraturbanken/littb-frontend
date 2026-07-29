@@ -1,10 +1,11 @@
 import {
-  assertMethod,
   createError,
   getRequestURL,
   getRouterParam,
   proxyRequest
 } from "h3"
+
+import { assertProxyMethod } from "../../utils/backend-proxy"
 
 function safeProxyPath(value: string | undefined): string {
   if (
@@ -22,7 +23,7 @@ function safeProxyPath(value: string | undefined): string {
 }
 
 export default defineEventHandler((event) => {
-  assertMethod(event, ["GET", "HEAD"])
+  assertProxyMethod(event, ["GET", "HEAD"])
   const path = safeProxyPath(getRouterParam(event, "path"))
   const contentBase = useRuntimeConfig(event).contentBase.replace(/\/$/u, "")
   const target = `${contentBase}/red/${path}${getRequestURL(event).search}`

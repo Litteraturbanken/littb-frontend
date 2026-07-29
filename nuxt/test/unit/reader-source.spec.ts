@@ -384,6 +384,24 @@ describe("managed Reader e-text boundary", () => {
     )).toBe(".work { background: url(/txt/bilder/ornament.png); }")
   })
 
+  test("rebases resource tokens without rewriting strings or comments that display CSS text", () => {
+    expect(rebaseRelativeStylesheetReferences(`
+.url-label::before { content: "url(../labels/help.png)"; }
+.import-label::before { content: '@import "theme/base.css"'; }
+.escaped::before { content: "quoted \\"url(../still-text.png)\\""; }
+/* url(../comments/help.png) and @import "comments/base.css" */
+.resource { background: url(../images/paper.png); }
+@import "theme/base.css" screen;
+`, "/red/css/reader/main.css")).toBe(`
+.url-label::before { content: "url(../labels/help.png)"; }
+.import-label::before { content: '@import "theme/base.css"'; }
+.escaped::before { content: "quoted \\"url(../still-text.png)\\""; }
+/* url(../comments/help.png) and @import "comments/base.css" */
+.resource { background: url(/red/css/images/paper.png); }
+@import "/red/css/reader/theme/base.css" screen;
+`)
+  })
+
   test("retains the Reader authority through the DTO and marker path", () => {
     expectTypeOf<string>().not.toMatchTypeOf<ReaderEtextPage["html"]>()
     expectTypeOf<ManagedAssetHtml<"home-editorial">>()

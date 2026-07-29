@@ -5,6 +5,7 @@ import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -57,7 +58,140 @@ class OpenApiHandler(BaseHTTPRequestHandler):
         pass
 
 
+class SearchSurfaceHandler(BaseHTTPRequestHandler):
+    response_mode = "failed"
+
+    def do_GET(self) -> None:
+        path = unquote(urlparse(self.path).path)
+        if path == "/v2/openapi.json":
+            self._json(
+                {
+                    "openapi": "3.1.0",
+                    "paths": {"/dictionary/articles": {"get": {}}},
+                }
+            )
+            return
+        if path == "/bibliotek":
+            self._html(
+                """
+                <div id="__nuxt">
+                  <h1>Botanisera i biblioteket</h1>
+                  <main data-library-mounted="true">
+                    <input data-library-filter>
+                    <a data-library-tab="works" aria-current="page">Verk</a>
+                    <a data-library-sort="popularitet" class="active">Popularitet</a>
+                    <button data-library-advanced aria-expanded="true">Utökad</button>
+                    <section data-library-advanced-panel>Filter</section>
+                  </main>
+                </div>
+                <script>
+                const root = document.querySelector("#__nuxt");
+                root.__vue_app__ = {};
+                const advanced = document.querySelector("[data-library-advanced]");
+                advanced.addEventListener("click", () => {
+                  const open = advanced.getAttribute("aria-expanded") === "true";
+                  advanced.setAttribute("aria-expanded", String(!open));
+                  document.querySelector("[data-library-advanced-panel]")?.remove();
+                  if (!open) advanced.insertAdjacentHTML(
+                    "afterend", "<section data-library-advanced-panel>Filter</section>"
+                  );
+                });
+                document.querySelector("[data-library-filter]").addEventListener(
+                  "input",
+                  () => fetch("/api/v2/library/search", { method: "POST" }).catch(() => {})
+                );
+                </script>
+                """
+            )
+            return
+        if path == "/sök":
+            advanced = "avancerad=1" in self.path
+            panel = '<section id="text-search-advanced-panel">Filter</section>' if advanced else ""
+            css_class = "advanced" if advanced else "simple"
+            title = "Enkel sökning" if advanced else "Utökad sökning"
+            self._html(
+                f"""
+                <div id="__nuxt">
+                  <main data-search-root data-search-mounted="true" class="{css_class}">
+                    <h1>Sök i texterna</h1>
+                    <label>Sökfras <input value="kyrka"></label>
+                    <button data-search-advanced title="{title}">Söktyp</button>
+                    {panel}
+                  </main>
+                </div>
+                <script>
+                document.querySelector("#__nuxt").__vue_app__ = {{}};
+                fetch("/api/v2/text-search/results", {{ method: "POST" }}).catch(() => {{}});
+                </script>
+                """
+            )
+            return
+        self._html('<div id="__nuxt"></div><script>document.querySelector("#__nuxt").__vue_app__ = {};</script>')
+
+    def do_POST(self) -> None:
+        path = urlparse(self.path).path
+        if path not in {
+            "/api/v2/library/search",
+            "/api/v2/text-search/results",
+        }:
+            self.send_error(404)
+            return
+        if self.response_mode == "failed":
+            self._json({"error": "controlled failure"}, status=503)
+            return
+        if path.endswith("library/search"):
+            self._json({"mode": "works", "items": [], "total_works": 0})
+        else:
+            self._json(
+                {
+                    "query": "kyrka",
+                    "page": 1,
+                    "page_size": 30,
+                    "total_work_hits": 0,
+                    "author_facets": [],
+                    "works": [],
+                }
+            )
+
+    def _html(self, body: str) -> None:
+        encoded = body.encode()
+        self.send_response(200)
+        self.send_header("content-type", "text/html; charset=utf-8")
+        self.send_header("content-length", str(len(encoded)))
+        self.end_headers()
+        self.wfile.write(encoded)
+
+    def _json(self, body: object, status: int = 200) -> None:
+        encoded = json.dumps(body).encode()
+        self.send_response(status)
+        self.send_header("content-type", "application/json")
+        self.send_header("content-length", str(len(encoded)))
+        self.end_headers()
+        self.wfile.write(encoded)
+
+    def log_message(self, _format: str, *_arguments: object) -> None:
+        pass
+
+
 class NuxtLivePlaywrightTest(unittest.TestCase):
+    def run_search_surface(self, response_mode: str, grep: str) -> subprocess.CompletedProcess[str]:
+        SearchSurfaceHandler.response_mode = response_mode
+        server = ThreadingHTTPServer(("127.0.0.1", 0), SearchSurfaceHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            origin = f"http://127.0.0.1:{server.server_port}"
+            return run_live_playwright(
+                "--grep",
+                grep,
+                backend_origin=origin,
+                nuxt_origin=origin,
+            )
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
+
     def test_conventional_e2e_scripts_use_the_nuxt_live_configuration(self) -> None:
         package = json.loads((ROOT / "package.json").read_text())
 
@@ -122,6 +256,19 @@ class NuxtLivePlaywrightTest(unittest.TestCase):
             "Nuxt preflight failed: http://127.0.0.1:10/",
             result.stderr + result.stdout,
         )
+
+    def test_library_smoke_rejects_a_failed_same_origin_search_response(self) -> None:
+        result = self.run_search_surface(
+            "failed",
+            "loads the advanced Library route",
+        )
+
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+
+    def test_both_text_search_smokes_reject_empty_success_responses(self) -> None:
+        result = self.run_search_surface("empty", "text search")
+
+        self.assertNotEqual(result.returncode, 0, result.stdout)
 
 
 if __name__ == "__main__":

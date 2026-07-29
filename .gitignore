@@ -16,4 +16,5 @@ tmp
 /.playwright-cli/
 /.playwright-mcp/
 /.superpowers/brainstorm/
+/.superpowers/sdd/
 /output/

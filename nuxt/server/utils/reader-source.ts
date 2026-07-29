@@ -31,36 +31,116 @@ function rebaseStylesheetReference(reference: string, stylesheetUrl: string): st
   return resolved.href.slice(resolved.origin.length)
 }
 
-function rebaseStylesheetSegment(segment: string, stylesheetUrl: string): string {
-  const rebasedUrls = segment.replace(
-    /\burl\(\s*(?:(["'])([^"']*)\1|([^"'()]*?))\s*\)/giu,
-    (full, _quote: string | undefined, quoted: string | undefined, unquoted: string | undefined) => {
-      const reference = quoted ?? unquoted ?? ""
-      const rebased = rebaseStylesheetReference(reference.trim(), stylesheetUrl)
-      if (rebased === reference.trim()) return full
-      const referenceIndex = full.indexOf(reference)
-      return `${full.slice(0, referenceIndex)}${rebased}${full.slice(referenceIndex + reference.length)}`
+function cssStringEnd(stylesheet: string, start: number): number {
+  const quote = stylesheet[start]
+  let index = start + 1
+  while (index < stylesheet.length) {
+    if (stylesheet[index] === "\\") {
+      index += 2
+    } else if (stylesheet[index] === quote) {
+      return index + 1
+    } else {
+      index += 1
     }
-  )
+  }
+  return stylesheet.length
+}
 
-  return rebasedUrls.replace(
-    /(@import\s+)(["'])([^"']+)\2/giu,
-    (full, prefix: string, quote: string, reference: string) => {
-      const rebased = rebaseStylesheetReference(reference, stylesheetUrl)
-      return rebased === reference ? full : `${prefix}${quote}${rebased}${quote}`
+function rebaseQuotedImport(
+  stylesheet: string,
+  start: number,
+  stylesheetUrl: string
+): { end: number, value: string } | null {
+  const prefix = stylesheet.slice(start).match(/^@import\s+/iu)?.[0]
+  if (!prefix) return null
+  const quoteStart = start + prefix.length
+  const quote = stylesheet[quoteStart]
+  if (quote !== "\"" && quote !== "'") return null
+  const end = cssStringEnd(stylesheet, quoteStart)
+  if (end > stylesheet.length || stylesheet[end - 1] !== quote) return null
+  const reference = stylesheet.slice(quoteStart + 1, end - 1)
+  const rebased = rebaseStylesheetReference(reference, stylesheetUrl)
+  return {
+    end,
+    value: `${prefix}${quote}${rebased}${quote}`
+  }
+}
+
+function rebaseUrlToken(
+  stylesheet: string,
+  start: number,
+  stylesheetUrl: string
+): { end: number, value: string } | null {
+  const prefix = stylesheet.slice(start).match(/^url\(\s*/iu)?.[0]
+  if (!prefix) return null
+  const referenceStart = start + prefix.length
+  const quote = stylesheet[referenceStart]
+  if (quote === "\"" || quote === "'") {
+    const stringEnd = cssStringEnd(stylesheet, referenceStart)
+    if (stylesheet[stringEnd - 1] !== quote) return null
+    const suffix = stylesheet.slice(stringEnd).match(/^\s*\)/u)?.[0]
+    if (!suffix) return null
+    const reference = stylesheet.slice(referenceStart + 1, stringEnd - 1)
+    const rebased = rebaseStylesheetReference(reference, stylesheetUrl)
+    return {
+      end: stringEnd + suffix.length,
+      value: `${prefix}${quote}${rebased}${quote}${suffix}`
     }
+  }
+
+  const close = stylesheet.indexOf(")", referenceStart)
+  if (close < 0) return null
+  const rawReference = stylesheet.slice(referenceStart, close)
+  if (/["'()]/u.test(rawReference)) return null
+  const leadingSpace = rawReference.match(/^\s*/u)?.[0] ?? ""
+  const trailingSpace = rawReference.match(/\s*$/u)?.[0] ?? ""
+  const reference = rawReference.slice(
+    leadingSpace.length,
+    rawReference.length - trailingSpace.length
   )
+  const rebased = rebaseStylesheetReference(reference, stylesheetUrl)
+  return {
+    end: close + 1,
+    value: `${prefix}${leadingSpace}${rebased}${trailingSpace})`
+  }
 }
 
 export function rebaseRelativeStylesheetReferences(
   stylesheet: string,
   stylesheetUrl: string
 ): string {
-  return stylesheet.split(/(\/\*[\s\S]*?\*\/)/gu)
-    .map((segment, index) => (
-      index % 2 === 0 ? rebaseStylesheetSegment(segment, stylesheetUrl) : segment
-    ))
-    .join("")
+  let rebased = ""
+  let index = 0
+  while (index < stylesheet.length) {
+    if (stylesheet.startsWith("/*", index)) {
+      const commentEnd = stylesheet.indexOf("*/", index + 2)
+      const end = commentEnd < 0 ? stylesheet.length : commentEnd + 2
+      rebased += stylesheet.slice(index, end)
+      index = end
+      continue
+    }
+    const character = stylesheet[index]
+    if (character === "\"" || character === "'") {
+      const end = cssStringEnd(stylesheet, index)
+      rebased += stylesheet.slice(index, end)
+      index = end
+      continue
+    }
+    const previous = stylesheet[index - 1]
+    const url = (!previous || !/[\w-]/u.test(previous))
+      ? rebaseUrlToken(stylesheet, index, stylesheetUrl)
+      : null
+    const imported = url ? null : rebaseQuotedImport(stylesheet, index, stylesheetUrl)
+    const token = url ?? imported
+    if (token) {
+      rebased += token.value
+      index = token.end
+      continue
+    }
+    rebased += character
+    index += 1
+  }
+  return rebased
 }
 
 export type ReaderSourcePage = WorkManifestPage
