@@ -1,5 +1,78 @@
 import { expect, test } from "@playwright/test"
 
+const fixturePort = Number(process.env.LBAPI_FIXTURE_PORT || 4120)
+const fixtureOrigin = `http://127.0.0.1:${fixturePort}`
+
+test("Nitro proxies bounded backend requests without shadowing exact APIs", async ({ request }) => {
+  const v2 = await request.get("/api/v2/openapi.json?probe=production")
+  expect(v2.status()).toBe(200)
+  expect(await v2.json()).toEqual({
+    openapi: "3.1.0",
+    path: "/private-v2/openapi.json",
+    query: "probe=production"
+  })
+  expect((await request.head("/api/v2/openapi.json")).status()).toBe(200)
+
+  const legacy = await request.get("/api/?q=kyrka")
+  expect(legacy.status()).toBe(200)
+  expect(await legacy.json()).toEqual({ query: "q=kyrka" })
+  expect((await request.get(
+    "/api/get_authors?exclude=intro%2Cdb_*"
+  )).status()).toBe(200)
+
+  await request.delete(`${fixtureOrigin}/_contact_submissions`)
+  await request.delete(`${fixtureOrigin}/_requests`)
+  const submission = {
+    sender_name: "Proxy Probe",
+    sender_address: "proxy@example.test",
+    message: "Forward the complete body",
+    audience: "litteraturbanken"
+  }
+  const posted = await request.post("/api/v2/contact?probe=post", {
+    data: submission
+  })
+  expect(posted.status()).toBe(202)
+  expect(await posted.json()).toEqual({ status: "accepted" })
+  expect(await (await request.get(
+    `${fixtureOrigin}/_contact_submissions`
+  )).json()).toEqual({ contactSubmissions: [submission] })
+  expect(await (await request.get(`${fixtureOrigin}/_requests`)).json())
+    .toEqual({ requests: ["/private-v2/contact?probe=post"] })
+
+  const exactReader = await request.get(
+    "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext"
+  )
+  expect(exactReader.status()).toBe(200)
+  expect(exactReader.headers()["cache-control"]).toBe("no-store")
+
+  for (const exactPath of [
+    "/api/editor/lb-editor-doktor/1/f",
+    "/api/author-documents/S%C3%B6derbergH/presentation",
+    "/api/dramawebben/documents/om",
+    "/api/v2/dictionary/articles?word=DOKTOR"
+  ]) {
+    expect((await request.get(exactPath)).status(), exactPath).toBe(200)
+  }
+
+  const developerOnly = await request.get("/api/dev/red-ftp?q=lb123")
+  expect(developerOnly.status()).toBe(404)
+  expect((await developerOnly.json()).statusMessage).toBe("Not found")
+
+  for (const exactPath of [
+    "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext",
+    "/api/editor/lb-editor-doktor/1/f",
+    "/api/author-documents/S%C3%B6derbergH/presentation",
+    "/api/dramawebben/documents/om",
+    "/api/dev/red-ftp?q=lb123",
+    "/api/v2/dictionary/articles?word=DOKTOR"
+  ]) {
+    expect((await request.post(exactPath)).status(), exactPath).toBe(404)
+  }
+
+  const unsupportedMethod = await request.put("/api/v2/openapi.json")
+  expect(unsupportedMethod.status()).toBe(405)
+})
+
 test("Nitro proxies the bounded public legacy asset prefixes", async ({ request }) => {
   const sharedStylesheet = await request.get("/red/css/etext.css")
   expect(sharedStylesheet.status()).toBe(200)

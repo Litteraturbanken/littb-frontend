@@ -2356,6 +2356,26 @@ const server = createServer(async (request, response) => {
   if (request.method === "GET" && url.pathname === "/health") {
     return sendJson(response, 200, { ok: true })
   }
+  if (["GET", "HEAD"].includes(request.method) && apiPathname === "/v2/openapi.json") {
+    return sendJson(response, 200, {
+      openapi: "3.1.0",
+      path: rawPathname,
+      query: url.searchParams.toString()
+    })
+  }
+  if (request.method === "GET" && url.pathname === "/legacy-api/") {
+    return sendJson(response, 200, { query: url.searchParams.toString() })
+  }
+  if (
+    request.method === "POST"
+    && (
+      /^\/legacy-api\/(?:reader|editor|author-documents|dramawebben|dev)(?:\/|$)/u
+        .test(url.pathname)
+      || apiPathname === "/v2/dictionary/articles"
+    )
+  ) {
+    return sendJson(response, 200, { proxied: true })
+  }
   if (url.pathname === "/_library_v2/requests") {
     if (request.method === "GET") return sendJson(response, 200, libraryV2Requests)
     if (request.method === "DELETE") {
