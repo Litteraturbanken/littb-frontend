@@ -28,3 +28,27 @@ editor suggestions without a separate review.
 See the [cross-repository V2 quality workflow](../docs/quality.md) for contract
 ownership, the Reader/Editor layer matrix, managed assets outside OpenAPI, the
 current lint baseline, and the full parity gate.
+
+## Staging deployment
+
+Run the deployment from the repository root. The script refuses a dirty tree,
+pushes the current branch, builds the exact commit with the shared multi-arch
+builder, waits for the build, validates the job, and deploys it:
+
+```sh
+scripts/deploy-stage.sh
+nomad job status lb-frontend-stage
+nomad job history -p lb-frontend-stage
+```
+
+Images are SHA-pinned at
+`registry.service.consul:5000/lb-frontend:<git-sha>`. The public route is
+`https://lb-frontend.pub.lb.se`.
+
+To roll back to the immediately preceding Nomad job version:
+
+```sh
+previous_version="$(nomad job history -json lb-frontend-stage | jq -r 'map(.Version) | sort | reverse | .[1]')"
+test "$previous_version" != null
+nomad job revert -detach lb-frontend-stage "$previous_version"
+```
