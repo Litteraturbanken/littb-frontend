@@ -1,9 +1,13 @@
 .git
+.env*
+.DS_Store
 node_modules
 .nuxt
 .output
 output
 coverage
+.cache
+.pytest_cache
 test
 test-results
 test-results-visual-extra
