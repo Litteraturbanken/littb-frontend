@@ -69,17 +69,25 @@ class NuxtLivePlaywrightTest(unittest.TestCase):
             "yarn test:e2e:nuxt-live --debug",
         )
 
-    def test_config_lists_only_the_five_live_smoke_checks(self) -> None:
+    def test_config_lists_the_complete_live_smoke_surface(self) -> None:
         result = run_live_playwright("--list")
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Total: 5 tests in 1 file", result.stdout)
+        self.assertIn("Total: 13 tests in 1 file", result.stdout)
         for title in (
-            "loads the Nuxt library shell",
-            "navigates one Reader page",
-            "opens a typed dictionary article",
-            "navigates one Editor page",
-            "hydrates the text-search route",
+            "loads and hydrates the home page",
+            "loads the advanced Library route and exercises its controls",
+            "hydrates simple text search with its route query",
+            "hydrates advanced text search with its route query",
+            "loads and hydrates Hjalmar Söderberg's author route",
+            "loads etext Reader content and navigates to the next page",
+            "loads facsimile Reader content and exposes its OCR layer",
+            "opens a typed dictionary article through the same-origin API",
+            "loads the required lb12106 Editor route",
+            "retains Editor next-page interaction coverage",
+            "loads and hydrates the presentations landing page",
+            "loads and hydrates the Dramawebben landing page",
+            "restores Reader route and state after NuxtLink history navigation",
         ):
             self.assertIn(title, result.stdout)
 
@@ -110,7 +118,7 @@ class NuxtLivePlaywrightTest(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(
-            "Nuxt preflight failed: http://127.0.0.1:10/_nuxt/@vite/client",
+            "Nuxt preflight failed: http://127.0.0.1:10/",
             result.stderr + result.stdout,
         )
 

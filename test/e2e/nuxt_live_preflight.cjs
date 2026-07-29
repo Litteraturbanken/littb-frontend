@@ -1,5 +1,6 @@
-const backendOrigin = process.env.LITTB_BACKEND_ORIGIN || "http://127.0.0.1:8000"
-const nuxtOrigin = process.env.LITTB_NUXT_LIVE_ORIGIN || "http://127.0.0.1:3020"
+const nuxtOrigin = (process.env.LITTB_NUXT_LIVE_ORIGIN || "http://127.0.0.1:3020")
+    .replace(/\/$/, "")
+const configuredBackendOrigin = process.env.LITTB_BACKEND_ORIGIN?.replace(/\/$/, "")
 
 async function getResponse(label, url) {
     let response
@@ -15,7 +16,9 @@ async function getResponse(label, url) {
 }
 
 async function requireBackend() {
-    const url = `${backendOrigin.replace(/\/$/, "")}/v2/openapi.json`
+    const url = configuredBackendOrigin
+        ? `${configuredBackendOrigin}/v2/openapi.json`
+        : `${nuxtOrigin}/api/v2/openapi.json`
     const response = await getResponse("Backend", url)
     let schema
     try {
@@ -33,11 +36,12 @@ async function requireBackend() {
 }
 
 async function requireNuxt() {
-    const url = `${nuxtOrigin.replace(/\/$/, "")}/_nuxt/@vite/client`
+    const url = `${nuxtOrigin}/`
     const response = await getResponse("Nuxt", url)
     const contentType = response.headers.get("content-type") || ""
-    if (!contentType.includes("javascript")) {
-        throw new Error(`Nuxt preflight failed: ${url} (unexpected content type)`)
+    const html = await response.text()
+    if (!contentType.includes("text/html") || !html.includes('id="__nuxt"')) {
+        throw new Error(`Nuxt preflight failed: ${url} (hydration shell missing)`)
     }
 }
 

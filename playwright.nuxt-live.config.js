@@ -1,6 +1,7 @@
 const { defineConfig, devices } = require("@playwright/test")
 
-const nuxtOrigin = process.env.LITTB_NUXT_LIVE_ORIGIN || "http://127.0.0.1:3020"
+const nuxtOrigin = (process.env.LITTB_NUXT_LIVE_ORIGIN || "http://127.0.0.1:3020")
+    .replace(/\/$/, "")
 
 module.exports = defineConfig({
     testDir: "./test/e2e",
