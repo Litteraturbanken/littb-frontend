@@ -117,8 +117,14 @@ job "lb-frontend-stage" {
 
         entrypoint = ["/bin/sh", "-ec"]
         args = [<<-EOT
-          : "$${GIT_SHA:?missing GIT_SHA}"
-          : "$${IMAGE_REF:?missing IMAGE_REF}"
+          if [ -z "$${GIT_SHA}" ]; then
+            echo "missing GIT_SHA" >&2
+            exit 1
+          fi
+          if [ -z "$${IMAGE_REF}" ]; then
+            echo "missing IMAGE_REF" >&2
+            exit 1
+          fi
           export HOST=0.0.0.0 PORT="$${NOMAD_PORT_http}"
           exec node .output/server/index.mjs
         EOT
