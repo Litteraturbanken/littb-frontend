@@ -85,7 +85,7 @@ def test_require_file_rejects_a_missing_deployment_script(self) -> None:
 
 - [ ] **Step 2: Run the focused tests to verify they fail**
 
-Run: `python -m unittest test.test_tasks.InvokeTaskTests.test_lists_the_public_development_tasks test.test_tasks.InvokeTaskTests.test_stage_runs_existing_backend_then_frontend_scripts test.test_tasks.InvokeTaskTests.test_require_file_rejects_a_missing_deployment_script`
+Run: `python test/test_tasks.py InvokeTaskTests.test_lists_the_public_development_tasks InvokeTaskTests.test_stage_runs_existing_backend_then_frontend_scripts InvokeTaskTests.test_require_file_rejects_a_missing_deployment_script`
 
 Expected: FAIL because `stage` is neither defined nor registered.
 
@@ -134,7 +134,7 @@ Expected: exit 0 and show `--backend-ref` and `--frontend-ref`. Do not run the t
 
 - [ ] **Step 5: Run the complete Invoke suite**
 
-Run: `python -m unittest test.test_tasks`
+Run: `python test/test_tasks.py`
 
 Expected: PASS with no deployment process started.
 
