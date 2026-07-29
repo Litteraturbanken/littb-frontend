@@ -94,13 +94,17 @@ export default defineNuxtConfig({
     apiBase: "http://127.0.0.1:8000/v2",
     deploymentEnvironment: "production",
     deploymentGitSha: process.env.GIT_SHA || "0000000000000000000000000000000000000000",
+    observabilityHmacSecret: "",
+    observabilityHmacSecretFile: "",
     libraryApiBase: "http://127.0.0.1:8000",
     contentBase: "https://red.litteraturbanken.se",
     readerSourceBase: "https://litteraturbanken.se",
     public: {
       apiBase: "/api/v2",
       libraryApiBase: "/api",
-      contentBase: ""
+      contentBase: "",
+      observabilityEnvironment: process.env.DEPLOYMENT_ENV || "production",
+      observabilityGitSha: process.env.GIT_SHA || "0000000000000000000000000000000000000000"
     }
   },
   typescript: {
@@ -123,7 +127,7 @@ export default defineNuxtConfig({
           changeOrigin: true,
           rewrite: path => path.replace(/^\/api\/v2(?=\/|$)/, "/v2")
         },
-        "^/api/(?!v2(?:/|$)|reader(?:/|$)|editor(?:/|$)|dev(?:/|$)|author-documents(?:/|$)|dramawebben(?:/|$))": {
+        "^/api/(?!v2(?:/|$)|reader(?:/|$)|editor(?:/|$)|dev(?:/|$)|author-documents(?:/|$)|dramawebben(?:/|$)|observability(?:/|$))": {
           target: legacyApiProxyTarget,
           changeOrigin: true,
           ...(legacyApiProxyOverride

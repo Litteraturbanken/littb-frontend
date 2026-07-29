@@ -274,6 +274,7 @@ const port = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
 const redirectTargetPort = port + 1
 const redirectTargetOrigin = `http://127.0.0.1:${redirectTargetPort}`
 let requests = []
+let observabilityRequests = []
 let contactSubmissions = []
 let deferContactSubmissions = false
 let pendingContactReleases = []
@@ -2411,6 +2412,33 @@ const server = createServer(async (request, response) => {
   if (request.method === "OPTIONS") return sendJson(response, 204, null)
   if (request.method === "GET" && url.pathname === "/health") {
     return sendJson(response, 200, { ok: true })
+  }
+  if (url.pathname === "/_observability_requests") {
+    if (request.method === "GET") {
+      return sendJson(response, 200, { requests: observabilityRequests })
+    }
+    if (request.method === "DELETE") {
+      observabilityRequests = []
+      return sendJson(response, 200, { requests: observabilityRequests })
+    }
+  }
+  if (
+    request.method === "POST"
+    && apiPathname === "/v2/internal/observability/events"
+  ) {
+    const body = await readText(request)
+    observabilityRequests.push({
+      body,
+      headers: request.headers
+    })
+    let parsed
+    try {
+      parsed = JSON.parse(body)
+    } catch {
+      return sendJson(response, 422, { accepted: 0 })
+    }
+    const accepted = Array.isArray(parsed.events) ? parsed.events.length : 0
+    return sendJson(response, 202, { accepted })
   }
   if (["GET", "HEAD"].includes(request.method) && apiPathname === "/v2/openapi.json") {
     return sendJson(response, 200, {
