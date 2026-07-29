@@ -5,7 +5,12 @@ const browserErrors = new WeakMap()
 async function waitForNuxt(page) {
     await page.locator("#__nuxt").waitFor({ state: "attached" })
     await page.waitForFunction(
-        () => Boolean(document.querySelector("#__nuxt")?.__vue_app__)
+        () => document.querySelector("#__nuxt")
+            ?.__vue_app__
+            ?.config
+            ?.globalProperties
+            ?.$nuxt
+            ?.isHydrating === false
     )
 }
 
