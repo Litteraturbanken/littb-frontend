@@ -106,6 +106,7 @@ job "lb-frontend-stage" {
       env {
         GIT_SHA                     = var.git_sha
         IMAGE_REF                   = var.image
+        NUXT_DEPLOYMENT_GIT_SHA     = var.git_sha
         NUXT_DEPLOYMENT_ENVIRONMENT = "staging"
         NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT = "stage"
         NUXT_PUBLIC_OBSERVABILITY_GIT_SHA     = var.git_sha

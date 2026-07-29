@@ -79,6 +79,7 @@ test("staging Nomad service exposes the SHA-pinned Nuxt runtime through public i
   expect(normalizedJobspec).toContain('image = var.image')
   expect(normalizedJobspec).toContain('force_pull = true')
   expect(normalizedJobspec).toContain('GIT_SHA = var.git_sha')
+  expect(normalizedJobspec).toContain('NUXT_DEPLOYMENT_GIT_SHA = var.git_sha')
   expect(normalizedJobspec).toContain('IMAGE_REF = var.image')
   expect(normalizedJobspec).toContain('NUXT_DEPLOYMENT_ENVIRONMENT = "staging"')
   expect(normalizedJobspec).toContain('NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT = "stage"')

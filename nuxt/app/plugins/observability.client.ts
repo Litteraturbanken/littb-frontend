@@ -23,7 +23,7 @@ export default defineNuxtPlugin({
     const config = useRuntimeConfig()
     const router = useRouter()
     const reporter = new BrowserObservabilityReporter({
-      endpoint: "/api/observability/events",
+      endpoint: "/_observability/events",
       environment: environment(config.public.observabilityEnvironment),
       deploymentGitSha: String(config.public.observabilityGitSha || ""),
       route: () => router.currentRoute.value.matched.at(-1)?.path ?? null

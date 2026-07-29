@@ -37,7 +37,7 @@ test.beforeEach(async ({ request }) => {
 
 test("same-origin browser events are signed over the exact forwarded bytes", async ({ request }) => {
   const body = JSON.stringify({ events: [event()] })
-  const response = await request.post("/api/observability/events", {
+  const response = await request.post("/_observability/events", {
     data: body,
     headers: {
       "content-type": "application/json",
@@ -66,26 +66,26 @@ test("same-origin browser events are signed over the exact forwarded bytes", asy
 
 test("cross-origin, malformed, oversized, and privacy-unsafe batches fail closed", async ({ request }) => {
   const validBody = JSON.stringify({ events: [event()] })
-  const crossOrigin = await request.post("/api/observability/events", {
+  const crossOrigin = await request.post("/_observability/events", {
     data: validBody,
     headers: { "content-type": "application/json", origin: "https://evil.invalid" }
   })
   expect(crossOrigin.status()).toBe(403)
 
-  const wrongType = await request.post("/api/observability/events", {
+  const wrongType = await request.post("/_observability/events", {
     data: validBody,
     headers: { "content-type": "text/plain", origin: appOrigin }
   })
   expect(wrongType.status()).toBe(415)
 
   const unsafe = event("018f47c0-4d5b-7a62-8f41-a04b5df3fd8e")
-  const unsafeResponse = await request.post("/api/observability/events", {
+  const unsafeResponse = await request.post("/_observability/events", {
     data: JSON.stringify({ events: [{ ...unsafe, query: "private phrase" }] }),
     headers: { "content-type": "application/json", origin: appOrigin }
   })
   expect(unsafeResponse.status()).toBe(422)
 
-  const tooMany = await request.post("/api/observability/events", {
+  const tooMany = await request.post("/_observability/events", {
     data: JSON.stringify({
       events: Array.from({ length: 11 }, (_, index) => event(
         `018f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`
@@ -95,7 +95,7 @@ test("cross-origin, malformed, oversized, and privacy-unsafe batches fail closed
   })
   expect(tooMany.status()).toBe(422)
 
-  const oversized = await request.post("/api/observability/events", {
+  const oversized = await request.post("/_observability/events", {
     data: JSON.stringify({ events: [event()], padding: "x".repeat(17_000) }),
     headers: { "content-type": "application/json", origin: appOrigin }
   })
@@ -114,8 +114,8 @@ test("replayed event IDs are acknowledged without a second upstream delivery", a
     headers: { "content-type": "application/json", origin: appOrigin }
   }
 
-  expect((await request.post("/api/observability/events", options)).status()).toBe(202)
-  const replay = await request.post("/api/observability/events", options)
+  expect((await request.post("/_observability/events", options)).status()).toBe(202)
+  const replay = await request.post("/_observability/events", options)
   expect(replay.status()).toBe(202)
   expect(await replay.json()).toEqual({ accepted: 0 })
 
