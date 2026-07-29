@@ -182,12 +182,37 @@ test.describe("Nuxt whole-site staging smoke", () => {
         )
     })
 
-    test("loads the required lb12106 Editor route", async ({ page }) => {
-        await openNuxtRoute(page, "/editor/lb12106/ix/0/f")
+    test("loads lb12106 Editor etext and navigates to the next page", async ({
+        page
+    }) => {
+        await openNuxtRoute(page, "/editor/lb12106/ix/0/e")
 
-        await expect(page.locator(".editor-reader .reader_main.type-faksimil"))
-            .toBeVisible()
-        await expect(page.locator(".editor-reader img.faksimil")).toBeVisible()
+        const reader = page.locator(".editor-reader .reader_main")
+        await expect(reader).not.toHaveClass(/type-faksimil/)
+        await expect(reader.locator(".etext")).toBeVisible()
+        await expect(
+            page.locator(".editor-reader-context .editor-metadata-controls > .title")
+        ).toContainText("Kejsarn av Portugallien")
+        await page.getByRole("link", { name: "Nästa sida" }).click()
+        await expect(page).toHaveURL(/\/editor\/lb12106\/ix\/1\/e$/)
+        await expect(reader.locator(".etext")).toBeVisible()
+    })
+
+    test("reports the unavailable lb12106 Editor facsimile manifest honestly", async ({
+        request
+    }) => {
+        const response = await request.get(
+            "/api/v2/works/lb12106/editor-manifest?media_type=faksimil"
+        )
+
+        expect(response.status()).toBe(404)
+        expect(await response.json()).toEqual({
+            error: {
+                code: "editor_manifest_not_found",
+                message: "Editor manifest not found",
+                details: null
+            }
+        })
     })
 
     test("retains Editor next-page interaction coverage", async ({ page }) => {
