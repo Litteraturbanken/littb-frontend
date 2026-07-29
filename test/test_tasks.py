@@ -93,8 +93,64 @@ class InvokeTaskTests(unittest.TestCase):
             "quality.library",
             "quality.reader-editor",
             "quality.release",
+            "stage",
         ):
             self.assertIn(task_name, result.stdout)
+
+    def test_stage_runs_existing_backend_then_frontend_scripts(self) -> None:
+        context = tasks.Context()
+        settings = tasks.Settings(
+            backend_app="example.web:app",
+            backend_dir=Path("/configured/backend"),
+            backend_host="127.0.0.1",
+            backend_port=8000,
+            nuxt_dir=Path("/configured/frontend/nuxt"),
+            nuxt_port=3020,
+        )
+
+        with patch.object(
+            tasks.Settings,
+            "from_environment",
+            return_value=settings,
+        ), patch.object(tasks, "_require_file") as require_file, patch.object(
+            tasks,
+            "_run",
+        ) as run:
+            tasks.stage.body(
+                context,
+                backend_ref="backend-sha",
+                frontend_ref="frontend-sha",
+            )
+
+        backend_script = settings.backend_dir / "scripts" / "deploy-stage.sh"
+        frontend_script = ROOT / "scripts" / "deploy-stage.sh"
+        self.assertEqual(
+            require_file.call_args_list,
+            [call(backend_script, "Backend"), call(frontend_script, "Frontend")],
+        )
+        self.assertEqual(
+            run.call_args_list,
+            [
+                call(
+                    context,
+                    [str(backend_script), "backend-sha"],
+                    settings.backend_dir,
+                ),
+                call(
+                    context,
+                    [str(frontend_script), "frontend-sha"],
+                    ROOT,
+                ),
+            ],
+        )
+
+    def test_require_file_rejects_a_missing_deployment_script(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            missing = Path(directory) / "missing-deploy-stage.sh"
+            with self.assertRaises(tasks.Exit) as raised:
+                tasks._require_file(missing, "Backend")
+
+        self.assertIn("deployment script does not exist", str(raised.exception))
 
     def test_status_reports_environment_overrides(self) -> None:
         result = run_invoke(

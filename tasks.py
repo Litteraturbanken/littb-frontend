@@ -298,6 +298,11 @@ def _run(context: Context, command: Sequence[str], directory: Path, **kwargs: ob
         )
 
 
+def _require_file(path: Path, label: str) -> None:
+    if not path.is_file():
+        raise Exit(f"{label} deployment script does not exist: {path}")
+
+
 def _port_is_open(host: str, port: int) -> bool:
     try:
         with socket.create_connection((host, port), timeout=0.2):
@@ -698,6 +703,27 @@ def status(_context: Context) -> None:
     print(f"         {nuxt_url} ({nuxt_state})")
 
 
+@task(
+    help={
+        "backend_ref": "Backend Git ref passed to its staging script.",
+        "frontend_ref": "Frontend Git ref passed to its staging script.",
+    },
+)
+def stage(
+    context: Context,
+    backend_ref: str = "HEAD",
+    frontend_ref: str = "HEAD",
+) -> None:
+    """Deploy the backend and frontend staging jobs from explicit Git refs."""
+    settings = Settings.from_environment()
+    backend_script = settings.backend_dir / "scripts" / "deploy-stage.sh"
+    frontend_script = ROOT / "scripts" / "deploy-stage.sh"
+    _require_file(backend_script, "Backend")
+    _require_file(frontend_script, "Frontend")
+    _run(context, [str(backend_script), backend_ref], settings.backend_dir)
+    _run(context, [str(frontend_script), frontend_ref], ROOT)
+
+
 dev = Collection("dev")
 dev.add_task(dev_all)
 dev.add_task(dev_backend)
@@ -723,3 +749,4 @@ ns.add_task(e2e)
 ns.add_task(test_task)
 ns.add_task(typecheck)
 ns.add_task(status)
+ns.add_task(stage)
