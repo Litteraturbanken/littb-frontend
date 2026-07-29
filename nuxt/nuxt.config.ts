@@ -4,6 +4,9 @@ const apiProxyTarget = process.env.LBAPI_PROXY_TARGET || "http://127.0.0.1:8000"
 const contentProxyTarget = process.env.LITTB_CONTENT_PROXY_TARGET || "https://red.litteraturbanken.se"
 const litteraturkartanProxyTarget = process.env.LITTERATURKARTAN_PROXY_TARGET || "https://litteraturbanken.se"
 const readerSourceProxyTarget = process.env.READER_SOURCE_PROXY_TARGET || "https://litteraturbanken.se"
+const forwardedHostHeaders = (target: string): Record<string, string> => ({
+  "x-forwarded-host": new URL(target).host
+})
 const legacyApiProxyOverride = process.env.LBAPI_LEGACY_PROXY_TARGET
 const legacyApiProxyTarget = legacyApiProxyOverride || "http://127.0.0.1:8000"
 
@@ -43,16 +46,28 @@ export default defineNuxtConfig({
   ],
   routeRules: {
     "/txt/**": {
-      proxy: `${readerSourceProxyTarget}/txt/**`
+      proxy: {
+        to: `${readerSourceProxyTarget}/txt/**`,
+        headers: forwardedHostHeaders(readerSourceProxyTarget)
+      }
     },
     "/bilder/**": {
-      proxy: `${readerSourceProxyTarget}/bilder/**`
+      proxy: {
+        to: `${readerSourceProxyTarget}/bilder/**`,
+        headers: forwardedHostHeaders(readerSourceProxyTarget)
+      }
     },
     "/export/faksimil/**": {
-      proxy: `${readerSourceProxyTarget}/export/faksimil/**`
+      proxy: {
+        to: `${readerSourceProxyTarget}/export/faksimil/**`,
+        headers: forwardedHostHeaders(readerSourceProxyTarget)
+      }
     },
     "/litteraturkartan/**": {
-      proxy: `${litteraturkartanProxyTarget}/litteraturkartan/**`
+      proxy: {
+        to: `${litteraturkartanProxyTarget}/litteraturkartan/**`,
+        headers: forwardedHostHeaders(litteraturkartanProxyTarget)
+      }
     },
     "/om/statistik": { ssr: true },
     "/om/**": { ssr: true },

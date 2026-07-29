@@ -6,6 +6,12 @@ type ProxyRule = {
 }
 
 type NuxtConfig = {
+  routeRules: Record<string, {
+    proxy?: {
+      to: string
+      headers?: Record<string, string>
+    }
+  }>
   runtimeConfig: {
     libraryApiBase: string
   }
@@ -51,5 +57,23 @@ describe("local legacy library API defaults", () => {
 
     expect(proxy?.target).toBe("https://legacy.example.test")
     expect(proxy?.rewrite).toBeUndefined()
+  })
+})
+
+describe("external reader source proxy", () => {
+  test("replaces inbound forwarded hosts with each external upstream host", async () => {
+    vi.stubEnv("READER_SOURCE_PROXY_TARGET", "https://reader.example.test")
+    vi.stubEnv("LITTERATURKARTAN_PROXY_TARGET", "https://map.example.test")
+
+    const config = await loadConfig()
+
+    for (const path of ["/txt/**", "/bilder/**", "/export/faksimil/**"]) {
+      expect(config.routeRules[path]?.proxy).toMatchObject({
+        headers: { "x-forwarded-host": "reader.example.test" }
+      })
+    }
+    expect(config.routeRules["/litteraturkartan/**"]?.proxy).toMatchObject({
+      headers: { "x-forwarded-host": "map.example.test" }
+    })
   })
 })
