@@ -93,9 +93,28 @@ class InvokeTaskTests(unittest.TestCase):
             "quality.library",
             "quality.reader-editor",
             "quality.release",
+            "observability",
             "stage",
         ):
             self.assertIn(task_name, result.stdout)
+
+    def test_observability_delegates_to_infra_verifier_without_cli_credentials(self) -> None:
+        context = tasks.Context()
+        infra_dir = Path("/configured/lb-infra")
+        verifier = infra_dir / "scripts" / "verify_lb_observability.py"
+
+        with patch.dict(os.environ, {"LB_INFRA_DIR": str(infra_dir)}), patch.object(
+            tasks,
+            "_require_file",
+        ) as require_file, patch.object(tasks, "_run") as run:
+            tasks.observability.body(context, dry_run=True)
+
+        require_file.assert_called_once_with(verifier, "Observability verifier")
+        run.assert_called_once_with(
+            context,
+            [sys.executable, str(verifier), "--dry-run"],
+            infra_dir,
+        )
 
     def test_stage_runs_existing_backend_then_frontend_scripts(self) -> None:
         context = tasks.Context()

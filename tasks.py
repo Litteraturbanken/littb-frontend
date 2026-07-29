@@ -53,6 +53,13 @@ def _environment_port(name: str, default: int) -> int:
     return port
 
 
+def _infra_dir() -> Path:
+    return _environment_path(
+        "LB_INFRA_DIR",
+        _default_backend_dir().parent / "lb-infra",
+    )
+
+
 @dataclass(frozen=True)
 class Settings:
     backend_app: str
@@ -724,6 +731,33 @@ def stage(
     _run(context, [str(frontend_script), frontend_ref], ROOT)
 
 
+@task(
+    help={
+        "dry_run": "List safe staging checks without contacting services.",
+        "fault_test": "Optional controlled fault: alert or opensearch.",
+        "allow_disruption": "Required explicit opt-in for the opensearch fault.",
+    },
+)
+def observability(
+    context: Context,
+    dry_run: bool = False,
+    fault_test: str = "",
+    allow_disruption: bool = False,
+) -> None:
+    """Run the unified staging observability verification harness."""
+    infra_dir = _infra_dir()
+    verifier = infra_dir / "scripts" / "verify_lb_observability.py"
+    _require_file(verifier, "Observability verifier")
+    command = [sys.executable, str(verifier)]
+    if dry_run:
+        command.append("--dry-run")
+    if fault_test:
+        command.extend(("--fault-test", fault_test))
+    if allow_disruption:
+        command.append("--allow-disruption")
+    _run(context, command, infra_dir)
+
+
 dev = Collection("dev")
 dev.add_task(dev_all)
 dev.add_task(dev_backend)
@@ -750,3 +784,4 @@ ns.add_task(test_task)
 ns.add_task(typecheck)
 ns.add_task(status)
 ns.add_task(stage)
+ns.add_task(observability)
