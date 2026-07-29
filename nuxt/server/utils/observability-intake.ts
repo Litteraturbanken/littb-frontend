@@ -1,4 +1,4 @@
-import { createHash, createHmac } from "node:crypto"
+import { createHash, createHmac, randomBytes } from "node:crypto"
 import { readFile } from "node:fs/promises"
 
 import {
@@ -12,7 +12,12 @@ import {
   type H3Event
 } from "h3"
 
-import type { ObservabilityEventBatch } from "../../app/lib/observability/events"
+import type {
+  BrowserEvent,
+  BrowserEventName,
+  EventEnvironment
+} from "../../app/lib/observability/events"
+import { resolveCorrelationToken } from "./observability-correlation"
 import { correlationHeaders } from "./observability"
 
 const MAX_BODY_BYTES = 16 * 1024
@@ -26,27 +31,55 @@ const MAX_CLIENTS = 10_000
 const MAX_EVENT_IDS = 20_000
 const EVENT_ID_PATTERN
   = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u
-const FORBIDDEN_KEYS = new Set([
-  "body",
-  "cookie",
-  "cookies",
-  "fullurl",
-  "ip",
-  "message",
-  "query",
-  "rawurl",
-  "searchphrase",
-  "selectedtext",
-  "stack",
-  "url",
-  "useragent"
+const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u
+const ZERO_GIT_SHA = "0".repeat(40)
+const BROWSER_EVENT_NAMES = new Set<BrowserEventName>([
+  "browser.error",
+  "browser.unhandled_rejection",
+  "browser.chunk_error"
 ])
+const BROWSER_ERROR_TYPES = new Set([
+  "ApiNetworkError",
+  "ApiResponseError",
+  "ChunkLoadError",
+  "Error",
+  "NullRejection",
+  "OtherError",
+  "RangeError",
+  "ReferenceError",
+  "StringRejection",
+  "SyntaxError",
+  "TypeError",
+  "URIError",
+  "UnknownError"
+])
+const RESOURCE_KINDS = new Set([
+  "document",
+  "script",
+  "style",
+  "image",
+  "unknown"
+] as const)
 
 export interface ObservabilityIntakeConfig {
   apiBase: string
   allowedOrigins: string
+  deploymentEnvironment: string
+  deploymentGitSha: string
   hmacSecret: string
   hmacSecretFile: string
+}
+
+interface BrowserIntakeEvent {
+  event_id: string
+  event_name: BrowserEventName
+  error_type: string
+  resource_kind: NonNullable<BrowserEvent["attributes"]["resource_kind"]>
+  correlation_token: string | null
+}
+
+interface BrowserIntakeBatch {
+  events: BrowserIntakeEvent[]
 }
 
 interface RateEntry {
@@ -136,16 +169,29 @@ function validateOrigin(event: H3Event, allowedOrigins: string): void {
   }
 }
 
-function containsForbiddenKey(value: unknown): boolean {
-  if (Array.isArray(value)) return value.some(containsForbiddenKey)
-  if (!value || typeof value !== "object") return false
-  return Object.entries(value).some(([key, nested]) => (
-    FORBIDDEN_KEYS.has(key.toLowerCase().replaceAll(/[_-]/gu, ""))
-    || containsForbiddenKey(nested)
-  ))
+function isBrowserIntakeEvent(value: unknown): value is BrowserIntakeEvent {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const event = value as Record<string, unknown>
+  return Object.keys(event).length === 5
+    && Object.hasOwn(event, "event_id")
+    && typeof event.event_id === "string"
+    && EVENT_ID_PATTERN.test(event.event_id)
+    && typeof event.event_name === "string"
+    && BROWSER_EVENT_NAMES.has(event.event_name as BrowserEventName)
+    && typeof event.error_type === "string"
+    && BROWSER_ERROR_TYPES.has(event.error_type)
+    && typeof event.resource_kind === "string"
+    && RESOURCE_KINDS.has(
+      event.resource_kind as NonNullable<
+        BrowserEvent["attributes"]["resource_kind"]
+      >
+    )
+    && (event.correlation_token === null
+      || (typeof event.correlation_token === "string"
+        && EVENT_ID_PATTERN.test(event.correlation_token)))
 }
 
-function parseBatch(body: Buffer): ObservabilityEventBatch {
+function parseBatch(body: Buffer): BrowserIntakeBatch {
   let value: unknown
   try {
     value = JSON.parse(body.toString("utf8"))
@@ -161,19 +207,65 @@ function parseBatch(body: Buffer): ObservabilityEventBatch {
     || !Array.isArray(value.events)
     || value.events.length < 1
     || value.events.length > MAX_BATCH_EVENTS
-    || containsForbiddenKey(value)
-    || value.events.some(event => (
-      !event
-      || typeof event !== "object"
-      || Array.isArray(event)
-      || !("event_id" in event)
-      || typeof event.event_id !== "string"
-      || !EVENT_ID_PATTERN.test(event.event_id)
-    ))
+    || value.events.some(event => !isBrowserIntakeEvent(event))
   ) {
     throw createError({ statusCode: 422, statusMessage: "Invalid event batch" })
   }
-  return value as ObservabilityEventBatch
+  return value as BrowserIntakeBatch
+}
+
+function normalizeEnvironment(value: string): EventEnvironment {
+  if (value === "stage" || value === "staging") return "stage"
+  if (value === "production") return "production"
+  return "development"
+}
+
+function nonZeroSpanId(): string {
+  const value = randomBytes(8).toString("hex")
+  return /^0+$/u.test(value) ? `1${value.slice(1)}` : value
+}
+
+function trustedBrowserEvent(
+  event: BrowserIntakeEvent,
+  config: ObservabilityIntakeConfig,
+  now: number,
+  resolveCorrelation: typeof resolveCorrelationToken
+): BrowserEvent {
+  const correlation = resolveCorrelation(event.correlation_token, now)
+  const fingerprint = createHash("sha256")
+    .update(event.event_name)
+    .update("\n")
+    .update(event.error_type)
+    .update("\n")
+    .update(event.resource_kind)
+    .digest("hex")
+  const common = {
+    schema_version: "lb.observability.v1" as const,
+    timestamp: new Date(now).toISOString(),
+    event_id: event.event_id,
+    event_kind: "error" as const,
+    severity: "error" as const,
+    service: "lb-frontend" as const,
+    producer: "browser" as const,
+    environment: normalizeEnvironment(config.deploymentEnvironment),
+    deployment_git_sha: GIT_SHA_PATTERN.test(config.deploymentGitSha)
+      ? config.deploymentGitSha
+      : ZERO_GIT_SHA,
+    request_id: correlation?.requestId ?? null,
+    trace_id: correlation?.traceId ?? null,
+    span_id: correlation ? nonZeroSpanId() : null,
+    route: null,
+    http_method: null,
+    status_code: null,
+    duration_ms: null,
+    error_type: event.error_type,
+    error_fingerprint: fingerprint,
+    attributes: {
+      component: null,
+      resource_kind: event.resource_kind
+    }
+  }
+  return { ...common, event_name: event.event_name } as BrowserEvent
 }
 
 async function readSecret(config: ObservabilityIntakeConfig): Promise<Buffer> {
@@ -203,6 +295,7 @@ export async function handleObservabilityIntake(
     guard?: ObservabilityIntakeGuard
     fetch?: typeof globalThis.fetch
     now?: () => number
+    resolveCorrelation?: typeof resolveCorrelationToken
   } = {}
 ): Promise<{ accepted: number }> {
   const contentType = getHeader(event, "content-type")
@@ -225,15 +318,19 @@ export async function handleObservabilityIntake(
   const guard = options.guard ?? intakeGuard
   const now = (options.now ?? Date.now)()
   guard.enforceRate(clientKey(event), now)
-  const events = guard.reserveNewEvents(batch.events, now)
-  if (events.length === 0) {
+  const intakeEvents = guard.reserveNewEvents(batch.events, now)
+  if (intakeEvents.length === 0) {
     setResponseStatus(event, 202)
     return { accepted: 0 }
   }
 
-  const forwardedBody = events.length === batch.events.length
-    ? body
-    : Buffer.from(JSON.stringify({ events }))
+  const events = intakeEvents.map(item => trustedBrowserEvent(
+    item,
+    config,
+    now,
+    options.resolveCorrelation ?? resolveCorrelationToken
+  ))
+  const forwardedBody = Buffer.from(JSON.stringify({ events }))
   const timestamp = String(Math.floor(now / 1_000))
   const secret = await readSecret(config)
   const signature = `sha256=${createHmac("sha256", secret)
@@ -255,7 +352,7 @@ export async function handleObservabilityIntake(
       body: forwardedBody.toString("utf8")
     })
   } catch {
-    guard.release(events.map(item => item.event_id))
+    guard.release(intakeEvents.map(item => item.event_id))
     throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
   }
   if (response.status === 409) {
@@ -263,7 +360,7 @@ export async function handleObservabilityIntake(
     return { accepted: 0 }
   }
   if (!response.ok) {
-    guard.release(events.map(item => item.event_id))
+    guard.release(intakeEvents.map(item => item.event_id))
     throw createError({
       statusCode: response.status >= 400 && response.status < 500 ? 422 : 502,
       statusMessage: "Event intake unavailable"

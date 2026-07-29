@@ -7,6 +7,8 @@ export default defineEventHandler(event => {
   return handleObservabilityIntake(event, {
     apiBase: String(config.apiBase),
     allowedOrigins: String(config.observabilityAllowedOrigins || ""),
+    deploymentEnvironment: String(config.deploymentEnvironment || ""),
+    deploymentGitSha: String(config.deploymentGitSha || ""),
     hmacSecret: String(config.observabilityHmacSecret || ""),
     hmacSecretFile: String(config.observabilityHmacSecretFile || "")
   })

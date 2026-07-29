@@ -1,6 +1,9 @@
 import { describe, expect, test, vi } from "vitest"
 
-import { createLbApiClient } from "../../app/lib/api/client"
+import {
+  createLbApiClient,
+  observeApiFailures
+} from "../../app/lib/api/client"
 import type {
   EditorManifestResponse,
   ReaderManifestResponse
@@ -49,6 +52,27 @@ const editorManifestFixture = {
 } satisfies EditorManifestResponse
 
 describe("generated LB API client", () => {
+  test("associates a server failure with its exact response correlation token", async () => {
+    const observeFailure = vi.fn()
+    const stop = observeApiFailures(observeFailure)
+    const token = "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e"
+    const fetchMock = vi.fn(async () => new Response("{}", {
+      status: 503,
+      headers: { "x-lb-observability-correlation": token }
+    }))
+
+    try {
+      await createLbApiClient("http://example.test/v2", fetchMock).GET("/stats")
+    } finally {
+      stop()
+    }
+
+    expect(observeFailure).toHaveBeenCalledExactlyOnceWith({
+      correlationToken: token,
+      errorType: "ApiResponseError"
+    })
+  })
+
   test("exposes a response request ID without global state", async () => {
     const observeRequestId = vi.fn()
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({

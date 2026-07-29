@@ -37,6 +37,10 @@ describe("Nuxt observability context", () => {
     ["zero trace", {
       requestId: undefined,
       traceparent: `00-${"0".repeat(32)}-${VALID_PARENT_ID}-01`
+    }],
+    ["zero parent span", {
+      requestId: undefined,
+      traceparent: `00-${VALID_TRACE_ID}-${"0".repeat(16)}-01`
     }]
   ])("replaces an invalid incoming %s", (_label, incoming) => {
     const context = createObservabilityContext(incoming)
@@ -46,6 +50,14 @@ describe("Nuxt observability context", () => {
     )
     expect(context.traceId).toMatch(/^[0-9a-f]{32}$/u)
     expect(context.traceId).not.toBe("0".repeat(32))
+  })
+
+  test("replaces a trace whose parent span is all zero", () => {
+    const context = createObservabilityContext({
+      traceparent: `00-${VALID_TRACE_ID}-${"0".repeat(16)}-01`
+    })
+
+    expect(context.traceId).not.toBe(VALID_TRACE_ID)
   })
 })
 

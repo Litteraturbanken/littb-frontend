@@ -8,26 +8,11 @@ const secret = "test-observability-secret-material-0123456789"
 
 function event(eventId = "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d") {
   return {
-    schema_version: "lb.observability.v1",
-    timestamp: "2026-07-29T20:00:00Z",
     event_id: eventId,
     event_name: "browser.error",
-    event_kind: "error",
-    severity: "error",
-    service: "lb-frontend",
-    producer: "browser",
-    environment: "stage",
-    deployment_git_sha: "a".repeat(40),
-    request_id: null,
-    trace_id: null,
-    span_id: null,
-    route: "/bibliotek",
-    http_method: null,
-    status_code: null,
-    duration_ms: null,
     error_type: "TypeError",
-    error_fingerprint: "b".repeat(64),
-    attributes: { component: "Library", resource_kind: "unknown" }
+    resource_kind: "unknown",
+    correlation_token: null
   }
 }
 
@@ -35,7 +20,7 @@ test.beforeEach(async ({ request }) => {
   await request.delete(`${fixtureOrigin}/_observability_requests`)
 })
 
-test("same-origin browser events are signed over the exact forwarded bytes", async ({ request }) => {
+test("same-origin browser events are rebuilt and signed as trusted events", async ({ request }) => {
   const body = JSON.stringify({ events: [event()] })
   const response = await request.post("/_observability/events", {
     data: body,
@@ -52,10 +37,30 @@ test("same-origin browser events are signed over the exact forwarded bytes", asy
   const ledgerResponse = await request.get(`${fixtureOrigin}/_observability_requests`)
   const ledger = (await ledgerResponse.json()).requests
   expect(ledger).toHaveLength(1)
-  expect(ledger[0].body).toBe(body)
+  const forwarded = JSON.parse(ledger[0].body)
+  expect(forwarded.events).toHaveLength(1)
+  expect(forwarded.events[0]).toMatchObject({
+    schema_version: "lb.observability.v1",
+    event_id: event().event_id,
+    event_name: "browser.error",
+    event_kind: "error",
+    severity: "error",
+    service: "lb-frontend",
+    producer: "browser",
+    environment: "stage",
+    deployment_git_sha: "a".repeat(40),
+    request_id: null,
+    trace_id: null,
+    span_id: null,
+    route: null,
+    error_type: "TypeError",
+    attributes: { component: null, resource_kind: "unknown" }
+  })
+  expect(forwarded.events[0].error_fingerprint).toMatch(/^[0-9a-f]{64}$/u)
+  expect(Date.parse(forwarded.events[0].timestamp)).not.toBeNaN()
   const timestamp = ledger[0].headers["x-lb-observability-timestamp"]
   const expectedSignature = `sha256=${createHmac("sha256", secret)
-    .update(`${timestamp}.${body}`)
+    .update(`${timestamp}.${ledger[0].body}`)
     .digest("hex")}`
   expect(ledger[0].headers["x-lb-observability-signature"])
     .toBe(expectedSignature)
@@ -99,12 +104,21 @@ test("cross-origin, malformed, oversized, and privacy-unsafe batches fail closed
   })
   expect(wrongType.status()).toBe(415)
 
-  const unsafe = event("018f47c0-4d5b-7a62-8f41-a04b5df3fd8e")
-  const unsafeResponse = await request.post("/_observability/events", {
-    data: JSON.stringify({ events: [{ ...unsafe, query: "private phrase" }] }),
-    headers: { "content-type": "application/json", origin: appOrigin }
-  })
-  expect(unsafeResponse.status()).toBe(422)
+  for (const forged of [
+    { ...event(), event_name: "request.failed" },
+    { ...event(), timestamp: "2026-01-01T00:00:00Z" },
+    { ...event(), deployment_git_sha: "f".repeat(40) },
+    { ...event(), producer: "fastapi" },
+    { ...event(), error_type: "selectedSecret" },
+    { ...event(), component: "selectedSecret" },
+    { ...event(), query: "private phrase" }
+  ]) {
+    const unsafeResponse = await request.post("/_observability/events", {
+      data: JSON.stringify({ events: [forged] }),
+      headers: { "content-type": "application/json", origin: appOrigin }
+    })
+    expect(unsafeResponse.status()).toBe(422)
+  }
 
   const tooMany = await request.post("/_observability/events", {
     data: JSON.stringify({
@@ -124,6 +138,31 @@ test("cross-origin, malformed, oversized, and privacy-unsafe batches fail closed
 
   const ledgerResponse = await request.get(`${fixtureOrigin}/_observability_requests`)
   expect((await ledgerResponse.json()).requests).toEqual([])
+})
+
+test("an issued correlation token links only its exact server request", async ({ request }) => {
+  const correlatedResponse = await request.get("/robots.txt")
+  const token = correlatedResponse.headers()["x-lb-observability-correlation"]
+  const requestId = correlatedResponse.headers()["x-request-id"]
+  const traceparent = correlatedResponse.headers().traceparent
+  expect(token).toMatch(/^[0-9a-f-]{36}$/u)
+
+  const correlatedEvent = {
+    ...event("018f47c0-4d5b-7a62-8f41-a04b5df3fd91"),
+    correlation_token: token
+  }
+  expect((await request.post("/_observability/events", {
+    data: JSON.stringify({ events: [correlatedEvent] }),
+    headers: { "content-type": "application/json", origin: appOrigin }
+  })).status()).toBe(202)
+
+  const ledger = (await (await request.get(
+    `${fixtureOrigin}/_observability_requests`
+  )).json()).requests
+  const forwarded = JSON.parse(ledger[0].body).events[0]
+  expect(forwarded.request_id).toBe(requestId)
+  expect(forwarded.trace_id).toBe(traceparent.split("-")[1])
+  expect(forwarded.span_id).toMatch(/^[0-9a-f]{16}$/u)
 })
 
 test("replayed event IDs are acknowledged without a second upstream delivery", async ({ request }) => {

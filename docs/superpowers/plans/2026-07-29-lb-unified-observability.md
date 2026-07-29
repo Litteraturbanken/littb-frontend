@@ -237,7 +237,7 @@ git commit -m "feat(nuxt): propagate observability context"
 - Create: `/Users/johan/.codex/worktrees/8c5c/littb/nuxt/app/lib/observability/events.ts`
 - Create: `/Users/johan/.codex/worktrees/8c5c/littb/nuxt/app/lib/observability/browser.ts`
 - Create: `/Users/johan/.codex/worktrees/8c5c/littb/nuxt/app/plugins/observability.client.ts`
-- Create: `/Users/johan/.codex/worktrees/8c5c/littb/nuxt/server/api/observability/events.post.ts`
+- Create: `/Users/johan/.codex/worktrees/8c5c/littb/nuxt/server/routes/_observability/events.post.ts`
 - Create: `/Users/johan/.codex/worktrees/8c5c/littb/nuxt/test/unit/observability-browser.spec.ts`
 - Create: `/Users/johan/.codex/worktrees/8c5c/littb/nuxt/test/ssr/observability-api.spec.ts`
 - Modify: `/Users/johan/.codex/worktrees/8c5c/littb/nuxt/nuxt.config.ts`
@@ -264,7 +264,7 @@ Expected: PASS.
 **Step 4: Commit**
 
 ```bash
-git add nuxt/app/lib/observability nuxt/app/plugins/observability.client.ts nuxt/server/api/observability/events.post.ts nuxt/test/unit/observability-browser.spec.ts nuxt/test/ssr/observability-api.spec.ts nuxt/nuxt.config.ts
+git add nuxt/app/lib/observability nuxt/app/plugins/observability.client.ts nuxt/server/routes/_observability/events.post.ts nuxt/test/unit/observability-browser.spec.ts nuxt/test/ssr/observability-api.spec.ts nuxt/nuxt.config.ts
 git commit -m "feat(nuxt): capture privacy-safe browser events"
 ```
 

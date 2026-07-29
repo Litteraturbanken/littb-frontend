@@ -11,7 +11,7 @@ const GIT_SHA = "a".repeat(40)
 
 function reporterOptions(overrides: Record<string, unknown> = {}) {
   return {
-    endpoint: "/api/observability/events",
+    endpoint: "/_observability/events",
     environment: "stage" as const,
     deploymentGitSha: GIT_SHA,
     route: () => "/sök",
@@ -106,6 +106,15 @@ describe("browser event delivery", () => {
     expect(deliveries).toHaveLength(1)
     const body = JSON.parse(deliveries[0])
     expect(body.events).toHaveLength(1)
+    expect(body.events[0]).toEqual({
+      event_id: expect.stringMatching(/^[0-9a-f-]{36}$/u),
+      event_name: "browser.error",
+      error_type: "TypeError",
+      resource_kind: "unknown",
+      correlation_token: null
+    })
+    expect(deliveries[0]).not.toContain("deployment_git_sha")
+    expect(deliveries[0]).not.toContain("timestamp")
   })
 
   test("caps each batch at ten events and retains the remainder", async () => {
@@ -134,7 +143,7 @@ describe("browser event delivery", () => {
     expect(sizes).toEqual([10, 2])
   })
 
-  test("never sends a body larger than 16 KiB", async () => {
+  test("strips non-intake fields before delivery", async () => {
     const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
     const reporter = new BrowserObservabilityReporter(reporterOptions({
       fetch: fetchMock
@@ -154,10 +163,22 @@ describe("browser event delivery", () => {
       attributes: { ...valid.attributes, component: "x".repeat(20_000) }
     } as BrowserEvent
 
-    reporter.enqueue(oversized)
+    reporter.enqueue(
+      oversized,
+      "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e"
+    )
     await reporter.flush()
 
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(fetchMock).toHaveBeenCalledOnce()
+    const sent = JSON.parse(String(fetchMock.mock.calls[0][1]?.body))
+    expect(sent.events[0]).toEqual({
+      event_id: oversized.event_id,
+      event_name: "browser.error",
+      error_type: "Error",
+      resource_kind: "unknown",
+      correlation_token: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e"
+    })
+    expect(JSON.stringify(sent)).not.toContain("x".repeat(100))
   })
 
   test("uses beacon on page exit and falls back to isolated keepalive fetch", async () => {
@@ -196,5 +217,26 @@ describe("browser event delivery", () => {
 
     expect(beacon).toHaveBeenCalledOnce()
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  test("retries a transient delivery failure without another event", async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(new Response(null, { status: 503 }))
+        .mockResolvedValueOnce(new Response(null, { status: 202 }))
+      const reporter = new BrowserObservabilityReporter(reporterOptions({
+        fetch: fetchMock,
+        autoFlush: true
+      }))
+      await reporter.capture(new Error("private"))
+
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(fetchMock).toHaveBeenCalledOnce()
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

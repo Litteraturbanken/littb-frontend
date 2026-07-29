@@ -1,5 +1,6 @@
 import type { EventEnvironment } from "../lib/observability/events"
 import { BrowserObservabilityReporter } from "../lib/observability/browser"
+import { observeApiFailures } from "../lib/api/client"
 
 function environment(value: unknown): EventEnvironment {
   if (value === "stage" || value === "staging") return "stage"
@@ -27,6 +28,14 @@ export default defineNuxtPlugin({
       environment: environment(config.public.observabilityEnvironment),
       deploymentGitSha: String(config.public.observabilityGitSha || ""),
       route: () => router.currentRoute.value.matched.at(-1)?.path ?? null
+    })
+
+    observeApiFailures(failure => {
+      const error = new Error()
+      error.name = failure.errorType
+      void reporter.capture(error, {
+        correlationToken: failure.correlationToken
+      })
     })
 
     nuxtApp.hooks.hook("vue:error", error => {

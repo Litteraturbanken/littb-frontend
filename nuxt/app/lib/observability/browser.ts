@@ -11,6 +11,7 @@ const MAX_BATCH_BYTES = 16 * 1024
 const MAX_QUEUE_EVENTS = 50
 const DEDUPLICATION_WINDOW_MS = 60_000
 const FLUSH_DELAY_MS = 1_000
+const MAX_RETRY_DELAY_MS = 30_000
 const SAFE_LABEL_PATTERN = /^[A-Za-z0-9_.:-]{1,120}$/u
 const ERROR_TYPE_PATTERN = /^[A-Za-z0-9_.:-]{1,160}$/u
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u
@@ -27,6 +28,19 @@ interface CreateBrowserErrorEventOptions {
   requestId?: string | null
   now?: () => Date
   randomUUID?: () => string
+}
+
+interface QueuedBrowserEvent {
+  event: BrowserEvent
+  correlationToken: string | null
+}
+
+interface BrowserIntakeEvent {
+  event_id: string
+  event_name: BrowserEventName
+  error_type: string
+  resource_kind: NonNullable<BrowserEvent["attributes"]["resource_kind"]>
+  correlation_token: string | null
 }
 
 interface ReporterOptions {
@@ -71,7 +85,21 @@ function errorType(error: unknown): string {
   } else if (error !== undefined) {
     candidate = `${typeof error}Rejection`
   }
-  return ERROR_TYPE_PATTERN.test(candidate) ? candidate : "UnknownError"
+  if (!ERROR_TYPE_PATTERN.test(candidate)) return "UnknownError"
+  return new Set([
+    "ApiNetworkError",
+    "ApiResponseError",
+    "ChunkLoadError",
+    "Error",
+    "NullRejection",
+    "RangeError",
+    "ReferenceError",
+    "StringRejection",
+    "SyntaxError",
+    "TypeError",
+    "URIError",
+    "UnknownError"
+  ]).has(candidate) ? candidate : "OtherError"
 }
 
 async function sha256(value: string): Promise<string> {
@@ -97,7 +125,7 @@ export async function createBrowserErrorEvent(
   const type = errorType(options.error)
   const component = safeLabel(options.component)
   const route = safeRoute(options.route)
-  const resourceKind = options.resourceKind ?? null
+  const resourceKind = options.resourceKind ?? "unknown"
   const fingerprint = await sha256([
     options.eventName,
     type,
@@ -143,8 +171,18 @@ export async function createBrowserErrorEvent(
   return { ...common, event_name: "browser.error" }
 }
 
-function serializedBatch(events: BrowserEvent[]): string {
-  return JSON.stringify({ events })
+function intakeEvent(queued: QueuedBrowserEvent): BrowserIntakeEvent {
+  return {
+    event_id: queued.event.event_id,
+    event_name: queued.event.event_name,
+    error_type: queued.event.error_type ?? "UnknownError",
+    resource_kind: queued.event.attributes.resource_kind ?? "unknown",
+    correlation_token: queued.correlationToken
+  }
+}
+
+function serializedBatch(events: QueuedBrowserEvent[]): string {
+  return JSON.stringify({ events: events.map(intakeEvent) })
 }
 
 function byteLength(value: string): number {
@@ -153,10 +191,11 @@ function byteLength(value: string): number {
 
 export class BrowserObservabilityReporter {
   readonly #options: ReporterOptions
-  readonly #queue: BrowserEvent[] = []
+  readonly #queue: QueuedBrowserEvent[] = []
   readonly #seen = new Map<string, number>()
   #timer: ReturnType<typeof setTimeout> | undefined
   #flushing: Promise<void> | undefined
+  #retryDelayMs = FLUSH_DELAY_MS
 
   constructor(options: ReporterOptions) {
     this.#options = options
@@ -168,7 +207,7 @@ export class BrowserObservabilityReporter {
       eventName?: BrowserEventName
       component?: string | null
       resourceKind?: BrowserEvent["attributes"]["resource_kind"]
-      requestId?: string | null
+      correlationToken?: string | null
     } = {}
   ): Promise<void> {
     try {
@@ -177,37 +216,40 @@ export class BrowserObservabilityReporter {
         error,
         component: metadata.component,
         resourceKind: metadata.resourceKind,
-        requestId: metadata.requestId,
         route: this.#options.route(),
         environment: this.#options.environment,
         deploymentGitSha: this.#options.deploymentGitSha
       })
-      this.enqueue(event)
+      this.enqueue(event, metadata.correlationToken)
     } catch {
       // Capturing an error must never create another application failure.
     }
   }
 
-  enqueue(event: BrowserEvent): void {
+  enqueue(event: BrowserEvent, correlationToken: string | null = null): void {
     const now = (this.#options.nowMs ?? Date.now)()
     const deduplicationKey
       = `${event.event_name}:${event.error_fingerprint}:${event.route}`
     const previous = this.#seen.get(deduplicationKey)
     if (previous !== undefined && now - previous < DEDUPLICATION_WINDOW_MS) return
-    if (byteLength(serializedBatch([event])) > MAX_BATCH_BYTES) return
+    const queued = { event, correlationToken }
+    if (byteLength(serializedBatch([queued])) > MAX_BATCH_BYTES) return
 
     this.#seen.set(deduplicationKey, now)
     for (const [key, seenAt] of this.#seen) {
       if (now - seenAt >= DEDUPLICATION_WINDOW_MS) this.#seen.delete(key)
     }
     if (this.#queue.length >= MAX_QUEUE_EVENTS) this.#queue.shift()
-    this.#queue.push(event)
-    if (this.#options.autoFlush !== false && !this.#timer) {
-      this.#timer = setTimeout(() => {
-        this.#timer = undefined
-        void this.flush()
-      }, FLUSH_DELAY_MS)
-    }
+    this.#queue.push(queued)
+    this.#scheduleFlush(FLUSH_DELAY_MS)
+  }
+
+  #scheduleFlush(delay: number): void {
+    if (this.#options.autoFlush === false || this.#timer) return
+    this.#timer = setTimeout(() => {
+      this.#timer = undefined
+      void this.flush()
+    }, delay)
   }
 
   async flush(preferBeacon = false): Promise<void> {
@@ -222,7 +264,7 @@ export class BrowserObservabilityReporter {
 
   async #deliver(preferBeacon: boolean): Promise<void> {
     if (this.#queue.length === 0) return
-    const batch: BrowserEvent[] = []
+    const batch: QueuedBrowserEvent[] = []
     while (batch.length < MAX_BATCH_EVENTS && this.#queue.length > 0) {
       const candidate = this.#queue[0]
       if (!candidate) break
@@ -243,7 +285,10 @@ export class BrowserObservabilityReporter {
         if (beacon?.(
           this.#options.endpoint,
           new Blob([body], { type: "application/json" })
-        )) return
+        )) {
+          this.#retryDelayMs = FLUSH_DELAY_MS
+          return
+        }
       } catch {
         // Keepalive fetch below is the fallback delivery path.
       }
@@ -259,8 +304,14 @@ export class BrowserObservabilityReporter {
         credentials: "same-origin",
         keepalive: true
       })
-      if (response.ok) return
-      if (response.status >= 400 && response.status < 500) return
+      if (response.ok) {
+        this.#retryDelayMs = FLUSH_DELAY_MS
+        return
+      }
+      if (response.status >= 400 && response.status < 500) {
+        this.#retryDelayMs = FLUSH_DELAY_MS
+        return
+      }
     } catch {
       // A temporarily unavailable intake is handled by the bounded queue.
     }
@@ -268,5 +319,10 @@ export class BrowserObservabilityReporter {
     if (this.#queue.length > MAX_QUEUE_EVENTS) {
       this.#queue.length = MAX_QUEUE_EVENTS
     }
+    this.#scheduleFlush(this.#retryDelayMs)
+    this.#retryDelayMs = Math.min(
+      this.#retryDelayMs * 2,
+      MAX_RETRY_DELAY_MS
+    )
   }
 }
