@@ -15,3 +15,5 @@ tmp
 /test-results/
 /.playwright-cli/
 /.playwright-mcp/
+/.superpowers/brainstorm/
+/output/

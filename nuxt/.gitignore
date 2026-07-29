@@ -3,3 +3,7 @@
 node_modules/
 playwright-report/
 test-results/
+.playwright-cli/
+.playwright-mcp/
+output/
+test-results-visual-extra/
