@@ -84,6 +84,9 @@ test("staging Nomad service exposes the SHA-pinned Nuxt runtime through public i
   expect(normalizedJobspec).toContain('NUXT_DEPLOYMENT_ENVIRONMENT = "staging"')
   expect(normalizedJobspec).toContain('NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT = "stage"')
   expect(normalizedJobspec).toContain('NUXT_PUBLIC_OBSERVABILITY_GIT_SHA = var.git_sha')
+  expect(normalizedJobspec).toContain(
+    'NUXT_OBSERVABILITY_ALLOWED_ORIGINS = "https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se"'
+  )
   expect(normalizedJobspec).toContain('NUXT_OBSERVABILITY_HMAC_SECRET_FILE = "/secrets/lb_observability_hmac_secret"')
   expect(jobspec).toContain('format("%s:/secrets/lb_observability_hmac_secret:ro", var.observability_hmac_secret_path)')
   expect(jobspec).not.toContain("NUXT_OBSERVABILITY_HMAC_SECRET =")

@@ -44,6 +44,7 @@ const FORBIDDEN_KEYS = new Set([
 
 export interface ObservabilityIntakeConfig {
   apiBase: string
+  allowedOrigins: string
   hmacSecret: string
   hmacSecretFile: string
 }
@@ -109,16 +110,28 @@ export class ObservabilityIntakeGuard {
 
 const intakeGuard = new ObservabilityIntakeGuard()
 
-function validateOrigin(event: H3Event): void {
+function validateOrigin(event: H3Event, allowedOrigins: string): void {
   const origin = getHeader(event, "origin")
-  const expected = `${getRequestProtocol(event, { xForwardedProto: true })}://${getRequestHost(event, { xForwardedHost: true })}`
+  const expected = `${getRequestProtocol(event, { xForwardedProto: true })}://${getRequestHost(event, { xForwardedHost: false })}`
   let normalized: string | undefined
   try {
     normalized = origin ? new URL(origin).origin : undefined
   } catch {
     normalized = undefined
   }
-  if (!normalized || normalized !== expected) {
+  const configured = allowedOrigins
+    .split(",")
+    .slice(0, 10)
+    .map(value => value.trim())
+    .filter(value => value.length > 0 && value.length <= 300)
+    .flatMap(value => {
+      try {
+        return [new URL(value).origin]
+      } catch {
+        return []
+      }
+    })
+  if (!normalized || (normalized !== expected && !configured.includes(normalized))) {
     throw createError({ statusCode: 403, statusMessage: "Same origin required" })
   }
 }
@@ -199,7 +212,7 @@ export async function handleObservabilityIntake(
   if (contentType !== "application/json") {
     throw createError({ statusCode: 415, statusMessage: "JSON content type required" })
   }
-  validateOrigin(event)
+  validateOrigin(event, config.allowedOrigins)
   const declaredLength = Number(getHeader(event, "content-length"))
   if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
     throw createError({ statusCode: 413, statusMessage: "Event batch too large" })

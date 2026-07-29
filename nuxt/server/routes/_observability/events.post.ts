@@ -6,6 +6,7 @@ export default defineEventHandler(event => {
   const config = useRuntimeConfig(event)
   return handleObservabilityIntake(event, {
     apiBase: String(config.apiBase),
+    allowedOrigins: String(config.observabilityAllowedOrigins || ""),
     hmacSecret: String(config.observabilityHmacSecret || ""),
     hmacSecretFile: String(config.observabilityHmacSecretFile || "")
   })

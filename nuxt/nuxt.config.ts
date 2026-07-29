@@ -96,6 +96,7 @@ export default defineNuxtConfig({
     deploymentGitSha: process.env.GIT_SHA || "0000000000000000000000000000000000000000",
     observabilityHmacSecret: "",
     observabilityHmacSecretFile: "",
+    observabilityAllowedOrigins: "",
     libraryApiBase: "http://127.0.0.1:8000",
     contentBase: "https://red.litteraturbanken.se",
     readerSourceBase: "https://litteraturbanken.se",

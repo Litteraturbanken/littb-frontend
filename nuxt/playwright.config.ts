@@ -78,6 +78,7 @@ export default defineConfig({
         `NUXT_CONTENT_BASE=${fixtureOrigin} ` +
         `NUXT_READER_SOURCE_BASE=${fixtureOrigin} ` +
         `NUXT_OBSERVABILITY_HMAC_SECRET=${"test-observability-secret-material-0123456789"} ` +
+        `NUXT_OBSERVABILITY_ALLOWED_ORIGINS=https://stage.litteraturbanken.se ` +
         `READER_SOURCE_PROXY_TARGET=${fixtureOrigin} ` +
         `LITTB_CONTENT_PROXY_TARGET=${fixtureOrigin} ` +
         `NUXT_IGNORE_LOCK=1 yarn dev --port ${nuxtPort}`,

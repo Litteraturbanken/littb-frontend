@@ -64,7 +64,7 @@ test("same-origin browser events are signed over the exact forwarded bytes", asy
   expect(ledger[0].body).not.toContain("Private Browser Identity")
 })
 
-test("same-origin validation honors the trusted proxy host", async ({ request }) => {
+test("same-origin validation accepts a configured public alias", async ({ request }) => {
   const body = JSON.stringify({
     events: [event("018f47c0-4d5b-7a62-8f41-a04b5df3fd90")]
   })
@@ -85,7 +85,11 @@ test("cross-origin, malformed, oversized, and privacy-unsafe batches fail closed
   const validBody = JSON.stringify({ events: [event()] })
   const crossOrigin = await request.post("/_observability/events", {
     data: validBody,
-    headers: { "content-type": "application/json", origin: "https://evil.invalid" }
+    headers: {
+      "content-type": "application/json",
+      origin: "https://evil.invalid",
+      "x-forwarded-host": "evil.invalid"
+    }
   })
   expect(crossOrigin.status()).toBe(403)
 

@@ -110,6 +110,7 @@ job "lb-frontend-stage" {
         NUXT_DEPLOYMENT_ENVIRONMENT = "staging"
         NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT = "stage"
         NUXT_PUBLIC_OBSERVABILITY_GIT_SHA     = var.git_sha
+        NUXT_OBSERVABILITY_ALLOWED_ORIGINS    = "https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se"
         NUXT_OBSERVABILITY_HMAC_SECRET_FILE   = "/secrets/lb_observability_hmac_secret"
         NUXT_API_BASE               = "http://lb-backend-stage.service.consul:5003/v2"
         NUXT_LIBRARY_API_BASE       = "http://lb-backend-stage.service.consul:5003"
