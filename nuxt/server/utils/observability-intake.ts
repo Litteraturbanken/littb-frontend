@@ -111,7 +111,7 @@ const intakeGuard = new ObservabilityIntakeGuard()
 
 function validateOrigin(event: H3Event): void {
   const origin = getHeader(event, "origin")
-  const expected = `${getRequestProtocol(event, { xForwardedProto: true })}://${getRequestHost(event, { xForwardedHost: false })}`
+  const expected = `${getRequestProtocol(event, { xForwardedProto: true })}://${getRequestHost(event, { xForwardedHost: true })}`
   let normalized: string | undefined
   try {
     normalized = origin ? new URL(origin).origin : undefined

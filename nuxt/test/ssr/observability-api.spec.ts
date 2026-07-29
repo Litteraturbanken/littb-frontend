@@ -64,6 +64,23 @@ test("same-origin browser events are signed over the exact forwarded bytes", asy
   expect(ledger[0].body).not.toContain("Private Browser Identity")
 })
 
+test("same-origin validation honors the trusted proxy host", async ({ request }) => {
+  const body = JSON.stringify({
+    events: [event("018f47c0-4d5b-7a62-8f41-a04b5df3fd90")]
+  })
+  const response = await request.post("/_observability/events", {
+    data: body,
+    headers: {
+      "content-type": "application/json",
+      origin: "https://stage.litteraturbanken.se",
+      "x-forwarded-host": "stage.litteraturbanken.se",
+      "x-forwarded-proto": "https"
+    }
+  })
+
+  expect(response.status()).toBe(202)
+})
+
 test("cross-origin, malformed, oversized, and privacy-unsafe batches fail closed", async ({ request }) => {
   const validBody = JSON.stringify({ events: [event()] })
   const crossOrigin = await request.post("/_observability/events", {
