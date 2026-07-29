@@ -191,6 +191,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/observability/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Observability Events
+         * @description Authenticate, validate, and emit one bounded batch of typed events.
+         *
+         *     Returns:
+         *         The number of events accepted into the structured log stream.
+         */
+        post: operations["v2_post_internal_observability_events"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/legacy-author-routes/resolve": {
         parameters: {
             query?: never;
@@ -506,6 +529,8 @@ export interface components {
         /** ApiErrorResponse */
         ApiErrorResponse: {
             error: components["schemas"]["ApiError"];
+            /** Request Id */
+            request_id?: string | null;
         };
         /** AuthorContainingWork */
         AuthorContainingWork: {
@@ -737,6 +762,223 @@ export interface components {
             /** Title */
             title: string | null;
         };
+        /**
+         * BrowserChunkErrorEvent
+         * @description Represent a sanitized browser bundle-loading failure.
+         */
+        BrowserChunkErrorEvent: {
+            attributes: components["schemas"]["BrowserErrorAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "error";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "browser.chunk_error";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
+        /**
+         * BrowserErrorAttributes
+         * @description Describe a browser failure without retaining a message, URL, or stack.
+         */
+        BrowserErrorAttributes: {
+            /** Component */
+            component?: string | null;
+            /** Resource Kind */
+            resource_kind?: ("document" | "script" | "style" | "image" | "unknown") | null;
+        };
+        /**
+         * BrowserErrorEvent
+         * @description Represent a sanitized browser error.
+         */
+        BrowserErrorEvent: {
+            attributes: components["schemas"]["BrowserErrorAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "error";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "browser.error";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
+        /**
+         * BrowserUnhandledRejectionEvent
+         * @description Represent a sanitized unhandled browser promise rejection.
+         */
+        BrowserUnhandledRejectionEvent: {
+            attributes: components["schemas"]["BrowserErrorAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "error";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "browser.unhandled_rejection";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
         /** ContactAcceptedResponse */
         ContactAcceptedResponse: {
             /**
@@ -780,6 +1022,85 @@ export interface components {
             base_form: string;
             /** Word */
             word: string;
+        };
+        /**
+         * DictionaryLookupAttributes
+         * @description Describe a dictionary lookup without retaining the selected word.
+         */
+        DictionaryLookupAttributes: {
+            /** Found */
+            found?: boolean | null;
+            /** Word Length */
+            word_length: number;
+        };
+        /**
+         * DictionaryLookupEvent
+         * @description Represent a dictionary lookup without the looked-up word.
+         */
+        DictionaryLookupEvent: {
+            attributes: components["schemas"]["DictionaryLookupAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "business";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "business.dictionary_lookup";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
         };
         /** DramawebbenCatalogAuthor */
         DramawebbenCatalogAuthor: {
@@ -910,6 +1231,149 @@ export interface components {
             /** Work Id */
             work_id: string;
         };
+        /**
+         * EmptyAttributes
+         * @description Represent an event that deliberately carries no additional attributes.
+         */
+        EmptyAttributes: Record<string, never>;
+        /**
+         * EpubDownloadEvent
+         * @description Represent an EPUB download requested for a work.
+         */
+        EpubDownloadEvent: {
+            attributes: components["schemas"]["WorkEventAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "business";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "business.epub_download";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
+        /**
+         * EpubMissingEvent
+         * @description Represent a requested work whose EPUB is unavailable.
+         */
+        EpubMissingEvent: {
+            attributes: components["schemas"]["WorkEventAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "business";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "business.epub_missing";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
         /** ErrorDetail */
         ErrorDetail: {
             /** Field */
@@ -926,6 +1390,75 @@ export interface components {
             size: 1 | 2 | 3 | 4 | 5;
             /** Width */
             width: number;
+        };
+        /**
+         * HandledErrorEvent
+         * @description Represent an error converted into an expected application response.
+         */
+        HandledErrorEvent: {
+            attributes: components["schemas"]["EmptyAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "error";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "error.handled";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
         };
         /** LegacyAuthorRouteRequest */
         LegacyAuthorRouteRequest: {
@@ -1296,6 +1829,90 @@ export interface components {
             /** Total Works */
             total_works: number;
         };
+        /**
+         * LibraryFilterAttributes
+         * @description Describe an allowlisted library-filter interaction.
+         */
+        LibraryFilterAttributes: {
+            /**
+             * Filter Kind
+             * @enum {string}
+             */
+            filter_kind: "author" | "category" | "format" | "language" | "period" | "publisher" | "text";
+            /** Result Count */
+            result_count?: number | null;
+            /** Selected Count */
+            selected_count: number;
+        };
+        /**
+         * LibraryFilterEvent
+         * @description Represent a library-filter interaction.
+         */
+        LibraryFilterEvent: {
+            attributes: components["schemas"]["LibraryFilterAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "business";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "business.library_filter";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
         /** LibraryFilters */
         LibraryFilters: {
             /** About Author Ids */
@@ -1586,6 +2203,22 @@ export interface components {
             /** Faksimil */
             faksimil: number;
         };
+        /**
+         * ObservabilityAcceptedResponse
+         * @description Report how many trusted events entered the server log stream.
+         */
+        ObservabilityAcceptedResponse: {
+            /** Accepted */
+            accepted: number;
+        };
+        /**
+         * ObservabilityEventBatch
+         * @description Bound a browser-to-server delivery batch.
+         */
+        ObservabilityEventBatch: {
+            /** Events */
+            events: (components["schemas"]["RequestCompletedEvent"] | components["schemas"]["RequestFailedEvent"] | components["schemas"]["UnhandledErrorEvent"] | components["schemas"]["HandledErrorEvent"] | components["schemas"]["BrowserErrorEvent"] | components["schemas"]["BrowserUnhandledRejectionEvent"] | components["schemas"]["BrowserChunkErrorEvent"] | components["schemas"]["UpstreamFailedEvent"] | components["schemas"]["SearchSubmittedEvent"] | components["schemas"]["QuickSearchNavigationEvent"] | components["schemas"]["LibraryFilterEvent"] | components["schemas"]["ReaderPageEvent"] | components["schemas"]["EpubDownloadEvent"] | components["schemas"]["QrOpenedEvent"] | components["schemas"]["DictionaryLookupEvent"] | components["schemas"]["EpubMissingEvent"] | components["schemas"]["VerificationEvent"])[];
+        };
         /** PopularEpub */
         PopularEpub: {
             author: components["schemas"]["AuthorSummary"];
@@ -1640,6 +2273,75 @@ export interface components {
             /** Title Path */
             title_path: string;
         };
+        /**
+         * QrOpenedEvent
+         * @description Represent a QR link opened for a work.
+         */
+        QrOpenedEvent: {
+            attributes: components["schemas"]["WorkEventAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "business";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "business.qr_opened";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
         /** QuickSearchItem */
         QuickSearchItem: {
             /**
@@ -1658,6 +2360,88 @@ export interface components {
             type_label: "Författare" | "Verk" | "Del";
             /** Url */
             url: string;
+        };
+        /**
+         * QuickSearchNavigationAttributes
+         * @description Describe navigation from quick search without retaining query content.
+         */
+        QuickSearchNavigationAttributes: {
+            /**
+             * Destination Kind
+             * @enum {string}
+             */
+            destination_kind: "author" | "work" | "page" | "search";
+            /** Result Rank */
+            result_rank?: number | null;
+        };
+        /**
+         * QuickSearchNavigationEvent
+         * @description Represent navigation from a quick-search result.
+         */
+        QuickSearchNavigationEvent: {
+            attributes: components["schemas"]["QuickSearchNavigationAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "business";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "business.quicksearch_navigation";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
         };
         /** QuickSearchResponse */
         QuickSearchResponse: {
@@ -1764,6 +2548,230 @@ export interface components {
             /** Work Id */
             work_id: string;
         };
+        /**
+         * ReaderPageAttributes
+         * @description Identify a reader page using public catalog identifiers only.
+         */
+        ReaderPageAttributes: {
+            /** Author Id */
+            author_id: string | null;
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "etext" | "faksimil" | "epub" | "pdf" | "audio";
+            /** Page Id */
+            page_id: string;
+            /** Work Id */
+            work_id: string;
+        };
+        /**
+         * ReaderPageEvent
+         * @description Represent a reader page becoming active.
+         */
+        ReaderPageEvent: {
+            attributes: components["schemas"]["ReaderPageAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "business";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "business.reader_page";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
+        /**
+         * RequestCompletedEvent
+         * @description Represent a successfully completed application request.
+         */
+        RequestCompletedEvent: {
+            attributes: components["schemas"]["EmptyAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "request";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "request.completed";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
+        /**
+         * RequestFailedEvent
+         * @description Represent an application request that returned a failure status.
+         */
+        RequestFailedEvent: {
+            attributes: components["schemas"]["EmptyAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "request";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "request.failed";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
         /** SearchHitHighlight */
         SearchHitHighlight: {
             /** From Word Id */
@@ -1780,6 +2788,87 @@ export interface components {
             field: "author_ids" | "keyword" | "language" | "main_author.gender" | "mediatype" | "modernized" | "proofread" | "provenance.library" | "source" | "texttype";
             /** Value */
             value: string;
+        };
+        /**
+         * SearchSubmittedAttributes
+         * @description Describe search shape and outcome without retaining the search phrase.
+         */
+        SearchSubmittedAttributes: {
+            /** Advanced */
+            advanced: boolean;
+            /** Query Length */
+            query_length: number;
+            /** Result Count */
+            result_count?: number | null;
+        };
+        /**
+         * SearchSubmittedEvent
+         * @description Represent a privacy-safe text-search submission.
+         */
+        SearchSubmittedEvent: {
+            attributes: components["schemas"]["SearchSubmittedAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "business";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "business.search_submitted";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
         };
         /** SimilarWork */
         SimilarWork: {
@@ -2237,6 +3326,243 @@ export interface components {
             title: string;
             /** Title Id */
             title_id: string;
+        };
+        /**
+         * UnhandledErrorEvent
+         * @description Represent an exception that crossed an application boundary.
+         */
+        UnhandledErrorEvent: {
+            attributes: components["schemas"]["EmptyAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "error";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "error.unhandled";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
+        /**
+         * UpstreamFailedAttributes
+         * @description Identify the fixed internal service involved in an upstream failure.
+         */
+        UpstreamFailedAttributes: {
+            /**
+             * Upstream Service
+             * @default lb-backend
+             * @constant
+             */
+            upstream_service: "lb-backend";
+        };
+        /**
+         * UpstreamFailedEvent
+         * @description Represent a failed Nuxt-to-backend operation.
+         */
+        UpstreamFailedEvent: {
+            attributes: components["schemas"]["UpstreamFailedAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "error";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "upstream.failed";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
+        /**
+         * VerificationAttributes
+         * @description Carry a synthetic sentinel used for end-to-end pipeline verification.
+         */
+        VerificationAttributes: {
+            /** Sentinel Id */
+            sentinel_id: string;
+        };
+        /**
+         * VerificationEvent
+         * @description Represent a synthetic pipeline-verification sentinel.
+         */
+        VerificationEvent: {
+            attributes: components["schemas"]["VerificationAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "verification";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "observability.verification";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
+        /**
+         * WorkEventAttributes
+         * @description Identify a work involved in a download or review event.
+         */
+        WorkEventAttributes: {
+            /** Author Id */
+            author_id?: string | null;
+            /** Work Id */
+            work_id: string;
         };
         /** WorkLookupByIdRequest */
         WorkLookupByIdRequest: {
@@ -3022,6 +4348,93 @@ export interface operations {
                 };
             };
             /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_post_internal_observability_events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservabilityEventBatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservabilityAcceptedResponse"];
+                };
+            };
+            /** @description Invalid event signature */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Event replay detected */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Event batch is too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description JSON content type required */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid event batch */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Event intake is not configured */
             503: {
                 headers: {
                     [name: string]: unknown;

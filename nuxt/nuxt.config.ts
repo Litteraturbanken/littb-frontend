@@ -93,6 +93,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     apiBase: "http://127.0.0.1:8000/v2",
     deploymentEnvironment: "production",
+    deploymentGitSha: process.env.GIT_SHA || "0000000000000000000000000000000000000000",
     libraryApiBase: "http://127.0.0.1:8000",
     contentBase: "https://red.litteraturbanken.se",
     readerSourceBase: "https://litteraturbanken.se",

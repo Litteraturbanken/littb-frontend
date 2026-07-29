@@ -49,6 +49,33 @@ const editorManifestFixture = {
 } satisfies EditorManifestResponse
 
 describe("generated LB API client", () => {
+  test("exposes a response request ID without global state", async () => {
+    const observeRequestId = vi.fn()
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      works: 1,
+      authors: 2,
+      pages: { etext: 3, faksimil: 4 },
+      words: { etext: 5, faksimil: 6 },
+      epubs: 7
+    }), {
+      headers: {
+        "content-type": "application/json",
+        "x-request-id": "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d"
+      }
+    }))
+    const client = createLbApiClient(
+      "http://example.test/v2",
+      fetchMock,
+      observeRequestId
+    )
+
+    await client.GET("/stats")
+
+    expect(observeRequestId).toHaveBeenCalledExactlyOnceWith(
+      "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d"
+    )
+  })
+
   test("encodes the exact typed Reader manifest identity", async () => {
     const fetchMock = vi.fn(async () => json(readerManifestFixture))
     const client = createLbApiClient("http://example.test/v2", fetchMock)

@@ -7,6 +7,8 @@ import {
   type H3Event
 } from "h3"
 
+import { correlationHeaders } from "./observability"
+
 type ProxyMethod = "GET" | "HEAD" | "POST"
 
 export function assertProxyMethod(
@@ -54,5 +56,7 @@ export async function proxyBackendRequest(
   assertProxyMethod(event, ["GET", "HEAD", "POST"])
   const safePath = safeBackendPath(path)
   const target = `${base.replace(/\/$/u, "")}/${safePath}${getRequestURL(event).search}`
-  return await proxyRequest(event, target)
+  return await proxyRequest(event, target, {
+    headers: correlationHeaders(event)
+  })
 }
