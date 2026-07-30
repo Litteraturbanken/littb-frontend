@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 import {
   decodeAndValidatePathSegments,
   matchLegacyReaderSegments,
+  normalizeLegacyRouteIdentity,
   validCanonicalSegment
 } from "../../server/utils/legacy-author-route"
 
@@ -16,6 +17,11 @@ function errorData(action: () => unknown) {
 }
 
 describe("legacy author route parsing", () => {
+  test("normalizes accented legacy route identities for the resolver index", () => {
+    expect(normalizeLegacyRouteIdentity("LönnlövS")).toBe("LonnlovS")
+    expect(normalizeLegacyRouteIdentity("DörrarOchÖppningar")).toBe("DorrarOchOppningar")
+  })
+
   test("returns no match for every non-legacy prefix", () => {
     expect(decodeAndValidatePathSegments("/författare/LagerlöfS")).toEqual([])
     expect(decodeAndValidatePathSegments("/forfattare")).toEqual([])

@@ -61,6 +61,10 @@ function validDecodedSegment(value: string, maximum: number): boolean {
     && !hasLoneSurrogate(value)
 }
 
+export function normalizeLegacyRouteIdentity(value: string): string {
+  return value.normalize("NFKD").replace(/\p{M}/gu, "")
+}
+
 export function decodeAndValidatePathSegments(pathname: string): string[] {
   if (!pathname.startsWith("/forfattare/")) return []
   const raw = pathname.slice(1).split("/")

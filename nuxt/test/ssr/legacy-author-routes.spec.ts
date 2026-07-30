@@ -47,6 +47,24 @@ test("canonicalizes a normalized profile with one private author-only resolution
   }])
 })
 
+test("normalizes an accented legacy profile before private resolution", async ({
+  request
+}) => {
+  const response = await request.get("/forfattare/Lagerl%C3%B6fS", {
+    maxRedirects: 0
+  })
+  expect(response.status()).toBe(307)
+  expect(response.headers().location).toBe("/f%C3%B6rfattare/Lagerl%C3%B6fS")
+  expect(await resolverRequests(request)).toEqual([{
+    path: "/private-v2/legacy-author-routes/resolve",
+    body: {
+      normalized_author_id: "LagerlofS",
+      normalized_title_id: null,
+      media_type: null
+    }
+  }])
+})
+
 test("canonicalizes both Reader identities and preserves the raw query byte-for-byte", async ({
   request
 }) => {

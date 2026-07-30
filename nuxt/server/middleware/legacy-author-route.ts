@@ -9,6 +9,7 @@ import {
   decodeAndValidatePathSegments,
   legacyRouteError,
   matchLegacyReaderSegments,
+  normalizeLegacyRouteIdentity,
   resolveLegacyAuthorRoutePrivately
 } from "../utils/legacy-author-route"
 
@@ -34,8 +35,10 @@ export default defineEventHandler(async event => {
   const segments = decodeAndValidatePathSegments(pathname)
   const reader = matchLegacyReaderSegments(segments)
   const resolution = await resolveLegacyAuthorRoutePrivately(event, {
-    normalized_author_id: segments[1]!,
-    normalized_title_id: reader?.title ?? null,
+    normalized_author_id: normalizeLegacyRouteIdentity(segments[1]!),
+    normalized_title_id: reader
+      ? normalizeLegacyRouteIdentity(reader.title)
+      : null,
     media_type: reader?.mediaType ?? null
   })
 
