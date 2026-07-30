@@ -12,6 +12,7 @@
     "dev": "nuxt dev --host 127.0.0.1 --port 3000",
     "build": "nuxt build",
     "preview": "nuxt preview",
+    "case-study:embed": "node scripts/embed-case-study.mjs",
     "lighthouse:reader": "node scripts/run-lighthouse-reader.mjs",
     "policy:check": "node scripts/verify-architecture-policy.mjs",
     "lint": "eslint . --max-warnings 0",
