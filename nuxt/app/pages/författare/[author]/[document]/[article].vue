@@ -52,8 +52,9 @@ function isExactAuthor(value: unknown): boolean {
     && value.hasIntroduction === true
     && value.hasDramawebben === true
     && value.searchUrl === "/sok?forfattare=Lagerl%C3%B6fS&avancerad"
-    && value.audioUrl
-      === "https://litteraturbanken.se/ljudochbild/författare/lagerlofs"
+    && (value.audioUrl === null
+      || value.audioUrl
+        === "https://litteraturbanken.se/ljudochbild/författare/lagerlofs")
 }
 
 function isExactSlaArticlePage(

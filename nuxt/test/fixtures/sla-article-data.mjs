@@ -82,6 +82,9 @@ const author = Object.freeze({
 export const slaArticleDescriptors = Object.freeze(Object.fromEntries(
   slaArticleFixtures.map(article => [article.articleId, Object.freeze({
     ...author,
+    audio_url: article.articleId === "OmSelmaLagerlofArkivet.html"
+      ? null
+      : author.audio_url,
     document_kind: "omtexterna",
     article_id: article.articleId,
     source_path: article.sourcePath
