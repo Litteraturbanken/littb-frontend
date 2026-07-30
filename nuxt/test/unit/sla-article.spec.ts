@@ -28,6 +28,14 @@ describe("strict SLA article descriptors", () => {
       .toBe("/red/sla/TextkritiskaRiktlinjer.html")
   })
 
+  test("accepts a registry-owned article without an audio recording", () => {
+    expect(expectedSlaArticleSource(
+      descriptor({ audio_url: null }),
+      "LagerlöfS",
+      articleId
+    )).toBe("/red/sla/TextkritiskaRiktlinjer.html")
+  })
+
   test.each([
     { author_id: "SöderbergH" },
     { normalized_author_id: "LagerlöfS" },
@@ -37,7 +45,6 @@ describe("strict SLA article descriptors", () => {
     { has_introduction: false },
     { has_dramawebben: false },
     { search_url: null },
-    { audio_url: null },
     { document_kind: "presentation" },
     { article_id: "Introduktion.html" },
     { source_path: "/red/sla/Introduktion.html" },
@@ -355,6 +362,25 @@ describe("SLA article transport boundary", () => {
       "https://private-api.test/v2/authors/Lagerl%C3%B6fS/documents/omtexterna/articles/TextkritiskaRiktlinjer.html"
     )
     expect(descriptorRequest.redirect).toBe("manual")
+    expect(fetchMock.mock.calls[1]).toEqual([
+      "https://managed.test/red/sla/TextkritiskaRiktlinjer.html",
+      { method: "GET", redirect: "manual" }
+    ])
+  })
+
+  test("loads article HTML when the descriptor has no audio recording", async () => {
+    stubRuntimeConfig()
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(descriptor({ audio_url: null })))
+      .mockResolvedValueOnce(htmlResponse(
+        "<!doctype html><html><body><p>Safe article</p></body></html>"
+      ))
+    vi.stubGlobal("fetch", fetchMock)
+
+    const article = await loadSlaArticle(event, "LagerlöfS", articleId)
+
+    expect(article.author.audioUrl).toBeNull()
+    expect(article.bodyHtml).toBe("<p>Safe article</p>")
     expect(fetchMock.mock.calls[1]).toEqual([
       "https://managed.test/red/sla/TextkritiskaRiktlinjer.html",
       { method: "GET", redirect: "manual" }

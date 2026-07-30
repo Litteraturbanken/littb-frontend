@@ -148,7 +148,7 @@ function isSlaArticleDescriptor(value: unknown): value is SlaArticleDescriptor {
     && value.has_introduction === true
     && value.has_dramawebben === true
     && value.search_url === SLA_SEARCH_URL
-    && value.audio_url === SLA_AUDIO_URL
+    && (value.audio_url === null || value.audio_url === SLA_AUDIO_URL)
     && value.document_kind === "omtexterna"
     && typeof value.article_id === "string"
     && typeof value.source_path === "string"
