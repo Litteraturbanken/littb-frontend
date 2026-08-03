@@ -356,6 +356,11 @@
                 margin-left: 2px;
             }
 
+            .disabled i {
+                cursor: default;
+                opacity: 0.7;
+            }
+
             .expl {
                 display: inline-block;
                 font-size: 0.7em;

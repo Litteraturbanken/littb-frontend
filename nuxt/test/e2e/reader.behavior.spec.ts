@@ -1811,10 +1811,14 @@ test("preserves the production desktop e-text reader layout", async ({ page }, t
     const right = document.querySelector<HTMLElement>("#rightCorridor")
     const pagerLink = document.querySelector<HTMLElement>(".pager_ctrls > .prev_part")
     const subnavLink = document.querySelector<HTMLElement>(".subnav li a")
-    if (!main || !pageName || !right || !pagerLink || !subnavLink) {
+    const disabledPreviousIcon = document.querySelector<HTMLElement>(
+      'a[aria-label="Föregående sida"][aria-disabled="true"] .navicon.left i'
+    )
+    if (!main || !pageName || !right || !pagerLink || !subnavLink || !disabledPreviousIcon) {
       throw new Error("Reader layout elements are missing")
     }
     return {
+      disabledPreviousIconOpacity: getComputedStyle(disabledPreviousIcon).opacity,
       mainFlex: getComputedStyle(main).flex,
       mainLeft: main.getBoundingClientRect().left,
       mainWidth: main.getBoundingClientRect().width,
@@ -1832,6 +1836,7 @@ test("preserves the production desktop e-text reader layout", async ({ page }, t
   })
 
   expect(layout).toMatchObject({
+    disabledPreviousIconOpacity: "0.7",
     mainFlex: "0 1 auto",
     rightMarginLeft: "64px",
     pagerDisplay: "inline",
