@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { CSSProperties, DirectiveBinding, ObjectDirective } from "vue"
+import type { CSSProperties } from "vue"
 import type { LocationQuery } from "vue-router"
+import { libraryTooltipDirective } from "~/directives/library-tooltip"
 import { createLbApiClient } from "~/lib/api/client"
 import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
 import { legacyPaginationItems } from "~/lib/legacy-pagination"
@@ -15,32 +16,38 @@ import {
     type LibrarySearchState
 } from "~/lib/library"
 import {
+    authorSortKey,
+    epubSortKey,
+    libraryPageMaximum,
+    parseLibraryRouteState,
+    partSortKey,
+    relevanceSortKey,
+    type AuthorSortKey,
+    type BrowseSortKey,
+    type EpubSortKey,
+    type LatestSortKey,
+    type LibraryMode,
+    type LibraryRouteState as ParsedLibraryRouteState,
+    type PartSortKey,
+    type RelevanceSortKey
+} from "~/lib/library/navigation"
+import {
+    assignLibraryPageResult,
+    type AuthorBrowseResponse,
+    type BrowseResponse,
+    type EpubResponse,
+    type LatestResponse,
+    type LibraryPageData,
+    type LibraryPageResultHandlers,
+    type LibraryResponse,
+    type PdfResponse
+} from "~/lib/library/page-results"
+import {
     toLibrarySearchView,
-    type BrowseResult,
-    type LibraryPageData as LibrarySuccessPageData
+    type BrowseResult
 } from "~/lib/library/view-model"
 
 definePageMeta({ alias: ["/epub"] })
-
-type StatefulResponse<Response> = Omit<Response, "suggest" | "failed"> & {
-    suggest: unknown[]
-    failed: boolean
-}
-type LibraryResponse = StatefulResponse<
-    Extract<LibrarySuccessPageData, { mode: "all" }>["response"]
->
-type AuthorBrowseResponse = StatefulResponse<
-    Extract<LibrarySuccessPageData, { mode: "authors" }>["response"]
->
-
-type LibraryMode = "all" | "latest" | "authors" | "works" | "parts" | "epub" | "pdf"
-type RelevanceSortKey = "relevans" | "forfattare" | "titlar" | "kronologi"
-type EpubSortKey = "forfattare" | "titlar" | "popularitet" | "kronologi"
-type LatestSortKey = "nytillkommet"
-type AuthorSortKey = "namn" | "popularitet" | "kronologi"
-type PartSortKey = "forfattare" | "titlar"
-type BrowseSortKey = EpubSortKey | AuthorSortKey | PartSortKey
-const libraryPageMaximum = 100
 
 type LibraryGender = "" | "female" | "male"
 type LibraryCategory = NonNullable<LibraryFilters["categories"]>[number]
@@ -60,37 +67,7 @@ type LibraryAdvancedFilters = {
 type ImprintBounds = { from: number; to: number }
 type AboutAuthorOption = { id: string; label: string }
 
-type LibraryRouteState = {
-    standalone: boolean
-    mode: LibraryMode
-    filter: string
-    sort: RelevanceSortKey | BrowseSortKey | LatestSortKey
-    page: number
-    hide1800: boolean
-    downloadMode: boolean
-    advanced: boolean
-    advancedFilters: LibraryAdvancedFilters
-}
-
-type EpubResponse = StatefulResponse<
-    Extract<LibrarySuccessPageData, { mode: "epub" | "pdf" }>["response"]
->
-type PdfResponse = EpubResponse
-
-type BrowseResponse = StatefulResponse<
-    Extract<LibrarySuccessPageData, { mode: "works" | "parts" }>["response"]
->
-type LatestResponse = StatefulResponse<
-    Extract<LibrarySuccessPageData, { mode: "latest" }>["response"]
->
-type LibraryPageData =
-    | { mode: "all"; response: LibraryResponse }
-    | { mode: "authors"; response: AuthorBrowseResponse }
-    | { mode: "works"; response: BrowseResponse }
-    | { mode: "parts"; response: BrowseResponse }
-    | { mode: "latest"; response: LatestResponse }
-    | { mode: "epub"; response: EpubResponse }
-    | { mode: "pdf"; response: PdfResponse }
+type LibraryRouteState = ParsedLibraryRouteState<LibraryAdvancedFilters>
 
 type LibrarySummary = {
     identity: string
@@ -106,138 +83,7 @@ type LibraryInitialData = {
     summary: LibrarySummary | null
 }
 
-const libraryTooltipDelay = 500
-let libraryTooltipSequence = 0
-
-type LibraryTooltipState = {
-    content: string
-    hovered: boolean
-    focused: boolean
-    timer: ReturnType<typeof setTimeout> | null
-    popup: HTMLDivElement | null
-    previousDescribedBy: string | null
-    cleanup: () => void
-}
-
-const libraryTooltipStates = new WeakMap<HTMLElement, LibraryTooltipState>()
-
-function hideLibraryTooltip(element: HTMLElement, state: LibraryTooltipState) {
-    if (state.timer) clearTimeout(state.timer)
-    state.timer = null
-    state.popup?.remove()
-    state.popup = null
-    if (state.previousDescribedBy === null) element.removeAttribute("aria-describedby")
-    else element.setAttribute("aria-describedby", state.previousDescribedBy)
-}
-
-function showLibraryTooltip(element: HTMLElement, state: LibraryTooltipState) {
-    if (!state.content || state.popup || state.timer || (!state.hovered && !state.focused)) return
-    state.timer = setTimeout(() => {
-        state.timer = null
-        if (!element.isConnected || !state.content || (!state.hovered && !state.focused)) return
-        const popup = document.createElement("div")
-        const inner = document.createElement("div")
-        const arrow = document.createElement("div")
-        const id = `library-tooltip-${++libraryTooltipSequence}`
-        popup.id = id
-        popup.className = "tooltip top in library-tooltip"
-        popup.role = "tooltip"
-        popup.style.position = "fixed"
-        popup.style.pointerEvents = "none"
-        inner.className = "tooltip-inner"
-        inner.textContent = state.content
-        arrow.className = "tooltip-arrow"
-        popup.append(inner, arrow)
-        document.body.append(popup)
-        const rect = element.getBoundingClientRect()
-        popup.style.left = `${rect.left + rect.width / 2}px`
-        popup.style.top = `${rect.top}px`
-        popup.style.transform = "translate(-50%, -100%)"
-        state.popup = popup
-        element.setAttribute("aria-describedby", id)
-    }, libraryTooltipDelay)
-}
-
-function updateLibraryTooltipVisibility(element: HTMLElement, state: LibraryTooltipState) {
-    if (state.hovered || state.focused) showLibraryTooltip(element, state)
-    else hideLibraryTooltip(element, state)
-}
-
-function mountLibraryTooltip(element: HTMLElement, binding: DirectiveBinding<string>) {
-    const mouseenter = () => {
-        state.hovered = true
-        updateLibraryTooltipVisibility(element, state)
-    }
-    const mouseleave = () => {
-        state.hovered = false
-        updateLibraryTooltipVisibility(element, state)
-    }
-    const focus = () => {
-        state.focused = true
-        updateLibraryTooltipVisibility(element, state)
-    }
-    const blur = () => {
-        state.focused = false
-        updateLibraryTooltipVisibility(element, state)
-    }
-    const state: LibraryTooltipState = {
-        content: binding.value || "",
-        hovered: false,
-        focused: false,
-        timer: null,
-        popup: null,
-        previousDescribedBy: element.getAttribute("aria-describedby"),
-        cleanup: () => {
-            for (const [event, handler] of [
-                ["mouseenter", mouseenter],
-                ["mouseleave", mouseleave],
-                ["focus", focus],
-                ["blur", blur]
-            ] as const) {
-                element.removeEventListener(event, handler)
-            }
-        }
-    }
-    for (const [event, handler] of [
-        ["mouseenter", mouseenter],
-        ["mouseleave", mouseleave],
-        ["focus", focus],
-        ["blur", blur]
-    ] as const)
-        element.addEventListener(event, handler)
-    libraryTooltipStates.set(element, state)
-}
-
-const vLibraryTooltip: ObjectDirective<HTMLElement, string> = {
-    getSSRProps(binding) {
-        return binding.value ? { "data-library-tooltip-content": binding.value } : {}
-    },
-    mounted(element, binding) {
-        if (binding.value) mountLibraryTooltip(element, binding)
-    },
-    updated(element, binding) {
-        const state = libraryTooltipStates.get(element)
-        if (!state) {
-            if (binding.value) mountLibraryTooltip(element, binding)
-            return
-        }
-        if (state.content !== binding.value) hideLibraryTooltip(element, state)
-        state.content = binding.value || ""
-        if (!state.content) {
-            state.cleanup()
-            libraryTooltipStates.delete(element)
-        } else {
-            updateLibraryTooltipVisibility(element, state)
-        }
-    },
-    beforeUnmount(element) {
-        const state = libraryTooltipStates.get(element)
-        if (!state) return
-        hideLibraryTooltip(element, state)
-        state.cleanup()
-        libraryTooltipStates.delete(element)
-    }
-}
+const vLibraryTooltip = libraryTooltipDirective
 
 function emptyLibraryResponse(failed = false): LibraryResponse {
     return { data: [], hits: 0, suggest: [], failed }
@@ -451,10 +297,6 @@ function queryYearRange(value: unknown): [number, number] | null {
     return [from!, to!]
 }
 
-function queryAdvanced(value: unknown): boolean {
-    return value === null || value === "" || value === "1" || value === "true"
-}
-
 function advancedFilters(query: LocationQuery): LibraryAdvancedFilters {
     const gender = queryValue(query.kön)
     return {
@@ -468,68 +310,8 @@ function advancedFilters(query: LocationQuery): LibraryAdvancedFilters {
     }
 }
 
-function relevanceSortKey(value: unknown): RelevanceSortKey {
-    return sorts.some(item => item.key === value) ? (value as RelevanceSortKey) : "relevans"
-}
-
-function epubSortKey(value: unknown): EpubSortKey {
-    return epubSorts.some(item => item.key === value) ? (value as EpubSortKey) : "popularitet"
-}
-
-function authorSortKey(value: unknown): AuthorSortKey {
-    return authorSorts.some(item => item.key === value) ? (value as AuthorSortKey) : "popularitet"
-}
-
-function partSortKey(value: unknown): PartSortKey {
-    return partSorts.some(item => item.key === value) ? (value as PartSortKey) : "titlar"
-}
-
 function routeState(path: string, query: LocationQuery): LibraryRouteState {
-    const standalone = path === "/epub"
-    const downloadMode =
-        !standalone && query.nedladdning !== undefined && queryAdvanced(query.nedladdning)
-    const requestedMode = queryValue(query.visa)
-    const mode: LibraryMode = downloadMode
-        ? "works"
-        : requestedMode === "pdf"
-          ? "pdf"
-          : !standalone && requestedMode === "latest"
-            ? "latest"
-            : !standalone && requestedMode === "authors"
-              ? "authors"
-              : !standalone && requestedMode === "works"
-                ? "works"
-                : !standalone && requestedMode === "parts"
-                  ? "parts"
-                  : standalone || requestedMode === "epub"
-                    ? "epub"
-                    : "all"
-    const parsed = Number(queryValue(query.sida))
-    return {
-        standalone,
-        mode,
-        filter: queryValue(query.filter),
-        sort:
-            mode === "all"
-                ? relevanceSortKey(query.sort)
-                : mode === "latest"
-                  ? "nytillkommet"
-                  : mode === "authors"
-                    ? authorSortKey(query.sort)
-                    : mode === "parts"
-                      ? partSortKey(query.sort)
-                      : epubSortKey(query.sort),
-        page:
-            mode === "authors"
-                ? 1
-                : Number.isInteger(parsed) && parsed >= 1 && parsed <= libraryPageMaximum
-                  ? parsed
-                  : 1,
-        hide1800: mode === "latest" && query.hide1800 !== undefined,
-        downloadMode,
-        advanced: query.avancerat !== undefined && queryAdvanced(query.avancerat),
-        advancedFilters: advancedFilters(query)
-    }
+    return parseLibraryRouteState(path, query, advancedFilters(query))
 }
 
 function emptyAuthorBrowseResponse(failed = false): AuthorBrowseResponse {
@@ -916,6 +698,30 @@ const workResults = ref(
 const partResults = ref(
     initialPageData.mode === "parts" ? initialPageData.response : emptyBrowseResponse()
 )
+const pageResultHandlers = {
+    all: response => {
+        results.value = response
+    },
+    authors: response => {
+        authorResults.value = response
+    },
+    works: response => {
+        workResults.value = response
+    },
+    parts: response => {
+        partResults.value = response
+    },
+    latest: response => {
+        latestResults.value = response
+    },
+    epub: response => {
+        epubResults.value = response
+    },
+    pdf: response => {
+        pdfResults.value = response
+    }
+} satisfies LibraryPageResultHandlers
+
 function initialLibrarySummaryValue(): LibrarySummary {
     const summary =
         initialData.value?.summary ??
@@ -1216,31 +1022,47 @@ function updateLibrarySummaryFromPage(state: QueryState, pageData: LibraryPageDa
     }
 }
 
+function isActiveLibrarySummaryIdentity(identity: string): boolean {
+    return identity === librarySummaryIdentity(filter.value, currentState().advancedFilters)
+}
+
+function hasCompleteLibrarySummary(): boolean {
+    return [
+        librarySummary.value.authors,
+        librarySummary.value.works,
+        librarySummary.value.parts,
+        librarySummary.value.epub,
+        librarySummary.value.pdf
+    ].every(value => value !== null)
+}
+
+function canCommitLibrarySummary(
+    summary: LibrarySummary | null,
+    identity: string,
+    version: number,
+    controller: AbortController,
+    ownsController: boolean
+): summary is LibrarySummary {
+    return ownsController
+        && version === summaryVersion
+        && !controller.signal.aborted
+        && summary !== null
+        && summary.identity === identity
+        && isActiveLibrarySummaryIdentity(identity)
+        && !currentState().downloadMode
+}
+
 async function refreshLibrarySummary(
     filterValue: string,
     advanced: LibraryAdvancedFilters,
     sourceDownloadMode = false
 ) {
     const identity = librarySummaryIdentity(filterValue, advanced)
-    if (
-        standalone ||
-        sourceDownloadMode ||
-        identity !== librarySummaryIdentity(filter.value, currentState().advancedFilters)
-    )
-        return
+    if (standalone || sourceDownloadMode || !isActiveLibrarySummaryIdentity(identity)) return
     if (librarySummary.value.identity !== identity) {
         invalidateLibrarySummary(filterValue, advanced)
     }
-    if (
-        [
-            librarySummary.value.authors,
-            librarySummary.value.works,
-            librarySummary.value.parts,
-            librarySummary.value.epub,
-            librarySummary.value.pdf
-        ].every(value => value !== null)
-    )
-        return
+    if (hasCompleteLibrarySummary()) return
 
     const version = ++summaryVersion
     summaryController?.abort()
@@ -1251,16 +1073,7 @@ async function refreshLibrarySummary(
     )
     const ownsController = summaryController === activeController
     if (ownsController) summaryController = null
-    if (
-        !ownsController ||
-        version !== summaryVersion ||
-        activeController.signal.aborted ||
-        summary === null ||
-        summary.identity !== identity ||
-        identity !== librarySummaryIdentity(filter.value, currentState().advancedFilters) ||
-        currentState().downloadMode
-    )
-        return
+    if (!canCommitLibrarySummary(summary, identity, version, activeController, ownsController)) return
     const current =
         librarySummary.value.identity === identity
             ? librarySummary.value
@@ -1313,35 +1126,30 @@ async function runBrowserRequest(state: QueryState, version: number) {
         pageData.mode !== state.mode
     )
         return
+    assignLibraryPageResult(pageData, pageResultHandlers)
     if (pageData.mode === "epub") {
-        epubResults.value = pageData.response
-        if (standalone && !epubResults.value.failed) {
+        if (standalone && !pageData.response.failed) {
             updateDownloadCount(
                 state.filter,
                 state.advancedFilters,
                 "epub",
-                epubResults.value.distinctHits
+                pageData.response.distinctHits
             )
         }
     } else if (pageData.mode === "pdf") {
-        pdfResults.value = pageData.response
-        if (standalone && !pdfResults.value.failed) {
+        if (standalone && !pageData.response.failed) {
             updateDownloadCount(
                 state.filter,
                 state.advancedFilters,
                 "pdf",
-                pdfResults.value.distinctHits
+                pageData.response.distinctHits
             )
         }
-    } else if (pageData.mode === "latest") latestResults.value = pageData.response
-    else if (pageData.mode === "authors") authorResults.value = pageData.response
-    else if (pageData.mode === "works") {
-        workResults.value = pageData.response
+    } else if (pageData.mode === "works") {
         expandedWorkKey.value =
-            workResults.value.data.find(item => item.titlePath === queryValue(route.query.title))
+            pageData.response.data.find(item => item.titlePath === queryValue(route.query.title))
                 ?.key ?? ""
-    } else if (pageData.mode === "parts") partResults.value = pageData.response
-    else results.value = pageData.response
+    }
     updateLibrarySummaryFromPage(state, pageData)
     loading.value = false
     if (controller === activeController) controller = null
