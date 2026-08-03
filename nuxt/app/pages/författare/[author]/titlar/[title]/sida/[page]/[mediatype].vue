@@ -23,6 +23,12 @@ import { toBoundedDeveloperValue } from "~/lib/quick-search-developer"
 import { readerMissingPageErrorData } from "~/lib/reader-missing-page"
 import { readerTitleTooltipDirective } from "~/lib/reader-title-tooltip"
 import {
+  decodedWorkSearchQueryKey as decodedRawQueryKey,
+  isWorkSearchActivationKey,
+  nextWorkSearchOptions,
+  type WorkSearchOption
+} from "~/lib/reader/work-search"
+import {
   copyProductionValue,
   isProductionShortcutGuarded,
   urnResolverUrl
@@ -1328,8 +1334,6 @@ function submitGotoHit(): void {
   void navigateToHit(ordinal - 1)
 }
 
-type WorkSearchOption = "default" | "lemma" | "modernize" | "prefix" | "suffix" | "infix"
-
 const workSearchOpen = ref(false)
 const workSearchQuery = ref("")
 const workSearchMessage = ref("")
@@ -1409,49 +1413,21 @@ function toggleWorkSearch(): void {
 }
 
 function chooseWorkSearchOption(option: WorkSearchOption): void {
-  if (option === "default") {
-    workSearchLemma.value = false
-    workSearchOlderSpellings.value = false
-    workSearchPrefix.value = false
-    workSearchSuffix.value = false
-    return
-  }
-  if (option === "lemma") {
-    workSearchLemma.value = true
-    workSearchOlderSpellings.value = false
-    workSearchPrefix.value = false
-    workSearchSuffix.value = false
-    return
-  }
-  if (option === "modernize") {
-    if (workSearchOlderSpellings.value) {
-      workSearchOlderSpellings.value = false
-    } else {
-      workSearchLemma.value = false
-      workSearchOlderSpellings.value = true
-      workSearchPrefix.value = false
-      workSearchSuffix.value = false
-    }
-    return
-  }
-  if (option === "infix") {
-    if (!workSearchPrefix.value || !workSearchSuffix.value) {
-      workSearchLemma.value = false
-      workSearchOlderSpellings.value = false
-      workSearchPrefix.value = true
-      workSearchSuffix.value = true
-    }
-    return
-  }
-
-  workSearchLemma.value = false
-  workSearchOlderSpellings.value = false
-  if (option === "prefix") workSearchPrefix.value = !workSearchPrefix.value
-  if (option === "suffix") workSearchSuffix.value = !workSearchSuffix.value
+  if (option === "infix" && workSearchPrefix.value && workSearchSuffix.value) return
+  const next = nextWorkSearchOptions({
+    lemma: workSearchLemma.value,
+    olderSpellings: workSearchOlderSpellings.value,
+    prefix: workSearchPrefix.value,
+    suffix: workSearchSuffix.value
+  }, option)
+  workSearchLemma.value = next.lemma
+  workSearchOlderSpellings.value = next.olderSpellings
+  workSearchPrefix.value = next.prefix
+  workSearchSuffix.value = next.suffix
 }
 
 function activateWorkSearchOption(event: KeyboardEvent, option: WorkSearchOption): void {
-  if (event.key !== "Enter" && event.key !== " ") return
+  if (!isWorkSearchActivationKey(event.key)) return
   event.preventDefault()
   chooseWorkSearchOption(option)
 }
@@ -1464,16 +1440,6 @@ const workSearchQueryKeys = new Set([
   "prefix",
   "suffix"
 ])
-
-function decodedRawQueryKey(segment: string): string | null {
-  const separator = segment.indexOf("=")
-  const rawKey = separator < 0 ? segment : segment.slice(0, separator)
-  try {
-    return decodeURIComponent(rawKey.replace(/\+/g, " "))
-  } catch {
-    return null
-  }
-}
 
 function workSearchFullPath(query: string | null): string {
   const fragmentIndex = rawFullPath.value.indexOf("#")
