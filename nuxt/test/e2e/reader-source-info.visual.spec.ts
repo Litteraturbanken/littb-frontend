@@ -128,6 +128,8 @@ function isRegisteredBrowserRequest(url: URL, route: string, method: string) {
     /^\/txt\/lb31230\/lb31230_([1-5])\/lb31230_\1_000[12]\.jpeg$/u,
     /^\/red\/bilder\/gemensamt\/(?:gublogga|kblogga|cc-128x128|cc0-128x128|cc-pd-128x128)\.png$/u,
     /^\/red\/bilder\/gemensamt\/dramawebben_svart\.svg$/u,
+    /^\/assets\/fonts\/font-awesome\/fontawesome-littb\.woff2$/u,
+    /^\/assets\/styles\/fonts\/601526\/32FBEBA806C948833\.css$/u,
     /^\/favicon\.ico$/u
   ].some(pattern => pattern.test(url.pathname))
 }
@@ -163,6 +165,16 @@ test.beforeAll(async () => {
     normalPath,
     "GET"
   )).toBe(false)
+  expect(isRegisteredBrowserRequest(
+    new URL("/assets/fonts/font-awesome/fontawesome-littb.woff2", nuxtOrigin),
+    normalPath,
+    "GET"
+  )).toBe(true)
+  expect(isRegisteredBrowserRequest(
+    new URL("/assets/styles/fonts/601526/32FBEBA806C948833.css", nuxtOrigin),
+    normalPath,
+    "GET"
+  )).toBe(true)
   expect(isRegisteredBrowserRequest(
     new URL("/_nuxt/app.js?unexpected=1", nuxtOrigin),
     normalPath,

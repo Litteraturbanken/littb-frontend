@@ -1,4 +1,5 @@
 const javascriptAsset = /\.m?js$/u
+const viteStyleAsset = /\.(?:vue|css|scss)$/u
 const viteTimestamp = /^\d{13}$/u
 const viteVersion = /^[a-f0-9]{8}$/u
 const maximumPathDecodes = 4
@@ -65,15 +66,20 @@ export function isRegisteredNuxtAsset(url: URL): boolean {
     && url.searchParams.get("nuxt_component_export") === "default"
   ) return true
 
-  const styleQueryKeys = ["vue", "type", "index", "scoped", "lang.css"]
-  return url.pathname.endsWith(".vue")
-    && url.searchParams.size === styleQueryKeys.length
-    && styleQueryKeys.every(key => url.searchParams.has(key))
+  const styleQueryKeys = new Set(["vue", "type", "index", "scoped", "src", "lang.css", "lang.scss"])
+  const styleEntries = [...url.searchParams]
+  const styleKeys = styleEntries.map(([key]) => key)
+  const styleLanguages = ["lang.css", "lang.scss"].filter(key => url.searchParams.has(key))
+  return viteStyleAsset.test(url.pathname)
+    && styleEntries.length === new Set(styleKeys).size
+    && styleKeys.every(key => styleQueryKeys.has(key))
     && url.searchParams.get("vue") === ""
     && url.searchParams.get("type") === "style"
     && /^\d+$/u.test(url.searchParams.get("index") ?? "")
-    && viteVersion.test(url.searchParams.get("scoped") ?? "")
-    && url.searchParams.get("lang.css") === ""
+    && (url.searchParams.get("scoped") === null || viteVersion.test(url.searchParams.get("scoped")!))
+    && (url.searchParams.get("src") === null || url.searchParams.get("src") === "true")
+    && styleLanguages.length === 1
+    && url.searchParams.get(styleLanguages[0]!) === ""
 }
 
 export function isSameOriginRegisteredNuxtAsset(url: URL, origin: string): boolean {

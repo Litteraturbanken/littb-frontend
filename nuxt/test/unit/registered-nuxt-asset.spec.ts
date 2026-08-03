@@ -42,6 +42,27 @@ describe("registered Nuxt visual-test assets", () => {
     ), origin)).toBe(true)
   })
 
+  test.each([
+    "/_nuxt/pages/f%C3%B6rfattare/[author]/titlar/[title]/sida/[page]/[mediatype].vue?vue&type=style&index=0&lang.scss",
+    "/_nuxt/layouts/reader.vue?vue&type=style&index=0&lang.scss",
+    "/_nuxt/assets/styles/reader.scss?vue&type=style&index=0&src=true&lang.scss",
+    "/_nuxt/@fs/Users/johan/project/nuxt/node_modules/vue-multiselect/dist/vue-multiselect.css?vue&type=style&index=0&src=true&lang.css",
+    "/_nuxt/components/global/SiteShell.vue?vue&type=style&index=0&scoped=da36b0b2&lang.css"
+  ])("accepts the bounded Vite style-module shape: %s", path => {
+    expect(isSameOriginRegisteredNuxtAsset(new URL(path, origin), origin)).toBe(true)
+  })
+
+  test.each([
+    "/_nuxt/assets/styles/reader.scss?vue&type=style&index=0&src=unexpected&lang.scss",
+    "/_nuxt/assets/styles/reader.scss?vue&type=style&index=0&lang.scss&unexpected=1",
+    "/_nuxt/assets/styles/reader.scss?vue&type=style&index=0&lang.css&lang.scss",
+    "/_nuxt/assets/styles/reader.scss?vue&type=script&index=0&lang.scss",
+    "/_nuxt/assets/styles/reader.js?vue&type=style&index=0&lang.scss",
+    "/_nuxt/assets/styles/reader.scss?vue&type=style&index=x&lang.scss"
+  ])("rejects an unregistered Vite style-module shape: %s", path => {
+    expect(isSameOriginRegisteredNuxtAsset(new URL(path, origin), origin)).toBe(false)
+  })
+
   test("requires the original pathname to contain the literal Nuxt asset prefix", () => {
     expect(isSameOriginRegisteredNuxtAsset(
       new URL("/_nuxt/app.js", origin),
