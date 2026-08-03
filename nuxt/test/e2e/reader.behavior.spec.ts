@@ -343,12 +343,17 @@ test("part-rich sidebar exposes truthful authors, metadata, and raw-preserving t
   expect(problems).toEqual([])
 })
 
-test("Boye work contributors persist in sidebar, contents, and work search", async ({
+test("Boye primary author stays compact in the sidebar while dialogs retain contributors", async ({
   page
 }) => {
   const problems = captureBrowserProblems(page)
-  await page.goto(boyeFacsimilePath, { waitUntil: "networkidle" })
-  await expectBoyeContributors(page.locator(".reader-context > div").first().locator(".author"))
+  await page.goto(boyeEtextPath, { waitUntil: "load" })
+  await expect(page.locator(".reader-context")).toBeVisible({ timeout: 30_000 })
+  const sidebarAuthor = page.locator(".reader-context > div").first().locator(".author")
+  await expect(sidebarAuthor.locator("a")).toHaveCount(1)
+  await expect(sidebarAuthor.getByRole("link", { name: "Karin Boye" }))
+    .toHaveAttribute("href", "/f%C3%B6rfattare/BoyeK")
+  await expect(sidebarAuthor).not.toContainText("Paulina Helgeson")
 
   await page.locator(".reader-context .subnav")
     .getByRole("link", { name: "Innehållsförteckning" })
@@ -1815,10 +1820,12 @@ test("preserves the production desktop e-text reader layout", async ({ page }, t
     }
     return {
       mainFlex: getComputedStyle(main).flex,
+      mainLeft: main.getBoundingClientRect().left,
       mainWidth: main.getBoundingClientRect().width,
       pageNameClientWidth: pageName.clientWidth,
       pageNameScrollWidth: pageName.scrollWidth,
       rightMarginLeft: getComputedStyle(right).marginLeft,
+      rightLeft: right.getBoundingClientRect().left,
       pagerDisplay: getComputedStyle(pagerLink).display,
       pagerMinHeight: getComputedStyle(pagerLink).minHeight,
       pagerPaddingBottom: getComputedStyle(pagerLink).paddingBottom,
@@ -1839,6 +1846,7 @@ test("preserves the production desktop e-text reader layout", async ({ page }, t
     subnavPaddingBottom: "0px"
   })
   expect(layout.mainWidth).toBe(layout.pageNameClientWidth + 40)
+  expect(layout.rightLeft - layout.mainLeft - layout.mainWidth).toBe(68.53125)
   expect(layout.pageNameScrollWidth).toBe(layout.pageNameClientWidth)
   await expect(page.locator(
     'a[aria-label="Föregående sida"][aria-disabled="true"] .navicon.left'

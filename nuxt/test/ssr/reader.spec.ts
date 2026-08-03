@@ -248,7 +248,9 @@ test("legacy main-author contribution is present in the Reader SSR fallback", as
   ])
 })
 
-test("Boye Reader API and SSR retain ordered work contributors", async ({ request }) => {
+test("Boye API retains contributors while the SSR sidebar uses its primary author", async ({
+  request
+}) => {
   const api = await request.get(
     "/api/reader/BoyeK/EttVerkligtJordiskt/3/faksimil"
   )
@@ -283,11 +285,10 @@ test("Boye Reader API and SSR retain ordered work contributors", async ({ reques
   const context = document.querySelector(".reader-context-ssr")
   const links = [...context?.querySelectorAll(".author a") ?? []]
   expect(links.map(link => [link.textContent?.trim(), link.getAttribute("href")])).toEqual([
-    ["Karin Boye", "/f%C3%B6rfattare/BoyeK"],
-    ["Paulina Helgeson red.", "/f%C3%B6rfattare/HelgesonP"]
+    ["Karin Boye", "/f%C3%B6rfattare/BoyeK"]
   ])
-  expect(context?.querySelector(".author em")?.textContent).toBe("&")
-  expect(context?.querySelector(".author .authortype")?.textContent).toBe("red.")
+  expect(context?.querySelector(".author em")).toBeNull()
+  expect(context?.querySelector(".author .authortype")).toBeNull()
   const ocrLayer = document.querySelector(".reader-ocr-layer .overlay")
   expect(ocrLayer?.localName).toBe("div")
   expect(ocrLayer?.innerHTML).toBe(
