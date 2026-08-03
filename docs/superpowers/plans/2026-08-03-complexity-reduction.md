@@ -122,14 +122,22 @@
 - Add: focused unit tests for shared helpers.
 
 **Interfaces:**
-- Consumes: generated work-search responses and page-specific route context.
-- Produces: shared hit validation, index selection, keyboard activation decisions, and navigation query builders.
+- Consumes: raw query segments and already validated work-search hit arrays.
+- Produces: policy-free raw query manipulation, exact indexed hit lookup, and the
+  shared work-search option/keyboard decisions.
+- Keeps local: page-specific hit/response validation, target-page selection,
+  and query serialization. Reader and Editor intentionally have distinct route
+  schemas, hit scopes, bounds, and historical query encodings.
 
-- [ ] Add tests for the shared pure API and confirm it is initially missing.
-- [ ] Extract identical validation/navigation functions without moving fetch ownership.
-- [ ] Update both pages and delete duplicated implementations.
-- [ ] Run reader/editor unit, SSR, and browser behavior suites plus lint/typecheck.
-- [ ] Commit the task.
+- [x] Add focused tests for the shared pure API and confirm each new helper
+  contract fails before extraction.
+- [x] Extract only policy-free helpers without moving fetch ownership or
+  turning page-specific validation/navigation schemas into configuration.
+- [x] Update both pages and delete the duplicated raw-segment and indexed-hit
+  operations while retaining local route serialization.
+- [x] Run Reader/Editor unit, SSR, and relevant browser behavior suites plus
+  lint/typecheck.
+- [x] Commit the task.
 
 ### Task 7: Text-search request ownership
 

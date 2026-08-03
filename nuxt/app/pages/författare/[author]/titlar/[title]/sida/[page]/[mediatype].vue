@@ -23,7 +23,6 @@ import { toBoundedDeveloperValue } from "~/lib/quick-search-developer"
 import { readerMissingPageErrorData } from "~/lib/reader-missing-page"
 import { readerTitleTooltipDirective } from "~/lib/reader-title-tooltip"
 import {
-  decodedWorkSearchQueryKey as decodedRawQueryKey,
   isWorkSearchActivationKey,
   nextWorkSearchOptions,
   replaceWorkSearchQuerySegments,
@@ -1426,12 +1425,11 @@ function workSearchFullPath(query: string | null): string {
   const queryIndex = beforeFragment.indexOf("?")
   const path = queryIndex < 0 ? beforeFragment : beforeFragment.slice(0, queryIndex)
   const rawQuery = queryIndex < 0 ? "" : beforeFragment.slice(queryIndex + 1)
-  const retained = rawQuery.length === 0
-    ? []
-    : rawQuery.split("&").filter(segment => {
-        const key = decodedRawQueryKey(segment)
-        return key === null || !workSearchQueryKeys.has(key)
-      })
+  const retained = replaceWorkSearchQuerySegments(
+    rawQuery.length === 0 ? [] : rawQuery.split("&"),
+    workSearchQueryKeys,
+    new Map()
+  )
 
   if (query !== null) {
     retained.push(new URLSearchParams({ q: query }).toString(), "hit=0")
