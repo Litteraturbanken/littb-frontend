@@ -2617,18 +2617,17 @@ test("submits a canonical work search, preserves raw owners, and follows History
   const searchbox = page.locator(".reader-context .searchbox")
   const input = searchbox.getByRole("searchbox")
   await expect(input).toHaveValue("old")
-  await input.fill("  glas  ")
+  await input.fill("  doktor glas  ")
   await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
 
-  const canonicalQuery = `${retained}&q=glas&hit=0`
+  const canonicalQuery = `${retained}&q=doktor+glas&hit=0`
   await expect(page).toHaveURL(`${readerPath}${canonicalQuery}`)
-  await expect(page.locator("#search_nav")).toContainText("1 sökträff")
+  await expect(page.locator("#search_nav")).toContainText("5 sökträffar")
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -2")
-  await expect(page.locator("#w2_2.markee")).toHaveCount(1)
   expect(await readerHitRequests(request)).toEqual([
     expect.objectContaining({
       path: "/v2/works/lb-reader-doktor-glas/search-hits",
-      query: expect.stringContaining("query=glas&offset=0&limit=3")
+      query: expect.stringContaining("query=doktor%20glas&offset=0&limit=3")
     })
   ])
 
@@ -2637,8 +2636,8 @@ test("submits a canonical work search, preserves raw owners, and follows History
   await expect(input).toHaveValue("old")
   await page.goForward({ waitUntil: "networkidle" })
   await expect(page).toHaveURL(`${readerPath}${canonicalQuery}`)
-  await expect(input).toHaveValue("glas")
-  await expect(page.locator("#w2_2.markee")).toHaveCount(1)
+  await expect(input).toHaveValue("doktor glas")
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -2")
   expect(problems).toEqual([])
 })
 

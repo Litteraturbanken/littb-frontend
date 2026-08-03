@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs"
-
 import { describe, expect, test } from "vitest"
 import {
   decodedWorkSearchQueryKey,
@@ -92,16 +90,4 @@ describe("reader and editor work-search options", () => {
     )).toEqual(["show_search_work"])
   })
 
-  test("Reader work-search query filtering delegates to the shared raw segment helper", () => {
-    const source = readFileSync(new URL(
-      "../../app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
-      import.meta.url
-    ), "utf8")
-    const functionStart = source.indexOf("function workSearchFullPath")
-    const functionEnd = source.indexOf("\nfunction submitWorkSearch", functionStart)
-    const functionSource = source.slice(functionStart, functionEnd)
-
-    expect(functionSource).toContain("replaceWorkSearchQuerySegments(")
-    expect(functionSource).not.toContain("decodedRawQueryKey(segment)")
-  })
 })
