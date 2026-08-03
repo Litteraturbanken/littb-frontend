@@ -81,7 +81,7 @@
 ### Task 4: Backend Library provider modules
 
 **Files:**
-- Create focused modules under `/Users/johan/dev/lb-backend/lbapi/v2/library/` for shared provider access, predicates, browsing, downloads, and counts.
+- Create focused modules under `/Users/johan/dev/lb-backend/lbapi/v2/library_support/` for shared provider access, predicates, browsing, downloads, and counts. The `_support` suffix avoids colliding with the existing public `lbapi.v2.library` module.
 - Modify: `/Users/johan/dev/lb-backend/lbapi/v2/library_provider.py`
 - Modify: focused tests under `/Users/johan/dev/lb-backend/test_lbapi/v2/`.
 

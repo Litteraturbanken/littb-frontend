@@ -39,14 +39,72 @@ function mechanicallyOwnedStyles(legacy: string): string {
         min-height: 24px;
     }
     .sla {`
-  return replaceExactlyOnce(
-    replaceExactlyOnce(
-      replaceExactlyOnce(legacy, mainnavBefore, mainnavAfter),
+  const transformations: ReadonlyArray<readonly [string, string]> = [
+    ['@use "mixins" as *;', '@use "mixins" as *;\n@use "focus";'],
+    ["\n:focus {\n    outline: none;\n}\n", ""],
+    ["input:focus, button.btn:focus", "input:focus:not(:focus-visible), button.btn:focus:not(:focus-visible)"],
+    [
+      `    .btn:active, .btn.active {
+        box-shadow: none;
+        /* border: 2px inset #7a1400; */`,
+      `    .btn:active, .btn.active {
+        /* border: 2px inset #7a1400; */`
+    ],
+    [
+      `        border-color: #333;
+    }
+
+    .checks {`,
+      `        border-color: #333;
+    }
+    .btn:active:not(:focus-visible), .btn.active:not(:focus-visible) {
+        box-shadow: none;
+    }
+
+    .checks {`
+    ],
+    [
+      `                &.active {
+                    box-shadow: none;
+                    background-color: var(--primary-color) !important;
+                    color : white;
+                }
+                &:focus {`,
+      `                &.active {
+                    background-color: var(--primary-color) !important;
+                    color : white;
+                }
+                &.active:not(:focus-visible) {
+                    box-shadow: none;
+                }
+                &:focus:not(:focus-visible) {`
+    ],
+    [
+      `        border: 1px solid #999;
+        outline: none;
+    }
+    .auth_select_container {`,
+      `        border: 1px solid #999;
+    }
+    input.filter:not(:focus-visible) {
+        outline: none;
+    }
+    .auth_select_container {`
+    ],
+    [mainnavBefore, mainnavAfter],
+    [
       'background-image: url("../img/dramawebben.jpg") !important;',
       "background-image: var(--dramawebben-background-image, none) !important;"
-    ),
-    'background-image: url("../img/dramawebben_fade.jpg") !important;',
-    "background-image: var(--dramawebben-subpage-background-image, none) !important;"
+    ],
+    [
+      'background-image: url("../img/dramawebben_fade.jpg") !important;',
+      "background-image: var(--dramawebben-subpage-background-image, none) !important;"
+    ]
+  ]
+
+  return transformations.reduce(
+    (source, [before, after]) => replaceExactlyOnce(source, before, after),
+    legacy
   )
 }
 
