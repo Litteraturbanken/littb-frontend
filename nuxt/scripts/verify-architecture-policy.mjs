@@ -1721,7 +1721,7 @@ function buildCapabilityRegistry(records) {
               substitution.unit,
               substitution.node,
               seen,
-              substitutions
+              substitution.substitutions ?? substitutions
             )
           : false
       }
@@ -1744,7 +1744,11 @@ function buildCapabilityRegistry(records) {
             declaration.node.typeParameters?.forEach((parameter, index) => {
               const argument = node.typeArguments?.[index]
               if (argument) {
-                instantiatedSubstitutions.set(parameter.name.text, { node: argument, unit })
+                instantiatedSubstitutions.set(parameter.name.text, {
+                  node: argument,
+                  unit,
+                  substitutions
+                })
               }
             })
             if (ts.isTypeAliasDeclaration(declaration.node)) {
@@ -2063,7 +2067,9 @@ function buildCapabilityRegistry(records) {
       const memberSubstitutions = new Map(substitutions)
       declaration.node.typeParameters?.forEach((parameter, index) => {
         const argument = objectType.typeArguments?.[index]
-        if (argument) memberSubstitutions.set(parameter.name.text, { node: argument, unit })
+        if (argument) {
+          memberSubstitutions.set(parameter.name.text, { node: argument, unit, substitutions })
+        }
       })
       return { node: member.type, unit: declaration.unit, substitutions: memberSubstitutions }
     }
@@ -2179,7 +2185,9 @@ function buildCapabilityRegistry(records) {
       const memberSubstitutions = new Map(substitutions)
       declaration.node.typeParameters?.forEach((parameter, index) => {
         const argument = objectType.typeArguments?.[index]
-        if (argument) memberSubstitutions.set(parameter.name.text, { node: argument, unit })
+        if (argument) {
+          memberSubstitutions.set(parameter.name.text, { node: argument, unit, substitutions })
+        }
       })
       resolved = resolved || typeCarries(
         member.type,

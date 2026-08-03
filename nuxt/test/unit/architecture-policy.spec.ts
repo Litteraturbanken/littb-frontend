@@ -1580,6 +1580,10 @@ describe("architecture policy verifier", () => {
       `type Box<Value> = { nested: { html: Value } }\ntype Reviewed = Box<${sanitizedHtmlType}<"author-profile">>["nested"]["html"]\nconst forged = value ${castKeyword} Reviewed`
     ],
     [
+      "nested generic aliases reusing a parameter name",
+      `type Outer<Value> = Inner<Value>\ntype Inner<Value> = Value\ntype Reviewed = Outer<${sanitizedHtmlType}<"author-profile">>\nconst forged = value ${castKeyword} Reviewed`
+    ],
+    [
       "destructured generic method",
       `const brander = { forge<Value>(value: string): Value { return value ${castKeyword} Value } }\nconst { forge } = brander\nforge<${sanitizedHtmlType}<"author-profile">>(value)`
     ],
@@ -1916,6 +1920,23 @@ describe("architecture policy verifier", () => {
 
     expect(result.error).toBeUndefined()
     expect(result.status).toBe(0)
+  })
+
+  test("audits nested generics that reuse a type-parameter name without overflowing", () => {
+    const root = createTree()
+    writeSource(root, "app/pages/nested-generics.vue", [
+      "<template>{{ label }}</template>",
+      "<script setup lang=\"ts\">",
+      "type Outer<Value> = Inner<Value>",
+      "type Inner<Value> = Value",
+      "const label: Outer<string> = \"root\"",
+      "</script>"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
   })
 
   test("reports every violation in stable path and line order", () => {
