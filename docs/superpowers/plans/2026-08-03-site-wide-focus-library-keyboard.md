@@ -4,7 +4,7 @@
 
 **Goal:** Restore visible keyboard focus throughout the Nuxt application and make Library work-title disclosures visually correct, semantically linked, and fully operable by keyboard.
 
-**Architecture:** Replace the legacy global focus suppression with one keyboard-only, forced-colors-aware focus contract in the shared stylesheet. Keep Library work titles as native buttons, add a deterministic `aria-controls` relationship to each existing action region, and cover the behavior with Playwright tests that exercise the browser's real tab order and native button activation.
+**Architecture:** Define one keyboard-only, forced-colors-aware focus contract in `nuxt/app/assets/styles/_focus.scss`, consumed by the default layout through `styles.scss` and by the Reader layout through `reader-base.scss`. Component presentation rules may style active controls and native inputs, but may suppress the shared ring only outside `:focus-visible`. Keep Library work titles as native buttons: regular mode exposes a deterministic `aria-controls`/`aria-expanded` disclosure relationship, while download mode exposes native selection state with `aria-pressed` and disables titles that have no exports. Playwright tests exercise the browser's real tab order and native Enter/Space activation.
 
 **Tech Stack:** Nuxt 4, Vue 3 `<script setup>`, TypeScript 5.9, SCSS, Playwright 1.61, Yarn 1, Invoke.
 
@@ -16,7 +16,8 @@
 - Keep Vue Multiselect's existing arrow-key, Enter, and Escape behavior unchanged.
 - The site-wide focus cue must use `:focus-visible`, include both light and dark edges, have a visible offset, and remain usable in forced-colors mode.
 - Library work-title disclosures must be black (`#333`) while idle and use the existing red (`#7a1400`) on hover and keyboard focus.
-- Every work-title disclosure must retain `aria-expanded` and gain `aria-controls` referencing a stable, unique action-container ID.
+- Every regular-mode work-title disclosure must retain `aria-expanded` and gain `aria-controls` referencing a stable, unique action-container ID.
+- Download-mode work titles must omit disclosure attributes, expose selection through `aria-pressed`, and be disabled when the work has no exports.
 - Write each regression test first, run it, and observe the expected failure before changing production code.
 - Add no dependencies.
 
@@ -24,10 +25,25 @@
 
 ## File Map
 
-- `nuxt/app/assets/styles/styles.scss` owns the single application-wide keyboard focus contract.
-- `nuxt/test/e2e/shell-accessibility.behavior.spec.ts` proves that a non-Library page exposes a visible keyboard focus outline.
-- `nuxt/app/pages/bibliotek.vue` owns the Library work disclosure ID, ARIA relationship, and title interaction colors.
-- `nuxt/test/e2e/library.behavior.spec.ts` proves the Library title color and full title-to-action keyboard path.
+- `nuxt/app/assets/styles/_focus.scss` owns the single application-wide keyboard focus contract.
+- `nuxt/app/assets/styles/styles.scss` consumes that contract for the default layout and keeps legacy component resets outside `:focus-visible`.
+- `nuxt/app/assets/styles/reader-base.scss` consumes the same contract for the Reader layout.
+- `nuxt/app/pages/dramawebben/pjäser.vue` keeps the author combobox's pointer-only reset outside `:focus-visible`.
+- `nuxt/test/e2e/shell-accessibility.behavior.spec.ts` proves the shared ring on shell, Reader, active-button, and native-input/combobox paths.
+- `nuxt/app/pages/bibliotek.vue` owns the Library work disclosure/selection state, deterministic action ID, and title interaction colors.
+- `nuxt/test/e2e/library.behavior.spec.ts` proves the Library title color, title-to-action keyboard path, and download-mode Enter/Space selection semantics.
+
+## Final Acceptance Matrix
+
+| Surface | Keyboard acceptance | Pointer acceptance | Automated evidence |
+| --- | --- | --- | --- |
+| Active buttons/tabs | A focused active Library tab retains the 2px white outline, 2px offset, and 4px dark halo. | Active/clicked controls retain their existing presentation without the keyboard ring. | `shell-accessibility.behavior.spec.ts` active Library tab regression |
+| Native inputs and comboboxes | Default-layout inputs plus Dramawebben's author combobox and search input retain the complete shared ring. | Legacy border/outline resets remain unchanged outside `:focus-visible`. | `shell-accessibility.behavior.spec.ts` input and Dramawebben regressions |
+| Reader | The Reader layout imports and renders the same shared keyboard ring. | Reader pointer presentation is unchanged. | `shell-accessibility.behavior.spec.ts` Reader focus regression |
+| Library regular mode | Work titles are native disclosures with dark idle text, `aria-expanded`, stable `aria-controls`, Enter activation, and Tab/Shift+Tab continuity. | Click expansion and existing hover presentation are unchanged. | `library.behavior.spec.ts` disclosure keyboard-flow regression |
+| Library download mode | Exportable work titles are native toggle buttons with `aria-pressed`; Enter and Space update selection state. Titles without exports are disabled no-ops. Disclosure attributes are absent. | Existing checkbox, row, and title selection paths remain aligned. | `library.behavior.spec.ts` download-mode selection regressions |
+| Pointer modality | Keyboard rings appear only for `:focus-visible`. | Fresh pointer clicks show no outline or halo. | Staged real-Chromium pointer check |
+| Forced colors | The shared outline uses system `Highlight` and removes the decorative shadow. | No forced-color suppression is introduced. | `_focus.scss` forced-colors rule plus stylesheet/type gates |
 
 ### Task 1: Site-wide keyboard focus contract
 

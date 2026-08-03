@@ -3152,10 +3152,24 @@ onUnmounted(() => {
                                                         data-library-work-toggle
                                                         data-library-tooltip-kind="title"
                                                         class="library-work-toggle"
-                                                        :aria-controls="workActionsId(item)"
+                                                        :aria-controls="
+                                                            !downloadMode
+                                                                ? workActionsId(item)
+                                                                : undefined
+                                                        "
                                                         :aria-expanded="
-                                                            !downloadMode &&
-                                                            expandedWorkKey === item.key
+                                                            !downloadMode
+                                                                ? expandedWorkKey === item.key
+                                                                : undefined
+                                                        "
+                                                        :aria-pressed="
+                                                            downloadMode
+                                                                ? selectedSourceWorks.has(item.key)
+                                                                : undefined
+                                                        "
+                                                        :disabled="
+                                                            downloadMode &&
+                                                            item.sourceExports.length === 0
                                                         "
                                                         @click.stop="
                                                             downloadMode

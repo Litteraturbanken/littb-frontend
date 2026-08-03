@@ -104,3 +104,18 @@ test("keyboard focus preserves the shared ring on Dramawebben filter controls", 
 
   await expectKeyboardFocusRing(page, page.locator(".controls .filter_btn"))
 })
+
+test("keyboard focus preserves the shared ring on the active Library tab", async ({ page }) => {
+  await page.goto("/bibliotek?visa=works", { waitUntil: "networkidle" })
+
+  await expectKeyboardFocusRing(page, page.locator('[data-library-tab="works"]'))
+})
+
+test("keyboard focus preserves the shared ring on both Dramawebben text inputs", async ({
+  page
+}) => {
+  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+
+  await expectKeyboardFocusRing(page, page.getByRole("combobox", { name: "Författare" }))
+  await expectKeyboardFocusRing(page, page.getByRole("textbox", { name: "Sök", exact: true }))
+})

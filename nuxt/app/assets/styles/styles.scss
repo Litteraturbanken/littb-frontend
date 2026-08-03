@@ -2352,11 +2352,13 @@ body > .header {
     }
 
     .btn:active, .btn.active {
-        box-shadow: none;
         /* border: 2px inset #7a1400; */
         background-color: var(--primary-color);
         color: white;
         border-color: #333;
+    }
+    .btn:active:not(:focus-visible), .btn.active:not(:focus-visible) {
+        box-shadow: none;
     }
 
     .checks {
@@ -2525,9 +2527,11 @@ body > .header {
                     background-color : var(--primary-color) !important;
                 }
                 &.active {
-                    box-shadow: none;
                     background-color: var(--primary-color) !important;
                     color : white;
+                }
+                &.active:not(:focus-visible) {
+                    box-shadow: none;
                 }
                 &:focus:not(:focus-visible) {
                     outline: none;
@@ -3925,6 +3929,8 @@ grundform-clean {
         padding-left: 0.5em;
         height : 34px;
         border: 1px solid #999;
+    }
+    input.filter:not(:focus-visible) {
         outline: none;
     }
     .auth_select_container {

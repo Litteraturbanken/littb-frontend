@@ -806,6 +806,54 @@ test("download-mode long titles shrink and ellipsize inside the work column", as
   expect(geometry.titleClientWidth).toBeLessThan(geometry.titleScrollWidth)
 })
 
+test("download-mode work titles use native Enter and Space selection semantics", async ({
+  page
+}) => {
+  await page.goto(
+    "/bibliotek?avancerat=1&visa=works&nedladdning=1&filter=unsafe-download-token",
+    { waitUntil: "networkidle" }
+  )
+
+  const toggle = page.getByRole("button", { name: "Säkert källmaterial", exact: true })
+  const work = toggle.locator("xpath=ancestor::*[@data-library-work-row]")
+
+  await expect(toggle).not.toHaveAttribute("aria-controls")
+  await expect(toggle).not.toHaveAttribute("aria-expanded")
+  await expect(toggle).toHaveAttribute("aria-pressed", "false")
+
+  await toggle.focus()
+  await page.keyboard.press("Enter")
+  await expect(toggle).toHaveAttribute("aria-pressed", "true")
+  await expect(work.locator("[data-library-source-checkbox]")).toBeChecked()
+  await expect(page.locator("[data-library-selected-work]")).toHaveCount(1)
+
+  await page.keyboard.press("Space")
+  await expect(toggle).toHaveAttribute("aria-pressed", "false")
+  await expect(work.locator("[data-library-source-checkbox]")).not.toBeChecked()
+  await expect(page.locator("[data-library-selected-work]")).toHaveCount(0)
+})
+
+test("download-mode work titles without exports are disabled no-ops", async ({ page }) => {
+  await page.goto(
+    "/bibliotek?avancerat=1&visa=works&nedladdning=1&filter=unsafe-download-token",
+    { waitUntil: "networkidle" }
+  )
+
+  const work = page.locator("[data-library-work-row]").filter({
+    hasText: "Osäkert källmaterial"
+  })
+  const toggle = work.locator("[data-library-work-toggle]")
+
+  await expect(toggle).toBeDisabled()
+  await expect(toggle).not.toHaveAttribute("aria-controls")
+  await expect(toggle).not.toHaveAttribute("aria-expanded")
+  await expect(toggle).toHaveAttribute("aria-pressed", "false")
+
+  await toggle.evaluate((element: HTMLButtonElement) => element.click())
+  await expect(page.locator("[data-library-selected-work]")).toHaveCount(0)
+  await expect(work.locator("[data-library-source-checkbox]")).not.toBeChecked()
+})
+
 test("a long editor surname truncates while its role suffix stays inside the author column", async ({
   page
 }) => {

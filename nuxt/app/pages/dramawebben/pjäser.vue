@@ -829,10 +829,12 @@ useHead(() => ({
   height: 24px;
   padding: 0;
   border: 0 !important;
-  outline: 0;
   background: transparent;
   font-family: inherit;
   font-size: inherit;
+}
+.catalog_select input.select2-selection__rendered:not(:focus-visible) {
+  outline: 0;
 }
 .catalog_select .select2-selection__arrow {
   position: absolute;
