@@ -1776,9 +1776,10 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
     "href",
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
   )
-  await expect(page.locator('link[href="/red/css/etext.css"]')).toHaveCount(1)
-  await expect(page.locator('link[href="/txt/css/lb-reader-doktor-glas-etext.css"]'))
-    .toHaveCount(1)
+  expect(await page.locator("style[data-reader-shared-styles]").textContent())
+    .toContain(".txt .center")
+  expect(await page.locator("style[data-reader-work-styles]").textContent())
+    .toContain(".txt .titelsida")
 
   const recorded = await readerRequests(request)
   const pages = recorded.filter(path => path.startsWith(
@@ -1792,6 +1793,56 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
   ])
   expect(new URL(pages[0]!, fixture).searchParams.get("username")).toBe("app")
   expect(clientReaderRequests).toEqual([])
+  expect(problems).toEqual([])
+})
+
+test("preserves the production desktop e-text reader layout", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-chromium", "Desktop production geometry")
+  const problems = captureBrowserProblems(page)
+  await page.goto(
+    "/författare/SöderbergH/titlar/DoktorGlas/sida/-3/etext",
+    { waitUntil: "networkidle" }
+  )
+
+  const layout = await page.evaluate(() => {
+    const main = document.querySelector<HTMLElement>(".reader_main")
+    const pageName = document.querySelector<HTMLElement>(".reader_main .pname")
+    const right = document.querySelector<HTMLElement>("#rightCorridor")
+    const pagerLink = document.querySelector<HTMLElement>(".pager_ctrls > .prev_part")
+    const subnavLink = document.querySelector<HTMLElement>(".subnav li a")
+    if (!main || !pageName || !right || !pagerLink || !subnavLink) {
+      throw new Error("Reader layout elements are missing")
+    }
+    return {
+      mainFlex: getComputedStyle(main).flex,
+      mainWidth: main.getBoundingClientRect().width,
+      pageNameClientWidth: pageName.clientWidth,
+      pageNameScrollWidth: pageName.scrollWidth,
+      rightMarginLeft: getComputedStyle(right).marginLeft,
+      pagerDisplay: getComputedStyle(pagerLink).display,
+      pagerMinHeight: getComputedStyle(pagerLink).minHeight,
+      pagerPaddingBottom: getComputedStyle(pagerLink).paddingBottom,
+      subnavDisplay: getComputedStyle(subnavLink).display,
+      subnavMinHeight: getComputedStyle(subnavLink).minHeight,
+      subnavPaddingBottom: getComputedStyle(subnavLink).paddingBottom
+    }
+  })
+
+  expect(layout).toMatchObject({
+    mainFlex: "0 1 auto",
+    rightMarginLeft: "64px",
+    pagerDisplay: "inline",
+    pagerMinHeight: "0px",
+    pagerPaddingBottom: "0px",
+    subnavDisplay: "inline",
+    subnavMinHeight: "0px",
+    subnavPaddingBottom: "0px"
+  })
+  expect(layout.mainWidth).toBe(layout.pageNameClientWidth + 40)
+  expect(layout.pageNameScrollWidth).toBe(layout.pageNameClientWidth)
+  await expect(page.locator(
+    'a[aria-label="Föregående sida"][aria-disabled="true"] .navicon.left'
+  )).toBeVisible()
   expect(problems).toEqual([])
 })
 

@@ -2172,6 +2172,13 @@ watch(readerRequestIdentity, () => {
                 @click.prevent="queueReaderPage(draftPreviousPageName)"
               ><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span>{{ " " }}</a>
               <a
+                v-else
+                class="disabled"
+                aria-disabled="true"
+                aria-label="Föregående sida"
+                tabindex="-1"
+              ><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span>{{ " " }}</a>
+              <a
                 v-if="draftNextPageName"
                 rel="next"
                 :href="pageHref(draftNextPageName)"

@@ -14,7 +14,6 @@
 
     #rightCorridor {
         display: inline-block;
-        margin-left: 79.53125px !important;
 
         .slider-large.rzslider .rz-bar:not(.rz-selection) {
             background-color: #e1caca;
@@ -159,9 +158,6 @@
     }
 
     .reader_main {
-        flex: 0 0 477px;
-        width: 477px;
-
         &.type-faksimil {
             flex-basis: auto;
             width: auto;
@@ -263,7 +259,6 @@
         min-height: 36rem;
         padding: 0 20px;
         white-space: nowrap;
-        width: 477px;
 
         div.pname {
             left: 0;
@@ -526,17 +521,6 @@
 
     #toolkit-right .navicon i {
         padding: 0 1px;
-    }
-}
-
-.page-reading:has(.reader_main .etext) #toolkit-right {
-    .pager_ctrls > a,
-    .pager_ctrls > form > a,
-    .subnav > ul > li > a {
-        box-sizing: border-box;
-        display: inline-block;
-        min-height: 24px;
-        padding-bottom: 2px;
     }
 }
 
