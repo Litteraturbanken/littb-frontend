@@ -29,40 +29,15 @@ const legacyReaderEditorMetadataFragments = [
   "/get_work_info",
   "/count_pages/"
 ]
-const canonicalEslintConfig = `import withNuxt from "./.nuxt/eslint.config.mjs"
-
-export default withNuxt({
-  ignores: [
-    ".nuxt/**",
-    ".output/**",
-    "node_modules/**",
-    "app/lib/api/generated/**",
-    "coverage/**",
-    "playwright-report/**",
-    "test-results*/**"
-  ]
-})
-`
-const canonicalCapabilitySource = `import type { ManagedAssetHtml, ManagedStyleText, ManagedStylesheetHref, RenderableCapability, RenderableHtml, SanitizedHtml } from "../types/renderable-html"
-function capability<T extends RenderableCapability>(value: string): T { return value as T }
-export function issueAuthorProfileHtml(value: string): SanitizedHtml<"author-profile"> { return capability<SanitizedHtml<"author-profile">>(value) }
-export function issueAuthorDocumentHtml(value: string): SanitizedHtml<"author-document"> { return capability<SanitizedHtml<"author-document">>(value) }
-export function issueDramawebbenDocumentHtml(value: string): SanitizedHtml<"dramawebben-document"> { return capability<SanitizedHtml<"dramawebben-document">>(value) }
-export function issueSlaArticleHtml(value: string): SanitizedHtml<"sla-article"> { return capability<SanitizedHtml<"sla-article">>(value) }
-export function issueDictionaryArticleHtml(value: string): SanitizedHtml<"dictionary-article"> { return capability<SanitizedHtml<"dictionary-article">>(value) }
-export function issueReaderOcrHtml(value: string): SanitizedHtml<"reader-ocr"> { return capability<SanitizedHtml<"reader-ocr">>(value) }
-export function issueReaderSourceInfoHtml(value: string): SanitizedHtml<"reader-source-info"> { return capability<SanitizedHtml<"reader-source-info">>(value) }
-export function issueEditorEtextHtml(value: string): SanitizedHtml<"editor-etext"> { return capability<SanitizedHtml<"editor-etext">>(value) }
-export function issueManagedReaderHtml(value: string): ManagedAssetHtml<"reader-etext"> { return capability<ManagedAssetHtml<"reader-etext">>(value) }
-export function issueManagedHomeHtml(value: string): ManagedAssetHtml<"home-editorial"> { return capability<ManagedAssetHtml<"home-editorial">>(value) }
-export function issueManagedAboutHtml(value: string): ManagedAssetHtml<"about-editorial"> { return capability<ManagedAssetHtml<"about-editorial">>(value) }
-export function issueManagedPresentationHtml(value: string): ManagedAssetHtml<"presentation-editorial"> { return capability<ManagedAssetHtml<"presentation-editorial">>(value) }
-export function issueManagedPresentationStyle(value: string): ManagedStyleText<"presentation-editorial"> { return capability<ManagedStyleText<"presentation-editorial">>(value) }
-export function issueManagedPresentationStylesheetHref(value: string): ManagedStylesheetHref<"presentation-editorial"> { return capability<ManagedStylesheetHref<"presentation-editorial">>(value) }
-export function emptyRenderableHtml<Value extends RenderableHtml>(): Value { return capability<Value>("") }
-export function joinReaderSourceRows(values: readonly SanitizedHtml<"reader-source-info">[]): SanitizedHtml<"reader-source-info"> { return capability<SanitizedHtml<"reader-source-info">>(values.join("<br>")) }
-export function transformManagedReaderHtml(value: ManagedAssetHtml<"reader-etext">, transform: (value: string) => string): ManagedAssetHtml<"reader-etext"> { return capability<ManagedAssetHtml<"reader-etext">>(transform(value)) }
-`
+const requiredEslintIgnores = new Set([
+  ".nuxt/**",
+  ".output/**",
+  "node_modules/**",
+  "app/lib/api/generated/**",
+  "coverage/**",
+  "playwright-report/**",
+  "test-results*/**"
+])
 const capabilityTypes = new Set([
   "ManagedAssetHtml",
   "ManagedStyleText",
@@ -86,6 +61,27 @@ const capabilityIssuers = new Set([
   "issueManagedPresentationHtml",
   "issueManagedPresentationStyle",
   "issueManagedPresentationStylesheetHref"
+])
+const capabilityIssuerReturnTypes = new Map([
+  ["issueAuthorProfileHtml", 'SanitizedHtml<"author-profile">'],
+  ["issueAuthorDocumentHtml", 'SanitizedHtml<"author-document">'],
+  ["issueDramawebbenDocumentHtml", 'SanitizedHtml<"dramawebben-document">'],
+  ["issueSlaArticleHtml", 'SanitizedHtml<"sla-article">'],
+  ["issueDictionaryArticleHtml", 'SanitizedHtml<"dictionary-article">'],
+  ["issueReaderOcrHtml", 'SanitizedHtml<"reader-ocr">'],
+  ["issueReaderSourceInfoHtml", 'SanitizedHtml<"reader-source-info">'],
+  ["issueEditorEtextHtml", 'SanitizedHtml<"editor-etext">'],
+  ["issueManagedReaderHtml", 'ManagedAssetHtml<"reader-etext">'],
+  ["issueManagedHomeHtml", 'ManagedAssetHtml<"home-editorial">'],
+  ["issueManagedAboutHtml", 'ManagedAssetHtml<"about-editorial">'],
+  ["issueManagedPresentationHtml", 'ManagedAssetHtml<"presentation-editorial">'],
+  ["issueManagedPresentationStyle", 'ManagedStyleText<"presentation-editorial">'],
+  ["issueManagedPresentationStylesheetHref", 'ManagedStylesheetHref<"presentation-editorial">']
+])
+const capabilityUtilityNames = new Set([
+  "emptyRenderableHtml",
+  "joinReaderSourceRows",
+  "transformManagedReaderHtml"
 ])
 const reviewedDomPolicies = new Map([
   [rendererPath, [
@@ -2594,41 +2590,249 @@ function auditDirectCapabilityFlows(record, registry) {
   }
 }
 
-function astShape(node, sourceFile) {
-  const children = node.getChildren(sourceFile)
-  if (children.length === 0) {
-    if (ts.isIdentifier(node) || ts.isPrivateIdentifier(node)) return [node.kind, node.text]
-    if (ts.isStringLiteralLike(node) || ts.isNumericLiteral(node)) return [node.kind, node.text]
-    return [node.kind]
-  }
-  return [node.kind, children.map(child => astShape(child, sourceFile))]
+function compactNodeText(node, sourceFile) {
+  return node?.getText(sourceFile).replace(/\s+/gu, "") ?? ""
 }
 
-const canonicalCapabilityAst = (() => {
-  const sourceFile = ts.createSourceFile(
-    capabilityPath,
-    canonicalCapabilitySource,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS
-  )
-  return JSON.stringify(sourceFile.statements.map(statement => astShape(statement, sourceFile)))
-})()
+function hasModifier(node, kind) {
+  return Boolean(node.modifiers?.some(modifier => modifier.kind === kind))
+}
+
+function singleReturnExpression(declaration) {
+  if (!declaration.body || declaration.body.statements.length !== 1) return null
+  const statement = declaration.body.statements[0]
+  return ts.isReturnStatement(statement) && statement.expression
+    ? unwrapExpression(statement.expression)
+    : null
+}
+
+function directCapabilityCall(declaration, sourceFile, expectedType) {
+  const expression = singleReturnExpression(declaration)
+  if (!expression || !ts.isCallExpression(expression)
+    || !ts.isIdentifier(expression.expression)
+    || expression.expression.text !== "capability"
+    || expression.typeArguments?.length !== 1
+    || compactNodeText(expression.typeArguments[0], sourceFile) !== expectedType.replace(/\s+/gu, "")) {
+    return null
+  }
+  return expression.arguments.length === 1 ? unwrapExpression(expression.arguments[0]) : null
+}
+
+function isIdentifierParameter(parameter, name, typeText, sourceFile) {
+  return ts.isIdentifier(parameter.name)
+    && parameter.name.text === name
+    && !parameter.dotDotDotToken
+    && !parameter.questionToken
+    && !parameter.initializer
+    && compactNodeText(parameter.type, sourceFile) === typeText.replace(/\s+/gu, "")
+}
+
+function validCapabilityHelper(declaration, sourceFile) {
+  if (!declaration
+    || hasModifier(declaration, ts.SyntaxKind.ExportKeyword)
+    || hasModifier(declaration, ts.SyntaxKind.DefaultKeyword)
+    || declaration.typeParameters?.length !== 1
+    || declaration.parameters.length !== 1
+    || compactNodeText(declaration.type, sourceFile) !== "T") return false
+  const typeParameter = declaration.typeParameters[0]
+  if (!ts.isIdentifier(typeParameter.name)
+    || typeParameter.name.text !== "T"
+    || compactNodeText(typeParameter.constraint, sourceFile) !== "RenderableCapability"
+    || !isIdentifierParameter(declaration.parameters[0], "value", "string", sourceFile)) return false
+  const statement = declaration.body?.statements[0]
+  const expression = statement && ts.isReturnStatement(statement)
+    ? statement.expression
+    : null
+  return Boolean(expression
+    && ts.isAsExpression(expression)
+    && ts.isIdentifier(expression.expression)
+    && expression.expression.text === "value"
+    && compactNodeText(expression.type, sourceFile) === "T")
+}
+
+function validCapabilityIssuer(declaration, sourceFile, expectedType) {
+  if (!declaration
+    || !hasModifier(declaration, ts.SyntaxKind.ExportKeyword)
+    || hasModifier(declaration, ts.SyntaxKind.DefaultKeyword)
+    || declaration.typeParameters?.length
+    || declaration.parameters.length !== 1
+    || compactNodeText(declaration.type, sourceFile) !== expectedType.replace(/\s+/gu, "")
+    || !isIdentifierParameter(declaration.parameters[0], "value", "string", sourceFile)) return false
+  const argument = directCapabilityCall(declaration, sourceFile, expectedType)
+  return Boolean(argument && ts.isIdentifier(argument) && argument.text === "value")
+}
+
+function validEmptyRenderableHtml(declaration, sourceFile) {
+  if (!declaration
+    || !hasModifier(declaration, ts.SyntaxKind.ExportKeyword)
+    || declaration.typeParameters?.length !== 1
+    || declaration.parameters.length !== 0
+    || compactNodeText(declaration.type, sourceFile) !== "Value") return false
+  const typeParameter = declaration.typeParameters[0]
+  const argument = directCapabilityCall(declaration, sourceFile, "Value")
+  return ts.isIdentifier(typeParameter.name)
+    && typeParameter.name.text === "Value"
+    && compactNodeText(typeParameter.constraint, sourceFile) === "RenderableHtml"
+    && Boolean(argument && ts.isStringLiteral(argument) && argument.text === "")
+}
+
+function validJoinReaderSourceRows(declaration, sourceFile) {
+  const expectedType = 'SanitizedHtml<"reader-source-info">'
+  if (!declaration
+    || !hasModifier(declaration, ts.SyntaxKind.ExportKeyword)
+    || declaration.typeParameters?.length
+    || declaration.parameters.length !== 1
+    || !isIdentifierParameter(
+      declaration.parameters[0],
+      "values",
+      `readonly ${expectedType}[]`,
+      sourceFile
+    )
+    || compactNodeText(declaration.type, sourceFile) !== expectedType.replace(/\s+/gu, "")) return false
+  const argument = directCapabilityCall(declaration, sourceFile, expectedType)
+  return Boolean(argument
+    && ts.isCallExpression(argument)
+    && ts.isPropertyAccessExpression(argument.expression)
+    && ts.isIdentifier(argument.expression.expression)
+    && argument.expression.expression.text === "values"
+    && argument.expression.name.text === "join"
+    && argument.arguments.length === 1
+    && ts.isStringLiteral(argument.arguments[0])
+    && argument.arguments[0].text === "<br>")
+}
+
+function validTransformManagedReaderHtml(declaration, sourceFile) {
+  const expectedType = 'ManagedAssetHtml<"reader-etext">'
+  if (!declaration
+    || !hasModifier(declaration, ts.SyntaxKind.ExportKeyword)
+    || declaration.typeParameters?.length
+    || declaration.parameters.length !== 2
+    || !isIdentifierParameter(declaration.parameters[0], "value", expectedType, sourceFile)
+    || !isIdentifierParameter(
+      declaration.parameters[1],
+      "transform",
+      "(value: string) => string",
+      sourceFile
+    )
+    || compactNodeText(declaration.type, sourceFile) !== expectedType.replace(/\s+/gu, "")) return false
+  const argument = directCapabilityCall(declaration, sourceFile, expectedType)
+  return Boolean(argument
+    && ts.isCallExpression(argument)
+    && ts.isIdentifier(argument.expression)
+    && argument.expression.text === "transform"
+    && argument.arguments.length === 1
+    && ts.isIdentifier(argument.arguments[0])
+    && argument.arguments[0].text === "value")
+}
+
+function validCapabilityTypeImport(statement) {
+  if (!ts.isImportDeclaration(statement)
+    || statement.moduleSpecifier.text !== "../types/renderable-html"
+    || !statement.importClause?.isTypeOnly
+    || statement.importClause.name
+    || !statement.importClause.namedBindings
+    || !ts.isNamedImports(statement.importClause.namedBindings)) return false
+  const imported = statement.importClause.namedBindings.elements.map(element => {
+    if (element.propertyName || element.isTypeOnly) return null
+    return element.name.text
+  })
+  return imported.every(Boolean)
+    && imported.length === capabilityTypes.size
+    && imported.every(name => capabilityTypes.has(name))
+}
 
 function auditCapabilityUtility(record) {
   const unit = record.units[0]
-  const fingerprint = unit
-    ? JSON.stringify(unit.sourceFile.statements.map(statement => astShape(statement, unit.sourceFile)))
-    : ""
-  if (fingerprint !== canonicalCapabilityAst) {
+  let valid = Boolean(unit)
+  if (unit) {
+    const declarations = new Map()
+    let importCount = 0
+    for (const statement of unit.sourceFile.statements) {
+      if (ts.isImportDeclaration(statement)) {
+        importCount += 1
+        valid &&= validCapabilityTypeImport(statement)
+        continue
+      }
+      if (!ts.isFunctionDeclaration(statement) || !statement.name
+        || declarations.has(statement.name.text)) {
+        valid = false
+        continue
+      }
+      declarations.set(statement.name.text, statement)
+    }
+    valid &&= importCount === 1
+    const expectedNames = new Set([
+      "capability",
+      ...capabilityIssuerReturnTypes.keys(),
+      ...capabilityUtilityNames
+    ])
+    valid &&= declarations.size === expectedNames.size
+      && [...declarations.keys()].every(name => expectedNames.has(name))
+    valid &&= validCapabilityHelper(declarations.get("capability"), unit.sourceFile)
+    for (const [name, returnType] of capabilityIssuerReturnTypes) {
+      valid &&= validCapabilityIssuer(declarations.get(name), unit.sourceFile, returnType)
+    }
+    valid &&= validEmptyRenderableHtml(declarations.get("emptyRenderableHtml"), unit.sourceFile)
+    valid &&= validJoinReaderSourceRows(declarations.get("joinReaderSourceRows"), unit.sourceFile)
+    valid &&= validTransformManagedReaderHtml(
+      declarations.get("transformManagedReaderHtml"),
+      unit.sourceFile
+    )
+  }
+  if (!valid) {
     addViolation(record.relativePath, 1, "capability utility must equal the reviewed structural surface")
   }
+}
+
+function staticPropertyName(property) {
+  if (ts.isIdentifier(property.name) || ts.isStringLiteralLike(property.name)) {
+    return property.name.text
+  }
+  return null
+}
+
+function validEslintConfigSource(source) {
+  const sourceFile = ts.createSourceFile(
+    "eslint.config.mjs",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JS
+  )
+  if (sourceFile.parseDiagnostics.length > 0 || sourceFile.statements.length !== 2) return false
+  const [importStatement, exportStatement] = sourceFile.statements
+  if (!ts.isImportDeclaration(importStatement)
+    || importStatement.moduleSpecifier.text !== "./.nuxt/eslint.config.mjs"
+    || importStatement.importClause?.name?.text !== "withNuxt"
+    || importStatement.importClause.namedBindings
+    || !ts.isExportAssignment(exportStatement)
+    || exportStatement.isExportEquals) return false
+  const expression = unwrapExpression(exportStatement.expression)
+  if (!ts.isCallExpression(expression)
+    || !ts.isIdentifier(expression.expression)
+    || expression.expression.text !== "withNuxt"
+    || expression.arguments.length !== 1) return false
+  const config = unwrapExpression(expression.arguments[0])
+  if (!ts.isObjectLiteralExpression(config)) return false
+  const properties = new Map()
+  for (const property of config.properties) {
+    if (!ts.isPropertyAssignment(property)) return false
+    const name = staticPropertyName(property)
+    if (name === null || properties.has(name)) return false
+    properties.set(name, unwrapExpression(property.initializer))
+  }
+  const ignores = properties.get("ignores")
+  if (!ignores || !ts.isArrayLiteralExpression(ignores)
+    || ignores.elements.length !== requiredEslintIgnores.size) return false
+  const values = ignores.elements.map(element => ts.isStringLiteralLike(element) ? element.text : null)
+  return values.every(value => value !== null && requiredEslintIgnores.has(value))
+    && new Set(values).size === requiredEslintIgnores.size
 }
 
 function auditEslintConfig() {
   const relativePath = "eslint.config.mjs"
   try {
-    if (readFileSync(resolve(root, relativePath), "utf8") !== canonicalEslintConfig) {
+    if (!validEslintConfigSource(readFileSync(resolve(root, relativePath), "utf8"))) {
       addViolation(relativePath, 1, "ESLint configuration must equal the canonical reviewed file")
     }
   } catch {

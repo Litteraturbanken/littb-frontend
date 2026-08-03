@@ -339,6 +339,37 @@ describe("architecture policy verifier", () => {
     expect(result.stderr).toBe("")
   })
 
+  test("accepts reordered capability issuer declarations", () => {
+    const root = createTree()
+    const [importLine, ...bodyLines] = reviewedCapabilityModule().split("\n")
+    const capabilityLines = bodyLines.slice(0, 3)
+    const issuerLines = bodyLines.slice(3).reverse()
+    writeSource(
+      root,
+      "shared/utils/renderable-html.ts",
+      [importLine, ...capabilityLines, ...issuerLines].join("\n")
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("accepts unrelated strict ESLint rules while preserving the required ignores", () => {
+    const root = createTree()
+    writeSource(
+      root,
+      "eslint.config.mjs",
+      eslintConfig(expectedIgnores, 'rules: { eqeqeq: "error" }')
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
   test("accepts the Nuxt alias for the exact HTML document helper", () => {
     const root = createTree()
     const path = "app/lib/author-profile.ts"
