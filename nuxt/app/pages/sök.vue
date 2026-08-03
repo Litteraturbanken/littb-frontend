@@ -9,6 +9,10 @@ import type {
 import SearchMultiSelect from "~/components/search/SearchMultiSelect.vue"
 import { createLbApiClient } from "~/lib/api/client"
 import {
+  createTextSearchRequestOwner,
+  type TextSearchOwnedRequest
+} from "~/lib/text-search-request-owner"
+import {
   acceptTextSearchCountResponse,
   acceptTextSearchOptionsResponse,
   acceptTextSearchResultsResponse,
@@ -262,8 +266,8 @@ watch(() => state.value.advanced, advanced => {
   void chronologyAsyncData.execute()
 }, { flush: "sync" })
 
-let primaryController: AbortController | null = null
-watch(primaryIdentity, () => { primaryController?.abort() }, { flush: "sync" })
+const primaryRequestOwner = createTextSearchRequestOwner()
+watch(primaryIdentity, primaryRequestOwner.cancel, { flush: "sync" })
 const queryInput = ref(state.value.phrase ?? "")
 const searchInputElement = ref<HTMLInputElement | null>(null)
 watch(() => state.value.phrase, phrase => { queryInput.value = phrase ?? "" })
@@ -322,10 +326,8 @@ const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
     if (!requestedState.phrase) return { identity, status: 204, results: null }
     const body = buildTextSearchResultsRequest(requestedState)
     const requestIdentity = textSearchResultsRequestIdentity(body)
-    primaryController?.abort()
-    const controller = new AbortController()
-    primaryController = controller
-    const requestSignal = AbortSignal.any([signal, controller.signal])
+    const request = primaryRequestOwner.start(identity)
+    const requestSignal = AbortSignal.any([signal, request.signal])
     try {
       const result = await client.POST("/text-search/results", { body, signal: requestSignal })
       const accepted = result.response.status === 200
@@ -340,7 +342,7 @@ const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
       }
       return { identity, status: 502, results: null }
     } finally {
-      if (primaryController === controller) primaryController = null
+      primaryRequestOwner.finish(request)
     }
   },
   {
@@ -431,9 +433,8 @@ const countIdentity = computed(() => state.value.phrase
       facetAuthorId: null
     }))
   : "empty")
-const countInFlight = new Map<string, AbortController>()
-let countVersion = 0
-let countController: AbortController | null = null
+const countInFlight = new Map<string, TextSearchOwnedRequest>()
+const countRequestOwner = createTextSearchRequestOwner()
 
 async function loadCount() {
   const requestedState = {
@@ -443,19 +444,16 @@ async function loadCount() {
   if (!requestedState.phrase) return
   const identity = countIdentity.value
   if (Object.hasOwn(countCache.value, identity) || countInFlight.has(identity)) return
-  const version = ++countVersion
-  countController?.abort()
-  const controller = new AbortController()
-  countController = controller
-  countInFlight.set(identity, controller)
+  const request = countRequestOwner.start(identity)
+  countInFlight.set(identity, request)
   const body = buildTextSearchCountRequest(requestedState)
   const requestIdentity = textSearchCountRequestIdentity(body)
   try {
-    const result = await client.POST("/text-search/count", { body, signal: controller.signal })
+    const result = await client.POST("/text-search/count", { body, signal: request.signal })
     const accepted = result.response.status === 200
       ? acceptTextSearchCountResponse(result.data, body, requestIdentity)
       : null
-    if (version === countVersion && identity === countIdentity.value && accepted) {
+    if (countRequestOwner.isCurrent(request, countIdentity.value) && accepted) {
       countCache.value[identity] = {
         documents: accepted.total_documents,
         hits: accepted.total_highlights
@@ -464,7 +462,8 @@ async function loadCount() {
   } catch {
     // Failed and aborted requests remain retryable on identity re-entry.
   } finally {
-    if (countInFlight.get(identity) === controller) countInFlight.delete(identity)
+    if (countInFlight.get(identity) === request) countInFlight.delete(identity)
+    countRequestOwner.finish(request)
   }
 }
 
@@ -512,36 +511,33 @@ const optionsCache = useState<Record<string, OptionsView>>(
   "text-search-options-cache",
   () => ({})
 )
-const optionsInFlight = new Map<string, AbortController>()
-let optionsVersion = 0
-let optionsController: AbortController | null = null
+const optionsInFlight = new Map<string, TextSearchOwnedRequest>()
+const optionsRequestOwner = createTextSearchRequestOwner()
 
 async function loadOptions() {
   const requestedState = state.value
   const identity = textSearchRouteIdentity(requestedState)
   if (optionsCache.value[identity]?.staticComplete || optionsInFlight.has(identity)) return
-  const version = ++optionsVersion
-  optionsController?.abort()
-  const controller = new AbortController()
-  optionsController = controller
-  optionsInFlight.set(identity, controller)
+  const request = optionsRequestOwner.start(identity)
+  optionsInFlight.set(identity, request)
   const body = buildTextSearchOptionsRequest(requestedState)
   const requestIdentity = textSearchOptionsRequestIdentity(body)
   try {
     const result = await client.POST("/text-search/options", {
       body,
-      signal: controller.signal
+      signal: request.signal
     })
     const accepted = result.response.status === 200
       ? acceptTextSearchOptionsResponse(result.data, body, requestIdentity)
       : null
-    if (version === optionsVersion && identity === routeIdentity.value && accepted) {
+    if (optionsRequestOwner.isCurrent(request, routeIdentity.value) && accepted) {
       optionsCache.value[identity] = optionsView(accepted)
     }
   } catch {
     // Failed and aborted requests remain retryable on identity re-entry.
   } finally {
-    if (optionsInFlight.get(identity) === controller) optionsInFlight.delete(identity)
+    if (optionsInFlight.get(identity) === request) optionsInFlight.delete(identity)
+    optionsRequestOwner.finish(request)
   }
 }
 
@@ -706,8 +702,7 @@ async function commitChronologyDraft(endpoint: "from" | "to", value: string) {
   syncChronologyDraft()
 }
 
-let titleVersion = 0
-let titleController: AbortController | null = null
+const titleRequestOwner = createTextSearchRequestOwner()
 let titleTimer: ReturnType<typeof setTimeout> | null = null
 const titleLoading = ref(false)
 const titleOptionsFailed = ref(false)
@@ -725,10 +720,7 @@ watch(routeIdentity, () => {
 async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) {
   const requestedState = state.value
   const identity = textSearchRouteIdentity(requestedState)
-  const version = ++titleVersion
-  titleController?.abort()
-  const controller = new AbortController()
-  titleController = controller
+  const request = titleRequestOwner.start(identity)
   titleLoading.value = true
   titleOptionsFailed.value = false
   failedTitleOptionsRequest = null
@@ -742,12 +734,12 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
   try {
     const result = await client.POST("/text-search/options", {
       body,
-      signal: controller.signal
+      signal: request.signal
     })
     const accepted = result.response.status === 200
       ? acceptTextSearchOptionsResponse(result.data, body, requestIdentity)
       : null
-    if (version === titleVersion && identity === routeIdentity.value && accepted) {
+    if (titleRequestOwner.isCurrent(request, routeIdentity.value) && accepted) {
       const current = optionsCache.value[identity]
       optionsCache.value[identity] = {
         ...(current ?? optionsView(accepted, false)),
@@ -756,27 +748,25 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
       }
       titleOptionsExpanded.value = titleLimit === 500
       failedTitleOptionsRequest = null
-    } else if (version === titleVersion && identity === routeIdentity.value) {
+    } else if (titleRequestOwner.isCurrent(request, routeIdentity.value)) {
       titleOptionsFailed.value = true
       failedTitleOptionsRequest = { titleFilter, titleLimit }
     }
   } catch (error) {
     if (!(error instanceof DOMException && error.name === "AbortError")) {
-      if (version === titleVersion && identity === routeIdentity.value) {
+      if (titleRequestOwner.isCurrent(request, routeIdentity.value)) {
         titleOptionsFailed.value = true
         failedTitleOptionsRequest = { titleFilter, titleLimit }
       }
     }
   } finally {
-    if (version === titleVersion) titleLoading.value = false
+    if (titleRequestOwner.finish(request)) titleLoading.value = false
   }
 }
 
 function queueTitleOptions(titleFilter: string) {
   if (titleFilterText.value !== titleFilter) {
-    titleVersion += 1
-    titleController?.abort()
-    titleController = null
+    titleRequestOwner.cancel()
     titleLoading.value = false
     titleOptionsExpanded.value = false
     titleOptionsFailed.value = false
@@ -803,11 +793,9 @@ function retryTitleOptions() {
 }
 
 function cancelTitleOptions() {
-  titleVersion += 1
+  titleRequestOwner.cancel()
   if (titleTimer) clearTimeout(titleTimer)
   titleTimer = null
-  titleController?.abort()
-  titleController = null
   titleLoading.value = false
   titleOptionsFailed.value = false
   titleOptionsExpanded.value = false
@@ -965,25 +953,20 @@ function selectedMode(mode: string): boolean {
 
 watch(routeIdentity, cancelTitleOptions, { flush: "sync" })
 watch(countIdentity, () => {
-  countVersion += 1
-  countController?.abort()
+  countRequestOwner.cancel()
   countInFlight.clear()
 }, { flush: "sync" })
 watch(routeIdentity, () => {
-  optionsVersion += 1
-  optionsController?.abort()
+  optionsRequestOwner.cancel()
   optionsInFlight.clear()
   if (state.value.advanced) void loadOptions()
 }, { flush: "post" })
 
 const moreHits = shallowRef<Record<string, readonly SearchHitView[]>>({})
-let moreVersion = 0
-let moreController: AbortController | null = null
+const moreRequestOwner = createTextSearchRequestOwner()
 const moreLoadingKey = ref<string | null>(null)
 watch(routeIdentity, () => {
-  moreVersion += 1
-  moreController?.abort()
-  moreController = null
+  moreRequestOwner.cancel()
   moreHits.value = {}
   moreLoadingKey.value = null
 }, { flush: "sync" })
@@ -992,10 +975,7 @@ async function showMore(workKey: string) {
   const requestedState = state.value
   if (!requestedState.phrase) return
   const identity = textSearchRouteIdentity(requestedState)
-  const version = ++moreVersion
-  moreController?.abort()
-  const controller = new AbortController()
-  moreController = controller
+  const request = moreRequestOwner.start(identity)
   moreLoadingKey.value = workKey
   const requestState: TextSearchRouteState = {
     ...requestedState,
@@ -1007,12 +987,12 @@ async function showMore(workKey: string) {
   try {
     const result = await client.POST("/text-search/results", {
       body,
-      signal: controller.signal
+      signal: request.signal
     })
     const accepted = result.response.status === 200
       ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
       : null
-    if (version === moreVersion && identity === routeIdentity.value && accepted
+    if (moreRequestOwner.isCurrent(request, routeIdentity.value) && accepted
       && accepted.works.length === 1 && accepted.works[0]?.lbworkid === workKey) {
       const expanded = resultsView(accepted, requestedState).works.find(work => work.key === workKey)
       if (expanded) moreHits.value = { ...moreHits.value, [workKey]: expanded.hits }
@@ -1022,7 +1002,7 @@ async function showMore(workKey: string) {
       // Keep the accepted primary rows when expansion fails.
     }
   } finally {
-    if (version === moreVersion) moreLoadingKey.value = null
+    if (moreRequestOwner.finish(request)) moreLoadingKey.value = null
   }
 }
 
@@ -1137,16 +1117,13 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", handlePaginationKeydown)
-  primaryController?.abort()
-  countVersion += 1
-  countController?.abort()
+  primaryRequestOwner.cancel()
+  countRequestOwner.cancel()
   countInFlight.clear()
-  optionsVersion += 1
-  optionsController?.abort()
+  optionsRequestOwner.cancel()
   optionsInFlight.clear()
   cancelTitleOptions()
-  moreVersion += 1
-  moreController?.abort()
+  moreRequestOwner.cancel()
 })
 
 useSeoMeta({
