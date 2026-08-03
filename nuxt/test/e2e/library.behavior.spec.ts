@@ -32,6 +32,25 @@ async function expectFocusRingNotClipped(locator: Locator) {
   })).toEqual([])
 }
 
+async function expectKeyboardFocusRing(locator: Locator) {
+  expect(await locator.evaluate((element) => {
+    const style = getComputedStyle(element)
+    return {
+      boxShadow: style.boxShadow,
+      outlineColor: style.outlineColor,
+      outlineOffset: style.outlineOffset,
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth
+    }
+  })).toEqual({
+    boxShadow: "rgb(51, 51, 51) 0px 0px 0px 4px",
+    outlineColor: "rgb(255, 255, 255)",
+    outlineOffset: "2px",
+    outlineStyle: "solid",
+    outlineWidth: "2px"
+  })
+}
+
 function libraryFilters(overrides: Partial<LibraryFilters> = {}): LibraryFilters {
   return {
     query: "",
@@ -731,12 +750,13 @@ test("Works titles are black keyboard disclosures linked to their representation
   await page.locator("[data-library-sort]").last().focus()
   await page.keyboard.press("Tab")
   await expect(toggle).toBeFocused()
-  expect(await toggle.evaluate(element => getComputedStyle(element).outlineStyle)).toBe("solid")
+  await expectKeyboardFocusRing(toggle)
   await expectFocusRingNotClipped(toggle)
 
   await page.keyboard.press("Tab")
   const author = work.getByRole("link", { name: "Söderberg", exact: true })
   await expect(author).toBeFocused()
+  await expectKeyboardFocusRing(author)
   await expectFocusRingNotClipped(author)
   await page.keyboard.press("Shift+Tab")
   await expect(toggle).toBeFocused()
@@ -754,6 +774,74 @@ test("Works titles are black keyboard disclosures linked to their representation
   await expect(work.getByRole("link", { name: "Läs som etext", exact: true })).toBeFocused()
   await page.keyboard.press("Shift+Tab")
   await expect(toggle).toBeFocused()
+})
+
+test("download-mode long titles shrink and ellipsize inside the work column", async ({
+  page
+}) => {
+  await page.goto(
+    "/bibliotek?avancerat=1&visa=works&nedladdning=1&filter=download-title-width",
+    { waitUntil: "networkidle" }
+  )
+
+  const work = page.locator("[data-library-work-row]").filter({
+    hasText: "En avsiktligt mycket lång nedladdningstitel"
+  })
+  const toggle = work.locator("[data-library-work-toggle]")
+  const geometry = await toggle.evaluate((element) => {
+    const title = element as HTMLElement
+    const column = title.closest("td")
+    if (!column) throw new Error("work title is missing its result column")
+    const titleRect = title.getBoundingClientRect()
+    const columnRect = column.getBoundingClientRect()
+    return {
+      columnRight: columnRect.right,
+      titleClientWidth: title.clientWidth,
+      titleRight: titleRect.right,
+      titleScrollWidth: title.scrollWidth
+    }
+  })
+
+  expect(geometry.titleRight).toBeLessThanOrEqual(geometry.columnRight + 1)
+  expect(geometry.titleClientWidth).toBeLessThan(geometry.titleScrollWidth)
+})
+
+test("a long editor surname truncates while its role suffix stays inside the author column", async ({
+  page
+}) => {
+  await page.goto(
+    "/bibliotek?visa=works&filter=role-suffix-width",
+    { waitUntil: "networkidle" }
+  )
+
+  const work = page.locator("[data-library-work-row]").filter({
+    hasText: "Redaktörens långa efternamn"
+  })
+  const authorColumn = work.locator("td").last()
+  const author = work.getByRole("link", {
+    name: "Det mycket långa redaktörsefternamnet",
+    exact: true
+  })
+  const suffix = work.getByText("(red.)", { exact: true })
+  const geometry = await author.evaluate((element) => {
+    const link = element as HTMLElement
+    const column = link.closest("td")
+    const suffixElement = link.nextElementSibling
+    if (!column || !(suffixElement instanceof HTMLElement)) {
+      throw new Error("author result is missing its column or role suffix")
+    }
+    return {
+      authorClientWidth: link.clientWidth,
+      authorScrollWidth: link.scrollWidth,
+      columnRight: column.getBoundingClientRect().right,
+      suffixRight: suffixElement.getBoundingClientRect().right
+    }
+  })
+
+  await expect(authorColumn).toContainText("(red.)")
+  expect(await suffix.evaluate(element => element.textContent)).toBe("\u00a0(red.)")
+  expect(geometry.authorClientWidth).toBeLessThan(geometry.authorScrollWidth)
+  expect(geometry.suffixRight).toBeLessThanOrEqual(geometry.columnRight + 1)
 })
 
 test("Works groups representations and expands the legacy read, download, search, and about actions", async ({

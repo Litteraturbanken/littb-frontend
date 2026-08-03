@@ -3143,6 +3143,7 @@ onUnmounted(() => {
                                             >
                                             <div
                                                 class="header block text-lg leading-tight"
+                                                :class="{ 'min-w-0 flex-1': downloadMode }"
                                             >
                                                 <span class="title_inner">
                                                     <button
@@ -3199,18 +3200,21 @@ onUnmounted(() => {
                                     </td>
                                     <td class="block w-44 text-right">
                                         <div
-                                            class="whitespace-nowrap"
+                                            class="min-w-0 whitespace-nowrap"
                                         >
-                                            <span class="author uppercase text-sm">
+                                            <span
+                                                class="author uppercase text-sm flex min-w-0 justify-end"
+                                            >
                                                 <NuxtLink
                                                     v-library-tooltip="item.authorTooltip"
                                                     data-library-tooltip-kind="author"
-                                                    class="inline-block max-w-full overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
+                                                    class="min-w-0 shrink overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
                                                     :to="canonicalNuxtHref(item.authorHref)"
                                                     >{{ item.surname }}</NuxtLink
                                                 ><template v-if="item.roleSuffix"
-                                                    >{{ " "
-                                                    }}<span class="text-gray-700 sc">{{
+                                                    ><span
+                                                        class="shrink-0 text-gray-700 sc"
+                                                    >&nbsp;{{
                                                         item.roleSuffix.trim()
                                                     }}</span></template
                                                 >

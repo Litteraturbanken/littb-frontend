@@ -1308,6 +1308,7 @@ const libraryAuthors = {
   soderberg: { author_id: "SöderbergH", full_name: "Hjalmar Söderberg", surname: "Söderberg", role: null, birth_year: "1869", death_year: "1941" },
   geijer: { author_id: "GeijerEGA", full_name: "Erik Gustaf Geijer", surname: "Geijer", role: "editor", birth_year: "1783", death_year: "1847" },
   bauer: { author_id: "BauerJ", full_name: "John Bauer", surname: "Bauer", role: "illustrator", birth_year: "1882", death_year: "1918" },
+  longEditor: { author_id: "LongEditorA", full_name: "Linnéa Det mycket långa redaktörsefternamnet", surname: "Det mycket långa redaktörsefternamnet", role: "editor", birth_year: null, death_year: null },
   poet: { author_id: "PoetP", full_name: "Pia Poet", surname: "Poet", role: "editor", birth_year: null, death_year: null }
 }
 
@@ -1595,6 +1596,26 @@ function libraryAuthorsResponse(query, limit) {
 
 function libraryWorksResponse(query) {
   if (query === "inga") return { mode: "works", total_hits: 0, total_works: 0, items: [] }
+  if (query === "download-title-width") {
+    return { mode: "works", total_hits: 1, total_works: 1, items: [
+      libraryBrowseItem({
+        title: "En avsiktligt mycket lång nedladdningstitel som måste kortas inom verkets kolumn",
+        fullTitle: "En avsiktligt mycket lång nedladdningstitel som måste kortas inom verkets kolumn",
+        year: "1905", author: libraryAuthors.soderberg, titleId: "LongDownloadTitle",
+        sourceExports: [
+          { format: "txt", media_type: "etext", size: 1024, work_id: "lb-LongDownloadTitle" }
+        ]
+      })
+    ] }
+  }
+  if (query === "role-suffix-width") {
+    return { mode: "works", total_hits: 1, total_works: 1, items: [
+      libraryBrowseItem({
+        title: "Redaktörens långa efternamn", fullTitle: "Redaktörens långa efternamn",
+        year: "1906", author: libraryAuthors.longEditor, titleId: "LongEditorSurname"
+      })
+    ] }
+  }
   if (query.toLowerCase() === "strindberg") {
     return { mode: "works", total_hits: 611, total_works: 465, items: [
       libraryBrowseItem({
@@ -1686,10 +1707,12 @@ function libraryCountResponse(mode, filters) {
   const empty = query === "inga"
   if (mode === "works") {
     return {
-      mode, total: empty ? 0 : query === "strindberg" ? 465 : query.includes("selma") ? 1 : query === "unsafe-download-token" ? 2 : 3,
+      mode, total: empty ? 0 : query === "strindberg" ? 465 : query.includes("selma") ? 1 : query === "unsafe-download-token" ? 2 : query === "role-suffix-width" || query === "download-title-width" ? 1 : 3,
       author_ids: empty ? [] : query.includes("selma") ? ["LagerlofS"]
         : query === "strindberg" ? ["StrindbergA", "StrindbergE", "StrindbergF", "StrindbergN", "StrindbergO", "StrindbergT", "StrindbergV"]
         : query === "unsafe-download-token" ? ["SöderbergH"]
+          : query === "role-suffix-width" ? ["LongEditorA"]
+            : query === "download-title-width" ? ["SöderbergH"]
           : ["SöderbergH", "GeijerEGA", "BauerJ"]
     }
   }
