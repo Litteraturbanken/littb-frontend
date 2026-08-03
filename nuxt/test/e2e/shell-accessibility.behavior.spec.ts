@@ -16,6 +16,37 @@ async function expectMinimumTargetHeight(locator: Locator, minimum = 24) {
   }
 }
 
+async function expectKeyboardFocusRing(page: import("@playwright/test").Page, target: Locator) {
+  await expect(target).toHaveCount(1)
+
+  for (let tab = 0; tab < 80; tab += 1) {
+    await page.keyboard.press("Tab")
+    if (await target.evaluate((element) => element === document.activeElement)) {
+      await expect.poll(async () => target.evaluate((element) => (
+        getComputedStyle(element).outlineOffset
+      ))).toBe("2px")
+
+      const style = await target.evaluate((element) => {
+        const computed = getComputedStyle(element)
+        return {
+          outlineStyle: computed.outlineStyle,
+          outlineWidth: computed.outlineWidth,
+          outlineOffset: computed.outlineOffset,
+          boxShadow: computed.boxShadow
+        }
+      })
+
+      expect(style.outlineStyle).toBe("solid")
+      expect(Number.parseFloat(style.outlineWidth)).toBeGreaterThanOrEqual(2)
+      expect(style.outlineOffset).toBe("2px")
+      expect(style.boxShadow).toContain("4px")
+      return
+    }
+  }
+
+  throw new Error("keyboard navigation did not reach the expected control")
+}
+
 test("the shared main navigation retains native list semantics", async ({ page }) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
 
@@ -54,4 +85,22 @@ test("keyboard focus remains visibly identifiable outside the Library", async ({
   expect(style.outlineStyle).toBe("solid")
   expect(Number.parseFloat(style.outlineWidth)).toBeGreaterThan(0)
   expect(Number.parseFloat(style.outlineOffset)).toBeGreaterThanOrEqual(2)
+})
+
+test("keyboard focus remains visibly identifiable in the Reader layout", async ({ page }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+
+  await expectKeyboardFocusRing(page, page.locator('nav[aria-label="Huvudnavigation"] a').first())
+})
+
+test("keyboard focus preserves the shared ring on default-layout inputs", async ({ page }) => {
+  await page.goto("/om/kontakt", { waitUntil: "networkidle" })
+
+  await expectKeyboardFocusRing(page, page.locator('input[type="email"]').first())
+})
+
+test("keyboard focus preserves the shared ring on Dramawebben filter controls", async ({ page }) => {
+  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+
+  await expectKeyboardFocusRing(page, page.locator(".controls .filter_btn"))
 })

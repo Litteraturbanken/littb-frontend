@@ -2,6 +2,7 @@
 @use "sass:color";
 @use "sass:meta";
 @use "mixins" as *;
+@use "focus";
 
 
 $screen-sm: 640px;
@@ -96,23 +97,6 @@ img {
 }
 .page-start .start-only.flex {
     display: flex;
-}
-
-:focus:not(:focus-visible) {
-    outline: none;
-}
-
-:focus-visible {
-    outline: 2px solid #fff;
-    outline-offset: 2px;
-    box-shadow: 0 0 0 4px #333;
-}
-
-@media (forced-colors: active) {
-    :focus-visible {
-        outline: 2px solid Highlight;
-        box-shadow: none;
-    }
 }
 
 // @font-face {
@@ -623,7 +607,7 @@ textarea::placeholder {
   color: #9e9e9e;
 }
 
-input:focus, button.btn:focus {
+input:focus:not(:focus-visible), button.btn:focus:not(:focus-visible) {
     outline-color : $primarycolor;
     outline-width : 1px;
 }
@@ -2545,7 +2529,7 @@ body > .header {
                     background-color: var(--primary-color) !important;
                     color : white;
                 }
-                &:focus {
+                &:focus:not(:focus-visible) {
                     outline: none;
                 }
             }

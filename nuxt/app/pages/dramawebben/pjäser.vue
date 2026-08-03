@@ -952,9 +952,9 @@ useHead(() => ({
   background-image: none !important;
   background-size: auto !important;
 }
-.controls .filter_btn:focus {
-  outline: 0 !important;
-  box-shadow: none !important;
+.controls .filter_btn:focus:not(:focus-visible) {
+  outline: 0;
+  box-shadow: none;
 }
 @media (max-width: 639px) {
   .catalog_page.catalog_plays::after {

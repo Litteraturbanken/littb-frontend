@@ -2,6 +2,7 @@
 @use "sass:color";
 @use "sass:meta";
 @use "mixins" as *;
+@use "focus";
 
 
 $screen-sm: 640px;
@@ -96,10 +97,6 @@ img {
 }
 .page-start .start-only.flex {
     display: flex;
-}
-
-:focus {
-    outline: none;
 }
 
 // @font-face {
@@ -610,7 +607,7 @@ textarea::placeholder {
   color: #9e9e9e;
 }
 
-input:focus, button.btn:focus {
+input:focus:not(:focus-visible), button.btn:focus:not(:focus-visible) {
     outline-color : $primarycolor;
     outline-width : 1px;
 }
