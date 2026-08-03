@@ -429,8 +429,10 @@ for (const mode of ["works", "latest", "epub", "pdf"] as const) {
     const author = row.locator("[data-library-tooltip-kind=author]")
 
     await expect(title).toContainText(mode === "pdf" ? "Gösta Berlings saga" : "Doktor Glas")
-    await expect(title.locator("xpath=ancestor::*[contains(@class, 'header')][1]"))
-      .toHaveCSS("text-overflow", "ellipsis")
+    const truncationTarget = mode === "works"
+      ? title
+      : title.locator("xpath=ancestor::*[contains(@class, 'header')][1]")
+    await expect(truncationTarget).toHaveCSS("text-overflow", "ellipsis")
     await expect(page.getByRole("tooltip")).toHaveCount(0)
     await title.hover()
     await page.waitForTimeout(300)
@@ -705,6 +707,28 @@ test("Works titles are black keyboard disclosures linked to their representation
   await page.keyboard.press("Tab")
   await expect(toggle).toBeFocused()
   expect(await toggle.evaluate(element => getComputedStyle(element).outlineStyle)).toBe("solid")
+  expect(await toggle.evaluate((element) => {
+    const ringOutset = 4
+    const ring = element.getBoundingClientRect()
+    const clippedBy: string[] = []
+
+    for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+      const style = getComputedStyle(ancestor)
+      if (!/(hidden|clip)/.test(`${style.overflowX} ${style.overflowY}`)) continue
+
+      const boundary = ancestor.getBoundingClientRect()
+      if (
+        ring.left - ringOutset < boundary.left ||
+        ring.top - ringOutset < boundary.top ||
+        ring.right + ringOutset > boundary.right ||
+        ring.bottom + ringOutset > boundary.bottom
+      ) {
+        clippedBy.push(ancestor.className)
+      }
+    }
+
+    return clippedBy
+  })).toEqual([])
 
   const controls = await toggle.getAttribute("aria-controls")
   expect(controls).toBeTruthy()

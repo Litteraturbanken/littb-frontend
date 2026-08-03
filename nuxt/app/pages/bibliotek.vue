@@ -3142,7 +3142,7 @@ onUnmounted(() => {
                                                 @change="toggleSourceWork(item)"
                                             >
                                             <div
-                                                class="header block overflow-hidden text-ellipsis whitespace-nowrap text-lg leading-tight"
+                                                class="header block text-lg leading-tight"
                                             >
                                                 <span class="title_inner">
                                                     <button
@@ -3700,9 +3700,15 @@ onUnmounted(() => {
 }
 
 .library-work-toggle {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
     padding: 0;
     color: #333;
     text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
     cursor: pointer;
     background: transparent;
     border: 0;
