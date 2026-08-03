@@ -633,6 +633,7 @@ export const sharedReaderCss = `
 `
 
 export const workReaderCss = `
+.etext { width: 540px; }
 .txt .titelsida { font-family: Georgia, serif; line-height: 1.9; min-width: 28rem; }
 .txt .author { letter-spacing: .04em; }
 `

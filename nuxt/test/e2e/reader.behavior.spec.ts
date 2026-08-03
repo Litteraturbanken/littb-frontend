@@ -1818,6 +1818,7 @@ test("preserves the production desktop e-text reader layout", async ({ page }, t
       throw new Error("Reader layout elements are missing")
     }
     return {
+      disabledPreviousIconColor: getComputedStyle(disabledPreviousIcon, "::before").color,
       disabledPreviousIconOpacity: getComputedStyle(disabledPreviousIcon).opacity,
       mainFlex: getComputedStyle(main).flex,
       mainLeft: main.getBoundingClientRect().left,
@@ -1836,6 +1837,7 @@ test("preserves the production desktop e-text reader layout", async ({ page }, t
   })
 
   expect(layout).toMatchObject({
+    disabledPreviousIconColor: "rgb(128, 128, 128)",
     disabledPreviousIconOpacity: "0.7",
     mainFlex: "0 1 auto",
     rightMarginLeft: "64px",
@@ -1852,6 +1854,56 @@ test("preserves the production desktop e-text reader layout", async ({ page }, t
   await expect(page.locator(
     'a[aria-label="Föregående sida"][aria-disabled="true"] .navicon.left'
   )).toBeVisible()
+  expect(problems).toEqual([])
+})
+
+test("preserves a work's fixed e-text width below the desktop breakpoint", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  await page.setViewportSize({ width: 577, height: 747 })
+  await page.goto(
+    "/författare/SöderbergH/titlar/DoktorGlas/sida/-3/etext",
+    { waitUntil: "networkidle" }
+  )
+
+  const layout = await page.evaluate(() => {
+    const main = document.querySelector<HTMLElement>(".reader_main")
+    const text = document.querySelector<HTMLElement>(".reader_main .etext")
+    const right = document.querySelector<HTMLElement>("#rightCorridor")
+    if (!main || !text || !right) throw new Error("Reader layout elements are missing")
+    return {
+      mainWidth: main.getBoundingClientRect().width,
+      textWidth: text.getBoundingClientRect().width,
+      rightGap: right.getBoundingClientRect().left - main.getBoundingClientRect().right
+    }
+  })
+
+  expect(layout).toEqual({
+    mainWidth: 540,
+    textWidth: 540,
+    rightGap: 20.53125
+  })
+  expect(problems).toEqual([])
+})
+
+test("uses the legacy fluid e-text width at the 560px mobile breakpoint", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto(
+    "/författare/SöderbergH/titlar/DoktorGlas/sida/-3/etext",
+    { waitUntil: "networkidle" }
+  )
+
+  const layout = await page.evaluate(() => {
+    const main = document.querySelector<HTMLElement>(".reader_main")
+    const text = document.querySelector<HTMLElement>(".reader_main .etext")
+    if (!main || !text) throw new Error("Reader layout elements are missing")
+    return {
+      mainWidth: main.getBoundingClientRect().width,
+      textWidth: text.getBoundingClientRect().width
+    }
+  })
+
+  expect(layout).toEqual({ mainWidth: 370, textWidth: 370 })
   expect(problems).toEqual([])
 })
 

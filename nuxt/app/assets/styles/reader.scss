@@ -359,6 +359,10 @@
             .disabled i {
                 cursor: default;
                 opacity: 0.7;
+
+                &::before {
+                    color: grey;
+                }
             }
 
             .expl {
@@ -556,7 +560,6 @@
 
         .etext {
             min-height: 0;
-            width: auto;
         }
     }
 }
