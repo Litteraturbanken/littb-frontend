@@ -2051,7 +2051,7 @@ watch(readerRequestIdentity, () => {
             aria-label="Läsinformation och sidnavigering"
           >
             <div>
-              <div class="author"><ReaderContributors :contributors="[reader.author]" /></div>
+              <div class="author"><ReaderContributors :contributors="reader.contributors" /></div>
               <a
                 ref="titleSourceInfoTrigger"
                 v-reader-title-tooltip="readerTitleTooltip"
@@ -2405,7 +2405,7 @@ watch(readerRequestIdentity, () => {
         <template #fallback>
           <aside class="reader-context-ssr" aria-label="Läsinformation och sidnavigering">
             <span class="author"><ReaderContributors
-              :contributors="[reader.author]"
+              :contributors="reader.contributors"
             /></span>
             <span><a
               :data-reader-title-tooltip-content="readerTitleTooltip || undefined"

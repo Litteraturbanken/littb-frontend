@@ -343,17 +343,13 @@ test("part-rich sidebar exposes truthful authors, metadata, and raw-preserving t
   expect(problems).toEqual([])
 })
 
-test("Boye primary author stays compact in the sidebar while dialogs retain contributors", async ({
+test("Boye work contributors persist in sidebar, contents, and work search", async ({
   page
 }) => {
   const problems = captureBrowserProblems(page)
   await page.goto(boyeEtextPath, { waitUntil: "load" })
   await expect(page.locator(".reader-context")).toBeVisible({ timeout: 30_000 })
-  const sidebarAuthor = page.locator(".reader-context > div").first().locator(".author")
-  await expect(sidebarAuthor.locator("a")).toHaveCount(1)
-  await expect(sidebarAuthor.getByRole("link", { name: "Karin Boye" }))
-    .toHaveAttribute("href", "/f%C3%B6rfattare/BoyeK")
-  await expect(sidebarAuthor).not.toContainText("Paulina Helgeson")
+  await expectBoyeContributors(page.locator(".reader-context > div").first().locator(".author"))
 
   await page.locator(".reader-context .subnav")
     .getByRole("link", { name: "Innehållsförteckning" })
