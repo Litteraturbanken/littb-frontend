@@ -1,18 +1,26 @@
 import { describe, expect, test, vi } from "vitest"
 
 import {
-  buildReaderSourceInfo,
+  fetchWorkSourceInfo
+} from "../../server/utils/reader-source-info"
+import {
   clearReaderSourceInfoStaticCache,
   fetchReaderSourceInfoStaticDefinitions,
-  fetchWorkSourceInfo,
-  loadCachedReaderSourceInfoStaticDefinitions,
-  parseReaderSourceInfoRequest,
+  loadCachedReaderSourceInfoStaticDefinitions
+} from "../../server/utils/reader-source-info-definitions"
+import {
+  buildReaderSourceInfo,
   projectReaderSourceInfoLicense,
   projectReaderSourceInfoProvenance,
-  resolveReaderSourceInfoAttributions,
-  sanitizeReaderSourceInfoHtml,
+  resolveReaderSourceInfoAttributions
+} from "../../server/utils/reader-source-info-projection"
+import {
+  sanitizeReaderSourceInfoHtml
+} from "../../server/utils/reader-source-info-sanitizer"
+import {
+  parseReaderSourceInfoRequest,
   validateReaderSourceInfoResponse
-} from "../../server/utils/reader-source-info"
+} from "../../server/utils/reader-source-info-validation"
 import {
   cloneRecord,
   requiredArray,

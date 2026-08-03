@@ -113,8 +113,10 @@ const reviewedDomPolicies = new Map([
   ["server/utils/editor-reader-html.ts", [
     { functionName: "sanitizeEditorEtextHtml", kind: "read", base: "document", count: 1 }
   ]],
-  ["server/utils/reader-source-info.ts", [
-    { functionName: "sanitizeReaderSourceInfoHtml", kind: "read", base: "body", issuer: "issueReaderSourceInfoHtml", count: 1 },
+  ["server/utils/reader-source-info-sanitizer.ts", [
+    { functionName: "sanitizeReaderSourceInfoHtml", kind: "read", base: "body", issuer: "issueReaderSourceInfoHtml", count: 1 }
+  ]],
+  ["server/utils/reader-source-info-projection.ts", [
     { functionName: "unwrapLicenseText", kind: "read", base: "texts", count: 1 }
   ]],
   ["server/utils/sla-article.ts", [

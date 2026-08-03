@@ -1,10 +1,8 @@
 import type { ReaderRouteResolution } from "#shared/types/reader"
 
 import { createLbApiClient } from "../../../../../app/lib/api/client"
-import {
-  fetchWorkSourceInfo,
-  parseReaderSourceInfoRequest
-} from "../../../../utils/reader-source-info"
+import { fetchWorkSourceInfo } from "../../../../utils/reader-source-info"
+import { parseReaderSourceInfoRequest } from "../../../../utils/reader-source-info-validation"
 
 function encodeRfc3986Segment(value: string): string {
   return encodeURIComponent(value).replace(

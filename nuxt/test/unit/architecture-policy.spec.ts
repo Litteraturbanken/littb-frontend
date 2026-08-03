@@ -58,7 +58,8 @@ const detachedDomAllowlist = [
   "server/utils/author-document.ts",
   "server/utils/dramawebben-document.ts",
   "server/utils/editor-reader-html.ts",
-  "server/utils/reader-source-info.ts",
+  "server/utils/reader-source-info-projection.ts",
+  "server/utils/reader-source-info-sanitizer.ts",
   "server/utils/sla-article.ts"
 ]
 
@@ -160,7 +161,7 @@ const reviewedDomSources: Readonly<Record<string, string>> = {
     "  return issueEditorEtextHtml(html)",
     "}"
   ].join("\n"),
-  "server/utils/reader-source-info.ts": [
+  "server/utils/reader-source-info-sanitizer.ts": [
     "import { parseHTML } from \"linkedom\"",
     "import { issueReaderSourceInfoHtml } from \"#shared/utils/renderable-html\"",
     "export function sanitizeReaderSourceInfoHtml(source: string) {",
@@ -169,7 +170,10 @@ const reviewedDomSources: Readonly<Record<string, string>> = {
     "  const bodies = [...document.querySelectorAll(\"body\")]",
     "  const body = bodies[0]!",
     `  return issueReaderSourceInfoHtml(body.${domHtmlProperty})`,
-    "}",
+    "}"
+  ].join("\n"),
+  "server/utils/reader-source-info-projection.ts": [
+    "import { parseHTML } from \"linkedom\"",
     "function unwrapLicenseText(source: string) {",
     "  let document: ParsedDocument",
     "  ({ document } = parseHTML(source) as unknown as { document: ParsedDocument })",
