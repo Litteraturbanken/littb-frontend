@@ -3199,12 +3199,13 @@ onUnmounted(() => {
                                     </td>
                                     <td class="block w-44 text-right">
                                         <div
-                                            class="text-ellipsis whitespace-nowrap overflow-hidden"
+                                            class="whitespace-nowrap"
                                         >
                                             <span class="author uppercase text-sm">
                                                 <NuxtLink
                                                     v-library-tooltip="item.authorTooltip"
                                                     data-library-tooltip-kind="author"
+                                                    class="inline-block max-w-full overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
                                                     :to="canonicalNuxtHref(item.authorHref)"
                                                     >{{ item.surname }}</NuxtLink
                                                 ><template v-if="item.roleSuffix"

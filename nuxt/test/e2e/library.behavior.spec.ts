@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Locator } from "@playwright/test"
 
 import type { operations } from "../../app/lib/api/generated/lbapi"
 
@@ -6,6 +6,31 @@ const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 type LibrarySearchRequest = operations["v2_post_library_search"]["requestBody"]["content"]["application/json"]
 type LibraryCountRequest = operations["v2_post_library_counts"]["requestBody"]["content"]["application/json"]
 type LibraryFilters = LibraryCountRequest["filters"]
+
+async function expectFocusRingNotClipped(locator: Locator) {
+  expect(await locator.evaluate((element) => {
+    const ringOutset = 4
+    const ring = element.getBoundingClientRect()
+    const clippedBy: string[] = []
+
+    for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+      const style = getComputedStyle(ancestor)
+      if (!/(hidden|clip)/.test(`${style.overflowX} ${style.overflowY}`)) continue
+
+      const boundary = ancestor.getBoundingClientRect()
+      if (
+        ring.left - ringOutset < boundary.left ||
+        ring.top - ringOutset < boundary.top ||
+        ring.right + ringOutset > boundary.right ||
+        ring.bottom + ringOutset > boundary.bottom
+      ) {
+        clippedBy.push(ancestor.className)
+      }
+    }
+
+    return clippedBy
+  })).toEqual([])
+}
 
 function libraryFilters(overrides: Partial<LibraryFilters> = {}): LibraryFilters {
   return {
@@ -707,28 +732,14 @@ test("Works titles are black keyboard disclosures linked to their representation
   await page.keyboard.press("Tab")
   await expect(toggle).toBeFocused()
   expect(await toggle.evaluate(element => getComputedStyle(element).outlineStyle)).toBe("solid")
-  expect(await toggle.evaluate((element) => {
-    const ringOutset = 4
-    const ring = element.getBoundingClientRect()
-    const clippedBy: string[] = []
+  await expectFocusRingNotClipped(toggle)
 
-    for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
-      const style = getComputedStyle(ancestor)
-      if (!/(hidden|clip)/.test(`${style.overflowX} ${style.overflowY}`)) continue
-
-      const boundary = ancestor.getBoundingClientRect()
-      if (
-        ring.left - ringOutset < boundary.left ||
-        ring.top - ringOutset < boundary.top ||
-        ring.right + ringOutset > boundary.right ||
-        ring.bottom + ringOutset > boundary.bottom
-      ) {
-        clippedBy.push(ancestor.className)
-      }
-    }
-
-    return clippedBy
-  })).toEqual([])
+  await page.keyboard.press("Tab")
+  const author = work.getByRole("link", { name: "Söderberg", exact: true })
+  await expect(author).toBeFocused()
+  await expectFocusRingNotClipped(author)
+  await page.keyboard.press("Shift+Tab")
+  await expect(toggle).toBeFocused()
 
   const controls = await toggle.getAttribute("aria-controls")
   expect(controls).toBeTruthy()
