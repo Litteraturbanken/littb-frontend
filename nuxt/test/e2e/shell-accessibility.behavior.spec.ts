@@ -33,3 +33,25 @@ test("audited shell and reader links meet the 24px touch-target floor", async ({
   await expectMinimumTargetHeight(page.locator(".pager_ctrls > a, .pager_ctrls > form > a"))
   await expectMinimumTargetHeight(page.locator(".subnav > ul > li > a"))
 })
+
+test("keyboard focus remains visibly identifiable outside the Library", async ({ page }) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+
+  await page.keyboard.press("Tab")
+  const focused = page.locator(":focus")
+  await expect(focused).toHaveCount(1)
+  await expect(focused).toBeVisible()
+
+  const style = await focused.evaluate((element) => {
+    const computed = getComputedStyle(element)
+    return {
+      outlineStyle: computed.outlineStyle,
+      outlineWidth: computed.outlineWidth,
+      outlineOffset: computed.outlineOffset
+    }
+  })
+
+  expect(style.outlineStyle).toBe("solid")
+  expect(Number.parseFloat(style.outlineWidth)).toBeGreaterThan(0)
+  expect(Number.parseFloat(style.outlineOffset)).toBeGreaterThanOrEqual(2)
+})
