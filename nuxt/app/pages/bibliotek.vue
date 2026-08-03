@@ -2007,6 +2007,10 @@ function browsePageHref(page: number): string {
     })
 }
 
+function workActionsId(item: BrowseResult): string {
+    return `library-work-actions-${encodeURIComponent(item.key)}`
+}
+
 function toggleWorkActions(item: BrowseResult) {
     const opening = expandedWorkKey.value !== item.key
     expandedWorkKey.value = opening ? item.key : ""
@@ -3147,6 +3151,7 @@ onUnmounted(() => {
                                                         data-library-work-toggle
                                                         data-library-tooltip-kind="title"
                                                         class="library-work-toggle"
+                                                        :aria-controls="workActionsId(item)"
                                                         :aria-expanded="
                                                             !downloadMode &&
                                                             expandedWorkKey === item.key
@@ -3164,6 +3169,7 @@ onUnmounted(() => {
                                         </div>
                                         <div
                                             v-show="!downloadMode && expandedWorkKey === item.key"
+                                            :id="workActionsId(item)"
                                             data-library-work-actions
                                             class="collapse-content"
                                         >
@@ -3695,7 +3701,7 @@ onUnmounted(() => {
 
 .library-work-toggle {
     padding: 0;
-    color: #7a1400;
+    color: #333;
     text-align: left;
     cursor: pointer;
     background: transparent;
@@ -3703,8 +3709,8 @@ onUnmounted(() => {
 }
 
 .library-work-toggle:hover,
-.library-work-toggle:focus {
-    color: #333;
+.library-work-toggle:focus-visible {
+    color: #7a1400;
 }
 
 [data-library-advanced-panel] select {

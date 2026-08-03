@@ -689,6 +689,38 @@ test("Författare hydrates 150 rows and expands the legacy Visa alla disclosure"
   expect(visibleRequests[0]?.body).toMatchObject({ mode: "authors", limit: 151 })
 })
 
+test("Works titles are black keyboard disclosures linked to their representation actions", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?visa=works&sort=popularitet", { waitUntil: "networkidle" })
+
+  const work = page.locator("[data-library-work-row]").filter({ hasText: "Doktor Glas" })
+  const toggle = work.locator("[data-library-work-toggle]")
+  const actions = work.locator("[data-library-work-actions]")
+
+  await expect(toggle).toHaveCSS("color", "rgb(51, 51, 51)")
+  await expect(toggle).toHaveAttribute("aria-expanded", "false")
+
+  await page.locator("[data-library-sort]").last().focus()
+  await page.keyboard.press("Tab")
+  await expect(toggle).toBeFocused()
+  expect(await toggle.evaluate(element => getComputedStyle(element).outlineStyle)).toBe("solid")
+
+  const controls = await toggle.getAttribute("aria-controls")
+  expect(controls).toBeTruthy()
+  if (!controls) throw new Error("work disclosure is missing aria-controls")
+  await expect(actions).toHaveAttribute("id", controls)
+
+  await page.keyboard.press("Enter")
+  await expect(toggle).toHaveAttribute("aria-expanded", "true")
+  await expect(actions).toBeVisible()
+
+  await page.keyboard.press("Tab")
+  await expect(work.getByRole("link", { name: "Läs som etext", exact: true })).toBeFocused()
+  await page.keyboard.press("Shift+Tab")
+  await expect(toggle).toBeFocused()
+})
+
 test("Works groups representations and expands the legacy read, download, search, and about actions", async ({
   page,
   request
