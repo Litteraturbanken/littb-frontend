@@ -10,9 +10,10 @@ import {
 } from "~/lib/search-hit-highlight"
 import { parseTextSearchReturnHref } from "~/lib/text-search-navigation"
 import {
-  decodedWorkSearchQueryKey as decodedRawQueryKey,
   isWorkSearchActivationKey,
   nextWorkSearchOptions,
+  replaceWorkSearchQuerySegments,
+  workSearchHitAt,
   type WorkSearchOption
 } from "~/lib/reader/work-search"
 import {
@@ -661,17 +662,21 @@ const hitResponse = computed(() => {
 const activeHit = computed(() => {
   const state = searchState.value
   if (!state || !hitResponse.value) return null
-  const hit = hitResponse.value.items.find(item => item.index === state.hit) ?? null
+  const hit = workSearchHitAt(hitResponse.value.items, state.hit)
   return hit && hit.highlight.from_word_id === state.fromWordId &&
     hit.highlight.to_word_id === state.toWordId ? hit : null
 })
 const previousHit = computed(() => {
   const state = searchState.value
-  return state && hitResponse.value?.items.find(item => item.index === state.hit - 1) || null
+  return state && hitResponse.value
+    ? workSearchHitAt(hitResponse.value.items, state.hit - 1)
+    : null
 })
 const nextHit = computed(() => {
   const state = searchState.value
-  return state && hitResponse.value?.items.find(item => item.index === state.hit + 1) || null
+  return state && hitResponse.value
+    ? workSearchHitAt(hitResponse.value.items, state.hit + 1)
+    : null
 })
 
 function markEditorHtml(
@@ -712,10 +717,11 @@ function searchNeutralHref(fullPath: string): string {
   const queryIndex = beforeHash.indexOf("?")
   if (queryIndex < 0) return fullPath
   const path = beforeHash.slice(0, queryIndex)
-  const retained = beforeHash.slice(queryIndex + 1).split("&").filter(segment => {
-    const key = decodedRawQueryKey(segment)
-    return key === null || !editorSearchKeys.has(key)
-  })
+  const retained = replaceWorkSearchQuerySegments(
+    beforeHash.slice(queryIndex + 1).split("&"),
+    editorSearchKeys,
+    new Map()
+  )
   return `${path}${retained.length ? `?${retained.join("&")}` : ""}${fragment}`
 }
 
@@ -727,24 +733,28 @@ function workSearchHitHref(hit: WorkSearchHit, query: string): string {
   const queryIndex = beforeHash.indexOf("?")
   const path = queryIndex < 0 ? beforeHash : beforeHash.slice(0, queryIndex)
   const rawQuery = queryIndex < 0 ? "" : beforeHash.slice(queryIndex + 1)
-  const retained = rawQuery.length === 0 ? [] : rawQuery.split("&").filter(segment => {
-    const key = decodedRawQueryKey(segment)
-    return key === null || !editorSearchKeys.has(key)
-  })
-  retained.push(
-    "show_search_work",
-    `s_query=${encodeURIComponent(query)}`,
-    `s_lbworkid=${encodeURIComponent(workId.value)}`,
-    `s_mediatype=${encodeURIComponent(page.value?.mediaType ?? "")}`,
-    `s_word_form_only=${String(!workSearchLemma.value)}`,
-    `s_include_modernized=${String(workSearchOlderSpellings.value)}`
+  const replacements = new Map<string, string | null>([
+    ["show_search_work", null],
+    ["s_query", query],
+    ["s_lbworkid", workId.value],
+    ["s_mediatype", page.value?.mediaType ?? ""],
+    ["s_word_form_only", String(!workSearchLemma.value)],
+    ["s_include_modernized", String(workSearchOlderSpellings.value)]
+  ])
+  if (workSearchPrefix.value) replacements.set("s_prefix", "true")
+  if (workSearchSuffix.value) replacements.set("s_suffix", "true")
+  replacements.set("hit_index", String(hit.index))
+  replacements.set("traff", hit.highlight.from_word_id)
+  replacements.set("traffslut", hit.highlight.to_word_id)
+  const withoutSearchState = replaceWorkSearchQuerySegments(
+    rawQuery.length === 0 ? [] : rawQuery.split("&"),
+    editorSearchKeys,
+    new Map()
   )
-  if (workSearchPrefix.value) retained.push("s_prefix=true")
-  if (workSearchSuffix.value) retained.push("s_suffix=true")
-  retained.push(
-    `hit_index=${hit.index}`,
-    `traff=${encodeURIComponent(hit.highlight.from_word_id)}`,
-    `traffslut=${encodeURIComponent(hit.highlight.to_word_id)}`
+  const retained = replaceWorkSearchQuerySegments(
+    withoutSearchState,
+    new Set(),
+    replacements
   )
   return `${path}?${retained.join("&")}${fragment}`
 }
@@ -828,7 +838,7 @@ async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
   const sourceIdentity = searchRequestIdentity.value
   if (!state || !current || !response || index < 0 || index >= response.total_hits ||
     index > maximumHitOffset) return null
-  const cached = response.items.find(item => item.index === index)
+  const cached = workSearchHitAt(response.items, index)
   if (cached) return cached
   try {
     const client = createLbApiClient(config.public.apiBase)

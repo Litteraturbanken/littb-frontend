@@ -26,6 +26,8 @@ import {
   decodedWorkSearchQueryKey as decodedRawQueryKey,
   isWorkSearchActivationKey,
   nextWorkSearchOptions,
+  replaceWorkSearchQuerySegments,
+  workSearchHitAt,
   type WorkSearchOption
 } from "~/lib/reader/work-search"
 import {
@@ -1073,7 +1075,7 @@ const hitRequestFailed = computed(
 )
 const activeHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
-  return hitResponse.value.items.find(item => item.index === searchState.value!.hit) ?? null
+  return workSearchHitAt(hitResponse.value.items, searchState.value.hit)
 })
 const selectedSearchHit = computed<WorkSearchHit | null>(() => {
   const currentReader = reader.value
@@ -1112,15 +1114,13 @@ const selectedSearchHit = computed<WorkSearchHit | null>(() => {
 })
 const previousHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
-  return hitResponse.value.items.find(
-    item => item.index === searchState.value!.hit - 1 && item.index <= maximumNavigableHit
-  ) ?? null
+  const index = searchState.value.hit - 1
+  return index <= maximumNavigableHit ? workSearchHitAt(hitResponse.value.items, index) : null
 })
 const nextHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
-  return hitResponse.value.items.find(
-    item => item.index === searchState.value!.hit + 1 && item.index <= maximumNavigableHit
-  ) ?? null
+  const index = searchState.value.hit + 1
+  return index <= maximumNavigableHit ? workSearchHitAt(hitResponse.value.items, index) : null
 })
 const markedReaderHtml = computed<ManagedAssetHtml<"reader-etext">>(() => {
   const currentReader = etextReader.value
@@ -1203,7 +1203,7 @@ async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
     currentReader.identity !== readerRequestIdentity.value
   ) return null
 
-  const cached = response.items.find(item => item.index === index)
+  const cached = workSearchHitAt(response.items, index)
   if (cached) return cached
 
   try {
@@ -1267,33 +1267,9 @@ function rawHitFullPath(hit: WorkSearchHit): string {
     replacements.set("traffslut", hit.highlight.to_word_id)
     replacements.set("hit_index", String(hit.index))
   }
-  if (queryIndex < 0) {
-    const query = Array.from(replacements, ([key, value]) =>
-      `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-    ).join("&")
-    return `${beforeHash}?${query}${fragment}`
-  }
-
-  const path = beforeHash.slice(0, queryIndex)
-  const segments = beforeHash.slice(queryIndex + 1).split("&")
-  const replaced = new Set<string>()
-  const query = segments.map(segment => {
-    const separator = segment.indexOf("=")
-    const rawKey = separator < 0 ? segment : segment.slice(0, separator)
-    let key: string
-    try {
-      key = decodeURIComponent(rawKey.replace(/\+/g, " "))
-    } catch {
-      return segment
-    }
-    const value = replacements.get(key)
-    if (value === undefined) return segment
-    replaced.add(key)
-    return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-  })
-  for (const [key, value] of replacements) {
-    if (!replaced.has(key)) query.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-  }
+  const path = queryIndex < 0 ? beforeHash : beforeHash.slice(0, queryIndex)
+  const segments = queryIndex < 0 ? [] : beforeHash.slice(queryIndex + 1).split("&")
+  const query = replaceWorkSearchQuerySegments(segments, new Set(), replacements)
   return `${path}?${query.join("&")}${fragment}`
 }
 

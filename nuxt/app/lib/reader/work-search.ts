@@ -54,3 +54,36 @@ export function decodedWorkSearchQueryKey(segment: string): string | null {
     return null
   }
 }
+
+export function replaceWorkSearchQuerySegments(
+  segments: readonly string[],
+  keysToRemove: ReadonlySet<string>,
+  replacements: ReadonlyMap<string, string | null>
+): string[] {
+  const replaced = new Set<string>()
+  const next = segments.flatMap(segment => {
+    const key = decodedWorkSearchQueryKey(segment)
+    if (key === null) return [segment]
+
+    if (replacements.has(key)) {
+      const value = replacements.get(key) ?? null
+      replaced.add(key)
+      return [value === null ? encodeURIComponent(key) : `${encodeURIComponent(key)}=${encodeURIComponent(value)}`]
+    }
+    return keysToRemove.has(key) ? [] : [segment]
+  })
+
+  for (const [key, value] of replacements) {
+    if (!replaced.has(key)) {
+      next.push(value === null ? encodeURIComponent(key) : `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    }
+  }
+  return next
+}
+
+export function workSearchHitAt<THit extends { index: number }>(
+  hits: readonly THit[],
+  index: number
+): THit | null {
+  return hits.find(hit => hit.index === index) ?? null
+}
