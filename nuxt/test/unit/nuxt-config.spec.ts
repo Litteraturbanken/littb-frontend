@@ -6,6 +6,13 @@ type ProxyRule = {
 }
 
 type NuxtConfig = {
+  nitro: {
+    imports: {
+      dirsScanOptions: {
+        fileFilter: (path: string) => boolean
+      }
+    }
+  }
   routeRules: Record<string, {
     proxy?: {
       to: string
@@ -75,5 +82,18 @@ describe("external reader source proxy", () => {
     expect(config.routeRules["/litteraturkartan/**"]?.proxy).toMatchObject({
       headers: { "x-forwarded-host": "map.example.test" }
     })
+  })
+})
+
+describe("Reader source-information auto-import boundary", () => {
+  test("scans the public facade without registering its direct-import modules twice", async () => {
+    const config = await loadConfig()
+    const include = config.nitro.imports.dirsScanOptions.fileFilter
+
+    expect(include("/repo/server/utils/reader-source-info.ts")).toBe(true)
+    for (const module of ["definitions", "projection", "sanitizer", "validation"]) {
+      expect(include(`/repo/server/utils/reader-source-info-${module}.ts`)).toBe(false)
+    }
+    expect(include("/repo/server/utils/other-helper.ts")).toBe(true)
   })
 })

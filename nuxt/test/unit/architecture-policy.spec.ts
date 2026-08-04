@@ -360,18 +360,54 @@ describe("architecture policy verifier", () => {
     expect(result.stderr).toBe("")
   })
 
-  test("accepts unrelated strict ESLint rules while preserving the required ignores", () => {
+  test("accepts unrelated strict ESLint rules in scalar and option-array forms", () => {
     const root = createTree()
     writeSource(
       root,
       "eslint.config.mjs",
-      eslintConfig(expectedIgnores, 'rules: { eqeqeq: "error" }')
+      eslintConfig(
+        expectedIgnores,
+        'rules: { eqeqeq: "error", curly: 2, quotes: ["error", "double"], semi: [2, "always"] }'
+      )
     )
 
     const result = runVerifier(root)
 
     expect(result.status).toBe(0)
     expect(result.stderr).toBe("")
+  })
+
+  test.each([
+    ["off severity", 'rules: { "vue/no-v-html": "off" }'],
+    ["warn severity", 'rules: { eqeqeq: "warn" }'],
+    ["off option-array severity", 'rules: { quotes: [0, "double"] }'],
+    ["warn option-array severity", 'rules: { semi: [1, "always"] }']
+  ])("rejects an ESLint rule with %s", (_description, rules) => {
+    const root = createTree()
+    writeSource(root, "eslint.config.mjs", eslintConfig(expectedIgnores, rules))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "eslint.config.mjs:1: ESLint configuration must equal the canonical reviewed file"
+    )
+  })
+
+  test.each([
+    ["files", 'files: ["app/**/*.ts"]'],
+    ["languageOptions", 'languageOptions: { globals: { unsafe: "readonly" } }'],
+    ["arbitrary property", 'name: "scope-altering-config"']
+  ])("rejects the scope-altering ESLint config property %s", (_description, property) => {
+    const root = createTree()
+    writeSource(root, "eslint.config.mjs", eslintConfig(expectedIgnores, property))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "eslint.config.mjs:1: ESLint configuration must equal the canonical reviewed file"
+    )
   })
 
   test("accepts the Nuxt alias for the exact HTML document helper", () => {

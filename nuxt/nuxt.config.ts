@@ -9,6 +9,7 @@ const forwardedHostHeaders = (target: string): Record<string, string> => ({
 })
 const legacyApiProxyOverride = process.env.LBAPI_LEGACY_PROXY_TARGET
 const legacyApiProxyTarget = legacyApiProxyOverride || "http://127.0.0.1:8000"
+const readerSourceInfoInternalModule = /[/\\]reader-source-info-(?:definitions|projection|sanitizer|validation)\.[cm]?[jt]s$/u
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
@@ -25,6 +26,11 @@ export default defineNuxtConfig({
   },
   nitro: {
     compressPublicAssets: true,
+    imports: {
+      dirsScanOptions: {
+        fileFilter: path => !readerSourceInfoInternalModule.test(path)
+      }
+    },
     publicAssets: [
       {
         dir: resolve("app/assets/styles/fonts/601526"),

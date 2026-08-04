@@ -16,6 +16,24 @@ import {
   type WorkSourceInfoResponse
 } from "./reader-source-info-validation"
 
+export {
+  clearReaderSourceInfoStaticCache,
+  fetchReaderSourceInfoStaticDefinitions,
+  loadCachedReaderSourceInfoStaticDefinitions
+} from "./reader-source-info-definitions"
+export type { ReaderSourceInfoStaticDefinitions } from "./reader-source-info-definitions"
+export {
+  buildReaderSourceInfo,
+  projectReaderSourceInfoLicense,
+  projectReaderSourceInfoProvenance,
+  resolveReaderSourceInfoAttributions
+} from "./reader-source-info-projection"
+export { sanitizeReaderSourceInfoHtml } from "./reader-source-info-sanitizer"
+export {
+  parseReaderSourceInfoRequest,
+  validateReaderSourceInfoResponse
+} from "./reader-source-info-validation"
+
 type LbApiClient = ReturnType<typeof createLbApiClient>
 
 export async function fetchWorkSourceInfo(

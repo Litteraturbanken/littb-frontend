@@ -2801,6 +2801,30 @@ function staticPropertyName(property) {
   return null
 }
 
+function validEslintRuleSeverity(expression) {
+  const severity = unwrapExpression(expression)
+  return (ts.isStringLiteralLike(severity) && severity.text === "error")
+    || (ts.isNumericLiteral(severity) && severity.text === "2")
+}
+
+function validEslintRules(expression) {
+  const rules = unwrapExpression(expression)
+  if (!ts.isObjectLiteralExpression(rules)) return false
+  const names = new Set()
+  for (const property of rules.properties) {
+    if (!ts.isPropertyAssignment(property)) return false
+    const name = staticPropertyName(property)
+    if (name === null || names.has(name)) return false
+    names.add(name)
+    const configuration = unwrapExpression(property.initializer)
+    const severity = ts.isArrayLiteralExpression(configuration)
+      ? configuration.elements[0]
+      : configuration
+    if (!severity || !validEslintRuleSeverity(severity)) return false
+  }
+  return true
+}
+
 function validEslintConfigSource(source) {
   const sourceFile = ts.createSourceFile(
     "eslint.config.mjs",
@@ -2831,9 +2855,14 @@ function validEslintConfigSource(source) {
     if (name === null || properties.has(name)) return false
     properties.set(name, unwrapExpression(property.initializer))
   }
+  if ([...properties.keys()].some(name => name !== "ignores" && name !== "rules")) {
+    return false
+  }
   const ignores = properties.get("ignores")
   if (!ignores || !ts.isArrayLiteralExpression(ignores)
     || ignores.elements.length !== requiredEslintIgnores.size) return false
+  const rules = properties.get("rules")
+  if (rules && !validEslintRules(rules)) return false
   const values = ignores.elements.map(element => ts.isStringLiteralLike(element) ? element.text : null)
   return values.every(value => value !== null && requiredEslintIgnores.has(value))
     && new Set(values).size === requiredEslintIgnores.size
