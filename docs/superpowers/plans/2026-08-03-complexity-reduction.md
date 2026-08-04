@@ -167,8 +167,15 @@
 - Consumes: all completed tasks.
 - Produces: fresh verification evidence and a before/after complexity report.
 
-- [ ] Run Nuxt policy, lint, typecheck, unit, SSR, and relevant Playwright suites.
-- [ ] Run backend Ruff, type checks, V2 tests, and OpenAPI/client consistency checks.
-- [ ] Re-run the frontend and backend complexity scans and compare the original hotspots.
-- [ ] Inspect both repository diffs for behavior or generated-file drift.
-- [ ] Report any remaining failures explicitly; do not claim completion unless every required check is green.
+**Accepted verification boundary (2026-08-04):** Behavior, contract, type, and
+production-build gates must be green. Relevant visual suites must be executed,
+and evidence-backed visual test-harness defects must be repaired. Remaining
+visual failures may be accepted as separately owned pre-plan visual debt only
+when representative plan-base provenance is recorded; visual-suite success
+must not be claimed under this boundary.
+
+- [x] Run Nuxt policy, lint, typecheck, unit, SSR, production build, and relevant Playwright suites.
+- [x] Run backend Ruff, type checks, V2 tests, and OpenAPI/client consistency checks.
+- [x] Re-run the frontend and backend complexity scans and compare the original hotspots.
+- [x] Inspect both repository diffs for behavior or generated-file drift.
+- [x] Report remaining visual failures with plan-base provenance and separately owned follow-up debt.
