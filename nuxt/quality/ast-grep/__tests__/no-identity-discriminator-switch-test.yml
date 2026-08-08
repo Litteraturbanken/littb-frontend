@@ -1,0 +1,33 @@
+id: no-identity-discriminator-switch
+valid:
+  - |
+    switch (view.mode) {
+      case "authors":
+        return { mode: view.mode, response: transformAuthors(view.response) }
+      case "works":
+        return { mode: view.mode, response: transformWorks(view.response) }
+    }
+  - |
+    switch (view.mode) {
+      case "authors":
+        return { mode: "authors", response: view.response }
+      case "works":
+        return { mode: "works", response: view.response }
+    }
+invalid:
+  - |
+    switch (view.mode) {
+      case "all":
+        return { mode: view.mode, response: view.response }
+      case "authors":
+        return { mode: view.mode, response: view.response }
+    }
+  - |
+    switch (view.mode) {
+      case "all":
+        return { mode: view.mode, response: view.response }
+      case "authors":
+        return { mode: view.mode, response: view.response }
+      case "works":
+        return { mode: view.mode, response: view.response }
+    }

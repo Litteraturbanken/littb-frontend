@@ -12,6 +12,7 @@ const lintEnvironment = ["eslint", "env"].join("-")
 const lintInline = ["eslint"].join("")
 const lintGlobal = ["glob", "al"].join("")
 const lintExported = ["export", "ed"].join("")
+const astGrepIgnore = ["ast", "grep", "ignore"].join("-")
 const tsIgnore = ["@ts", "ignore"].join("-")
 const tsExpectError = ["@ts", "expect-error"].join("-")
 const domHtmlProperty = ["inner", "HTML"].join("")
@@ -1883,6 +1884,22 @@ describe("architecture policy verifier", () => {
     expect(result.stderr).toContain("app/pages/unsafe.vue:1: ESLint inline configuration comments are forbidden")
   })
 
+  test.each([
+    ["JavaScript", "app/lib/unsafe.js", `// ${astGrepIgnore}`],
+    ["TypeScript", "app/lib/unsafe.ts", `/* ${astGrepIgnore} */`],
+    ["Vue script", "app/pages/unsafe.vue", `<script setup>\n// ${astGrepIgnore}\n</script>`],
+    ["Vue template", "app/pages/unsafe.vue", `<!-- ${astGrepIgnore} -->`]
+  ])("rejects an ast-grep suppression in %s source", (_name, path, source) => {
+    const root = createTree()
+    writeSource(root, path, source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}:`)
+    expect(result.stderr).toContain("ast-grep inline suppressions are forbidden")
+  })
+
   test.each(["\n", "\r\n", "\r", "\u2028", "\u2029"])(
     "requires a description before the %j expected-error line terminator",
     separator => {
@@ -1903,6 +1920,7 @@ describe("architecture policy verifier", () => {
   test.each([
     ["URL string", `const documentation = "https://${lintInline}.org/docs"`],
     ["directive fixture string", `const fixture = "// ${lintDisable}-next-line"`],
+    ["ast-grep fixture string", `const fixture = "// ${astGrepIgnore}"`],
     ["capability prose comment", `// This example reads value ${castKeyword} ${sanitizedHtmlType}<"author-profile"> but is not executable.\nconst safe = true`]
   ])("ignores policy-like prose in a %s", (_name, source) => {
     const root = createTree()

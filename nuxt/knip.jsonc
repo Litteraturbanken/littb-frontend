@@ -1,0 +1,28 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "nuxt.config.ts",
+    "app/app.vue",
+    "app/pages/**/*.vue",
+    "app/components/**/*.vue",
+    "app/layouts/**/*.vue",
+    "app/middleware/**/*.{js,mjs,ts}",
+    "app/plugins/**/*.{js,mjs,ts}",
+    "server/**/*.{js,mjs,ts}"
+  ],
+  "project": [
+    "app/**/*.{js,mjs,ts,vue}",
+    "server/**/*.{js,mjs,ts}",
+    "shared/**/*.{js,mjs,ts}",
+    "!app/lib/api/generated/**"
+  ],
+  "ignore": [
+    "app/lib/api/generated/**",
+    ".nuxt/**",
+    ".output/**",
+    "coverage/**",
+    "playwright-report/**",
+    "test-results*/**",
+    "test/**"
+  ]
+}

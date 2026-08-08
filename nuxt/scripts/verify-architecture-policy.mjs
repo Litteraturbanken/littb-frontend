@@ -325,6 +325,9 @@ function auditComments(record) {
     if (/^(?:eslint(?:\b|-)|global\b|exported\b)/u.test(body)) {
       addViolation(record.relativePath, line, "ESLint inline configuration comments are forbidden")
     }
+    if (/\bast-grep-ignore\b/u.test(comment.body)) {
+      addViolation(record.relativePath, line, "ast-grep inline suppressions are forbidden")
+    }
     const ignoreIndex = comment.body.indexOf("@ts-ignore")
     if (ignoreIndex !== -1) {
       addViolation(record.relativePath, line, "TypeScript ignore comments are forbidden")

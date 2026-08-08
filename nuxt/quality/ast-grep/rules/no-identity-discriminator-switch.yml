@@ -1,0 +1,33 @@
+id: no-identity-discriminator-switch
+language: TypeScript
+severity: error
+message: Discriminator branches must perform a real transformation.
+note: Return the already-derived view directly when every branch reconstructs the same value.
+files:
+  - "app/**/*.ts"
+  - "app/**/*.vue"
+  - "server/**/*.ts"
+  - "shared/**/*.ts"
+ignores:
+  - "app/lib/api/generated/**"
+rule:
+  all:
+    - pattern:
+        context: |
+          switch ($DISCRIMINANT) {
+            case $SECOND:
+              return { mode: $MODE, response: $RESPONSE }
+          }
+        selector: switch_case
+    - follows:
+        stopBy: end
+        pattern:
+          context: |
+            switch ($DISCRIMINANT) {
+              case $FIRST:
+                return { mode: $MODE, response: $RESPONSE }
+            }
+          selector: switch_case
+    - inside:
+        stopBy: end
+        kind: switch_statement
