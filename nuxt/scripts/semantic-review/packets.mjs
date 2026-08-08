@@ -41,9 +41,26 @@ function ownedManifest(packet, sources) {
   return { owned, surfaces }
 }
 
+function lineRanges(unit) {
+  const lines = Array.isArray(unit.ownedLines)
+    ? [...new Set(unit.ownedLines)].toSorted((left, right) => left - right)
+    : Array.from(
+        { length: unit.endLine - unit.startLine + 1 },
+        (_, index) => unit.startLine + index
+      )
+  const ranges = []
+  for (const line of lines) {
+    const current = ranges.at(-1)
+    if (current && current[1] + 1 === line) current[1] = line
+    else ranges.push([line, line])
+  }
+  return ranges
+}
+
 export function fingerprintPacket(packet, sources) {
   const manifest = ownedManifest(packet, sources)
   const canonical = {
+    contractVersion: 2,
     id: packet.id,
     roots: sorted(packet.rootUnitIds),
     owned: manifest.owned,
@@ -69,6 +86,7 @@ export function materializeReviewPacket(packet, sources) {
       path: unit.path,
       startLine: unit.startLine,
       endLine: unit.endLine,
+      lines: lineRanges(unit),
       root: roots.has(unit.id),
       exported: unit.exported === true
     }
@@ -133,6 +151,10 @@ function markdownCell(value) {
   return String(value).replaceAll("|", "\\|").replaceAll("\n", " ")
 }
 
+function lineRangeLabel(unit) {
+  return unit.lines.map(([start, end]) => start === end ? String(start) : `${start}-${end}`).join(",")
+}
+
 export function renderPacketMarkdown(packet, sources) {
   const review = materializeReviewPacket(packet, sources)
   const lines = [
@@ -152,7 +174,7 @@ export function renderPacketMarkdown(packet, sources) {
     "| --- | --- | --- | --- |"
   ]
   for (const unit of review.units) {
-    lines.push(`| ${unit.root ? "yes" : "no"} | \`${unit.id}\` | \`${unit.path}:${unit.startLine}-${unit.endLine}\` | ${unit.exported ? "yes" : "no"} |`)
+    lines.push(`| ${unit.root ? "yes" : "no"} | \`${unit.id}\` | \`${unit.path}:${lineRangeLabel(unit)}\` | ${unit.exported ? "yes" : "no"} |`)
   }
   lines.push("", "## Context", "")
   for (const [label, values] of [

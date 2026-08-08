@@ -170,6 +170,7 @@ function reviewPrompt({ packetPath, author, reviewer }) {
     `Evidence author must be exactly: ${author}`,
     `Evidence reviewer must be exactly: ${reviewer}`,
     "Inspect the current source, direct callers, dependencies, types, and relevant tests named by the packet.",
+    "Cite findings only on physical lines listed in the owned unit's lines ranges.",
     "Use read-only commands. Return only JSON matching the supplied schema.",
     "Do not review or summarize any other packet."
   ].join("\n")

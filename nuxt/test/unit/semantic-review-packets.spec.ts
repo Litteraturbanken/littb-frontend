@@ -102,11 +102,34 @@ describe("semantic review packets", () => {
         path: "app/lib/books.ts",
         startLine: 1,
         endLine: 3,
+        lines: [[1, 3]],
         root: true,
         exported: true
       }]
     })
     expect(JSON.stringify(materialized)).not.toContain("Doktor Glas")
+  })
+
+  test("materializes exact discontiguous ownership for a Vue component shell", () => {
+    const sources = [source("app/pages/index.vue", [
+      "<template>",
+      "  <main>Book</main>",
+      "</template>",
+      "<script setup lang=\"ts\">",
+      "function loadBooks() {",
+      "  return ['Doktor Glas']",
+      "}",
+      "</script>"
+    ].join("\n"))]
+
+    const materialized = materializeReviewPacket(packetFor(sources), sources)
+
+    expect(materialized.units).toEqual([
+      expect.objectContaining({
+        id: "app/pages/index.vue::component::index",
+        lines: [[1, 1], [3, 4], [8, 8]]
+      })
+    ])
   })
 
   test("renders deterministic JSON, Markdown, and index artifacts", () => {

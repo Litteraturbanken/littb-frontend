@@ -102,7 +102,10 @@ function packetUnit(packet, finding) {
   }
   const unit = packet.units.find(candidate => candidate.id === finding.unitId)
   if (!unit) throw new Error(`Finding ${finding.id} is outside packet units`)
-  if (!Number.isInteger(finding.line) || finding.line < unit.startLine || finding.line > unit.endLine) {
+  const lineIsOwned = Array.isArray(unit.lines)
+    ? unit.lines.some(([start, end]) => start <= finding.line && finding.line <= end)
+    : unit.startLine <= finding.line && finding.line <= unit.endLine
+  if (!Number.isInteger(finding.line) || !lineIsOwned) {
     throw new Error(`Finding ${finding.id} line is outside unit range`)
   }
   return unit
@@ -233,6 +236,27 @@ function recordMatchesEvidence(record, evidence) {
   }
 }
 
+function stalePacketSnapshot(record, evidence) {
+  const units = new Map()
+  for (const finding of evidence.findings ?? []) {
+    if (!units.has(finding.unitId)) {
+      units.set(finding.unitId, {
+        id: finding.unitId,
+        path: finding.path,
+        startLine: finding.line,
+        endLine: finding.line,
+        lines: [[finding.line, finding.line]]
+      })
+    }
+  }
+  return {
+    id: record.packetId,
+    fingerprint: record.fingerprint,
+    paths: [...new Set([...units.values()].map(unit => unit.path))],
+    units: [...units.values()]
+  }
+}
+
 export function validateLedger({ ledger, packets, evidenceByPath }) {
   const records = parseLedger(ledger)
   const packetById = new Map(packets.map(packet => [packet.id, packet]))
@@ -251,7 +275,12 @@ export function validateLedger({ ledger, packets, evidenceByPath }) {
       throw new Error(`Review evidence is not valid JSON: ${record.evidencePath}`)
     }
     const packet = packetById.get(record.packetId)
-    parseEvidence(evidence, { ...packet, fingerprint: record.fingerprint })
+    parseEvidence(
+      evidence,
+      record.fingerprint === packet.fingerprint
+        ? packet
+        : stalePacketSnapshot(record, evidence)
+    )
     recordMatchesEvidence(record, evidence)
   }
   const report = {

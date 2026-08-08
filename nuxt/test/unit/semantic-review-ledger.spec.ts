@@ -31,6 +31,7 @@ function packet(overrides: Record<string, unknown> = {}) {
       path: "app/lib/books.ts",
       startLine: 10,
       endLine: 29,
+      lines: [[10, 29]],
       root: true,
       exported: true
     }],
@@ -107,13 +108,19 @@ describe("semantic review ledger", () => {
     ["foreign path", evidence({ findings: [finding({ path: "app/lib/other.ts" })] }), "outside packet paths"],
     ["foreign unit", evidence({ findings: [finding({ unitId: "app/lib/books.ts::function::other" })] }), "outside packet units"],
     ["line outside unit", evidence({ findings: [finding({ line: 30 })] }), "outside unit range"],
+    ["line in an unowned gap", evidence({ findings: [finding()] }), "outside unit range", packet({
+      units: [{
+        ...packet().units[0],
+        lines: [[10, 12], [20, 29]]
+      }]
+    })],
     ["empty verification", evidence({ verification: [""] }), "verification command"],
     ["multiline verification", evidence({ verification: ["yarn lint\nrm -rf build"] }), "verification command"],
     ["approved unresolved Important", evidence({
       findings: [finding({ severity: "important", status: "unresolved", resolution: null, resolutionCommit: null })]
     }), "cannot approve unresolved Important or Critical findings"]
-  ])("rejects %s", (_label, value, message) => {
-    expect(() => parseEvidence(value, packet())).toThrow(message)
+  ])("rejects %s", (_label, value, message, boundedPacket = packet()) => {
+    expect(() => parseEvidence(value, boundedPacket)).toThrow(message)
   })
 
   test("reports missing, stale, changes-requested, and oversized approvals", () => {
@@ -127,10 +134,15 @@ describe("semantic review ledger", () => {
       evidenceByPath: new Map()
     })).toMatchObject({ unreviewed: [packet().id] })
 
+    const staleEvidenceValue = evidence({ findings: [finding()] })
+    const staleRecord = record(staleEvidenceValue)
     expect(validateLedger({
-      ledger: { version: 1, records: [currentRecord] },
-      packets: [packet({ fingerprint: "b".repeat(64) })],
-      evidenceByPath
+      ledger: { version: 1, records: [staleRecord] },
+      packets: [packet({
+        fingerprint: "b".repeat(64),
+        units: [{ ...packet().units[0], startLine: 100, endLine: 119, lines: [[100, 119]] }]
+      })],
+      evidenceByPath: new Map([[staleRecord.evidencePath, evidenceText(staleEvidenceValue)]])
     })).toMatchObject({ stale: [packet().id] })
 
     const requested = evidence({ verdict: "changes-requested", findings: [finding({
@@ -180,6 +192,7 @@ describe("semantic review ledger", () => {
         path: "app/lib/authors.ts",
         startLine: 1,
         endLine: 5,
+        lines: [[1, 5]],
         root: true,
         exported: true
       }]
