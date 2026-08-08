@@ -2363,7 +2363,12 @@ watch(readerRequestIdentity, () => {
                   type="text"
                   aria-label="Träffnummer"
                 >
-                <i v-show="gotoHitInputOpen" class="fa fa-angle-double-right" />
+                <button
+                  type="submit"
+                  class="direct-hit-submit"
+                  aria-label="Gå till träff"
+                  :disabled="gotoHitPending"
+                ><i class="fa fa-angle-double-right" aria-hidden="true" /></button>
               </form>
             </li>
             </template>

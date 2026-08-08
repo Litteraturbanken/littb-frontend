@@ -2877,7 +2877,9 @@ test("direct hit input toggles and focuses, rejects bad ordinals, and pushes a v
   const trigger = toolkit.getByRole("link", { name: "Gå direkt till träff . . ." })
   await trigger.click()
   const input = toolkit.getByRole("textbox", { name: "Träffnummer" })
+  const submit = toolkit.getByRole("button", { name: "Gå till träff" })
   await expect(input).toBeVisible()
+  await expect(submit).toBeVisible()
   await expect(input).toBeFocused()
   const directItem = trigger.locator("..")
   const directForm = directItem.locator("form")
@@ -2915,7 +2917,7 @@ test("direct hit input toggles and focuses, rejects bad ordinals, and pushes a v
   expect(await readerHitRequests(request)).toEqual([])
 
   await input.fill("4")
-  await input.press("Enter")
+  await submit.click()
   const targetQuery = `?${rawOwners}&q=doktor%20glas&hit=3`
   await expect.poll(() => page.evaluate(() => location.pathname + location.search))
     .toBe(`${storedNextReaderPath}${targetQuery}`)
