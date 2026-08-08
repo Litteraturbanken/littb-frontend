@@ -1657,8 +1657,10 @@ function libraryDownloadResponse(body) {
     }
     const items = query.includes("Selma") || body.page === 2 || (query === "sort race" && body.reverse)
       ? [gostaEpub] : [doktorEpub, folkvisorEpub, bauerEpub]
-    const total = query === "bounded" ? 10_001 : query === "paged" ? 201
-      : query === "pagination window" ? 1700 : query.includes("Selma") ? 1 : 201
+    let total = 201
+    if (query === "bounded") total = 10_001
+    else if (query === "pagination window") total = 1700
+    else if (query.includes("Selma")) total = 1
     return { mode: "epub", total_hits: total, total_works: total, items }
   }
   if (query.toLowerCase() === "strindberg") {
@@ -1671,11 +1673,39 @@ function libraryDownloadResponse(body) {
     }
   }
   if (query === "tuple-collision") return { mode: "pdf", total_hits: 10, total_works: 8, items: tuplePdfItems }
-  const items = query.includes("Selma") ? [defaultPdfItems[0]]
-    : body.page === 2 ? [libraryPdfItem("Doktor Glas", "Doktor Glas. Roman", "1905", libraryAuthors.soderberg, "DoktorGlas", "SöderbergH_DoktorGlas.pdf", "/export/faksimil/lb-DoktorGlas.pdf")]
-      : defaultPdfItems
-  const totalWorks = query === "bounded" ? 10_001 : query === "paged" ? 201 : query.includes("Selma") ? 1 : 201
-  return { mode: "pdf", total_hits: query === "bounded" ? 10_001 : query.includes("Selma") ? 2 : 307, total_works: totalWorks, items }
+  let items = defaultPdfItems
+  if (query.includes("Selma")) items = [defaultPdfItems[0]]
+  else if (body.page === 2) {
+    items = [libraryPdfItem("Doktor Glas", "Doktor Glas. Roman", "1905", libraryAuthors.soderberg, "DoktorGlas", "SöderbergH_DoktorGlas.pdf", "/export/faksimil/lb-DoktorGlas.pdf")]
+  }
+  let totalWorks = 201
+  if (query === "bounded") totalWorks = 10_001
+  else if (query.includes("Selma")) totalWorks = 1
+  let totalHits = 307
+  if (query === "bounded") totalHits = 10_001
+  else if (query.includes("Selma")) totalHits = 2
+  return { mode: "pdf", total_hits: totalHits, total_works: totalWorks, items }
+}
+
+function libraryWorksCountTotal(query, empty) {
+  if (empty) return 0
+  if (query === "strindberg") return 465
+  if (query.includes("selma")) return 1
+  if (query === "unsafe-download-token") return 2
+  if (query === "role-suffix-width" || query === "download-title-width") return 1
+  return 3
+}
+
+function libraryWorksAuthorIds(query, empty) {
+  if (empty) return []
+  if (query.includes("selma")) return ["LagerlofS"]
+  if (query === "strindberg") {
+    return ["StrindbergA", "StrindbergE", "StrindbergF", "StrindbergN", "StrindbergO", "StrindbergT", "StrindbergV"]
+  }
+  if (query === "unsafe-download-token") return ["SöderbergH"]
+  if (query === "role-suffix-width") return ["LongEditorA"]
+  if (query === "download-title-width") return ["SöderbergH"]
+  return ["SöderbergH", "GeijerEGA", "BauerJ"]
 }
 
 function librarySearchResponse(body) {
@@ -1707,13 +1737,9 @@ function libraryCountResponse(mode, filters) {
   const empty = query === "inga"
   if (mode === "works") {
     return {
-      mode, total: empty ? 0 : query === "strindberg" ? 465 : query.includes("selma") ? 1 : query === "unsafe-download-token" ? 2 : query === "role-suffix-width" || query === "download-title-width" ? 1 : 3,
-      author_ids: empty ? [] : query.includes("selma") ? ["LagerlofS"]
-        : query === "strindberg" ? ["StrindbergA", "StrindbergE", "StrindbergF", "StrindbergN", "StrindbergO", "StrindbergT", "StrindbergV"]
-        : query === "unsafe-download-token" ? ["SöderbergH"]
-          : query === "role-suffix-width" ? ["LongEditorA"]
-            : query === "download-title-width" ? ["SöderbergH"]
-          : ["SöderbergH", "GeijerEGA", "BauerJ"]
+      mode,
+      total: libraryWorksCountTotal(query, empty),
+      author_ids: libraryWorksAuthorIds(query, empty)
     }
   }
   if (mode === "parts") {

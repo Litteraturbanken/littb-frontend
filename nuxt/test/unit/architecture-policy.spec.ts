@@ -43,6 +43,18 @@ const requiredSonarRuleEntries = [
   '"sonarjs/no-identical-functions": "error"',
   '"sonarjs/no-redundant-boolean": "error"'
 ]
+const requiredTailwindRuleEntry = '"tailwindcss/no-contradicting-classname": "error"'
+const requiredDeepConditionalRuleEntry = `"no-restricted-syntax": [
+      "error",
+      {
+        selector: "ConditionalExpression ConditionalExpression ConditionalExpression",
+        message: "Extract deeply nested ternary logic into named statements."
+      }
+    ]`
+const requiredVueDeepConditionalRuleEntry = requiredDeepConditionalRuleEntry.replace(
+  '"no-restricted-syntax"',
+  '"vue/no-restricted-syntax"'
+)
 
 const detachedDomAllowlist = [
   "app/lib/author-profile.ts",
@@ -224,14 +236,22 @@ function writeSource(root: string, relativePath: string, source: string): void {
 function eslintConfig(
   ignores: readonly string[] = expectedIgnores,
   extraRules = "",
-  extraProperty = ""
+  extraProperty = "",
+  includeDeepConditionalRule = true
 ): string {
-  const ruleEntries = [...requiredSonarRuleEntries, extraRules].filter(Boolean)
+  const ruleEntries = [
+    ...requiredSonarRuleEntries,
+    requiredTailwindRuleEntry,
+    includeDeepConditionalRule ? requiredDeepConditionalRuleEntry : "",
+    includeDeepConditionalRule ? requiredVueDeepConditionalRuleEntry : "",
+    extraRules
+  ].filter(Boolean)
   return `import sonarjs from "eslint-plugin-sonarjs"
+import tailwindcss from "eslint-plugin-tailwindcss"
 import withNuxt from "./.nuxt/eslint.config.mjs"
 
 export default withNuxt({
-  plugins: { sonarjs },
+  plugins: { sonarjs, tailwindcss },
   ignores: ${JSON.stringify(ignores)},
   rules: {
     ${ruleEntries.join(",\n    ")}
@@ -264,6 +284,9 @@ function createTree(): string {
   ].join("\n"))
   for (const [path, source] of Object.entries(reviewedDomSources)) {
     writeSource(root, path, source)
+  }
+  for (const path of ["app/pages/bibliotek.vue", "app/pages/sök.vue"]) {
+    writeSource(root, path, "<template><ChronologyRangeSlider /></template>\n")
   }
   for (const contract of [
     "author-works-contract.ts",
@@ -304,6 +327,7 @@ describe("architecture policy verifier", () => {
       "@vue/compiler-sfc": "3.5.39",
       "dependency-cruiser": "18.1.1",
       "eslint-plugin-sonarjs": "4.2.0",
+      "eslint-plugin-tailwindcss": "3.18.3",
       "knip": "6.32.0"
     })
   })
@@ -327,6 +351,82 @@ describe("architecture policy verifier", () => {
     expect(result.status).toBe(0)
     expect(result.stderr).toBe("")
     expect(result.stdout).toMatch(/^Architecture policy passed: audited \d+ files\.\n$/u)
+  })
+
+  test.each(["app/pages/bibliotek.vue", "app/pages/sök.vue"])(
+    "requires %s to delegate chronology range interaction to the shared component",
+    path => {
+      const root = createTree()
+      writeSource(
+        root,
+        path,
+        '<template><div class="rzslider" @pointerdown="beginChronologyPointer" /></template>\n'
+      )
+
+      const result = runVerifier(root)
+
+      expect(result.status).toBe(1)
+      expect(result.stderr).toContain(
+        `${path}:1: Chronology range interaction must be owned by ChronologyRangeSlider`
+      )
+    }
+  )
+
+  test.each([
+    [
+      "bound rzslider class",
+      `<template>
+        <ChronologyRangeSlider />
+        <div :class="'rzslider'" />
+      </template>\n`
+    ],
+    [
+      "direct pointer event",
+      `<template>
+        <ChronologyRangeSlider />
+        <div @pointermove="moveChronologyPointer" />
+      </template>\n`
+    ],
+    [
+      "raw range input",
+      `<template>
+        <ChronologyRangeSlider />
+        <input type="range">
+      </template>\n`
+    ],
+    [
+      "object event binding",
+      `<template>
+        <ChronologyRangeSlider />
+        <div v-on="handlers" />
+      </template>\n`
+    ],
+    [
+      "dynamic input type",
+      `<template>
+        <ChronologyRangeSlider />
+        <input :type="inputType">
+      </template>\n`
+    ],
+    [
+      "dynamic event name",
+      `<template>
+        <ChronologyRangeSlider />
+        <div @[eventName]="handler" />
+      </template>\n`
+    ]
+  ])("rejects a chronology ownership bypass using a %s", (_description, source) => {
+    const root = createTree()
+    const path = "app/pages/bibliotek.vue"
+    writeSource(root, path, source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(path)
+    expect(result.stderr).toContain(
+      "Chronology range interaction must be owned by ChronologyRangeSlider"
+    )
   })
 
   test("accepts the exact imported HTML document helper as detached provenance", () => {
@@ -430,13 +530,47 @@ describe("architecture policy verifier", () => {
 
   test.each([
     ["missing SonarJS import", (source: string) => source.replace('import sonarjs from "eslint-plugin-sonarjs"\n', "")],
-    ["missing plugin registration", (source: string) => source.replace("  plugins: { sonarjs },\n", "")],
-    ["renamed plugin registration", (source: string) => source.replace("plugins: { sonarjs }", "plugins: { quality: sonarjs }")],
+    ["missing Tailwind import", (source: string) => source.replace('import tailwindcss from "eslint-plugin-tailwindcss"\n', "")],
+    ["missing plugin registration", (source: string) => source.replace("  plugins: { sonarjs, tailwindcss },\n", "")],
+    ["renamed plugin registration", (source: string) => source.replace("plugins: { sonarjs, tailwindcss }", "plugins: { quality: sonarjs, tailwindcss }")],
     ["missing required rule", (source: string) => source.replace(`    ${requiredSonarRuleEntries[0]},\n`, "")],
+    ["missing Tailwind conflict rule", (source: string) => source.replace(`    ${requiredTailwindRuleEntry},\n`, "")],
     ["downgraded required rule", (source: string) => source.replace(requiredSonarRuleEntries[0]!, requiredSonarRuleEntries[0]!.replace('"error"', '"warn"'))]
   ])("rejects canonical ESLint protection with %s", (_description, mutate) => {
     const root = createTree()
     writeSource(root, "eslint.config.mjs", mutate(eslintConfig()))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "eslint.config.mjs:1: ESLint configuration must equal the canonical reviewed file"
+    )
+  })
+
+  test("requires deeply nested conditionals to stay review-blocking", () => {
+    const root = createTree()
+    writeSource(
+      root,
+      "eslint.config.mjs",
+      eslintConfig(expectedIgnores, "", "", false)
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "eslint.config.mjs:1: ESLint configuration must equal the canonical reviewed file"
+    )
+  })
+
+  test("requires deeply nested Vue template conditionals to stay review-blocking", () => {
+    const root = createTree()
+    writeSource(
+      root,
+      "eslint.config.mjs",
+      eslintConfig().replace(requiredVueDeepConditionalRuleEntry, '"vue/no-restricted-syntax": "error"')
+    )
 
     const result = runVerifier(root)
 

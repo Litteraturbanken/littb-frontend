@@ -9,6 +9,10 @@ const root = resolve(process.argv[2] ?? process.cwd())
 const sourceExtensions = new Set([".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx", ".vue"])
 const capabilityPath = "shared/utils/renderable-html.ts"
 const rendererPath = "app/components/global/RenderableHtmlContent.vue"
+const chronologyRangeConsumerPaths = new Set([
+  "app/pages/bibliotek.vue",
+  "app/pages/sök.vue"
+])
 const htmlDocumentPath = "app/lib/html-document.ts"
 const contractAllowlist = new Set([
   "test/nuxt/author-works-contract.ts",
@@ -45,6 +49,15 @@ const requiredSonarRules = new Set([
   "sonarjs/no-identical-expressions",
   "sonarjs/no-identical-functions",
   "sonarjs/no-redundant-boolean"
+])
+const requiredTailwindRules = new Set([
+  "tailwindcss/no-contradicting-classname"
+])
+const deepConditionalSelector = "ConditionalExpression ConditionalExpression ConditionalExpression"
+const deepConditionalMessage = "Extract deeply nested ternary logic into named statements."
+const deepConditionalRuleNames = new Set([
+  "no-restricted-syntax",
+  "vue/no-restricted-syntax"
 ])
 const capabilityTypes = new Set([
   "ManagedAssetHtml",
@@ -1518,6 +1531,65 @@ function auditVueTemplate(record) {
   visit(ast)
 }
 
+function auditChronologyRangeOwnership(record) {
+  if (!chronologyRangeConsumerPaths.has(record.relativePath) || !record.template) return
+  const { ast, start } = record.template
+  let sharedComponentFound = false
+  let rawTrackLine = null
+  const pointerEvents = new Set([
+    "lostpointercapture",
+    "pointercancel",
+    "pointerdown",
+    "pointermove",
+    "pointerup"
+  ])
+  const visit = node => {
+    if (node.type === NodeTypes.ELEMENT) {
+      if (node.tagType === ElementTypes.COMPONENT && node.tag === "ChronologyRangeSlider") {
+        sharedComponentFound = true
+      }
+      for (const property of node.props) {
+        const line = lineNumberAt(record.source, start + property.loc.start.offset)
+        if (property.type === NodeTypes.ATTRIBUTE) {
+          const values = property.value?.content.split(/\s+/u) ?? []
+          if ((property.name === "class" && values.includes("rzslider"))
+            || (node.tag === "input" && property.name === "type" && values.includes("range"))) {
+            rawTrackLine ??= line
+          }
+          continue
+        }
+        if (property.type !== NodeTypes.DIRECTIVE) continue
+        if (property.name === "on" && !property.arg?.isStatic
+          && node.tag !== "ChronologyRangeSlider") {
+          rawTrackLine ??= line
+          continue
+        }
+        if (!property.arg?.isStatic) continue
+        if (property.name === "bind" && property.arg.content === "class"
+          && /(?:^|[^\w-])rzslider(?:$|[^\w-])/u.test(property.exp?.content ?? "")) {
+          rawTrackLine ??= line
+        }
+        if (property.name === "bind" && property.arg.content === "type" && node.tag === "input") {
+          rawTrackLine ??= line
+        }
+        if (property.name === "on" && pointerEvents.has(property.arg.content)
+          && node.tag !== "ChronologyRangeSlider") {
+          rawTrackLine ??= line
+        }
+      }
+    }
+    for (const child of node.children ?? []) visit(child)
+  }
+  visit(ast)
+  if (!sharedComponentFound || rawTrackLine !== null) {
+    addViolation(
+      record.relativePath,
+      rawTrackLine ?? 1,
+      "Chronology range interaction must be owned by ChronologyRangeSlider"
+    )
+  }
+}
+
 function importAliases(unit) {
   const aliases = new Map()
   const namespaces = new Set()
@@ -2818,6 +2890,27 @@ function validEslintRuleSeverity(expression) {
     || (ts.isNumericLiteral(severity) && severity.text === "2")
 }
 
+function validDeepConditionalRule(expression) {
+  const configuration = unwrapExpression(expression)
+  if (!ts.isArrayLiteralExpression(configuration) || configuration.elements.length !== 2) {
+    return false
+  }
+  const [severity, restrictionExpression] = configuration.elements
+  if (!severity || !validEslintRuleSeverity(severity) || !restrictionExpression) return false
+  const restriction = unwrapExpression(restrictionExpression)
+  if (!ts.isObjectLiteralExpression(restriction) || restriction.properties.length !== 2) return false
+  const values = new Map()
+  for (const property of restriction.properties) {
+    if (!ts.isPropertyAssignment(property)) return false
+    const name = staticPropertyName(property)
+    const value = unwrapExpression(property.initializer)
+    if (name === null || values.has(name) || !ts.isStringLiteralLike(value)) return false
+    values.set(name, value.text)
+  }
+  return values.get("selector") === deepConditionalSelector
+    && values.get("message") === deepConditionalMessage
+}
+
 function validEslintRules(expression) {
   const rules = unwrapExpression(expression)
   if (!ts.isObjectLiteralExpression(rules)) return false
@@ -2828,12 +2921,18 @@ function validEslintRules(expression) {
     if (name === null || names.has(name)) return false
     names.add(name)
     const configuration = unwrapExpression(property.initializer)
+    if (deepConditionalRuleNames.has(name)) {
+      if (!validDeepConditionalRule(configuration)) return false
+      continue
+    }
     const severity = ts.isArrayLiteralExpression(configuration)
       ? configuration.elements[0]
       : configuration
     if (!severity || !validEslintRuleSeverity(severity)) return false
   }
-  return [...requiredSonarRules].every(name => names.has(name))
+  return [...deepConditionalRuleNames].every(name => names.has(name))
+    && [...requiredSonarRules].every(name => names.has(name))
+    && [...requiredTailwindRules].every(name => names.has(name))
 }
 
 function validDefaultImport(statement, moduleName, bindingName) {
@@ -2843,12 +2942,13 @@ function validDefaultImport(statement, moduleName, bindingName) {
     && !statement.importClause.namedBindings
 }
 
-function validSonarPlugins(expression) {
+function validEslintPlugins(expression) {
   const plugins = unwrapExpression(expression)
   return ts.isObjectLiteralExpression(plugins)
-    && plugins.properties.length === 1
-    && ts.isShorthandPropertyAssignment(plugins.properties[0])
+    && plugins.properties.length === 2
+    && plugins.properties.every(property => ts.isShorthandPropertyAssignment(property))
     && plugins.properties[0].name.text === "sonarjs"
+    && plugins.properties[1].name.text === "tailwindcss"
 }
 
 function validEslintConfigSource(source) {
@@ -2859,9 +2959,10 @@ function validEslintConfigSource(source) {
     true,
     ts.ScriptKind.JS
   )
-  if (sourceFile.parseDiagnostics.length > 0 || sourceFile.statements.length !== 3) return false
-  const [sonarImport, nuxtImport, exportStatement] = sourceFile.statements
+  if (sourceFile.parseDiagnostics.length > 0 || sourceFile.statements.length !== 4) return false
+  const [sonarImport, tailwindImport, nuxtImport, exportStatement] = sourceFile.statements
   if (!validDefaultImport(sonarImport, "eslint-plugin-sonarjs", "sonarjs")
+    || !validDefaultImport(tailwindImport, "eslint-plugin-tailwindcss", "tailwindcss")
     || !validDefaultImport(nuxtImport, "./.nuxt/eslint.config.mjs", "withNuxt")
     || !ts.isExportAssignment(exportStatement)
     || exportStatement.isExportEquals) return false
@@ -2883,7 +2984,7 @@ function validEslintConfigSource(source) {
     return false
   }
   const plugins = properties.get("plugins")
-  if (!plugins || !validSonarPlugins(plugins)) return false
+  if (!plugins || !validEslintPlugins(plugins)) return false
   const ignores = properties.get("ignores")
   if (!ignores || !ts.isArrayLiteralExpression(ignores)
     || ignores.elements.length !== requiredEslintIgnores.size) return false
@@ -2947,6 +3048,7 @@ for (const record of sourceRecords) {
   auditComments(record)
   auditLegacyReaderEditorMetadata(record)
   auditVueTemplate(record)
+  auditChronologyRangeOwnership(record)
   auditDomOperations(record)
   auditNativeVNodeCalls(record)
   if (record.relativePath === capabilityPath) auditCapabilityUtility(record)

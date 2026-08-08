@@ -568,21 +568,6 @@ const chronologyCeiling = computed(() => (
 const chronologyFromDraft = ref("")
 const chronologyToDraft = ref("")
 const chronologyDraftDirty = ref(false)
-const chronologyRangeStyle = computed(() => {
-  const span = chronologyCeiling.value - chronologyFloor.value
-  const from = Number(chronologyFromDraft.value)
-  const to = Number(chronologyToDraft.value)
-  const fromPercent = span > 0 && Number.isFinite(from)
-    ? Math.max(0, Math.min(100, (from - chronologyFloor.value) / span * 100))
-    : 0
-  const toPercent = span > 0 && Number.isFinite(to)
-    ? Math.max(0, Math.min(100, (to - chronologyFloor.value) / span * 100))
-    : 100
-  return {
-    "--chronology-from": `${fromPercent}%`,
-    "--chronology-to": `${toPercent}%`
-  }
-})
 
 function syncChronologyDraft() {
   if (chronologyDraftDirty.value) return
@@ -610,69 +595,7 @@ function setChronologyDraft(endpoint: "from" | "to", value: string) {
   else chronologyToDraft.value = value
 }
 
-const chronologyPointerEndpoint = ref<"from" | "to" | null>(null)
-
-function chronologyPointerYear(event: PointerEvent): number | null {
-  if (!(event.currentTarget instanceof HTMLElement)) return null
-  const box = event.currentTarget.getBoundingClientRect()
-  const usableWidth = Math.max(1, box.width - 20)
-  const fraction = Math.max(0, Math.min(1, (event.clientX - box.left - 10) / usableWidth))
-  return Math.round(
-    chronologyFloor.value + fraction * (chronologyCeiling.value - chronologyFloor.value)
-  )
-}
-
-function setChronologyPointerDraft(endpoint: "from" | "to", year: number) {
-  const other = Number(endpoint === "from"
-    ? chronologyToDraft.value
-    : chronologyFromDraft.value)
-  const bounded = Number.isFinite(other)
-    ? endpoint === "from" ? Math.min(year, other) : Math.max(year, other)
-    : year
-  setChronologyDraft(endpoint, String(bounded))
-}
-
-function beginChronologyPointer(event: PointerEvent) {
-  const track = event.currentTarget
-  if (
-    event.button !== 0
-    || !(track instanceof HTMLElement)
-    || event.target !== track
-  ) return
-  const year = chronologyPointerYear(event)
-  if (year === null) return
-  event.preventDefault()
-  const from = Number(chronologyFromDraft.value)
-  const to = Number(chronologyToDraft.value)
-  const endpoint = Math.abs(year - from) < Math.abs(year - to) ? "from" : "to"
-  chronologyPointerEndpoint.value = endpoint
-  const range = track.querySelector<HTMLInputElement>(`input[data-range-endpoint="${endpoint}"]`)
-  range?.focus({ preventScroll: true })
-  track.setPointerCapture(event.pointerId)
-  setChronologyPointerDraft(endpoint, year)
-}
-
-function moveChronologyPointer(event: PointerEvent) {
-  const endpoint = chronologyPointerEndpoint.value
-  if (!endpoint) return
-  const year = chronologyPointerYear(event)
-  if (year !== null) setChronologyPointerDraft(endpoint, year)
-}
-
-function finishChronologyPointer(event: PointerEvent) {
-  const endpoint = chronologyPointerEndpoint.value
-  if (!endpoint) return
-  moveChronologyPointer(event)
-  chronologyPointerEndpoint.value = null
-  void commitChronologyDraft(
-    endpoint,
-    endpoint === "from" ? chronologyFromDraft.value : chronologyToDraft.value
-  )
-}
-
-function cancelChronologyPointer() {
-  if (!chronologyPointerEndpoint.value) return
-  chronologyPointerEndpoint.value = null
+function cancelChronologyDraft() {
   chronologyDraftDirty.value = false
   syncChronologyDraft()
 }
@@ -1281,40 +1204,20 @@ v-for="item in [
         <i class="fa fa-clock-o mr-1 ml-px" />{{ " " }}
         <span class="sc mt-8">Tidslinje: kronologisk sökning</span>
       </div>
-      <div class="flex block max-w-3xl pr-2">
-        <div
+      <div class="flex max-w-3xl pr-2">
+        <ChronologyRangeSlider
           data-search-chronology-range
-          class="rzslider mt-3 slider-large chronology_ranges"
-          :style="chronologyRangeStyle"
-          @pointerdown="beginChronologyPointer"
-          @pointermove="moveChronologyPointer"
-          @pointerup="finishChronologyPointer"
-          @pointercancel="cancelChronologyPointer"
-          @lostpointercapture="cancelChronologyPointer"
-        >
-          <input
-            type="range"
-            data-range-endpoint="from"
-            :min="chronologyFloor"
-            :max="chronologyCeiling"
-            step="1"
-            :value="chronologyFromDraft"
-            aria-label="Från år reglage"
-            @input="setChronologyDraft('from', ($event.target as HTMLInputElement).value)"
-            @change="commitChronologyDraft('from', ($event.target as HTMLInputElement).value)"
-          >
-          <input
-            type="range"
-            data-range-endpoint="to"
-            :min="chronologyFloor"
-            :max="chronologyCeiling"
-            step="1"
-            :value="chronologyToDraft"
-            aria-label="Till år reglage"
-            @input="setChronologyDraft('to', ($event.target as HTMLInputElement).value)"
-            @change="commitChronologyDraft('to', ($event.target as HTMLInputElement).value)"
-          >
-        </div>
+          class="mt-3 slider-large chronology_ranges"
+          :min="chronologyFloor"
+          :max="chronologyCeiling"
+          :from="chronologyFromDraft"
+          :to="chronologyToDraft"
+          from-label="Från år reglage"
+          to-label="Till år reglage"
+          @draft="setChronologyDraft"
+          @commit="commitChronologyDraft"
+          @cancel="cancelChronologyDraft"
+        />
         <div class="whitespace-nowrap self-center chronology_inputs">
           <span class="text-sm sc">Tryckår: </span>
           <input
@@ -1673,40 +1576,8 @@ v-for="item in [
   background-repeat: no-repeat;
 }
 
-.chronology_ranges input[type="range"] {
-  appearance: none;
-  position: absolute;
-  top: -2px;
-  left: 0;
-  width: 100%;
-  height: 20px;
-  padding: 0;
-  margin: 0;
-  border: 0;
-  background: transparent;
-  pointer-events: none;
-}
-
 .reset {
   color: #616161;
-}
-
-.chronology_ranges input[type="range"]::-webkit-slider-runnable-track {
-  height: 8px;
-  border-radius: 4px;
-  background: transparent;
-}
-
-.chronology_ranges input[type="range"]::-webkit-slider-thumb {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  margin-top: -6px;
-  border: 1px solid darkgrey;
-  border-radius: 50%;
-  background: white;
-  box-shadow: 1px 1px 3px grey;
-  pointer-events: auto;
 }
 
 .gender_select {

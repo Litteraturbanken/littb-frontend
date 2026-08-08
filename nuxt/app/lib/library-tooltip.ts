@@ -51,8 +51,9 @@ export function libraryAuthorTooltipText(
   }
   const birth = validYear("birth_year", "birth")
   const death = validYear("death_year", "death")
-  const lifespan = birth && death
-    ? `${birth}-${death}`
-    : birth ? `f. ${birth}` : death ? `d. ${death}` : ""
+  let lifespan = ""
+  if (birth && death) lifespan = `${birth}-${death}`
+  else if (birth) lifespan = `f. ${birth}`
+  else if (death) lifespan = `d. ${death}`
   return usefulLibraryTooltipText(`${fullName}${lifespan ? ` (${lifespan})` : ""}`, displayText)
 }

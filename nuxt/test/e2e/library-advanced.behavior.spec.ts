@@ -208,7 +208,7 @@ test("multi facets and chronology compose exact safe predicates and commit once 
   await expect(page.getByLabel("Till tryckår", { exact: true })).toHaveValue("2026")
 })
 
-test("chronology bare track clicks move the nearest handle and ties choose the upper handle", async ({
+test("chronology track clicks move the nearest handle and collapsed ranges expand directionally", async ({
   page
 }) => {
   await page.goto("/bibliotek?avancerat=1&intervall=1900,2000", { waitUntil: "networkidle" })
@@ -260,6 +260,16 @@ test("chronology bare track clicks move the nearest handle and ties choose the u
   await clickYear(1950)
   await expect(from).toHaveValue("1900")
   await expect(to).toHaveValue("1950")
+  expect(await page.evaluate(
+    () => (window as typeof window & { __chronologyPushes?: number }).__chronologyPushes
+  )).toBe(1)
+
+  await page.goto("/bibliotek?avancerat=1&intervall=1900,1900", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  await installPushCounter()
+  await clickYear(1880)
+  await expect(from).toHaveValue("1880")
+  await expect(to).toHaveValue("1900")
   expect(await page.evaluate(
     () => (window as typeof window & { __chronologyPushes?: number }).__chronologyPushes
   )).toBe(1)

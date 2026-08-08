@@ -1,8 +1,9 @@
 import sonarjs from "eslint-plugin-sonarjs"
+import tailwindcss from "eslint-plugin-tailwindcss"
 import withNuxt from "./.nuxt/eslint.config.mjs"
 
 export default withNuxt({
-  plugins: { sonarjs },
+  plugins: { sonarjs, tailwindcss },
   ignores: [
     ".nuxt/**",
     ".output/**",
@@ -18,6 +19,21 @@ export default withNuxt({
     "sonarjs/no-duplicated-branches": "error",
     "sonarjs/no-identical-expressions": "error",
     "sonarjs/no-identical-functions": "error",
+    "tailwindcss/no-contradicting-classname": "error",
+    "no-restricted-syntax": [
+      "error",
+      {
+        selector: "ConditionalExpression ConditionalExpression ConditionalExpression",
+        message: "Extract deeply nested ternary logic into named statements."
+      }
+    ],
+    "vue/no-restricted-syntax": [
+      "error",
+      {
+        selector: "ConditionalExpression ConditionalExpression ConditionalExpression",
+        message: "Extract deeply nested ternary logic into named statements."
+      }
+    ],
     "sonarjs/no-redundant-boolean": "error"
   }
 })

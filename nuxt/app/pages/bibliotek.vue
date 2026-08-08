@@ -527,6 +527,13 @@ const aboutAuthorIdSet = computed<ReadonlySet<string>>(
     () => new Set(aboutAuthorOptions.value.map(option => option.id))
 )
 
+function browseSortForState(state: LibraryRouteState): BrowseSortKey {
+    if (state.mode === "authors") return authorSortKey(state.sort)
+    if (state.mode === "parts") return partSortKey(state.sort)
+    if (state.mode === "works") return epubSortKey(state.sort)
+    return "popularitet"
+}
+
 const initialState = Object.freeze(routeState(route.path, route.query))
 const standalone = initialState.standalone
 const mode = initialState.mode
@@ -537,14 +544,7 @@ const initialEpubSort =
     initialState.mode === "epub" || initialState.mode === "pdf"
         ? (initialState.sort as EpubSortKey)
         : "popularitet"
-const initialBrowseSort =
-    initialState.mode === "authors"
-        ? (initialState.sort as AuthorSortKey)
-        : initialState.mode === "parts"
-          ? (initialState.sort as PartSortKey)
-          : initialState.mode === "works"
-            ? (initialState.sort as EpubSortKey)
-            : "popularitet"
+const initialBrowseSort = browseSortForState(initialState)
 async function fetchInitialData(): Promise<LibraryInitialData> {
     const pagePromise = fetchLibraryPageData(initialState)
     const summaryPromise =
@@ -829,19 +829,21 @@ function requestState(state: LibraryRouteState): QueryState {
     }
 }
 
+function selectedSortForCurrentMode(): QueryState["sort"] {
+    if (currentMode.value === "all") return selectedSort.value
+    if (currentMode.value === "latest") return "nytillkommet"
+    if (currentMode.value === "epub" || currentMode.value === "pdf") {
+        return selectedEpubSort.value
+    }
+    return selectedBrowseSort.value
+}
+
 function currentState(): QueryState {
     return {
         standalone: route.path === "/epub",
         mode: currentMode.value,
         filter: filter.value,
-        sort:
-            currentMode.value === "all"
-                ? selectedSort.value
-                : currentMode.value === "latest"
-                  ? "nytillkommet"
-                  : currentMode.value === "epub" || currentMode.value === "pdf"
-                    ? selectedEpubSort.value
-                    : selectedBrowseSort.value,
+        sort: selectedSortForCurrentMode(),
         page: currentMode.value === "all" ? 1 : currentPage.value,
         hide1800: currentMode.value === "latest" && hide1800.value,
         downloadMode: !standalone && downloadMode.value,
@@ -1216,19 +1218,19 @@ function resetSearch() {
     void router.push({ path: route.path, query })
 }
 
+function defaultSortForMode(nextMode: LibraryMode): QueryState["sort"] {
+    if (nextMode === "all") return "relevans"
+    if (nextMode === "latest") return "nytillkommet"
+    if (nextMode === "parts") return "titlar"
+    return "popularitet"
+}
+
 function selectMode(nextMode: LibraryMode) {
     beginIntent({
         standalone: route.path === "/epub",
         mode: nextMode,
         filter: filter.value,
-        sort:
-            nextMode === "all"
-                ? "relevans"
-                : nextMode === "latest"
-                  ? "nytillkommet"
-                  : nextMode === "parts"
-                    ? "titlar"
-                    : "popularitet",
+        sort: defaultSortForMode(nextMode),
         page: 1,
         hide1800: false,
         downloadMode: false,
@@ -1438,20 +1440,6 @@ function commitLanguages(values: string[]) {
     void pushAdvancedQuery("languages", selectedLanguages.value.join(","))
 }
 
-const chronologyRangeStyle = computed(() => {
-    const bounds = chronologyBounds.value
-    if (!bounds) return { "--chronology-from": "0%", "--chronology-to": "100%" }
-    const span = bounds.to - bounds.from
-    const from = Number(chronologyFromDraft.value)
-    const to = Number(chronologyToDraft.value)
-    const fromPercent = Number.isFinite(from) ? ((from - bounds.from) / span) * 100 : 0
-    const toPercent = Number.isFinite(to) ? ((to - bounds.from) / span) * 100 : 100
-    return {
-        "--chronology-from": `${Math.max(0, Math.min(100, fromPercent))}%`,
-        "--chronology-to": `${Math.max(0, Math.min(100, toPercent))}%`
-    }
-})
-
 function setChronologyDraft(endpoint: "from" | "to", value: string) {
     chronologyDraftDirty.value = true
     const numeric = Number(value)
@@ -1462,68 +1450,6 @@ function setChronologyDraft(endpoint: "from" | "to", value: string) {
         const from = Number(chronologyFromDraft.value)
         chronologyToDraft.value = String(Number.isFinite(from) ? Math.max(numeric, from) : numeric)
     }
-}
-
-const chronologyPointerEndpoint = ref<"from" | "to" | null>(null)
-const chronologyFromRange = ref<HTMLInputElement | null>(null)
-const chronologyToRange = ref<HTMLInputElement | null>(null)
-function chronologyPointerYear(event: PointerEvent): number | null {
-    const bounds = chronologyBounds.value
-    if (!bounds || !(event.currentTarget instanceof HTMLElement)) return null
-    const box = event.currentTarget.getBoundingClientRect()
-    const usableWidth = Math.max(1, box.width - 20)
-    const fraction = Math.max(0, Math.min(1, (event.clientX - box.left - 10) / usableWidth))
-    return Math.round(bounds.from + fraction * (bounds.to - bounds.from))
-}
-
-function beginChronologyPointer(event: PointerEvent) {
-    const track = event.currentTarget
-    if (event.button !== 0 || !(track instanceof HTMLElement)) return
-    event.preventDefault()
-    const year = chronologyPointerYear(event)
-    if (year === null) return
-    const from = Number(chronologyFromDraft.value)
-    const to = Number(chronologyToDraft.value)
-    const fromDistance = Math.abs(year - from)
-    const toDistance = Math.abs(year - to)
-    chronologyPointerEndpoint.value =
-        fromDistance < toDistance
-            ? "from"
-            : fromDistance > toDistance
-              ? "to"
-              : year < from
-                ? "from"
-                : "to"
-    const range =
-        chronologyPointerEndpoint.value === "from"
-            ? chronologyFromRange.value
-            : chronologyToRange.value
-    range?.focus({ preventScroll: true })
-    track.setPointerCapture(event.pointerId)
-    setChronologyDraft(chronologyPointerEndpoint.value, String(year))
-}
-
-function moveChronologyPointer(event: PointerEvent) {
-    const endpoint = chronologyPointerEndpoint.value
-    if (!endpoint) return
-    const year = chronologyPointerYear(event)
-    if (year !== null) setChronologyDraft(endpoint, String(year))
-}
-
-function finishChronologyPointer(event: PointerEvent) {
-    const endpoint = chronologyPointerEndpoint.value
-    if (!endpoint) return
-    moveChronologyPointer(event)
-    chronologyPointerEndpoint.value = null
-    void commitChronologyDraft(
-        endpoint,
-        endpoint === "from" ? chronologyFromDraft.value : chronologyToDraft.value
-    )
-}
-
-function cancelChronologyPointer() {
-    chronologyPointerEndpoint.value = null
-    resetChronologyDraft()
 }
 
 function resetChronologyDraft() {
@@ -1753,20 +1679,19 @@ const epubTabCount = computed(() =>
 const pdfTabCount = computed(() =>
     standalone ? downloadCounts.value.pdf : librarySummary.value.pdf
 )
+
+function currentResultHitCount(): number {
+    if (currentMode.value === "latest") return latestResults.value.distinctHits
+    if (currentMode.value === "authors") return 0
+    if (currentMode.value === "works") return workResults.value.distinctHits
+    if (currentMode.value === "parts") return partResults.value.hits
+    return downloadDistinctHits.value
+}
+
 const pageCount = computed(() =>
     Math.min(
         libraryPageMaximum,
-        Math.ceil(
-            (currentMode.value === "latest"
-                ? latestResults.value.distinctHits
-                : currentMode.value === "authors"
-                  ? 0
-                  : currentMode.value === "works"
-                    ? workResults.value.distinctHits
-                    : currentMode.value === "parts"
-                      ? partResults.value.hits
-                      : downloadDistinctHits.value) / 100
-        )
+        Math.ceil(currentResultHitCount() / 100)
     )
 )
 const pages = computed(() => legacyPaginationItems(pageCount.value, currentPage.value))
@@ -2165,57 +2090,18 @@ onUnmounted(() => {
                         <span class="sc mt-8">Tidslinje: kronologisk sökning</span>
                     </div>
                     <div v-if="chronologyBounds" data-library-chronology-range class="flex">
-                        <div
-                            class="rzslider mt-3 slider-large chronology_ranges"
-                            :style="chronologyRangeStyle"
-                            @pointerdown="beginChronologyPointer"
-                            @pointermove="moveChronologyPointer"
-                            @pointerup="finishChronologyPointer"
-                            @pointercancel="cancelChronologyPointer"
-                        >
-                            <input
-                                ref="chronologyFromRange"
-                                type="range"
-                                :min="chronologyFloor"
-                                :max="chronologyCeiling"
-                                step="1"
-                                :value="chronologyFromDraft"
-                                aria-label="Från tryckår reglage"
-                                @input="
-                                    setChronologyDraft(
-                                        'from',
-                                        ($event.target as HTMLInputElement).value
-                                    )
-                                "
-                                @change="
-                                    commitChronologyDraft(
-                                        'from',
-                                        ($event.target as HTMLInputElement).value
-                                    )
-                                "
-                            >
-                            <input
-                                ref="chronologyToRange"
-                                type="range"
-                                :min="chronologyFloor"
-                                :max="chronologyCeiling"
-                                step="1"
-                                :value="chronologyToDraft"
-                                aria-label="Till tryckår reglage"
-                                @input="
-                                    setChronologyDraft(
-                                        'to',
-                                        ($event.target as HTMLInputElement).value
-                                    )
-                                "
-                                @change="
-                                    commitChronologyDraft(
-                                        'to',
-                                        ($event.target as HTMLInputElement).value
-                                    )
-                                "
-                            >
-                        </div>
+                        <ChronologyRangeSlider
+                            class="mt-3 slider-large chronology_ranges"
+                            :min="chronologyFloor"
+                            :max="chronologyCeiling"
+                            :from="chronologyFromDraft"
+                            :to="chronologyToDraft"
+                            from-label="Från tryckår reglage"
+                            to-label="Till tryckår reglage"
+                            @draft="setChronologyDraft"
+                            @commit="commitChronologyDraft"
+                            @cancel="resetChronologyDraft"
+                        />
                         <div class="whitespace-nowrap self-center chronology_inputs">
                             <span class="text-sm sc">Tryckår: </span>
                             <input
@@ -2402,7 +2288,7 @@ onUnmounted(() => {
                 <div class="bg-white/65 lg:p-6 p-2 lg:border border-gray-900 flex-grow">
                     <div
                         v-if="currentMode === 'all'"
-                        class="result relevance pl-0 lg:ml-3 lg:ml-0 w-full lg:w-auto"
+                        class="result relevance pl-0 lg:ml-3 w-full lg:w-auto"
                     >
                         <div class="text-base">
                             <div class="inline-block sc mr-2">Sortera:</div>
@@ -2644,7 +2530,7 @@ onUnmounted(() => {
                         >
                             Inga träffar.
                         </div>
-                        <table v-else id="table" class="table block w-full flex-grow -ml-2">
+                        <table v-else id="table" class="table w-full flex-grow -ml-2">
                             <tbody class="block">
                                 <template
                                     v-for="group in latestResults.groups"
@@ -2907,7 +2793,7 @@ onUnmounted(() => {
                         <table
                             v-else-if="currentMode === 'works'"
                             id="table"
-                            class="table block w-full flex-grow -ml-2"
+                            class="table w-full flex-grow -ml-2"
                         >
                             <tbody class="block">
                                 <tr
@@ -3166,7 +3052,7 @@ onUnmounted(() => {
                         <div v-else-if="!downloadResults.length" data-library-empty class="pb-4">
                             Inga träffar.
                         </div>
-                        <table v-else id="table" class="table block w-full flex-grow -ml-2">
+                        <table v-else id="table" class="table w-full flex-grow -ml-2">
                             <tbody class="block">
                                 <tr
                                     v-for="item in downloadResults"
@@ -3329,7 +3215,7 @@ onUnmounted(() => {
                     </div>
                 </div>
                 <div v-if="downloadMode">
-                    <div class="dl ml-4 p-4 sticky flex flex-col overflow-auto relative">
+                    <div class="dl ml-4 p-4 sticky flex flex-col overflow-auto">
                         <h3 class="uppercase text-xl mt-2 mb-2">Valda verk</h3>
                         <div class="footer">
                             <button
@@ -3661,35 +3547,4 @@ onUnmounted(() => {
     background-repeat: no-repeat;
 }
 
-[data-library-chronology-range] input[type="range"] {
-    appearance: none;
-    position: absolute;
-    top: -2px;
-    left: 0;
-    width: 100%;
-    height: 20px;
-    padding: 0;
-    margin: 0;
-    border: 0;
-    background: transparent;
-    pointer-events: none;
-}
-
-[data-library-chronology-range] input[type="range"]::-webkit-slider-runnable-track {
-    height: 8px;
-    border-radius: 4px;
-    background: transparent;
-}
-
-[data-library-chronology-range] input[type="range"]::-webkit-slider-thumb {
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    margin-top: -6px;
-    border: 1px solid darkgrey;
-    border-radius: 50%;
-    background: white;
-    box-shadow: 1px 1px 3px grey;
-    pointer-events: auto;
-}
 </style>
