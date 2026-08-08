@@ -59,8 +59,33 @@ export function buildLibraryFilters(state: LibraryFilterState): LibraryFilters {
   }
 }
 
+type PartsSearchState = Extract<LibrarySearchState, { mode: "parts" }>
+type DownloadSearchState = Extract<LibrarySearchState, { mode: "epub" | "pdf" }>
+
+function buildPagedLibrarySearchRequest(
+  state: PartsSearchState,
+  filters: LibraryFilters
+): Extract<LibrarySearchRequest, { mode: "parts" }>
+function buildPagedLibrarySearchRequest(
+  state: DownloadSearchState,
+  filters: LibraryFilters
+): Extract<LibrarySearchRequest, { mode: "epub" | "pdf" }>
+function buildPagedLibrarySearchRequest(
+  state: PartsSearchState | DownloadSearchState,
+  filters: LibraryFilters
+) {
+  return {
+    mode: state.mode,
+    filters,
+    reverse: state.reverse,
+    sort: commonSort[state.sort],
+    page: state.page
+  }
+}
+
 export function buildLibrarySearchRequest(state: LibrarySearchState): LibrarySearchRequest {
   const filters = buildLibraryFilters(state.filters)
+  if (state.mode === "parts") return buildPagedLibrarySearchRequest(state, filters)
   switch (state.mode) {
     case "all":
       return {
@@ -86,14 +111,6 @@ export function buildLibrarySearchRequest(state: LibrarySearchState): LibrarySea
         page: state.page,
         source_only: state.sourceOnly
       }
-    case "parts":
-      return {
-        mode: state.mode,
-        filters,
-        reverse: state.reverse,
-        sort: commonSort[state.sort],
-        page: state.page
-      }
     case "latest":
       return {
         mode: state.mode,
@@ -104,13 +121,7 @@ export function buildLibrarySearchRequest(state: LibrarySearchState): LibrarySea
       }
     case "epub":
     case "pdf":
-      return {
-        mode: state.mode,
-        filters,
-        reverse: state.reverse,
-        sort: commonSort[state.sort],
-        page: state.page
-      }
+      return buildPagedLibrarySearchRequest(state, filters)
     default:
       return assertNever(state)
   }

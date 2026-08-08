@@ -40,13 +40,18 @@
     "vue-router": "5.2.0"
   },
   "devDependencies": {
+    "@ast-grep/cli": "0.45.1",
     "@nuxt/eslint": "1.16.0",
     "@playwright/test": "1.61.1",
     "@types/node": "22.20.1",
+    "@vue/compiler-sfc": "3.5.39",
     "@vue/server-renderer": "3.5.39",
     "autoprefixer": "10.4.21",
     "bootstrap-sass": "3.4.3",
+    "dependency-cruiser": "18.1.1",
     "eslint": "10.8.0",
+    "eslint-plugin-sonarjs": "4.2.0",
+    "knip": "6.32.0",
     "lighthouse": "13.4.1",
     "openapi-typescript": "7.13.0",
     "postcss": "8.5.6",

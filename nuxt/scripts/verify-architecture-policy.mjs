@@ -38,6 +38,14 @@ const requiredEslintIgnores = new Set([
   "playwright-report/**",
   "test-results*/**"
 ])
+const requiredSonarRules = new Set([
+  "sonarjs/no-all-duplicated-branches",
+  "sonarjs/no-collection-size-mischeck",
+  "sonarjs/no-duplicated-branches",
+  "sonarjs/no-identical-expressions",
+  "sonarjs/no-identical-functions",
+  "sonarjs/no-redundant-boolean"
+])
 const capabilityTypes = new Set([
   "ManagedAssetHtml",
   "ManagedStyleText",
@@ -2822,7 +2830,22 @@ function validEslintRules(expression) {
       : configuration
     if (!severity || !validEslintRuleSeverity(severity)) return false
   }
-  return true
+  return [...requiredSonarRules].every(name => names.has(name))
+}
+
+function validDefaultImport(statement, moduleName, bindingName) {
+  return ts.isImportDeclaration(statement)
+    && statement.moduleSpecifier.text === moduleName
+    && statement.importClause?.name?.text === bindingName
+    && !statement.importClause.namedBindings
+}
+
+function validSonarPlugins(expression) {
+  const plugins = unwrapExpression(expression)
+  return ts.isObjectLiteralExpression(plugins)
+    && plugins.properties.length === 1
+    && ts.isShorthandPropertyAssignment(plugins.properties[0])
+    && plugins.properties[0].name.text === "sonarjs"
 }
 
 function validEslintConfigSource(source) {
@@ -2833,12 +2856,10 @@ function validEslintConfigSource(source) {
     true,
     ts.ScriptKind.JS
   )
-  if (sourceFile.parseDiagnostics.length > 0 || sourceFile.statements.length !== 2) return false
-  const [importStatement, exportStatement] = sourceFile.statements
-  if (!ts.isImportDeclaration(importStatement)
-    || importStatement.moduleSpecifier.text !== "./.nuxt/eslint.config.mjs"
-    || importStatement.importClause?.name?.text !== "withNuxt"
-    || importStatement.importClause.namedBindings
+  if (sourceFile.parseDiagnostics.length > 0 || sourceFile.statements.length !== 3) return false
+  const [sonarImport, nuxtImport, exportStatement] = sourceFile.statements
+  if (!validDefaultImport(sonarImport, "eslint-plugin-sonarjs", "sonarjs")
+    || !validDefaultImport(nuxtImport, "./.nuxt/eslint.config.mjs", "withNuxt")
     || !ts.isExportAssignment(exportStatement)
     || exportStatement.isExportEquals) return false
   const expression = unwrapExpression(exportStatement.expression)
@@ -2855,14 +2876,16 @@ function validEslintConfigSource(source) {
     if (name === null || properties.has(name)) return false
     properties.set(name, unwrapExpression(property.initializer))
   }
-  if ([...properties.keys()].some(name => name !== "ignores" && name !== "rules")) {
+  if ([...properties.keys()].some(name => name !== "plugins" && name !== "ignores" && name !== "rules")) {
     return false
   }
+  const plugins = properties.get("plugins")
+  if (!plugins || !validSonarPlugins(plugins)) return false
   const ignores = properties.get("ignores")
   if (!ignores || !ts.isArrayLiteralExpression(ignores)
     || ignores.elements.length !== requiredEslintIgnores.size) return false
   const rules = properties.get("rules")
-  if (rules && !validEslintRules(rules)) return false
+  if (!rules || !validEslintRules(rules)) return false
   const values = ignores.elements.map(element => ts.isStringLiteralLike(element) ? element.text : null)
   return values.every(value => value !== null && requiredEslintIgnores.has(value))
     && new Set(values).size === requiredEslintIgnores.size

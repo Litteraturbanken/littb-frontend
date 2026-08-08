@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, resolve } from "node:path"
 import { afterEach, describe, expect, test } from "vitest"
@@ -34,20 +34,14 @@ const expectedIgnores = [
   "test-results*/**"
 ]
 
-const canonicalEslintConfig = `import withNuxt from "./.nuxt/eslint.config.mjs"
-
-export default withNuxt({
-  ignores: [
-    ".nuxt/**",
-    ".output/**",
-    "node_modules/**",
-    "app/lib/api/generated/**",
-    "coverage/**",
-    "playwright-report/**",
-    "test-results*/**"
-  ]
-})
-`
+const requiredSonarRuleEntries = [
+  '"sonarjs/no-all-duplicated-branches": "error"',
+  '"sonarjs/no-collection-size-mischeck": "error"',
+  '"sonarjs/no-duplicated-branches": "error"',
+  '"sonarjs/no-identical-expressions": "error"',
+  '"sonarjs/no-identical-functions": "error"',
+  '"sonarjs/no-redundant-boolean": "error"'
+]
 
 const detachedDomAllowlist = [
   "app/lib/author-profile.ts",
@@ -226,13 +220,22 @@ function writeSource(root: string, relativePath: string, source: string): void {
   writeFileSync(absolutePath, source)
 }
 
-function eslintConfig(ignores: readonly string[] = expectedIgnores, extra = ""): string {
-  if (ignores === expectedIgnores && extra === "") return canonicalEslintConfig
-  return `import withNuxt from "./.nuxt/eslint.config.mjs"
+function eslintConfig(
+  ignores: readonly string[] = expectedIgnores,
+  extraRules = "",
+  extraProperty = ""
+): string {
+  const ruleEntries = [...requiredSonarRuleEntries, extraRules].filter(Boolean)
+  return `import sonarjs from "eslint-plugin-sonarjs"
+import withNuxt from "./.nuxt/eslint.config.mjs"
 
 export default withNuxt({
+  plugins: { sonarjs },
   ignores: ${JSON.stringify(ignores)},
-  ${extra}
+  rules: {
+    ${ruleEntries.join(",\n    ")}
+  },
+  ${extraProperty}
 })
 `
 }
@@ -290,6 +293,20 @@ afterEach(() => {
 })
 
 describe("architecture policy verifier", () => {
+  test("pins the maintainability analyzer toolchain", () => {
+    const manifest = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, "../../package.json"), "utf8")
+    ) as { devDependencies: Record<string, string> }
+
+    expect(manifest.devDependencies).toMatchObject({
+      "@ast-grep/cli": "0.45.1",
+      "@vue/compiler-sfc": "3.5.39",
+      "dependency-cruiser": "18.1.1",
+      "eslint-plugin-sonarjs": "4.2.0",
+      "knip": "6.32.0"
+    })
+  })
+
   test("accepts every reviewed renderer, detached DOM, contract, and ignored-path boundary", () => {
     const root = createTree()
     for (const directory of [
@@ -367,7 +384,7 @@ describe("architecture policy verifier", () => {
       "eslint.config.mjs",
       eslintConfig(
         expectedIgnores,
-        'rules: { eqeqeq: "error", curly: 2, quotes: ["error", "double"], semi: [2, "always"] }'
+        'eqeqeq: "error", curly: 2, quotes: ["error", "double"], semi: [2, "always"]'
       )
     )
 
@@ -378,10 +395,10 @@ describe("architecture policy verifier", () => {
   })
 
   test.each([
-    ["off severity", 'rules: { "vue/no-v-html": "off" }'],
-    ["warn severity", 'rules: { eqeqeq: "warn" }'],
-    ["off option-array severity", 'rules: { quotes: [0, "double"] }'],
-    ["warn option-array severity", 'rules: { semi: [1, "always"] }']
+    ["off severity", '"vue/no-v-html": "off"'],
+    ["warn severity", 'eqeqeq: "warn"'],
+    ["off option-array severity", 'quotes: [0, "double"]'],
+    ["warn option-array severity", 'semi: [1, "always"]']
   ])("rejects an ESLint rule with %s", (_description, rules) => {
     const root = createTree()
     writeSource(root, "eslint.config.mjs", eslintConfig(expectedIgnores, rules))
@@ -400,7 +417,25 @@ describe("architecture policy verifier", () => {
     ["arbitrary property", 'name: "scope-altering-config"']
   ])("rejects the scope-altering ESLint config property %s", (_description, property) => {
     const root = createTree()
-    writeSource(root, "eslint.config.mjs", eslintConfig(expectedIgnores, property))
+    writeSource(root, "eslint.config.mjs", eslintConfig(expectedIgnores, "", property))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "eslint.config.mjs:1: ESLint configuration must equal the canonical reviewed file"
+    )
+  })
+
+  test.each([
+    ["missing SonarJS import", (source: string) => source.replace('import sonarjs from "eslint-plugin-sonarjs"\n', "")],
+    ["missing plugin registration", (source: string) => source.replace("  plugins: { sonarjs },\n", "")],
+    ["renamed plugin registration", (source: string) => source.replace("plugins: { sonarjs }", "plugins: { quality: sonarjs }")],
+    ["missing required rule", (source: string) => source.replace(`    ${requiredSonarRuleEntries[0]},\n`, "")],
+    ["downgraded required rule", (source: string) => source.replace(requiredSonarRuleEntries[0]!, requiredSonarRuleEntries[0]!.replace('"error"', '"warn"'))]
+  ])("rejects canonical ESLint protection with %s", (_description, mutate) => {
+    const root = createTree()
+    writeSource(root, "eslint.config.mjs", mutate(eslintConfig()))
 
     const result = runVerifier(root)
 
@@ -1782,7 +1817,7 @@ describe("architecture policy verifier", () => {
 
   test("rejects a rules override and any widened ESLint ignore", () => {
     const root = createTree()
-    writeSource(root, "eslint.config.mjs", eslintConfig([...expectedIgnores, "fixtures/**"], "rules: {}"))
+    writeSource(root, "eslint.config.mjs", eslintConfig([...expectedIgnores, "fixtures/**"]))
 
     const result = runVerifier(root)
 

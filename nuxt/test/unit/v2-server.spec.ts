@@ -211,7 +211,7 @@ async function workLookupRequests() {
   }
 }
 
-async function postWorkLookup(path: string, body: unknown) {
+async function postJson(path: string, body: unknown) {
   return await fetch(`${origin}${path}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -314,14 +314,6 @@ async function rawStatus(
     request.on("error", reject)
     if (encodedBody !== null) request.write(encodedBody)
     request.end()
-  })
-}
-
-async function postAuthorResolve(path: string, body: unknown) {
-  return await fetch(`${origin}${path}`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body)
   })
 }
 
@@ -2759,11 +2751,11 @@ describe("v2 fixture server operations", () => {
   })
 
   test("work lookup serves deterministic rows for exact ID and title bodies with CORS", async () => {
-    const byId = await postWorkLookup("/v2/works/lookup", {
+    const byId = await postJson("/v2/works/lookup", {
       work_id: "lb238704",
       titles: []
     })
-    const byTitles = await postWorkLookup("/v2/works/lookup", {
+    const byTitles = await postJson("/v2/works/lookup", {
       work_id: null,
       titles: ["Röda rummet", "Gösta Berlings saga"]
     })
@@ -2803,7 +2795,7 @@ describe("v2 fixture server operations", () => {
   })
 
   test("work lookup matches the lowercase compact Unicode route title", async () => {
-    const response = await postWorkLookup("/v2/works/lookup", {
+    const response = await postJson("/v2/works/lookup", {
       work_id: null,
       titles: ["rödarummet"]
     })
@@ -2815,7 +2807,7 @@ describe("v2 fixture server operations", () => {
   })
 
   test("work lookup matches the visual authority title aliases", async () => {
-    const response = await postWorkLookup("/v2/works/lookup", {
+    const response = await postJson("/v2/works/lookup", {
       work_id: null,
       titles: ["Titel", "Titel två"]
     })
@@ -2830,7 +2822,7 @@ describe("v2 fixture server operations", () => {
     const body = { work_id: null, titles: ["Röda rummet"] }
     await fetch(`${origin}/v2/stats`)
     await fetch(`${origin}/v2/quick-search?query=strindberg`)
-    await postWorkLookup("/v2/works/lookup", body)
+    await postJson("/v2/works/lookup", body)
 
     expect(await workLookupRequests()).toEqual({
       requests: [{ path: "/v2/works/lookup", body }]
@@ -2851,7 +2843,7 @@ describe("v2 fixture server operations", () => {
   test("work lookup has an independent exact 503 control", async () => {
     await fetch(`${origin}/_work_lookup_failure`, { method: "PUT" })
 
-    const failed = await postWorkLookup("/v2/works/lookup", {
+    const failed = await postJson("/v2/works/lookup", {
       work_id: "lb238704",
       titles: []
     })
@@ -2873,7 +2865,7 @@ describe("v2 fixture server operations", () => {
     expect(await (await fetch(`${origin}/_work_lookup_failure`)).json()).toEqual({
       failure: false
     })
-    expect((await postWorkLookup("/v2/works/lookup", {
+    expect((await postJson("/v2/works/lookup", {
       work_id: "lb238704",
       titles: []
     })).status).toBe(200)
@@ -2884,7 +2876,7 @@ describe("v2 fixture server operations", () => {
       body: JSON.stringify({ resource: "works" })
     })
     expect((await fetch(`${origin}/v2/works/popular`)).status).toBe(503)
-    expect((await postWorkLookup("/v2/works/lookup", {
+    expect((await postJson("/v2/works/lookup", {
       work_id: "lb238704",
       titles: []
     })).status).toBe(200)
@@ -2904,10 +2896,10 @@ describe("v2 fixture server operations", () => {
     })
 
     const completionOrder: string[] = []
-    const slow = postWorkLookup("/v2/works/lookup", slowBody).then(() => {
+    const slow = postJson("/v2/works/lookup", slowBody).then(() => {
       completionOrder.push("slow")
     })
-    const fast = postWorkLookup("/v2/works/lookup", fastBody).then(() => {
+    const fast = postJson("/v2/works/lookup", fastBody).then(() => {
       completionOrder.push("fast")
     })
     await Promise.all([slow, fast])
@@ -2930,7 +2922,7 @@ describe("v2 fixture server operations", () => {
   })
 
   test("work lookup exposes a separately addressable duplicate representation", async () => {
-    const response = await postWorkLookup("/v2/works/lookup", {
+    const response = await postJson("/v2/works/lookup", {
       work_id: "lb-duplicate",
       titles: []
     })
@@ -2974,8 +2966,8 @@ describe("v2 fixture server operations", () => {
       ]
     }
 
-    const publicResponse = await postAuthorResolve("/v2/authors/resolve", body)
-    const privateResponse = await postAuthorResolve("/private-v2/authors/resolve", body)
+    const publicResponse = await postJson("/v2/authors/resolve", body)
+    const privateResponse = await postJson("/private-v2/authors/resolve", body)
 
     expect(publicResponse.status).toBe(200)
     expect(await publicResponse.json()).toEqual(expected)
@@ -2992,8 +2984,8 @@ describe("v2 fixture server operations", () => {
   test("author resolve failure and ledger resets remain isolated from other fixture state", async () => {
     const lookupBody = { work_id: "lb238704", titles: [] }
     await fetch(`${origin}/v2/stats`)
-    await postWorkLookup("/v2/works/lookup", lookupBody)
-    await postAuthorResolve("/v2/authors/resolve", { author_ids: ["StrindbergA"] })
+    await postJson("/v2/works/lookup", lookupBody)
+    await postJson("/v2/authors/resolve", { author_ids: ["StrindbergA"] })
 
     await fetch(`${origin}/_author_resolve_requests`, { method: "DELETE" })
     expect(await authorResolveRequests()).toEqual({ requests: [] })
@@ -3009,7 +3001,7 @@ describe("v2 fixture server operations", () => {
       failure: true
     })
     const failedBody = { author_ids: ["LagerlofS"] }
-    const failed = await postAuthorResolve("/private-v2/authors/resolve", failedBody)
+    const failed = await postJson("/private-v2/authors/resolve", failedBody)
     expect(failed.status).toBe(503)
     expect(await failed.json()).toEqual({
       error: {
@@ -3026,7 +3018,7 @@ describe("v2 fixture server operations", () => {
     expect(await (await fetch(`${origin}/_author_resolve_failure`)).json()).toEqual({
       failure: false
     })
-    expect((await postAuthorResolve(
+    expect((await postJson(
       "/v2/authors/resolve",
       { author_ids: ["LagerlofS"] }
     )).status).toBe(200)
@@ -3046,10 +3038,10 @@ describe("v2 fixture server operations", () => {
     })
 
     const completionOrder: string[] = []
-    const slow = postAuthorResolve("/v2/authors/resolve", slowBody).then(() => {
+    const slow = postJson("/v2/authors/resolve", slowBody).then(() => {
       completionOrder.push("slow")
     })
-    const fast = postAuthorResolve("/v2/authors/resolve", fastBody).then(() => {
+    const fast = postJson("/v2/authors/resolve", fastBody).then(() => {
       completionOrder.push("fast")
     })
     await Promise.all([slow, fast])
@@ -3088,7 +3080,7 @@ describe("v2 fixture server operations", () => {
     ]
 
     for (const body of invalidBodies) {
-      const response = await postAuthorResolve("/v2/authors/resolve", body)
+      const response = await postJson("/v2/authors/resolve", body)
       expect(response.status).toBe(422)
       expect(await response.json()).toEqual({
         error: {
@@ -3119,7 +3111,7 @@ describe("v2 fixture server operations", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(contactBody)
       }),
-      await postWorkLookup("/private-v2/works/lookup", lookupBody)
+      await postJson("/private-v2/works/lookup", lookupBody)
     ]
 
     expect(responses.map(response => response.status)).toEqual([

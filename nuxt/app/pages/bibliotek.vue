@@ -441,23 +441,7 @@ async function fetchLibraryPageData(
         const body = buildLibrarySearchRequest(librarySearchState(state, reverse, authorLimit))
         const { data } = await libraryClient.POST("/library/search", { body, signal })
         if (!data || data.mode !== state.mode) return emptyPageData(state.mode, true)
-        const view = toLibrarySearchView(data)
-        switch (view.mode) {
-            case "all":
-                return { mode: view.mode, response: view.response }
-            case "authors":
-                return { mode: view.mode, response: view.response }
-            case "works":
-                return { mode: view.mode, response: view.response }
-            case "parts":
-                return { mode: view.mode, response: view.response }
-            case "latest":
-                return { mode: view.mode, response: view.response }
-            case "epub":
-                return { mode: view.mode, response: view.response }
-            case "pdf":
-                return { mode: view.mode, response: view.response }
-        }
+        return toLibrarySearchView(data)
     } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") throw error
         return emptyPageData(state.mode, true)
