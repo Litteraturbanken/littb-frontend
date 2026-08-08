@@ -2243,6 +2243,21 @@ test("faksimil size replacement changes exact sources and stops at both edges", 
   expect(problems).toEqual([])
 })
 
+test("faksimil size replacement preserves raw query owners and its fragment", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  const rawQuery = "?bare&plus=a+b&space=a%20b&storlek=3" +
+    "&repeat=%2f&repeat=%2F#scan%20nine"
+  await page.goto(`${facsimilePath}${rawQuery}`, { waitUntil: "networkidle" })
+
+  await page.locator("#toolkit .reader-facsimile-size-controls")
+    .getByRole("button", { name: "Större" }).click()
+
+  await expect.poll(() => page.evaluate(() => location.pathname + location.search + location.hash))
+    .toBe(`${storedFacsimilePath}?bare&plus=a+b&space=a%20b&storlek=4` +
+      "&repeat=%2f&repeat=%2F#scan%20nine")
+  expect(problems).toEqual([])
+})
+
 test("faksimil rotation persists while a size change clears only the image error", async ({
   page
 }, testInfo) => {

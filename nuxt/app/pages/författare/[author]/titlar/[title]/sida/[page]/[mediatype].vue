@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LocationQueryRaw, RouteLocationRaw } from "vue-router"
+import type { RouteLocationRaw } from "vue-router"
 
 import type {
   ReaderFacsimileSize,
@@ -51,6 +51,7 @@ import {
   readerContentsNeutralFullPath,
   readerDialogNeutralFullPath,
   readerFullPathWithFragment,
+  readerFullPathWithQueryValue,
   readerHitHref,
   readerMediaFullPath,
   readerPartAuthorKey,
@@ -1692,23 +1693,11 @@ function selectFacsimileSize(size: ReaderFacsimileSize): void {
     !currentReader.sources.some(source => source.size === size)
   ) return
 
-  const query = Object.fromEntries(
-    Object.entries(preservedQuery()).map(([key, value]) => [
-      key,
-      Array.isArray(value) ? [...value] : value
-    ])
-  ) as LocationQueryRaw
-  query.storlek = String(size)
-  void router.replace({
-    name: route.name as string,
-    params: {
-      author: authorParam.value,
-      title: titleParam.value,
-      page: pageParam.value,
-      mediatype: mediaTypeParam.value
-    },
-    query
-  })
+  void navigateRawFullPath(
+    readerFullPathWithQueryValue(rawFullPath.value, "storlek", String(size)),
+    true,
+    rawFullPath.value
+  )
 }
 
 function activateFocus(): void {

@@ -7,6 +7,7 @@ import {
   readerContentsNeutralFullPath,
   readerDialogNeutralFullPath,
   readerFullPathWithFragment,
+  readerFullPathWithQueryValue,
   readerHitHref,
   readerPartAuthorKey,
   readerPageFullPath,
@@ -116,6 +117,18 @@ describe("Reader contents raw-query ownership", () => {
     expect(readerFullPathWithFragment(raw, normalizedClient.split("#")[0]!)).toBe(
       "/reader?bare&space=a%20b&repeat=%2f&repeat=%2F"
     )
+  })
+
+  test("replaces one query owner without normalizing unrelated bytes or its fragment", () => {
+    const raw = "/reader?bare&plus=a+b&space=a%20b&storlek=3" +
+      "&repeat=%2f&%73torlek=2&repeat=%2F#scan%20nine"
+
+    expect(readerFullPathWithQueryValue(raw, "storlek", "4")).toBe(
+      "/reader?bare&plus=a+b&space=a%20b&storlek=4" +
+      "&repeat=%2f&repeat=%2F#scan%20nine"
+    )
+    expect(readerFullPathWithQueryValue("/reader#scan", "storlek", "4"))
+      .toBe("/reader?storlek=4#scan")
   })
 
   test("gives repeated part authors occurrence-stable unique keys", () => {

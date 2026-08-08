@@ -28,14 +28,19 @@ const contentsKey = new Set<ReaderDialogKey>(["innehall"])
 const sourceInfoKey = new Set<ReaderDialogKey>(["om-boken"])
 const readerDialogKeys = new Set<ReaderDialogKey>(["innehall", "om-boken"])
 
-function isDialogSegment(segment: string, keys: ReadonlySet<ReaderDialogKey>): boolean {
+function decodedQuerySegmentKey(segment: string): string | null {
   const separator = segment.indexOf("=")
   const rawKey = separator < 0 ? segment : segment.slice(0, separator)
   try {
-    return keys.has(decodeURIComponent(rawKey) as ReaderDialogKey)
+    return decodeURIComponent(rawKey.replace(/\+/gu, " "))
   } catch {
-    return false
+    return null
   }
+}
+
+function isDialogSegment(segment: string, keys: ReadonlySet<ReaderDialogKey>): boolean {
+  const key = decodedQuerySegmentKey(segment)
+  return key !== null && keys.has(key as ReaderDialogKey)
 }
 
 function withoutReaderDialogKeys(
@@ -77,6 +82,26 @@ export function readerFullPathWithFragment(
   const { beforeFragment } = splitFragment(rawFullPath)
   const { fragment } = splitFragment(fragmentSource)
   return `${beforeFragment}${fragment}`
+}
+
+export function readerFullPathWithQueryValue(
+  fullPath: string,
+  key: string,
+  value: string
+): string {
+  const { beforeFragment, fragment } = splitFragment(fullPath)
+  const queryIndex = beforeFragment.indexOf("?")
+  const path = queryIndex < 0 ? beforeFragment : beforeFragment.slice(0, queryIndex)
+  const rawQuery = queryIndex < 0 ? "" : beforeFragment.slice(queryIndex + 1)
+  let replaced = false
+  const segments = (rawQuery ? rawQuery.split("&") : []).flatMap(segment => {
+    if (decodedQuerySegmentKey(segment) !== key) return [segment]
+    if (replaced) return []
+    replaced = true
+    return [`${encodeURIComponent(key)}=${encodeURIComponent(value)}`]
+  })
+  if (!replaced) segments.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+  return `${path}?${segments.join("&")}${fragment}`
 }
 
 export function readerPartAuthorKey(authorId: string, index: number): string {
