@@ -840,6 +840,31 @@ test("source information shows only its own loading state", async ({ page, reque
   expect(problems).toEqual([])
 })
 
+test("closing source information aborts its obsolete client request", async ({ page, request }) => {
+  const problems = captureBrowserProblems(page)
+  await request.put(`${fixture}/_source_info_delays`, {
+    data: { "SöderbergH|DoktorGlas": 2_000 }
+  })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+
+  const sourceInfoPath = "/api/reader/source-info/S%C3%B6derbergH/DoktorGlas"
+  const sourceInfoStarted = page.waitForRequest(browserRequest =>
+    new URL(browserRequest.url()).pathname === sourceInfoPath
+  )
+  const sourceInfoAborted = page.waitForEvent("requestfailed", browserRequest =>
+    new URL(browserRequest.url()).pathname === sourceInfoPath
+  )
+  await page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Mer om boken" }).click()
+  await sourceInfoStarted
+
+  await navigateClient(page, readerEncodedPath)
+
+  await expect(page.getByRole("dialog", { name: "Om boken" })).toHaveCount(0)
+  expect((await sourceInfoAborted).failure()?.errorText).toMatch(/abort/iu)
+  expect(problems).toEqual([])
+})
+
 test("external query removal closes source information without refetching Reader state", async ({
   page,
   request

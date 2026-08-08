@@ -5243,6 +5243,16 @@ const server = createServer(async (request, response) => {
         items: []
       })
     }
+    if (query.query === "incomplete-window") {
+      return sendJson(response, 200, {
+        query: query.query,
+        media_type: query.mediaType,
+        offset: query.offset,
+        limit: query.limit,
+        total_hits: query.offset + 2,
+        items: []
+      })
+    }
     return sendJson(response, 200, readerSearchHitResponse(
       readerHitWork.workId,
       query.query,

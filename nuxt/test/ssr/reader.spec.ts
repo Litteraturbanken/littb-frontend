@@ -1194,6 +1194,19 @@ test("a malformed hit response is contained locally", async ({ request }) => {
   ])
 })
 
+test("an incomplete hit window is contained locally", async ({ request }) => {
+  const response = await request.get(`${readerPath}?q=incomplete-window&hit=1`)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expect(html).toContain("DOKTOR")
+  expect(html).toContain("Sökträffen kunde inte hämtas.")
+  expect(html).not.toContain("Ingen sådan sökträff.")
+  expect(html).not.toContain("markee")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
+})
+
 for (const mismatch of [
   {
     label: "etext page-name-scoped word id",

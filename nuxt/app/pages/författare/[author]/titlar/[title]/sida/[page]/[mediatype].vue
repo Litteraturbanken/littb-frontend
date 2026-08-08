@@ -449,9 +449,10 @@ function isExpectedHitResponse(
     && value.media_type === mediaType
     && value.offset === offset
     && value.limit === limit
-  if (!metadataMatches || !isSafeInteger(value.total_hits) || value.items.length > limit) return false
+  if (!metadataMatches || !isSafeInteger(value.total_hits) || value.total_hits < 0 ||
+    value.items.length > limit) return false
   const totalHits = value.total_hits
-  return value.items.every((item, position) => isExpectedHitItem(
+  const itemsAreExpected = value.items.every((item, position) => isExpectedHitItem(
     item,
     position,
     offset,
@@ -459,6 +460,9 @@ function isExpectedHitResponse(
     workId,
     mediaType
   ))
+  const requestedHitIsPresent = state.hit >= totalHits ||
+    value.items.some(item => isRecord(item) && item.index === state.hit)
+  return itemsAreExpected && requestedHitIsPresent
 }
 
 function routeParam(name: "author" | "title" | "page" | "mediatype"): string {
@@ -553,10 +557,15 @@ type CurrentReaderSourceInfo =
   }
   | { status: "error", identity: string }
 
+let sourceInfoController: AbortController | null = null
 const sourceInfoFetch = await useAsyncData<CurrentReaderSourceInfo>(
   computed(() => `reader-source-info:${sourceInfoRequestIdentity.value}`),
-  async () => {
+  async (_nuxtApp, { signal }) => {
+    sourceInfoController?.abort()
     const identity = sourceInfoRequestIdentity.value
+    const controller = new AbortController()
+    sourceInfoController = controller
+    const requestSignal = AbortSignal.any([signal, controller.signal])
     const sourceInfoApiUrl = [
       "/api/reader/source-info",
       encodeURIComponent(authorParam.value),
@@ -565,7 +574,8 @@ const sourceInfoFetch = await useAsyncData<CurrentReaderSourceInfo>(
     try {
       const sourceInfo = await requestFetch<ReaderSourceInfo>(sourceInfoApiUrl, {
         query: { media_type: mediaTypeParam.value },
-        retry: 0
+        retry: 0,
+        signal: requestSignal
       })
       let similarWorks: SimilarWork[] = []
       if (sourceInfo.mediaType === "etext" || sourceInfo.mediaType === "faksimil") {
@@ -578,7 +588,8 @@ const sourceInfoFetch = await useAsyncData<CurrentReaderSourceInfo>(
               path: { work_id: sourceInfo.workId },
               query: { media_type: sourceInfo.mediaType }
             },
-            redirect: "manual"
+            redirect: "manual",
+            signal: requestSignal
           })
           if (!result.error && isSimilarWorksResponse(result.data)) {
             similarWorks = result.data.items
@@ -590,6 +601,8 @@ const sourceInfoFetch = await useAsyncData<CurrentReaderSourceInfo>(
       return { status: "success" as const, identity, sourceInfo, similarWorks }
     } catch {
       return { status: "error" as const, identity }
+    } finally {
+      if (sourceInfoController === controller) sourceInfoController = null
     }
   },
   { immediate: initialSourceInfoRequested }
@@ -622,7 +635,11 @@ const sourceInfoLoading = computed(
 )
 
 watch(sourceInfoRequested, open => {
-  if (!open || (import.meta.client && nuxtApp.isHydrating)) return
+  if (!open) {
+    sourceInfoController?.abort()
+    return
+  }
+  if (import.meta.client && nuxtApp.isHydrating) return
   const current = sourceInfoFetch.data.value
   if (
     !current
@@ -632,6 +649,8 @@ watch(sourceInfoRequested, open => {
     void sourceInfoFetch.execute()
   }
 })
+watch(sourceInfoRequestIdentity, () => sourceInfoController?.abort())
+onBeforeUnmount(() => sourceInfoController?.abort())
 
 const currentReader = computed(() => {
   const current = data.value
