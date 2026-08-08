@@ -298,11 +298,11 @@
       "identity": "cognitive-complexity>12"
     },
     {
-      "fingerprint": "e14e7f0a62ccef31b9c13521de761470d2684ddc356756c72930abc8cef8f992",
+      "fingerprint": "f0af5995461cefb8410fb51dc7d40c9fa55098a73d7a782f70cd69cc9a04542b",
       "tool": "sonarjs",
       "rule": "cognitive-complexity",
       "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
-      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::callback::useHead.callback[1]#1",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::callback::useHead.callback[1]@55120aa34706#1",
       "identity": "cognitive-complexity>12"
     },
     {
@@ -330,11 +330,11 @@
       "identity": "cognitive-complexity>12"
     },
     {
-      "fingerprint": "3db1319b4e5921ede3542285b511586d86d981879981bfab5c89dc737e09be15",
+      "fingerprint": "ece7b1ddad727ca4c2bc19fed7aad24977bdbddec42afceb42cda36c561dcc4f",
       "tool": "sonarjs",
       "rule": "cognitive-complexity",
       "path": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts",
-      "unitId": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts::callback::defineEventHandler.callback[1]#1",
+      "unitId": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts::callback::defineEventHandler.callback[1]@8b1aeb7ee14b#1",
       "identity": "cognitive-complexity>12"
     },
     {
@@ -714,11 +714,11 @@
       "identity": "cyclomatic-complexity>12"
     },
     {
-      "fingerprint": "b5644f8c417255dfe9d5ca98dbc69dd305da06cd1f29476c41dec042b588c897",
+      "fingerprint": "5189eb883a5f66907caeb530ac76566f091566c2c61c9de086976aaa52d33185",
       "tool": "sonarjs",
       "rule": "cyclomatic-complexity",
       "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
-      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::callback::useHead.callback[1]#1",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::callback::useHead.callback[1]@55120aa34706#1",
       "identity": "cyclomatic-complexity>12"
     },
     {
@@ -794,19 +794,19 @@
       "identity": "cyclomatic-complexity>12"
     },
     {
-      "fingerprint": "71512bf7d36b11f02927547ec6dd82b340b185ce5efd23acc14c3fd27f9ed69e",
+      "fingerprint": "159ac6b04cb904652e923ff9306a38a29f9eacb2dd2958e2bbf3382aa6883790",
       "tool": "sonarjs",
       "rule": "cyclomatic-complexity",
       "path": "server/api/dramawebben/documents/[document].get.ts",
-      "unitId": "server/api/dramawebben/documents/[document].get.ts::callback::defineEventHandler.callback[1]#1",
+      "unitId": "server/api/dramawebben/documents/[document].get.ts::callback::defineEventHandler.callback[1]@68b7f05f711c#1",
       "identity": "cyclomatic-complexity>12"
     },
     {
-      "fingerprint": "8901db0fd3b143bbe6e1720e0aa9adb742f10eff1ab7ceec70cf354b791abf35",
+      "fingerprint": "9c408d190f2dba5789b86f13ed1737f180d0a3b4a06a4293b01bd8ecc8001c27",
       "tool": "sonarjs",
       "rule": "cyclomatic-complexity",
       "path": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts",
-      "unitId": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts::callback::defineEventHandler.callback[1]#1",
+      "unitId": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts::callback::defineEventHandler.callback[1]@8b1aeb7ee14b#1",
       "identity": "cyclomatic-complexity>12"
     },
     {
@@ -818,11 +818,11 @@
       "identity": "cyclomatic-complexity>12"
     },
     {
-      "fingerprint": "7b75d17c605b58c9d74ad61d0e6c61d44c78ac88f59e6ffacb881c348a0ad5a9",
+      "fingerprint": "e74c8704e56f2b94ba206459d113f866f01c3171d75e81c15f380e0389ee1994",
       "tool": "sonarjs",
       "rule": "cyclomatic-complexity",
       "path": "server/plugins/response-compression.ts",
-      "unitId": "server/plugins/response-compression.ts::callback::nitroApp.hooks.hook.callback[2]#1",
+      "unitId": "server/plugins/response-compression.ts::callback::nitroApp.hooks.hook.callback[2]@10cc2176b123#1",
       "identity": "cyclomatic-complexity>12"
     },
     {
@@ -994,11 +994,11 @@
       "identity": "cyclomatic-complexity>12"
     },
     {
-      "fingerprint": "c2d5f9ae506ae4a40fdb78c007e09a694ad04b86c6df45f2c9898c2efdf79143",
+      "fingerprint": "20003ccd5f7d4d317a7dc8076f1e6eff9117d4e259b5eac0e776c8f79c5dc256",
       "tool": "sonarjs",
       "rule": "max-lines-per-function",
       "path": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts",
-      "unitId": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts::callback::defineEventHandler.callback[1]#1",
+      "unitId": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts::callback::defineEventHandler.callback[1]@8b1aeb7ee14b#1",
       "identity": "max-lines-per-function>80"
     },
     {

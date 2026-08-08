@@ -1,7 +1,10 @@
+import { createHash } from "node:crypto"
 import { basename, extname } from "node:path"
 
 import { parse as parseVueSfc } from "@vue/compiler-sfc"
 import ts from "typescript"
+
+const canonicalPrinter = ts.createPrinter({ removeComments: true })
 
 function scriptKind(path, lang = "") {
   const suffix = lang || extname(path).slice(1)
@@ -89,7 +92,13 @@ function callbackIdentity(node, sourceFile) {
   const argument = call.arguments.indexOf(current)
   if (argument === -1) return null
   const callee = call.expression.getText(sourceFile).replaceAll(/\s+/gu, "")
-  return callee ? { kind: "callback", name: `${callee}.callback[${argument + 1}]` } : null
+  if (!callee) return null
+  const canonicalCall = canonicalPrinter.printNode(ts.EmitHint.Unspecified, call, sourceFile)
+  const structuralHash = createHash("sha256").update(canonicalCall).digest("hex").slice(0, 12)
+  return {
+    kind: "callback",
+    name: `${callee}.callback[${argument + 1}]@${structuralHash}`
+  }
 }
 
 function qualifiedIdentity(node, sourceFile, callbackCounts) {

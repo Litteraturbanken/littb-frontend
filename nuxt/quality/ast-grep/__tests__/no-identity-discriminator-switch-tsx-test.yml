@@ -1,0 +1,24 @@
+id: no-identity-discriminator-switch-tsx
+valid:
+  - |
+    function View() {
+      const content = <div />
+      switch (view.mode) {
+        case "authors":
+          return { mode: view.mode, response: transformAuthors(view.response), content }
+        case "works":
+          return { mode: view.mode, response: transformWorks(view.response), content }
+      }
+    }
+invalid:
+  - |
+    function View() {
+      const content = <div />
+      switch (view.mode) {
+        case "all":
+          return { mode: view.mode, response: view.response }
+        case "authors":
+          return { mode: view.mode, response: view.response }
+      }
+      return content
+    }

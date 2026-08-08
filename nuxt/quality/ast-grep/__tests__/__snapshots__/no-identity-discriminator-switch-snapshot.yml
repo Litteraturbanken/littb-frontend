@@ -1,0 +1,66 @@
+id: no-identity-discriminator-switch
+snapshots:
+  ? |
+    switch (view.mode) {
+      case "all":
+        return { mode: view.mode, response: view.response }
+      case "authors":
+        return { mode: view.mode, response: view.response }
+      case "works":
+        return { mode: view.mode, response: view.response }
+    }
+  : labels:
+    - source: |-
+        case "authors":
+            return { mode: view.mode, response: view.response }
+      style: primary
+      start: 93
+      end: 164
+    - source: |-
+        case "all":
+            return { mode: view.mode, response: view.response }
+      style: secondary
+      start: 23
+      end: 90
+    - source: |-
+        switch (view.mode) {
+          case "all":
+            return { mode: view.mode, response: view.response }
+          case "authors":
+            return { mode: view.mode, response: view.response }
+          case "works":
+            return { mode: view.mode, response: view.response }
+        }
+      style: secondary
+      start: 0
+      end: 238
+  ? |
+    switch (view.mode) {
+      case "all":
+        return { mode: view.mode, response: view.response }
+      case "authors":
+        return { mode: view.mode, response: view.response }
+    }
+  : labels:
+    - source: |-
+        case "authors":
+            return { mode: view.mode, response: view.response }
+      style: primary
+      start: 93
+      end: 164
+    - source: |-
+        case "all":
+            return { mode: view.mode, response: view.response }
+      style: secondary
+      start: 23
+      end: 90
+    - source: |-
+        switch (view.mode) {
+          case "all":
+            return { mode: view.mode, response: view.response }
+          case "authors":
+            return { mode: view.mode, response: view.response }
+        }
+      style: secondary
+      start: 0
+      end: 166

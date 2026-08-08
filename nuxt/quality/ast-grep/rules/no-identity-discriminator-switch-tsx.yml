@@ -1,13 +1,12 @@
-id: no-identity-discriminator-switch
-language: TypeScript
+id: no-identity-discriminator-switch-tsx
+language: Tsx
 severity: error
 message: Discriminator branches must perform a real transformation.
 note: Return the already-derived view directly when every branch reconstructs the same value.
 files:
-  - "app/**/*.{cjs,cts,js,mjs,mts,ts}"
-  - "app/**/*.vue"
-  - "server/**/*.{cjs,cts,js,mjs,mts,ts}"
-  - "shared/**/*.{cjs,cts,js,mjs,mts,ts}"
+  - "app/**/*.{jsx,tsx}"
+  - "server/**/*.{jsx,tsx}"
+  - "shared/**/*.{jsx,tsx}"
 ignores:
   - "app/lib/api/generated/**"
 rule:

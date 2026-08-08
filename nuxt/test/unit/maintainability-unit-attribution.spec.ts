@@ -203,31 +203,67 @@ describe("maintainability source-unit attribution", () => {
       column: 15
     })
 
-    expect(first).toMatchObject({
-      id: "app/lib/watchers.ts::callback::watch.callback[2]#1",
-      kind: "callback"
-    })
-    expect(second).toMatchObject({
-      id: "app/lib/watchers.ts::callback::watch.callback[2]#2",
-      kind: "callback"
-    })
+    expect(first.kind).toBe("callback")
+    expect(first.id).toMatch(/^app\/lib\/watchers\.ts::callback::watch\.callback\[2\]@[a-f0-9]{12}#1$/u)
+    expect(second.kind).toBe("callback")
+    expect(second.id).toMatch(/^app\/lib\/watchers\.ts::callback::watch\.callback\[2\]@[a-f0-9]{12}#1$/u)
     expect(first.id).not.toBe(second.id)
   })
 
   test("uses columns to distinguish callbacks that share one line", () => {
     const source = "run(() => first()); run(() => second())"
 
-    expect(attributeFindingToUnit({
+    const first = attributeFindingToUnit({
       source,
       relativePath: "app/lib/inline.ts",
       line: 1,
       column: 10
-    }).id).toBe("app/lib/inline.ts::callback::run.callback[1]#1")
-    expect(attributeFindingToUnit({
+    })
+    const second = attributeFindingToUnit({
       source,
       relativePath: "app/lib/inline.ts",
       line: 1,
       column: 30
-    }).id).toBe("app/lib/inline.ts::callback::run.callback[1]#2")
+    })
+
+    expect(first.id).toMatch(/^app\/lib\/inline\.ts::callback::run\.callback\[1\]@[a-f0-9]{12}#1$/u)
+    expect(second.id).toMatch(/^app\/lib\/inline\.ts::callback::run\.callback\[1\]@[a-f0-9]{12}#1$/u)
+    expect(first.id).not.toBe(second.id)
+  })
+
+  test("preserves a callback identity when an unrelated same-callee callback is inserted earlier", () => {
+    const original = "watch(first, () => first.value)"
+    const inserted = [
+      "watch(unrelated, () => unrelated.value)",
+      original
+    ].join("\n")
+
+    const [originalUnit] = listSourceUnits({
+      source: original,
+      relativePath: "app/lib/stable-watchers.ts"
+    })
+    const [, movedUnit] = listSourceUnits({
+      source: inserted,
+      relativePath: "app/lib/stable-watchers.ts"
+    })
+
+    expect(movedUnit!.id).toBe(originalUnit!.id)
+  })
+
+  test("does not let comments churn a callback's structural identity", () => {
+    const [plainUnit] = listSourceUnits({
+      source: "watch(first, () => first.value)",
+      relativePath: "app/lib/commented-watchers.ts"
+    })
+    const [commentedUnit] = listSourceUnits({
+      source: [
+        "watch(first,",
+        "  // why this watch exists",
+        "  () => first.value)"
+      ].join("\n"),
+      relativePath: "app/lib/commented-watchers.ts"
+    })
+
+    expect(commentedUnit!.id).toBe(plainUnit!.id)
   })
 })

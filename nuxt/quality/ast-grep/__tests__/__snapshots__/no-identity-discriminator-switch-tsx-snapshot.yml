@@ -1,0 +1,36 @@
+id: no-identity-discriminator-switch-tsx
+snapshots:
+  ? |
+    function View() {
+      const content = <div />
+      switch (view.mode) {
+        case "all":
+          return { mode: view.mode, response: view.response }
+        case "authors":
+          return { mode: view.mode, response: view.response }
+      }
+      return content
+    }
+  : labels:
+    - source: |-
+        case "authors":
+              return { mode: view.mode, response: view.response }
+      style: primary
+      start: 145
+      end: 218
+    - source: |-
+        case "all":
+              return { mode: view.mode, response: view.response }
+      style: secondary
+      start: 71
+      end: 140
+    - source: |-
+        switch (view.mode) {
+            case "all":
+              return { mode: view.mode, response: view.response }
+            case "authors":
+              return { mode: view.mode, response: view.response }
+          }
+      style: secondary
+      start: 46
+      end: 222
