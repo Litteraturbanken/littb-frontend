@@ -125,10 +125,11 @@ function sourceLocation(sourceFile, position, offset) {
   return { line: location.line + 1 + offset, column: location.character + 1 }
 }
 
-function unitWithColumns(unit, startColumn, endColumn) {
+function unitWithColumns(unit, startColumn, endColumn, canonicalSource = "") {
   Object.defineProperties(unit, {
     startColumn: { value: startColumn },
-    endColumn: { value: endColumn }
+    endColumn: { value: endColumn },
+    canonicalSource: { value: canonicalSource }
   })
   return unit
 }
@@ -159,7 +160,11 @@ function parseScriptUnits({ source, relativePath, offset, lang }) {
         path: relativePath,
         startLine: start.line,
         endLine: end.line
-      }, start.column, end.column))
+      }, start.column, end.column, canonicalPrinter.printNode(
+        ts.EmitHint.Unspecified,
+        node,
+        sourceFile
+      ).replaceAll("\r\n", "\n")))
     }
     ts.forEachChild(node, visit)
   }
@@ -182,12 +187,13 @@ function vueScriptBlocks(source, relativePath) {
     }))
 }
 
-export function listSourceUnits({ source, relativePath }) {
+export function listSourceUnits({ source, relativePath, includeFallback = false }) {
   const blocks = relativePath.endsWith(".vue")
     ? vueScriptBlocks(source, relativePath)
     : [{ source, relativePath, offset: 0, lang: "" }]
-  return blocks
-    .flatMap(parseScriptUnits)
+  const units = blocks.flatMap(parseScriptUnits)
+  if (includeFallback) units.push(fallbackUnit(source, relativePath))
+  return units
     .sort((left, right) => left.startLine - right.startLine
       || left.endLine - right.endLine
       || left.kind.localeCompare(right.kind, "en")
@@ -198,23 +204,23 @@ function fallbackUnit(source, relativePath) {
   const lines = source.split("\n").length
   if (relativePath.endsWith(".vue")) {
     const name = basename(relativePath, ".vue")
-    return {
+    return unitWithColumns({
       id: `${relativePath}::component::${name}`,
       kind: "component",
       name,
       path: relativePath,
       startLine: 1,
       endLine: lines
-    }
+    }, 1, Math.max(1, source.split("\n").at(-1)?.length ?? 1), source.replaceAll("\r\n", "\n"))
   }
-  return {
+  return unitWithColumns({
     id: `${relativePath}::module::${relativePath}`,
     kind: "module",
     name: relativePath,
     path: relativePath,
     startLine: 1,
     endLine: lines
-  }
+  }, 1, Math.max(1, source.split("\n").at(-1)?.length ?? 1), source.replaceAll("\r\n", "\n"))
 }
 
 export function attributeFindingToUnit({ source, relativePath, line, column = 1 }) {

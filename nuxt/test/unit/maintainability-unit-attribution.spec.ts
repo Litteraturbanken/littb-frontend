@@ -6,6 +6,34 @@ import {
 } from "../../scripts/maintainability/unit-attribution.mjs"
 
 describe("maintainability source-unit attribution", () => {
+  test("optionally enumerates a Vue component fallback without changing the default", () => {
+    const source = [
+      "<template><main /></template>",
+      "<script setup lang=\"ts\">",
+      "function loadBooks() { return [] }",
+      "</script>"
+    ].join("\n")
+
+    expect(listSourceUnits({ source, relativePath: "app/pages/Library.vue" }))
+      .toHaveLength(1)
+    expect(listSourceUnits({
+      source,
+      relativePath: "app/pages/Library.vue",
+      includeFallback: true
+    })).toEqual([
+      expect.objectContaining({
+        id: "app/pages/Library.vue::component::Library",
+        kind: "component",
+        name: "Library"
+      }),
+      expect.objectContaining({
+        id: "app/pages/Library.vue::function::loadBooks",
+        kind: "function",
+        name: "loadBooks"
+      })
+    ])
+  })
+
   test("attributes nested TypeScript findings to the smallest named unit", () => {
     const source = [
       "export function loadBooks() {",
