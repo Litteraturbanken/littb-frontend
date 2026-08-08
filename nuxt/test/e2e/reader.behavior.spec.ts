@@ -2678,6 +2678,62 @@ test("validates empty work searches and closes active hits without touching raw 
   expect(problems).toEqual([])
 })
 
+test("canonical search options reject a mismatched legacy marker", async ({ page }) => {
+  const legacyMarker = [
+    "traff=w2_1",
+    "traffslut=w2_1",
+    "s_query=doktor%20glas",
+    "s_lbworkid=lb-reader-doktor-glas",
+    "s_mediatype=etext",
+    "s_word_form_only=true",
+    "s_include_modernized=true",
+    "hit_index=1"
+  ].join("&")
+  await page.goto(
+    `${readerPath}?q=doktor%20glas&hit=1&lemma=1&${legacyMarker}`,
+    { waitUntil: "networkidle" }
+  )
+
+  await expect(page.locator("#w2_1.markee")).toHaveCount(1)
+  await expect(page.locator("#w2_2.markee.flip")).toHaveCount(1)
+  await expect(page.locator(".reader_main .markee")).toHaveCount(2)
+})
+
+test("closing mixed search state removes legacy markers but preserves its return owner", async ({
+  page
+}) => {
+  const origin = "/s%C3%B6k?fras=doktor"
+  const legacyMarker = [
+    "traff=w2_1",
+    "traffslut=w2_1",
+    "s_query=doktor%20glas",
+    "s_lbworkid=lb-reader-doktor-glas",
+    "s_mediatype=etext",
+    "s_word_form_only=true",
+    "s_include_modernized=true",
+    "s_prefix=true",
+    "s_suffix=true",
+    "hit_index=1"
+  ].join("&")
+  await page.goto(
+    `${readerPath}?bare&q=doktor%20glas&hit=1&${legacyMarker}`
+    + `&s_return=${encodeURIComponent(origin)}`,
+    { waitUntil: "networkidle" }
+  )
+
+  await page.locator("#search_nav").getByRole("link", {
+    name: "Stäng träffvisningen"
+  }).click()
+
+  await expect(page.locator("#search_nav")).toHaveCount(0)
+  await expect(page.locator(".reader_main .markee")).toHaveCount(0)
+  await expect.poll(() => page.evaluate(() => ({
+    bare: location.search.includes("?bare&") || location.search.endsWith("?bare"),
+    keys: [...new URLSearchParams(location.search).keys()],
+    searchReturn: new URLSearchParams(location.search).get("s_return")
+  }))).toEqual({ bare: true, keys: ["bare", "s_return"], searchReturn: origin })
+})
+
 test("projects Angular work-search options onto canonical generated hit flags", async ({
   page,
   request

@@ -228,6 +228,18 @@ const canonicalSearchKeys = [
   "prefix",
   "suffix"
 ] as const
+const legacySearchMarkerKeys = [
+  "traff",
+  "traffslut",
+  "hit_index",
+  "s_query",
+  "s_lbworkid",
+  "s_mediatype",
+  "s_word_form_only",
+  "s_include_modernized",
+  "s_prefix",
+  "s_suffix"
+] as const
 const wordIdPattern = /^w(?<page>[0-9]+)_(?<ordinal>[0-9]+)$/
 const maximumHitOffset = 1_000_000
 const maximumNavigableHit = maximumHitOffset + 1
@@ -1067,11 +1079,28 @@ function selectedHitIndex(rawHitIndex: unknown): number | null {
   return Number.isSafeInteger(index) && index <= maximumNavigableHit ? index : null
 }
 
+function legacySearchBoolean(value: unknown, fallback: boolean): boolean | null {
+  if (value === undefined) return fallback
+  if (value === "true") return true
+  if (value === "false") return false
+  return null
+}
+
 function selectedHitMatchesCanonicalState(rawQuery: string, hitIndex: number): boolean {
   const hasCanonicalState = route.query.q !== undefined || route.query.hit !== undefined
   if (!hasCanonicalState) return true
   const canonicalState = parseCanonicalSearchState()
-  return canonicalState?.query === rawQuery && canonicalState.hit === hitIndex
+  if (canonicalState?.query !== rawQuery || canonicalState.hit !== hitIndex) return false
+
+  const wordFormOnly = legacySearchBoolean(route.query.s_word_form_only, true)
+  const includeModernized = legacySearchBoolean(route.query.s_include_modernized, true)
+  const prefix = legacySearchBoolean(route.query.s_prefix, false)
+  const suffix = legacySearchBoolean(route.query.s_suffix, false)
+  return wordFormOnly !== null && includeModernized !== null &&
+    prefix !== null && suffix !== null &&
+    wordFormOnly === !canonicalState.wordForms &&
+    includeModernized === canonicalState.includeOlderSpellings &&
+    prefix === canonicalState.prefix && suffix === canonicalState.suffix
 }
 
 function selectedHitRouteMatchesReader(currentReader: ReaderPage): boolean {
@@ -1430,13 +1459,9 @@ function activateWorkSearchOption(event: KeyboardEvent, option: WorkSearchOption
   chooseWorkSearchOption(option)
 }
 
-const workSearchQueryKeys = new Set([
-  "q",
-  "hit",
-  "lemma",
-  "ej_modern",
-  "prefix",
-  "suffix"
+const workSearchQueryKeys = new Set<string>([
+  ...canonicalSearchKeys,
+  ...legacySearchMarkerKeys
 ])
 
 function appendWorkSearchQuery(segments: string[], query: string): void {
