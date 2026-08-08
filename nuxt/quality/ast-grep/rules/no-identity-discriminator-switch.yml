@@ -4,10 +4,10 @@ severity: error
 message: Discriminator branches must perform a real transformation.
 note: Return the already-derived view directly when every branch reconstructs the same value.
 files:
-  - "app/**/*.ts"
+  - "app/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}"
   - "app/**/*.vue"
-  - "server/**/*.ts"
-  - "shared/**/*.ts"
+  - "server/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}"
+  - "shared/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}"
 ignores:
   - "app/lib/api/generated/**"
 rule:

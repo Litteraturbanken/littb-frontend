@@ -3,9 +3,9 @@ import withNuxt from "./.nuxt/eslint.config.mjs"
 
 export default withNuxt({
   files: [
-    "app/**/*.{js,mjs,ts,vue}",
-    "server/**/*.{js,mjs,ts}",
-    "shared/**/*.{js,mjs,ts}"
+    "app/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx,vue}",
+    "server/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}",
+    "shared/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}"
   ],
   ignores: [
     ".nuxt/**",

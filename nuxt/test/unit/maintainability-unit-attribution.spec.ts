@@ -160,4 +160,74 @@ describe("maintainability source-unit attribution", () => {
         })
       ])
   })
+
+  test("names callbacks through transparent single-argument wrappers", () => {
+    const source = [
+      "const readerPageHandler = defineEventHandler(async event => {",
+      "  if (!event) throw new Error('missing')",
+      "  return event",
+      "})",
+      "export default readerPageHandler"
+    ].join("\n")
+
+    expect(attributeFindingToUnit({
+      source,
+      relativePath: "server/api/reader.get.ts",
+      line: 1,
+      column: 48
+    })).toMatchObject({
+      id: "server/api/reader.get.ts::function::readerPageHandler",
+      kind: "function",
+      name: "readerPageHandler",
+      startLine: 1,
+      endLine: 4
+    })
+  })
+
+  test("gives unowned callbacks distinct stable structural identities", () => {
+    const source = [
+      "watch(first, () => { if (first.value) act() })",
+      "watch(second, () => { if (second.value) act() })"
+    ].join("\n")
+
+    const first = attributeFindingToUnit({
+      source,
+      relativePath: "app/lib/watchers.ts",
+      line: 1,
+      column: 14
+    })
+    const second = attributeFindingToUnit({
+      source,
+      relativePath: "app/lib/watchers.ts",
+      line: 2,
+      column: 15
+    })
+
+    expect(first).toMatchObject({
+      id: "app/lib/watchers.ts::callback::watch.callback[2]#1",
+      kind: "callback"
+    })
+    expect(second).toMatchObject({
+      id: "app/lib/watchers.ts::callback::watch.callback[2]#2",
+      kind: "callback"
+    })
+    expect(first.id).not.toBe(second.id)
+  })
+
+  test("uses columns to distinguish callbacks that share one line", () => {
+    const source = "run(() => first()); run(() => second())"
+
+    expect(attributeFindingToUnit({
+      source,
+      relativePath: "app/lib/inline.ts",
+      line: 1,
+      column: 10
+    }).id).toBe("app/lib/inline.ts::callback::run.callback[1]#1")
+    expect(attributeFindingToUnit({
+      source,
+      relativePath: "app/lib/inline.ts",
+      line: 1,
+      column: 30
+    }).id).toBe("app/lib/inline.ts::callback::run.callback[1]#2")
+  })
 })

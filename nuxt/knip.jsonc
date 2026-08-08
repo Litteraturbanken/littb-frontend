@@ -6,14 +6,14 @@
     "app/pages/**/*.vue",
     "app/components/**/*.vue",
     "app/layouts/**/*.vue",
-    "app/middleware/**/*.{js,mjs,ts}",
-    "app/plugins/**/*.{js,mjs,ts}",
-    "server/**/*.{js,mjs,ts}"
+    "app/middleware/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}",
+    "app/plugins/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}",
+    "server/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}"
   ],
   "project": [
-    "app/**/*.{js,mjs,ts,vue}",
-    "server/**/*.{js,mjs,ts}",
-    "shared/**/*.{js,mjs,ts}",
+    "app/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx,vue}",
+    "server/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}",
+    "shared/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}",
     "!app/lib/api/generated/**"
   ],
   "ignore": [

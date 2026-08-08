@@ -72,13 +72,15 @@ describe("maintainability analyzer adapters", () => {
       exports: [{ name: "unusedExport", line: 9, col: 17, pos: 120 }],
       files: [],
       optionalPeerDependencies: [],
-      types: [{ name: "UnusedType", line: 15, col: 13, pos: 220 }]
+      types: [{ name: "UnusedType", line: 15, col: 13, pos: 220 }],
+      unlisted: [{ name: "direct-package", line: 21, col: 8, pos: 310 }]
     }] }, { root })
 
     expect(findings).toEqual([
       expect.objectContaining({ rule: "dependencies", path: "app/lib/library/view-model.ts", line: 3, column: 8, identity: "dependencies:unused-package" }),
       expect.objectContaining({ rule: "exports", path: "app/lib/library/view-model.ts", line: 9, column: 17, identity: "exports:unusedExport" }),
-      expect.objectContaining({ rule: "types", path: "app/lib/library/view-model.ts", line: 15, column: 13, identity: "types:UnusedType" })
+      expect.objectContaining({ rule: "types", path: "app/lib/library/view-model.ts", line: 15, column: 13, identity: "types:UnusedType" }),
+      expect.objectContaining({ rule: "unlisted", path: "app/lib/library/view-model.ts", line: 21, column: 8, identity: "unlisted:direct-package" })
     ])
     expect(findings.every(finding => finding.tool === "knip" && finding.severity === "info")).toBe(true)
   })
@@ -145,5 +147,36 @@ describe("maintainability analyzer adapters", () => {
     ["ast-grep", () => parseAstGrepFindings([{ file: "x" }], { root })]
   ])("fails closed for malformed %s diagnostics", (tool, parse) => {
     expect(parse).toThrow(`Invalid ${tool} diagnostic at index 0`)
+  })
+
+  test("fails closed when a configured Sonar metric message changes shape", () => {
+    expect(() => parseEslintFindings([{
+      filePath: `${root}/app/lib/example.ts`,
+      messages: [{
+        ruleId: "sonarjs/cognitive-complexity",
+        severity: 1,
+        message: "This message no longer exposes its metric.",
+        line: 1,
+        column: 1
+      }]
+    }], { root })).toThrow("Invalid ESLint diagnostic at index 0")
+  })
+
+  test.each([
+    ["message", { message: undefined }],
+    ["language", { language: undefined }]
+  ])("fails closed when ast-grep omits %s", (_name, replacement) => {
+    const diagnostic = {
+      text: "case 'a': return value",
+      range: { start: { line: 1, column: 1 } },
+      file: "app/example.ts",
+      language: "TypeScript",
+      ruleId: "example-rule",
+      severity: "error",
+      message: "Example",
+      ...replacement
+    }
+    expect(() => parseAstGrepFindings([diagnostic], { root }))
+      .toThrow("Invalid ast-grep diagnostic at index 0")
   })
 })

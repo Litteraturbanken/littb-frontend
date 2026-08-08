@@ -20,6 +20,40 @@ function staticName(node, sourceFile) {
   return node.getText(sourceFile)
 }
 
+function transparentExpression(node) {
+  return ts.isParenthesizedExpression(node)
+    || ts.isAsExpression(node)
+    || ts.isTypeAssertionExpression(node)
+    || ts.isSatisfiesExpression(node)
+    || ts.isNonNullExpression(node)
+}
+
+function assignedOwner(node, sourceFile) {
+  let current = node
+  while (current.parent) {
+    const parent = current.parent
+    if (transparentExpression(parent) && parent.expression === current) {
+      current = parent
+      continue
+    }
+    if (ts.isCallExpression(parent)
+      && parent.arguments.length === 1
+      && parent.arguments[0] === current) {
+      current = parent
+      continue
+    }
+    if (ts.isVariableDeclaration(parent) && parent.initializer === current) {
+      return staticName(parent.name, sourceFile)
+    }
+    if ((ts.isPropertyAssignment(parent) || ts.isPropertyDeclaration(parent))
+      && parent.initializer === current) {
+      return staticName(parent.name, sourceFile)
+    }
+    break
+  }
+  return null
+}
+
 function functionIdentity(node, sourceFile) {
   if (ts.isFunctionDeclaration(node)) {
     return node.name ? { kind: "function", name: node.name.text } : null
@@ -35,15 +69,8 @@ function functionIdentity(node, sourceFile) {
   if (ts.isConstructorDeclaration(node)) return { kind: "constructor", name: "constructor" }
   if (!ts.isArrowFunction(node) && !ts.isFunctionExpression(node)) return null
   if (node.name) return { kind: "function", name: node.name.text }
-  if (ts.isVariableDeclaration(node.parent)) {
-    const name = staticName(node.parent.name, sourceFile)
-    return name ? { kind: "function", name } : null
-  }
-  if (ts.isPropertyAssignment(node.parent)) {
-    const name = staticName(node.parent.name, sourceFile)
-    return name ? { kind: "function", name } : null
-  }
-  return null
+  const name = assignedOwner(node, sourceFile)
+  return name ? { kind: "function", name } : null
 }
 
 function className(node, sourceFile) {
@@ -53,8 +80,21 @@ function className(node, sourceFile) {
   return null
 }
 
-function qualifiedIdentity(node, sourceFile) {
-  const identity = functionIdentity(node, sourceFile)
+function callbackIdentity(node, sourceFile) {
+  if (!ts.isArrowFunction(node) && !ts.isFunctionExpression(node)) return null
+  let current = node
+  while (current.parent && transparentExpression(current.parent)) current = current.parent
+  const call = current.parent
+  if (!ts.isCallExpression(call)) return null
+  const argument = call.arguments.indexOf(current)
+  if (argument === -1) return null
+  const callee = call.expression.getText(sourceFile).replaceAll(/\s+/gu, "")
+  return callee ? { kind: "callback", name: `${callee}.callback[${argument + 1}]` } : null
+}
+
+function qualifiedIdentity(node, sourceFile, callbackCounts) {
+  const directIdentity = functionIdentity(node, sourceFile)
+  const identity = directIdentity ?? callbackIdentity(node, sourceFile)
   if (!identity) return null
   const qualifiers = []
   for (let parent = node.parent; parent; parent = parent.parent) {
@@ -63,8 +103,25 @@ function qualifiedIdentity(node, sourceFile) {
     const enclosingClass = className(parent, sourceFile)
     if (enclosingClass) qualifiers.push(enclosingClass)
   }
-  const name = [...qualifiers.reverse(), identity.name].join(".")
+  const qualifiedName = [...qualifiers.reverse(), identity.name].join(".")
+  if (directIdentity) return { kind: identity.kind, name: qualifiedName }
+  const occurrence = (callbackCounts.get(qualifiedName) ?? 0) + 1
+  callbackCounts.set(qualifiedName, occurrence)
+  const name = `${qualifiedName}#${occurrence}`
   return { kind: identity.kind, name }
+}
+
+function sourceLocation(sourceFile, position, offset) {
+  const location = sourceFile.getLineAndCharacterOfPosition(position)
+  return { line: location.line + 1 + offset, column: location.character + 1 }
+}
+
+function unitWithColumns(unit, startColumn, endColumn) {
+  Object.defineProperties(unit, {
+    startColumn: { value: startColumn },
+    endColumn: { value: endColumn }
+  })
+  return unit
 }
 
 function parseScriptUnits({ source, relativePath, offset, lang }) {
@@ -76,19 +133,24 @@ function parseScriptUnits({ source, relativePath, offset, lang }) {
     scriptKind(relativePath, lang)
   )
   const units = []
+  const callbackCounts = new Map()
   function visit(node) {
-    const identity = qualifiedIdentity(node, sourceFile)
+    const identity = qualifiedIdentity(node, sourceFile, callbackCounts)
     if (identity) {
-      const start = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 + offset
-      const end = sourceFile.getLineAndCharacterOfPosition(Math.max(node.getStart(sourceFile), node.getEnd() - 1)).line + 1 + offset
-      units.push({
+      const start = sourceLocation(sourceFile, node.getStart(sourceFile), offset)
+      const end = sourceLocation(
+        sourceFile,
+        Math.max(node.getStart(sourceFile), node.getEnd() - 1),
+        offset
+      )
+      units.push(unitWithColumns({
         id: `${relativePath}::${identity.kind}::${identity.name}`,
         kind: identity.kind,
         name: identity.name,
         path: relativePath,
-        startLine: start,
-        endLine: end
-      })
+        startLine: start.line,
+        endLine: end.line
+      }, start.column, end.column))
     }
     ts.forEachChild(node, visit)
   }
@@ -151,8 +213,11 @@ export function attributeFindingToUnit({ source, relativePath, line, column = 1 
     throw new RangeError("Finding line and column must be positive integers")
   }
   const containing = listSourceUnits({ source, relativePath })
-    .filter(unit => unit.startLine <= line && line <= unit.endLine)
+    .filter(unit => unit.startLine <= line && line <= unit.endLine
+      && (line !== unit.startLine || column >= unit.startColumn)
+      && (line !== unit.endLine || column <= unit.endColumn))
     .sort((left, right) => (left.endLine - left.startLine) - (right.endLine - right.startLine)
+      || (left.endColumn - left.startColumn) - (right.endColumn - right.startColumn)
       || right.startLine - left.startLine
       || left.id.localeCompare(right.id, "en"))
   return containing[0] ?? fallbackUnit(source, relativePath)

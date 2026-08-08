@@ -34,6 +34,7 @@
   "dependencies": {
     "@headlessui/vue": "1.7.23",
     "font-awesome": "4.4.0",
+    "h3": "1.15.11",
     "linkedom": "0.18.13",
     "nuxt": "4.4.8",
     "openapi-fetch": "0.17.0",
@@ -46,6 +47,8 @@
     "@nuxt/eslint": "1.16.0",
     "@playwright/test": "1.61.1",
     "@types/node": "22.20.1",
+    "@vitejs/plugin-vue": "6.0.8",
+    "@vue/compiler-dom": "3.5.39",
     "@vue/compiler-sfc": "3.5.39",
     "@vue/server-renderer": "3.5.39",
     "autoprefixer": "10.4.21",

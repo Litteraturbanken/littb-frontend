@@ -8,7 +8,12 @@ import {
   parseEslintFindings,
   parseKnipFindings
 } from "./maintainability/adapters.mjs"
-import { compareWithBaseline, rankReviewUnits, serializeBaseline } from "./maintainability/findings.mjs"
+import {
+  compareWithBaseline,
+  fingerprintFinding,
+  rankReviewUnits,
+  serializeBaseline
+} from "./maintainability/findings.mjs"
 import { renderReviewJson, renderReviewMarkdown } from "./maintainability/report.mjs"
 import { attributeFindingToUnit } from "./maintainability/unit-attribution.mjs"
 
@@ -69,7 +74,7 @@ function defaultCommands() {
       "--reporter", "json",
       "--no-exit-code",
       "--no-progress",
-      "--include", "files,exports,types"
+      "--include", "files,exports,types,unlisted"
     ],
     dependencyCruiser: [
       binary("depcruise"),
@@ -143,6 +148,7 @@ function collectRawFindings() {
 
 function isAuthoredPath(path) {
   return /^(?:app|server|shared)\//u.test(path)
+    && !path.split("/").includes("..")
     && !path.startsWith("app/lib/api/generated/")
     && !/(?:^|\/)(?:test|tests|fixtures?)(?:\/|$)/u.test(path)
 }
@@ -194,17 +200,67 @@ function attributeFindings(rawFindings) {
   })
 }
 
-function readBaseline() {
-  if (!existsSync(baselinePath)) return { version: 1, findings: [] }
+const baselineRecordFields = ["fingerprint", "identity", "path", "rule", "tool", "unitId"]
+
+function validateBaselineRecord(record, index, fingerprints) {
+  if (!record || typeof record !== "object" || Array.isArray(record)) {
+    throw new Error(`Maintainability baseline record ${index} is invalid`)
+  }
+  const fields = Object.keys(record).sort(compareText)
+  if (fields.length !== baselineRecordFields.length
+    || fields.some((field, fieldIndex) => field !== baselineRecordFields[fieldIndex])) {
+    throw new Error(`Maintainability baseline record ${index} has an invalid shape`)
+  }
+  for (const field of baselineRecordFields) {
+    if (typeof record[field] !== "string" || record[field].length === 0) {
+      throw new Error(`Maintainability baseline record ${index} has an invalid ${field}`)
+    }
+  }
+  if (!/^[a-f0-9]{64}$/u.test(record.fingerprint)
+    || !isAuthoredPath(record.path)
+    || record.path.split("/").includes("..")
+    || !record.unitId.startsWith(`${record.path}::`)) {
+    throw new Error(`Maintainability baseline record ${index} is not canonical`)
+  }
+  const expected = fingerprintFinding({
+    tool: record.tool,
+    rule: record.rule,
+    path: record.path,
+    unit: { id: record.unitId },
+    identity: record.identity
+  })
+  if (record.fingerprint !== expected || fingerprints.has(record.fingerprint)) {
+    throw new Error(`Maintainability baseline record ${index} has an invalid fingerprint`)
+  }
+  fingerprints.add(record.fingerprint)
+}
+
+function readBaseline(allowMissing) {
+  if (!existsSync(baselinePath)) {
+    if (allowMissing) return { version: 1, findings: [] }
+    throw new Error("Maintainability baseline is missing; initialize it explicitly")
+  }
   let baseline
+  let serialized
   try {
-    baseline = JSON.parse(readFileSync(baselinePath, "utf8"))
+    serialized = readFileSync(baselinePath, "utf8")
+    baseline = JSON.parse(serialized)
   } catch {
     throw new Error("Maintainability baseline is not valid JSON")
   }
   if (baseline?.version !== 1 || !Array.isArray(baseline.findings)) {
     throw new Error("Maintainability baseline must use schema version 1")
   }
+  const fingerprints = new Set()
+  baseline.findings.forEach((record, index) => validateBaselineRecord(record, index, fingerprints))
+  const canonical = serializeBaseline(baseline.findings.map(record => ({
+    tool: record.tool,
+    rule: record.rule,
+    path: record.path,
+    unit: { id: record.unitId },
+    identity: record.identity
+  })))
+  if (serialized !== canonical) throw new Error("Maintainability baseline is not canonically sorted")
   return baseline
 }
 
@@ -251,7 +307,7 @@ function printSummary(comparison, rankedUnits) {
 function main() {
   const options = parseArguments(process.argv.slice(2))
   const findings = attributeFindings(collectRawFindings())
-  const baseline = readBaseline()
+  const baseline = readBaseline(options.updateBaseline)
   const comparison = compareWithBaseline(findings, baseline)
   const rankedUnits = rankReviewUnits(comparison.current)
   const report = filteredReport(comparison, rankedUnits, baseline, options.paths)

@@ -35,6 +35,12 @@ function sonarThreshold(message) {
   return threshold ? { measured: Number(threshold[1]), threshold: Number(threshold[2]) } : {}
 }
 
+const sonarMetricRules = new Set([
+  "cognitive-complexity",
+  "cyclomatic-complexity",
+  "max-lines-per-function"
+])
+
 export function parseEslintFindings(payload, { root }) {
   if (!Array.isArray(payload)) throw new TypeError("Invalid ESLint diagnostic at index 0")
   const findings = []
@@ -54,6 +60,10 @@ export function parseEslintFindings(payload, { root }) {
       const tool = namespace === "sonarjs" ? "sonarjs" : "eslint"
       const rule = tool === "sonarjs" ? ruleParts.join("/") : ruleId
       const limits = tool === "sonarjs" ? sonarThreshold(message.message) : {}
+      if (tool === "sonarjs" && sonarMetricRules.has(rule)
+        && (typeof limits.measured !== "number" || typeof limits.threshold !== "number")) {
+        invalid("ESLint", index)
+      }
       findings.push({
         tool,
         rule,
@@ -79,7 +89,8 @@ const knipCategories = [
   "exports",
   "files",
   "optionalPeerDependencies",
-  "types"
+  "types",
+  "unlisted"
 ]
 
 export function parseKnipFindings(payload, { root }) {
@@ -159,6 +170,8 @@ export function parseAstGrepFindings(payload, { root }) {
     const start = match?.range?.start
     if (!path || typeof rule !== "string" || !findingSeverity
       || typeof match.text !== "string"
+      || typeof match.message !== "string"
+      || typeof match.language !== "string"
       || !Number.isInteger(start?.line) || !Number.isInteger(start?.column)) {
       invalid("ast-grep", index)
     }
@@ -170,7 +183,7 @@ export function parseAstGrepFindings(payload, { root }) {
       path,
       line: start.line + 1,
       column: start.column + 1,
-      identity: `${rule}:${match.language ?? "unknown"}:${kind}`,
+      identity: `${rule}:${match.language}:${kind}`,
       message: match.message
     }
   })

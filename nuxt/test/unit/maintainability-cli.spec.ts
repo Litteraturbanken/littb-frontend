@@ -1,8 +1,10 @@
 import { spawnSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, resolve } from "node:path"
 import { afterEach, describe, expect, test } from "vitest"
+
+import { fingerprintFinding } from "../../scripts/maintainability/findings.mjs"
 
 const cli = resolve(import.meta.dirname, "../../scripts/run-maintainability.mjs")
 const roots: string[] = []
@@ -49,6 +51,24 @@ function eslintMessage(path = "app/example.ts", measured = 24) {
       column: 8
     }]
   }]
+}
+
+function validBaselineRecord() {
+  const finding = {
+    tool: "sonarjs",
+    rule: "cognitive-complexity",
+    path: "app/example.ts",
+    unit: { id: "app/example.ts::function::suspect" },
+    identity: "cognitive-complexity>12"
+  }
+  return {
+    fingerprint: fingerprintFinding(finding),
+    tool: finding.tool,
+    rule: finding.rule,
+    path: finding.path,
+    unitId: finding.unit.id,
+    identity: finding.identity
+  }
 }
 
 function run(root: string, payloads = cleanPayloads(), args: string[] = [], extraEnv: Record<string, string> = {}) {
@@ -213,5 +233,33 @@ describe("maintainability CLI", () => {
 
     expect(result.status).toBe(2)
     expect(result.stderr).toContain("--path is not allowed in CI")
+  })
+
+  test("requires a checked-in baseline except during explicit initialization", () => {
+    const root = createRoot()
+    unlinkSync(resolve(root, "quality/maintainability-baseline.json"))
+
+    const ordinary = run(root)
+    const initialize = run(root, cleanPayloads(), ["--update-baseline"])
+
+    expect(ordinary.status).toBe(2)
+    expect(ordinary.stderr).toContain("Maintainability baseline is missing")
+    expect(initialize.status).toBe(0)
+    expect(JSON.parse(readFileSync(resolve(root, "quality/maintainability-baseline.json"), "utf8")))
+      .toEqual({ version: 1, findings: [] })
+  })
+
+  test.each([
+    ["incomplete record", [{ fingerprint: "bad" }]],
+    ["tampered fingerprint", [{ ...validBaselineRecord(), fingerprint: "a".repeat(64) }]],
+    ["duplicate record", [validBaselineRecord(), validBaselineRecord()]]
+  ])("rejects a non-canonical baseline with %s", (_name, findings) => {
+    const root = createRoot()
+    write(root, "quality/maintainability-baseline.json", `${JSON.stringify({ version: 1, findings }, null, 2)}\n`)
+
+    const result = run(root)
+
+    expect(result.status).toBe(2)
+    expect(result.stderr).toContain("Maintainability baseline")
   })
 })

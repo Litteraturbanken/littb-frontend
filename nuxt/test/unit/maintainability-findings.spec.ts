@@ -89,6 +89,24 @@ describe("maintainability finding model", () => {
     expect(result.resolvedFingerprints).toEqual(["resolved-fingerprint"])
   })
 
+  test("keeps same-rule diagnostics in distinct callback units", () => {
+    const first = finding({
+      unit: { ...loadUnit, id: "app/pages/example.vue::callback::computed.callback[1]#1" }
+    })
+    const second = finding({
+      line: 90,
+      unit: { ...loadUnit, id: "app/pages/example.vue::callback::useHead.callback[1]#1" }
+    })
+    const baseline = JSON.parse(serializeBaseline([first]))
+
+    const result = compareWithBaseline([first, second], baseline)
+
+    expect(result.current).toHaveLength(2)
+    expect(result.knownFindings).toHaveLength(1)
+    expect(result.newFindings).toHaveLength(1)
+    expect(result.newFindings[0]!.unit.id).toBe(second.unit.id)
+  })
+
   test("ranks cross-tool agreement above an isolated blocking finding", () => {
     const corroborating = finding({
       tool: "knip",
