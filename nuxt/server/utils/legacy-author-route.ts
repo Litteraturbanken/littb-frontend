@@ -65,6 +65,14 @@ export function normalizeLegacyRouteIdentity(value: string): string {
   return value.normalize("NFKD").replace(/\p{M}/gu, "")
 }
 
+function legacyReaderShape(segments: string[]): boolean {
+  return segments.length === 7
+    && segments[0] === "forfattare"
+    && segments[2] === "titlar"
+    && segments[4] === "sida"
+    && ["etext", "faksimil"].includes(segments[6] ?? "")
+}
+
 export function decodeAndValidatePathSegments(pathname: string): string[] {
   if (!pathname.startsWith("/forfattare/")) return []
   const raw = pathname.slice(1).split("/")
@@ -75,11 +83,7 @@ export function decodeAndValidatePathSegments(pathname: string): string[] {
   // Decode before structural classification so encoded fixed segments cannot
   // bypass the 200-character Reader title boundary.
   const decoded = raw.map(segment => decodeStable(segment, 512))
-  const readerShape = decoded.length === 7
-    && decoded[0] === "forfattare"
-    && decoded[2] === "titlar"
-    && decoded[4] === "sida"
-    && ["etext", "faksimil"].includes(decoded[6] ?? "")
+  const readerShape = legacyReaderShape(decoded)
 
   for (const [index, segment] of decoded.entries()) {
     const maximum = index === 1 ? 100 : readerShape && index === 3 ? 200 : 512

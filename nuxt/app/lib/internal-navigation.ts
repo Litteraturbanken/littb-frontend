@@ -43,6 +43,28 @@ function validRouteSegment(value: string, maximumLength: number): boolean {
     && !hasLoneSurrogate(value)
 }
 
+function isAuthorTitleRoute(segments: string[]): boolean {
+  const title = segments[3]
+  if (!title || !validRouteSegment(title, 200)) return false
+  if (segments.length === 4) return true
+  const routeKind = segments[4]
+  if (segments.length === 5) return routeKind === "info" || readerMedia.has(routeKind!)
+  if (routeKind === "info") return segments.length === 6 && readerMedia.has(segments[5]!)
+  return routeKind === "sida" && segments.length === 7
+    && validRouteSegment(segments[5]!, 512) && readerMedia.has(segments[6]!)
+}
+
+function isAuthorSectionRoute(segments: string[], author: string, section: string): boolean {
+  if (segments.length === 3) {
+    return authorPages.has(section) || authorDocuments.has(section)
+      || (author === "LagerlöfS" && section === "omtexterna")
+  }
+  if (section === "omtexterna") {
+    return segments.length === 4 && author === "LagerlöfS" && isSlaArticleId(segments[3])
+  }
+  return section === "titlar" && isAuthorTitleRoute(segments)
+}
+
 function isAuthorRoute(segments: string[]): boolean {
   if (segments[0] !== "författare") return false
 
@@ -51,34 +73,7 @@ function isAuthorRoute(segments: string[]): boolean {
   if (segments.length === 2) return true
 
   const section = segments[2]
-  if (segments.length === 3) {
-    return authorPages.has(section!)
-      || authorDocuments.has(section!)
-      || (author === "LagerlöfS" && section === "omtexterna")
-  }
-
-  if (section === "omtexterna") {
-    return segments.length === 4
-      && author === "LagerlöfS"
-      && isSlaArticleId(segments[3])
-  }
-  if (section !== "titlar") return false
-
-  const title = segments[3]
-  if (!title || !validRouteSegment(title, 200)) return false
-  if (segments.length === 4) return true
-
-  const routeKind = segments[4]
-  if (segments.length === 5) {
-    return routeKind === "info" || readerMedia.has(routeKind!)
-  }
-  if (routeKind === "info") {
-    return segments.length === 6 && readerMedia.has(segments[5]!)
-  }
-  if (routeKind !== "sida" || segments.length !== 7) return false
-
-  return validRouteSegment(segments[5]!, 512)
-    && readerMedia.has(segments[6]!)
+  return section ? isAuthorSectionRoute(segments, author, section) : false
 }
 
 function replaceStaticPrefix(
@@ -102,40 +97,50 @@ export function canonicalNuxtHref(value: string): string {
     ?? value
 }
 
-export function isNuxtInternalHref(value: string): boolean {
-  if (!value.startsWith("/") || value.startsWith("//")) return false
+function decodedNuxtPath(value: string): { decoded: string; segments: string[] } | null {
+  if (!value.startsWith("/") || value.startsWith("//")) return null
   const rawPathname = value.split(/[?#]/u, 1)[0] ?? ""
   const pathname = rawPathname.length > 1 && rawPathname.endsWith("/")
     ? rawPathname.slice(0, -1)
     : rawPathname
-  let decoded: string
-  let segments: string[]
   try {
-    decoded = decodeURIComponent(pathname)
-    segments = pathname.split("/").slice(1).map(segment => decodeURIComponent(segment))
+    return {
+      decoded: decodeURIComponent(pathname),
+      segments: pathname.split("/").slice(1).map(segment => decodeURIComponent(segment))
+    }
   } catch {
-    return false
+    return null
   }
-  if (exactNuxtRoutes.has(decoded)) return true
+}
 
-  if (segments.some(segment => !segment)) return false
+function isEditorRoute(segments: string[]): boolean {
+  return segments.length === 5 && segments[2] === "ix"
+    && /^(?:0|[1-9]\d*)$/u.test(segments[3]!)
+    && (segments[4] === "e" || segments[4] === "f")
+}
 
-  if (segments[0] === "id") return segments.length <= 2
-  if (segments[0] === "om") {
-    return segments.length === 2 && aboutPages.has(segments[1]!)
-  }
-  if (segments[0] === "dramawebben") {
+function isPresentationRoute(segments: string[]): boolean {
+  return segments.length === 1 || validatePresentationSegments(segments.slice(1))
+}
+
+function isKnownRootRoute(segments: string[]): boolean | null {
+  const root = segments[0]
+  if (root === "id") return segments.length <= 2
+  if (root === "om") return segments.length === 2 && aboutPages.has(segments[1]!)
+  if (root === "dramawebben") {
     return segments.length === 2 && dramawebbenPages.has(segments[1]!)
   }
-  if (segments[0] === "editor") {
-    return segments.length === 5
-      && segments[2] === "ix"
-      && /^(?:0|[1-9]\d*)$/u.test(segments[3]!)
-      && (segments[4] === "e" || segments[4] === "f")
-  }
-  if (segments[0] === "presentationer") {
-    if (segments.length === 1) return true
-    return validatePresentationSegments(segments.slice(1))
-  }
-  return isAuthorRoute(segments)
+  if (root === "editor") return isEditorRoute(segments)
+  if (root === "presentationer") return isPresentationRoute(segments)
+  return null
+}
+
+export function isNuxtInternalHref(value: string): boolean {
+  const path = decodedNuxtPath(value)
+  if (!path) return false
+  if (exactNuxtRoutes.has(path.decoded)) return true
+  const { segments } = path
+  if (segments.some(segment => !segment)) return false
+  const rootResult = isKnownRootRoute(segments)
+  return rootResult ?? isAuthorRoute(segments)
 }

@@ -21,6 +21,12 @@ const allowedStyleProperties = new Set([
   "white-space",
   "width"
 ])
+const styleKeywords: Readonly<Record<string, ReadonlySet<string>>> = {
+  display: new Set(["block", "inline", "inline-block"]),
+  position: new Set(["absolute", "relative"]),
+  "white-space": new Set(["normal", "nowrap"])
+}
+const nonnegativeStyleProperties = new Set(["font-size", "height", "line-height", "width"])
 
 interface OverlayElement {
   attributes: ArrayLike<{ name: string, value: string }>
@@ -33,6 +39,17 @@ interface OverlayElement {
   tagName: string
 }
 
+function canonicalStyleDeclaration(property: string, candidate: string): string | null {
+  if (!allowedStyleProperties.has(property)) return null
+  if (styleKeywords[property]?.has(candidate)) return `${property}: ${candidate}`
+  const numeric = candidate.match(/^(-?\d+(?:\.\d+)?)(px|pt|em|rem|%)?$/u)
+  if (!numeric) return null
+  const amount = Number(numeric[1])
+  if (!Number.isFinite(amount) || Math.abs(amount) > 10_000) return null
+  if (nonnegativeStyleProperties.has(property) && amount < 0) return null
+  return `${property}: ${candidate}`
+}
+
 function sanitizeStyle(value: string): string {
   const declarations: string[] = []
   for (const declaration of value.split(";")) {
@@ -40,28 +57,56 @@ function sanitizeStyle(value: string): string {
     if (separator < 1) continue
     const property = declaration.slice(0, separator).trim().toLowerCase()
     const candidate = declaration.slice(separator + 1).trim().toLowerCase()
-    if (!allowedStyleProperties.has(property)) continue
-
-    const keywords: Record<string, ReadonlySet<string>> = {
-      display: new Set(["block", "inline", "inline-block"]),
-      position: new Set(["absolute", "relative"]),
-      "white-space": new Set(["normal", "nowrap"])
-    }
-    if (keywords[property]?.has(candidate)) {
-      declarations.push(`${property}: ${candidate}`)
-      continue
-    }
-
-    const numeric = candidate.match(/^(-?\d+(?:\.\d+)?)(px|pt|em|rem|%)?$/u)
-    if (!numeric) continue
-    const amount = Number(numeric[1])
-    if (!Number.isFinite(amount) || Math.abs(amount) > 10_000) continue
-    if (["font-size", "height", "line-height", "width"].includes(property) && amount < 0) {
-      continue
-    }
-    declarations.push(`${property}: ${candidate}`)
+    const sanitized = canonicalStyleDeclaration(property, candidate)
+    if (sanitized) declarations.push(sanitized)
   }
   return declarations.join("; ")
+}
+
+function sanitizeClassAttribute(element: OverlayElement, value: string): void {
+  const classes = value.split(/\s+/u).filter(token => allowedOverlayClasses.has(token))
+  if (classes.length > 0) element.setAttribute("class", [...new Set(classes)].join(" "))
+  else element.removeAttribute("class")
+}
+
+function sanitizeTitleAttribute(element: OverlayElement, value: string): void {
+  if (value.length > 2_000 || hasC0OrC1Control(value)) element.removeAttribute("title")
+}
+
+function sanitizeStyleAttribute(element: OverlayElement, value: string): void {
+  const style = sanitizeStyle(value)
+  if (style) element.setAttribute("style", style)
+  else element.removeAttribute("style")
+}
+
+const overlayAttributeSanitizers: Readonly<Record<
+  string,
+  (element: OverlayElement, value: string) => void
+>> = {
+  class: sanitizeClassAttribute,
+  style: sanitizeStyleAttribute,
+  title: sanitizeTitleAttribute
+}
+
+function isPreservedScopedAttribute(root: boolean, name: string, value: string): boolean {
+  if (root) return name === "data-size"
+  return name === "id" && /^[A-Za-z0-9_-]{1,100}$/u.test(value)
+}
+
+function sanitizeOverlayAttribute(
+  element: OverlayElement,
+  root: boolean,
+  attribute: { name: string, value: string }
+): void {
+  const name = attribute.name.toLowerCase()
+  const value = attribute.value
+  const sanitizer = overlayAttributeSanitizers[name]
+  if (sanitizer) {
+    sanitizer(element, value)
+    return
+  }
+  if (isPreservedScopedAttribute(root, name, value)) return
+  element.removeAttribute(name)
 }
 
 function sanitizeOverlayElement(element: OverlayElement, root: boolean): void {
@@ -71,31 +116,7 @@ function sanitizeOverlayElement(element: OverlayElement, root: boolean): void {
   }
 
   for (const attribute of Array.from(element.attributes)) {
-    const name = attribute.name.toLowerCase()
-    const value = attribute.value
-    if (name === "class") {
-      const classes = value.split(/\s+/u).filter(token => allowedOverlayClasses.has(token))
-      if (classes.length > 0) element.setAttribute(name, [...new Set(classes)].join(" "))
-      else element.removeAttribute(name)
-      continue
-    }
-    if (name === "title") {
-      if (value.length > 2_000 || hasC0OrC1Control(value)) {
-        element.removeAttribute(name)
-      }
-      continue
-    }
-    if (!root && name === "id" && /^[A-Za-z0-9_-]{1,100}$/u.test(value)) {
-      continue
-    }
-    if (name === "style") {
-      const style = sanitizeStyle(value)
-      if (style) element.setAttribute(name, style)
-      else element.removeAttribute(name)
-      continue
-    }
-    if (root && name === "data-size") continue
-    element.removeAttribute(name)
+    sanitizeOverlayAttribute(element, root, attribute)
   }
 }
 

@@ -7,7 +7,7 @@ export type LatestSortKey = "nytillkommet"
 export type AuthorSortKey = "namn" | "popularitet" | "kronologi"
 export type PartSortKey = "forfattare" | "titlar"
 export type BrowseSortKey = EpubSortKey | AuthorSortKey | PartSortKey
-export type LibrarySortKey = RelevanceSortKey | BrowseSortKey | LatestSortKey
+type LibrarySortKey = RelevanceSortKey | BrowseSortKey | LatestSortKey
 
 export type LibraryRouteState<AdvancedFilters> = {
   standalone: boolean
@@ -35,7 +35,7 @@ function queryValue(value: unknown): string {
   return typeof value === "string" ? value : ""
 }
 
-export function queryAdvanced(value: unknown): boolean {
+function queryAdvanced(value: unknown): boolean {
   return value === null || value === "" || value === "1" || value === "true"
 }
 

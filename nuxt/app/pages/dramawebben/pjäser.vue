@@ -93,24 +93,14 @@ function isCatalogAuthor(value: unknown): value is CatalogAuthor {
     ].includes(key))
 }
 
-function isSafeCatalogMediaUrl(mediaType: string, url: string, downloadable: boolean): boolean {
-  if (
-    !url.startsWith("/")
-    || url.startsWith("//")
-    || hasC0OrDelete(url)
-    || hasEcmaWhitespace(url)
-  ) return false
-  if (mediaType === "pdf") {
-    return downloadable && /^\/txt\/[^/?#]+\/[^/?#]+\.pdf$/u.test(url)
-  }
-  if (downloadable) return false
-  if (mediaType === "etext" || mediaType === "faksimil") {
-    return new RegExp(
-      `^/författare/[^/?#]+/titlar/[^/?#]+/sida/[^/?#]+/${mediaType}$`,
-      "u"
-    ).test(url)
-  }
-  if (mediaType !== "infopost") return false
+function safeCatalogUrlShape(url: string): boolean {
+  return url.startsWith("/")
+    && !url.startsWith("//")
+    && !hasC0OrDelete(url)
+    && !hasEcmaWhitespace(url)
+}
+
+function safeCatalogInfoPostUrl(url: string): boolean {
   try {
     const parsed = new URL(url, "http://catalog.local")
     return parsed.origin === "http://catalog.local"
@@ -122,6 +112,17 @@ function isSafeCatalogMediaUrl(mediaType: string, url: string, downloadable: boo
   } catch {
     return false
   }
+}
+
+function isSafeCatalogMediaUrl(mediaType: string, url: string, downloadable: boolean): boolean {
+  if (!safeCatalogUrlShape(url)) return false
+  if (mediaType === "pdf") {
+    return downloadable && /^\/txt\/[^/?#]+\/[^/?#]+\.pdf$/u.test(url)
+  }
+  if (downloadable) return false
+  if (mediaType === "etext") return /^\/författare\/[^/?#]+\/titlar\/[^/?#]+\/sida\/[^/?#]+\/etext$/u.test(url)
+  if (mediaType === "faksimil") return /^\/författare\/[^/?#]+\/titlar\/[^/?#]+\/sida\/[^/?#]+\/faksimil$/u.test(url)
+  return mediaType === "infopost" && safeCatalogInfoPostUrl(url)
 }
 
 function isCatalogMedia(value: unknown): value is CatalogMedia {
@@ -137,21 +138,31 @@ function isMetric(value: unknown): value is number | null {
   return value === null || (typeof value === "number" && Number.isInteger(value) && value >= 0)
 }
 
+function hasCatalogWorkIdentity(value: Record<string, unknown>): boolean {
+  return typeof value.work_id === "string"
+    && typeof value.title_path === "string"
+    && typeof value.title === "string"
+    && isStringOrNull(value.short_title)
+    && typeof value.is_childrens_play === "boolean"
+}
+
+function hasCatalogWorkCollections(value: Record<string, unknown>): boolean {
+  return Array.isArray(value.authors)
+    && value.authors.length > 0
+    && value.authors.every(isCatalogAuthor)
+    && Array.isArray(value.media)
+    && value.media.length > 0
+    && value.media.every(isCatalogMedia)
+}
+
 function isCatalogWork(value: unknown): value is CatalogWork {
   if (!isRecord(value)) return false
   const keys = [
     "work_id", "title_path", "title", "short_title", "authors", "media",
     "is_childrens_play", ...rangeFields.map(field => field.key)
   ]
-  return typeof value.work_id === "string"
-    && typeof value.title_path === "string"
-    && typeof value.title === "string"
-    && isStringOrNull(value.short_title)
-    && Array.isArray(value.authors) && value.authors.length > 0
-    && value.authors.every(isCatalogAuthor)
-    && Array.isArray(value.media) && value.media.length > 0
-    && value.media.every(isCatalogMedia)
-    && typeof value.is_childrens_play === "boolean"
+  return hasCatalogWorkIdentity(value)
+    && hasCatalogWorkCollections(value)
     && rangeFields.every(field => isMetric(value[field.key]))
     && Object.keys(value).every(key => keys.includes(key))
 }

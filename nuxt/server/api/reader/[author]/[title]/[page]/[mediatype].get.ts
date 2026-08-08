@@ -2,6 +2,14 @@ import type { ReaderPage } from "#shared/types/reader"
 import { readerAuthorContributionSuffix } from "#shared/utils/reader-author"
 import { issueManagedReaderHtml } from "#shared/utils/renderable-html"
 import { fetchReaderOcrOverlay } from "#server/utils/reader-ocr"
+import type {
+  ReaderEtextWorkMetadata,
+  ReaderFacsimileWorkMetadata
+} from "#server/utils/reader-source"
+
+type ReaderEvent = Parameters<typeof getRouterParam>[0]
+type ReaderMetadata = Awaited<ReturnType<typeof loadReaderMetadata>>
+type ReaderMetadataPage = ReaderMetadata["pages"][number]
 
 function requiredParam(event: Parameters<typeof getRouterParam>[0], name: string): string {
   const value = getRouterParam(event, name)
@@ -40,33 +48,38 @@ function workContributorText(contributors: ReaderPage["contributors"]): string {
   return `${labels.slice(0, -1).join(", ")} & ${labels.at(-1)}`
 }
 
-const readerPageHandler = defineEventHandler(async event => {
-  setHeader(event, "cache-control", "no-store")
-  const author = requiredParam(event, "author")
-  const titlePath = requiredParam(event, "title")
-  const pageName = requiredParam(event, "page")
-  const mediaType = requiredParam(event, "mediatype")
-  const metadata = await loadReaderMetadata(event, author, titlePath, mediaType)
-
-  const currentPosition = metadata.pages.findIndex(page => page.page_name === pageName)
-  if (currentPosition < 0) {
+function readerPagePosition(metadata: ReaderMetadata, pageName: string): number {
+  const position = metadata.pages.findIndex(page => page.page_name === pageName)
+  if (position < 0) {
     throw createError({ statusCode: 404, statusMessage: "Reader page not found" })
   }
+  return position
+}
 
-  const currentPage = metadata.pages[currentPosition]!
-  const parts = metadata.parts
-  const partNavigation = resolveReaderPartNavigation(parts, currentPage.page_index)
+function alternateMediaTarget(
+  metadata: ReaderMetadata,
+  pageName: string,
+  pageIndex: number
+): ReaderPage["alternateMedia"] {
+  if (!metadata.alternateMedia) return null
+  const page = metadata.alternateMedia.pages.find(candidate => candidate.page_name === pageName)
+    ?? metadata.alternateMedia.pages.find(candidate => candidate.page_index === pageIndex)
+    ?? metadata.alternateMedia.pages[0]
+  return page
+    ? { mediaType: metadata.alternateMedia.media_type, pageName: page.page_name }
+    : null
+}
+
+function commonReaderPage(
+  metadata: ReaderMetadata,
+  currentPage: ReaderMetadataPage,
+  currentPosition: number,
+  pageName: string
+) {
+  const partNavigation = resolveReaderPartNavigation(metadata.parts, currentPage.page_index)
   const knownNames = new Set(metadata.pages.map(page => page.page_name))
-  const alternatePage = metadata.alternateMedia?.pages.find(page => page.page_name === pageName)
-    ?? metadata.alternateMedia?.pages.find(page => page.page_index === currentPage.page_index)
-    ?? metadata.alternateMedia?.pages[0]
-  const commonPage = {
-    alternateMedia: metadata.alternateMedia && alternatePage
-      ? {
-          mediaType: metadata.alternateMedia.media_type,
-          pageName: alternatePage.page_name
-        }
-      : null,
+  return {
+    alternateMedia: alternateMediaTarget(metadata, pageName, currentPage.page_index),
     author: metadata.author,
     contributors: metadata.contributors,
     description:
@@ -92,7 +105,7 @@ const readerPageHandler = defineEventHandler(async event => {
     })),
     pageName,
     pageNames: metadata.pages.map(page => page.page_name),
-    parts,
+    parts: metadata.parts,
     previousPageName: metadata.pages[currentPosition - metadata.pageStep]?.page_name ?? null,
     previousPartPageName: partNavigation.previousPartPageName,
     searchable: metadata.searchable,
@@ -105,47 +118,66 @@ const readerPageHandler = defineEventHandler(async event => {
     urn: metadata.urn,
     workId: metadata.workId
   }
+}
 
-  if (metadata.mediaType === "faksimil") {
-    const facsimilePage = metadata.pages[currentPosition]!
-    const ocrBase = useRuntimeConfig(event).contentBase.replace(/\/$/, "")
-    const ocrOverlay = metadata.searchable
-      ? await fetchReaderOcrOverlay(ocrBase, metadata.workId, facsimilePage.page_index)
-      : null
-    return {
-      ...commonPage,
-      imageNumber: facsimilePage.image_number,
-      mediaType: metadata.mediaType,
-      ocrOverlay,
-      preferredSize: metadata.preferredSize,
-      sources: buildFacsimileSources(
-        metadata.workId,
-        facsimilePage.image_number,
-        metadata.sizes
-      )
-    } satisfies ReaderPage
+async function facsimileReaderPage(
+  event: ReaderEvent,
+  metadata: ReaderFacsimileWorkMetadata,
+  currentPosition: number,
+  commonPage: ReturnType<typeof commonReaderPage>
+): Promise<ReaderPage> {
+  const currentPage = metadata.pages[currentPosition]!
+  const ocrBase = useRuntimeConfig(event).contentBase.replace(/\/$/, "")
+  const ocrOverlay = metadata.searchable
+    ? await fetchReaderOcrOverlay(ocrBase, metadata.workId, currentPage.page_index)
+    : null
+  return {
+    ...commonPage,
+    imageNumber: currentPage.image_number,
+    mediaType: "faksimil",
+    ocrOverlay,
+    preferredSize: metadata.preferredSize,
+    sources: buildFacsimileSources(metadata.workId, currentPage.image_number, metadata.sizes)
   }
+}
 
+async function etextReaderPage(
+  event: ReaderEvent,
+  metadata: ReaderEtextWorkMetadata,
+  currentPosition: number,
+  commonPage: ReturnType<typeof commonReaderPage>
+): Promise<ReaderPage> {
+  const currentPage = metadata.pages[currentPosition]!
   const [pageHtml, sharedStylesheetCss, workStylesheetCss] = await Promise.all([
-    fetchReaderPageHtml(
-      metadata.base,
-      metadata.workId,
-      currentPage.page_index
-    ),
+    fetchReaderPageHtml(metadata.base, metadata.workId, currentPage.page_index),
     fetchReaderSharedStylesheet(useRuntimeConfig(event).contentBase.replace(/\/$/u, "")),
     fetchReaderWorkStylesheet(metadata.base, metadata.workId)
   ])
-  const html = issueManagedReaderHtml(pageHtml.replaceAll("\u00ad", "-"))
-
   return {
     ...commonPage,
-    html,
-    mediaType: metadata.mediaType,
+    html: issueManagedReaderHtml(pageHtml.replaceAll("\u00ad", "-")),
+    mediaType: "etext",
     sharedStylesheetCss,
     sharedStylesheetUrl: "/red/css/etext.css",
     workStylesheetCss,
     workStylesheetUrl: `/txt/css/${encodeURIComponent(metadata.workId)}-etext.css`
-  } satisfies ReaderPage
+  }
+}
+
+const readerPageHandler = defineEventHandler(async event => {
+  setHeader(event, "cache-control", "no-store")
+  const author = requiredParam(event, "author")
+  const titlePath = requiredParam(event, "title")
+  const pageName = requiredParam(event, "page")
+  const mediaType = requiredParam(event, "mediatype")
+  const metadata = await loadReaderMetadata(event, author, titlePath, mediaType)
+  const currentPosition = readerPagePosition(metadata, pageName)
+  const currentPage = metadata.pages[currentPosition]!
+  const commonPage = commonReaderPage(metadata, currentPage, currentPosition, pageName)
+  if (metadata.mediaType === "faksimil") {
+    return facsimileReaderPage(event, metadata, currentPosition, commonPage)
+  }
+  return etextReaderPage(event, metadata, currentPosition, commonPage)
 })
 
 export default readerPageHandler

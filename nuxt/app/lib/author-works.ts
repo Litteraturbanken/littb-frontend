@@ -95,6 +95,24 @@ function isAction(value: unknown): boolean {
   return false
 }
 
+function hasWorkIdentity(value: Record<string, unknown>): boolean {
+  return isString(value.work_id)
+    && isString(value.title_id)
+    && isString(value.title_path)
+    && isString(value.title)
+    && isString(value.title_url)
+}
+
+function hasWorkLabels(value: Record<string, unknown>): boolean {
+  return isNullableString(value.short_title)
+    && isNullableString(value.title_tooltip)
+    && isNullableString(value.imprint_year)
+}
+
+function displayAuthorIsValid(value: unknown, required: boolean): boolean {
+  return required ? isPerson(value) : value === null || isPerson(value)
+}
+
 function isWork(value: unknown, requireDisplayAuthor: boolean): boolean {
   if (!isRecord(value) || !hasExactKeys(value, [
     "work_id",
@@ -112,17 +130,9 @@ function isWork(value: unknown, requireDisplayAuthor: boolean): boolean {
   if (!Array.isArray(value.actions) || value.actions.length < 1 || value.actions.length > 5) {
     return false
   }
-  return isString(value.work_id)
-    && isString(value.title_id)
-    && isString(value.title_path)
-    && isString(value.title)
-    && isNullableString(value.short_title)
-    && isNullableString(value.title_tooltip)
-    && isString(value.title_url)
-    && isNullableString(value.imprint_year)
-    && (requireDisplayAuthor
-      ? isPerson(value.display_author)
-      : value.display_author === null || isPerson(value.display_author))
+  return hasWorkIdentity(value)
+    && hasWorkLabels(value)
+    && displayAuthorIsValid(value.display_author, requireDisplayAuthor)
     && isContainingWork(value.containing_work)
     && value.actions.every(isAction)
 }
@@ -142,9 +152,28 @@ function isSection(
     && value.items.every(item => isWork(item, expectedShowAuthor))
 }
 
+function hasShellIdentity(value: Record<string, unknown>): boolean {
+  return isString(value.author_id)
+    && isString(value.full_name)
+    && isNullableString(value.birth_year)
+    && isNullableString(value.death_year)
+}
+
+function hasShellLinks(value: Record<string, unknown>): boolean {
+  return isNullableString(value.search_url)
+    && isNullableString(value.audio_url)
+    && isNullableString(value.map_url)
+}
+
+function hasShellCollections(value: Record<string, unknown>): boolean {
+  return Array.isArray(value.related_links)
+    && value.related_links.every(isLink)
+    && Array.isArray(value.encyclopedia_links)
+    && value.encyclopedia_links.every(isLink)
+}
+
 function isShell(value: unknown): boolean {
-  return isRecord(value)
-    && hasExactKeys(value, [
+  if (!isRecord(value) || !hasExactKeys(value, [
       "author_id",
       "full_name",
       "birth_year",
@@ -157,21 +186,13 @@ function isShell(value: unknown): boolean {
       "portrait",
       "related_links",
       "encyclopedia_links"
-    ])
-    && isString(value.author_id)
-    && isString(value.full_name)
-    && isNullableString(value.birth_year)
-    && isNullableString(value.death_year)
+    ])) return false
+  return hasShellIdentity(value)
     && typeof value.has_introduction === "boolean"
     && typeof value.has_dramawebben === "boolean"
-    && isNullableString(value.search_url)
-    && isNullableString(value.audio_url)
-    && isNullableString(value.map_url)
+    && hasShellLinks(value)
     && isPortrait(value.portrait)
-    && Array.isArray(value.related_links)
-    && value.related_links.every(isLink)
-    && Array.isArray(value.encyclopedia_links)
-    && value.encyclopedia_links.every(isLink)
+    && hasShellCollections(value)
 }
 
 export function isAuthorWorksResponse(value: unknown): value is AuthorWorksResponse {

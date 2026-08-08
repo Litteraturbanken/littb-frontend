@@ -58,6 +58,12 @@ function isHtmlSpace(character: string | undefined): boolean {
   return character !== undefined && /[\t\n\f\r ]/.test(character)
 }
 
+function afterHtmlSpace(source: string, start: number): number {
+  let cursor = start
+  while (isHtmlSpace(source[cursor])) cursor += 1
+  return cursor
+}
+
 function tagEnd(source: string, start: number): number | null {
   let quote: "\"" | "'" | null = null
   for (let cursor = start + 1; cursor < source.length; cursor += 1) {
@@ -73,56 +79,75 @@ function tagEnd(source: string, start: number): number | null {
   return null
 }
 
-function startTagAt(source: string, start: number): StartTag | null {
-  let cursor = start + 1
+function tagNameAt(source: string, start: number): { end: number; name: string } | null {
+  let cursor = start
   if (!/[a-z]/i.test(source[cursor] ?? "")) return null
-
-  const nameStart = cursor
   while (/[a-z\d:-]/i.test(source[cursor] ?? "")) cursor += 1
-  const name = source.slice(nameStart, cursor).toLowerCase()
-  const end = tagEnd(source, start)
-  if (end === null) return null
+  return { end: cursor, name: source.slice(start, cursor).toLowerCase() }
+}
 
+function attributeNameAt(
+  source: string,
+  start: number,
+  limit: number
+): { end: number; name: string } | null {
+  let cursor = start
+  while (cursor < limit && !isHtmlSpace(source[cursor])
+    && !["/", ">", "="].includes(source[cursor] ?? "")) cursor += 1
+  return cursor === start
+    ? null
+    : { end: cursor, name: source.slice(start, cursor).toLowerCase() }
+}
+
+function afterAttributeValue(source: string, start: number, limit: number): number {
+  let cursor = afterHtmlSpace(source, start)
+  const quote = source[cursor]
+  if (quote === "\"" || quote === "'") {
+    cursor += 1
+    while (cursor < limit && source[cursor] !== quote) cursor += 1
+    return source[cursor] === quote ? cursor + 1 : cursor
+  }
+  while (cursor < limit && !isHtmlSpace(source[cursor])
+    && !["/", ">"].includes(source[cursor] ?? "")) cursor += 1
+  return cursor
+}
+
+function startTagAttributes(source: string, start: number, end: number): Set<string> {
   const attributes = new Set<string>()
-  while (cursor < end - 1) {
-    while (isHtmlSpace(source[cursor])) cursor += 1
+  let cursor = start
+  const limit = end - 1
+  while (cursor < limit) {
+    cursor = afterHtmlSpace(source, cursor)
     if (source[cursor] === "/") {
       cursor += 1
       continue
     }
-    if (cursor >= end - 1) break
-
-    const attributeStart = cursor
-    while (
-      cursor < end - 1
-      && !isHtmlSpace(source[cursor])
-      && !["/", ">", "="].includes(source[cursor] ?? "")
-    ) cursor += 1
-    if (cursor === attributeStart) {
+    if (cursor >= limit) break
+    const attribute = attributeNameAt(source, cursor, limit)
+    if (!attribute) {
       cursor += 1
       continue
     }
-    attributes.add(source.slice(attributeStart, cursor).toLowerCase())
-
-    while (isHtmlSpace(source[cursor])) cursor += 1
+    attributes.add(attribute.name)
+    cursor = afterHtmlSpace(source, attribute.end)
     if (source[cursor] !== "=") continue
-    cursor += 1
-    while (isHtmlSpace(source[cursor])) cursor += 1
-    const quote = source[cursor]
-    if (quote === "\"" || quote === "'") {
-      cursor += 1
-      while (cursor < end - 1 && source[cursor] !== quote) cursor += 1
-      if (source[cursor] === quote) cursor += 1
-    } else {
-      while (
-        cursor < end - 1
-        && !isHtmlSpace(source[cursor])
-        && !["/", ">"].includes(source[cursor] ?? "")
-      ) cursor += 1
-    }
+    cursor = afterAttributeValue(source, cursor + 1, limit)
   }
+  return attributes
+}
 
-  return { start, end, name, source: source.slice(start, end), attributes }
+function startTagAt(source: string, start: number): StartTag | null {
+  const tagName = tagNameAt(source, start + 1)
+  if (!tagName) return null
+  const end = tagEnd(source, start)
+  if (end === null) return null
+  return {
+    start,
+    end,
+    name: tagName.name,
+    source: source.slice(start, end),
+    attributes: startTagAttributes(source, tagName.end, end)
+  }
 }
 
 function rawTextEnd(source: string, lowerSource: string, tag: StartTag): number {
@@ -140,12 +165,43 @@ function rawTextEnd(source: string, lowerSource: string, tag: StartTag): number 
 }
 
 function imageElementEnd(source: string, lowerSource: string, tag: StartTag): number {
-  let cursor = tag.end
-  while (isHtmlSpace(source[cursor])) cursor += 1
+  const cursor = afterHtmlSpace(source, tag.end)
   if (!lowerSource.startsWith("</img", cursor)) return tag.end
   const delimiter = source[cursor + "</img".length]
   if (delimiter !== ">" && !isHtmlSpace(delimiter)) return tag.end
   return tagEnd(source, cursor) ?? tag.end
+}
+
+function scannedTagAt(
+  source: string,
+  lowerSource: string,
+  opening: number
+): { next: number; tag: StartTag | null } {
+  if (source.startsWith("<!--", opening)) {
+    const commentEnd = source.indexOf("-->", opening + 4)
+    return { next: commentEnd === -1 ? source.length : commentEnd + 3, tag: null }
+  }
+  if (["!", "?", "/"].includes(source[opening + 1] ?? "")) {
+    return { next: tagEnd(source, opening) ?? source.length, tag: null }
+  }
+  const tag = startTagAt(source, opening)
+  if (!tag) return { next: opening + 1, tag: null }
+  return {
+    next: rawTextElements.has(tag.name) ? rawTextEnd(source, lowerSource, tag) : tag.end,
+    tag
+  }
+}
+
+function appendControlTag(
+  tags: StartTag[],
+  source: string,
+  lowerSource: string,
+  tag: StartTag | null
+): void {
+  if (tag?.name === "link" && tag.attributes.has("data-ng-href")) tags.push(tag)
+  if (tag?.name === "img" && tag.attributes.has("bkg-img")) {
+    tags.push({ ...tag, end: imageElementEnd(source, lowerSource, tag) })
+  }
 }
 
 function controlTags(source: string): StartTag[] {
@@ -156,30 +212,26 @@ function controlTags(source: string): StartTag[] {
   while (cursor < source.length) {
     const opening = source.indexOf("<", cursor)
     if (opening === -1) break
-    if (source.startsWith("<!--", opening)) {
-      const commentEnd = source.indexOf("-->", opening + 4)
-      cursor = commentEnd === -1 ? source.length : commentEnd + 3
-      continue
-    }
-    if (["!", "?", "/"].includes(source[opening + 1] ?? "")) {
-      cursor = tagEnd(source, opening) ?? source.length
-      continue
-    }
-
-    const tag = startTagAt(source, opening)
-    if (!tag) {
-      cursor = opening + 1
-      continue
-    }
-    if (tag.name === "link" && tag.attributes.has("data-ng-href")) tags.push(tag)
-    if (tag.name === "img" && tag.attributes.has("bkg-img")) {
-      tags.push({ ...tag, end: imageElementEnd(source, lowerSource, tag) })
-    }
-    cursor = rawTextElements.has(tag.name)
-      ? rawTextEnd(source, lowerSource, tag)
-      : tag.end
+    const scanned = scannedTagAt(source, lowerSource, opening)
+    appendControlTag(tags, source, lowerSource, scanned.tag)
+    cursor = scanned.next
   }
   return tags
+}
+
+function fullyDecodedRedPath(value: string): string | null {
+  let decoded = value
+  try {
+    for (let pass = 0; pass < maxDecodePasses; pass += 1) {
+      const next = decodeURIComponent(decoded)
+      if (next.length > maxCanonicalPathLength) return null
+      if (next === decoded) return decoded
+      decoded = next
+    }
+  } catch {
+    return null
+  }
+  return null
 }
 
 function canonicalRedPath(value: string | null): string | null {
@@ -191,18 +243,8 @@ function canonicalRedPath(value: string | null): string | null {
   ) return null
 
   try {
-    let decoded = value
-    let stabilized = false
-    for (let pass = 0; pass < maxDecodePasses; pass += 1) {
-      const next = decodeURIComponent(decoded)
-      if (next.length > maxCanonicalPathLength) return null
-      if (next === decoded) {
-        stabilized = true
-        break
-      }
-      decoded = next
-    }
-    if (!stabilized) return null
+    const decoded = fullyDecodedRedPath(value)
+    if (decoded === null) return null
     if (decoded.includes("\\") || !decoded.startsWith("/red/")) return null
     if (decoded.split("/").some(segment => segment === "." || segment === "..")) return null
 

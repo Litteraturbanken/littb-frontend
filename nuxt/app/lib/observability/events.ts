@@ -1,13 +1,9 @@
 import type { components } from "../api/generated/lbapi"
 
-export type ObservabilityEvent
-  = components["schemas"]["ObservabilityEventBatch"]["events"][number]
-export type ObservabilityEventBatch
-  = components["schemas"]["ObservabilityEventBatch"]
-export type BrowserErrorEvent = components["schemas"]["BrowserErrorEvent"]
-export type BrowserUnhandledRejectionEvent
+type BrowserErrorEvent = components["schemas"]["BrowserErrorEvent"]
+type BrowserUnhandledRejectionEvent
   = components["schemas"]["BrowserUnhandledRejectionEvent"]
-export type BrowserChunkErrorEvent
+type BrowserChunkErrorEvent
   = components["schemas"]["BrowserChunkErrorEvent"]
 export type BrowserEvent
   = BrowserErrorEvent

@@ -67,45 +67,44 @@ export function decodeLegacyDramawebbenSegment(raw: string): string {
   return decoded
 }
 
-function isSafeLocalLocation(value: unknown, kind: "play" | "author"): value is string {
-  if (
-    typeof value !== "string"
-    || value.length < 1
-    || value.length > 2048
-    || !value.startsWith("/")
-    || value.startsWith("//")
-    || value.includes("\\")
-    || value.includes("#")
-    || hasC0OrC1Control(value)
-    || hasLoneSurrogate(value)
-  ) return false
+type ParsedLocalLocation = { segments: string[]; url: URL }
 
-  let url: URL
-  try {
-    url = new URL(value, "http://littb.invalid")
-  } catch {
-    return false
-  }
-  if (url.origin !== "http://littb.invalid") return false
-
-  const segments = url.pathname.slice(1).split("/").map(segment => {
+function decodedLocationSegments(url: URL): string[] | null {
+  const segments: string[] = []
+  for (const segment of url.pathname.slice(1).split("/")) {
     try {
-      return decodeURIComponent(segment)
+      segments.push(decodeURIComponent(segment))
     } catch {
       return null
     }
-  })
-  if (segments.some(segment => segment === null)) return false
-
-  if (kind === "author") {
-    return segments.length === 3
-      && segments[0] === "författare"
-      && isSafeSegment(segments[1]!, 100)
-      && segments[2] === "dramawebben"
-      && url.search === ""
   }
+  return segments
+}
 
-  const reader = segments.length === 7
+function parseLocalLocation(value: unknown): ParsedLocalLocation | null {
+  if (typeof value !== "string" || value.length < 1 || value.length > 2048
+    || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")
+    || value.includes("#") || hasC0OrC1Control(value) || hasLoneSurrogate(value)) return null
+  try {
+    const url = new URL(value, "http://littb.invalid")
+    if (url.origin !== "http://littb.invalid") return null
+    const segments = decodedLocationSegments(url)
+    return segments ? { segments, url } : null
+  } catch {
+    return null
+  }
+}
+
+function isAuthorLocation({ segments, url }: ParsedLocalLocation): boolean {
+  return segments.length === 3
+    && segments[0] === "författare"
+    && isSafeSegment(segments[1]!, 100)
+    && segments[2] === "dramawebben"
+    && url.search === ""
+}
+
+function isReaderLocation({ segments, url }: ParsedLocalLocation): boolean {
+  return segments.length === 7
     && segments[0] === "författare"
     && isSafeSegment(segments[1]!, 100)
     && segments[2] === "titlar"
@@ -114,16 +113,28 @@ function isSafeLocalLocation(value: unknown, kind: "play" | "author"): value is 
     && isSafeSegment(segments[5]!, 100)
     && ["etext", "faksimil"].includes(segments[6]!)
     && url.search === ""
-  const pdf = segments.length === 3
+}
+
+function isPdfLocation({ segments, url }: ParsedLocalLocation): boolean {
+  return segments.length === 3
     && segments[0] === "txt"
     && isSafeSegment(segments[1]!, 100)
     && segments[2] === `${segments[1]}.pdf`
     && url.search === ""
-  const information = segments.length === 2
+}
+
+function isInformationLocation({ segments, url }: ParsedLocalLocation): boolean {
+  return segments.length === 2
     && segments[0] === "dramawebben"
     && segments[1] === "pjäser"
     && /^\?om-boken&authorid=[^&=]+&titlepath=[^&=]+$/u.test(url.search)
-  return reader || pdf || information
+}
+
+function isSafeLocalLocation(value: unknown, kind: "play" | "author"): value is string {
+  const location = parseLocalLocation(value)
+  if (!location) return false
+  if (kind === "author") return isAuthorLocation(location)
+  return isReaderLocation(location) || isPdfLocation(location) || isInformationLocation(location)
 }
 
 export async function resolveLegacyDramawebbenRoutePrivately(

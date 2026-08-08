@@ -46,16 +46,19 @@ function encodeRfc3986Segment(value: string): string {
   )
 }
 
+function isAuthorSummary(value: UnknownRecord): boolean {
+  return typeof value.authorId === "string"
+    && typeof value.fullName === "string"
+    && typeof value.lifespan === "string"
+    && typeof value.hasIntroduction === "boolean"
+    && typeof value.hasDramawebben === "boolean"
+    && (value.searchUrl === null || typeof value.searchUrl === "string")
+    && (value.audioUrl === null || typeof value.audioUrl === "string")
+}
+
 function isAuthorSupplementalPage(value: unknown): value is AuthorSupplementalPage {
   if (!isRecord(value) || !isRecord(value.author)) return false
-  const author = value.author
-  return typeof author.authorId === "string"
-    && typeof author.fullName === "string"
-    && typeof author.lifespan === "string"
-    && typeof author.hasIntroduction === "boolean"
-    && typeof author.hasDramawebben === "boolean"
-    && (author.searchUrl === null || typeof author.searchUrl === "string")
-    && (author.audioUrl === null || typeof author.audioUrl === "string")
+  return isAuthorSummary(value.author)
     && isDocumentKind(value.documentKind)
     && typeof value.bodyHtml === "string"
 }

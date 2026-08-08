@@ -32,6 +32,26 @@ function hasFocusedPasteOwner(target: EventTarget | null): boolean {
     && element !== element.ownerDocument.documentElement
 }
 
+function modifiedProductionShortcut(event: KeyboardEvent): boolean {
+  return event.defaultPrevented
+    || event.isComposing
+    || event.altKey
+    || event.ctrlKey
+    || event.metaKey
+    || event.shiftKey
+}
+
+function productionShortcutTargetGuarded(
+  eventTarget: EventTarget | null,
+  activeElement: EventTarget | null
+): boolean {
+  return editableTarget(eventTarget)
+    || editableTarget(activeElement)
+    || dialogTarget(eventTarget)
+    || dialogTarget(activeElement)
+    || openDialog()
+}
+
 export function isProductionShortcutGuarded(
   event: KeyboardEvent,
   activeElement?: EventTarget | null
@@ -39,17 +59,8 @@ export function isProductionShortcutGuarded(
   const currentActiveElement = activeElement === undefined && typeof document !== "undefined"
     ? document.activeElement
     : activeElement ?? null
-  return event.defaultPrevented
-    || event.isComposing
-    || event.altKey
-    || event.ctrlKey
-    || event.metaKey
-    || event.shiftKey
-    || editableTarget(event.target)
-    || editableTarget(currentActiveElement)
-    || dialogTarget(event.target)
-    || dialogTarget(currentActiveElement)
-    || openDialog()
+  return modifiedProductionShortcut(event)
+    || productionShortcutTargetGuarded(event.target, currentActiveElement)
 }
 
 export function isPublicShellPasteGuarded(

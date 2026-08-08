@@ -143,23 +143,31 @@ function hasMalformedPercentEncoding(value: string): boolean {
   return false
 }
 
+function unsafeDecodedPathSegment(value: string): boolean {
+  return value === "." || value === ".." || /[\\/]/.test(value)
+}
+
+function decodedPathSegment(value: string): string | null {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return null
+  }
+}
+
 function hasUnsafePathSegment(rawSegment: string): boolean {
+  if (hasMalformedPercentEncoding(rawSegment)) return true
   let segment = rawSegment
   for (let layer = 0; layer < maximumPathDecodeLayers; layer += 1) {
-    if (segment === "." || segment === ".." || /[\\/]/.test(segment)) return true
-    if (layer === 0 && hasMalformedPercentEncoding(segment)) return true
+    if (unsafeDecodedPathSegment(segment)) return true
     if (!/%[\da-f]{2}/i.test(segment)) return false
 
-    let decoded: string
-    try {
-      decoded = decodeURIComponent(segment)
-    } catch {
-      return true
-    }
+    const decoded = decodedPathSegment(segment)
+    if (decoded === null) return true
     if (decoded === segment) return false
     segment = decoded
   }
-  if (segment === "." || segment === ".." || /[\\/]/.test(segment)) return true
+  if (unsafeDecodedPathSegment(segment)) return true
   return /%[\da-f]{2}/i.test(segment)
 }
 
@@ -243,6 +251,60 @@ async function boundedResponseBytes(response: Response, maximumBytes: number): P
   return bytes
 }
 
+function validatedManagedFinalUrl(
+  responseUrl: string,
+  authority: ConfiguredAuthority,
+  rules: ManagedTextRules
+): URL {
+  let rawFinalUrl: RawUrlAuthority | undefined
+  let rawFinalError: unknown
+  try {
+    rawFinalUrl = inspectRawUrlAuthority(responseUrl, "Managed text final URL is not allowed")
+  } catch (error) {
+    rawFinalError = error
+  }
+  const finalUrl = new URL(responseUrl)
+  if (finalUrl.username || finalUrl.password) {
+    throw new Error("Managed text final URL credentials are not allowed")
+  }
+  if (!rawFinalUrl) {
+    throw rawFinalError ?? new Error("Managed text final URL is not allowed")
+  }
+  if (
+    !["http:", "https:"].includes(finalUrl.protocol)
+    || finalUrl.protocol !== rawFinalUrl.protocol
+  ) {
+    throw new Error("Managed text final URL is not allowed")
+  }
+  if (finalUrl.protocol !== authority.protocol) {
+    throw new Error("Managed text final protocol is not allowed")
+  }
+  if (finalUrl.origin !== authority.origin) {
+    throw new Error("Managed text final authority is not allowed")
+  }
+  if (hasUnsafeEncodedPath(rawPathname(rawFinalUrl.suffix))) {
+    throw new Error("Managed text final path is not allowed")
+  }
+  const pathAllowed = rules.allowedPaths?.includes(finalUrl.pathname)
+    || rules.allowedPathPrefixes.some(prefix => pathMatchesPrefix(finalUrl.pathname, prefix))
+  if (!pathAllowed) throw new Error("Managed text final path is not allowed")
+  return finalUrl
+}
+
+function validateManagedResponse(response: Response, rules: ManagedTextRules): void {
+  if (!response.ok) throw new Error("Managed text request failed")
+
+  const mediaType = responseMediaType(response)
+  if (!rules.allowedContentTypes.some(value => value.toLowerCase() === mediaType)) {
+    throw new Error("Managed text content type is not allowed")
+  }
+
+  const declaredBytes = declaredByteLength(response)
+  if (declaredBytes !== null && declaredBytes > rules.maximumBytes) {
+    throw new Error("Managed text exceeds byte limit")
+  }
+}
+
 export async function fetchManagedText(
   url: string,
   rules: ManagedTextRules,
@@ -250,70 +312,11 @@ export async function fetchManagedText(
 ): Promise<string> {
   const authority = configuredAuthority(rules.authorityOrigin)
   const response = await fetcher(url, { redirect: "follow" })
-  let rawFinalUrl: RawUrlAuthority | undefined
-  let rawFinalError: unknown
   try {
-    rawFinalUrl = inspectRawUrlAuthority(response.url, "Managed text final URL is not allowed")
-  } catch (error) {
-    rawFinalError = error
-  }
-  let finalUrl: URL
-  try {
-    finalUrl = new URL(response.url)
+    validatedManagedFinalUrl(response.url, authority, rules)
+    validateManagedResponse(response, rules)
   } catch (error) {
     return rejectUnreadBody(response, error)
-  }
-  if (finalUrl.username || finalUrl.password) {
-    return rejectUnreadBody(
-      response,
-      new Error("Managed text final URL credentials are not allowed")
-    )
-  }
-  if (!rawFinalUrl) {
-    return rejectUnreadBody(
-      response,
-      rawFinalError ?? new Error("Managed text final URL is not allowed")
-    )
-  }
-  if (
-    !["http:", "https:"].includes(finalUrl.protocol)
-    || finalUrl.protocol !== rawFinalUrl.protocol
-  ) {
-    return rejectUnreadBody(response, new Error("Managed text final URL is not allowed"))
-  }
-  if (finalUrl.protocol !== authority.protocol) {
-    return rejectUnreadBody(response, new Error("Managed text final protocol is not allowed"))
-  }
-  if (finalUrl.origin !== authority.origin) {
-    return rejectUnreadBody(response, new Error("Managed text final authority is not allowed"))
-  }
-  const finalRawPathname = rawPathname(rawFinalUrl.suffix)
-  if (hasUnsafeEncodedPath(finalRawPathname)) {
-    return rejectUnreadBody(response, new Error("Managed text final path is not allowed"))
-  }
-  if (
-    !rules.allowedPaths?.includes(finalUrl.pathname)
-    && !rules.allowedPathPrefixes.some(prefix => pathMatchesPrefix(finalUrl.pathname, prefix))
-  ) {
-    return rejectUnreadBody(response, new Error("Managed text final path is not allowed"))
-  }
-  if (!response.ok) {
-    return rejectUnreadBody(response, new Error("Managed text request failed"))
-  }
-
-  const mediaType = responseMediaType(response)
-  if (!rules.allowedContentTypes.some(value => value.toLowerCase() === mediaType)) {
-    return rejectUnreadBody(response, new Error("Managed text content type is not allowed"))
-  }
-
-  let declaredBytes: number | null
-  try {
-    declaredBytes = declaredByteLength(response)
-  } catch (error) {
-    return rejectUnreadBody(response, error)
-  }
-  if (declaredBytes !== null && declaredBytes > rules.maximumBytes) {
-    return rejectUnreadBody(response, new Error("Managed text exceeds byte limit"))
   }
   const bytes = await boundedResponseBytes(response, rules.maximumBytes)
   return new TextDecoder("utf-8", { fatal: true }).decode(bytes)

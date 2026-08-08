@@ -8,6 +8,11 @@ import {
   markEditorEtextHtml,
   markReaderOcrHtml
 } from "~/lib/search-hit-highlight"
+import {
+  keyboardNavigationAction,
+  type KeyboardNavigationAction,
+  type KeyboardNavigationDirection
+} from "~/lib/reader-keyboard-navigation"
 import { parseTextSearchReturnHref } from "~/lib/text-search-navigation"
 import {
   isWorkSearchActivationKey,
@@ -516,26 +521,39 @@ function routeBoolean(key: string, fallback: boolean): boolean | null {
 }
 
 const maximumHitOffset = 1_000_000
-const searchState = computed<EditorSearchState | null>(() => {
-  const current = page.value
+function boundedSearchQuery(): string | null {
   const query = routeSingleString("s_query")?.trim() ?? ""
-  const hitIndex = routeSingleString("hit_index")
-  const fromWordId = routeSingleString("traff")
-  const toWordId = routeSingleString("traffslut")
+  return query.length >= 1 && query.length <= 200 ? query : null
+}
+
+function boundedSearchHit(): number | null {
+  const rawHit = routeSingleString("hit_index")
+  if (!rawHit || !/^(?:0|[1-9]\d*)$/.test(rawHit)) return null
+  const hit = Number(rawHit)
+  return Number.isSafeInteger(hit) && hit <= maximumHitOffset ? hit : null
+}
+
+function boundedSearchWordId(key: "traff" | "traffslut"): string | null {
+  const value = routeSingleString(key)
+  return value && value.length <= 100 ? value : null
+}
+
+function editorSearchState(current: EditorReaderPage | null | undefined): EditorSearchState | null {
+  if (!current?.searchable) return null
+  if (routeSingleString("s_lbworkid") !== current.workId) return null
+  if (routeSingleString("s_mediatype") !== current.mediaType) return null
+
+  const query = boundedSearchQuery()
+  const hit = boundedSearchHit()
+  const fromWordId = boundedSearchWordId("traff")
+  const toWordId = boundedSearchWordId("traffslut")
   const wordFormOnly = routeBoolean("s_word_form_only", false)
   const includeOlderSpellings = routeBoolean("s_include_modernized", true)
   const prefix = routeBoolean("s_prefix", false)
   const suffix = routeBoolean("s_suffix", false)
-  if (
-    !current?.searchable || query.length < 1 || query.length > 200 ||
-    routeSingleString("s_lbworkid") !== current.workId ||
-    routeSingleString("s_mediatype") !== current.mediaType ||
-    !hitIndex || !/^(?:0|[1-9]\d*)$/.test(hitIndex) ||
-    !fromWordId || !toWordId || fromWordId.length > 100 || toWordId.length > 100 ||
+  if (!query || hit === null || !fromWordId || !toWordId ||
     wordFormOnly === null || includeOlderSpellings === null || prefix === null || suffix === null
   ) return null
-  const hit = Number(hitIndex)
-  if (!Number.isSafeInteger(hit) || hit > maximumHitOffset) return null
   return Object.freeze({
     fromWordId,
     hit,
@@ -546,7 +564,9 @@ const searchState = computed<EditorSearchState | null>(() => {
     toWordId,
     wordForms: !wordFormOnly
   })
-})
+}
+
+const searchState = computed<EditorSearchState | null>(() => editorSearchState(page.value))
 
 watch(() => route.query.show_search_work, value => {
   workSearchOpen.value = value !== undefined
@@ -578,17 +598,33 @@ function wordPosition(value: string, currentWorkId: string): {
     : null
 }
 
+function isWorkSearchHitShape(value: unknown): value is WorkSearchHit {
+  if (!isRecord(value) || !isRecord(value.highlight)) return false
+  return typeof value.index === "number"
+    && Number.isSafeInteger(value.index)
+    && typeof value.page_name === "string"
+    && value.page_name.length >= 1
+    && typeof value.page_index === "number"
+    && Number.isSafeInteger(value.page_index)
+}
+
+function hitRangeIsValid(hit: WorkSearchHit, currentWorkId: string): boolean {
+  const from = wordPosition(String(hit.highlight.from_word_id ?? ""), currentWorkId)
+  const to = wordPosition(String(hit.highlight.to_word_id ?? ""), currentWorkId)
+  return Boolean(from && to && from.scope === to.scope && from.ordinal <= to.ordinal)
+}
+
+function hitMatchesEditorPageRange(hit: WorkSearchHit, current: EditorReaderPage): boolean {
+  if (hit.page_index < 0 || hit.page_index >= (current.pageCount ?? 0)) return false
+  if (current.mediaType !== "faksimil") return true
+  const from = wordPosition(String(hit.highlight.from_word_id ?? ""), current.workId)
+  return from?.page === null || String(from?.page) === hit.page_name
+}
+
 function isWorkSearchHit(value: unknown, current: EditorReaderPage): value is WorkSearchHit {
-  if (!isRecord(value) || typeof value.index !== "number" || !Number.isSafeInteger(value.index) ||
-    typeof value.page_name !== "string" || value.page_name.length < 1 ||
-    typeof value.page_index !== "number" || !Number.isSafeInteger(value.page_index) ||
-    !isRecord(value.highlight)) return false
-  const from = wordPosition(String(value.highlight.from_word_id ?? ""), current.workId)
-  const to = wordPosition(String(value.highlight.to_word_id ?? ""), current.workId)
-  if (!from || !to || from.scope !== to.scope || from.ordinal > to.ordinal) return false
-  if (current.mediaType === "faksimil" && from.page !== null &&
-    String(from.page) !== value.page_name) return false
-  return value.page_index >= 0 && value.page_index < (current.pageCount ?? 0)
+  return isWorkSearchHitShape(value)
+    && hitRangeIsValid(value, current.workId)
+    && hitMatchesEditorPageRange(value, current)
 }
 
 function isExpectedHitResponse(
@@ -809,12 +845,16 @@ async function submitWorkSearch(): Promise<void> {
     }
     await navigateRawFullPath(workSearchHitHref(hit, query))
   } catch (searchError) {
-    if (!(searchError instanceof DOMException && searchError.name === "AbortError")) {
+    if (!isAbortError(searchError)) {
       workSearchMessage.value = "Sökningen kunde inte genomföras."
     }
   } finally {
     if (workSearchController === controller) workSearchController = null
   }
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError"
 }
 
 watch(searchState, state => {
@@ -831,36 +871,57 @@ watch(rawFullPath, () => {
   hitNavigationGeneration += 1
 }, { flush: "sync" })
 
-async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
+type EditorHitLookupContext = {
+  state: EditorSearchState
+  current: EditorReaderPage
+  response: WorkSearchHitsResponse
+  sourceIdentity: string
+}
+
+function editorHitLookupContext(index: number): EditorHitLookupContext | null {
   const state = searchState.value
   const current = page.value
   const response = hitResponse.value
-  const sourceIdentity = searchRequestIdentity.value
-  if (!state || !current || !response || index < 0 || index >= response.total_hits ||
-    index > maximumHitOffset) return null
+  if (!state || !current || !response) return null
+  if (index < 0 || index >= response.total_hits || index > maximumHitOffset) return null
+  return { state, current, response, sourceIdentity: searchRequestIdentity.value }
+}
+
+async function fetchEditorHitAtIndex(
+  context: EditorHitLookupContext,
+  index: number
+): Promise<WorkSearchHit | null> {
+  const { state, current, response, sourceIdentity } = context
+  const client = createLbApiClient(config.public.apiBase)
+  const result = await client.GET("/works/{work_id}/search-hits", {
+    params: {
+      path: { work_id: current.workId },
+      query: {
+        media_type: current.mediaType,
+        query: state.query,
+        offset: index,
+        limit: 1,
+        word_forms: state.wordForms,
+        include_older_spellings: state.includeOlderSpellings,
+        prefix: state.prefix,
+        suffix: state.suffix
+      }
+    }
+  })
+  if (result.error || !isExpectedHitResponse(result.data, state, current, index, 1)) return null
+  if (result.data.total_hits !== response.total_hits) return null
+  if (sourceIdentity !== searchRequestIdentity.value) return null
+  return result.data.items[0] ?? null
+}
+
+async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
+  const context = editorHitLookupContext(index)
+  if (!context) return null
+  const { response } = context
   const cached = workSearchHitAt(response.items, index)
   if (cached) return cached
   try {
-    const client = createLbApiClient(config.public.apiBase)
-    const result = await client.GET("/works/{work_id}/search-hits", {
-      params: {
-        path: { work_id: current.workId },
-        query: {
-          media_type: current.mediaType,
-          query: state.query,
-          offset: index,
-          limit: 1,
-          word_forms: state.wordForms,
-          include_older_spellings: state.includeOlderSpellings,
-          prefix: state.prefix,
-          suffix: state.suffix
-        }
-      }
-    })
-    if (result.error || !isExpectedHitResponse(result.data, state, current, index, 1) ||
-      result.data.total_hits !== response.total_hits ||
-      sourceIdentity !== searchRequestIdentity.value) return null
-    return result.data.items[0] ?? null
+    return await fetchEditorHitAtIndex(context, index)
   } catch {
     return null
   }
@@ -893,38 +954,38 @@ function isEditableTarget(target: EventTarget | null): boolean {
     target.isContentEditable || ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)
   )
 }
+function editorAtScrollEdge(direction: KeyboardNavigationDirection): boolean {
+  if (direction === "previous") return window.scrollX < 10
+  return Math.ceil(window.scrollX + window.innerWidth) >= document.documentElement.scrollWidth
+}
+
+function boundedEditorTarget(current: EditorReaderPage, target: number): number | null {
+  if (current.pageIndexes) return current.pageIndexes.includes(target) ? target : null
+  return target >= 0 && current.pageCount !== null && target < current.pageCount ? target : null
+}
+
+function editorTargetForAction(
+  current: EditorReaderPage,
+  action: KeyboardNavigationAction
+): number | null {
+  if (action.kind === "adjacent") {
+    return action.direction === "next" ? current.nextIndex : current.previousIndex
+  }
+  if (action.kind === "jump") {
+    return boundedEditorTarget(current, current.pageIndex + (action.direction === "next" ? 10 : -10))
+  }
+  return null
+}
+
 function keyboardTarget(event: KeyboardEvent): number | null {
   const current = page.value
   if (!current) return null
-  const boundedTarget = (target: number) => {
-    if (current.pageIndexes) return current.pageIndexes.includes(target) ? target : null
-    return target >= 0 && current.pageCount !== null && target < current.pageCount ? target : null
-  }
-  if (event.key === "n") return current.nextIndex
-  if (event.key === "f") return current.previousIndex
-  if (event.key === "m" || event.key === "F16") {
-    return boundedTarget(current.pageIndex + 10)
-  }
-  if (event.key === "d" || event.key === "F15") {
-    return boundedTarget(current.pageIndex - 10)
-  }
-  if (event.key === "ArrowRight") {
-    if (event.altKey && event.shiftKey) {
-      return boundedTarget(current.pageIndex + 10)
-    }
-    if (event.altKey) return null
-    const atRightEdge = Math.ceil(window.scrollX + window.innerWidth) >=
-      document.documentElement.scrollWidth
-    return event.shiftKey || atRightEdge ? current.nextIndex : null
-  }
-  if (event.key === "ArrowLeft") {
-    if (event.altKey && event.shiftKey) {
-      return boundedTarget(current.pageIndex - 10)
-    }
-    if (event.altKey) return null
-    return event.shiftKey || window.scrollX < 10 ? current.previousIndex : null
-  }
-  return null
+  const action = keyboardNavigationAction(event, {
+    altArrowAction: null,
+    atEdge: editorAtScrollEdge,
+    letterAction: "jump"
+  })
+  return action ? editorTargetForAction(current, action) : null
 }
 function handleKeyboard(event: KeyboardEvent): void {
   if (

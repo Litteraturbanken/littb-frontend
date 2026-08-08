@@ -93,6 +93,25 @@ function safeHref(value: string): boolean {
   }
 }
 
+function attributeAllowed(elementName: string, attributeName: string): boolean {
+  return attributeName === "class"
+    || (elementName === "a" && ["href", "target", "rel"].includes(attributeName))
+}
+
+function sanitizeAnchor(element: SanitizableElement): void {
+  if (element.hasAttribute("href") && !safeHref(element.getAttribute("href") ?? "")) {
+    element.removeAttribute("href")
+  }
+  if (element.hasAttribute("target") && element.getAttribute("target") !== "_blank") {
+    element.removeAttribute("target")
+  }
+  if (element.getAttribute("target") !== "_blank") return
+  const rel = new Set((element.getAttribute("rel") ?? "").split(/\s+/u).filter(Boolean))
+  rel.add("noopener")
+  rel.add("noreferrer")
+  element.setAttribute("rel", [...rel].join(" "))
+}
+
 function sanitizeElement(element: SanitizableElement): void {
   const name = element.localName.toLowerCase()
   if (removedSubtrees.has(name)) {
@@ -108,24 +127,10 @@ function sanitizeElement(element: SanitizableElement): void {
 
   for (const attribute of [...element.attributes]) {
     const attributeName = attribute.name.toLowerCase()
-    const allowed = attributeName === "class"
-      || (name === "a" && ["href", "target", "rel"].includes(attributeName))
-    if (!allowed) element.removeAttribute(attribute.name)
+    if (!attributeAllowed(name, attributeName)) element.removeAttribute(attribute.name)
   }
 
-  if (name !== "a") return
-  if (element.hasAttribute("href") && !safeHref(element.getAttribute("href") ?? "")) {
-    element.removeAttribute("href")
-  }
-  if (element.hasAttribute("target") && element.getAttribute("target") !== "_blank") {
-    element.removeAttribute("target")
-  }
-  if (element.getAttribute("target") === "_blank") {
-    const rel = new Set((element.getAttribute("rel") ?? "").split(/\s+/u).filter(Boolean))
-    rel.add("noopener")
-    rel.add("noreferrer")
-    element.setAttribute("rel", [...rel].join(" "))
-  }
+  if (name === "a") sanitizeAnchor(element)
 }
 
 function sanitizeNode(node: SanitizableNode): void {

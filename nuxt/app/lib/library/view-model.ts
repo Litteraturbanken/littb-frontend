@@ -18,9 +18,9 @@ type LatestItem = components["schemas"]["LibraryLatestItem"]
 type LibraryAuthorIds = NonNullable<
   components["schemas"]["LibraryBrowseCountResponse"]["author_ids"]
 >
-export type LibraryHighlightFragment = components["schemas"]["LibraryHighlightFragment"]
+type LibraryHighlightFragment = components["schemas"]["LibraryHighlightFragment"]
 
-export type LibraryResult = {
+type LibraryResult = {
   index: "etext" | "faksimil" | "pdf" | "etext-part" | "faksimil-part" | "author" | "presentations" | "sol" | "litteraturkartan" | "wordpress"
   sourceLabel: string
   primaryLabel: string
@@ -40,7 +40,7 @@ export type LibraryResult = {
   highlights: LibraryHighlightFragment[]
 }
 
-export type DownloadResult = {
+type DownloadResult = {
   title: string
   titleTooltip: string
   year: string
@@ -54,14 +54,14 @@ export type DownloadResult = {
   downloadFilename: string
 }
 
-export type BrowseAction = {
+type BrowseAction = {
   kind: components["schemas"]["LibraryAction"]["kind"]
   label: string
   href: string
   downloadFilename: string
 }
 
-export type SourceExport = {
+type SourceExport = {
   lbworkid: string
   mediatype: components["schemas"]["LibrarySourceExport"]["media_type"]
   type: components["schemas"]["LibrarySourceExport"]["format"]
@@ -83,7 +83,7 @@ export type BrowseResult = {
   sourceExports: SourceExport[]
 }
 
-export type LatestResult = {
+type LatestResult = {
   title: string
   titleTooltip: string
   titleId: string
@@ -145,65 +145,90 @@ function knownYear(value: number | null): string {
   return typeof value === "number" && value > 0 ? String(value) : ""
 }
 
+function mapTextItem(item: Extract<AllItem, { kind: "text" }>): LibraryResult {
+  return {
+    ...baseResult(item.index, item.highlights),
+    sourceLabel: item.source_label,
+    primaryLabel: item.short_title ?? item.title,
+    primaryHref: `${authorHref(item.reader_author_id)}/titlar/${encodeURIComponent(item.title_id)}/sida/${encodeURIComponent(item.page_name)}/${encodeURIComponent(item.media_type)}`,
+    yearLabel: item.imprint_year ?? "",
+    secondaryAuthor: item.main_author.full_name ?? "",
+    authorHref: authorHref(item.main_author.author_id),
+    fullTitle: item.title,
+    authorContribution: contribution(item.main_author.role)
+  }
+}
+
+function mapPdfItem(item: Extract<AllItem, { kind: "pdf" }>): LibraryResult {
+  const encodedWorkId = encodeURIComponent(item.work_id)
+  return {
+    ...baseResult("pdf", item.highlights),
+    sourceLabel: item.source_label,
+    primaryLabel: item.short_title ?? item.title,
+    primaryHref: `/txt/${encodedWorkId}/${encodedWorkId}.pdf`,
+    download: true,
+    yearLabel: item.imprint_year ?? "",
+    secondaryAuthor: item.main_author.full_name ?? "",
+    authorHref: authorHref(item.main_author.author_id),
+    fullTitle: item.title,
+    authorContribution: contribution(item.main_author.role)
+  }
+}
+
+function mapAuthorItem(item: Extract<AllItem, { kind: "author" }>): LibraryResult {
+  const [surname = "", ...givenNames] = item.name_for_index.split(",")
+  const birth = knownYear(item.birth_year)
+  const death = knownYear(item.death_year)
+  const years = birth || death ? `${birth}–${death}` : ""
+  return {
+    ...baseResult("author", item.highlights),
+    sourceLabel: "Författare",
+    primaryLabel: item.name_for_index,
+    primaryHref: `${authorHref(item.author_id)}/`,
+    yearLabel: years,
+    authorSurname: surname.trim(),
+    authorGivenNames: givenNames.join(",").trim(),
+    mobileYearLabel: years ? `(${years})` : "",
+    authorId: item.author_id,
+    authorPopularity: item.popularity,
+    authorBirth: item.birth_year ?? 0
+  }
+}
+
+type ExternalItem = Extract<AllItem, {
+  kind: "presentation" | "translator_lexicon" | "literature_map" | "wordpress"
+}>
+
+const externalIndex: Record<ExternalItem["kind"], LibraryResult["index"]> = {
+  presentation: "presentations",
+  translator_lexicon: "sol",
+  literature_map: "litteraturkartan",
+  wordpress: "wordpress"
+}
+
+function mapExternalItem(item: ExternalItem): LibraryResult {
+  return {
+    ...baseResult(externalIndex[item.kind], item.highlights),
+    sourceLabel: item.source_label,
+    primaryLabel: item.title,
+    primaryHref: item.url,
+    secondaryAuthor: item.byline ?? ""
+  }
+}
+
 function mapAllItem(item: AllItem): LibraryResult {
   switch (item.kind) {
-    case "text": {
-      const primaryLabel = item.short_title ?? item.title
-      return {
-        ...baseResult(item.index, item.highlights),
-        sourceLabel: item.source_label,
-        primaryLabel,
-        primaryHref: `${authorHref(item.reader_author_id)}/titlar/${encodeURIComponent(item.title_id)}/sida/${encodeURIComponent(item.page_name)}/${encodeURIComponent(item.media_type)}`,
-        yearLabel: item.imprint_year ?? "",
-        secondaryAuthor: item.main_author.full_name ?? "",
-        authorHref: authorHref(item.main_author.author_id),
-        fullTitle: item.title,
-        authorContribution: contribution(item.main_author.role)
-      }
-    }
-    case "pdf": {
-      const primaryLabel = item.short_title ?? item.title
-      const encodedWorkId = encodeURIComponent(item.work_id)
-      return {
-        ...baseResult("pdf", item.highlights),
-        sourceLabel: item.source_label,
-        primaryLabel,
-        primaryHref: `/txt/${encodedWorkId}/${encodedWorkId}.pdf`,
-        download: true,
-        yearLabel: item.imprint_year ?? "",
-        secondaryAuthor: item.main_author.full_name ?? "",
-        authorHref: authorHref(item.main_author.author_id),
-        fullTitle: item.title,
-        authorContribution: contribution(item.main_author.role)
-      }
-    }
-    case "author": {
-      const [surname = "", ...givenNames] = item.name_for_index.split(",")
-      const birth = knownYear(item.birth_year)
-      const death = knownYear(item.death_year)
-      const years = birth || death ? `${birth}–${death}` : ""
-      return {
-        ...baseResult("author", item.highlights),
-        sourceLabel: "Författare",
-        primaryLabel: item.name_for_index,
-        primaryHref: `${authorHref(item.author_id)}/`,
-        yearLabel: years,
-        authorSurname: surname.trim(),
-        authorGivenNames: givenNames.join(",").trim(),
-        mobileYearLabel: years ? `(${years})` : "",
-        authorId: item.author_id,
-        authorPopularity: item.popularity,
-        authorBirth: item.birth_year ?? 0
-      }
-    }
+    case "text":
+      return mapTextItem(item)
+    case "pdf":
+      return mapPdfItem(item)
+    case "author":
+      return mapAuthorItem(item)
     case "presentation":
-      return { ...baseResult("presentations", item.highlights), sourceLabel: item.source_label, primaryLabel: item.title, primaryHref: item.url, secondaryAuthor: item.byline ?? "" }
     case "translator_lexicon":
-      return { ...baseResult("sol", item.highlights), sourceLabel: item.source_label, primaryLabel: item.title, primaryHref: item.url, secondaryAuthor: item.byline ?? "" }
     case "literature_map":
-      return { ...baseResult("litteraturkartan", item.highlights), sourceLabel: item.source_label, primaryLabel: item.title, primaryHref: item.url, secondaryAuthor: item.byline ?? "" }
     case "wordpress":
-      return { ...baseResult("wordpress", item.highlights), sourceLabel: item.source_label, primaryLabel: item.title, primaryHref: item.url, secondaryAuthor: item.byline ?? "" }
+      return mapExternalItem(item)
     default:
       return assertNever(item)
   }
@@ -283,7 +308,7 @@ const swedishMonths = [
   "juli", "augusti", "september", "oktober", "november", "december"
 ] as const
 
-export function formatLibraryImportedDate(value: string): string {
+function formatLibraryImportedDate(value: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
   if (!match) return value
   const month = Number(match[2])

@@ -32,7 +32,7 @@ type ParsedDocument = {
   querySelectorAll: (selectors: string) => ArrayLike<ParsedElement>
 }
 
-export type PresentationStyleNode =
+type PresentationStyleNode =
   | {
     kind: "stylesheet"
     href: ManagedStylesheetHref<"presentation-editorial">

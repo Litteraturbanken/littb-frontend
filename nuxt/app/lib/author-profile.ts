@@ -155,34 +155,29 @@ function hasTraversal(value: string): boolean {
   return path.split("/").some(segment => segment === "." || segment === "..")
 }
 
-function safeHref(value: string): string | null {
-  if (
-    !value
-    || value !== value.trim()
-    || value.includes("\\")
-    || hasC0OrC1Control(value)
-  ) return null
+function hasUnsafeHrefCodeUnits(value: string): boolean {
+  return value.includes("\\") || hasC0OrC1Control(value)
+}
 
-  const decoded = repeatedlyDecode(value)
-  if (
-    decoded === null
-    || decoded.includes("\\")
-    || hasC0OrC1Control(decoded)
-    || value.startsWith("//")
-    || decoded.startsWith("//")
-    || hasTraversal(decoded)
-  ) return null
-
-  let parsed: URL
+function parsedSafeHref(value: string): URL | null {
   try {
-    parsed = new URL(value, sanitizerBase)
+    const parsed = new URL(value, sanitizerBase)
+    if (!allowedUrlProtocols.has(parsed.protocol.toLowerCase())) return null
+    if (absoluteScheme.test(value) && !/^(?:https?|mailto|tel):/iu.test(value)) return null
+    return parsed
   } catch {
     return null
   }
+}
 
-  const protocol = parsed.protocol.toLowerCase()
-  if (!allowedUrlProtocols.has(protocol)) return null
-  if (absoluteScheme.test(value) && !/^(?:https?|mailto|tel):/iu.test(value)) return null
+function safeHref(value: string): string | null {
+  if (!value || value !== value.trim() || hasUnsafeHrefCodeUnits(value)) return null
+
+  const decoded = repeatedlyDecode(value)
+  if (decoded === null || hasUnsafeHrefCodeUnits(decoded)) return null
+  if (value.startsWith("//") || decoded.startsWith("//") || hasTraversal(decoded)) return null
+
+  if (!parsedSafeHref(value)) return null
 
   return value.startsWith("/forfattare/")
     ? `/författare/${value.slice("/forfattare/".length)}`

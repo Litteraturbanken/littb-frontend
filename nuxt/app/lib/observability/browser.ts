@@ -263,38 +263,32 @@ export class BrowserObservabilityReporter {
     }
   }
 
-  async #deliver(preferBeacon: boolean): Promise<void> {
-    if (this.#queue.length === 0) return
+  #takeBatch(): QueuedBrowserEvent[] {
     const batch: QueuedBrowserEvent[] = []
     while (batch.length < MAX_BATCH_EVENTS && this.#queue.length > 0) {
       const candidate = this.#queue[0]
       if (!candidate) break
-      const prospective = serializedBatch([...batch, candidate])
-      if (byteLength(prospective) > MAX_BATCH_BYTES) break
+      if (byteLength(serializedBatch([...batch, candidate])) > MAX_BATCH_BYTES) break
       batch.push(candidate)
       this.#queue.shift()
     }
-    if (batch.length === 0) return
+    return batch
+  }
 
-    const body = serializedBatch(batch)
-    if (preferBeacon) {
-      const beacon = this.#options.beacon
-        ?? (typeof navigator === "undefined"
-          ? undefined
-          : navigator.sendBeacon.bind(navigator))
-      try {
-        if (beacon?.(
-          this.#options.endpoint,
-          new Blob([body], { type: "application/json" })
-        )) {
-          this.#retryDelayMs = FLUSH_DELAY_MS
-          return
-        }
-      } catch {
-        // Keepalive fetch below is the fallback delivery path.
-      }
+  #deliverByBeacon(body: string): boolean {
+    const beacon = this.#options.beacon
+      ?? (typeof navigator === "undefined" ? undefined : navigator.sendBeacon.bind(navigator))
+    try {
+      return beacon?.(
+        this.#options.endpoint,
+        new Blob([body], { type: "application/json" })
+      ) ?? false
+    } catch {
+      return false
     }
+  }
 
+  async #deliverByFetch(body: string): Promise<boolean> {
     const fetchRequest = this.#options.fetch
       ?? ((url: string, init: RequestInit) => globalThis.fetch(url, init))
     try {
@@ -305,25 +299,33 @@ export class BrowserObservabilityReporter {
         credentials: "same-origin",
         keepalive: true
       })
-      if (response.ok) {
-        this.#retryDelayMs = FLUSH_DELAY_MS
-        return
-      }
-      if (response.status >= 400 && response.status < 500) {
-        this.#retryDelayMs = FLUSH_DELAY_MS
-        return
-      }
+      return response.ok || (response.status >= 400 && response.status < 500)
     } catch {
-      // A temporarily unavailable intake is handled by the bounded queue.
+      return false
     }
+  }
+
+  #retryBatch(batch: QueuedBrowserEvent[]): void {
     this.#queue.unshift(...batch)
-    if (this.#queue.length > MAX_QUEUE_EVENTS) {
-      this.#queue.length = MAX_QUEUE_EVENTS
-    }
+    if (this.#queue.length > MAX_QUEUE_EVENTS) this.#queue.length = MAX_QUEUE_EVENTS
     this.#scheduleFlush(this.#retryDelayMs)
-    this.#retryDelayMs = Math.min(
-      this.#retryDelayMs * 2,
-      MAX_RETRY_DELAY_MS
-    )
+    this.#retryDelayMs = Math.min(this.#retryDelayMs * 2, MAX_RETRY_DELAY_MS)
+  }
+
+  async #deliver(preferBeacon: boolean): Promise<void> {
+    if (this.#queue.length === 0) return
+    const batch = this.#takeBatch()
+    if (batch.length === 0) return
+
+    const body = serializedBatch(batch)
+    if (preferBeacon && this.#deliverByBeacon(body)) {
+      this.#retryDelayMs = FLUSH_DELAY_MS
+      return
+    }
+    if (await this.#deliverByFetch(body)) {
+      this.#retryDelayMs = FLUSH_DELAY_MS
+      return
+    }
+    this.#retryBatch(batch)
   }
 }

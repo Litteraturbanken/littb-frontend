@@ -11,19 +11,28 @@ import { acceptsBrotliEncoding } from "#server/utils/response-compression"
 
 const minimumCompressibleCharacters = 1_024
 
+function isCompressibleHtmlResponse(
+  event: Parameters<typeof getResponseStatus>[0],
+  body: unknown
+): body is string {
+  if (typeof body !== "string" || body.length < minimumCompressibleCharacters) return false
+  if (getResponseStatus(event) !== 200 || event.path.startsWith("/__nuxt_error")) return false
+  if (getResponseHeader(event, "content-encoding")) return false
+  if (!acceptsBrotliEncoding(getRequestHeader(event, "accept-encoding"))) return false
+  const contentType = getResponseHeader(event, "content-type")
+  return typeof contentType === "string" && contentType.startsWith("text/html")
+}
+
+function appendAcceptEncodingVary(event: Parameters<typeof getResponseStatus>[0]): void {
+  const vary = getResponseHeader(event, "vary")
+  const value = Array.isArray(vary) ? vary.join(", ") : vary === undefined ? "" : String(vary)
+  if (value.split(",").some(entry => entry.trim().toLowerCase() === "accept-encoding")) return
+  setResponseHeader(event, "vary", value ? `${value}, Accept-Encoding` : "Accept-Encoding")
+}
+
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook("beforeResponse", (event, response) => {
-    if (
-      typeof response.body !== "string"
-      || getResponseStatus(event) !== 200
-      || event.path.startsWith("/__nuxt_error")
-      || response.body.length < minimumCompressibleCharacters
-      || getResponseHeader(event, "content-encoding")
-      || !acceptsBrotliEncoding(getRequestHeader(event, "accept-encoding"))
-    ) return
-
-    const contentType = getResponseHeader(event, "content-type")
-    if (typeof contentType !== "string" || !contentType.startsWith("text/html")) return
+    if (!isCompressibleHtmlResponse(event, response.body)) return
 
     response.body = brotliCompressSync(Buffer.from(response.body), {
       params: {
@@ -32,14 +41,6 @@ export default defineNitroPlugin((nitroApp) => {
     })
     removeResponseHeader(event, "content-length")
     setResponseHeader(event, "content-encoding", "br")
-    const vary = getResponseHeader(event, "vary")
-    const varyValue = Array.isArray(vary) ? vary.join(", ") : vary === undefined ? "" : String(vary)
-    if (!varyValue.split(",").some(value => value.trim().toLowerCase() === "accept-encoding")) {
-      setResponseHeader(
-        event,
-        "vary",
-        varyValue ? `${varyValue}, Accept-Encoding` : "Accept-Encoding"
-      )
-    }
+    appendAcceptEncodingVary(event)
   })
 })

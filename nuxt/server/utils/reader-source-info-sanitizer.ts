@@ -87,6 +87,25 @@ function sanitizeIntegerAttribute(value: string, minimum: number, maximum: numbe
     : null
 }
 
+function sanitizeClassAttribute(
+  element: SanitizableElement,
+  context: "editorial" | "inline" | "license"
+): void {
+  if (!element.hasAttribute("class")) return
+  const value = sanitizeClasses(element.getAttribute("class") ?? "", context)
+  if (value === null) element.removeAttribute("class")
+  else element.setAttribute("class", value)
+}
+
+function sanitizeSpanAttributes(element: SanitizableElement): void {
+  for (const attributeName of ["colspan", "rowspan"]) {
+    if (!element.hasAttribute(attributeName)) continue
+    const value = sanitizeIntegerAttribute(element.getAttribute(attributeName) ?? "", 1, 100)
+    if (value === null) element.removeAttribute(attributeName)
+    else element.setAttribute(attributeName, value)
+  }
+}
+
 function sanitizeAllowedAttributes(
   element: SanitizableElement,
   name: string,
@@ -99,21 +118,8 @@ function sanitizeAllowedAttributes(
       element.removeAttribute(attribute.name)
     }
   }
-  if (element.hasAttribute("class")) {
-    const value = sanitizeClasses(element.getAttribute("class") ?? "", context)
-    if (value === null) element.removeAttribute("class")
-    else element.setAttribute("class", value)
-  }
-  for (const attributeName of ["colspan", "rowspan"]) {
-    if (!element.hasAttribute(attributeName)) continue
-    const value = sanitizeIntegerAttribute(
-      element.getAttribute(attributeName) ?? "",
-      1,
-      100
-    )
-    if (value === null) element.removeAttribute(attributeName)
-    else element.setAttribute(attributeName, value)
-  }
+  sanitizeClassAttribute(element, context)
+  sanitizeSpanAttributes(element)
 }
 
 function sanitizeLink(element: SanitizableElement): void {

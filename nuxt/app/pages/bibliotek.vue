@@ -917,6 +917,16 @@ function updateDownloadCount(
     downloadCounts.value = { ...current, identity, [mode]: count }
 }
 
+function inactiveDownloadCountIsCurrent(
+    result: Awaited<ReturnType<typeof fetchLibraryCount>> | null,
+    inactiveMode: "epub" | "pdf",
+    identity: string
+): result is NonNullable<typeof result> & { total: number } {
+    return result?.mode === inactiveMode
+        && result.total !== null
+        && identity === downloadCountIdentity(filter.value, currentState().advancedFilters)
+}
+
 async function refreshInactiveDownloadCount(
     filterValue: string,
     advanced: LibraryAdvancedFilters,
@@ -941,15 +951,9 @@ async function refreshInactiveDownloadCount(
     ).catch(() => null)
     const ownsController = downloadCountController === activeController
     if (ownsController) downloadCountController = null
-    if (
-        !ownsController ||
-        version !== downloadCountVersion ||
-        activeController.signal.aborted ||
-        result?.mode !== inactiveMode ||
-        result.total === null ||
-        identity !== downloadCountIdentity(filter.value, currentState().advancedFilters)
-    )
-        return
+    if (!ownsController) return
+    if (version !== downloadCountVersion || activeController.signal.aborted) return
+    if (!inactiveDownloadCountIsCurrent(result, inactiveMode, identity)) return
     updateDownloadCount(filterValue, advanced, inactiveMode, result.total)
 }
 
@@ -962,14 +966,15 @@ function invalidateLibrarySummary(filterValue: string, advanced: LibraryAdvanced
     librarySummary.value = emptyLibrarySummary(filterValue, advanced)
 }
 
-function updateLibrarySummaryFromPage(state: QueryState, pageData: LibraryPageState) {
-    if (standalone || state.downloadMode || pageData.response.failed) return
+function canUpdateLibrarySummary(state: QueryState, pageData: LibraryPageState): boolean {
+    if (standalone || state.downloadMode || pageData.response.failed) return false
     const identity = librarySummaryIdentity(state.filter, state.advancedFilters)
-    if (
-        librarySummary.value.identity !== identity ||
-        identity !== librarySummaryIdentity(filter.value, currentState().advancedFilters)
-    )
-        return
+    return librarySummary.value.identity === identity
+        && identity === librarySummaryIdentity(filter.value, currentState().advancedFilters)
+}
+
+function updateLibrarySummaryFromPage(state: QueryState, pageData: LibraryPageState) {
+    if (!canUpdateLibrarySummary(state, pageData)) return
     switch (pageData.mode) {
         case "all":
         case "latest":
@@ -1038,6 +1043,25 @@ function canCommitLibrarySummary(
         && !currentState().downloadMode
 }
 
+function mergedLibrarySummary(
+    summary: LibrarySummary,
+    identity: string,
+    filterValue: string,
+    advanced: LibraryAdvancedFilters
+): LibrarySummary {
+    const current = librarySummary.value.identity === identity
+        ? librarySummary.value
+        : emptyLibrarySummary(filterValue, advanced)
+    return {
+        identity,
+        authors: summary.authors ?? current.authors,
+        works: summary.works ?? current.works,
+        parts: summary.parts ?? current.parts,
+        epub: summary.epub ?? current.epub,
+        pdf: summary.pdf ?? current.pdf
+    }
+}
+
 async function refreshLibrarySummary(
     filterValue: string,
     advanced: LibraryAdvancedFilters,
@@ -1060,22 +1084,10 @@ async function refreshLibrarySummary(
     const ownsController = summaryController === activeController
     if (ownsController) summaryController = null
     if (!canCommitLibrarySummary(summary, identity, version, activeController, ownsController)) return
-    const current =
-        librarySummary.value.identity === identity
-            ? librarySummary.value
-            : emptyLibrarySummary(filterValue, advanced)
-    librarySummary.value = {
-        identity,
-        authors: summary.authors ?? current.authors,
-        works: summary.works ?? current.works,
-        parts: summary.parts ?? current.parts,
-        epub: summary.epub ?? current.epub,
-        pdf: summary.pdf ?? current.pdf
-    }
+    librarySummary.value = mergedLibrarySummary(summary, identity, filterValue, advanced)
 }
 
-function queryFor(state: QueryState): LocationQuery {
-    const query: LocationQuery = { ...route.query }
+function clearLibraryQuery(query: LocationQuery): void {
     delete query.visa
     delete query.filter
     delete query.sort
@@ -1083,9 +1095,16 @@ function queryFor(state: QueryState): LocationQuery {
     delete query.hide1800
     delete query.nedladdning
     delete query.title
-    if (state.mode !== "all" && (!state.standalone || state.mode === "pdf")) {
-        query.visa = state.mode
-    }
+}
+
+function queryIncludesLibraryMode(state: QueryState): boolean {
+    return state.mode !== "all" && (!state.standalone || state.mode === "pdf")
+}
+
+function queryFor(state: QueryState): LocationQuery {
+    const query: LocationQuery = { ...route.query }
+    clearLibraryQuery(query)
+    if (queryIncludesLibraryMode(state)) query.visa = state.mode
     if (state.filter) query.filter = state.filter
     if (state.mode !== "all" || state.sort !== "relevans") query.sort = state.sort
     if (state.mode !== "all" && state.mode !== "authors" && state.page > 1) {
@@ -1094,6 +1113,44 @@ function queryFor(state: QueryState): LocationQuery {
     if (state.mode === "latest" && state.hide1800) query.hide1800 = null
     if (state.downloadMode) query.nedladdning = "1"
     return query
+}
+
+function isCurrentLibraryPageRequest(
+    state: QueryState,
+    version: number,
+    activeController: AbortController,
+    pageData: LibraryPageState | null
+): pageData is LibraryPageState {
+    return version === requestVersion && !activeController.signal.aborted
+        && pageData !== null && pageData.mode === state.mode
+}
+
+function updatePageModeState(state: QueryState, pageData: LibraryPageState): void {
+    if (pageData.mode === "epub" || pageData.mode === "pdf") {
+        if (standalone && !pageData.response.failed) {
+            updateDownloadCount(
+                state.filter,
+                state.advancedFilters,
+                pageData.mode,
+                pageData.response.distinctHits
+            )
+        }
+        return
+    }
+    if (pageData.mode === "works") {
+        expandedWorkKey.value =
+            pageData.response.data.find(item => item.titlePath === queryValue(route.query.title))
+                ?.key ?? ""
+    }
+}
+
+function refreshAfterPageRequest(state: QueryState, pageData: LibraryPageState): void {
+    if (!pageData.response.failed) {
+        void refreshLibrarySummary(state.filter, state.advancedFilters, state.downloadMode)
+    }
+    if (state.mode === "epub" || state.mode === "pdf") {
+        void refreshInactiveDownloadCount(state.filter, state.advancedFilters, state.mode)
+    }
 }
 
 async function runBrowserRequest(state: QueryState, version: number) {
@@ -1105,45 +1162,13 @@ async function runBrowserRequest(state: QueryState, version: number) {
     const pageData = await fetchLibraryPageData(state, activeController.signal, reversed).catch(
         () => null
     )
-    if (
-        version !== requestVersion ||
-        activeController.signal.aborted ||
-        pageData === null ||
-        pageData.mode !== state.mode
-    )
-        return
+    if (!isCurrentLibraryPageRequest(state, version, activeController, pageData)) return
     assignLibraryPageResult(pageData, pageResultHandlers)
-    if (pageData.mode === "epub") {
-        if (standalone && !pageData.response.failed) {
-            updateDownloadCount(
-                state.filter,
-                state.advancedFilters,
-                "epub",
-                pageData.response.distinctHits
-            )
-        }
-    } else if (pageData.mode === "pdf") {
-        if (standalone && !pageData.response.failed) {
-            updateDownloadCount(
-                state.filter,
-                state.advancedFilters,
-                "pdf",
-                pageData.response.distinctHits
-            )
-        }
-    } else if (pageData.mode === "works") {
-        expandedWorkKey.value =
-            pageData.response.data.find(item => item.titlePath === queryValue(route.query.title))
-                ?.key ?? ""
-    }
+    updatePageModeState(state, pageData)
     updateLibrarySummaryFromPage(state, pageData)
     loading.value = false
     if (controller === activeController) controller = null
-    if (!pageData.response.failed)
-        void refreshLibrarySummary(state.filter, state.advancedFilters, state.downloadMode)
-    if (state.mode === "epub" || state.mode === "pdf") {
-        void refreshInactiveDownloadCount(state.filter, state.advancedFilters, state.mode)
-    }
+    refreshAfterPageRequest(state, pageData)
 }
 
 async function persistAndRequest(state: QueryState, version: number) {
@@ -1459,6 +1484,15 @@ function resetChronologyDraft() {
     chronologyToDraft.value = String(range?.[1] ?? chronologyBounds.value?.to ?? "")
 }
 
+function chronologyDraftRange(bounds: ImprintBounds): [number, number] | null {
+    if (!/^\d{4}$/.test(chronologyFromDraft.value)) return null
+    if (!/^\d{4}$/.test(chronologyToDraft.value)) return null
+    const from = Number(chronologyFromDraft.value)
+    const to = Number(chronologyToDraft.value)
+    if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to)) return null
+    return from >= bounds.from && to <= bounds.to && from <= to ? [from, to] : null
+}
+
 async function commitChronologyDraft(endpoint: "from" | "to", value: string) {
     setChronologyDraft(endpoint, value)
     const bounds = chronologyBounds.value
@@ -1466,22 +1500,12 @@ async function commitChronologyDraft(endpoint: "from" | "to", value: string) {
         resetChronologyDraft()
         return
     }
-    const from = /^\d{4}$/.test(chronologyFromDraft.value)
-        ? Number(chronologyFromDraft.value)
-        : Number.NaN
-    const to = /^\d{4}$/.test(chronologyToDraft.value)
-        ? Number(chronologyToDraft.value)
-        : Number.NaN
-    if (
-        !Number.isSafeInteger(from) ||
-        !Number.isSafeInteger(to) ||
-        from < bounds.from ||
-        to > bounds.to ||
-        from > to
-    ) {
+    const range = chronologyDraftRange(bounds)
+    if (!range) {
         resetChronologyDraft()
         return
     }
+    const [from, to] = range
     const current = routeState(route.path, route.query).advancedFilters.yearRange
     if ((current?.[0] ?? bounds.from) === from && (current?.[1] ?? bounds.to) === to) {
         chronologyDraftDirty.value = false
@@ -1549,46 +1573,56 @@ const ownedQueryKeys = new Set([
     "title"
 ])
 
+function appendPreservedQueryValue(
+    params: URLSearchParams,
+    key: string,
+    value: string | null | (string | null)[]
+): void {
+    if (Array.isArray(value)) {
+        for (const item of value) params.append(key, item ?? "")
+        return
+    }
+    params.append(key, value ?? "")
+}
+
 function preservedQuery(): URLSearchParams {
     const params = new URLSearchParams()
     for (const [key, value] of Object.entries(route.query)) {
         if (ownedQueryKeys.has(key)) continue
-        if (Array.isArray(value)) {
-            for (const item of value) {
-                if (item === null) params.append(key, "")
-                else if (typeof item === "string") params.append(key, item)
-            }
-        } else if (value === null) {
-            params.append(key, "")
-        } else if (typeof value === "string") {
-            params.append(key, value)
-        }
+        appendPreservedQueryValue(params, key, value)
     }
     return params
 }
 
-function stateHref(state: {
+type LibraryHrefState = {
     mode: LibraryMode
     filter: string
     sort: RelevanceSortKey | BrowseSortKey | LatestSortKey
     page?: number
     hide1800?: boolean
-}): string {
-    const params = preservedQuery()
+}
+
+function applyStateModeParams(params: URLSearchParams, state: LibraryHrefState): void {
     if (state.mode !== "all" && (route.path !== "/epub" || state.mode === "pdf")) {
         params.set("visa", state.mode)
     }
     if (state.filter) params.set("filter", state.filter)
-    if (state.mode !== "all") {
-        params.set("sort", state.sort as EpubSortKey)
-    } else if (state.sort !== "relevans") {
-        params.set("sort", state.sort)
-    }
+    if (state.mode !== "all") params.set("sort", state.sort as EpubSortKey)
+    else if (state.sort !== "relevans") params.set("sort", state.sort)
+}
+
+function applyStatePagingParams(params: URLSearchParams, state: LibraryHrefState): void {
     if (state.page !== undefined && state.mode !== "authors") {
         params.set("sida", String(state.page))
     }
     if (state.mode === "latest" && state.hide1800) params.set("hide1800", "")
     if (downloadMode.value && state.mode === "works") params.set("nedladdning", "1")
+}
+
+function stateHref(state: LibraryHrefState): string {
+    const params = preservedQuery()
+    applyStateModeParams(params, state)
+    applyStatePagingParams(params, state)
     const query = params.toString()
     return `${route.path}${query ? `?${query}` : ""}`
 }

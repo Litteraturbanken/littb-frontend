@@ -79,57 +79,71 @@ function requestStatus(error: unknown): 404 | 502 {
   return error.statusCode === 404 || error.status === 404 ? 404 : 502
 }
 
+function resolverPath(): string {
+  return [
+    "/api/reader/resolve",
+    encodeURIComponent(requestedAuthor),
+    encodeURIComponent(requestedTitle),
+    encodeURIComponent(requestedMediaType)
+  ].join("/")
+}
+
+function navigationDestination(publicTarget: string): Readonly<{
+  target: string
+  normalizedFullPath: string
+}> {
+  if (import.meta.server) return { target: publicTarget, normalizedFullPath: "" }
+  const target = publicTarget.replace(/^\/författare(?=\/)/, "/f%C3%B6rfattare")
+  const resolved = router.resolve(target)
+  const normalizedFullPath = router.resolve({
+    path: resolved.path,
+    query: resolved.query,
+    hash: resolved.hash
+  }).fullPath
+  return { target, normalizedFullPath }
+}
+
+function synchronizePublicHistory(
+  navigationResult: unknown,
+  normalizedFullPath: string,
+  publicTarget: string
+): void {
+  if (import.meta.server || isNavigationFailure(navigationResult)) return
+  if (router.currentRoute.value.fullPath !== normalizedFullPath) return
+  if (router.options.history.location !== normalizedFullPath) return
+  router.options.history.replace(publicTarget)
+}
+
+function handleResolutionError(error: unknown): void {
+  if (!isCurrentIdentity()) return
+  const statusCode = requestStatus(error)
+  if (import.meta.server) {
+    throw createError({
+      statusCode,
+      statusMessage: statusCode === 404
+        ? "Reader page not found"
+        : "Reader page unavailable"
+    })
+  }
+  failedStatus.value = statusCode
+}
+
 async function resolveReaderShorthand(): Promise<void> {
   try {
-    const resolverPath = [
-      "/api/reader/resolve",
-      encodeURIComponent(requestedAuthor),
-      encodeURIComponent(requestedTitle),
-      encodeURIComponent(requestedMediaType)
-    ].join("/")
-    const resolution = await requestFetch<unknown>(resolverPath, { retry: 0 })
+    const resolution = await requestFetch<unknown>(resolverPath(), { retry: 0 })
     if (!isExpectedResolution(resolution)) {
       throw createError({ statusCode: 502, statusMessage: "Reader page unavailable" })
     }
     if (!isCurrentIdentity()) return
     const publicTarget = `${resolution.canonicalPath}${rawQuerySuffix}`
-    const navigationTarget = import.meta.client
-      ? publicTarget.replace(/^\/författare(?=\/)/, "/f%C3%B6rfattare")
-      : publicTarget
-    const resolvedNavigation = import.meta.client
-      ? router.resolve(navigationTarget)
-      : null
-    const normalizedNavigationFullPath = resolvedNavigation
-      ? router.resolve({
-          path: resolvedNavigation.path,
-          query: resolvedNavigation.query,
-          hash: resolvedNavigation.hash
-        }).fullPath
-      : ""
+    const destination = navigationDestination(publicTarget)
     const navigationResult = await nuxtApp.runWithContext(() => navigateTo(
-      navigationTarget,
+      destination.target,
       { redirectCode: 307, replace: true }
     ))
-    if (
-      import.meta.client &&
-      !isNavigationFailure(navigationResult) &&
-      router.currentRoute.value.fullPath === normalizedNavigationFullPath &&
-      router.options.history.location === normalizedNavigationFullPath
-    ) {
-      router.options.history.replace(publicTarget)
-    }
+    synchronizePublicHistory(navigationResult, destination.normalizedFullPath, publicTarget)
   } catch (error) {
-    if (!isCurrentIdentity()) return
-    const statusCode = requestStatus(error)
-    if (import.meta.server) {
-      throw createError({
-        statusCode,
-        statusMessage: statusCode === 404
-          ? "Reader page not found"
-          : "Reader page unavailable"
-      })
-    }
-    failedStatus.value = statusCode
+    handleResolutionError(error)
   }
 }
 

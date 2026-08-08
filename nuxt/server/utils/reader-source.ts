@@ -105,6 +105,29 @@ function rebaseUrlToken(
   }
 }
 
+function protectedStylesheetTokenEnd(stylesheet: string, start: number): number | null {
+  if (stylesheet.startsWith("/*", start)) {
+    const commentEnd = stylesheet.indexOf("*/", start + 2)
+    return commentEnd < 0 ? stylesheet.length : commentEnd + 2
+  }
+  const character = stylesheet[start]
+  return character === "\"" || character === "'"
+    ? cssStringEnd(stylesheet, start)
+    : null
+}
+
+function rebaseStylesheetToken(
+  stylesheet: string,
+  start: number,
+  stylesheetUrl: string
+): { end: number, value: string } | null {
+  const previous = stylesheet[start - 1]
+  const url = (!previous || !/[\w-]/u.test(previous))
+    ? rebaseUrlToken(stylesheet, start, stylesheetUrl)
+    : null
+  return url ?? rebaseQuotedImport(stylesheet, start, stylesheetUrl)
+}
+
 export function rebaseRelativeStylesheetReferences(
   stylesheet: string,
   stylesheetUrl: string
@@ -112,32 +135,19 @@ export function rebaseRelativeStylesheetReferences(
   let rebased = ""
   let index = 0
   while (index < stylesheet.length) {
-    if (stylesheet.startsWith("/*", index)) {
-      const commentEnd = stylesheet.indexOf("*/", index + 2)
-      const end = commentEnd < 0 ? stylesheet.length : commentEnd + 2
-      rebased += stylesheet.slice(index, end)
-      index = end
+    const protectedEnd = protectedStylesheetTokenEnd(stylesheet, index)
+    if (protectedEnd !== null) {
+      rebased += stylesheet.slice(index, protectedEnd)
+      index = protectedEnd
       continue
     }
-    const character = stylesheet[index]
-    if (character === "\"" || character === "'") {
-      const end = cssStringEnd(stylesheet, index)
-      rebased += stylesheet.slice(index, end)
-      index = end
-      continue
-    }
-    const previous = stylesheet[index - 1]
-    const url = (!previous || !/[\w-]/u.test(previous))
-      ? rebaseUrlToken(stylesheet, index, stylesheetUrl)
-      : null
-    const imported = url ? null : rebaseQuotedImport(stylesheet, index, stylesheetUrl)
-    const token = url ?? imported
+    const token = rebaseStylesheetToken(stylesheet, index, stylesheetUrl)
     if (token) {
       rebased += token.value
       index = token.end
       continue
     }
-    rebased += character
+    rebased += stylesheet[index]
     index += 1
   }
   return rebased

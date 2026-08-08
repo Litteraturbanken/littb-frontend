@@ -56,6 +56,37 @@ type EditorSourceOptions = {
   timeoutMs?: number
 }
 
+function concatenateEditorBytes(chunks: Uint8Array[], total: number): Uint8Array {
+  const bytes = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return bytes
+}
+
+async function readBoundedEditorBody(
+  response: Response,
+  maximumBytes: number
+): Promise<Uint8Array> {
+  if (!response.body) throw new Error("Missing bounded source body")
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > maximumBytes) {
+      await reader.cancel("Editor source exceeds bound")
+      throw new Error("Invalid bounded source length")
+    }
+    chunks.push(value)
+  }
+  return concatenateEditorBytes(chunks, total)
+}
+
 export async function fetchBoundedEditorText(
   url: string | URL,
   maximumBytes: number,
@@ -77,27 +108,7 @@ export async function fetchBoundedEditorText(
         throw new Error("Invalid bounded source length")
       }
     }
-    if (!response.body) throw new Error("Missing bounded source body")
-
-    const reader = response.body.getReader()
-    const chunks: Uint8Array[] = []
-    let total = 0
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      total += value.byteLength
-      if (total > maximumBytes) {
-        await reader.cancel("Editor source exceeds bound")
-        throw new Error("Invalid bounded source length")
-      }
-      chunks.push(value)
-    }
-    const bytes = new Uint8Array(total)
-    let offset = 0
-    for (const chunk of chunks) {
-      bytes.set(chunk, offset)
-      offset += chunk.byteLength
-    }
+    const bytes = await readBoundedEditorBody(response, maximumBytes)
     return new TextDecoder("utf-8", { fatal: true }).decode(bytes)
   } finally {
     clearTimeout(timer)
@@ -139,6 +150,29 @@ export async function fetchTimedEditorHead(
   }
 }
 
+function validEditorPageName(value: unknown): value is string {
+  return typeof value === "string"
+    && value.length >= 1
+    && value.length <= 100
+    && value.trim() === value
+    && !hasC0OrC1Control(value)
+}
+
+function validEditorPageIndex(value: unknown): value is number {
+  return typeof value === "number"
+    && Number.isSafeInteger(value)
+    && value >= 0
+    && value < 100_000
+}
+
+function editorPageIndex(value: unknown, indexes: ReadonlySet<number>): number | null {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null
+  const sourcePage = value as Record<string, unknown>
+  const pageIndex = sourcePage.pageindex
+  if (!validEditorPageName(sourcePage.pagename) || !validEditorPageIndex(pageIndex)) return null
+  return indexes.has(pageIndex) ? null : pageIndex
+}
+
 export function parseEditorPageIndexes(value: unknown): {
   indexes: number[]
   pageCount: number
@@ -146,16 +180,8 @@ export function parseEditorPageIndexes(value: unknown): {
   if (!Array.isArray(value) || value.length === 0 || value.length > 100_000) return null
   const indexes = new Set<number>()
   for (const rawPage of value) {
-    if (rawPage === null || typeof rawPage !== "object" || Array.isArray(rawPage)) return null
-    const sourcePage = rawPage as Record<string, unknown>
-    const pageIndex = sourcePage.pageindex
-    const pageName = sourcePage.pagename
-    if (
-      typeof pageName !== "string" || pageName.length === 0 || pageName.length > 100 ||
-      pageName.trim() !== pageName || hasC0OrC1Control(pageName) ||
-      typeof pageIndex !== "number" || !Number.isSafeInteger(pageIndex) ||
-      pageIndex < 0 || pageIndex >= 100_000 || indexes.has(pageIndex)
-    ) return null
+    const pageIndex = editorPageIndex(rawPage, indexes)
+    if (pageIndex === null) return null
     indexes.add(pageIndex)
   }
   const sorted = [...indexes].sort((left, right) => left - right)
@@ -177,6 +203,43 @@ function safeUrl(value: string, image: boolean): boolean {
   return /^(?:#|\/|\.\.?\/|[^:/?#]+(?:[/?#]|$))/u.test(value)
 }
 
+const identifierAttributes = new Set(["class", "id", "name", "pname"])
+const linkAttributes = new Set(["href", "cite"])
+
+function editorAttributeIsAllowed(tagName: string, name: string): boolean {
+  return !name.startsWith("on")
+    && (globalAttributes.has(name) || Boolean(tagAttributes[tagName]?.has(name)))
+}
+
+function editorAttributeValueIsSafe(name: string, value: string): boolean {
+  if (identifierAttributes.has(name)) return safeIdentifier(value)
+  if (linkAttributes.has(name)) return safeUrl(value, false)
+  if (name === "src") return safeUrl(value, true)
+  return value.length <= 2_000 && !hasC0OrC1Control(value)
+}
+
+function sanitizeTargetAttribute(element: SanitizedElement, value: string): void {
+  if (value !== "_blank") element.removeAttribute("target")
+  else element.setAttribute("rel", "noopener noreferrer")
+}
+
+function sanitizeElementAttribute(
+  element: SanitizedElement,
+  attribute: { name: string, value: string }
+): void {
+  const name = attribute.name.toLowerCase()
+  const value = attribute.value
+  if (!editorAttributeIsAllowed(element.tagName, name)) {
+    element.removeAttribute(name)
+    return
+  }
+  if (name === "target") {
+    sanitizeTargetAttribute(element, value)
+    return
+  }
+  if (!editorAttributeValueIsSafe(name, value)) element.removeAttribute(name)
+}
+
 function sanitizeElement(element: SanitizedElement): void {
   if (activeTags.has(element.tagName)) {
     element.remove()
@@ -187,31 +250,7 @@ function sanitizeElement(element: SanitizedElement): void {
     return
   }
   for (const attribute of Array.from(element.attributes)) {
-    const name = attribute.name.toLowerCase()
-    const value = attribute.value
-    const allowed = globalAttributes.has(name) || tagAttributes[element.tagName]?.has(name)
-    if (!allowed || name.startsWith("on")) {
-      element.removeAttribute(name)
-      continue
-    }
-    if (["class", "id", "name", "pname"].includes(name) && !safeIdentifier(value)) {
-      element.removeAttribute(name)
-      continue
-    }
-    if (["href", "cite"].includes(name) && !safeUrl(value, false)) {
-      element.removeAttribute(name)
-      continue
-    }
-    if (name === "src" && !safeUrl(value, true)) {
-      element.removeAttribute(name)
-      continue
-    }
-    if (name === "target") {
-      if (value !== "_blank") element.removeAttribute(name)
-      else element.setAttribute("rel", "noopener noreferrer")
-      continue
-    }
-    if (value.length > 2_000 || hasC0OrC1Control(value)) element.removeAttribute(name)
+    sanitizeElementAttribute(element, attribute)
   }
 }
 

@@ -14,6 +14,7 @@ import type { components } from "../../lib/api/generated/lbapi"
 import {
   developerQuickSearchCommands,
   stableDeveloperJson,
+  type QuickSearchContext,
   type QuickSearchDeveloperAction,
   type RedFtpEntry
 } from "../../lib/quick-search-developer"
@@ -334,18 +335,7 @@ async function runDeveloperAction(
   if (!import.meta.dev) return
   const context = developerContext.value
   if (action === "id") {
-    if (context?.kind !== "reader") return
-    developerOutput.value = { kind: "id", value: context.workId, status: null }
-    try {
-      await navigator.clipboard.writeText(context.workId)
-      if (developerOutput.value?.kind === "id") {
-        developerOutput.value.status = "Kopierat."
-      }
-    } catch {
-      if (developerOutput.value?.kind === "id") {
-        developerOutput.value.status = "Kunde inte kopiera id:t."
-      }
-    }
+    await copyDeveloperWorkId(context)
     return
   }
   if (action === "info") {
@@ -354,6 +344,23 @@ async function runDeveloperAction(
     return
   }
 
+  await searchDeveloperFtp(label)
+}
+
+async function copyDeveloperWorkId(context: QuickSearchContext | null): Promise<void> {
+  if (context?.kind !== "reader") return
+  developerOutput.value = { kind: "id", value: context.workId, status: null }
+  try {
+    await navigator.clipboard.writeText(context.workId)
+    if (developerOutput.value?.kind === "id") developerOutput.value.status = "Kopierat."
+  } catch {
+    if (developerOutput.value?.kind === "id") {
+      developerOutput.value.status = "Kunde inte kopiera id:t."
+    }
+  }
+}
+
+async function searchDeveloperFtp(label: string): Promise<void> {
   developerOutput.value = { kind: "ftp", entries: [], status: "Söker i red …" }
   try {
     const response = await $fetch<{ entries: unknown }>("/api/dev/red-ftp", {
@@ -363,11 +370,7 @@ async function runDeveloperAction(
     if (!isRedFtpEntries(response.entries)) throw new Error("Invalid Red FTP response")
     developerOutput.value = { kind: "ftp", entries: response.entries, status: null }
   } catch {
-    developerOutput.value = {
-      kind: "ftp",
-      entries: [],
-      status: "Hittade inte red-tjänsten."
-    }
+    developerOutput.value = { kind: "ftp", entries: [], status: "Hittade inte red-tjänsten." }
   }
 }
 

@@ -212,25 +212,50 @@ function validateWorkIdentity(
   return { authorId: value.author_id, workId: value.work_id }
 }
 
+function sourceDescriptionIsValid(value: UnknownRecord): boolean {
+  return optionalHtmlString(value.source_description_html, 200_000)
+    && optionalString(value.source_description_author_id, 200)
+    && (value.source_description_author_id === null
+      || validSegment(value.source_description_author_id))
+}
+
+function introductionIsValid(value: UnknownRecord): boolean {
+  return optionalHtmlString(value.work_introduction_html, 200_000)
+    && optionalString(value.work_introduction_author_id, 200)
+    && (value.work_introduction_author_id === null
+      || validSegment(value.work_introduction_author_id))
+}
+
+function publicationMetadataIsValid(value: UnknownRecord): boolean {
+  return optionalString(value.imprint, 20_000)
+    && optionalString(value.urn, 2_000)
+    && optionalString(value.libris_id, 200)
+    && optionalString(value.license_key, 200)
+    && (value.is_printed === null || typeof value.is_printed === "boolean")
+}
+
 function validateWorkMetadata(value: UnknownRecord): void {
-  if (
-    !boundedString(value.title, 20_000)
+  if (!boundedString(value.title, 20_000)
     || !optionalString(value.short_title, 20_000)
     || !optionalString(value.text_type, 200)
-    || !optionalHtmlString(value.source_description_html, 200_000)
-    || !optionalString(value.source_description_author_id, 200)
-    || (value.source_description_author_id !== null
-      && !validSegment(value.source_description_author_id))
-    || !optionalHtmlString(value.work_introduction_html, 200_000)
-    || !optionalString(value.work_introduction_author_id, 200)
-    || (value.work_introduction_author_id !== null
-      && !validSegment(value.work_introduction_author_id))
-    || !optionalString(value.imprint, 20_000)
-    || !optionalString(value.urn, 2_000)
-    || !optionalString(value.libris_id, 200)
-    || !optionalString(value.license_key, 200)
-    || (value.is_printed !== null && typeof value.is_printed !== "boolean")
+    || !sourceDescriptionIsValid(value)
+    || !introductionIsValid(value)
+    || !publicationMetadataIsValid(value)
   ) invalidSourceInfo()
+}
+
+function validSourceAuthor(
+  item: UnknownRecord,
+  authorIds: ReadonlySet<string>
+): item is UnknownRecord & { author_id: string } {
+  return validSegment(item.author_id)
+    && !authorIds.has(item.author_id)
+    && boundedString(item.full_name, 20_000)
+    && optionalString(item.surname, 20_000)
+    && optionalString(item.role, 200)
+    && optionalString(item.author_type, 200)
+    && safeRootUrl(item.url)
+    && item.url === `/författare/${encodeReaderSourceSegment(item.author_id)}`
 }
 
 function validateAuthors(value: unknown, canonicalAuthorId: string): void {
@@ -238,16 +263,7 @@ function validateAuthors(value: unknown, canonicalAuthorId: string): void {
   const authorIds = new Set<string>()
   for (const item of authors) {
     if (!isReaderSourceRecord(item) || !exactKeys(item, authorKeys)) invalidSourceInfo()
-    if (
-      !validSegment(item.author_id)
-      || authorIds.has(item.author_id)
-      || !boundedString(item.full_name, 20_000)
-      || !optionalString(item.surname, 20_000)
-      || !optionalString(item.role, 200)
-      || !optionalString(item.author_type, 200)
-      || !safeRootUrl(item.url)
-      || item.url !== `/författare/${encodeReaderSourceSegment(item.author_id)}`
-    ) invalidSourceInfo()
+    if (!validSourceAuthor(item, authorIds)) invalidSourceInfo()
     authorIds.add(item.author_id)
   }
   if (authors.length > 0 && !authorIds.has(canonicalAuthorId)) invalidSourceInfo()
@@ -342,6 +358,19 @@ function validateErrata(value: unknown): void {
   }
 }
 
+function validateDramaFact(value: unknown, seenFacts: Set<string>): void {
+  if (!isReaderSourceRecord(value) || !exactKeys(value, dramaFactKeys)) invalidSourceInfo()
+  if (typeof value.key !== "string" || !validDramaFacts.has(value.key)) invalidSourceInfo()
+  if (seenFacts.has(value.key) || !boundedString(value.value, 20_000)) invalidSourceInfo()
+  seenFacts.add(value.key)
+}
+
+function validateDramaRoles(value: unknown): void {
+  for (const role of strictArray(value, 1_000)) {
+    if (!boundedHtmlString(role, 20_000)) invalidSourceInfo()
+  }
+}
+
 function validateDramawebben(value: unknown): void {
   if (value === null) return
   if (!isReaderSourceRecord(value) || !exactKeys(value, dramaKeys)) invalidSourceInfo()
@@ -350,19 +379,8 @@ function validateDramawebben(value: unknown): void {
     || !optionalHtmlString(value.history_html, 200_000)
   ) invalidSourceInfo()
   const seenFacts = new Set<string>()
-  for (const fact of strictArray(value.facts, 8)) {
-    if (!isReaderSourceRecord(fact) || !exactKeys(fact, dramaFactKeys)) invalidSourceInfo()
-    if (
-      typeof fact.key !== "string"
-      || !validDramaFacts.has(fact.key)
-      || seenFacts.has(fact.key)
-      || !boundedString(fact.value, 20_000)
-    ) invalidSourceInfo()
-    seenFacts.add(fact.key)
-  }
-  for (const role of strictArray(value.roles, 1_000)) {
-    if (!boundedHtmlString(role, 20_000)) invalidSourceInfo()
-  }
+  for (const fact of strictArray(value.facts, 8)) validateDramaFact(fact, seenFacts)
+  validateDramaRoles(value.roles)
 }
 
 export function validateReaderSourceInfoResponse(

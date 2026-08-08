@@ -206,6 +206,22 @@ export async function resolveReaderSourceInfoAttributions(
   }
 }
 
+function projectDramawebben(
+  source: WorkSourceInfoResponse
+): ReaderSourceInfo["dramawebben"] {
+  if (source.dramawebben === null) return null
+  return {
+    hasIntroduction: source.dramawebben.has_introduction,
+    facts: source.dramawebben.facts.map(fact => ({ ...fact })),
+    rolesHtml: source.dramawebben.roles.map(
+      role => sanitizeReaderSourceInfoHtml(role, "inline")
+    ),
+    historyHtml: source.dramawebben.history_html === null
+      ? null
+      : sanitizeReaderSourceInfoHtml(source.dramawebben.history_html)
+  }
+}
+
 export async function buildReaderSourceInfo(
   source: WorkSourceInfoResponse,
   definitions: ReaderSourceInfoStaticDefinitions,
@@ -273,17 +289,6 @@ export async function buildReaderSourceInfo(
     errata: source.errata.map(row => ({
       cellsHtml: row.cells_html.map(cell => sanitizeReaderSourceInfoHtml(cell, "inline"))
     })),
-    dramawebben: source.dramawebben === null
-      ? null
-      : {
-          hasIntroduction: source.dramawebben.has_introduction,
-          facts: source.dramawebben.facts.map(fact => ({ ...fact })),
-          rolesHtml: source.dramawebben.roles.map(
-            role => sanitizeReaderSourceInfoHtml(role, "inline")
-          ),
-          historyHtml: source.dramawebben.history_html === null
-            ? null
-            : sanitizeReaderSourceInfoHtml(source.dramawebben.history_html)
-        }
+    dramawebben: projectDramawebben(source)
   }
 }

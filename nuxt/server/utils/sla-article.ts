@@ -136,19 +136,31 @@ function descriptorLinksAreExact(value: SlaArticleDescriptor): boolean {
   }
 }
 
-function isSlaArticleDescriptor(value: unknown): value is SlaArticleDescriptor {
-  if (!isRecord(value)) return false
-  return Object.keys(value).length === descriptorKeys.size
-    && Object.keys(value).every(key => descriptorKeys.has(key))
-    && value.author_id === SLA_AUTHOR_ID
+function hasExactSlaDescriptorKeys(value: Record<string, unknown>): boolean {
+  const keys = Object.keys(value)
+  return keys.length === descriptorKeys.size && keys.every(key => descriptorKeys.has(key))
+}
+
+function hasExactSlaAuthor(value: Record<string, unknown>): boolean {
+  return value.author_id === SLA_AUTHOR_ID
     && value.normalized_author_id === SLA_NORMALIZED_AUTHOR_ID
     && value.full_name === SLA_FULL_NAME
     && value.birth_year === SLA_BIRTH_YEAR
     && value.death_year === SLA_DEATH_YEAR
-    && value.has_introduction === true
+}
+
+function hasExactSlaFeatures(value: Record<string, unknown>): boolean {
+  return value.has_introduction === true
     && value.has_dramawebben === true
     && value.search_url === SLA_SEARCH_URL
     && (value.audio_url === null || value.audio_url === SLA_AUDIO_URL)
+}
+
+function isSlaArticleDescriptor(value: unknown): value is SlaArticleDescriptor {
+  if (!isRecord(value)) return false
+  return hasExactSlaDescriptorKeys(value)
+    && hasExactSlaAuthor(value)
+    && hasExactSlaFeatures(value)
     && value.document_kind === "omtexterna"
     && typeof value.article_id === "string"
     && typeof value.source_path === "string"
@@ -236,26 +248,34 @@ function safeExternalHref(value: string): boolean {
   }
 }
 
-function safeSlaArticleHref(value: string): boolean {
-  if (
-    value !== value.trim()
+function unsafeSlaHref(value: string): boolean {
+  return value !== value.trim()
     || value.includes("\\")
     || hasC0OrC1Control(value)
     || hasLoneSurrogate(value)
-  ) return false
-  const decoded = fullyDecode(value)
-  if (decoded === null
-    || decoded.includes("\\")
-    || hasC0OrC1Control(decoded)
-    || hasLoneSurrogate(decoded)
-    || decoded.startsWith("//")
-    || hasTraversalSegment(decoded)) return false
+}
 
-  if (value.startsWith("#")) return safeId.test(value.slice(1))
+function unsafeDecodedSlaHref(value: string): boolean {
+  return value.includes("\\")
+    || hasC0OrC1Control(value)
+    || hasLoneSurrogate(value)
+    || value.startsWith("//")
+    || hasTraversalSegment(value)
+}
+
+function isKnownSlaHref(value: string): boolean {
   if (value === "/bibliotek?sort=titlar&filter=selma%20lagerlöf") return true
   if (exactSlaRoots.has(value) || exactPdfPaths.has(value)) return true
-  if (matchesRegisteredArticle(value) || matchesProfileReaderOrWork(value)) return true
-  return safeExternalHref(value)
+  return matchesRegisteredArticle(value) || matchesProfileReaderOrWork(value)
+}
+
+function safeSlaArticleHref(value: string): boolean {
+  if (unsafeSlaHref(value)) return false
+  const decoded = fullyDecode(value)
+  if (decoded === null || unsafeDecodedSlaHref(decoded)) return false
+
+  if (value.startsWith("#")) return safeId.test(value.slice(1))
+  return isKnownSlaHref(value) || safeExternalHref(value)
 }
 
 function safeClassValue(value: string): boolean {
@@ -298,7 +318,7 @@ function canonicalStyle(element: SanitizableElement, name: string, value: string
   return null
 }
 
-function sanitizeAttributeValues(element: SanitizableElement, name: string): void {
+function sanitizeGlobalAttributeValues(element: SanitizableElement): void {
   if (element.hasAttribute("class")
     && !safeClassValue(element.getAttribute("class") ?? "")) {
     element.removeAttribute("class")
@@ -306,42 +326,64 @@ function sanitizeAttributeValues(element: SanitizableElement, name: string): voi
   if (element.hasAttribute("id") && !safeId.test(element.getAttribute("id") ?? "")) {
     element.removeAttribute("id")
   }
-  if (element.hasAttribute("lang")
-    && !new Set(["sv", "en"]).has(element.getAttribute("lang") ?? "")) {
+  const language = element.getAttribute("lang")
+  if (language !== null && language !== "sv" && language !== "en") {
     element.removeAttribute("lang")
   }
+}
 
-  if (name === "a") {
-    if (element.hasAttribute("href")
-      && !safeSlaArticleHref(element.getAttribute("href") ?? "")) {
-      element.removeAttribute("href")
-    }
-    if (!element.hasAttribute("href")) {
-      element.removeAttribute("target")
-      element.removeAttribute("rel")
-    } else {
-      if (element.hasAttribute("target") && element.getAttribute("target") !== "_top") {
-        element.removeAttribute("target")
-      }
-      if (element.hasAttribute("rel")
-        && !safeRelValue(element.getAttribute("rel") ?? "")) {
-        element.removeAttribute("rel")
-      }
-    }
+function sanitizeAnchorAttributeValues(element: SanitizableElement): void {
+  if (element.hasAttribute("href")
+    && !safeSlaArticleHref(element.getAttribute("href") ?? "")) {
+    element.removeAttribute("href")
   }
+  if (!element.hasAttribute("href")) {
+    element.removeAttribute("target")
+    element.removeAttribute("rel")
+    return
+  }
+  if (element.hasAttribute("target") && element.getAttribute("target") !== "_top") {
+    element.removeAttribute("target")
+  }
+  if (element.hasAttribute("rel") && !safeRelValue(element.getAttribute("rel") ?? "")) {
+    element.removeAttribute("rel")
+  }
+}
+
+function sanitizeTableAttributeValues(element: SanitizableElement): void {
+  if (element.getAttribute("border") !== "1") element.removeAttribute("border")
+  if (element.hasAttribute("summary")
+    && !safeSummary(element.getAttribute("summary") ?? "")) {
+    element.removeAttribute("summary")
+  }
+}
+
+function sanitizeAttributeValues(element: SanitizableElement, name: string): void {
+  sanitizeGlobalAttributeValues(element)
+  if (name === "a") sanitizeAnchorAttributeValues(element)
   if (name === "ol" && element.getAttribute("type") !== "I") {
     element.removeAttribute("type")
   }
-  if (name === "table") {
-    if (element.getAttribute("border") !== "1") element.removeAttribute("border")
-    if (element.hasAttribute("summary")
-      && !safeSummary(element.getAttribute("summary") ?? "")) {
-      element.removeAttribute("summary")
-    }
-  }
+  if (name === "table") sanitizeTableAttributeValues(element)
   if (name === "th" && element.getAttribute("colspan") !== "2") {
     element.removeAttribute("colspan")
   }
+}
+
+function slaAttributeAllowed(
+  name: string,
+  attributeName: string,
+  specificAttributes: ReadonlySet<string> | undefined
+): boolean {
+  if (globalAttributes.has(attributeName) || specificAttributes?.has(attributeName)) return true
+  return attributeName === "style" && ["h1", "h2", "ul", "hr"].includes(name)
+}
+
+function sanitizeSlaStyle(element: SanitizableElement, name: string): void {
+  if (!element.hasAttribute("style")) return
+  const canonical = canonicalStyle(element, name, element.getAttribute("style") ?? "")
+  if (canonical === null) element.removeAttribute("style")
+  else element.setAttribute("style", canonical)
 }
 
 function sanitizeElement(element: SanitizableElement): void {
@@ -361,21 +403,13 @@ function sanitizeElement(element: SanitizableElement): void {
   const specificAttributes = elementAttributes[name]
   for (const attribute of [...element.attributes]) {
     const attributeName = attribute.name.toLowerCase()
-    const isStyle = attributeName === "style"
-      && (name === "h1" || name === "h2" || name === "ul" || name === "hr")
-    if (!globalAttributes.has(attributeName)
-      && !specificAttributes?.has(attributeName)
-      && !isStyle) {
+    if (!slaAttributeAllowed(name, attributeName, specificAttributes)) {
       element.removeAttribute(attribute.name)
     }
   }
 
   sanitizeAttributeValues(element, name)
-  if (element.hasAttribute("style")) {
-    const canonical = canonicalStyle(element, name, element.getAttribute("style") ?? "")
-    if (canonical === null) element.removeAttribute("style")
-    else element.setAttribute("style", canonical)
-  }
+  sanitizeSlaStyle(element, name)
 }
 
 function sanitizeNode(node: SanitizableNode): void {
@@ -433,6 +467,27 @@ export function slaArticleError(
     statusMessage: statusCode === 404 ? "Not Found" : "Bad Gateway",
     data: { code }
   })
+}
+
+function slaArticlePage(
+  descriptor: SlaArticleDescriptor,
+  sourcePath: SlaArticleSourcePath,
+  bodyHtml: SanitizedHtml<"sla-article">
+): SlaArticlePage {
+  return {
+    author: {
+      authorId: descriptor.author_id,
+      fullName: descriptor.full_name,
+      lifespan: formatYears(descriptor.birth_year, descriptor.death_year),
+      hasIntroduction: descriptor.has_introduction,
+      hasDramawebben: descriptor.has_dramawebben,
+      searchUrl: descriptor.search_url,
+      audioUrl: descriptor.audio_url
+    },
+    articleId: descriptor.article_id,
+    sourcePath,
+    bodyHtml
+  }
 }
 
 export async function loadSlaArticle(
@@ -507,18 +562,5 @@ export async function loadSlaArticle(
     return slaArticleError(502, "sla_article_unavailable")
   }
 
-  return {
-    author: {
-      authorId: descriptor.author_id,
-      fullName: descriptor.full_name,
-      lifespan: formatYears(descriptor.birth_year, descriptor.death_year),
-      hasIntroduction: descriptor.has_introduction,
-      hasDramawebben: descriptor.has_dramawebben,
-      searchUrl: descriptor.search_url,
-      audioUrl: descriptor.audio_url
-    },
-    articleId: descriptor.article_id,
-    sourcePath: expected,
-    bodyHtml
-  }
+  return slaArticlePage(descriptor, expected, bodyHtml)
 }

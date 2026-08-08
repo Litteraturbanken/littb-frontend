@@ -1,6 +1,7 @@
 import type { EditorFacsimileSource, EditorReaderPage } from "#shared/types/editor-reader"
 import type {
   EditorPageBounds,
+  EditorManifestResponse,
   FacsimileSize,
   WorkManifestPart
 } from "#shared/types/work-manifest"
@@ -18,6 +19,42 @@ import {
 
 const workIdPattern = /^[A-Za-z0-9_-]{1,100}$/
 const indexPattern = /^(?:0|[1-9]\d{0,6})$/
+type EditorEvent = Parameters<typeof getRouterParam>[0]
+type EditorMediaType = EditorReaderPage["mediaType"]
+type CompleteEditorManifest = Extract<EditorManifestResponse, { status: "complete" }>
+
+type EditorRequest = {
+  mediaType: EditorMediaType
+  pageIndex: number
+  workId: string
+}
+
+type EditorPagePosition = {
+  pageCount: number
+  pageIndexes: number[] | null
+  sparsePosition: number
+}
+
+type EditorReadableContext = {
+  complete: CompleteEditorManifest | null
+  currentPart: WorkManifestPart | null
+  firstReadableIndex: number
+  lastReadableIndex: number
+  nextPartIndex: number | null
+  previousPartIndex: number | null
+  readablePages: CompleteEditorManifest["pages"]
+}
+
+type EditorAssets = Pick<
+  EditorReaderPage,
+  | "facsimileSources"
+  | "html"
+  | "imageUrl"
+  | "imageWidth"
+  | "overlayHeight"
+  | "overlayHtml"
+  | "overlayWidth"
+>
 
 function requiredParam(event: Parameters<typeof getRouterParam>[0], name: string): string {
   const value = getRouterParam(event, name)
@@ -99,132 +136,181 @@ function editorFacsimileSources(
   return sources.sort((left, right) => left.size - right.size)
 }
 
-export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
-  setHeader(event, "cache-control", "no-store")
+function readEditorRequest(event: EditorEvent): EditorRequest {
   const workId = requiredParam(event, "lbid")
   const rawIndex = requiredParam(event, "ix")
   const alias = requiredParam(event, "mediatype")
-  if (
-    !workIdPattern.test(workId)
-    || !indexPattern.test(rawIndex)
-    || (alias !== "e" && alias !== "f")
-  ) pageNotFound()
+  if (!workIdPattern.test(workId) || !indexPattern.test(rawIndex)
+    || (alias !== "e" && alias !== "f")) pageNotFound()
+  return {
+    mediaType: alias === "e" ? "etext" : "faksimil",
+    pageIndex: Number(rawIndex),
+    workId
+  }
+}
 
-  const pageIndex = Number(rawIndex)
-  const mediaType = alias === "e" ? "etext" : "faksimil"
-  const manifest = await fetchEditorManifest(event, workId, mediaType)
-  const pageIndexes = manifest.bounds.kind === "sparse"
-    ? manifest.bounds.page_indexes
-    : null
-  const pageCount = editorPageCount(manifest.bounds)
+function editorPagePosition(
+  bounds: EditorPageBounds,
+  pageIndex: number
+): EditorPagePosition {
+  const pageIndexes = bounds.kind === "sparse" ? bounds.page_indexes : null
+  const pageCount = editorPageCount(bounds)
   const sparsePosition = pageIndexes?.indexOf(pageIndex) ?? -1
   if (pageIndex >= pageCount || (pageIndexes !== null && sparsePosition < 0)) pageNotFound()
+  return { pageCount, pageIndexes, sparsePosition }
+}
 
+function readableEditorContext(
+  manifest: EditorManifestResponse,
+  position: EditorPagePosition,
+  pageIndex: number
+): EditorReadableContext {
   const complete = manifest.status === "complete" ? manifest : null
-  const metadataAvailable = complete !== null
-  const contributors = complete?.contributors ?? []
   const parts = complete?.parts ?? []
-  const readablePages = complete?.pages.every(page => page.page_index < pageCount)
+  const readablePages = complete?.pages.every(page => page.page_index < position.pageCount)
     ? complete.pages
     : []
-  const { currentPart, nextPartIndex, previousPartIndex } = editorPartContext(
-    parts,
-    pageIndex
-  )
   const namedStartIndex = readablePages.find(
     page => page.page_name === complete?.start_page_name
   )?.page_index
   const namedEndIndex = readablePages.find(
     page => page.page_name === complete?.end_page_name
   )?.page_index
+  const sparseFirst = position.pageIndexes?.[0] ?? 0
+  const sparseLast = position.pageIndexes?.at(-1) ?? position.pageCount - 1
   const firstReadableIndex = complete
-    ? namedStartIndex ?? readablePages[0]?.page_index ?? pageIndexes?.[0] ?? 0
-    : pageIndexes?.[0] ?? 0
+    ? namedStartIndex ?? readablePages[0]?.page_index ?? sparseFirst
+    : sparseFirst
   const lastReadableIndex = complete
-    ? namedEndIndex ?? readablePages.at(-1)?.page_index ?? pageIndexes?.at(-1) ?? pageCount - 1
-    : pageIndexes?.at(-1) ?? pageCount - 1
+    ? namedEndIndex ?? readablePages.at(-1)?.page_index ?? sparseLast
+    : sparseLast
+  return {
+    complete,
+    ...editorPartContext(parts, pageIndex),
+    firstReadableIndex,
+    lastReadableIndex,
+    readablePages
+  }
+}
 
-  const config = useRuntimeConfig(event)
-  const base = config.readerSourceBase.replace(/\/$/u, "")
-  let html: string | null = null
-  if (mediaType === "etext") {
+async function fetchEditorEtext(
+  base: string,
+  request: EditorRequest
+): Promise<EditorReaderPage["html"]> {
+  if (request.mediaType !== "etext") return null
+  try {
+    const filename = String(request.pageIndex).padStart(5, "0")
+    const url = new URL(`${base}/txt/${encodeURIComponent(request.workId)}/res_${filename}.html`)
+    url.searchParams.set("username", "app")
+    const html = await fetchBoundedEditorText(url, maximumEditorHtmlLength)
+    const sanitized = sanitizeEditorEtextHtml(html)
+    if (sanitized === null) sourceError()
+    return sanitized
+  } catch {
+    sourceError()
+  }
+}
+
+async function fetchEditorAssets(
+  event: EditorEvent,
+  base: string,
+  request: EditorRequest,
+  sizes: readonly FacsimileSize[]
+): Promise<EditorAssets> {
+  const html = await fetchEditorEtext(base, request)
+  if (request.mediaType === "etext") {
+    return {
+      facsimileSources: [], html, imageUrl: null, imageWidth: null,
+      overlayHeight: null, overlayHtml: null, overlayWidth: null
+    }
+  }
+  const facsimileSources = editorFacsimileSources(sizes, request.workId, request.pageIndex)
+  const initialSource = facsimileSources.find(source => source.size === 3) ?? null
+  if (initialSource) {
     try {
-      const filename = String(pageIndex).padStart(5, "0")
-      const url = new URL(`${base}/txt/${encodeURIComponent(workId)}/res_${filename}.html`)
-      url.searchParams.set("username", "app")
-      html = await fetchBoundedEditorText(url, maximumEditorHtmlLength)
+      await fetchTimedEditorHead(`${base}${initialSource.url}`)
     } catch {
       sourceError()
     }
   }
-
-  const facsimileSources = mediaType === "faksimil"
-    ? editorFacsimileSources(complete?.sizes ?? [], workId, pageIndex)
-    : []
-  const initialFacsimileSource = facsimileSources.find(source => source.size === 3) ?? null
-  const imageWidth = initialFacsimileSource?.width ?? null
-  const imageUrl = initialFacsimileSource?.url ?? null
-  if (imageUrl) {
-    try {
-      await fetchTimedEditorHead(`${base}${imageUrl}`)
-    } catch {
-      sourceError()
-    }
+  const contentBase = useRuntimeConfig(event).contentBase.replace(/\/$/u, "")
+  const overlay = await fetchReaderOcrOverlay(contentBase, request.workId, request.pageIndex)
+  return {
+    facsimileSources,
+    html,
+    imageUrl: initialSource?.url ?? null,
+    imageWidth: initialSource?.width ?? null,
+    overlayHeight: overlay?.height ?? null,
+    overlayHtml: overlay?.html ?? null,
+    overlayWidth: overlay?.width ?? null
   }
+}
 
-  let overlayHtml: EditorReaderPage["overlayHtml"] = null
-  let overlayWidth: number | null = null
-  let overlayHeight: number | null = null
-  if (mediaType === "faksimil") {
-    const overlay = await fetchReaderOcrOverlay(
-      config.contentBase.replace(/\/$/u, ""),
-      workId,
-      pageIndex
-    )
-    if (overlay) {
-      overlayHtml = overlay.html
-      overlayWidth = overlay.width
-      overlayHeight = overlay.height
-    }
+function adjacentEditorIndex(
+  position: EditorPagePosition,
+  pageIndex: number,
+  offset: -1 | 1
+): number | null {
+  if (position.pageIndexes) {
+    return position.pageIndexes[position.sparsePosition + offset] ?? null
   }
+  const candidate = pageIndex + offset
+  return candidate >= 0 && candidate < position.pageCount ? candidate : null
+}
 
-  const sanitizedHtml = html === null ? null : sanitizeEditorEtextHtml(html)
-  if (html !== null && sanitizedHtml === null) sourceError()
+function editorReaderPage(
+  request: EditorRequest,
+  position: EditorPagePosition,
+  readable: EditorReadableContext,
+  assets: EditorAssets
+): EditorReaderPage {
+  const complete = readable.complete
+  const contributors = complete?.contributors ?? []
+  const parts = complete?.parts ?? []
   return {
     authorId: contributors[0]?.author_id ?? null,
     authorName: contributors[0]?.full_name ?? null,
     closeHref: complete ? editorCloseHref(complete.public_reader_target) : null,
     contributors,
-    currentPart,
+    currentPart: readable.currentPart,
     endPageName: complete?.end_page_name ?? null,
-    facsimileSources,
-    firstReadableIndex,
-    html: sanitizedHtml,
-    imageWidth,
-    imageUrl,
+    ...assets,
+    firstReadableIndex: readable.firstReadableIndex,
     imprintYear: complete?.imprint_year ?? null,
-    lastReadableIndex,
-    mediaType,
-    metadataAvailable,
-    nextIndex: pageIndexes
-      ? pageIndexes[sparsePosition + 1] ?? null
-      : pageIndex + 1 < pageCount ? pageIndex + 1 : null,
-    nextPartIndex,
-    overlayHeight,
-    overlayHtml,
-    overlayWidth,
-    pageCount,
-    pageIndex,
-    pageIndexes,
-    pageName: readablePages.find(page => page.page_index === pageIndex)?.page_name ?? null,
+    lastReadableIndex: readable.lastReadableIndex,
+    mediaType: request.mediaType,
+    metadataAvailable: complete !== null,
+    nextIndex: adjacentEditorIndex(position, request.pageIndex, 1),
+    nextPartIndex: readable.nextPartIndex,
+    pageCount: position.pageCount,
+    pageIndex: request.pageIndex,
+    pageIndexes: position.pageIndexes,
+    pageName: readable.readablePages.find(
+      page => page.page_index === request.pageIndex
+    )?.page_name ?? null,
     parts,
-    previousIndex: pageIndexes
-      ? pageIndexes[sparsePosition - 1] ?? null
-      : pageIndex > 0 ? pageIndex - 1 : null,
-    previousPartIndex,
+    previousIndex: adjacentEditorIndex(position, request.pageIndex, -1),
+    previousPartIndex: readable.previousPartIndex,
     searchable: complete?.searchable ?? false,
     title: complete?.display_title ?? null,
     titlePath: complete?.title_path ?? null,
-    workId
-  } satisfies EditorReaderPage
+    workId: request.workId
+  }
+}
+
+export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
+  setHeader(event, "cache-control", "no-store")
+  const request = readEditorRequest(event)
+  const manifest = await fetchEditorManifest(event, request.workId, request.mediaType)
+  const position = editorPagePosition(manifest.bounds, request.pageIndex)
+  const readable = readableEditorContext(manifest, position, request.pageIndex)
+  const config = useRuntimeConfig(event)
+  const base = config.readerSourceBase.replace(/\/$/u, "")
+  const assets = await fetchEditorAssets(
+    event,
+    base,
+    request,
+    readable.complete?.sizes ?? []
+  )
+  return editorReaderPage(request, position, readable, assets)
 })

@@ -21,6 +21,11 @@ import { usefulLibraryTooltipText } from "~/lib/library-tooltip"
 import { markReaderSearchOcrHtml } from "~/lib/search-hit-highlight"
 import { toBoundedDeveloperValue } from "~/lib/quick-search-developer"
 import { readerMissingPageErrorData } from "~/lib/reader-missing-page"
+import {
+  keyboardNavigationAction,
+  type KeyboardNavigationAction,
+  type KeyboardNavigationDirection
+} from "~/lib/reader-keyboard-navigation"
 import { readerTitleTooltipDirective } from "~/lib/reader-title-tooltip"
 import {
   isWorkSearchActivationKey,
@@ -226,13 +231,29 @@ const wordIdPattern = /^w(?<page>[0-9]+)_(?<ordinal>[0-9]+)$/
 const maximumHitOffset = 1_000_000
 const maximumNavigableHit = maximumHitOffset + 1
 
-function parseCanonicalSearchState(): CanonicalSearchState | null {
-  for (const key of canonicalSearchKeys) {
+function canonicalQueryValuesAreScalar(): boolean {
+  return canonicalSearchKeys.every(key => {
     const value = route.query[key]
-    if (Array.isArray(value) || (value !== undefined && typeof value !== "string")) {
-      return null
-    }
-  }
+    return value === undefined || typeof value === "string"
+  })
+}
+
+function canonicalSearchFlagsAreValid(): boolean {
+  return ["lemma", "ej_modern", "prefix", "suffix"].every(key => {
+    const value = route.query[key]
+    return value === undefined || value === "1"
+  })
+}
+
+function canonicalHitIndex(value: string): number | null {
+  if (!/^(?:0|[1-9]\d*)$/.test(value)) return null
+  const hit = Number(value)
+  if (!Number.isSafeInteger(hit) || hit < 0) return null
+  return Math.max(hit - 1, 0) <= maximumHitOffset ? hit : null
+}
+
+function parseCanonicalSearchState(): CanonicalSearchState | null {
+  if (!canonicalQueryValuesAreScalar() || !canonicalSearchFlagsAreValid()) return null
 
   const rawQuery = route.query.q
   const rawHit = route.query.hit
@@ -240,17 +261,8 @@ function parseCanonicalSearchState(): CanonicalSearchState | null {
 
   const query = rawQuery.trim()
   if (query.length < 1 || query.length > 200) return null
-  if (!/^(?:0|[1-9]\d*)$/.test(rawHit)) return null
-
-  const hit = Number(rawHit)
-  if (!Number.isSafeInteger(hit) || hit < 0 || Math.max(hit - 1, 0) > maximumHitOffset) {
-    return null
-  }
-
-  for (const key of ["lemma", "ej_modern", "prefix", "suffix"] as const) {
-    const value = route.query[key]
-    if (value !== undefined && value !== "1") return null
-  }
+  const hit = canonicalHitIndex(rawHit)
+  if (hit === null) return null
 
   return Object.freeze({
     query,
@@ -357,41 +369,58 @@ function readerWordPosition(value: string, workId: string): ReaderWordPosition |
     : null
 }
 
+function workSearchHitFields(value: unknown): value is WorkSearchHit {
+  if (!isRecord(value) || !isRecord(value.highlight)) return false
+  return isSafeInteger(value.index)
+    && typeof value.page_name === "string"
+    && value.page_name.trim().length >= 1
+    && value.page_name.length <= 100
+    && isSafeInteger(value.page_index)
+    && typeof value.highlight.from_word_id === "string"
+    && typeof value.highlight.to_word_id === "string"
+    && value.highlight.from_word_id.length <= 100
+    && value.highlight.to_word_id.length <= 100
+}
+
+function expectedHitPageScope(
+  hit: WorkSearchHit,
+  mediaType: "etext" | "faksimil"
+): string | null {
+  if (mediaType === "etext") return `page:${hit.page_index}`
+  return /^[0-9]+$/.test(hit.page_name) ? `page:${hit.page_name}` : null
+}
+
+function positionMatchesPage(position: ReaderWordPosition, pageScope: string | null): boolean {
+  return position.pageIndex === null || position.scope === pageScope
+}
+
 function isWorkSearchHit(
   value: unknown,
   workId: string,
   mediaType: "etext" | "faksimil"
 ): value is WorkSearchHit {
-  if (!isRecord(value)) return false
-  if (
-    !isSafeInteger(value.index) ||
-    typeof value.page_name !== "string" ||
-    value.page_name.trim().length < 1 ||
-    value.page_name.length > 100 ||
-    !isSafeInteger(value.page_index) ||
-    !isRecord(value.highlight)
-  ) return false
-
-  const { from_word_id: fromWordId, to_word_id: toWordId } = value.highlight
-  if (
-    typeof fromWordId !== "string" ||
-    typeof toWordId !== "string" ||
-    fromWordId.length > 100 ||
-    toWordId.length > 100
-  ) return false
-
-  const fromPosition = readerWordPosition(fromWordId, workId)
-  const toPosition = readerWordPosition(toWordId, workId)
+  if (!workSearchHitFields(value)) return false
+  const fromPosition = readerWordPosition(value.highlight.from_word_id, workId)
+  const toPosition = readerWordPosition(value.highlight.to_word_id, workId)
   if (!fromPosition || !toPosition || fromPosition.scope !== toPosition.scope ||
     fromPosition.ordinal > toPosition.ordinal) return false
 
-  const expectedPageScope = mediaType === "etext"
-    ? `page:${value.page_index}`
-    : /^[0-9]+$/.test(value.page_name)
-      ? `page:${value.page_name}`
-      : null
-  return (fromPosition.pageIndex === null || fromPosition.scope === expectedPageScope) &&
-    (toPosition.pageIndex === null || toPosition.scope === expectedPageScope)
+  const pageScope = expectedHitPageScope(value, mediaType)
+  return positionMatchesPage(fromPosition, pageScope) &&
+    positionMatchesPage(toPosition, pageScope)
+}
+
+function isExpectedHitItem(
+  item: unknown,
+  position: number,
+  offset: number,
+  totalHits: number,
+  workId: string,
+  mediaType: "etext" | "faksimil"
+): item is WorkSearchHit {
+  return isWorkSearchHit(item, workId, mediaType)
+    && item.index === offset + position
+    && item.index < totalHits
 }
 
 function isExpectedHitResponse(
@@ -403,23 +432,20 @@ function isExpectedHitResponse(
   limit = 3
 ): value is WorkSearchHitsResponse {
   if (!isRecord(value) || !Array.isArray(value.items)) return false
-  if (
-    value.query !== state.query ||
-    value.media_type !== mediaType ||
-    value.offset !== offset ||
-    value.limit !== limit ||
-    !isSafeInteger(value.total_hits) ||
-    value.items.length > limit
-  ) return false
-
-  for (const [position, item] of value.items.entries()) {
-    if (
-      !isWorkSearchHit(item, workId, mediaType) ||
-      item.index !== offset + position ||
-      item.index >= value.total_hits
-    ) return false
-  }
-  return true
+  const metadataMatches = value.query === state.query
+    && value.media_type === mediaType
+    && value.offset === offset
+    && value.limit === limit
+  if (!metadataMatches || !isSafeInteger(value.total_hits) || value.items.length > limit) return false
+  const totalHits = value.total_hits
+  return value.items.every((item, position) => isExpectedHitItem(
+    item,
+    position,
+    offset,
+    totalHits,
+    workId,
+    mediaType
+  ))
 }
 
 function markReaderHtml(
@@ -509,6 +535,7 @@ const requestFetch = useRequestFetch()
 type CurrentReaderPage =
   | { status: "success", identity: string, reader: ReaderPage }
   | { status: "error", identity: string }
+type SuccessfulReaderPage = Extract<CurrentReaderPage, { status: "success" }>
 
 const { data, error } = await useAsyncData<CurrentReaderPage>(
   computed(() => `reader:${readerFetchIdentity.value}`),
@@ -922,9 +949,12 @@ function commitSliderDraft(): void {
 function handleSliderChange(): void {
   if (!sliderKeyboardPending.value) commitSliderDraft()
 }
+function sliderKeyboardGuarded(event: KeyboardEvent): boolean {
+  return event.altKey || event.ctrlKey || event.metaKey
+}
 function sliderKeyboardTarget(event: KeyboardEvent): number | null {
   const maximum = sliderMaximum.value
-  if (maximum === null || event.altKey || event.ctrlKey || event.metaKey) return null
+  if (maximum === null || sliderKeyboardGuarded(event)) return null
   const current = sliderValue.value
   switch (event.key) {
     case "ArrowLeft":
@@ -1076,29 +1106,41 @@ const activeHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
   return workSearchHitAt(hitResponse.value.items, searchState.value.hit)
 })
+
+function selectedHitIndex(rawHitIndex: unknown): number | null {
+  if (typeof rawHitIndex !== "string" || !/^(?:0|[1-9]\d*)$/.test(rawHitIndex)) return null
+  const index = Number(rawHitIndex)
+  return Number.isSafeInteger(index) && index <= maximumNavigableHit ? index : null
+}
+
+function selectedHitMatchesCanonicalState(rawQuery: string, hitIndex: number): boolean {
+  const hasCanonicalState = route.query.q !== undefined || route.query.hit !== undefined
+  if (!hasCanonicalState) return true
+  const canonicalState = parseCanonicalSearchState()
+  return canonicalState?.query === rawQuery && canonicalState.hit === hitIndex
+}
+
+function selectedHitRouteMatchesReader(currentReader: ReaderPage): boolean {
+  if (route.query.s_lbworkid !== currentReader.workId) return false
+  return route.query.s_mediatype === undefined
+    || route.query.s_mediatype === currentReader.mediaType
+}
+
 const selectedSearchHit = computed<WorkSearchHit | null>(() => {
   const currentReader = reader.value
   if (!currentReader?.searchable) return null
 
-  const rawHitIndex = route.query.hit_index
   const rawQuery = route.query.s_query
   const fromWordId = route.query.traff
   const toWordId = route.query.traffslut
+  const hitIndex = selectedHitIndex(route.query.hit_index)
   if (
-    typeof rawHitIndex !== "string" || !/^(?:0|[1-9]\d*)$/.test(rawHitIndex) ||
+    hitIndex === null ||
     typeof rawQuery !== "string" || rawQuery.trim().length < 1 || rawQuery.length > 200 ||
-    route.query.s_lbworkid !== currentReader.workId ||
-    (route.query.s_mediatype !== undefined && route.query.s_mediatype !== currentReader.mediaType) ||
+    !selectedHitRouteMatchesReader(currentReader) ||
     typeof fromWordId !== "string" || typeof toWordId !== "string"
   ) return null
-
-  const hitIndex = Number(rawHitIndex)
-  if (!Number.isSafeInteger(hitIndex) || hitIndex > maximumNavigableHit) return null
-  const hasCanonicalState = route.query.q !== undefined || route.query.hit !== undefined
-  const canonicalState = hasCanonicalState ? parseCanonicalSearchState() : null
-  if (hasCanonicalState && (
-    !canonicalState || canonicalState.query !== rawQuery || canonicalState.hit !== hitIndex
-  )) return null
+  if (!selectedHitMatchesCanonicalState(rawQuery, hitIndex)) return null
 
   const hit: WorkSearchHit = {
     index: hitIndex,
@@ -1187,68 +1229,93 @@ function toggleGotoHitInput(): void {
   }
 }
 
-async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
+type HitLookupContext = Readonly<{
+  state: CanonicalSearchState
+  response: WorkSearchHitsResponse
+  currentReader: SuccessfulReaderPage
+  sourceIdentity: string
+}>
+
+function hitLookupContext(index: number): HitLookupContext | null {
   const state = searchState.value
   const response = hitResponse.value
-  const currentReader = data.value
-  const sourceIdentity = dialogNeutralIdentity.value
-  if (
-    !state ||
-    !response ||
-    index < 0 ||
-    index >= response.total_hits ||
-    index > maximumNavigableHit ||
-    currentReader?.status !== "success" ||
-    currentReader.identity !== readerRequestIdentity.value
-  ) return null
+  if (!state || !response) return null
+  if (index < 0 || index >= response.total_hits || index > maximumNavigableHit) return null
 
-  const cached = workSearchHitAt(response.items, index)
+  const currentReader = data.value
+  if (currentReader?.status !== "success") return null
+  if (currentReader.identity !== readerRequestIdentity.value) return null
+  return {
+    state,
+    response,
+    currentReader,
+    sourceIdentity: dialogNeutralIdentity.value
+  }
+}
+
+function sameSearchState(
+  current: CanonicalSearchState | null,
+  expected: CanonicalSearchState
+): boolean {
+  if (!current) return false
+  return current.query === expected.query
+    && current.hit === expected.hit
+    && current.wordForms === expected.wordForms
+    && current.includeOlderSpellings === expected.includeOlderSpellings
+    && current.prefix === expected.prefix
+    && current.suffix === expected.suffix
+}
+
+function hitLookupIsCurrent(context: HitLookupContext): boolean {
+  if (dialogNeutralIdentity.value !== context.sourceIdentity) return false
+  const latestReader = data.value
+  if (latestReader?.status !== "success") return false
+  return latestReader.identity === context.currentReader.identity
+    && sameSearchState(searchState.value, context.state)
+}
+
+async function fetchHitAtIndex(
+  context: HitLookupContext,
+  index: number
+): Promise<WorkSearchHit | null> {
+  const { currentReader, response, state } = context
+  const client = createLbApiClient(config.public.apiBase)
+  const result = await client.GET("/works/{work_id}/search-hits", {
+    params: {
+      path: { work_id: currentReader.reader.workId },
+      query: {
+        media_type: currentReader.reader.mediaType,
+        query: state.query,
+        offset: index,
+        limit: 1,
+        word_forms: state.wordForms,
+        include_older_spellings: state.includeOlderSpellings,
+        prefix: state.prefix,
+        suffix: state.suffix
+      }
+    }
+  })
+  if (result.error || !isExpectedHitResponse(
+    result.data,
+    state,
+    index,
+    currentReader.reader.workId,
+    currentReader.reader.mediaType,
+    1
+  )) return null
+  if (result.data.total_hits !== response.total_hits || !hitLookupIsCurrent(context)) return null
+  return result.data.items[0] ?? null
+}
+
+async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
+  const context = hitLookupContext(index)
+  if (!context) return null
+
+  const cached = workSearchHitAt(context.response.items, index)
   if (cached) return cached
 
   try {
-    const client = createLbApiClient(config.public.apiBase)
-    const result = await client.GET("/works/{work_id}/search-hits", {
-      params: {
-        path: { work_id: currentReader.reader.workId },
-        query: {
-          media_type: currentReader.reader.mediaType,
-          query: state.query,
-          offset: index,
-          limit: 1,
-          word_forms: state.wordForms,
-          include_older_spellings: state.includeOlderSpellings,
-          prefix: state.prefix,
-          suffix: state.suffix
-        }
-      }
-    })
-    if (
-      result.error ||
-      !isExpectedHitResponse(
-        result.data,
-        state,
-        index,
-        currentReader.reader.workId,
-        currentReader.reader.mediaType,
-        1
-      ) ||
-      result.data.total_hits !== response.total_hits
-    ) return null
-    const latestState = searchState.value
-    const latestReader = data.value
-    if (
-      dialogNeutralIdentity.value !== sourceIdentity ||
-      latestReader?.status !== "success" ||
-      latestReader.identity !== currentReader.identity ||
-      !latestState ||
-      latestState.query !== state.query ||
-      latestState.hit !== state.hit ||
-      latestState.wordForms !== state.wordForms ||
-      latestState.includeOlderSpellings !== state.includeOlderSpellings ||
-      latestState.prefix !== state.prefix ||
-      latestState.suffix !== state.suffix
-    ) return null
-    return result.data.items[0] ?? null
+    return await fetchHitAtIndex(context, index)
   } catch {
     return null
   }
@@ -1416,6 +1483,14 @@ const workSearchQueryKeys = new Set([
   "suffix"
 ])
 
+function appendWorkSearchQuery(segments: string[], query: string): void {
+  segments.push(new URLSearchParams({ q: query }).toString(), "hit=0")
+  if (workSearchLemma.value) segments.push("lemma=1")
+  if (!workSearchOlderSpellings.value) segments.push("ej_modern=1")
+  if (workSearchPrefix.value) segments.push("prefix=1")
+  if (workSearchSuffix.value) segments.push("suffix=1")
+}
+
 function workSearchFullPath(query: string | null): string {
   const fragmentIndex = rawFullPath.value.indexOf("#")
   const fragment = fragmentIndex < 0 ? "" : rawFullPath.value.slice(fragmentIndex)
@@ -1431,13 +1506,7 @@ function workSearchFullPath(query: string | null): string {
     new Map()
   )
 
-  if (query !== null) {
-    retained.push(new URLSearchParams({ q: query }).toString(), "hit=0")
-    if (workSearchLemma.value) retained.push("lemma=1")
-    if (!workSearchOlderSpellings.value) retained.push("ej_modern=1")
-    if (workSearchPrefix.value) retained.push("prefix=1")
-    if (workSearchSuffix.value) retained.push("suffix=1")
-  }
+  if (query !== null) appendWorkSearchQuery(retained, query)
   return `${path}${retained.length > 0 ? `?${retained.join("&")}` : ""}${fragment}`
 }
 
@@ -1532,43 +1601,64 @@ useSeoMeta({
   description: () => reader.value?.description
 })
 
+function readerHeadLinks(currentReader: ReaderPage | null): Array<{
+  rel: "stylesheet"
+  href: string
+}> {
+  if (!currentReader || currentReader.mediaType !== "etext") return []
+  const links: Array<{ rel: "stylesheet", href: string }> = []
+  if (currentReader.sharedStylesheetCss === null) {
+    links.push({ rel: "stylesheet", href: currentReader.sharedStylesheetUrl })
+  }
+  if (currentReader.workStylesheetCss === null) {
+    links.push({ rel: "stylesheet", href: currentReader.workStylesheetUrl })
+  }
+  return links
+}
+
+function readerHeadStyles(currentReader: ReaderPage | null): Array<{
+  key: string
+  textContent: string
+  "data-reader-shared-styles"?: string
+  "data-reader-work-styles"?: string
+}> {
+  if (!currentReader || currentReader.mediaType !== "etext") return []
+  const styles = []
+  if (currentReader.sharedStylesheetCss) {
+    styles.push({
+      key: "reader-shared-styles",
+      textContent: currentReader.sharedStylesheetCss,
+      "data-reader-shared-styles": ""
+    })
+  }
+  if (currentReader.workStylesheetCss) {
+    styles.push({
+      key: "reader-work-styles",
+      textContent: currentReader.workStylesheetCss,
+      "data-reader-work-styles": ""
+    })
+  }
+  return styles
+}
+
+function readerBodyClass(): string {
+  return [
+    "focus page-reading ready",
+    focusMode.value ? "reader-focus-mode" : "",
+    focusMode.value && etextReader.value && focusNightMode.value ? "night" : "",
+    contentsOpen.value || sourceInfoOpen.value ? "modal-open" : ""
+  ].filter(Boolean).join(" ")
+}
+
 useHead(() => ({
   bodyAttrs: {
-    class: [
-      "focus page-reading ready",
-      focusMode.value ? "reader-focus-mode" : "",
-      focusMode.value && etextReader.value && focusNightMode.value ? "night" : "",
-      contentsOpen.value || sourceInfoOpen.value ? "modal-open" : ""
-    ].filter(Boolean).join(" ")
+    class: readerBodyClass()
   },
   meta: currentPart.value?.title_id
     ? [{ name: "part", content: currentPart.value.title_id }]
     : [],
-  link: etextReader.value
-    ? [
-        ...(etextReader.value.sharedStylesheetCss === null
-          ? [{ rel: "stylesheet", href: etextReader.value.sharedStylesheetUrl }]
-          : []),
-        ...(etextReader.value.workStylesheetCss === null
-          ? [{ rel: "stylesheet", href: etextReader.value.workStylesheetUrl }]
-          : [])
-      ]
-    : [],
-  style: etextReader.value
-    ? [...(etextReader.value.sharedStylesheetCss
-        ? [{
-            key: "reader-shared-styles",
-            textContent: etextReader.value.sharedStylesheetCss,
-            "data-reader-shared-styles": ""
-          }]
-        : []), ...(etextReader.value.workStylesheetCss
-        ? [{
-            key: "reader-work-styles",
-            textContent: etextReader.value.workStylesheetCss,
-            "data-reader-work-styles": ""
-          }]
-        : [])]
-    : []
+  link: readerHeadLinks(reader.value),
+  style: readerHeadStyles(reader.value)
 }))
 
 function readerTarget(pageName: string, hit?: number): RouteLocationRaw {
@@ -1744,45 +1834,40 @@ function readerDialogIsOpen(): boolean {
     || document.querySelector('[role="dialog"][aria-modal="true"]') !== null
 }
 
-function keyboardPageTarget(event: KeyboardEvent): string | null {
-  const currentReader = reader.value
-  if (!currentReader) return null
+function readerAtScrollEdge(direction: KeyboardNavigationDirection): boolean {
+  if (direction === "previous") return window.scrollX < 10
+  return document.body.scrollWidth - window.scrollX === window.innerWidth
+}
 
-  if (event.key === "n") return draftNextPageName.value
-  if (event.key === "f") return draftPreviousPageName.value
-  if (event.key === "m" || event.key === "F16") {
-    return currentReader.nextPartPageName
+function readerTargetForAction(
+  currentReader: ReaderPage,
+  action: KeyboardNavigationAction
+): string | null {
+  if (action.kind === "adjacent") {
+    return action.direction === "next" ? draftNextPageName.value : draftPreviousPageName.value
   }
-  if (event.key === "d" || event.key === "F15") {
-    return currentReader.previousPartPageName
-  }
-
-  const forwards = event.key === "ArrowRight"
-  const backwards = event.key === "ArrowLeft"
-  if (!forwards && !backwards) return null
-
-  if (event.altKey && event.shiftKey) {
-    const draftPage = currentReader.pageMap.find(page => page.page_name === pageRouteDraftName.value)
-    const targetPageIndex = (draftPage?.page_index ?? currentReader.pageIndex) + (forwards ? 10 : -10)
-    return currentReader.pageMap.find(page => page.page_index === targetPageIndex)?.page_name
-      ?? null
-  }
-  if (event.altKey) {
-    return forwards
+  if (action.kind === "part") {
+    return action.direction === "next"
       ? currentReader.nextPartPageName
       : currentReader.previousPartPageName
   }
-  if (event.shiftKey) {
-    return forwards
-      ? draftNextPageName.value
-      : draftPreviousPageName.value
-  }
+  const draftPage = currentReader.pageMap.find(
+    page => page.page_name === pageRouteDraftName.value
+  )
+  const offset = action.direction === "next" ? 10 : -10
+  const targetPageIndex = (draftPage?.page_index ?? currentReader.pageIndex) + offset
+  return currentReader.pageMap.find(page => page.page_index === targetPageIndex)?.page_name ?? null
+}
 
-  if (forwards) {
-    const atRightEdge = document.body.scrollWidth - window.scrollX === window.innerWidth
-    return atRightEdge ? draftNextPageName.value : null
-  }
-  return window.scrollX < 10 ? draftPreviousPageName.value : null
+function keyboardPageTarget(event: KeyboardEvent): string | null {
+  const currentReader = reader.value
+  if (!currentReader) return null
+  const action = keyboardNavigationAction(event, {
+    altArrowAction: "part",
+    atEdge: readerAtScrollEdge,
+    letterAction: "part"
+  })
+  return action ? readerTargetForAction(currentReader, action) : null
 }
 
 function handleReaderPagingKeydown(event: KeyboardEvent): void {
@@ -1814,28 +1899,36 @@ function showProductionShortcutMessage(message: string): void {
   }, 2200)
 }
 
+async function copyReaderWorkId(currentReader: ReaderPage): Promise<void> {
+  const value = currentReader.editorWorkId || currentReader.workId
+  showProductionShortcutMessage(
+    await copyProductionValue(value) ? "Kopierade lbworkid" : "Kunde inte kopiera lbworkid"
+  )
+}
+
+async function copyReaderUrn(currentReader: ReaderPage): Promise<void> {
+  const url = urnResolverUrl(currentReader.urn)
+  if (!url) {
+    showProductionShortcutMessage("Ingen urn hittades")
+    return
+  }
+  showProductionShortcutMessage(
+    await copyProductionValue(url) ? "Kopierade urn" : "Kunde inte kopiera urn"
+  )
+}
+
 async function handleProductionShortcutKeydown(event: KeyboardEvent): Promise<void> {
   const currentReader = reader.value
   if (!currentReader || isProductionShortcutGuarded(event)) return
 
   if (event.key === "i" || event.key === "F17") {
     event.preventDefault()
-    const value = currentReader.editorWorkId || currentReader.workId
-    showProductionShortcutMessage(
-      await copyProductionValue(value) ? "Kopierade lbworkid" : "Kunde inte kopiera lbworkid"
-    )
+    await copyReaderWorkId(currentReader)
     return
   }
   if (event.key === "u" || event.key === "F21") {
     event.preventDefault()
-    const url = urnResolverUrl(currentReader.urn)
-    if (!url) {
-      showProductionShortcutMessage("Ingen urn hittades")
-      return
-    }
-    showProductionShortcutMessage(
-      await copyProductionValue(url) ? "Kopierade urn" : "Kunde inte kopiera urn"
-    )
+    await copyReaderUrn(currentReader)
     return
   }
   if (event.key === "å" || event.key === "[") {

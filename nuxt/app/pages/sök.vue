@@ -807,60 +807,65 @@ function toggleAdvanced() {
   patchFilters({ advanced: !state.value.advanced })
 }
 
-function setSearchMode(mode: "default" | "lemma" | "modernize" | "prefix" | "suffix" | "infix") {
-  if (mode === "default") {
-    patchFilters({
+type SearchMode = "default" | "lemma" | "modernize" | "prefix" | "suffix" | "infix"
+
+function searchModePatch(mode: SearchMode): Parameters<typeof textSearchFilterQuery>[1] {
+  switch (mode) {
+    case "default":
+      return {
       prefix: false,
       suffix: false,
       infix: false,
       wordFormOnly: true,
       includeModernized: false
-    })
-  } else if (mode === "lemma") {
-    patchFilters({
+      }
+    case "lemma":
+      return {
       prefix: false,
       suffix: false,
       infix: false,
       wordFormOnly: false,
       includeModernized: false
-    })
-  } else if (mode === "modernize") {
-    patchFilters(state.value.includeModernized
-      ? { includeModernized: false }
-      : {
+      }
+    case "modernize":
+      return state.value.includeModernized ? { includeModernized: false } : {
           prefix: false,
           suffix: false,
           infix: false,
           wordFormOnly: true,
           includeModernized: true
-        })
-  } else if (mode === "infix") {
-    patchFilters(state.value.infix
-      ? { prefix: false, suffix: false, infix: false, wordFormOnly: true }
-      : {
+        }
+    case "infix":
+      return state.value.infix
+        ? { prefix: false, suffix: false, infix: false, wordFormOnly: true }
+        : {
           prefix: true,
           suffix: true,
           infix: true,
           wordFormOnly: true,
           includeModernized: false
-        })
-  } else if (mode === "prefix") {
-    patchFilters({
+        }
+    case "prefix":
+      return {
       prefix: state.value.infix ? false : !state.value.prefix,
       suffix: state.value.suffix,
       infix: false,
       wordFormOnly: true,
       includeModernized: false
-    })
-  } else {
-    patchFilters({
+      }
+    case "suffix":
+      return {
       prefix: state.value.prefix,
       suffix: state.value.infix ? false : !state.value.suffix,
       infix: false,
       wordFormOnly: true,
       includeModernized: false
-    })
+      }
   }
+}
+
+function setSearchMode(mode: SearchMode) {
+  patchFilters(searchModePatch(mode))
 }
 
 function selectedMode(mode: string): boolean {
@@ -963,23 +968,30 @@ function goToPage(page: number) {
   void navigate(textSearchPageQuery(rawQuery.value, page))
 }
 
-function handlePaginationKeydown(event: KeyboardEvent) {
+function paginationShortcutGuarded(event: KeyboardEvent): boolean {
   if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
-    return
+    return true
   }
   const target = event.target instanceof HTMLElement
     ? event.target
     : document.activeElement as HTMLElement | null
-  if (target?.closest("input, select, textarea, [contenteditable]:not([contenteditable='false'])")) {
-    return
-  }
+  return Boolean(target?.closest(
+    "input, select, textarea, [contenteditable]:not([contenteditable='false'])"
+  ))
+}
+
+function atHorizontalEnd(root: HTMLElement): boolean {
+  return navigator.userAgent.includes("Firefox")
+    || root.scrollWidth - root.scrollLeft <= window.innerWidth
+}
+
+function handlePaginationKeydown(event: KeyboardEvent) {
+  if (paginationShortcutGuarded(event)) return
   const root = document.documentElement
   if (event.key === "ArrowLeft" && root.scrollLeft === 0 && state.value.page > 1) {
     event.preventDefault()
     goToPage(state.value.page - 1)
-  } else if (event.key === "ArrowRight"
-    && (navigator.userAgent.includes("Firefox")
-      || root.scrollWidth - root.scrollLeft <= window.innerWidth)
+  } else if (event.key === "ArrowRight" && atHorizontalEnd(root)
     && state.value.page < totalPages.value) {
     event.preventDefault()
     goToPage(state.value.page + 1)

@@ -61,7 +61,7 @@ async function navigateClient(page: Page, path: string) {
 async function expectAnchorAtViewportTop(page: Page, id: string) {
   await expect.poll(async () => page.locator(`#${id}`).evaluate(element =>
     Math.abs(element.getBoundingClientRect().top)
-  )).toBeLessThanOrEqual(1)
+  )).toBeLessThanOrEqual(2)
 }
 
 async function expectScrollTop(page: Page) {

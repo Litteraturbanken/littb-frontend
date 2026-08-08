@@ -168,26 +168,38 @@ function validateOrigin(event: H3Event, allowedOrigins: string): void {
   }
 }
 
-function isBrowserIntakeEvent(value: unknown): value is BrowserIntakeEvent {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false
-  const event = value as Record<string, unknown>
+function validBrowserEventIdentity(event: Record<string, unknown>): boolean {
   return Object.keys(event).length === 5
     && Object.hasOwn(event, "event_id")
     && typeof event.event_id === "string"
     && EVENT_ID_PATTERN.test(event.event_id)
-    && typeof event.event_name === "string"
+}
+
+function validBrowserEventClassification(event: Record<string, unknown>): boolean {
+  return typeof event.event_name === "string"
     && BROWSER_EVENT_NAMES.has(event.event_name as BrowserEventName)
     && typeof event.error_type === "string"
     && BROWSER_ERROR_TYPES.has(event.error_type)
-    && typeof event.resource_kind === "string"
-    && RESOURCE_KINDS.has(
-      event.resource_kind as NonNullable<
-        BrowserEvent["attributes"]["resource_kind"]
-      >
-    )
-    && (event.correlation_token === null
-      || (typeof event.correlation_token === "string"
-        && EVENT_ID_PATTERN.test(event.correlation_token)))
+}
+
+function validBrowserEventResource(event: Record<string, unknown>): boolean {
+  return typeof event.resource_kind === "string"
+    && RESOURCE_KINDS.has(event.resource_kind as NonNullable<
+      BrowserEvent["attributes"]["resource_kind"]
+    >)
+}
+
+function validCorrelationToken(value: unknown): boolean {
+  return value === null || (typeof value === "string" && EVENT_ID_PATTERN.test(value))
+}
+
+function isBrowserIntakeEvent(value: unknown): value is BrowserIntakeEvent {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const event = value as Record<string, unknown>
+  return validBrowserEventIdentity(event)
+    && validBrowserEventClassification(event)
+    && validBrowserEventResource(event)
+    && validCorrelationToken(event.correlation_token)
 }
 
 function parseBatch(body: Buffer): BrowserIntakeBatch {
@@ -306,16 +318,20 @@ export async function readBoundedRequestBody(
   return Buffer.concat(chunks, bytesRead)
 }
 
-export async function handleObservabilityIntake(
-  event: H3Event,
-  config: ObservabilityIntakeConfig,
-  options: {
-    guard?: ObservabilityIntakeGuard
-    fetch?: typeof globalThis.fetch
-    now?: () => number
-    resolveCorrelation?: typeof resolveCorrelationToken
-  } = {}
-): Promise<{ accepted: number }> {
+interface ObservabilityIntakeOptions {
+  guard?: ObservabilityIntakeGuard
+  fetch?: typeof globalThis.fetch
+  now?: () => number
+  resolveCorrelation?: typeof resolveCorrelationToken
+}
+
+type PreparedIntake = Readonly<{
+  guard: ObservabilityIntakeGuard
+  intakeEvents: BrowserIntakeEvent[]
+  now: number
+}>
+
+function validateIntakeHeaders(event: H3Event, config: ObservabilityIntakeConfig): void {
   const contentType = getHeader(event, "content-type")
     ?.split(";", 1)[0]
     ?.trim()
@@ -328,12 +344,85 @@ export async function handleObservabilityIntake(
   if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
     throw createError({ statusCode: 413, statusMessage: "Event batch too large" })
   }
-  const body = await readBoundedRequestBody(event)
-  const batch = parseBatch(body)
+}
+
+async function prepareIntake(
+  event: H3Event,
+  config: ObservabilityIntakeConfig,
+  options: ObservabilityIntakeOptions
+): Promise<PreparedIntake> {
+  validateIntakeHeaders(event, config)
+  const batch = parseBatch(await readBoundedRequestBody(event))
   const guard = options.guard ?? intakeGuard
   const now = (options.now ?? Date.now)()
   guard.enforceRate(clientKey(event), now)
-  const intakeEvents = guard.reserveNewEvents(batch.events, now)
+  return {
+    guard,
+    intakeEvents: guard.reserveNewEvents(batch.events, now),
+    now
+  }
+}
+
+async function signedForwardRequest(
+  event: H3Event,
+  config: ObservabilityIntakeConfig,
+  events: BrowserEvent[],
+  now: number
+): Promise<Readonly<{ init: RequestInit, target: string }>> {
+  const body = Buffer.from(JSON.stringify({ events }))
+  const timestamp = String(Math.floor(now / 1_000))
+  const signature = `sha256=${createHmac("sha256", await readSecret(config))
+    .update(timestamp)
+    .update(".")
+    .update(body)
+    .digest("hex")}`
+  return {
+    target: `${config.apiBase.replace(/\/$/u, "")}/internal/observability/events`,
+    init: {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-lb-observability-timestamp": timestamp,
+        "x-lb-observability-signature": signature,
+        ...correlationHeaders(event)
+      },
+      body: body.toString("utf8")
+    }
+  }
+}
+
+async function forwardEvents(
+  request: Awaited<ReturnType<typeof signedForwardRequest>>,
+  intakeEvents: BrowserIntakeEvent[],
+  guard: ObservabilityIntakeGuard,
+  fetchImplementation: typeof globalThis.fetch
+): Promise<Response> {
+  try {
+    return await fetchImplementation(request.target, request.init)
+  } catch {
+    guard.release(intakeEvents.map(item => item.event_id))
+    throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
+  }
+}
+
+function rejectFailedForward(
+  response: Response,
+  intakeEvents: BrowserIntakeEvent[],
+  guard: ObservabilityIntakeGuard
+): never {
+  guard.release(intakeEvents.map(item => item.event_id))
+  throw createError({
+    statusCode: response.status >= 400 && response.status < 500 ? 422 : 502,
+    statusMessage: "Event intake unavailable"
+  })
+}
+
+export async function handleObservabilityIntake(
+  event: H3Event,
+  config: ObservabilityIntakeConfig,
+  options: ObservabilityIntakeOptions = {}
+): Promise<{ accepted: number }> {
+  const { guard, intakeEvents, now } = await prepareIntake(event, config, options)
   if (intakeEvents.length === 0) {
     setResponseStatus(event, 202)
     return { accepted: 0 }
@@ -345,41 +434,19 @@ export async function handleObservabilityIntake(
     now,
     options.resolveCorrelation ?? resolveCorrelationToken
   ))
-  const forwardedBody = Buffer.from(JSON.stringify({ events }))
-  const timestamp = String(Math.floor(now / 1_000))
-  const secret = await readSecret(config)
-  const signature = `sha256=${createHmac("sha256", secret)
-    .update(timestamp)
-    .update(".")
-    .update(forwardedBody)
-    .digest("hex")}`
-  const target = `${config.apiBase.replace(/\/$/u, "")}/internal/observability/events`
-  let response: Response
-  try {
-    response = await (options.fetch ?? globalThis.fetch)(target, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-lb-observability-timestamp": timestamp,
-        "x-lb-observability-signature": signature,
-        ...correlationHeaders(event)
-      },
-      body: forwardedBody.toString("utf8")
-    })
-  } catch {
-    guard.release(intakeEvents.map(item => item.event_id))
-    throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
-  }
+  const request = await signedForwardRequest(event, config, events, now)
+  const response = await forwardEvents(
+    request,
+    intakeEvents,
+    guard,
+    options.fetch ?? globalThis.fetch
+  )
   if (response.status === 409) {
     setResponseStatus(event, 202)
     return { accepted: 0 }
   }
   if (!response.ok) {
-    guard.release(intakeEvents.map(item => item.event_id))
-    throw createError({
-      statusCode: response.status >= 400 && response.status < 500 ? 422 : 502,
-      statusMessage: "Event intake unavailable"
-    })
+    rejectFailedForward(response, intakeEvents, guard)
   }
   const result = await response.json() as { accepted?: unknown }
   const accepted = typeof result.accepted === "number"

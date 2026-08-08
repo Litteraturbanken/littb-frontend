@@ -92,7 +92,7 @@ const legacyFilterFieldMap = {
 const legacyFilterFields = new Set<SearchLegacyFilter["field"]>(
   Object.keys(legacyFilterFieldMap) as SearchLegacyFilter["field"][]
 )
-export const textSearchRouteKeys = [
+const textSearchRouteKeys = [
   "fras", "traffsida", "avancerad", "forfattare", "titlar", "kön",
   "languages", "keywords", "authorkeyword", "intervall", "sok_filter",
   "prefix", "suffix", "infix", "lemma", "ej_modern", "fuzzy", "keyword"
@@ -197,42 +197,50 @@ function parseLegacyFilters(query: TextSearchRouteQuery): SearchLegacyFilter[] {
   return filters
 }
 
+function routePage(query: TextSearchRouteQuery): number {
+  const raw = first(query, "traffsida")
+  return typeof raw === "string" && /^(?:[1-9]\d{0,3}|10000)$/.test(raw) ? Number(raw) : 1
+}
+
+function routeGender(query: TextSearchRouteQuery): TextSearchRouteState["gender"] {
+  const raw = first(query, "kön")
+  return raw === "female" || raw === "male" ? raw : null
+}
+
+function routeYearRange(query: TextSearchRouteQuery): TextSearchRouteState["yearRange"] {
+  const range = commaValues(query, "intervall")
+  if (range.length !== 2 || !/^\d{4}$/.test(range[0]!) || !/^\d{4}$/.test(range[1]!)) {
+    return null
+  }
+  const from = Number(range[0])
+  const to = Number(range[1])
+  return from >= 1000 && to <= 2200 && from <= to ? [from, to] : null
+}
+
+function routeFacetAuthorId(query: TextSearchRouteQuery): string | null {
+  const raw = first(query, "sok_filter")
+  return typeof raw === "string" && isSafeIdentifier(raw) ? raw : null
+}
+
 export function parseTextSearchRouteQuery(
   query: TextSearchRouteQuery
 ): TextSearchRouteState {
   const rawPhrase = first(query, "fras")
   const phrase = typeof rawPhrase === "string" ? rawPhrase.trim() : ""
-  const rawPage = first(query, "traffsida")
-  const page = typeof rawPage === "string" && /^(?:[1-9]\d{0,3}|10000)$/.test(rawPage)
-    ? Number(rawPage)
-    : 1
-  const rawGender = first(query, "kön")
-  const gender = rawGender === "female" || rawGender === "male" ? rawGender : null
-  const range = commaValues(query, "intervall")
-  const yearFrom = range.length === 2 && /^\d{4}$/.test(range[0]!) ? Number(range[0]) : null
-  const yearTo = range.length === 2 && /^\d{4}$/.test(range[1]!) ? Number(range[1]) : null
-  const yearRange = yearFrom !== null && yearTo !== null &&
-    yearFrom >= 1000 && yearTo <= 2200 && yearFrom <= yearTo
-    ? [yearFrom, yearTo] as const
-    : null
-  const rawFacet = first(query, "sok_filter")
-  const facetAuthorId = typeof rawFacet === "string" && isSafeIdentifier(rawFacet)
-    ? rawFacet
-    : null
   const infix = present(query, "infix")
 
   return Object.freeze({
     phrase: phrase.length >= 1 && phrase.length <= 200 ? phrase : null,
-    page,
+    page: routePage(query),
     advanced: present(query, "avancerad"),
     authorIds: identifierList(query, "forfattare"),
     workIds: identifierList(query, "titlar"),
-    gender,
+    gender: routeGender(query),
     languages: enumList(query, "languages", languageValues, 13),
     categories: enumList(query, "keywords", categoryValues, 38),
     aboutAuthorIds: identifierList(query, "authorkeyword"),
-    yearRange,
-    facetAuthorId,
+    yearRange: routeYearRange(query),
+    facetAuthorId: routeFacetAuthorId(query),
     prefix: infix || present(query, "prefix"),
     suffix: infix || present(query, "suffix"),
     infix,
@@ -247,19 +255,13 @@ function legacyFilterValue(filter: SearchLegacyFilter): string {
   return `${filter.field}:${filter.value}`
 }
 
-export function serializeTextSearchRouteState(
+type SerializedTextSearchQuery = Record<string, string | readonly string[] | null | undefined>
+type SetSerializedValue = (key: string, value: string | null) => void
+
+function serializeTextSearchSelections(
   state: TextSearchRouteState,
-  raw: TextSearchRouteQuery = {}
-): Record<string, string | readonly string[] | null | undefined> {
-  const serialized = Object.fromEntries(
-    Object.entries(raw).filter(([key]) => !textSearchRouteKeySet.has(key))
-  ) as Record<string, string | readonly string[] | null | undefined>
-  const set = (key: string, value: string | null): void => {
-    if (value !== null) serialized[key] = value
-  }
-  set("fras", state.phrase)
-  if (state.page !== 1) set("traffsida", String(state.page))
-  if (state.advanced) set("avancerad", "1")
+  set: SetSerializedValue
+): void {
   if (state.authorIds.length) set("forfattare", state.authorIds.join(","))
   if (state.workIds.length) set("titlar", state.workIds.join(","))
   set("kön", state.gender ?? null)
@@ -268,9 +270,14 @@ export function serializeTextSearchRouteState(
   if (state.aboutAuthorIds.length) set("authorkeyword", state.aboutAuthorIds.join(","))
   if (state.yearRange) set("intervall", state.yearRange.join(","))
   set("sok_filter", state.facetAuthorId)
-  if (state.infix) {
-    set("infix", "1")
-  } else {
+}
+
+function serializeTextSearchMatching(
+  state: TextSearchRouteState,
+  set: SetSerializedValue
+): void {
+  if (state.infix) set("infix", "1")
+  else {
     if (state.prefix) set("prefix", "1")
     if (state.suffix) set("suffix", "1")
   }
@@ -280,6 +287,23 @@ export function serializeTextSearchRouteState(
   if (state.legacyFilters.length) {
     set("keyword", state.legacyFilters.map(legacyFilterValue).join(","))
   }
+}
+
+export function serializeTextSearchRouteState(
+  state: TextSearchRouteState,
+  raw: TextSearchRouteQuery = {}
+): SerializedTextSearchQuery {
+  const serialized = Object.fromEntries(
+    Object.entries(raw).filter(([key]) => !textSearchRouteKeySet.has(key))
+  ) as SerializedTextSearchQuery
+  const set = (key: string, value: string | null): void => {
+    if (value !== null) serialized[key] = value
+  }
+  set("fras", state.phrase)
+  if (state.page !== 1) set("traffsida", String(state.page))
+  if (state.advanced) set("avancerad", "1")
+  serializeTextSearchSelections(state, set)
+  serializeTextSearchMatching(state, set)
   return serialized
 }
 
@@ -518,21 +542,33 @@ function isTextSearchHighlight(value: unknown, workId: string): value is TextSea
     positions.every(position => position[0] === positions[0]![0])
 }
 
+function hasTextSearchWorkIdentity(value: Record<string, unknown>): boolean {
+  return typeof value.lbworkid === "string"
+    && isSafeIdentifier(value.lbworkid)
+    && typeof value.author_id === "string"
+    && isSafeIdentifier(value.author_id)
+    && typeof value.title_id === "string"
+    && isSafeIdentifier(value.title_id)
+}
+
+function hasTextSearchWorkLabels(value: Record<string, unknown>): boolean {
+  return isBoundedString(value.author_name, 1, 1_000)
+    && isBoundedString(value.title, 1, 10_000)
+    && (value.mediatype === "etext" || value.mediatype === "faksimil")
+    && typeof value.has_more_highlights === "boolean"
+}
+
 function isTextSearchWork(value: unknown): value is TextSearchWork {
   if (!isRecord(value) || !hasExactKeys(value, [
     "lbworkid", "author_id", "author_name", "title", "title_id", "mediatype",
     "highlights", "has_more_highlights"
-  ]) || typeof value.lbworkid !== "string") return false
+  ])) return false
+  if (typeof value.lbworkid !== "string" ||
+    !hasTextSearchWorkIdentity(value) || !hasTextSearchWorkLabels(value)) return false
   const workId = value.lbworkid
-  return isSafeIdentifier(workId) &&
-    typeof value.author_id === "string" && isSafeIdentifier(value.author_id) &&
-    isBoundedString(value.author_name, 1, 1_000) &&
-    isBoundedString(value.title, 1, 10_000) &&
-    typeof value.title_id === "string" && isSafeIdentifier(value.title_id) &&
-    (value.mediatype === "etext" || value.mediatype === "faksimil") &&
-    Array.isArray(value.highlights) && value.highlights.length <= 500 &&
-    value.highlights.every(highlight => isTextSearchHighlight(highlight, workId)) &&
-    typeof value.has_more_highlights === "boolean"
+  return Array.isArray(value.highlights)
+    && value.highlights.length <= 500
+    && value.highlights.every(highlight => isTextSearchHighlight(highlight, workId))
 }
 
 function isAuthorFacet(value: unknown): value is TextSearchAuthorFacet {
@@ -545,15 +581,21 @@ function hasDistinctIds<T>(items: readonly T[], identifier: (item: T) => string)
   return new Set(items.map(identifier)).size === items.length
 }
 
-export function isTextSearchResultsResponse(value: unknown): value is TextSearchResultsResponse {
+function isBoundedArray<T>(
+  value: unknown,
+  maximum: number,
+  itemGuard: (item: unknown) => item is T
+): value is T[] {
+  return Array.isArray(value) && value.length <= maximum && value.every(itemGuard)
+}
+
+function isTextSearchResultsResponse(value: unknown): value is TextSearchResultsResponse {
   if (!isRecord(value) || !hasExactKeys(value, [
     "query", "page", "page_size", "total_work_hits", "works", "author_facets"
   ]) || !isBoundedString(value.query, 1, 200) ||
     !isSafeInteger(value.page, 1, 10_000) || value.page_size !== 30 ||
-    !isSafeInteger(value.total_work_hits) || !Array.isArray(value.works) ||
-    value.works.length > 30 || !value.works.every(isTextSearchWork) ||
-    !Array.isArray(value.author_facets) || value.author_facets.length > 10_000 ||
-    !value.author_facets.every(isAuthorFacet)) return false
+    !isSafeInteger(value.total_work_hits) || !isBoundedArray(value.works, 30, isTextSearchWork) ||
+    !isBoundedArray(value.author_facets, 10_000, isAuthorFacet)) return false
   const totalWorkHits = value.total_work_hits
   return totalWorkHits >= value.works.length &&
     hasDistinctIds(value.works, work => work.lbworkid) &&
@@ -573,7 +615,7 @@ export function acceptTextSearchResultsResponse(
   return value
 }
 
-export function isTextSearchCountResponse(value: unknown): value is TextSearchCountResponse {
+function isTextSearchCountResponse(value: unknown): value is TextSearchCountResponse {
   return isRecord(value) && hasExactKeys(value, [
     "query", "total_documents", "total_highlights"
   ]) && isBoundedString(value.query, 1, 200) &&
@@ -610,17 +652,15 @@ function isYearPair(from: unknown, to: unknown): boolean {
   return isSafeInteger(from, 1000, 2200) && isSafeInteger(to, 1000, 2200) && from <= to
 }
 
-export function isTextSearchOptionsResponse(value: unknown): value is TextSearchOptionsResponse {
+function isTextSearchOptionsResponse(value: unknown): value is TextSearchOptionsResponse {
   if (!isRecord(value) || !hasExactKeys(value, [
     "title_options", "title_total", "title_author_facets", "authors",
     "about_authors", "year_from", "year_to"
-  ]) || !Array.isArray(value.title_options) || value.title_options.length > 550 ||
-    !value.title_options.every(isTitleOption) || !isSafeInteger(value.title_total) ||
-    !Array.isArray(value.title_author_facets) || value.title_author_facets.length > 10_000 ||
-    !value.title_author_facets.every(isAuthorFacet) ||
-    !Array.isArray(value.authors) || value.authors.length > 10_000 ||
-    !value.authors.every(isAuthorOption) || !Array.isArray(value.about_authors) ||
-    value.about_authors.length > 10_000 || !value.about_authors.every(isAuthorOption) ||
+  ]) || !isBoundedArray(value.title_options, 550, isTitleOption) ||
+    !isSafeInteger(value.title_total) ||
+    !isBoundedArray(value.title_author_facets, 10_000, isAuthorFacet) ||
+    !isBoundedArray(value.authors, 10_000, isAuthorOption) ||
+    !isBoundedArray(value.about_authors, 10_000, isAuthorOption) ||
     !isYearPair(value.year_from, value.year_to)) return false
   return hasDistinctIds(value.title_options, option => option.work_id) &&
     hasDistinctIds(value.title_author_facets, facet => facet.author_id) &&
@@ -759,37 +799,38 @@ export function parseTextSearchReturnHref(query: TextSearchRouteQuery): string |
   return validateTextSearchReturnOrigin(query.s_return)
 }
 
-export function buildTextSearchReaderHref(
-  work: TextSearchWork,
-  highlight: TextSearchHighlight,
-  hitIndex: number,
-  state: TextSearchRouteState
-): string {
-  if (!state.phrase) throw new TypeError("Reader search links require a phrase")
-  if (!Number.isSafeInteger(hitIndex) || hitIndex < 0 || hitIndex > 1_000_001) {
-    throw new RangeError("Reader hit index is out of range")
-  }
+function textSearchReaderPath(work: TextSearchWork, highlight: TextSearchHighlight): string {
   if (!isSafeIdentifier(work.author_id) || !isSafeIdentifier(work.title_id) ||
     !isSafeIdentifier(work.lbworkid) ||
     (work.mediatype !== "etext" && work.mediatype !== "faksimil") ||
     !isTextSearchHighlight(highlight, work.lbworkid)) {
     throw new TypeError("Cannot build a Reader link from malformed search data")
   }
-  const firstMatch = highlight.match[0]!
-  const lastMatch = highlight.match.at(-1)!
-  const path = [
+  return [
     "", "författare", work.author_id, "titlar", work.title_id, "sida",
-    firstMatch.page_name, work.mediatype
+    highlight.match[0]!.page_name, work.mediatype
   ].map(rfc3986Segment).join("/")
-  const params = new URLSearchParams()
+}
+
+function appendCanonicalReaderSearch(
+  params: URLSearchParams,
+  state: TextSearchRouteState,
+  hitIndex: number
+): void {
   appendSearchParam(params, "q", state.phrase)
   appendSearchParam(params, "hit", hitIndex)
   if (!state.wordFormOnly) appendSearchParam(params, "lemma", 1)
   if (!state.includeModernized) appendSearchParam(params, "ej_modern", 1)
   if (state.prefix) appendSearchParam(params, "prefix", 1)
   if (state.suffix) appendSearchParam(params, "suffix", 1)
-  appendSearchParam(params, "traff", firstMatch.word_id)
-  appendSearchParam(params, "traffslut", lastMatch.word_id)
+}
+
+function appendLegacyReaderSearch(
+  params: URLSearchParams,
+  work: TextSearchWork,
+  state: TextSearchRouteState,
+  hitIndex: number
+): void {
   appendSearchParam(params, "s_query", state.phrase)
   appendSearchParam(params, "s_lbworkid", work.lbworkid)
   appendSearchParam(params, "s_mediatype", work.mediatype)
@@ -820,5 +861,25 @@ export function buildTextSearchReaderHref(
     )
   }
   appendSearchParam(params, "s_facet_author_id", state.facetAuthorId)
+}
+
+export function buildTextSearchReaderHref(
+  work: TextSearchWork,
+  highlight: TextSearchHighlight,
+  hitIndex: number,
+  state: TextSearchRouteState
+): string {
+  if (!state.phrase) throw new TypeError("Reader search links require a phrase")
+  if (!Number.isSafeInteger(hitIndex) || hitIndex < 0 || hitIndex > 1_000_001) {
+    throw new RangeError("Reader hit index is out of range")
+  }
+  const firstMatch = highlight.match[0]!
+  const lastMatch = highlight.match.at(-1)!
+  const path = textSearchReaderPath(work, highlight)
+  const params = new URLSearchParams()
+  appendCanonicalReaderSearch(params, state, hitIndex)
+  appendSearchParam(params, "traff", firstMatch.word_id)
+  appendSearchParam(params, "traffslut", lastMatch.word_id)
+  appendLegacyReaderSearch(params, work, state, hitIndex)
   return `${path}?${params.toString()}`
 }

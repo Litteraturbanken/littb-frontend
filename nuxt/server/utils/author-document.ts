@@ -58,6 +58,8 @@ const removedSubtrees = new Set([
 
 const genericGlobalAttributes = new Set(["class", "id", "lang", "title"])
 const slaGlobalAttributes = new Set(["class", "id", "lang"])
+const slaAnchorAttributes = new Set(["href", "target", "rel"])
+const slaStyleElements = new Set(["h1", "h2", "ul"])
 const descriptorKeys = new Set([
   "audio_url",
   "author_id",
@@ -139,24 +141,44 @@ function descriptorLinksAreExact(value: AuthorDocumentDescriptor): boolean {
   }
 }
 
-function isAuthorDocumentDescriptor(value: unknown): value is AuthorDocumentDescriptor {
-  if (!isRecord(value)) return false
-  return Object.keys(value).length === descriptorKeys.size
-    && Object.keys(value).every(key => descriptorKeys.has(key))
-    && typeof value.author_id === "string"
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string"
+}
+
+function isAuthorDocumentKind(value: unknown): value is AuthorDocumentKind {
+  return value === "presentation"
+    || value === "bibliografi"
+    || value === "semer"
+    || value === "omtexterna"
+}
+
+function hasExactDescriptorKeys(value: UnknownRecord): boolean {
+  const keys = Object.keys(value)
+  return keys.length === descriptorKeys.size && keys.every(key => descriptorKeys.has(key))
+}
+
+function hasAuthorDescriptorIdentity(value: UnknownRecord): boolean {
+  return typeof value.author_id === "string"
     && typeof value.normalized_author_id === "string"
-    && typeof value.full_name === "string" && value.full_name.length > 0
-    && (value.birth_year === null || typeof value.birth_year === "string")
-    && (value.death_year === null || typeof value.death_year === "string")
-    && typeof value.has_introduction === "boolean"
+    && typeof value.full_name === "string"
+    && value.full_name.length > 0
+}
+
+function hasAuthorDescriptorFeatures(value: UnknownRecord): boolean {
+  return typeof value.has_introduction === "boolean"
     && typeof value.has_dramawebben === "boolean"
-    && (value.search_url === null || typeof value.search_url === "string")
-    && (value.audio_url === null || typeof value.audio_url === "string")
-    && (value.document_kind === "presentation"
-      || value.document_kind === "bibliografi"
-      || value.document_kind === "semer"
-      || value.document_kind === "omtexterna")
+    && isAuthorDocumentKind(value.document_kind)
     && typeof value.source_path === "string"
+}
+
+function isAuthorDocumentDescriptor(value: unknown): value is AuthorDocumentDescriptor {
+  if (!isRecord(value) || !hasExactDescriptorKeys(value)) return false
+  return hasAuthorDescriptorIdentity(value)
+    && hasAuthorDescriptorFeatures(value)
+    && isNullableString(value.birth_year)
+    && isNullableString(value.death_year)
+    && isNullableString(value.search_url)
+    && isNullableString(value.audio_url)
 }
 
 export function expectedAuthorDocumentSource(
@@ -251,6 +273,62 @@ function canonicalSlaStyle(
   return null
 }
 
+function removeDisallowedAttributes(
+  element: SanitizableElement,
+  kind: AuthorDocumentKind,
+  name: string
+): void {
+  const globalAttributes = kind === "omtexterna"
+    ? slaGlobalAttributes
+    : genericGlobalAttributes
+  const specificAttributes = kind === "omtexterna"
+    ? (name === "a" ? slaAnchorAttributes : undefined)
+    : elementAttributes[name]
+  for (const attribute of [...element.attributes]) {
+    const attributeName = attribute.name.toLowerCase()
+    const allowedStyle = kind === "omtexterna" && attributeName === "style"
+      && slaStyleElements.has(name)
+    if (!globalAttributes.has(attributeName)
+      && !specificAttributes?.has(attributeName)
+      && !allowedStyle) element.removeAttribute(attribute.name)
+  }
+}
+
+function sanitizeSlaStyle(element: SanitizableElement, name: string): void {
+  if (!element.hasAttribute("style")) return
+  const canonical = canonicalSlaStyle(element, name, element.getAttribute("style") ?? "")
+  if (canonical === null) element.removeAttribute("style")
+  else element.setAttribute("style", canonical)
+}
+
+function sanitizeSlaAnchor(element: SanitizableElement): void {
+  if (element.hasAttribute("href") && !safeSlaHref(element.getAttribute("href") ?? "")) {
+    element.removeAttribute("href")
+  }
+  if (!element.hasAttribute("href")) {
+    element.removeAttribute("target")
+    element.removeAttribute("rel")
+  } else if (element.hasAttribute("target") && element.getAttribute("target") !== "_top") {
+    element.removeAttribute("target")
+  }
+}
+
+function sanitizeGenericElement(element: SanitizableElement, name: string): void {
+  if (name === "a" && element.hasAttribute("href")) {
+    const href = element.getAttribute("href") ?? ""
+    if (!safeUrl(href, "href")) element.removeAttribute("href")
+  }
+  if (name === "img" && element.hasAttribute("src")) {
+    const src = element.getAttribute("src") ?? ""
+    if (!safeUrl(src, "src")) element.removeAttribute("src")
+  }
+  if (name !== "a" || element.getAttribute("target") !== "_blank") return
+  const rel = new Set((element.getAttribute("rel") ?? "").split(/\s+/u).filter(Boolean))
+  rel.add("noopener")
+  rel.add("noreferrer")
+  element.setAttribute("rel", [...rel].join(" "))
+}
+
 function sanitizeElement(
   element: SanitizableElement,
   kind: AuthorDocumentKind
@@ -263,71 +341,17 @@ function sanitizeElement(
 
   for (const child of [...element.childNodes]) sanitizeNode(child, kind)
 
-  const allowedElements = kind === "omtexterna"
-    ? slaAllowedElements
-    : genericAllowedElements
+  const allowedElements = kind === "omtexterna" ? slaAllowedElements : genericAllowedElements
   if (!allowedElements.has(name)) {
     element.replaceWith(...element.childNodes)
     return
   }
-
-  const specificAttributes = kind === "omtexterna"
-    ? name === "a"
-      ? new Set(["href", "target", "rel"])
-      : new Set<string>()
-    : elementAttributes[name]
-  const globalAttributes = kind === "omtexterna"
-    ? slaGlobalAttributes
-    : genericGlobalAttributes
-  for (const attribute of [...element.attributes]) {
-    const attributeName = attribute.name.toLowerCase()
-    const isSlaStyle = kind === "omtexterna" && attributeName === "style"
-      && (name === "h1" || name === "h2" || name === "ul")
-    if (!globalAttributes.has(attributeName)
-      && !specificAttributes?.has(attributeName)
-      && !isSlaStyle) {
-      element.removeAttribute(attribute.name)
-    }
-  }
-
-  if (kind === "omtexterna" && element.hasAttribute("style")) {
-    const canonical = canonicalSlaStyle(
-      element,
-      name,
-      element.getAttribute("style") ?? ""
-    )
-    if (canonical === null) element.removeAttribute("style")
-    else element.setAttribute("style", canonical)
-  }
-
-  if (kind === "omtexterna" && name === "a") {
-    if (element.hasAttribute("href")
-      && !safeSlaHref(element.getAttribute("href") ?? "")) {
-      element.removeAttribute("href")
-    }
-    if (!element.hasAttribute("href")) {
-      element.removeAttribute("target")
-      element.removeAttribute("rel")
-    } else if (element.hasAttribute("target")
-      && element.getAttribute("target") !== "_top") {
-      element.removeAttribute("target")
-    }
-    return
-  }
-
-  if (name === "a" && element.hasAttribute("href")) {
-    const href = element.getAttribute("href") ?? ""
-    if (!safeUrl(href, "href")) element.removeAttribute("href")
-  }
-  if (name === "img" && element.hasAttribute("src")) {
-    const src = element.getAttribute("src") ?? ""
-    if (!safeUrl(src, "src")) element.removeAttribute("src")
-  }
-  if (name === "a" && element.getAttribute("target") === "_blank") {
-    const rel = new Set((element.getAttribute("rel") ?? "").split(/\s+/u).filter(Boolean))
-    rel.add("noopener")
-    rel.add("noreferrer")
-    element.setAttribute("rel", [...rel].join(" "))
+  removeDisallowedAttributes(element, kind, name)
+  if (kind === "omtexterna") {
+    sanitizeSlaStyle(element, name)
+    if (name === "a") sanitizeSlaAnchor(element)
+  } else {
+    sanitizeGenericElement(element, name)
   }
 }
 
@@ -388,6 +412,17 @@ export async function cancelResponseBody(response: Response): Promise<void> {
   await response.body?.cancel().catch(() => undefined)
 }
 
+async function readAuthorDocumentChunk(
+  reader: ReadableStreamDefaultReader<Uint8Array>
+): Promise<ReadableStreamReadResult<Uint8Array>> {
+  try {
+    return await reader.read()
+  } catch (error) {
+    await reader.cancel().catch(() => undefined)
+    throw error
+  }
+}
+
 export async function readAuthorDocumentResponse(
   response: Response,
   maxBytes: number
@@ -405,13 +440,7 @@ export async function readAuthorDocumentResponse(
   const chunks: Uint8Array[] = []
   let totalBytes = 0
   while (true) {
-    let result: ReadableStreamReadResult<Uint8Array>
-    try {
-      result = await reader.read()
-    } catch (error) {
-      await reader.cancel().catch(() => undefined)
-      throw error
-    }
+    const result = await readAuthorDocumentChunk(reader)
     const { done, value } = result
     if (done) break
     if (value === undefined) continue
@@ -445,6 +474,25 @@ export function formatYears(birth: string | null, death: string | null): string 
   if (left) return `f. ${left}`
   if (right) return `d. ${right}`
   return ""
+}
+
+function authorSupplementalPage(
+  descriptor: AuthorDocumentDescriptor,
+  bodyHtml: SanitizedHtml<"author-document">
+): AuthorSupplementalPage {
+  return {
+    author: {
+      authorId: descriptor.author_id,
+      fullName: descriptor.full_name,
+      lifespan: formatYears(descriptor.birth_year, descriptor.death_year),
+      hasIntroduction: descriptor.has_introduction,
+      hasDramawebben: descriptor.has_dramawebben,
+      searchUrl: descriptor.search_url,
+      audioUrl: descriptor.audio_url
+    },
+    documentKind: descriptor.document_kind,
+    bodyHtml
+  }
 }
 
 export async function loadAuthorDocument(
@@ -522,17 +570,5 @@ export async function loadAuthorDocument(
     return documentError(502, "author_document_unavailable")
   }
 
-  return {
-    author: {
-      authorId: descriptor.author_id,
-      fullName: descriptor.full_name,
-      lifespan: formatYears(descriptor.birth_year, descriptor.death_year),
-      hasIntroduction: descriptor.has_introduction,
-      hasDramawebben: descriptor.has_dramawebben,
-      searchUrl: descriptor.search_url,
-      audioUrl: descriptor.audio_url
-    },
-    documentKind: descriptor.document_kind,
-    bodyHtml
-  }
+  return authorSupplementalPage(descriptor, bodyHtml)
 }

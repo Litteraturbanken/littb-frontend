@@ -8,7 +8,7 @@ export type DeveloperJsonValue =
   | DeveloperJsonValue[]
   | { [key: string]: DeveloperJsonValue }
 
-export type QuickSearchReaderContext = Readonly<{
+type QuickSearchReaderContext = Readonly<{
   kind: "reader"
   owner: string
   workId: string
@@ -18,7 +18,7 @@ export type QuickSearchReaderContext = Readonly<{
   info: DeveloperJsonValue
 }>
 
-export type QuickSearchAuthorContext = Readonly<{
+type QuickSearchAuthorContext = Readonly<{
   kind: "author"
   owner: string
   info: DeveloperJsonValue
@@ -38,7 +38,7 @@ export type QuickSearchDeveloperCommand = Readonly<{
   action: QuickSearchDeveloperAction | null
 }>
 
-export type RedFtpBreadcrumb = Readonly<{ label: string, url: string }>
+type RedFtpBreadcrumb = Readonly<{ label: string, url: string }>
 export type RedFtpEntry = Readonly<{
   url: string
   breadcrumbs: RedFtpBreadcrumb[]
@@ -53,6 +53,32 @@ const maximumFtpResponseLength = 65_536
 const maximumFtpEntries = 50
 const maximumFtpPathLength = 2_048
 const safeWorkId = /^lb[A-Za-z0-9._-]{0,97}$/u
+
+function boundedArray(
+  value: unknown[],
+  depth: number,
+  ancestors: ReadonlySet<object>
+): DeveloperJsonValue[] {
+  const output = value.slice(0, maximumInfoArrayLength)
+    .map(item => boundedValue(item, depth + 1, ancestors))
+  if (value.length > maximumInfoArrayLength) output.push("[truncated]")
+  return output
+}
+
+function boundedObject(
+  value: object,
+  depth: number,
+  ancestors: ReadonlySet<object>
+): Record<string, DeveloperJsonValue> {
+  const record = value as Record<string, unknown>
+  const output: Record<string, DeveloperJsonValue> = {}
+  const keys = Object.keys(record).sort().slice(0, maximumInfoObjectKeys)
+  for (const key of keys) {
+    output[key] = boundedValue(record[key], depth + 1, ancestors)
+  }
+  if (Object.keys(record).length > maximumInfoObjectKeys) output["[truncated]"] = true
+  return output
+}
 
 function boundedValue(
   value: unknown,
@@ -70,24 +96,9 @@ function boundedValue(
 
   const nextAncestors = new Set(ancestors)
   nextAncestors.add(value)
-  if (Array.isArray(value)) {
-    const output = value.slice(0, maximumInfoArrayLength)
-      .map(item => boundedValue(item, depth + 1, nextAncestors))
-    if (value.length > maximumInfoArrayLength) output.push("[truncated]")
-    return output
-  }
-
-  const output: Record<string, DeveloperJsonValue> = {}
-  const keys = Object.keys(value).sort().slice(0, maximumInfoObjectKeys)
-  for (const key of keys) {
-    output[key] = boundedValue(
-      (value as Record<string, unknown>)[key],
-      depth + 1,
-      nextAncestors
-    )
-  }
-  if (Object.keys(value).length > maximumInfoObjectKeys) output["[truncated]"] = true
-  return output
+  return Array.isArray(value)
+    ? boundedArray(value, depth, nextAncestors)
+    : boundedObject(value, depth, nextAncestors)
 }
 
 export function toBoundedDeveloperValue(value: unknown): DeveloperJsonValue {
