@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process"
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
+import { pathToFileURL } from "node:url"
 
 import {
   parseAstGrepFindings,
@@ -304,13 +305,20 @@ function printSummary(comparison, rankedUnits) {
   }
 }
 
-function main() {
-  const options = parseArguments(process.argv.slice(2))
+export function buildMaintainabilityReport(options = {}) {
+  const paths = options.paths ?? []
+  const updateBaseline = options.updateBaseline === true
   const findings = attributeFindings(collectRawFindings())
-  const baseline = readBaseline(options.updateBaseline)
+  const baseline = readBaseline(updateBaseline)
   const comparison = compareWithBaseline(findings, baseline)
   const rankedUnits = rankReviewUnits(comparison.current)
-  const report = filteredReport(comparison, rankedUnits, baseline, options.paths)
+  const report = filteredReport(comparison, rankedUnits, baseline, paths)
+  return { baseline, comparison, rankedUnits, report }
+}
+
+function main() {
+  const options = parseArguments(process.argv.slice(2))
+  const { comparison, rankedUnits, report } = buildMaintainabilityReport(options)
   writeReports(report)
   printSummary(comparison, rankedUnits)
   if (options.updateBaseline) {
@@ -321,9 +329,11 @@ function main() {
   return comparison.newFindings.length > 0 ? 1 : 0
 }
 
-try {
-  process.exitCode = main()
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error))
-  process.exitCode = 2
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  try {
+    process.exitCode = main()
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error))
+    process.exitCode = 2
+  }
 }
