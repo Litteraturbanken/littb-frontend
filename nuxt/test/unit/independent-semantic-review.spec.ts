@@ -90,6 +90,13 @@ afterEach(() => {
 })
 
 describe("independent semantic review runner", () => {
+  test("uses a structured-output-compatible schema for constant fields", () => {
+    const document = JSON.parse(schema)
+
+    expect(document.properties.version).toEqual({ type: "integer", const: 1 })
+    expect(document.properties.method).toEqual({ type: "string", const: "codex-read-only" })
+  })
+
   test("reviews one packet through an ephemeral read-only structured process", () => {
     const root = createRoot()
     const sourceBefore = readFileSync(resolve(root, "app/lib/books.ts"), "utf8")

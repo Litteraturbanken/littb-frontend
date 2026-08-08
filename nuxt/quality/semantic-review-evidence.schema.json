@@ -15,12 +15,12 @@
     "verification"
   ],
   "properties": {
-    "version": { "const": 1 },
+    "version": { "type": "integer", "const": 1 },
     "packetId": { "type": "string", "minLength": 1 },
     "packetFingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "author": { "type": "string", "minLength": 1 },
     "reviewer": { "type": "string", "minLength": 1 },
-    "method": { "const": "codex-read-only" },
+    "method": { "type": "string", "const": "codex-read-only" },
     "verdict": { "enum": ["approved", "changes-requested"] },
     "findings": {
       "type": "array",
