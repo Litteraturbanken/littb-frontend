@@ -13,6 +13,7 @@ const lintInline = ["eslint"].join("")
 const lintGlobal = ["glob", "al"].join("")
 const lintExported = ["export", "ed"].join("")
 const astGrepIgnore = ["ast", "grep", "ignore"].join("-")
+const semanticReviewIgnore = ["semantic", "review", "ignore"].join("-")
 const tsIgnore = ["@ts", "ignore"].join("-")
 const tsExpectError = ["@ts", "expect-error"].join("-")
 const domHtmlProperty = ["inner", "HTML"].join("")
@@ -34,6 +35,14 @@ const expectedIgnores = [
   "playwright-report/**",
   "test-results*/**"
 ]
+
+const semanticReviewScripts = {
+  "quality:review:inventory": "node scripts/run-semantic-review.mjs inventory",
+  "quality:review:queue": "node scripts/run-semantic-review.mjs queue",
+  "quality:review:packet": "node scripts/run-semantic-review.mjs packet",
+  "quality:review:record": "node scripts/run-semantic-review.mjs record",
+  "quality:review:check": "node scripts/run-semantic-review.mjs check"
+}
 
 const requiredSonarRuleEntries = [
   '"sonarjs/no-all-duplicated-branches": "error"',
@@ -265,6 +274,8 @@ function createTree(): string {
   const root = mkdtempSync(resolve(tmpdir(), "littb-architecture-policy-"))
   temporaryTrees.push(root)
   writeSource(root, "eslint.config.mjs", eslintConfig())
+  writeSource(root, "package.json", `${JSON.stringify({ scripts: semanticReviewScripts }, null, 2)}\n`)
+  writeSource(root, "quality/semantic-review-ledger.json", "{\n  \"version\": 1,\n  \"records\": []\n}\n")
   writeSource(
     root,
     "shared/utils/renderable-html.ts",
@@ -317,6 +328,52 @@ afterEach(() => {
 })
 
 describe("architecture policy verifier", () => {
+  test("requires the exact semantic review package commands", () => {
+    const manifest = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, "../../package.json"), "utf8")
+    ) as { scripts: Record<string, string> }
+
+    expect(manifest.scripts).toMatchObject(semanticReviewScripts)
+  })
+
+  test.each([
+    ["missing command", { ...semanticReviewScripts, "quality:review:check": undefined }],
+    ["redirected command", { ...semanticReviewScripts, "quality:review:check": "node scripts/other.mjs" }],
+    ["bypass flag", { ...semanticReviewScripts, "quality:review:check": "node scripts/run-semantic-review.mjs check --allow-stale" }]
+  ])("rejects a semantic review package-script bypass: %s", (_label, scripts) => {
+    const root = createTree()
+    const filtered = Object.fromEntries(Object.entries(scripts).filter(([, value]) => value !== undefined))
+    writeSource(root, "package.json", `${JSON.stringify({ scripts: filtered }, null, 2)}\n`)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("package.json: semantic review commands must equal the reviewed contract")
+  })
+
+  test("rejects semantic review suppression comments in authored production source", () => {
+    const root = createTree()
+    writeSource(root, "app/lib/unsafe.ts", `// ${semanticReviewIgnore}\nexport const unsafe = true\n`)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("semantic review inline suppressions are forbidden")
+  })
+
+  test("rejects ledger evidence outside the canonical evidence directory", () => {
+    const root = createTree()
+    writeSource(root, "quality/semantic-review-ledger.json", `${JSON.stringify({
+      version: 1,
+      records: [{ evidencePath: "reviews/books.json" }]
+    }, null, 2)}\n`)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("quality/semantic-review-ledger.json: evidence paths must stay under quality/semantic-reviews")
+  })
+
   test("pins the maintainability analyzer toolchain", () => {
     const manifest = JSON.parse(
       readFileSync(resolve(import.meta.dirname, "../../package.json"), "utf8")

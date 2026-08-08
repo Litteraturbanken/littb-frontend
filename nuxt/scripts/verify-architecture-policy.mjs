@@ -53,6 +53,13 @@ const requiredSonarRules = new Set([
 const requiredTailwindRules = new Set([
   "tailwindcss/no-contradicting-classname"
 ])
+const requiredSemanticReviewScripts = Object.freeze({
+  "quality:review:inventory": "node scripts/run-semantic-review.mjs inventory",
+  "quality:review:queue": "node scripts/run-semantic-review.mjs queue",
+  "quality:review:packet": "node scripts/run-semantic-review.mjs packet",
+  "quality:review:record": "node scripts/run-semantic-review.mjs record",
+  "quality:review:check": "node scripts/run-semantic-review.mjs check"
+})
 const deepConditionalSelector = "ConditionalExpression ConditionalExpression ConditionalExpression"
 const deepConditionalMessage = "Extract deeply nested ternary logic into named statements."
 const deepConditionalRuleNames = new Set([
@@ -340,6 +347,9 @@ function auditComments(record) {
     }
     if (/\bast-grep-ignore\b/u.test(comment.body)) {
       addViolation(record.relativePath, line, "ast-grep inline suppressions are forbidden")
+    }
+    if (/\bsemantic-review-ignore\b/u.test(comment.body)) {
+      addViolation(record.relativePath, line, "semantic review inline suppressions are forbidden")
     }
     const ignoreIndex = comment.body.indexOf("@ts-ignore")
     if (ignoreIndex !== -1) {
@@ -3006,6 +3016,37 @@ function auditEslintConfig() {
   }
 }
 
+function auditSemanticReviewConfig() {
+  const packagePath = "package.json"
+  try {
+    const manifest = JSON.parse(readFileSync(resolve(root, packagePath), "utf8"))
+    const scripts = manifest?.scripts
+    const valid = scripts && typeof scripts === "object" && !Array.isArray(scripts)
+      && Object.entries(requiredSemanticReviewScripts)
+        .every(([name, command]) => scripts[name] === command)
+    if (!valid) {
+      addViolation(packagePath, 0, "semantic review commands must equal the reviewed contract")
+    }
+  } catch {
+    addViolation(packagePath, 0, "semantic review commands must equal the reviewed contract")
+  }
+
+  const ledgerPath = "quality/semantic-review-ledger.json"
+  try {
+    const ledger = JSON.parse(readFileSync(resolve(root, ledgerPath), "utf8"))
+    const pathsAreCanonical = ledger?.version === 1
+      && Array.isArray(ledger.records)
+      && ledger.records.every(record => typeof record?.evidencePath === "string"
+        && /^quality\/semantic-reviews\/[a-z0-9][a-z0-9._-]*\.json$/u.test(record.evidencePath)
+        && !record.evidencePath.split("/").includes(".."))
+    if (!pathsAreCanonical) {
+      addViolation(ledgerPath, 0, "evidence paths must stay under quality/semantic-reviews")
+    }
+  } catch {
+    addViolation(ledgerPath, 0, "evidence paths must stay under quality/semantic-reviews")
+  }
+}
+
 function readSource(absolutePath, relativePath) {
   try {
     return new TextDecoder("utf-8", { fatal: true }).decode(readFileSync(absolutePath))
@@ -3043,6 +3084,7 @@ function walk(absoluteDirectory) {
 
 walk(root)
 auditEslintConfig()
+auditSemanticReviewConfig()
 const capabilityRegistry = buildCapabilityRegistry(sourceRecords)
 for (const record of sourceRecords) {
   auditComments(record)

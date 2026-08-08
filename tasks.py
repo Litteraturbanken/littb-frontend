@@ -568,6 +568,7 @@ def quality_frontend(context: Context) -> None:
         ["yarn", "policy:check"],
         ["yarn", "lint"],
         ["yarn", "quality:maintainability"],
+        ["yarn", "quality:review:check"],
         ["yarn", "typecheck"],
         ["yarn", "test:unit"],
         ["yarn", "build"],
@@ -671,6 +672,12 @@ def quality_library(context: Context) -> None:
     _run(
         context,
         ["yarn", "quality:maintainability"],
+        settings.nuxt_dir,
+        env=node_environment,
+    )
+    _run(
+        context,
+        ["yarn", "quality:review:check"],
         settings.nuxt_dir,
         env=node_environment,
     )
