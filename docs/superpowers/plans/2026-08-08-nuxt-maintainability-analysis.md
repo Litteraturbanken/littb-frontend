@@ -28,6 +28,7 @@
 - Modify: `nuxt/eslint.config.mjs`
 - Modify: `nuxt/scripts/verify-architecture-policy.mjs`
 - Modify: `nuxt/test/unit/architecture-policy.spec.ts`
+- Modify: `nuxt/app/pages/bibliotek.vue`
 
 **Interfaces:**
 - Produces: pinned analyzer binaries and the canonical blocking SonarJS configuration.
@@ -76,12 +77,12 @@ yarn lint
 yarn install --frozen-lockfile
 ```
 
-Expected: all commands pass. Fix indisputable existing findings; remove a noisy rule globally only with its policy test, never by file suppression.
+Expected sequence: policy tests and policy check pass; the first lint run fails on the existing Library identity switch through `sonarjs/no-all-duplicated-branches`. Record that RED evidence, replace the complete switch with `return toLibrarySearchView(data)`, then rerun lint to GREEN. Fix any other indisputable findings; remove a noisy rule globally only with its policy test, never by file suppression.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add nuxt/package.json nuxt/yarn.lock nuxt/eslint.config.mjs nuxt/scripts/verify-architecture-policy.mjs nuxt/test/unit/architecture-policy.spec.ts
+git add nuxt/package.json nuxt/yarn.lock nuxt/eslint.config.mjs nuxt/scripts/verify-architecture-policy.mjs nuxt/test/unit/architecture-policy.spec.ts nuxt/app/pages/bibliotek.vue
 git commit -m "build: add Nuxt maintainability analyzers"
 ```
 
@@ -356,27 +357,26 @@ git commit -m "feat: add maintainability quality ratchet"
 
 ---
 
-### Task 7: Remove the Library identity adapter and duplicate state union
+### Task 7: Derive the Library state union from its canonical success type
 
 **Files:**
 - Modify: `nuxt/app/pages/bibliotek.vue`
 - Modify: `nuxt/app/lib/library/page-results.ts`
-- Create: `nuxt/test/unit/library-maintainability.spec.ts`
 - Modify: `nuxt/quality/maintainability-baseline.json`
 
 **Interfaces:**
 - Consumes: canonical successful `LibraryPageData` from `view-model.ts`.
-- Produces: distributively derived `LibraryPageState` and a direct `toLibrarySearchView(data)` return.
+- Produces: distributively derived `LibraryPageState`; the direct `toLibrarySearchView(data)` return is already protected by Tasks 1 and 4.
 
-- [ ] **Step 1: Write the failing regression test**
+- [ ] **Step 1: Establish the behavior-preserving refactor boundary**
 
-Run the real ast-grep rule against `bibliotek.vue` and assert zero identity-switch findings. Add a compile-only assignment proving successful `LibraryPageData` is assignable to `LibraryPageState`.
+Run the existing page-result dispatch, Library contract, typecheck, and ast-grep rule tests. These protect response dispatch and assignability while the manual state union is replaced; the structural rule fixture from Task 4 already proves the removed identity adapter cannot return.
 
-- [ ] **Step 2: Verify RED**
+- [ ] **Step 2: Verify the characterization boundary**
 
-Run: `cd nuxt && yarn vitest run test/unit/library-maintainability.spec.ts`
+Run: `cd nuxt && yarn vitest run test/unit/library-page-results.spec.ts test/unit/library-contract.spec.ts && yarn typecheck && yarn ast-grep test`
 
-Expected: FAIL on the seven repeated identity returns.
+Expected: all existing behavior and structural-rule tests pass before the type-only refactor.
 
 - [ ] **Step 3: Derive state and delete the adapter**
 
@@ -390,7 +390,7 @@ type StatefulPage<Page> = Page extends { mode: infer Mode, response: infer Respo
 export type LibraryPageState = StatefulPage<LibrarySuccessPageData>
 ```
 
-Derive response aliases from `Extract<LibraryPageState, ...>`, rename local component annotations accordingly, and replace the complete switch with `return toLibrarySearchView(data)`.
+Derive response aliases from `Extract<LibraryPageState, ...>` and rename local component annotations accordingly. Do not reintroduce a conversion around `toLibrarySearchView(data)`.
 
 - [ ] **Step 4: Verify GREEN and remove resolved debt**
 
@@ -398,7 +398,7 @@ Run:
 
 ```bash
 cd nuxt
-yarn vitest run test/unit/library-maintainability.spec.ts test/unit/library-page-results.spec.ts test/unit/library-contract.spec.ts
+yarn vitest run test/unit/library-page-results.spec.ts test/unit/library-contract.spec.ts
 yarn typecheck
 yarn quality:maintainability:update-baseline
 yarn quality:maintainability
@@ -409,7 +409,7 @@ Expected: focused tests and gates pass; the identity-switch fingerprint is absen
 - [ ] **Step 5: Commit**
 
 ```bash
-git add nuxt/app/pages/bibliotek.vue nuxt/app/lib/library/page-results.ts nuxt/test/unit/library-maintainability.spec.ts nuxt/quality/maintainability-baseline.json
+git add nuxt/app/pages/bibliotek.vue nuxt/app/lib/library/page-results.ts nuxt/quality/maintainability-baseline.json
 git commit -m "refactor: remove redundant Library page adapter"
 ```
 
@@ -484,7 +484,6 @@ yarn vitest run \
   test/unit/maintainability-adapters.spec.ts \
   test/unit/maintainability-report.spec.ts \
   test/unit/maintainability-cli.spec.ts \
-  test/unit/library-maintainability.spec.ts \
   test/unit/architecture-policy.spec.ts
 yarn policy:check
 yarn lint
