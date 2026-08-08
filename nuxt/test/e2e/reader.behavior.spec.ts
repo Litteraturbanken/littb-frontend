@@ -2937,7 +2937,7 @@ test("first and last hit controls preserve raw state and push exact Reader histo
   await expect(page.locator("#w3_2.markee")).toHaveCount(1)
   expect(await readerHitRequests(request)).toContainEqual(expect.objectContaining({
     path: "/v2/works/lb-reader-doktor-glas/search-hits",
-    query: expect.stringContaining("query=doktor%20glas&offset=4&limit=1")
+    query: expect.stringContaining("query=doktor%20glas&offset=3&limit=3")
   }))
 
   await page.goBack({ waitUntil: "networkidle" })
@@ -3023,7 +3023,7 @@ test("direct hit input toggles and focuses, rejects bad ordinals, and pushes a v
   await expect(toolkit.getByRole("textbox", { name: "Träffnummer" })).toHaveCount(0)
   expect(await readerHitRequests(request)).toContainEqual(expect.objectContaining({
     path: "/v2/works/lb-reader-doktor-glas/search-hits",
-    query: expect.stringContaining("query=doktor%20glas&offset=3&limit=1")
+    query: expect.stringContaining("query=doktor%20glas&offset=2&limit=3")
   }))
 
   await page.goBack({ waitUntil: "networkidle" })
@@ -3059,6 +3059,34 @@ test("no-hit first, last, and direct controls retain the exact Reader location",
   expect(problems).toEqual([])
 })
 
+test("direct hit lookup keeps its API window inside the maximum offset", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${readerPath}?q=max-direct&hit=999999`, { waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav")).toContainText("Träff 1000000, sida -2")
+  await request.delete(`${fixture}/_reader_hit_requests`)
+
+  const toolkit = page.locator("#search_nav")
+  await toolkit.getByRole("link", { name: "Gå direkt till träff . . ." }).click()
+  const input = toolkit.getByRole("textbox", { name: "Träffnummer" })
+  await input.fill("1000002")
+  await input.press("Enter")
+
+  await expect(page).toHaveURL(/\?q=max-direct&hit=1000001$/u)
+  await expect(toolkit).toContainText("Träff 1000002, sida -2")
+  expect(await readerHitRequests(request)).toEqual([
+    expect.objectContaining({
+      query: expect.stringContaining("query=max-direct&offset=1000000&limit=3")
+    }),
+    expect.objectContaining({
+      query: expect.stringContaining("query=max-direct&offset=1000000&limit=3")
+    })
+  ])
+  expect(problems).toEqual([])
+})
+
 test("an obsolete direct target lookup cannot navigate after an A-B-A route cycle", async ({
   page,
   request
@@ -3070,8 +3098,8 @@ test("an obsolete direct target lookup cannot navigate after an A-B-A route cycl
   const slowTargetKey = [
     "lb-reader-doktor-glas",
     "doktor glas",
-    "4",
-    "1",
+    "3",
+    "3",
     "false",
     "true",
     "false",
@@ -3084,7 +3112,7 @@ test("an obsolete direct target lookup cannot navigate after an A-B-A route cycl
   await page.locator("#search_nav")
     .getByRole("link", { name: "Gå till sista träffen" }).click()
   await expect.poll(async () => (await readerHitRequests(request)).some(
-    hit => hit.query.includes("offset=4&limit=1")
+    hit => hit.query.includes("offset=3&limit=3")
   )).toBe(true)
 
   await navigateClient(page, `${storedReaderPath}?q=glas&hit=0`)
@@ -3110,8 +3138,8 @@ test("opening Reader source information invalidates a delayed target lookup", as
   const slowTargetKey = [
     "lb-reader-doktor-glas",
     "doktor glas",
-    "4",
-    "1",
+    "3",
+    "3",
     "false",
     "true",
     "false",
@@ -3124,7 +3152,7 @@ test("opening Reader source information invalidates a delayed target lookup", as
   await page.locator("#search_nav")
     .getByRole("link", { name: "Gå till sista träffen" }).click()
   await expect.poll(async () => (await readerHitRequests(request)).some(
-    hit => hit.query.includes("offset=4&limit=1")
+    hit => hit.query.includes("offset=3&limit=3")
   )).toBe(true)
 
   await page.locator(".reader-context .subnav")

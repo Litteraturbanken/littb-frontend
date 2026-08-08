@@ -443,6 +443,7 @@ function isExpectedHitResponse(
   offset: number,
   workId: string,
   mediaType: "etext" | "faksimil",
+  expectedHitIndex: number,
   limit = 3
 ): value is WorkSearchHitsResponse {
   if (!isRecord(value) || !Array.isArray(value.items)) return false
@@ -461,8 +462,8 @@ function isExpectedHitResponse(
     workId,
     mediaType
   ))
-  const requestedHitIsPresent = state.hit >= totalHits ||
-    value.items.some(item => isRecord(item) && item.index === state.hit)
+  const requestedHitIsPresent = expectedHitIndex >= totalHits ||
+    value.items.some(item => isRecord(item) && item.index === expectedHitIndex)
   return itemsAreExpected && requestedHitIsPresent
 }
 
@@ -1061,7 +1062,8 @@ const hitFetch = await useAsyncData(
             state,
             offset,
             currentReader.reader.workId,
-            currentReader.reader.mediaType
+            currentReader.reader.mediaType,
+            state.hit
           )) {
             return { status: "error" as const, identity }
           }
@@ -1284,6 +1286,8 @@ async function fetchHitAtIndex(
   index: number
 ): Promise<WorkSearchHit | null> {
   const { currentReader, response, state } = context
+  const offset = Math.max(index - 1, 0)
+  const limit = 3
   const client = createLbApiClient(config.public.apiBase)
   const result = await client.GET("/works/{work_id}/search-hits", {
     params: {
@@ -1291,8 +1295,8 @@ async function fetchHitAtIndex(
       query: {
         media_type: currentReader.reader.mediaType,
         query: state.query,
-        offset: index,
-        limit: 1,
+        offset,
+        limit,
         word_forms: state.wordForms,
         include_older_spellings: state.includeOlderSpellings,
         prefix: state.prefix,
@@ -1303,13 +1307,14 @@ async function fetchHitAtIndex(
   if (result.error || !isExpectedHitResponse(
     result.data,
     state,
-    index,
+    offset,
     currentReader.reader.workId,
     currentReader.reader.mediaType,
-    1
+    index,
+    limit
   )) return null
   if (result.data.total_hits !== response.total_hits || !hitLookupIsCurrent(context)) return null
-  return result.data.items[0] ?? null
+  return workSearchHitAt(result.data.items, index)
 }
 
 async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {

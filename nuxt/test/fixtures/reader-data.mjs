@@ -496,6 +496,18 @@ export function readerSearchHitResponse(
   mediaType = "etext",
   options = {}
 ) {
+  if (query === "max-direct") {
+    const totalHits = 1_000_002
+    const items = Array.from({
+      length: Math.max(0, Math.min(limit, totalHits - offset))
+    }, (_, position) => ({
+      index: offset + position,
+      page_name: "-2",
+      page_index: 2,
+      highlight: { from_word_id: "w2_2", to_word_id: "w2_2" }
+    }))
+    return { query, media_type: mediaType, offset, limit, total_hits: totalHits, items }
+  }
   if (query === "brev" && (workId === "lb8345227" || workId === "lb-editor-boye")) {
     const totalHits = options.prefix ? 357 : 237
     const hitTemplates = [
