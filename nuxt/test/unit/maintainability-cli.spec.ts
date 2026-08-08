@@ -104,6 +104,45 @@ describe("maintainability CLI", () => {
     })
   })
 
+  test("ratchets a discovered identity switch to its enclosing unit", () => {
+    const root = createRoot()
+    write(root, "app/identity.ts", [
+      "export function reshape(view: { mode: string, response: unknown }) {",
+      "  switch (view.mode) {",
+      "    case \"all\": return { mode: view.mode, response: view.response }",
+      "    case \"authors\": return { mode: view.mode, response: view.response }",
+      "  }",
+      "}"
+    ].join("\n"))
+    const payloads = cleanPayloads()
+    payloads.astGrep.output = [{
+      text: "case \"authors\": return { mode: view.mode, response: view.response }",
+      range: {
+        byteOffset: { start: 140, end: 207 },
+        start: { line: 3, column: 4 },
+        end: { line: 3, column: 71 }
+      },
+      file: "app/identity.ts",
+      lines: "case \"authors\": return { mode: view.mode, response: view.response }",
+      charCount: { leading: 4, trailing: 0 },
+      language: "TypeScript",
+      metaVariables: { single: {}, multi: {}, transformed: {} },
+      ruleId: "no-identity-discriminator-switch",
+      severity: "error",
+      note: null,
+      message: "Discriminator branches must perform a real transformation."
+    }]
+
+    const result = run(root, payloads)
+    const packet = JSON.parse(readFileSync(resolve(root, ".quality/maintainability-review.json"), "utf8"))
+
+    expect(result.status).toBe(1)
+    expect(packet.units).toEqual([expect.objectContaining({
+      id: "app/identity.ts::function::reshape",
+      findings: [expect.objectContaining({ tool: "ast-grep", status: "new" })]
+    })])
+  })
+
   test("updates a sorted baseline explicitly and accepts known findings afterward", () => {
     const root = createRoot()
     const payloads = cleanPayloads()
