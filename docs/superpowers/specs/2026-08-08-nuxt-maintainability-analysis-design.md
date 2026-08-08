@@ -58,6 +58,25 @@ Each run prints a ranked review queue and writes a machine-readable report benea
 
 The system therefore requires human judgment only for promoting a recurring review observation into a general rule or adjusting a reviewed threshold. It never requires the user to nominate each offending file or function.
 
+## AI Review Packet
+
+The automatic inventory is also the input contract for independent AI code review. `.quality/maintainability-review.json` contains, for each ranked unit:
+
+- stable unit identity, kind, path, and current line span;
+- analyzer findings, severity, thresholds, and measured excess;
+- incoming and outgoing dependency edges available from dependency-cruiser;
+- related unused or duplicate exports available from Knip;
+- the changed-line overlap when a Git diff is available;
+- concise selection reasons and the evidence required to reproduce them.
+
+`.quality/maintainability-review.md` presents the same information for a human or an AI working without a JSON integration. The packet points to source ranges rather than copying source text, so reviewers inspect the current repository and its callers instead of reviewing stale excerpts.
+
+The repository includes a maintainability-review contract instructing an independent review AI to assess necessity, duplicate concepts, accidental indirection, consistency with established project patterns, and opportunities for deletion. Findings must cite concrete source and explain the simpler alternative. The authoring agent must not approve its own maintainability review.
+
+AI judgment is advisory because model output is not a deterministic build artifact. It does not directly fail CI. A confirmed recurring observation is converted into the narrowest deterministic protection that fits: a regression test, SonarJS or ESLint rule, dependency rule, or tested ast-grep pattern. This creates a feedback loop in which scanners discover suspects, AI review supplies design judgment, and repeated judgment becomes enforceable policy.
+
+Generating the packet never invokes a hosted model and requires no credentials. The actual independent review is performed by the development or pull-request workflow consuming the packet.
+
 ## Analyzer Responsibilities
 
 ### SonarJS
@@ -95,7 +114,7 @@ No hosted service, account, network access, or editor extension is required. All
 Implementation follows test-first development:
 
 1. Architecture-policy fixtures first demonstrate that missing, downgraded, or malformed SonarJS configuration is incorrectly accepted, then pass after the verifier is extended.
-2. Maintainability-orchestrator unit tests demonstrate stable unit attribution, fingerprinting, new-finding failure, known-finding acceptance, resolved-finding reporting, automatic review-queue ranking, and explicit baseline updates.
+2. Maintainability-orchestrator unit tests demonstrate stable unit attribution, fingerprinting, new-finding failure, known-finding acceptance, resolved-finding reporting, automatic review-queue ranking, deterministic AI-packet generation, changed-line overlap, and explicit baseline updates.
 3. ast-grep rule fixtures demonstrate the bad Library switch matches and a genuinely transforming switch does not.
 4. Package/task contract tests demonstrate that the gate is included in the authoritative frontend and Library quality tasks.
 5. The Library identity adapter is changed only after a focused regression assertion fails for its current redundant form.
@@ -108,6 +127,8 @@ Final verification runs the focused tests, `yarn policy:check`, `yarn lint`, `ya
 - New SonarJS, Knip, dependency-cruiser, and ast-grep findings fail one deterministic command.
 - Offending functions, components, handlers, and modules are discovered across the complete authored Nuxt tree without a maintained filename list.
 - Every run emits a ranked human-review queue and a machine-readable unit inventory.
+- The same run emits deterministic Markdown and JSON packets sufficient for an independent AI to review selected units without manually supplied paths.
+- AI review remains advisory, evidence-based, and separate from deterministic CI enforcement.
 - Current debt is visible and ratcheted without inline suppressions or downgraded severities.
 - Nuxt framework conventions do not create known false-positive failures.
 - The authoritative Invoke quality tasks execute the maintainability gate.
