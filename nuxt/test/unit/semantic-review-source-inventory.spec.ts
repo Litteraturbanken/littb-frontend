@@ -61,6 +61,7 @@ describe("semantic review source inventory", () => {
 
     expect(inventory.units.map(unit => unit.id)).toEqual([
       "app/pages/index.vue::component::index",
+      "app/pages/index.vue::template::template[1]",
       "app/pages/index.vue::function::loadBooks"
     ])
     expect(inventory.units.find(unit => unit.name === "loadBooks")?.exported).toBe(true)
@@ -91,14 +92,46 @@ describe("semantic review source inventory", () => {
       .toBe(canonicalUnitSource(moved, movedUnit!))
   })
 
-  test("uses the complete normalized SFC as component fallback review material", () => {
+  test("partitions Vue block content from the residual component shell", () => {
     const source = "<template>\r\n  <main>Book</main>\r\n</template>\r\n"
     const inventory = inventorySource({ path: "app/pages/index.vue", source })
     const component = inventory.units.find(unit => unit.kind === "component")
+    const template = inventory.units.find(unit => unit.kind === "template")
 
     expect(component).toBeDefined()
-    expect(canonicalUnitSource(source, component!)).toBe(
-      "<template>\n  <main>Book</main>\n</template>\n"
-    )
+    expect(template).toBeDefined()
+    expect(canonicalUnitSource(source, component!)).toBe("<template>\n</template>")
+    expect(canonicalUnitSource(source, template!)).toBe("  <main>Book</main>")
+  })
+
+  test("chunks large Vue template content into bounded review units", () => {
+    const source = [
+      "<template>",
+      ...Array.from({ length: 451 }, (_, index) => `  <p>Line ${index + 1}</p>`),
+      "</template>"
+    ].join("\n")
+
+    const inventory = inventorySource({ path: "app/pages/LongPage.vue", source })
+    const templates = inventory.units.filter(unit => unit.kind === "template")
+
+    expect(templates.map(unit => ({ id: unit.id, ownedLines: unit.ownedLines.length }))).toEqual([
+      { id: "app/pages/LongPage.vue::template::template[1]", ownedLines: 400 },
+      { id: "app/pages/LongPage.vue::template::template[2]", ownedLines: 51 }
+    ])
+  })
+
+  test("keeps a server module fallback limited to residual top-level code", () => {
+    const source = [
+      "import { api } from './api'",
+      "export function loadBooks() {",
+      "  return api.books()",
+      "}"
+    ].join("\n")
+
+    const inventory = inventorySource({ path: "server/utils/books.ts", source })
+    const module = inventory.units.find(unit => unit.kind === "module")
+
+    expect(module?.ownedLines).toEqual([1])
+    expect(canonicalUnitSource(source, module!)).toBe("import { api } from './api'")
   })
 })

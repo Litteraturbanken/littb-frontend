@@ -15,7 +15,7 @@ function ownedIds(packets: ReturnType<typeof planReviewPackets>): string[] {
 }
 
 describe("semantic review packet planner", () => {
-  test("assigns every Vue component unit to exactly one component packet", () => {
+  test("assigns Vue shell, template, and script responsibilities to separate packets", () => {
     const source = [
       "<template><button @click=\"loadBooks\">Load</button></template>",
       "<script setup lang=\"ts\">",
@@ -29,18 +29,26 @@ describe("semantic review packet planner", () => {
 
     const packets = planReviewPackets(sources)
 
-    expect(packets).toEqual([expect.objectContaining({
-      id: "app/pages/index.vue::packet::component",
-      rootUnitIds: ["app/pages/index.vue::component::index"],
-      ownedUnitIds: [
-        "app/pages/index.vue::component::index",
-        "app/pages/index.vue::function::loadBooks",
-        "app/pages/index.vue::function::loadBooks.normalize"
-      ],
-      paths: ["app/pages/index.vue"],
-      oversized: false,
-      waiver: null
-    })])
+    expect(packets).toEqual([
+      expect.objectContaining({
+        id: "app/pages/index.vue::packet::component",
+        rootUnitIds: ["app/pages/index.vue::component::index"],
+        ownedUnitIds: ["app/pages/index.vue::component::index"]
+      }),
+      expect.objectContaining({
+        id: "app/pages/index.vue::packet::template-1",
+        rootUnitIds: ["app/pages/index.vue::template::template[1]"],
+        ownedUnitIds: ["app/pages/index.vue::template::template[1]"]
+      }),
+      expect.objectContaining({
+        id: "app/pages/index.vue::packet::script-loadBooks",
+        rootUnitIds: ["app/pages/index.vue::function::loadBooks"],
+        ownedUnitIds: [
+          "app/pages/index.vue::function::loadBooks",
+          "app/pages/index.vue::function::loadBooks.normalize"
+        ]
+      })
+    ])
     expect(() => validatePacketCoverage(sources, packets)).not.toThrow()
   })
 
@@ -107,15 +115,23 @@ describe("semantic review packet planner", () => {
     ])
   })
 
-  test("marks an indivisible component above 450 nonblank lines as oversized", () => {
+  test("keeps a long template bounded by splitting its content packets", () => {
     const template = Array.from({ length: 451 }, (_, index) => `  <p>Line ${index + 1}</p>`)
     const source = ["<template>", ...template, "</template>"].join("\n")
     const sources = [inventory("app/pages/LongPage.vue", source)]
 
-    const [packet] = planReviewPackets(sources)
+    const packets = planReviewPackets(sources)
 
-    expect(packet).toMatchObject({ productionLines: 453, oversized: true, waiver: null })
-    expect(() => validatePacketCoverage(sources, [packet!])).not.toThrow()
+    expect(packets.map(packet => ({
+      id: packet.id,
+      productionLines: packet.productionLines,
+      oversized: packet.oversized
+    }))).toEqual([
+      { id: "app/pages/LongPage.vue::packet::component", productionLines: 2, oversized: false },
+      { id: "app/pages/LongPage.vue::packet::template-1", productionLines: 400, oversized: false },
+      { id: "app/pages/LongPage.vue::packet::template-2", productionLines: 51, oversized: false }
+    ])
+    expect(() => validatePacketCoverage(sources, packets)).not.toThrow()
   })
 
   test("splits adjacent private roots before their packet exceeds the 400-line target", () => {
@@ -158,6 +174,28 @@ describe("semantic review packet planner", () => {
       }
     ])
     expect(() => validatePacketCoverage(sources, packets)).not.toThrow()
+  })
+
+  test("does not double-count named functions in server utility module packets", () => {
+    const operation = (name: string) => [
+      `export function ${name}() {`,
+      ...Array.from({ length: 248 }, (_, index) => `  consume(${index})`),
+      "}"
+    ]
+    const sources = [inventory("server/utils/catalog.ts", [
+      "import { consume } from './consume'",
+      ...operation("first"),
+      ...operation("second")
+    ].join("\n"))]
+
+    const packets = planReviewPackets(sources)
+
+    expect(packets.map(packet => ({ id: packet.id, lines: packet.productionLines }))).toEqual([
+      { id: "server/utils/catalog.ts::packet::first", lines: 250 },
+      { id: "server/utils/catalog.ts::packet::second", lines: 250 },
+      { id: "server/utils/catalog.ts::packet::module", lines: 1 }
+    ])
+    expect(packets.every(packet => !packet.oversized)).toBe(true)
   })
 
   test("rejects missing, duplicate, and unknown unit ownership", () => {

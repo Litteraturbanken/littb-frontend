@@ -10,7 +10,7 @@ function fallbackUnit(source) {
 }
 
 function topLevelUnits(source) {
-  const candidates = source.units.filter(unit => unit.kind !== "component" && unit.kind !== "module")
+  const candidates = source.units.filter(unit => !["component", "module", "template", "style"].includes(unit.kind))
   return candidates.filter(unit => !candidates.some(parent => parent.id !== unit.id
     && parent.startLine <= unit.startLine
     && unit.endLine <= parent.endLine
@@ -28,6 +28,10 @@ function countOwnedLines(source, units) {
   const lines = source.source.replaceAll("\r\n", "\n").split("\n")
   const owned = new Set()
   for (const unit of units) {
+    if (Array.isArray(unit.ownedLines)) {
+      for (const line of unit.ownedLines) owned.add(line)
+      continue
+    }
     for (let line = unit.startLine; line <= unit.endLine; line += 1) {
       if (lines[line - 1]?.trim()) owned.add(line)
     }
@@ -56,13 +60,29 @@ function packet({ source, rootUnits, ownedUnits, options, rootName }) {
 function componentPackets(source, options) {
   const component = fallbackUnit(source)
   if (!component) throw new Error(`Vue component fallback is missing: ${source.path}`)
-  return [packet({
+  const packets = [packet({
     source,
     rootUnits: [component],
-    ownedUnits: source.units,
+    ownedUnits: [component],
     options,
     rootName: "component"
   })]
+  for (const unit of source.units.filter(unit => unit.kind === "template" || unit.kind === "style")) {
+    packets.push(packet({
+      source,
+      rootUnits: [unit],
+      ownedUnits: [unit],
+      options,
+      rootName: unit.name.replaceAll("[", "").replaceAll("]", "").replace(/(\d+)$/u, "-$1")
+    }))
+  }
+  const scriptUnits = source.units.filter(unit => !["component", "template", "style"].includes(unit.kind))
+  if (scriptUnits.length === 0) return packets
+  const scriptSource = { ...source, units: scriptUnits }
+  return [...packets, ...scriptPackets(scriptSource, options).map(item => ({
+    ...item,
+    id: item.id.replace(/::packet::(?:module-)?/u, "::packet::script-")
+  }))]
 }
 
 function serverPackets(source, options) {
@@ -165,7 +185,7 @@ export function planReviewPackets(sources, options = {}) {
     .sort((left, right) => compareText(left.path, right.path))
     .flatMap(source => source.path.endsWith(".vue")
       ? componentPackets(source, settings)
-      : source.path.startsWith("server/")
+      : source.path.startsWith("server/api/")
         ? serverPackets(source, settings)
         : scriptPackets(source, settings))
   validatePacketCoverage(sources, packets)
