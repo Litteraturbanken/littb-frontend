@@ -130,6 +130,12 @@ function reviewerCommand() {
   return command
 }
 
+function reviewerModel() {
+  const model = process.env.SEMANTIC_REVIEW_MODEL ?? "gpt-5.5"
+  if (!model || /[\r\n]/u.test(model)) throw new Error("SEMANTIC_REVIEW_MODEL must be one model name")
+  return model
+}
+
 function reviewPrompt({ packetPath, author, reviewer }) {
   return [
     "Perform an independent semantic code review of exactly one generated packet.",
@@ -150,6 +156,7 @@ function invokeReviewer({ packetEntry, author, reviewer }) {
   const args = [
     ...command.slice(1),
     "--ephemeral",
+    "--model", reviewerModel(),
     "--sandbox", "read-only",
     "--cd", root,
     "--output-schema", schemaPath,

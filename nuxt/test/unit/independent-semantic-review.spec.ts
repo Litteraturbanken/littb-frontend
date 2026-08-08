@@ -100,6 +100,8 @@ describe("independent semantic review runner", () => {
     const invocation = JSON.parse(readFileSync(log, "utf8").trim())
     expect(invocation.args).toEqual(expect.arrayContaining([
       "--ephemeral",
+      "--model",
+      "gpt-5.5",
       "--sandbox",
       "read-only",
       "--output-schema",
