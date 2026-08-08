@@ -43,7 +43,9 @@ function createRoot(): string {
     "import { appendFileSync, readFileSync, writeFileSync } from 'node:fs'",
     "const args = process.argv.slice(2)",
     "const prompt = readFileSync(0, 'utf8')",
-    "appendFileSync(process.env.REVIEW_FIXTURE_LOG, `${JSON.stringify({ args, prompt })}\\n`)",
+    "appendFileSync(process.env.REVIEW_FIXTURE_LOG, `${JSON.stringify({ args, prompt, startedAt: Date.now() })}\\n`)",
+    "const delay = Number(process.env.REVIEW_FIXTURE_DELAY || 0)",
+    "if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay))",
     "const outputIndex = args.indexOf('--output-last-message')",
     "const output = args[outputIndex + 1]",
     "if (process.env.REVIEW_FIXTURE_MODE === 'malformed') { writeFileSync(output, 'not json'); process.exit(0) }",
@@ -66,7 +68,7 @@ function createRoot(): string {
   return root
 }
 
-function run(root: string, mode = "approved") {
+function run(root: string, mode = "approved", extraEnv: Record<string, string> = {}) {
   const tool = resolve(root, "fixture-tool.mjs")
   const reviewer = resolve(root, "fixture-reviewer.mjs")
   const log = resolve(root, "reviewer.log")
@@ -87,7 +89,8 @@ function run(root: string, mode = "approved") {
       MAINTAINABILITY_TOOL_FIXTURES: JSON.stringify(commands),
       SEMANTIC_REVIEW_COMMAND: JSON.stringify([process.execPath, reviewer]),
       REVIEW_FIXTURE_LOG: log,
-      REVIEW_FIXTURE_MODE: mode
+      REVIEW_FIXTURE_MODE: mode,
+      ...extraEnv
     }
   })
   return { result, log }
@@ -127,6 +130,23 @@ describe("independent semantic review runner", () => {
     expect(JSON.parse(readFileSync(resolve(root, "quality/semantic-review-ledger.json"), "utf8")))
       .toMatchObject({ records: [{ state: "approved", reviewer: "independent-codex-review" }] })
     expect(readFileSync(resolve(root, "app/lib/books.ts"), "utf8")).toBe(sourceBefore)
+  })
+
+  test("reviews a bounded packet batch concurrently and records it serially", () => {
+    const root = createRoot()
+    write(root, "app/lib/authors.ts", "export function loadAuthors() { return ['Söderberg'] }\n")
+
+    const { result, log } = run(root, "approved", {
+      SEMANTIC_REVIEW_CONCURRENCY: "2",
+      REVIEW_FIXTURE_DELAY: "400"
+    })
+
+    expect(result.status).toBe(0)
+    const invocations = readFileSync(log, "utf8").trim().split("\n").map(line => JSON.parse(line))
+    expect(invocations).toHaveLength(2)
+    expect(Math.abs(invocations[0].startedAt - invocations[1].startedAt)).toBeLessThan(300)
+    expect(JSON.parse(readFileSync(resolve(root, "quality/semantic-review-ledger.json"), "utf8")))
+      .toMatchObject({ records: [{ state: "approved" }, { state: "approved" }] })
   })
 
   test("rejects malformed reviewer output without recording an approval", () => {

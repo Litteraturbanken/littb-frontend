@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import {
   existsSync,
@@ -162,6 +162,14 @@ function reviewerModel() {
   return model
 }
 
+function reviewerConcurrency() {
+  const raw = process.env.SEMANTIC_REVIEW_CONCURRENCY ?? "3"
+  if (!/^[1-4]$/u.test(raw)) {
+    throw new Error("SEMANTIC_REVIEW_CONCURRENCY must be an integer from 1 through 4")
+  }
+  return Number(raw)
+}
+
 function reviewPrompt({ packetPath, author, reviewer }) {
   return [
     "Perform an independent semantic code review of exactly one generated packet.",
@@ -176,7 +184,51 @@ function reviewPrompt({ packetPath, author, reviewer }) {
   ].join("\n")
 }
 
-function invokeReviewer({ packetEntry, author, reviewer }) {
+function reviewerProcess(command, args, input) {
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(command[0], args, {
+      cwd: root,
+      env: process.env,
+      stdio: ["pipe", "pipe", "pipe"]
+    })
+    const chunks = { stdout: [], stderr: [] }
+    let size = 0
+    let timedOut = false
+    const timeout = setTimeout(() => {
+      timedOut = true
+      child.kill("SIGTERM")
+    }, 30 * 60 * 1000)
+    const collect = streamName => chunk => {
+      size += chunk.length
+      if (size > 64 * 1024 * 1024) {
+        child.kill("SIGTERM")
+        reject(new Error("Independent reviewer output exceeded 64 MiB"))
+        return
+      }
+      chunks[streamName].push(chunk)
+    }
+    child.stdout.on("data", collect("stdout"))
+    child.stderr.on("data", collect("stderr"))
+    child.on("error", error => {
+      clearTimeout(timeout)
+      reject(new Error(`Independent reviewer could not start: ${error.message}`))
+    })
+    child.on("close", (status, signal) => {
+      clearTimeout(timeout)
+      const output = {
+        status,
+        signal,
+        stdout: Buffer.concat(chunks.stdout).toString("utf8"),
+        stderr: Buffer.concat(chunks.stderr).toString("utf8")
+      }
+      if (timedOut) reject(new Error("Independent reviewer timed out after 30 minutes"))
+      else resolvePromise(output)
+    })
+    child.stdin.end(input)
+  })
+}
+
+async function invokeReviewer({ packetEntry, author, reviewer }) {
   const outputPath = resolve(reportDirectory, `.review-${process.pid}-${artifactName(packetEntry.packet.id)}.json`)
   rmSync(outputPath, { force: true })
   const command = reviewerCommand()
@@ -191,16 +243,12 @@ function invokeReviewer({ packetEntry, author, reviewer }) {
     "-"
   ]
   const before = sourceSnapshot()
-  const result = spawnSync(command[0], args, {
-    cwd: root,
-    encoding: "utf8",
-    env: process.env,
-    input: reviewPrompt({ packetPath: packetEntry.path, author, reviewer }),
-    maxBuffer: 64 * 1024 * 1024,
-    timeout: 30 * 60 * 1000
-  })
+  const result = await reviewerProcess(
+    command,
+    args,
+    reviewPrompt({ packetPath: packetEntry.path, author, reviewer })
+  )
   assertSourceSnapshot(before)
-  if (result.error) throw new Error(`Independent reviewer could not start: ${result.error.message}`)
   if (result.signal || result.status === null) {
     throw new Error(`Independent reviewer terminated by ${result.signal ?? "an unknown signal"}`)
   }
@@ -244,7 +292,7 @@ function currentReport(entries) {
   })
 }
 
-function main() {
+async function main() {
   const options = parseArguments(process.argv.slice(2))
   if (!existsSync(schemaPath) || !existsSync(contractPath)) {
     throw new Error("Semantic review schema or contract is missing")
@@ -258,17 +306,29 @@ function main() {
     return 1
   }
   const approved = new Set(report.approved)
-  for (const entry of entries) {
-    if (approved.has(entry.packet.id)) continue
-    if (entry.packet.oversized && !entry.packet.waiver) {
-      console.log(`Semantic review packet is oversized: ${entry.packet.id}`)
-      return 1
+  const pending = entries.filter(entry => !approved.has(entry.packet.id))
+  const concurrency = reviewerConcurrency()
+  for (let index = 0; index < pending.length; index += concurrency) {
+    const batch = pending.slice(index, index + concurrency)
+    for (const entry of batch) {
+      if (entry.packet.oversized && !entry.packet.waiver) {
+        console.log(`Semantic review packet is oversized: ${entry.packet.id}`)
+        return 1
+      }
     }
-    const { evidence, text } = invokeReviewer({ packetEntry: entry, ...options })
-    saveEvidence(entry.packet, text)
-    console.log(`${evidence.verdict}: ${entry.packet.id}`)
-    if (evidence.verdict === "changes-requested") return 1
-    approved.add(entry.packet.id)
+    const reviewed = await Promise.all(batch.map(entry =>
+      invokeReviewer({ packetEntry: entry, ...options })
+    ))
+    let changesRequested = false
+    for (let offset = 0; offset < batch.length; offset += 1) {
+      const entry = batch[offset]
+      const { evidence, text } = reviewed[offset]
+      saveEvidence(entry.packet, text)
+      console.log(`${evidence.verdict}: ${entry.packet.id}`)
+      approved.add(entry.packet.id)
+      if (evidence.verdict === "changes-requested") changesRequested = true
+    }
+    if (changesRequested) return 1
   }
   report = currentReport(entries)
   if (report.unreviewed.length || report.stale.length || report.changesRequested.length || report.oversized.length) {
@@ -280,7 +340,7 @@ function main() {
 }
 
 try {
-  process.exitCode = main()
+  process.exitCode = await main()
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error))
   process.exitCode = 2
