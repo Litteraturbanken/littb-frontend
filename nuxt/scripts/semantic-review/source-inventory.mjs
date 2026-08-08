@@ -143,10 +143,17 @@ export function inventorySource(record) {
   }
   const surface = moduleSurface(record)
   const exported = new Set(surface.exports)
+  const namedUnits = listSourceUnits({
+    source: record.source,
+    relativePath: record.path
+  })
+  const includeFallback = record.path.endsWith(".vue")
+    || record.path.startsWith("server/")
+    || namedUnits.length === 0
   const units = listSourceUnits({
     source: record.source,
     relativePath: record.path,
-    includeFallback: true
+    includeFallback
   }).map(unit => {
     Object.defineProperty(unit, "exported", {
       value: exported.has(topLevelName(unit)),

@@ -33,6 +33,9 @@ function transparentExpression(node) {
 
 function assignedOwner(node, sourceFile) {
   let current = node
+  let structuralAnchor = node
+  const propertyPath = []
+  let nestedContainer = false
   while (current.parent) {
     const parent = current.parent
     if (transparentExpression(parent) && parent.expression === current) {
@@ -45,12 +48,38 @@ function assignedOwner(node, sourceFile) {
       current = parent
       continue
     }
-    if (ts.isVariableDeclaration(parent) && parent.initializer === current) {
-      return staticName(parent.name, sourceFile)
-    }
     if ((ts.isPropertyAssignment(parent) || ts.isPropertyDeclaration(parent))
       && parent.initializer === current) {
-      return staticName(parent.name, sourceFile)
+      const name = staticName(parent.name, sourceFile)
+      if (name) propertyPath.unshift(name)
+      structuralAnchor = parent
+      nestedContainer = true
+      current = parent
+      continue
+    }
+    if (ts.isObjectLiteralExpression(parent) && parent.properties.includes(current)) {
+      structuralAnchor = parent
+      nestedContainer = true
+      current = parent
+      continue
+    }
+    if (ts.isArrayLiteralExpression(parent) && parent.elements.includes(current)) {
+      if (!nestedContainer) structuralAnchor = current
+      nestedContainer = true
+      current = parent
+      continue
+    }
+    if (ts.isVariableDeclaration(parent) && parent.initializer === current) {
+      const name = staticName(parent.name, sourceFile)
+      if (!name || !nestedContainer) return name
+      const canonicalOwner = canonicalPrinter.printNode(
+        ts.EmitHint.Unspecified,
+        structuralAnchor,
+        sourceFile
+      )
+      const structuralHash = createHash("sha256").update(canonicalOwner).digest("hex").slice(0, 12)
+      const suffix = propertyPath.length > 0 ? propertyPath.join(".") : "item"
+      return `${name}.${suffix}@${structuralHash}`
     }
     break
   }
@@ -125,11 +154,12 @@ function sourceLocation(sourceFile, position, offset) {
   return { line: location.line + 1 + offset, column: location.character + 1 }
 }
 
-function unitWithColumns(unit, startColumn, endColumn, canonicalSource = "") {
+function unitWithColumns(unit, startColumn, endColumn, canonicalSource = "", hasBody = true) {
   Object.defineProperties(unit, {
     startColumn: { value: startColumn },
     endColumn: { value: endColumn },
-    canonicalSource: { value: canonicalSource }
+    canonicalSource: { value: canonicalSource },
+    hasBody: { value: hasBody }
   })
   return unit
 }
@@ -164,7 +194,7 @@ function parseScriptUnits({ source, relativePath, offset, lang }) {
         ts.EmitHint.Unspecified,
         node,
         sourceFile
-      ).replaceAll("\r\n", "\n")))
+      ).replaceAll("\r\n", "\n"), !ts.isFunctionLike(node) || Boolean(node.body)))
     }
     ts.forEachChild(node, visit)
   }
@@ -191,7 +221,28 @@ export function listSourceUnits({ source, relativePath, includeFallback = false 
   const blocks = relativePath.endsWith(".vue")
     ? vueScriptBlocks(source, relativePath)
     : [{ source, relativePath, offset: 0, lang: "" }]
-  const units = blocks.flatMap(parseScriptUnits)
+  const parsedUnits = blocks.flatMap(parseScriptUnits)
+  const units = []
+  for (let index = 0; index < parsedUnits.length; index += 1) {
+    const first = parsedUnits[index]
+    const overloads = [first]
+    while (index + 1 < parsedUnits.length && parsedUnits[index + 1].id === first.id) {
+      overloads.push(parsedUnits[index + 1])
+      index += 1
+    }
+    const implementations = overloads.filter(unit => unit.hasBody)
+    if (overloads.length > 1 && implementations.length === 1) {
+      const last = overloads.at(-1)
+      units.push(unitWithColumns({
+        ...first,
+        endLine: last.endLine
+      }, first.startColumn, last.endColumn, overloads
+        .map(unit => unit.canonicalSource)
+        .join("\n"), true))
+      continue
+    }
+    units.push(...overloads)
+  }
   if (includeFallback) units.push(fallbackUnit(source, relativePath))
   return units
     .sort((left, right) => left.startLine - right.startLine

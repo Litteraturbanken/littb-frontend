@@ -278,6 +278,45 @@ describe("maintainability source-unit attribution", () => {
     expect(movedUnit!.id).toBe(originalUnit!.id)
   })
 
+  test("gives repeated object-property functions stable distinct owner identities", () => {
+    const source = [
+      "const sections = [",
+      "  { kind: 'about', label: (name: string) => `About ${name}` },",
+      "  { kind: 'editor', label: () => 'As editor' },",
+      "] as const"
+    ].join("\n")
+    const moved = ["const unrelated = true", "", source].join("\n")
+
+    const original = listSourceUnits({ source, relativePath: "app/lib/sections.ts" })
+      .filter(unit => unit.name.includes("label"))
+    const afterMove = listSourceUnits({ source: moved, relativePath: "app/lib/sections.ts" })
+      .filter(unit => unit.name.includes("label"))
+
+    expect(original).toHaveLength(2)
+    expect(new Set(original.map(unit => unit.id)).size).toBe(2)
+    expect(afterMove.map(unit => unit.id)).toEqual(original.map(unit => unit.id))
+    expect(original.every(unit => unit.name.startsWith("sections.label@"))).toBe(true)
+  })
+
+  test("treats overload signatures and their implementation as one review unit", () => {
+    const source = [
+      "function load(value: string): string",
+      "function load(value: number): number",
+      "function load(value: string | number) {",
+      "  return value",
+      "}"
+    ].join("\n")
+
+    expect(listSourceUnits({ source, relativePath: "app/lib/load.ts" })).toEqual([{
+      id: "app/lib/load.ts::function::load",
+      kind: "function",
+      name: "load",
+      path: "app/lib/load.ts",
+      startLine: 1,
+      endLine: 5
+    }])
+  })
+
   test("does not let comments churn a callback's structural identity", () => {
     const [plainUnit] = listSourceUnits({
       source: "watch(first, () => first.value)",
