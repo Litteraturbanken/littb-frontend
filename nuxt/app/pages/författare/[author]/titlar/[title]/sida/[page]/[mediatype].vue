@@ -8,17 +8,18 @@ import type {
 import type { ManagedAssetHtml } from "#shared/types/renderable-html"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 import {
-  emptyRenderableHtml,
-  transformManagedReaderHtml
+  emptyRenderableHtml
 } from "#shared/utils/renderable-html"
 import { readerManifestPartAuthorLabel } from "#shared/utils/reader-author"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
-import { parseHtmlDocument } from "~/lib/html-document"
 import { usefulLibraryTooltipText } from "~/lib/library-tooltip"
-import { markReaderSearchOcrHtml } from "~/lib/search-hit-highlight"
+import {
+  markReaderSearchEtextHtml,
+  markReaderSearchOcrHtml
+} from "~/lib/search-hit-highlight"
 import { toBoundedDeveloperValue } from "~/lib/quick-search-developer"
 import { readerMissingPageErrorData } from "~/lib/reader-missing-page"
 import {
@@ -446,53 +447,6 @@ function isExpectedHitResponse(
     workId,
     mediaType
   ))
-}
-
-function markReaderHtml(
-  html: ManagedAssetHtml<"reader-etext">,
-  hit: WorkSearchHit,
-  pageName: string,
-  pageIndex: number
-): ManagedAssetHtml<"reader-etext"> {
-  if (hit.page_name !== pageName || hit.page_index !== pageIndex) return html
-
-  return transformManagedReaderHtml(html, source => {
-    const document = parseHtmlDocument(`<div data-reader-highlight-root>${source}</div>`)
-    const root = document.querySelector("[data-reader-highlight-root]")
-    if (!root) return source
-
-    const spans = Array.from(root.querySelectorAll("span[id]"))
-    const startMatches = spans.filter(
-      span => span.getAttribute("id") === hit.highlight.from_word_id
-    )
-    const endMatches = spans.filter(
-      span => span.getAttribute("id") === hit.highlight.to_word_id
-    )
-    if (startMatches.length === 0 || endMatches.length === 0) return source
-
-    const isValidDuplicateGroup = (matches: typeof spans): boolean => {
-      if (matches.length === 1) return true
-
-      const indexes = matches.map(match => spans.indexOf(match))
-      return matches.every((match, index) =>
-        indexes[index] === indexes[0]! + index &&
-        !match.hasAttribute("hidden") &&
-        match.getAttribute("aria-hidden") !== "true" &&
-        Boolean(match.textContent?.trim())
-      )
-    }
-    if (!isValidDuplicateGroup(startMatches) || !isValidDuplicateGroup(endMatches)) return source
-
-    const start = spans.indexOf(startMatches[0]!)
-    const end = spans.indexOf(endMatches.at(-1)!)
-    if (start < 0 || end < start) return source
-
-    for (let index = start; index <= end; index += 1) {
-      spans[index]!.classList.add("markee")
-      if ((index - start) % 2 === 1) spans[index]!.classList.add("flip")
-    }
-    return root.innerHTML
-  })
 }
 
 function routeParam(name: "author" | "title" | "page" | "mediatype"): string {
@@ -1168,12 +1122,14 @@ const markedReaderHtml = computed<ManagedAssetHtml<"reader-etext">>(() => {
   if (!currentReader) return emptyRenderableHtml()
   const hit = selectedSearchHit.value ?? activeHit.value
   if (!hit) return currentReader.html
-  return markReaderHtml(
-    currentReader.html,
-    hit,
-    currentReader.pageName,
-    currentReader.pageIndex
-  )
+  return markReaderSearchEtextHtml(currentReader.html, {
+    fromWordId: hit.highlight.from_word_id,
+    hitPageIndex: hit.page_index,
+    hitPageName: hit.page_name,
+    pageIndex: currentReader.pageIndex,
+    pageName: currentReader.pageName,
+    toWordId: hit.highlight.to_word_id
+  })
 })
 const markedFacsimileReader = computed(() => {
   const currentReader = facsimileReader.value
@@ -1661,25 +1617,8 @@ useHead(() => ({
   style: readerHeadStyles(reader.value)
 }))
 
-function readerTarget(pageName: string, hit?: number): RouteLocationRaw {
-  if (hit === undefined) return readerPageFullPath(rawFullPath.value, pageName)
-  const query = Object.fromEntries(
-    Object.entries(pageQuery.value).map(([key, value]) => [
-      key,
-      Array.isArray(value) ? [...value] : value
-    ])
-  ) as LocationQueryRaw
-  if (hit !== undefined) query.hit = String(hit)
-  return {
-    name: route.name as string,
-    params: {
-      author: authorParam.value,
-      title: titleParam.value,
-      page: pageName,
-      mediatype: mediaTypeParam.value
-    },
-    query
-  }
+function readerTarget(pageName: string): RouteLocationRaw {
+  return readerPageFullPath(rawFullPath.value, pageName)
 }
 
 function pageHref(pageName: string): string {

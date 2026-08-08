@@ -7,7 +7,8 @@ import type {
 } from "../../app/pages/presentationer/presentation-parser"
 import type {
   markEditorEtextHtml,
-  markReaderOcrHtml
+  markReaderOcrHtml,
+  markReaderSearchEtextHtml
 } from "../../app/lib/search-hit-highlight"
 import type {
   ManagedAssetHtml,
@@ -86,4 +87,12 @@ export type ReaderOcrMarkerParametersContract = Assert<Equal<
 export type ReaderOcrMarkerReturnContract = Assert<Equal<
   ReturnType<typeof markReaderOcrHtml>,
   SanitizedHtml<"reader-ocr">
+>>
+export type ReaderEtextSearchMarkerInputContract = Assert<Equal<
+  Parameters<typeof markReaderSearchEtextHtml>[0],
+  ManagedAssetHtml<"reader-etext">
+>>
+export type ReaderEtextSearchMarkerReturnContract = Assert<Equal<
+  ReturnType<typeof markReaderSearchEtextHtml>,
+  ManagedAssetHtml<"reader-etext">
 >>

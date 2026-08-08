@@ -3,10 +3,12 @@ import { describe, expect, test } from "vitest"
 import {
   markEditorEtextHtml,
   markReaderOcrHtml,
+  markReaderSearchEtextHtml,
   markReaderSearchOcrHtml
 } from "../../app/lib/search-hit-highlight"
 import {
   issueEditorEtextHtml,
+  issueManagedReaderHtml,
   issueReaderOcrHtml
 } from "../../shared/utils/renderable-html"
 
@@ -91,6 +93,26 @@ describe("markEditorEtextHtml", () => {
       + '<span id="from" class="w keep markee flip">B</span><i>middle</i>'
       + '<span id="to" class="w markee">C</span>'
       + '<span id="to" class="w markee flip">D</span><strong>tail</strong></div>'
+    )
+  })
+
+  test("uses the same duplicate-group policy for Reader etext", () => {
+    const etext = issueManagedReaderHtml(
+      '<p><span id="from" class="w">A</span><span id="from" class="w keep">B</span>'
+      + '<i>middle</i><span id="to" class="w">C</span></p>'
+    )
+
+    expect(markReaderSearchEtextHtml(etext, {
+      fromWordId: "from",
+      hitPageIndex: 4,
+      hitPageName: "5",
+      pageIndex: 4,
+      pageName: "5",
+      toWordId: "to"
+    })).toBe(
+      '<p><span id="from" class="w markee">A</span>'
+      + '<span id="from" class="w keep markee flip">B</span><i>middle</i>'
+      + '<span id="to" class="w markee">C</span></p>'
     )
   })
 

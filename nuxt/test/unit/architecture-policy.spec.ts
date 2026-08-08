@@ -69,7 +69,6 @@ const detachedDomAllowlist = [
   "app/lib/author-profile.ts",
   "app/lib/reader-dictionary.ts",
   "app/lib/search-hit-highlight.ts",
-  "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
   "app/pages/presentationer/presentation-parser.ts",
   "server/utils/author-document.ts",
   "server/utils/dramawebben-document.ts",
@@ -120,23 +119,11 @@ const reviewedDomSources: Readonly<Record<string, string>> = {
     "  const root = document.querySelector(\"[data-editor-highlight-root]\")!",
     `  return root.${domHtmlProperty}`,
     "}",
-    "export function markReaderSearchOcrHtml(html: string) {",
+    "function markReaderSearchHtml(html: string) {",
     "  const { document } = parseHTML(`<div data-reader-highlight-root>${html}</div>`)",
     "  const root = document.querySelector(\"[data-reader-highlight-root]\")!",
-    `  return issueReaderOcrHtml(root.${domHtmlProperty})`,
+    `  return root.${domHtmlProperty}`,
     "}"
-  ].join("\n"),
-  "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue": [
-    "<script setup lang=\"ts\">",
-    "import { parseHTML } from \"linkedom\"",
-    "function markReaderHtml(source: string) {",
-    "  return transformManagedReaderHtml(source, value => {",
-    "    const { document } = parseHTML(`<div data-reader-highlight-root>${value}</div>`)",
-    "    const root = document.querySelector(\"[data-reader-highlight-root]\")!",
-    `    return root.${domHtmlProperty}`,
-    "  })",
-    "}",
-    "</script>"
   ].join("\n"),
   "app/pages/presentationer/presentation-parser.ts": [
     "import { DOMParser } from \"linkedom\"",

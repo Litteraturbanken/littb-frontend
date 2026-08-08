@@ -124,10 +124,7 @@ const reviewedDomPolicies = new Map([
   ]],
   ["app/lib/search-hit-highlight.ts", [
     { functionName: "markSimpleContiguousWords", kind: "read", base: "root", count: 1 },
-    { functionName: "markReaderSearchOcrHtml", kind: "read", base: "root", issuer: "issueReaderOcrHtml", count: 1 }
-  ]],
-  ["app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue", [
-    { functionName: "markReaderHtml", kind: "read", base: "root", count: 1 }
+    { functionName: "markReaderSearchHtml", kind: "read", base: "root", count: 1 }
   ]],
   ["app/pages/presentationer/presentation-parser.ts", [
     { functionName: "parsePresentationDocument", kind: "read", base: "body", issuer: "issueManagedPresentationHtml", count: 1 }
