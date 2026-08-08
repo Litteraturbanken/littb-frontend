@@ -449,6 +449,12 @@ class InvokeTaskTests(unittest.TestCase):
                 ),
                 call(
                     context,
+                    ["yarn", "quality:maintainability"],
+                    settings.nuxt_dir,
+                    env=node_environment,
+                ),
+                call(
+                    context,
                     [
                         "yarn", "vitest", "run",
                         "test/unit/library-contract.spec.ts",
@@ -619,6 +625,7 @@ class InvokeTaskTests(unittest.TestCase):
             [
                 call(context, ["yarn", "policy:check"], settings.nuxt_dir, env=node_environment),
                 call(context, ["yarn", "lint"], settings.nuxt_dir, env=node_environment),
+                call(context, ["yarn", "quality:maintainability"], settings.nuxt_dir, env=node_environment),
                 call(context, ["yarn", "typecheck"], settings.nuxt_dir, env=node_environment),
                 call(context, ["yarn", "test:unit"], settings.nuxt_dir, env=node_environment),
                 call(context, ["yarn", "build"], settings.nuxt_dir, env=node_environment),
@@ -657,6 +664,7 @@ class InvokeTaskTests(unittest.TestCase):
         self.assertEqual(calls, [
             ["yarn", "policy:check"],
             ["yarn", "lint"],
+            ["yarn", "quality:maintainability"],
             ["yarn", "typecheck"],
         ])
 
