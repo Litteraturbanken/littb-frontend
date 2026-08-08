@@ -5,31 +5,18 @@ type StatefulResponse<Response> = Omit<Response, "suggest" | "failed"> & {
   failed: boolean
 }
 
-export type LibraryResponse = StatefulResponse<
-  Extract<LibrarySuccessPageData, { mode: "all" }>["response"]
->
-export type AuthorBrowseResponse = StatefulResponse<
-  Extract<LibrarySuccessPageData, { mode: "authors" }>["response"]
->
-export type EpubResponse = StatefulResponse<
-  Extract<LibrarySuccessPageData, { mode: "epub" | "pdf" }>["response"]
->
-export type PdfResponse = EpubResponse
-export type BrowseResponse = StatefulResponse<
-  Extract<LibrarySuccessPageData, { mode: "works" | "parts" }>["response"]
->
-export type LatestResponse = StatefulResponse<
-  Extract<LibrarySuccessPageData, { mode: "latest" }>["response"]
->
+type StatefulPage<Page> = Page extends { mode: infer Mode, response: infer Response }
+  ? { mode: Mode, response: StatefulResponse<Response> }
+  : never
 
-export type LibraryPageData =
-  | { mode: "all", response: LibraryResponse }
-  | { mode: "authors", response: AuthorBrowseResponse }
-  | { mode: "works", response: BrowseResponse }
-  | { mode: "parts", response: BrowseResponse }
-  | { mode: "latest", response: LatestResponse }
-  | { mode: "epub", response: EpubResponse }
-  | { mode: "pdf", response: PdfResponse }
+export type LibraryPageState = StatefulPage<LibrarySuccessPageData>
+
+export type LibraryResponse = Extract<LibraryPageState, { mode: "all" }>["response"]
+export type AuthorBrowseResponse = Extract<LibraryPageState, { mode: "authors" }>["response"]
+export type EpubResponse = Extract<LibraryPageState, { mode: "epub" | "pdf" }>["response"]
+export type PdfResponse = EpubResponse
+export type BrowseResponse = Extract<LibraryPageState, { mode: "works" | "parts" }>["response"]
+export type LatestResponse = Extract<LibraryPageState, { mode: "latest" }>["response"]
 
 export type LibraryPageResultHandlers = {
   all: (response: LibraryResponse) => void
@@ -42,7 +29,7 @@ export type LibraryPageResultHandlers = {
 }
 
 export function assignLibraryPageResult(
-  pageData: LibraryPageData,
+  pageData: LibraryPageState,
   handlers: LibraryPageResultHandlers
 ): void {
   switch (pageData.mode) {

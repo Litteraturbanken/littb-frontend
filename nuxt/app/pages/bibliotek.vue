@@ -37,8 +37,8 @@ import {
     type BrowseResponse,
     type EpubResponse,
     type LatestResponse,
-    type LibraryPageData,
     type LibraryPageResultHandlers,
+    type LibraryPageState,
     type LibraryResponse,
     type PdfResponse
 } from "~/lib/library/page-results"
@@ -79,7 +79,7 @@ type LibrarySummary = {
 }
 
 type LibraryInitialData = {
-    page: LibraryPageData
+    page: LibraryPageState
     summary: LibrarySummary | null
 }
 
@@ -394,7 +394,7 @@ function librarySearchState(
     }
 }
 
-function emptyPageData(mode: LibraryMode, failed = false): LibraryPageData {
+function emptyPageData(mode: LibraryMode, failed = false): LibraryPageState {
     switch (mode) {
         case "all":
             return { mode, response: emptyLibraryResponse(failed) }
@@ -436,7 +436,7 @@ async function fetchLibraryPageData(
     signal?: AbortSignal,
     reverse = false,
     authorLimit = 150
-): Promise<LibraryPageData> {
+): Promise<LibraryPageState> {
     try {
         const body = buildLibrarySearchRequest(librarySearchState(state, reverse, authorLimit))
         const { data } = await libraryClient.POST("/library/search", { body, signal })
@@ -960,7 +960,7 @@ function invalidateLibrarySummary(filterValue: string, advanced: LibraryAdvanced
     librarySummary.value = emptyLibrarySummary(filterValue, advanced)
 }
 
-function updateLibrarySummaryFromPage(state: QueryState, pageData: LibraryPageData) {
+function updateLibrarySummaryFromPage(state: QueryState, pageData: LibraryPageState) {
     if (standalone || state.downloadMode || pageData.response.failed) return
     const identity = librarySummaryIdentity(state.filter, state.advancedFilters)
     if (
