@@ -1,5 +1,13 @@
 import { spawnSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs"
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync
+} from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, resolve } from "node:path"
 
@@ -154,5 +162,26 @@ describe("independent semantic review runner", () => {
     expect(second.result.status).toBe(0)
     expect(readFileSync(second.log, "utf8")).toBe(firstLog)
     expect(second.result.stdout).toContain("No independent semantic review work remains")
+  })
+
+  test("retires evidence for a removed packet and reviews its replacement", () => {
+    const root = createRoot()
+    const first = run(root)
+    expect(first.result.status).toBe(0)
+    const oldEvidence = readdirSync(resolve(root, "quality/semantic-reviews"))
+    expect(oldEvidence).toHaveLength(1)
+
+    write(root, "app/lib/books.ts", "export function loadTitles() { return ['Doktor Glas'] }\n")
+    const second = run(root)
+
+    expect(second.result.status).toBe(0)
+    expect(readFileSync(second.log, "utf8").trim().split("\n")).toHaveLength(2)
+    const ledger = JSON.parse(readFileSync(
+      resolve(root, "quality/semantic-review-ledger.json"),
+      "utf8"
+    ))
+    expect(ledger.records).toHaveLength(1)
+    expect(ledger.records[0].packetId).toContain("loadTitles")
+    expect(readdirSync(resolve(root, "quality/semantic-reviews"))).toHaveLength(1)
   })
 })

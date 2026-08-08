@@ -10,7 +10,12 @@ import {
 } from "node:fs"
 import { dirname, resolve } from "node:path"
 
-import { parseEvidence, recordEvidence, validateLedger } from "./semantic-review/ledger.mjs"
+import {
+  parseEvidence,
+  recordEvidence,
+  serializeLedger,
+  validateLedger
+} from "./semantic-review/ledger.mjs"
 import { discoverAuthoredSources } from "./semantic-review/source-inventory.mjs"
 
 const root = process.cwd()
@@ -91,6 +96,27 @@ function currentPackets() {
 
 function readLedger() {
   return readJson(ledgerPath, "Semantic review ledger")
+}
+
+function reconcileRetiredPackets(entries) {
+  const ledger = readLedger()
+  if (ledger?.version !== 1 || !Array.isArray(ledger.records)
+    || Object.keys(ledger).toSorted().join(",") !== "records,version") {
+    throw new Error("Semantic review ledger has an invalid shape")
+  }
+  const records = JSON.parse(serializeLedger(ledger.records)).records
+  const currentIds = new Set(entries.map(entry => entry.packet.id))
+  const retained = records.filter(record => currentIds.has(record.packetId))
+  if (retained.length === records.length) return
+
+  atomicWrite(ledgerPath, serializeLedger(retained))
+  const retainedEvidence = new Set(retained.map(record => record.evidencePath))
+  for (const record of records) {
+    if (!currentIds.has(record.packetId) && !retainedEvidence.has(record.evidencePath)) {
+      rmSync(resolve(root, record.evidencePath), { force: true })
+    }
+  }
+  console.log(`Retired semantic review packets: ${records.length - retained.length}`)
 }
 
 function evidenceMap(ledger) {
@@ -224,6 +250,7 @@ function main() {
   }
   refreshInventory()
   const entries = currentPackets()
+  reconcileRetiredPackets(entries)
   let report = currentReport(entries)
   if (report.changesRequested.length > 0) {
     console.log(`Semantic review remains changes-requested: ${report.changesRequested[0]}`)
