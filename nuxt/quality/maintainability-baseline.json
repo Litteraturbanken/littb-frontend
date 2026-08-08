@@ -1,0 +1,1037 @@
+{
+  "version": 1,
+  "findings": [
+    {
+      "fingerprint": "2f426fea57186bb3d5ea4cf7e65fdc78bf1a730958bdb0275939bd0f45cc660e",
+      "tool": "knip",
+      "rule": "exports",
+      "path": "app/lib/library/navigation.ts",
+      "unitId": "app/lib/library/navigation.ts::function::queryAdvanced",
+      "identity": "exports:queryAdvanced"
+    },
+    {
+      "fingerprint": "bf07030586b9e2c264011a1ee664a807895d829f3142b20a8748db47835fd08d",
+      "tool": "knip",
+      "rule": "exports",
+      "path": "app/lib/library/view-model.ts",
+      "unitId": "app/lib/library/view-model.ts::function::formatLibraryImportedDate",
+      "identity": "exports:formatLibraryImportedDate"
+    },
+    {
+      "fingerprint": "97f2dd359494c013608a2bfdbc5fb263dfd23d1c8e611403074ee1a3be1efdb0",
+      "tool": "knip",
+      "rule": "exports",
+      "path": "app/lib/text-search.ts",
+      "unitId": "app/lib/text-search.ts::function::isTextSearchCountResponse",
+      "identity": "exports:isTextSearchCountResponse"
+    },
+    {
+      "fingerprint": "014fb66e6833cf6dddac7f4c15e077a041d9ad7941d7a1d54a5041527a036075",
+      "tool": "knip",
+      "rule": "exports",
+      "path": "app/lib/text-search.ts",
+      "unitId": "app/lib/text-search.ts::function::isTextSearchOptionsResponse",
+      "identity": "exports:isTextSearchOptionsResponse"
+    },
+    {
+      "fingerprint": "ff0d9cecaf995fa256e5344fe69bd894b545c39ba92b49d7abadf180118835ee",
+      "tool": "knip",
+      "rule": "exports",
+      "path": "app/lib/text-search.ts",
+      "unitId": "app/lib/text-search.ts::function::isTextSearchResultsResponse",
+      "identity": "exports:isTextSearchResultsResponse"
+    },
+    {
+      "fingerprint": "4280017b13e75f46070f23794655ea3acc046f6ebfc0f0b98f90d9f8a05293e9",
+      "tool": "knip",
+      "rule": "exports",
+      "path": "app/lib/text-search.ts",
+      "unitId": "app/lib/text-search.ts::module::app/lib/text-search.ts",
+      "identity": "exports:textSearchRouteKeys"
+    },
+    {
+      "fingerprint": "ae3af06ee99cf3c70faab21a6f653de1127afe05cd77998cac1f067d83533bc3",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/library/navigation.ts",
+      "unitId": "app/lib/library/navigation.ts::module::app/lib/library/navigation.ts",
+      "identity": "types:LibrarySortKey"
+    },
+    {
+      "fingerprint": "ae65215afea9aa3cb141f496aab9e4e13e9286dff78419d52cdc0d843ae6e654",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/library/view-model.ts",
+      "unitId": "app/lib/library/view-model.ts::module::app/lib/library/view-model.ts",
+      "identity": "types:BrowseAction"
+    },
+    {
+      "fingerprint": "5228ca1817eab1a228ee56bd952d446a9735331514582ede4b4959d7a2bb95e0",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/library/view-model.ts",
+      "unitId": "app/lib/library/view-model.ts::module::app/lib/library/view-model.ts",
+      "identity": "types:DownloadResult"
+    },
+    {
+      "fingerprint": "c7fc9ad09aaecefc38ab7148f199d9cd78cb5cb0a546d2c8fb68994448eee89d",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/library/view-model.ts",
+      "unitId": "app/lib/library/view-model.ts::module::app/lib/library/view-model.ts",
+      "identity": "types:LatestResult"
+    },
+    {
+      "fingerprint": "cd5696fcdd47bc11335ecdbef3a894dc638df0081b5472b660f153d462c220b4",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/library/view-model.ts",
+      "unitId": "app/lib/library/view-model.ts::module::app/lib/library/view-model.ts",
+      "identity": "types:LibraryHighlightFragment"
+    },
+    {
+      "fingerprint": "979e5523a9ed2d957a91f07f02c40069a349b5f98cf995a2f4bccc7be444dcf4",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/library/view-model.ts",
+      "unitId": "app/lib/library/view-model.ts::module::app/lib/library/view-model.ts",
+      "identity": "types:LibraryResult"
+    },
+    {
+      "fingerprint": "3295c24029ea74f6ce9bd5ee4aa7a916401a230424570b2b7cfd0eef303af7fd",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/library/view-model.ts",
+      "unitId": "app/lib/library/view-model.ts::module::app/lib/library/view-model.ts",
+      "identity": "types:SourceExport"
+    },
+    {
+      "fingerprint": "84f53513db3831237d4852504dc3d8f8bb0b4269e2dc3a2001ddb743b913c0bf",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/observability/events.ts",
+      "unitId": "app/lib/observability/events.ts::module::app/lib/observability/events.ts",
+      "identity": "types:BrowserChunkErrorEvent"
+    },
+    {
+      "fingerprint": "a2abd92f0d77bba58296aec55e2abf9f0ea236a3048ca82f5fad63b191e51ab5",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/observability/events.ts",
+      "unitId": "app/lib/observability/events.ts::module::app/lib/observability/events.ts",
+      "identity": "types:BrowserErrorEvent"
+    },
+    {
+      "fingerprint": "38e5513bda25b75ee74d20d9ca22edfd74c1a670fdc7c83b739fbc1ff8b96fed",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/observability/events.ts",
+      "unitId": "app/lib/observability/events.ts::module::app/lib/observability/events.ts",
+      "identity": "types:BrowserUnhandledRejectionEvent"
+    },
+    {
+      "fingerprint": "d4b8749b7b289f932a1cee138655c877dd31fa34e2f726f9380f0d3d448ab77a",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/observability/events.ts",
+      "unitId": "app/lib/observability/events.ts::module::app/lib/observability/events.ts",
+      "identity": "types:ObservabilityEvent"
+    },
+    {
+      "fingerprint": "6587bc3fd5aa3278d90572062075cdcad0c117efda1592925066bf17123db98d",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/observability/events.ts",
+      "unitId": "app/lib/observability/events.ts::module::app/lib/observability/events.ts",
+      "identity": "types:ObservabilityEventBatch"
+    },
+    {
+      "fingerprint": "509a6a7fd32466f813dff9942909272c352228a0b9ba96501741f800856c7ff9",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/quick-search-developer.ts",
+      "unitId": "app/lib/quick-search-developer.ts::module::app/lib/quick-search-developer.ts",
+      "identity": "types:QuickSearchAuthorContext"
+    },
+    {
+      "fingerprint": "91adbf2e0acf7b9095a17b323344dab307154576d5180982873bb2a36970f0de",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/quick-search-developer.ts",
+      "unitId": "app/lib/quick-search-developer.ts::module::app/lib/quick-search-developer.ts",
+      "identity": "types:QuickSearchReaderContext"
+    },
+    {
+      "fingerprint": "7f5ec4fd59b007b7d0c7e6ca25504aecff9d98f0c3c5ea6299a3cd9a85469367",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/lib/quick-search-developer.ts",
+      "unitId": "app/lib/quick-search-developer.ts::module::app/lib/quick-search-developer.ts",
+      "identity": "types:RedFtpBreadcrumb"
+    },
+    {
+      "fingerprint": "eff38cd77c4559a1e024b81562e24d558ac243ccc01db6d6ebe312bcf37094e9",
+      "tool": "knip",
+      "rule": "types",
+      "path": "app/pages/presentationer/presentation-parser.ts",
+      "unitId": "app/pages/presentationer/presentation-parser.ts::module::app/pages/presentationer/presentation-parser.ts",
+      "identity": "types:PresentationStyleNode"
+    },
+    {
+      "fingerprint": "af4d2d069cb67164d5d75489c3e6bd7ba4259998f80a84754d654be0011fbc44",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/components/global/QuickSearch.vue",
+      "unitId": "app/components/global/QuickSearch.vue::function::runDeveloperAction",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "813b1ffbfc2c60da084e139e6cf28e492c45b2076c4b81d526ffd2532ed0446a",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/lib/home-content.ts",
+      "unitId": "app/lib/home-content.ts::function::controlTags",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "f2a4af6d561ee7e4beaafbcc599d55c64589bb8ba490c946063590bc273514aa",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/lib/home-content.ts",
+      "unitId": "app/lib/home-content.ts::function::startTagAt",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "2de17c98b3e17ca67f3540558f293e56d8c6ca75cf91ee43e8bc1ee212a9fba0",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/lib/internal-navigation.ts",
+      "unitId": "app/lib/internal-navigation.ts::function::isAuthorRoute",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "e863b00a6fd9be178cb6a77b9d97e5689782f338028cf1d490eb0ba7c1445adc",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/lib/internal-navigation.ts",
+      "unitId": "app/lib/internal-navigation.ts::function::isNuxtInternalHref",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "f936a8ccf2ab1515c3be0243ec921ceef52671076310cf214690d54a4b5fac34",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/lib/observability/browser.ts",
+      "unitId": "app/lib/observability/browser.ts::method::BrowserObservabilityReporter.#deliver",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "182414bbc2d0d260063bca47248467346d1945f1a1dccf72b56e657e8f3ea27b",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/lib/presentation-routes.ts",
+      "unitId": "app/lib/presentation-routes.ts::function::validatePresentationSegments",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "e33a3def773a28e936141f9ac4266dedddb222e1aca903ea8e3eefd11929b1f1",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/lib/quick-search-developer.ts",
+      "unitId": "app/lib/quick-search-developer.ts::function::boundedValue",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "855c19d42da4e0678bfaf4d1542053f3c8fe53056f1ce8e3b125991ce577b0e6",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/lib/text-search.ts",
+      "unitId": "app/lib/text-search.ts::function::parseTextSearchRouteQuery",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "3c9370b5cfb6e002e521cdddddf4f0221a9e34a5070cbe15643556c7b997fcbd",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/lib/text-search.ts",
+      "unitId": "app/lib/text-search.ts::function::serializeTextSearchRouteState",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "207fc9b52384b80274e42bbb5deaaa79ade8e61e742932003d4f81b71b201815",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/pages/bibliotek.vue",
+      "unitId": "app/pages/bibliotek.vue::function::preservedQuery",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "d1f410c5c279da133cca65d0d0949baf27531af582cc23fc378f9b44103af897",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/pages/bibliotek.vue",
+      "unitId": "app/pages/bibliotek.vue::function::runBrowserRequest",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "1fa3e5d4133de777ad4852f4229345916e6ef0f28551087ff776ba1a586ca697",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue",
+      "unitId": "app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue::function::keyboardTarget",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "4f8cf27c5ac3c274702908367489e9d499c6337075ef1a5f3199f1b13064dbf9",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue",
+      "unitId": "app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue::function::submitWorkSearch",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "9bf67231ed243b9d5219414595172022bd03c637f33cabc84cc43e01a30f9d67",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/[mediatype].vue::function::resolveReaderShorthand",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "6d35d4fa116c97330051e9ddd9e4ef51f286a05c88d0dcf7f8d059f9e1b4a7c0",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::component::[mediatype]",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "a63e4db3bb671d1184b41bdfbf4b19b604e1720b7cf289319f4f1bbf957e635d",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::function::keyboardPageTarget",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "bf8ee641a10bbceb255d38d56c63c5b7d3545a9d4f8bd634081395323922ff4d",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::function::workSearchFullPath",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "164306b8a2d06c2fe600f1b3c08f25fb54eda2fb055d7f5e896fb6b886b911af",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "app/pages/sök.vue",
+      "unitId": "app/pages/sök.vue::function::setSearchMode",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "62dec0fe0a2e39b856ee3fe31e956ff0999c8e6df1b5a2e66c641383dde3c658",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts",
+      "unitId": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts::module::server/api/editor/[lbid]/[ix]/[mediatype].get.ts",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "b2213e6c7870a1190e32a2785a66c54cf9740e7d8985f70263f8582b58753bf8",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "server/utils/author-document.ts",
+      "unitId": "server/utils/author-document.ts::function::readAuthorDocumentResponse",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "7e1d646adebb2ae85573cc3c296c72b7f39405dd6169130fe2ce60dd93e05534",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "server/utils/author-document.ts",
+      "unitId": "server/utils/author-document.ts::function::sanitizeElement",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "25c0158ddc954efdb5bd30657aed98b53f70ed7dd297b1366b610052cafb4852",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "server/utils/dramawebben-document.ts",
+      "unitId": "server/utils/dramawebben-document.ts::function::sanitizeElement",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "71de06c3efd2437af338fffad5659c77344e1b648d1c1e888d268b48189682d5",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "server/utils/editor-reader-html.ts",
+      "unitId": "server/utils/editor-reader-html.ts::function::sanitizeElement",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "807689743f6f09107305956e358fb253f51f0a5529a9f7e4417da5815ef33d7e",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "server/utils/reader-ocr.ts",
+      "unitId": "server/utils/reader-ocr.ts::function::sanitizeOverlayElement",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "2bb0d756bbd230cdd50344f17c2978078bf80a3d679d04e0bdc6542ca9a2c34f",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "server/utils/reader-ocr.ts",
+      "unitId": "server/utils/reader-ocr.ts::function::sanitizeStyle",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "5898219afcea67ce237d23ee28c394503e5d5825742f5a197c49110a3173b71e",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "server/utils/reader-source-info-definitions.ts",
+      "unitId": "server/utils/reader-source-info-definitions.ts::function::readBoundedJson",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "14b6ca55ac14b38033b1fdd3c10345b09b7f4c43cd0514e3cd607c1ca423eaa3",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "server/utils/reader-source-info-sanitizer.ts",
+      "unitId": "server/utils/reader-source-info-sanitizer.ts::function::sanitizeAllowedAttributes",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "1196457b97729a7a472dd8ad1e6aa7f293e6eab80a0e13dcf54db3bf54241b95",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "server/utils/reader-source.ts",
+      "unitId": "server/utils/reader-source.ts::function::rebaseRelativeStylesheetReferences",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "e7f7b4f5740cf2f614ee496816f0dbf95d665c960d2d26f715b6eae19770486d",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "server/utils/sla-article.ts",
+      "unitId": "server/utils/sla-article.ts::function::sanitizeAttributeValues",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "4b7c06225b5043dba7ead93971d3f22579bb1bd41f69a77681f1e5c22ec4a994",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "shared/utils/managed-text.ts",
+      "unitId": "shared/utils/managed-text.ts::function::fetchManagedText",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "e47984bf0f8c81a2661aecfd64bdd5eb0a70918026784294e94ef5ba20e59ec6",
+      "tool": "sonarjs",
+      "rule": "cognitive-complexity",
+      "path": "shared/utils/managed-text.ts",
+      "unitId": "shared/utils/managed-text.ts::function::hasUnsafePathSegment",
+      "identity": "cognitive-complexity>12"
+    },
+    {
+      "fingerprint": "4646dd7e9e5702440d678f567bbf2dd0eecfb56a2db32508553c0c7b131798ae",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/author-profile.ts",
+      "unitId": "app/lib/author-profile.ts::function::safeHref",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "eec1b105a7be3bb8bab3532717f704cd7d4b35ad821453021096de8022ec0177",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/author-works.ts",
+      "unitId": "app/lib/author-works.ts::function::isShell",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "a2820a6979abbfe4e26903ad01bef37ba8850c68d8fb7edfc7c8a944586927c5",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/author-works.ts",
+      "unitId": "app/lib/author-works.ts::function::isWork",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "c3dbef888dc034f61a984ad9b2d149bc9f0010b700e8edd6ac3d1e6e90809d2b",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/home-content.ts",
+      "unitId": "app/lib/home-content.ts::function::canonicalRedPath",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "c65b0e062e40f7d9a411aa53a6b931fe89ef3233e2b2627263f2df3e65787962",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/home-content.ts",
+      "unitId": "app/lib/home-content.ts::function::controlTags",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "52d0b14f439709c8e8bb9436ed5c9d23b0e19158b70c35aa07d15ac3fecd1014",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/home-content.ts",
+      "unitId": "app/lib/home-content.ts::function::startTagAt",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "44ae820fb6785cec91620bc5a59321111807bf9c9608459ceba634ccae67bd9d",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/internal-navigation.ts",
+      "unitId": "app/lib/internal-navigation.ts::function::isAuthorRoute",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "d37c3569d4df15929a06eb9edd58b0d2a706720d777914561c857422f40360a6",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/internal-navigation.ts",
+      "unitId": "app/lib/internal-navigation.ts::function::isNuxtInternalHref",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "65d2712f52b4503f1d5039cc8b033f90beab751d2bfdad695f500ae10a8d36c4",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/library/view-model.ts",
+      "unitId": "app/lib/library/view-model.ts::function::mapAllItem",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "59b551bceb3337742aa872bcaaf94c54fdca74d730fefe324c26792c4e61b2d6",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/managed-html-navigation.ts",
+      "unitId": "app/lib/managed-html-navigation.ts::function::managedHtmlNavigationTarget",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "5e8b37e950dc8025f14978db0935c7b25c78caf8abbe2f9670b30a5561585198",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/observability/browser.ts",
+      "unitId": "app/lib/observability/browser.ts::method::BrowserObservabilityReporter.#deliver",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "2746d270d1541b5b179fbce214ad604400b503d6721b70ca73cfbd7bc270afe6",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/presentation-routes.ts",
+      "unitId": "app/lib/presentation-routes.ts::function::validatePresentationSegments",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "23478ef4a0f31ec0ac0d505247c071e98674359a2bdfcdec18ef9afd95435fed",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/production-shortcuts.ts",
+      "unitId": "app/lib/production-shortcuts.ts::function::isProductionShortcutGuarded",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "be277f398fa67fd4b4be1f37c9969d25ce0729981a3d4ca0f45c605fe2abed49",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/quick-search-developer.ts",
+      "unitId": "app/lib/quick-search-developer.ts::function::boundedValue",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "288e4690cf0526f87fc1c551e9bc35d3699b45122b47527a4be2d028f16bc662",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/text-search.ts",
+      "unitId": "app/lib/text-search.ts::function::buildTextSearchReaderHref",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "e8093ffad87bbc57b89c1fc57af1abb1a345205abe65c8073433bd5ee47a032b",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/text-search.ts",
+      "unitId": "app/lib/text-search.ts::function::isTextSearchOptionsResponse",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "395a5f6ae5d2a2cdeba8d992f45aba42777a1663c78ae329797b651cc225bad9",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/text-search.ts",
+      "unitId": "app/lib/text-search.ts::function::isTextSearchResultsResponse",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "7f793562a2ebbb06c3cf7076f58d99e05295d2ff3ee5956d8eaa11cc47187ea3",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/text-search.ts",
+      "unitId": "app/lib/text-search.ts::function::isTextSearchWork",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "7931f032474940955279e7a0417978db64d477b7601ae1d2f1c96d2079b4bebc",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/text-search.ts",
+      "unitId": "app/lib/text-search.ts::function::parseTextSearchRouteQuery",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "5890c4ae388ab25fc81d75544aaadec78a005d31f0c04dc35eead3b6ed3dd4ff",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/lib/text-search.ts",
+      "unitId": "app/lib/text-search.ts::function::serializeTextSearchRouteState",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "e806dd1fcd1e9be90395c02b431fdd7ee00823c4db205c633565288aaf534ea3",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/bibliotek.vue",
+      "unitId": "app/pages/bibliotek.vue::function::commitChronologyDraft",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "4f19482e2958f689bcd5e543757651af88742094323a55c9ed3d6c3ab1e56512",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/bibliotek.vue",
+      "unitId": "app/pages/bibliotek.vue::function::queryFor",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "bc62a2f21adc1abed6c23e45770db4cf6e8de66ae22cd13b92397dafe651e31a",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/bibliotek.vue",
+      "unitId": "app/pages/bibliotek.vue::function::refreshInactiveDownloadCount",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "39a23295c4b94bf87e27eef1b7efa3d0c7d1b46e65df955555ec2158bde8a120",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/bibliotek.vue",
+      "unitId": "app/pages/bibliotek.vue::function::refreshLibrarySummary",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "eca47878c41d990252b5204768ecf282887d9111c25345e840225fd8f391d272",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/bibliotek.vue",
+      "unitId": "app/pages/bibliotek.vue::function::runBrowserRequest",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "45ece0ceae4bd4c670ba7798649c85c6392d1c6722c62ba9049e9d4397c97ce8",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/bibliotek.vue",
+      "unitId": "app/pages/bibliotek.vue::function::stateHref",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "947d0ec7fd65e3b28e32ca72d6940f1b210231c373f31d6867efded04f70d9a2",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/bibliotek.vue",
+      "unitId": "app/pages/bibliotek.vue::function::updateLibrarySummaryFromPage",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "42edb9b6de0626d5da03f1764e6b6fd0aaaf10c32d73f9e2c23edddd768d1726",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/dramawebben/pjäser.vue",
+      "unitId": "app/pages/dramawebben/pjäser.vue::function::isCatalogWork",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "d3cd3a7a28620410ce708b0347e87ecdecbdb8f62cb8db2a37816515032642b0",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/dramawebben/pjäser.vue",
+      "unitId": "app/pages/dramawebben/pjäser.vue::function::isSafeCatalogMediaUrl",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "79feb38fc0a83f50aaa6a2e29d8232d56ff7b5fd4e5b322de1844e4147ea1f05",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue",
+      "unitId": "app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue::component::[mediatype]",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "896fe611bb79b765197fb2ca74634ea29a4a936744f7fb7b2c6c599eabb788d8",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue",
+      "unitId": "app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue::function::hitAtIndex",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "da4e871a7dcae4fcaf65d8e1ddb15b1c16857e4b786507fad218e4e6c8e4fd5e",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue",
+      "unitId": "app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue::function::isWorkSearchHit",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "b1ebbfe6fd397b97e28f5409a93847f74964402fdb0d5c242b36f72352ab4f4a",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue",
+      "unitId": "app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue::function::keyboardTarget",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "33f88a3f5cdd90d9e13a2714941903c7ca512eafb997cf6a07db8837dc703ec3",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/författare/[author]/[document]/index.vue",
+      "unitId": "app/pages/författare/[author]/[document]/index.vue::function::isAuthorSupplementalPage",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "2c496ba1d90121a40d06def4a71c3b307ff1b519f751269466195573b81fd8d1",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/[mediatype].vue::function::resolveReaderShorthand",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "078cfe45323d02aae5a9c7e629c495f768cb683ff3146ef6634494cc35edf975",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::component::[mediatype]",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "bca2f3a8440700acdc72e980743532ad061ffa7ee151155e7096c6294b634b10",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::function::handleProductionShortcutKeydown",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "2b55d948fb968aaff55242661bb38e8da1d674efaa3a11b500f214a88b429300",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::function::hitAtIndex",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "88fc7c8e689736fc8172afdd40831ee9fb971ae49ef6beef052c03bcd64b071b",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::function::isExpectedHitResponse",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "64ad0912dcba961d75b5ee25c0daf069f20a71165e6d49656ddcb9983438d3dd",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::function::isWorkSearchHit",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "1b428f297d7da0db17f0cf32f1054b492215fdb673f4439bd83cb06f2a16649c",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::function::keyboardPageTarget",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "c1a44c9a56b250a96ba9f7b1c3b917b79e74349c3c128c057dfac2b24b0e73e9",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::function::parseCanonicalSearchState",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "e63381cd22ea94df52295e8c54e9e60ac18ede455504447fa8a558cc86eb1ebe",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
+      "unitId": "app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue::function::sliderKeyboardTarget",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "d18680b67bebb1e2903580cc7141b11c338022ab8b71aa303309df2cc04247d9",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "app/pages/sök.vue",
+      "unitId": "app/pages/sök.vue::function::handlePaginationKeydown",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "ee7e41abd884738e2cf98ff7caead39b42c747f4763bf0cab3839c2dc547de10",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/api/dramawebben/documents/[document].get.ts",
+      "unitId": "server/api/dramawebben/documents/[document].get.ts::module::server/api/dramawebben/documents/[document].get.ts",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "6590540ae7d3be40011c32b253142d1fd4bd90b6b60dd6c9da991fcac93433c0",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts",
+      "unitId": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts::module::server/api/editor/[lbid]/[ix]/[mediatype].get.ts",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "644222ae7de720d8e398855b39945e61d6bde5be968502fc0408821e2a5ba509",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/api/reader/[author]/[title]/[page]/[mediatype].get.ts",
+      "unitId": "server/api/reader/[author]/[title]/[page]/[mediatype].get.ts::module::server/api/reader/[author]/[title]/[page]/[mediatype].get.ts",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "5599699debf806c42ba35ff3bfce44712a75e2facb779dbb43ee9b0b1949f3ba",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/plugins/response-compression.ts",
+      "unitId": "server/plugins/response-compression.ts::module::server/plugins/response-compression.ts",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "064954c21a2117b034a195b047ebe90696c24687abffd8230bd02d37fa5544de",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/author-document.ts",
+      "unitId": "server/utils/author-document.ts::function::isAuthorDocumentDescriptor",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "3997dd77e67a47e4cee809e34667fe5d99a3adfe66acbd2ef253f61f89a4c3ea",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/author-document.ts",
+      "unitId": "server/utils/author-document.ts::function::sanitizeElement",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "9c9f8c9374a69e2276929c0bcbc7a819a343456557ccae07ace33ed3fbaaf745",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/dramawebben-document.ts",
+      "unitId": "server/utils/dramawebben-document.ts::function::sanitizeElement",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "84388cd311bac4bdbcb81edb7b6d72bb280924cce336bcfcf078475b7273cd73",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/editor-reader-html.ts",
+      "unitId": "server/utils/editor-reader-html.ts::function::fetchBoundedEditorText",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "b06aa9fafd26a6675a4698d8a68b27131942ec58c94a6f57440143b446aad69a",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/editor-reader-html.ts",
+      "unitId": "server/utils/editor-reader-html.ts::function::parseEditorPageIndexes",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "318806b595d0e24f39b4278ead2cce23d6985d8f59b737c5db6dab6c958cb2b9",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/editor-reader-html.ts",
+      "unitId": "server/utils/editor-reader-html.ts::function::sanitizeElement",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "71f934854a00d54dae672c0d8c0c600cef70d647f086ce27b70ac8226a9ccd7d",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/legacy-author-route.ts",
+      "unitId": "server/utils/legacy-author-route.ts::function::decodeAndValidatePathSegments",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "38904a99ce2be1dc7c7f1c78c79eb8d3dca8a4f12091301b33e09c406e8f8b60",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/legacy-dramawebben-route.ts",
+      "unitId": "server/utils/legacy-dramawebben-route.ts::function::isSafeLocalLocation",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "fe105401ff16e1f4b6d7770d05faeab0778071ccb4310ee70c76b50b75d225f8",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/observability-intake.ts",
+      "unitId": "server/utils/observability-intake.ts::function::handleObservabilityIntake",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "f70e7ed340308d10274863511203a134574dac293fb7f0aa7f9286cdf759feb3",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/observability-intake.ts",
+      "unitId": "server/utils/observability-intake.ts::function::isBrowserIntakeEvent",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "c30ba180f06cbf1c395719f49a621c6da40d5e0e3519ab595bda33bc5690cbf3",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/reader-ocr.ts",
+      "unitId": "server/utils/reader-ocr.ts::function::sanitizeOverlayElement",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "3d4b11bed82a85046acfec3214e7f21a2410fd3438f2f69ad5880b172f4c169d",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/reader-source-info-definitions.ts",
+      "unitId": "server/utils/reader-source-info-definitions.ts::function::readBoundedJson",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "c4b1a460263891a71b6f976c65a85dbae2372ed2550806b7f1787b9ad2a054ca",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/reader-source-info-definitions.ts",
+      "unitId": "server/utils/reader-source-info-definitions.ts::function::validateProvenanceDefinitions",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "daad9362f082eda8143a8c7d82694bd31031cd405e229e1a6b6fca8bec5435e3",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/reader-source-info-validation.ts",
+      "unitId": "server/utils/reader-source-info-validation.ts::function::validateAuthors",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "06e4be044484258fb6707562b7221d439a7d86492f6de3a831e871b8ade8c031",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/reader-source-info-validation.ts",
+      "unitId": "server/utils/reader-source-info-validation.ts::function::validateDramawebben",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "379845e80b0270ee7adab2f4793e1ab3d057093483d6cfd1232188b50743339a",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/reader-source-info-validation.ts",
+      "unitId": "server/utils/reader-source-info-validation.ts::function::validateWorkMetadata",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "2f95254acdb6210509acd2f75f33606d694ab661c51308fb824c54cdf31bd8f0",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/sla-article.ts",
+      "unitId": "server/utils/sla-article.ts::function::isSlaArticleDescriptor",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "8e7326e4c40661a01edef29bb00765eb51e0d02b0e0c49269a5246cca615f704",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/sla-article.ts",
+      "unitId": "server/utils/sla-article.ts::function::safeSlaArticleHref",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "e1669dffc91babcffc188b96d15bf71af2fee233e73b2a93497aa373a6320d73",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/sla-article.ts",
+      "unitId": "server/utils/sla-article.ts::function::sanitizeAttributeValues",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "1d016a49e6fb80a61de7542cb49a2cc9f472d985275b29beb413de22016a12b8",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "server/utils/sla-article.ts",
+      "unitId": "server/utils/sla-article.ts::function::sanitizeElement",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "4463d728882a0671e0e1f3b7f691bcd88d47bf8f0ca26f2138b25c863347449e",
+      "tool": "sonarjs",
+      "rule": "cyclomatic-complexity",
+      "path": "shared/utils/managed-text.ts",
+      "unitId": "shared/utils/managed-text.ts::function::fetchManagedText",
+      "identity": "cyclomatic-complexity>12"
+    },
+    {
+      "fingerprint": "9659ed451392faf7825e6c18d680c8455c53f46053fe7483ddb2344683c13bbb",
+      "tool": "sonarjs",
+      "rule": "max-lines-per-function",
+      "path": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts",
+      "unitId": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts::module::server/api/editor/[lbid]/[ix]/[mediatype].get.ts",
+      "identity": "max-lines-per-function>80"
+    },
+    {
+      "fingerprint": "4cf4636bcc43a4f536a088336a321c428c9353d451bf6eea731d741a18896d02",
+      "tool": "sonarjs",
+      "rule": "max-lines-per-function",
+      "path": "server/api/reader/[author]/[title]/[page]/[mediatype].get.ts",
+      "unitId": "server/api/reader/[author]/[title]/[page]/[mediatype].get.ts::module::server/api/reader/[author]/[title]/[page]/[mediatype].get.ts",
+      "identity": "max-lines-per-function>80"
+    },
+    {
+      "fingerprint": "6055024ca7f52feac3435111f1b55af25118958805feb0bcf2523b085311f13c",
+      "tool": "sonarjs",
+      "rule": "max-lines-per-function",
+      "path": "server/utils/author-document.ts",
+      "unitId": "server/utils/author-document.ts::function::loadAuthorDocument",
+      "identity": "max-lines-per-function>80"
+    },
+    {
+      "fingerprint": "e932a797ca9d8f77403bed421312ecc51d73050f5d3690c2bdcf7d8af5b31c70",
+      "tool": "sonarjs",
+      "rule": "max-lines-per-function",
+      "path": "server/utils/observability-intake.ts",
+      "unitId": "server/utils/observability-intake.ts::function::handleObservabilityIntake",
+      "identity": "max-lines-per-function>80"
+    },
+    {
+      "fingerprint": "db2ec22da6a50920998994abb7f60451cf9059abcca1a3ff0b24e5fdad98f8b5",
+      "tool": "sonarjs",
+      "rule": "max-lines-per-function",
+      "path": "server/utils/reader-source-info-projection.ts",
+      "unitId": "server/utils/reader-source-info-projection.ts::function::buildReaderSourceInfo",
+      "identity": "max-lines-per-function>80"
+    },
+    {
+      "fingerprint": "44a5ec209305a4341c1a7127ff8b5f4ee229ae4412425a6de832c1ad7c323b2e",
+      "tool": "sonarjs",
+      "rule": "max-lines-per-function",
+      "path": "server/utils/sla-article.ts",
+      "unitId": "server/utils/sla-article.ts::function::loadSlaArticle",
+      "identity": "max-lines-per-function>80"
+    }
+  ]
+}

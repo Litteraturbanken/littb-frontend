@@ -6,4 +6,5 @@ test-results/
 .playwright-cli/
 .playwright-mcp/
 output/
+.quality/
 test-results-visual-extra/

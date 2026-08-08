@@ -17,6 +17,8 @@
     "policy:check": "node scripts/verify-architecture-policy.mjs",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix --max-warnings 0",
+    "quality:maintainability": "node scripts/run-maintainability.mjs",
+    "quality:maintainability:update-baseline": "node scripts/run-maintainability.mjs --update-baseline",
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
     "test:unit": "vitest run",
