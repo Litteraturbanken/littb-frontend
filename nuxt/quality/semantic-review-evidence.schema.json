@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Nuxt semantic review evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "packetId",
+    "packetFingerprint",
+    "author",
+    "reviewer",
+    "method",
+    "verdict",
+    "findings",
+    "verification"
+  ],
+  "properties": {
+    "version": { "const": 1 },
+    "packetId": { "type": "string", "minLength": 1 },
+    "packetFingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "author": { "type": "string", "minLength": 1 },
+    "reviewer": { "type": "string", "minLength": 1 },
+    "method": { "const": "codex-read-only" },
+    "verdict": { "enum": ["approved", "changes-requested"] },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "severity",
+          "category",
+          "path",
+          "unitId",
+          "line",
+          "summary",
+          "consequence",
+          "evidence",
+          "recommendation",
+          "status",
+          "resolution",
+          "resolutionCommit",
+          "verification"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "severity": { "enum": ["critical", "important", "minor", "question"] },
+          "category": {
+            "enum": [
+              "accessibility",
+              "complexity",
+              "concurrency",
+              "consistency",
+              "correctness",
+              "duplication",
+              "security",
+              "tests",
+              "types"
+            ]
+          },
+          "path": { "type": "string", "minLength": 1 },
+          "unitId": { "type": "string", "minLength": 1 },
+          "line": { "type": "integer", "minimum": 1 },
+          "summary": { "type": "string", "minLength": 1 },
+          "consequence": { "type": "string", "minLength": 1 },
+          "evidence": { "type": "string", "minLength": 1 },
+          "recommendation": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["false-positive", "question", "resolved", "unresolved"] },
+          "resolution": { "type": ["string", "null"] },
+          "resolutionCommit": { "type": ["string", "null"] },
+          "verification": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "verification": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}
