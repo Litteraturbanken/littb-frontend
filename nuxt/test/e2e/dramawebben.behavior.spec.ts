@@ -543,6 +543,10 @@ test("changing source-information identity aborts the obsolete request", async (
   await expect(page.getByRole("dialog", { name: "Om boken", exact: true }))
     .toContainText("Cendrillon")
   await expect.poll(() => aborted).not.toEqual([])
+  const requests = await sourceInfoRequests(request)
+  expect(requests.filter(({ path }: { path: string }) => (
+    path.endsWith("/WahlenbergA/Cendrillon/source-info")
+  ))).toHaveLength(1)
 })
 
 test("Cendrillon infopost renders its linked provenance, attribution, and live fact order", async ({

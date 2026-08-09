@@ -259,7 +259,6 @@ const sourceInfoIdentity = computed(() => {
 const sourceInfoRequestIdentity = computed(() => sourceInfoIdentity.value
   ? catalogSourceInfoKey(sourceInfoIdentity.value)
   : "")
-const initialSourceInfoRequested = sourceInfoIdentity.value !== null
 type CatalogSourceInfoResult =
   | { status: "success", identity: string, sourceInfo: ReaderSourceInfo }
   | { status: "error", identity: string }
@@ -293,8 +292,7 @@ const sourceInfoFetch = await useAsyncData<CatalogSourceInfoResult>(
     } finally {
       if (sourceInfoController === controller) sourceInfoController = null
     }
-  },
-  { immediate: initialSourceInfoRequested }
+  }
 )
 if (sourceInfoFetch.data.value?.status === "success") {
   retainedSourceInfo.value = sourceInfoFetch.data.value
@@ -318,11 +316,7 @@ const sourceInfoLoading = computed(() => sourceInfoIdentity.value !== null
 const sourceInfoOpen = computed(() => sourceInfoIdentity.value !== null)
 
 watch(sourceInfoRequestIdentity, identity => {
-  if (!identity) {
-    sourceInfoController?.abort()
-  } else if (!initialSourceInfoRequested) {
-    void sourceInfoFetch.execute()
-  }
+  if (!identity) sourceInfoController?.abort()
 }, { flush: "sync" })
 onBeforeUnmount(() => sourceInfoController?.abort())
 
