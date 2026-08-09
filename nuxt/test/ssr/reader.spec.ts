@@ -514,6 +514,51 @@ test("partful SSR exposes one raw-preserving contents trigger without a dialog t
   ])
 })
 
+test("direct contents SSR exposes its complete native table of contents", async ({
+  request
+}) => {
+  const response = await request.get(
+    `${readerPartsPath}?repeat=one&repeat=two&innehall`
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const dialog = document.querySelector('[role="dialog"][aria-modal="true"]')
+
+  expect(dialog?.querySelector("h2.sr-only")?.textContent).toBe("Innehållsförteckning")
+  expect(dialog?.querySelectorAll(".part_menu > li")).toHaveLength(5)
+  expect([...dialog?.querySelectorAll(".part_menu a") ?? []].find(
+    link => link.textContent?.trim() === "Mellandelen"
+  )?.getAttribute("href")).toBe(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-3/etext" +
+    "?repeat=one&repeat=two"
+  )
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlasParts")
+  ])
+})
+
+test("search-hit SSR exposes native close and validated return routes", async ({ request }) => {
+  const origin = "/s%C3%B6k?fras=doktor&traffsida=2"
+  const response = await request.get(
+    `${readerPath}?q=doktor%20glas&hit=1&s_return=${encodeURIComponent(origin)}`
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const navigation = document.querySelector(
+    '.reader-context-ssr [aria-label="Sökträffsnavigering"]'
+  )
+  const links = [...navigation?.querySelectorAll("a") ?? []]
+  const close = links.find(link => link.textContent?.trim() === "Stäng träffvisningen")
+  const searchReturn = links.find(link => link.textContent?.trim() === "Tillbaka till sökningen")
+
+  expect(close?.getAttribute("href")).toBe(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext" +
+    `?s_return=${encodeURIComponent(origin)}`
+  )
+  expect(searchReturn?.getAttribute("href")).toBe(origin)
+  expect(await readerHitRequests(request)).toHaveLength(1)
+})
+
 test("canonical API returns the exact searchable faksimil arm with selectable OCR", async ({
   request
 }) => {
@@ -1236,7 +1281,10 @@ for (const mismatch of [
     }
     expect(html).toContain("Sökträffen kunde inte hämtas.")
     expect(html).not.toContain("reader-search-position")
-    expect(html).not.toContain("reader-hit-navigation")
+    expect(html).toContain("reader-hit-navigation")
+    expect(html).toContain(">Stäng träffvisningen</a>")
+    expect(html).not.toContain(">Föregående sökträff</a>")
+    expect(html).not.toContain(">Nästa sökträff</a>")
     expect(html).not.toContain("markee")
     expect(await readerHitRequests(request)).toEqual([expect.objectContaining({
       path: expect.stringContaining("/works/"),

@@ -1499,6 +1499,8 @@ function workSearchFullPath(query: string | null): string {
   return `${path}${retained.length > 0 ? `?${retained.join("&")}` : ""}${fragment}`
 }
 
+const closeWorkSearchHref = computed(() => workSearchFullPath(null))
+
 function submitWorkSearch(): void {
   const query = workSearchQuery.value.trim()
   if (query.length < 1) {
@@ -2454,7 +2456,7 @@ watch(readerRequestIdentity, () => {
               href="https://litteraturbanken.se/diktensmuseum/nya-vagar-inledning/"
             ><img :src="nyaVagarLogo" alt="Logotyp för Nya vägar"></a>
             <nav
-              v-if="previousHit || nextHit"
+              v-if="searchState"
               class="reader-hit-navigation"
               aria-label="Sökträffsnavigering"
             >
@@ -2468,22 +2470,22 @@ watch(readerRequestIdentity, () => {
                 rel="next"
                 :href="hitHref(nextHit)"
               >Nästa sökträff</a>
+              <a :href="closeWorkSearchHref">Stäng träffvisningen</a>
+              <a v-if="searchReturnHref" :href="searchReturnHref">Tillbaka till sökningen</a>
             </nav>
           </aside>
         </template>
       </ClientOnly>
-      <ClientOnly>
-        <ReaderContentsDialog
-          :open="contentsOpen"
-          :contributors="reader.contributors"
-          :title="reader.fullTitle"
-          :imprint-year="reader.imprintYear"
-          :parts="reader.parts"
-          :part-hrefs="contentsPartHrefs"
-          @close="closeContents"
-          @select-page="selectContentsPage"
-        />
-      </ClientOnly>
+      <ReaderContentsDialog
+        :open="contentsOpen"
+        :contributors="reader.contributors"
+        :title="reader.fullTitle"
+        :imprint-year="reader.imprintYear"
+        :parts="reader.parts"
+        :part-hrefs="contentsPartHrefs"
+        @close="closeContents"
+        @select-page="selectContentsPage"
+      />
       <ReaderSourceInfoDialog
         :open="sourceInfoOpen"
         :loading="sourceInfoLoading"

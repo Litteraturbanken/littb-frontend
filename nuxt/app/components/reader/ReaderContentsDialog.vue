@@ -32,27 +32,43 @@ function authorLabel(author: WorkManifestPartAuthor): string {
 }
 
 const dialogPanel = ref<HTMLElement | null>(null)
+const headlessReady = ref(false)
+
+onMounted(() => {
+  headlessReady.value = true
+})
 </script>
 
 <template>
-  <Dialog
+  <component
+    :is="headlessReady ? Dialog : 'div'"
     v-if="open"
-    :open="open"
-    :initial-focus="dialogPanel"
+    :open="headlessReady ? open : undefined"
+    :initial-focus="headlessReady ? dialogPanel : undefined"
+    :role="headlessReady ? undefined : 'dialog'"
+    :aria-modal="headlessReady ? undefined : 'true'"
     as="div"
     class="modal chapters fade in"
     @close="emit('close')"
   >
     <div class="modal-backdrop fade in" aria-hidden="true" />
     <div class="modal-dialog">
-      <DialogPanel ref="dialogPanel" class="modal-content" tabindex="-1">
+      <component
+        :is="headlessReady ? DialogPanel : 'div'"
+        ref="dialogPanel"
+        class="modal-content"
+        tabindex="-1"
+      >
         <div class="chapters-modal modal-body">
           <button
             class="close_btn submit btn pull-right"
             type="button"
             @click="emit('close')"
           >Stäng</button>
-          <DialogTitle class="sr-only">Innehållsförteckning</DialogTitle>
+          <component
+            :is="headlessReady ? DialogTitle : 'h2'"
+            class="sr-only"
+          >Innehållsförteckning</component>
 
           <div class="header">
             <h2 class="author sc"><ReaderContributors :contributors="contributors" /></h2>
@@ -88,7 +104,7 @@ const dialogPanel = ref<HTMLElement | null>(null)
             </li>
           </ul>
         </div>
-      </DialogPanel>
+      </component>
     </div>
-  </Dialog>
+  </component>
 </template>
