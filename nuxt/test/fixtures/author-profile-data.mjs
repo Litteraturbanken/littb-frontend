@@ -260,6 +260,16 @@ export const managedHtmlProbeAuthorProfile = {
   }
 }
 
+/** @satisfies {AuthorProfile} */
+export const unsafeSearchAuthorProfile = {
+  ...strindbergAuthorProfile,
+  author_id: "UnsafeSearch",
+  full_name: "Osäker sökprofil",
+  surname: "Sökprofil",
+  canonical_path: "/författare/UnsafeSearch",
+  search_url: "https://evil.invalid/sok?forfattare=UnsafeSearch"
+}
+
 /** @type {ReadonlyMap<string, AuthorProfile>} */
 export const authorProfiles = new Map([
   [strindbergAuthorProfile.author_id, strindbergAuthorProfile],
@@ -268,5 +278,6 @@ export const authorProfiles = new Map([
   [dramaOnlyAuthorProfile.author_id, dramaOnlyAuthorProfile],
   [noIntroAuthorProfile.author_id, noIntroAuthorProfile],
   [rfc3986AuthorProfile.author_id, rfc3986AuthorProfile],
-  [managedHtmlProbeAuthorProfile.author_id, managedHtmlProbeAuthorProfile]
+  [managedHtmlProbeAuthorProfile.author_id, managedHtmlProbeAuthorProfile],
+  [unsafeSearchAuthorProfile.author_id, unsafeSearchAuthorProfile]
 ])

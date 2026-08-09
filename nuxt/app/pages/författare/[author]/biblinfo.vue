@@ -8,6 +8,7 @@ import {
   validateAuthorRouteParam
 } from "~/lib/author-profile"
 import type { components, operations } from "~/lib/api/generated/lbapi"
+import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
 
 type BibliographyEntry = components["schemas"]["BibliographyEntry"]
 type BibliographyResource = NonNullable<
@@ -161,7 +162,14 @@ const hitText = computed(() => entries.value.length
 const rootHref = computed(() => authorProfilePath(authorId.value))
 const titlesHref = computed(() => authorProfilePath(authorId.value, "titlar"))
 const dramawebbenHref = computed(() => authorProfilePath(authorId.value, "dramawebben"))
-const searchHref = computed(() => profile.value?.searchUrl.replace(/^\/sok(?=\?|$)/u, "/s%C3%B6k") ?? "")
+
+function internalSearchHref(value: string): string {
+  const href = canonicalNuxtHref(value)
+  const pathname = href.split(/[?#]/u, 1)[0]
+  return pathname === "/s%C3%B6k" && isNuxtInternalHref(href) ? href : ""
+}
+
+const searchHref = computed(() => profile.value ? internalSearchHref(profile.value.searchUrl) : "")
 
 function entryPairs(entry: BibliographyEntry): Array<readonly [string, string | null]> {
   return [

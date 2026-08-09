@@ -159,3 +159,16 @@ test("shows empty and failure states and keeps internal author navigation client
   expect(await page.evaluate(() => sessionStorage.getItem("biblinfo-client-marker"))).toBe("kept")
   expect(problems).toEqual([])
 })
+
+test("does not expose an untrusted profile search URL as navigation", async ({ page }) => {
+  const problems = collectProblems(page)
+  const response = await page.goto("/författare/UnsafeSearch/biblinfo", {
+    waitUntil: "networkidle"
+  })
+
+  expect(response?.status()).toBe(200)
+  await expect(page.getByRole("heading", { name: /Osäker sökprofil/u })).toBeVisible()
+  await expect(page.getByRole("navigation", { name: "Författarsidor" })
+    .getByRole("link", { name: "Sök i texterna" })).toHaveCount(0)
+  expect(problems).toEqual([])
+})
