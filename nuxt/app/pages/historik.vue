@@ -26,7 +26,7 @@ function storedHistory(value: unknown): StoredHistory | null {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return null
   const record = value as Record<string, unknown>
   const author = typeof record.author === "string" ? record.author.trim() : ""
-  if (author.length < 1 || author.length > 100) return null
+  if (!validRouteSegment(author, 100)) return null
   if (typeof record.label !== "string"
     || !record.label.trim()
     || record.label.length > maximumHistoryLabelLength) return null
