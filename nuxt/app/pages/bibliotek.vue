@@ -353,7 +353,12 @@ function librarySearchState(
     }
     switch (state.mode) {
         case "all":
-            return { ...common, mode: state.mode, sort: relevanceSortKey(state.sort) }
+            return {
+                ...common,
+                mode: state.mode,
+                sort: relevanceSortKey(state.sort),
+                page: state.page
+            }
         case "authors":
             return {
                 ...common,
@@ -825,7 +830,7 @@ function requestState(state: LibraryRouteState): QueryState {
         mode: state.mode,
         filter: state.filter,
         sort: state.sort,
-        page: state.mode === "all" || state.mode === "authors" ? 1 : state.page,
+        page: state.mode === "authors" ? 1 : state.page,
         hide1800: state.hide1800,
         downloadMode: state.downloadMode,
         advancedFilters: state.advancedFilters
@@ -847,7 +852,7 @@ function currentState(): QueryState {
         mode: currentMode.value,
         filter: filter.value,
         sort: selectedSortForCurrentMode(),
-        page: currentMode.value === "all" ? 1 : currentPage.value,
+        page: currentPage.value,
         hide1800: currentMode.value === "latest" && hide1800.value,
         downloadMode: !standalone && downloadMode.value,
         advancedFilters: {
@@ -1110,7 +1115,7 @@ function queryFor(state: QueryState): LocationQuery {
     if (queryIncludesLibraryMode(state)) query.visa = state.mode
     if (state.filter) query.filter = state.filter
     if (state.mode !== "all" || state.sort !== "relevans") query.sort = state.sort
-    if (state.mode !== "all" && state.mode !== "authors" && state.page > 1) {
+    if (state.mode !== "authors" && state.page > 1) {
         query.sida = String(state.page)
     }
     if (state.mode === "latest" && state.hide1800) query.hide1800 = null
@@ -1754,6 +1759,7 @@ const pdfTabCount = computed(() =>
 )
 
 function currentResultHitCount(): number {
+    if (currentMode.value === "all") return results.value.hits
     if (currentMode.value === "latest") return latestResults.value.distinctHits
     if (currentMode.value === "authors") return 0
     if (currentMode.value === "works") return workResults.value.distinctHits
@@ -1768,6 +1774,15 @@ const pageCount = computed(() =>
     )
 )
 const pages = computed(() => legacyPaginationItems(pageCount.value, currentPage.value))
+
+function allPageHref(page: number): string {
+    return stateHref({
+        mode: "all",
+        filter: filter.value,
+        sort: selectedSort.value,
+        page
+    })
+}
 
 function epubPageHref(page: number): string {
     return stateHref({
@@ -2546,6 +2561,60 @@ onUnmounted(() => {
                                 </tbody>
                             </table>
                         </div>
+                        <nav v-if="pageCount > 1" aria-label="Sidnavigation">
+                            <ul class="pagination pagination-sm sc">
+                                <li :class="{ disabled: currentPage <= 1 }">
+                                    <span
+                                        v-if="currentPage <= 1"
+                                        data-library-pagination-previous
+                                        aria-disabled="true"
+                                        >Föregående</span
+                                    >
+                                    <a
+                                        v-else
+                                        data-library-pagination-previous
+                                        :href="allPageHref(currentPage - 1)"
+                                        @click.prevent="selectPage(currentPage - 1)"
+                                        >Föregående</a
+                                    >
+                                </li>
+                                <li
+                                    v-for="item in pages"
+                                    :key="item.key"
+                                    :class="{ active: item.page === currentPage }"
+                                >
+                                    <a
+                                        :data-library-page="
+                                            item.label === '...' ? undefined : item.page
+                                        "
+                                        :data-library-pagination-ellipsis="
+                                            item.label === '...' || undefined
+                                        "
+                                        :href="allPageHref(item.page)"
+                                        :aria-current="
+                                            item.page === currentPage ? 'page' : undefined
+                                        "
+                                        @click.prevent="selectPage(item.page)"
+                                        >{{ item.label }}</a
+                                    >
+                                </li>
+                                <li :class="{ disabled: currentPage >= pageCount }">
+                                    <span
+                                        v-if="currentPage >= pageCount"
+                                        data-library-pagination-next
+                                        aria-disabled="true"
+                                        >Nästa</span
+                                    >
+                                    <a
+                                        v-else
+                                        data-library-pagination-next
+                                        :href="allPageHref(currentPage + 1)"
+                                        @click.prevent="selectPage(currentPage + 1)"
+                                        >Nästa</a
+                                    >
+                                </li>
+                            </ul>
+                        </nav>
                     </div>
                     <div
                         v-else-if="currentMode === 'latest'"

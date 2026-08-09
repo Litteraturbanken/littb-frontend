@@ -1580,6 +1580,11 @@ export interface components {
              */
             mode: "all";
             /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
              * Reverse
              * @default false
              */

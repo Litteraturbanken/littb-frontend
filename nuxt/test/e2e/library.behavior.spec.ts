@@ -364,7 +364,7 @@ test("a delayed stale Library request cannot replace the latest results", async 
   request
 }) => {
   await setLibraryDelay(request, "search", {
-    mode: "all", filters: libraryFilters({ query: "Selma" }), sort: "relevance", reverse: false
+    mode: "all", filters: libraryFilters({ query: "Selma" }), sort: "relevance", reverse: false, page: 1
   })
   await page.goto("/bibliotek", { waitUntil: "networkidle" })
 
@@ -1035,7 +1035,7 @@ test("delayed input cannot replace an immediate sort or reset intent", async ({
   request
 }) => {
   await setLibraryDelay(request, "search", {
-    mode: "all", filters: libraryFilters({ query: "Selma" }), sort: "relevance", reverse: false
+    mode: "all", filters: libraryFilters({ query: "Selma" }), sort: "relevance", reverse: false, page: 1
   })
   await page.goto("/bibliotek", { waitUntil: "networkidle" })
 
@@ -1050,7 +1050,7 @@ test("delayed input cannot replace an immediate sort or reset intent", async ({
   await expect(page.getByRole("link", { name: /Lagerlöf/ })).toBeVisible()
 
   await setLibraryDelay(request, "search", {
-    mode: "all", filters: libraryFilters({ query: "Senaste" }), sort: "title", reverse: false
+    mode: "all", filters: libraryFilters({ query: "Senaste" }), sort: "title", reverse: false, page: 1
   })
   await input.fill("Senaste")
   await page.waitForTimeout(350)
@@ -1140,7 +1140,7 @@ test("Library modes use only generated v2 operations", async ({ page, request })
     method: "GET", path: "/v2/library/options", scope: "public"
   }])
   expect(ledger.search).toEqual([
-    { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "all", filters, sort: "relevance", reverse: false } },
+    { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "all", filters, sort: "relevance", reverse: false, page: 1 } },
     { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "authors", filters, sort: "popularity", reverse: false, limit: 150 } },
     { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "latest", filters, reverse: false, page: 1, hide_1800: false } },
     { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "authors", filters, sort: "popularity", reverse: false, limit: 150 } },
@@ -1440,6 +1440,58 @@ test("EPUB pagination owns page state and keeps exact row anchors", async ({ pag
     "href",
     "/txt/epub/LagerlofS_GostaBerlingsSaga.epub"
   )
+})
+
+test("all-results pagination owns page state and resets it for new searches and sorts", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?keep&keep=ja&filter=all-pagination", {
+    waitUntil: "networkidle"
+  })
+  await expect(page.locator("[data-library-result]")).toHaveCount(100)
+  await reset(request)
+
+  await page.locator("[data-library-pagination-next]").click()
+  await expect(page.getByRole("link", { name: "Den unika träffen på sida två" })).toBeVisible()
+  let url = new URL(page.url())
+  expect(url.searchParams.get("sida")).toBe("2")
+  expect(url.searchParams.getAll("keep")).toEqual(["", "ja"])
+  expect((await requests(request)).at(-1)?.body).toMatchObject({
+    mode: "all",
+    page: 2,
+    filters: libraryFilters({ query: "all-pagination" })
+  })
+
+  await pushRoute(page, "/bibliotek?keep&keep=ja&filter=all-pagination")
+  await expect(page.locator("[data-library-result]")).toHaveCount(100)
+  await page.goBack()
+  await expect(page.getByRole("link", { name: "Den unika träffen på sida två" })).toBeVisible()
+  await page.goForward()
+  await expect(page.locator("[data-library-result]")).toHaveCount(100)
+
+  await page.locator("[data-library-pagination-next]").click()
+  await expect(page.getByRole("link", { name: "Den unika träffen på sida två" })).toBeVisible()
+
+  await page.locator('[data-library-sort="titlar"]').click()
+  await expect(page.locator("[data-library-result]")).toHaveCount(100)
+  url = new URL(page.url())
+  expect(url.searchParams.get("sort")).toBe("titlar")
+  expect(url.searchParams.has("sida")).toBe(false)
+  expect((await requests(request)).at(-1)?.body).toMatchObject({ mode: "all", page: 1 })
+
+  await page.locator("[data-library-pagination-next]").click()
+  await expect(page.getByRole("link", { name: "Den unika träffen på sida två" })).toBeVisible()
+  await page.locator("[data-library-filter]").fill("Selma")
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("Selma")
+  await expect.poll(() => new URL(page.url()).searchParams.has("sida")).toBe(false)
+  await expect(page.locator("[data-library-result]")).toHaveCount(1)
+  await expect(page.getByRole("link", { name: /Lagerlöf/ })).toBeVisible()
+  expect((await requests(request)).at(-1)?.body).toMatchObject({
+    mode: "all",
+    page: 1,
+    filters: libraryFilters({ query: "Selma" })
+  })
 })
 
 test("standalone EPUB keeps both format counts current without replacing active rows", async ({

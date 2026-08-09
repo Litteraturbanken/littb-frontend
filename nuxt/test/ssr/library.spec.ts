@@ -130,7 +130,8 @@ test("SSR renders the default Library slice from typed private options and searc
     mode: "all",
     filters: filters({ query: "Röda rummet" }),
     sort: "relevance",
-    reverse: false
+    reverse: false,
+    page: 1
   }, {
     mode: "authors",
     filters: filters({ query: "Röda rummet" }),
@@ -168,7 +169,7 @@ test("SSR owns every ordinary Strindberg tab summary under one filter", async ({
 
   const ledger = await libraryV2Requests(request)
   expect(ledger.search.map(entry => entry.body)).toEqual(expect.arrayContaining([
-    { mode: "all", filters: filters({ query: "strindberg" }), sort: "relevance", reverse: false },
+    { mode: "all", filters: filters({ query: "strindberg" }), sort: "relevance", reverse: false, page: 1 },
     { mode: "authors", filters: filters({ query: "strindberg" }), sort: "popularity", reverse: false, limit: 150 }
   ]))
   expect(ledger.counts.map(entry => entry.body)).toEqual(expect.arrayContaining([
@@ -228,7 +229,8 @@ test("SSR sends advanced Library filters as one exact typed body", async ({ requ
       year_to: 1910
     }),
     sort: "author",
-    reverse: false
+    reverse: false,
+    page: 1
   }, {
     mode: "authors",
     filters: filters({
@@ -332,7 +334,8 @@ test("SSR distinguishes a typed empty success from a typed primary failure", asy
       mode: "all",
       filters: filters({ query: "failed" }),
       sort: "relevance",
-      reverse: false
+      reverse: false,
+      page: 1
   }, {
     mode: "authors",
     filters: filters({ query: "failed" }),
@@ -533,19 +536,19 @@ test("SSR maps supported relevance and download sort routes to typed enums", asy
   const cases: Array<{ path: string, body: LibrarySearchRequest }> = [
     {
       path: "/bibliotek?sort=relevans",
-      body: { mode: "all", filters: filters(), sort: "relevance", reverse: false }
+      body: { mode: "all", filters: filters(), sort: "relevance", reverse: false, page: 1 }
     },
     {
       path: "/bibliotek?sort=forfattare",
-      body: { mode: "all", filters: filters(), sort: "author", reverse: false }
+      body: { mode: "all", filters: filters(), sort: "author", reverse: false, page: 1 }
     },
     {
       path: "/bibliotek?sort=titlar",
-      body: { mode: "all", filters: filters(), sort: "title", reverse: false }
+      body: { mode: "all", filters: filters(), sort: "title", reverse: false, page: 1 }
     },
     {
       path: "/bibliotek?sort=kronologi",
-      body: { mode: "all", filters: filters(), sort: "chronology", reverse: false }
+      body: { mode: "all", filters: filters(), sort: "chronology", reverse: false, page: 1 }
     },
     {
       path: "/bibliotek?visa=epub&sort=forfattare",
@@ -614,6 +617,33 @@ test("SSR preserves repeated query keys in typed pagination hrefs", async ({ req
     mode: "epub",
     filters: filters({ query: "paged" }),
     sort: "popularity",
+    reverse: false,
+    page: 2
+  })
+})
+
+test("SSR renders and requests the second all-results page with preserved query keys", async ({
+  request
+}) => {
+  const document = parseHTML(await (await request.get(
+    "/bibliotek?keep&keep=ja&filter=all-pagination&sida=2"
+  )).text()).document
+
+  expect(document.querySelectorAll("[data-library-result]")).toHaveLength(1)
+  expect(document.querySelector("[data-library-result]")?.textContent)
+    .toContain("Den unika träffen på sida två")
+  expect(document.querySelector('[data-library-page="2"]')?.getAttribute("aria-current"))
+    .toBe("page")
+  expect(document.querySelector('[data-library-page="1"]')?.getAttribute("href"))
+    .toBe("/bibliotek?keep=&keep=ja&filter=all-pagination&sida=1")
+  expect(document.querySelector("[data-library-pagination-previous]")?.getAttribute("href"))
+    .toBe("/bibliotek?keep=&keep=ja&filter=all-pagination&sida=1")
+  expect(document.querySelector("[data-library-pagination-next]")?.getAttribute("aria-disabled"))
+    .toBe("true")
+  expect((await libraryV2Requests(request)).search[0]?.body).toEqual({
+    mode: "all",
+    filters: filters({ query: "all-pagination" }),
+    sort: "relevance",
     reverse: false,
     page: 2
   })

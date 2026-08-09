@@ -4472,7 +4472,7 @@ describe("v2 fixture server operations", () => {
       year_to: null
     } satisfies components["schemas"]["LibraryFilters"]
     const searches = [
-      { mode: "all", filters, sort: "relevance", reverse: false },
+      { mode: "all", filters, sort: "relevance", reverse: false, page: 1 },
       { mode: "authors", filters, sort: "name", reverse: false, limit: 150 },
       { mode: "works", filters, sort: "author", reverse: false, page: 1, source_only: false },
       { mode: "parts", filters, sort: "title", reverse: false, page: 1 },
@@ -4516,15 +4516,43 @@ describe("v2 fixture server operations", () => {
     expect(ledger.counts.map((entry: { body: LibraryCountRequest }) => entry.body)).toEqual(counts)
   })
 
+  test("serves the unique second page of the paged Library all fixture", async () => {
+    const response = await fetch(`${origin}/v2/library/search`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        mode: "all",
+        filters: {
+          query: "all-pagination", gender: null, categories: [], narrowing_categories: [],
+          about_author_ids: [], media: [], languages: [], year_from: null, year_to: null
+        },
+        sort: "relevance",
+        reverse: false,
+        page: 2
+      })
+    })
+
+    expect(response.status).toBe(200)
+    const body = await response.json() as components["schemas"]["LibraryAllSearchResponse"]
+    expect(body.total_hits).toBe(101)
+    expect(body.items).toHaveLength(1)
+    expect(body.items[0]).toMatchObject({
+      kind: "text",
+      title: "Den unika träffen på sida två",
+      title_id: "AllPaginationPageTwo"
+    })
+  })
+
   test("strictly rejects malformed Library method, query, filters, lists, and mode fields", async () => {
     const filters = {
       query: "Selma", gender: null, categories: [], narrowing_categories: [],
       about_author_ids: [], media: [], languages: [], year_from: null, year_to: null
     }
     const invalid = [
-      { mode: "all", filters, sort: "relevance", reverse: false, extra: true },
+      { mode: "all", filters, sort: "relevance", reverse: false },
+      { mode: "all", filters, sort: "relevance", reverse: false, page: 1, extra: true },
       { mode: "constructor" },
-      { mode: "all", filters: { ...filters, categories: ["texttype:roman", "texttype:roman"] }, sort: "relevance", reverse: false },
+      { mode: "all", filters: { ...filters, categories: ["texttype:roman", "texttype:roman"] }, sort: "relevance", reverse: false, page: 1 },
       { mode: "works", filters, sort: "author", reverse: false, page: 1 },
       { mode: "latest", filters, reverse: false, page: 1, hide_1800: false, sort: "author" }
     ]
@@ -4557,7 +4585,7 @@ describe("v2 fixture server operations", () => {
       year_to: 3000
     }
     const bodies = [
-      { mode: "all", filters, sort: "relevance", reverse: false },
+      { mode: "all", filters, sort: "relevance", reverse: false, page: 100 },
       { mode: "authors", filters, sort: "name", reverse: false, limit: 10_000 },
       { mode: "works", filters, sort: "author", reverse: false, page: 100, source_only: false }
     ]
@@ -4590,7 +4618,9 @@ describe("v2 fixture server operations", () => {
       { ...validFilters, year_from: 2000, year_to: 1900 }
     ]
     const invalidBodies = [
-      ...invalidFilters.map(filters => ({ mode: "all", filters, sort: "relevance", reverse: false })),
+      ...invalidFilters.map(filters => ({ mode: "all", filters, sort: "relevance", reverse: false, page: 1 })),
+      { mode: "all", filters: validFilters, sort: "relevance", reverse: false, page: 0 },
+      { mode: "all", filters: validFilters, sort: "relevance", reverse: false, page: 101 },
       { mode: "authors", filters: validFilters, sort: "name", reverse: false, limit: 149 },
       { mode: "authors", filters: validFilters, sort: "name", reverse: false, limit: 10_001 },
       { mode: "works", filters: validFilters, sort: "author", reverse: false, page: 0, source_only: false },

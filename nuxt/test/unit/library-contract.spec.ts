@@ -52,7 +52,7 @@ describe("typed Library boundary", () => {
 
   test("builds every search mode and maps Swedish sort keys", () => {
     const requests = [
-      buildLibrarySearchRequest({ mode: "all", filters: filterState, sort: "relevans", reverse: false }),
+      buildLibrarySearchRequest({ mode: "all", filters: filterState, sort: "relevans", reverse: false, page: 2 }),
       buildLibrarySearchRequest({ mode: "authors", filters: filterState, sort: "namn", reverse: true, limit: 150 }),
       buildLibrarySearchRequest({ mode: "works", filters: filterState, sort: "forfattare", reverse: false, page: 2, sourceOnly: true }),
       buildLibrarySearchRequest({ mode: "parts", filters: filterState, sort: "titlar", reverse: false, page: 3 }),
@@ -67,6 +67,7 @@ describe("typed Library boundary", () => {
     expect(requests.map(request => "sort" in request ? request.sort : null)).toEqual([
       "relevance", "name", "author", "title", null, "popularity", "chronology"
     ])
+    expect(requests[0]).toMatchObject({ page: 2 })
     expect(requests[2]).toMatchObject({ page: 2, source_only: true })
     expect(requests[4]).toMatchObject({ page: 4, hide_1800: true })
   })

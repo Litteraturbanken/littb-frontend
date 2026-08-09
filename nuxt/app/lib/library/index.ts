@@ -25,7 +25,7 @@ interface CommonSearchState {
 }
 
 export type LibrarySearchState =
-  | (CommonSearchState & { mode: "all", sort: "relevans" | "forfattare" | "titlar" | "kronologi" })
+  | (CommonSearchState & { mode: "all", sort: "relevans" | "forfattare" | "titlar" | "kronologi", page: number })
   | (CommonSearchState & { mode: "authors", sort: "namn" | "popularitet" | "kronologi", limit: number })
   | (CommonSearchState & { mode: "works", sort: "forfattare" | "titlar" | "popularitet" | "kronologi", page: number, sourceOnly: boolean })
   | (CommonSearchState & { mode: "parts", sort: "forfattare" | "titlar", page: number })
@@ -92,7 +92,8 @@ export function buildLibrarySearchRequest(state: LibrarySearchState): LibrarySea
         mode: state.mode,
         filters,
         reverse: state.reverse,
-        sort: state.sort === "relevans" ? "relevance" : commonSort[state.sort]
+        sort: state.sort === "relevans" ? "relevance" : commonSort[state.sort],
+        page: state.page
       }
     case "authors":
       return {

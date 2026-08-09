@@ -301,7 +301,7 @@ test("a delayed advanced request cannot replace a newer route-owned result", asy
 }) => {
   await request.put(`${fixture}/_library_v2/delays`, { data: {
     operation: "search",
-    body: { mode: "all", filters: libraryFilters({ gender: "female" }), sort: "relevance", reverse: false },
+    body: { mode: "all", filters: libraryFilters({ gender: "female" }), sort: "relevance", reverse: false, page: 1 },
     delay: 900
   } })
   await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })

@@ -1236,7 +1236,7 @@ function validLibraryFilters(filters) {
 }
 
 const librarySearchFields = {
-  all: ["mode", "filters", "sort", "reverse"],
+  all: ["mode", "filters", "sort", "reverse", "page"],
   authors: ["mode", "filters", "sort", "reverse", "limit"],
   works: ["mode", "filters", "sort", "reverse", "page", "source_only"],
   parts: ["mode", "filters", "sort", "reverse", "page"],
@@ -1266,7 +1266,6 @@ function validLibrarySearchBody(body) {
     || typeof body.reverse !== "boolean") return false
   if (body.mode !== "latest" && !librarySorts[body.mode].has(body.sort)) return false
   if (body.mode === "authors") return Number.isInteger(body.limit) && body.limit >= 150 && body.limit <= 10_000
-  if (body.mode === "all") return true
   if (!Number.isInteger(body.page) || body.page < 1 || body.page > 100) return false
   if (body.mode === "works") return typeof body.source_only === "boolean"
   if (body.mode === "latest") return typeof body.hide_1800 === "boolean"
@@ -1292,7 +1291,7 @@ function canonicalLibraryIdentity(body) {
     year_from: body.filters.year_from,
     year_to: body.filters.year_to
   }
-  if (body.mode === "all") return JSON.stringify({ mode: body.mode, filters, sort: body.sort, reverse: body.reverse })
+  if (body.mode === "all") return JSON.stringify({ mode: body.mode, filters, sort: body.sort, reverse: body.reverse, page: body.page })
   if (body.mode === "authors") return JSON.stringify({ mode: body.mode, filters, sort: body.sort, reverse: body.reverse, limit: body.limit })
   if (body.mode === "works") return JSON.stringify({ mode: body.mode, filters, sort: body.sort, reverse: body.reverse, page: body.page, source_only: body.source_only })
   if (body.mode === "latest") return JSON.stringify({ mode: body.mode, filters, reverse: body.reverse, page: body.page, hide_1800: body.hide_1800 })
@@ -1496,7 +1495,7 @@ const defaultLatestGroups = [
   { imported_on: "2026-07-17", source_count: 1, items: [libraryLatestItem(bauerEpub, "2026-07-17")] }
 ]
 
-function libraryAllResponse(query) {
+function libraryAllResponse(query, page) {
   if (query === "inga") return { mode: "all", total_hits: 0, items: [] }
   if (query === "Röda rummet") {
     return {
@@ -1532,6 +1531,23 @@ function libraryAllResponse(query) {
         ...Array.from({ length: 99 }, (_, index) => libraryAllAuthor(`FixtureA${index}`, `Fixture, ${index}`)),
         { kind: "presentation", source_label: "Kringtexter", title: "sent på jorden (1932–1962): en samling", url: "https://litteraturbanken.se/presentationer/specialomraden/Spj_utg.html", byline: null, highlights: [] }
       ]
+    }
+  }
+  if (query === "all-pagination") {
+    return {
+      mode: "all",
+      total_hits: 101,
+      items: page === 2
+        ? [libraryAllText({
+            title: "Den unika träffen på sida två",
+            year: "1902",
+            author: libraryAuthors.lagerlof,
+            titleId: "AllPaginationPageTwo"
+          })]
+        : Array.from({ length: 100 }, (_, index) => libraryAllAuthor(
+            `AllPaginationA${index + 1}`,
+            `Paginering, Träff ${index + 1}`
+          ))
     }
   }
   if (query === "titelmetadata") {
@@ -1710,7 +1726,7 @@ function libraryWorksAuthorIds(query, empty) {
 
 function librarySearchResponse(body) {
   const query = body.filters.query
-  if (body.mode === "all") return libraryAllResponse(query)
+  if (body.mode === "all") return libraryAllResponse(query, body.page)
   if (body.mode === "authors") return libraryAuthorsResponse(query, body.limit)
   if (body.mode === "works") return libraryWorksResponse(query)
   if (body.mode === "parts") {

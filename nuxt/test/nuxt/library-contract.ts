@@ -96,7 +96,7 @@ const filters = {
 } satisfies components["schemas"]["LibraryFilters"]
 
 const searchRequests = [
-  { mode: "all", filters, sort: "relevance", reverse: false },
+  { mode: "all", filters, sort: "relevance", reverse: false, page: 1 },
   { mode: "authors", filters, sort: "name", reverse: false, limit: 150 },
   {
     mode: "works",
