@@ -1209,6 +1209,27 @@ test("author-filtered reconciliation waits for the unfiltered pager basis", asyn
   expect((await requests(request, "results")).map(entry => entry.body.page).sort()).toEqual([1, 2])
 })
 
+test("author-filtered out-of-range reconciliation reacts when its pager basis becomes ready", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "frihet:unfiltered", delay: 1200 }
+  })
+  await openSearch(
+    page,
+    "/s%C3%B6k?fras=frihet&traffsida=2&sok_filter=StrindbergA"
+  )
+
+  await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
+  await expect(page.locator("#toolkit .littb_pager"))
+    .toContainText("Visar verk 1-2 av 2, sida 1 av 1.")
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(3)
+  await page.waitForTimeout(200)
+  expect((await requests(request, "results")).map(entry => entry.body.page).sort())
+    .toEqual([1, 1, 2])
+})
+
 test("rapid faceted A to B to A navigation retries the current navigator snapshot", async ({
   page,
   request

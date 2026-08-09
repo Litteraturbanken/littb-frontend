@@ -1038,6 +1038,8 @@ const resultRows = computed<readonly ResultRowView[]>(() => {
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(mainSearchTotalWorks.value / 30)))
+const pagerBasisReady = computed(() => state.value.facetAuthorId === null
+  || navigatorSnapshot.value?.identity === navigatorIdentity.value)
 const displayedPage = computed(() => Math.min(state.value.page, totalPages.value))
 const visibleWorkCount = computed(() => state.value.facetAuthorId === null
   ? results.value?.works.length ?? 0
@@ -1058,14 +1060,16 @@ function replacePage(page: number) {
   void router.replace({ name: route.name as string, query: mutableQuery })
 }
 
-watch([displayPrimary, primaryIdentity, totalPages], ([candidate, identity, pageCount]) => {
-  if (import.meta.client && candidate?.identity === identity && candidate.status === 200
-    && (state.value.facetAuthorId === null
-      || navigatorSnapshot.value?.identity === navigatorIdentity.value)
-    && state.value.page > pageCount) {
-    replacePage(pageCount)
-  }
-}, { flush: "post" })
+watch(
+  [displayPrimary, primaryIdentity, totalPages, pagerBasisReady],
+  ([candidate, identity, pageCount, basisReady]) => {
+    if (import.meta.client && candidate?.identity === identity && candidate.status === 200
+      && basisReady && state.value.page > pageCount) {
+      replacePage(pageCount)
+    }
+  },
+  { flush: "post" }
+)
 
 function goToPage(page: number) {
   void navigate(textSearchPageQuery(rawQuery.value, page))
