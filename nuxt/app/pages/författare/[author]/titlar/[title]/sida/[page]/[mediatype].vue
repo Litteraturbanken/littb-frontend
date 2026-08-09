@@ -21,6 +21,7 @@ import {
 import { toBoundedDeveloperValue } from "~/lib/quick-search-developer"
 import { readerMissingPageErrorData } from "~/lib/reader-missing-page"
 import {
+  horizontalScrollEdge,
   keyboardNavigationAction,
   type KeyboardNavigationAction,
   type KeyboardNavigationDirection
@@ -1780,8 +1781,11 @@ function readerDialogIsOpen(): boolean {
 }
 
 function readerAtScrollEdge(direction: KeyboardNavigationDirection): boolean {
-  if (direction === "previous") return window.scrollX < 10
-  return document.body.scrollWidth - window.scrollX === window.innerWidth
+  return horizontalScrollEdge(direction, {
+    contentWidth: document.documentElement.scrollWidth,
+    scrollLeft: window.scrollX,
+    viewportWidth: window.innerWidth
+  })
 }
 
 function readerTargetForAction(

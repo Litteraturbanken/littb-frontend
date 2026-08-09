@@ -9,6 +9,7 @@ import {
   markReaderOcrHtml
 } from "~/lib/search-hit-highlight"
 import {
+  horizontalScrollEdge,
   keyboardNavigationAction,
   type KeyboardNavigationAction,
   type KeyboardNavigationDirection
@@ -1041,8 +1042,11 @@ function isEditableTarget(target: EventTarget | null): boolean {
   )
 }
 function editorAtScrollEdge(direction: KeyboardNavigationDirection): boolean {
-  if (direction === "previous") return window.scrollX < 10
-  return Math.ceil(window.scrollX + window.innerWidth) >= document.documentElement.scrollWidth
+  return horizontalScrollEdge(direction, {
+    contentWidth: document.documentElement.scrollWidth,
+    scrollLeft: window.scrollX,
+    viewportWidth: window.innerWidth
+  })
 }
 
 function boundedEditorTarget(current: EditorReaderPage, target: number): number | null {

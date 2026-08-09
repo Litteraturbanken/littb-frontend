@@ -14,6 +14,23 @@ export type KeyboardNavigationOptions = {
   letterAction: "jump" | "part"
 }
 
+export type HorizontalScrollMetrics = {
+  contentWidth: number
+  scrollLeft: number
+  viewportWidth: number
+}
+
+const horizontalEdgeTolerance = 10
+
+export function horizontalScrollEdge(
+  direction: KeyboardNavigationDirection,
+  metrics: HorizontalScrollMetrics
+): boolean {
+  if (direction === "previous") return metrics.scrollLeft < horizontalEdgeTolerance
+  return metrics.scrollLeft + metrics.viewportWidth >=
+    metrics.contentWidth - horizontalEdgeTolerance
+}
+
 const letterDirections = new Map<string, KeyboardNavigationDirection>([
   ["d", "previous"],
   ["F15", "previous"],

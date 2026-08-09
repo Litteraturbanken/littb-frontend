@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest"
 
 import {
+  horizontalScrollEdge,
   keyboardNavigationAction,
   type KeyboardNavigationOptions
 } from "../../app/lib/reader-keyboard-navigation"
@@ -17,6 +18,20 @@ function options(
 }
 
 describe("reader keyboard navigation", () => {
+  test.each([
+    ["previous", { contentWidth: 1000, scrollLeft: 9.75, viewportWidth: 600 }, true],
+    ["previous", { contentWidth: 1000, scrollLeft: 10, viewportWidth: 600 }, false],
+    ["next", { contentWidth: 1000, scrollLeft: 390.25, viewportWidth: 600 }, true],
+    ["next", { contentWidth: 1000, scrollLeft: 300, viewportWidth: 600 }, false],
+    ["next", { contentWidth: 600, scrollLeft: 0, viewportWidth: 600 }, true]
+  ] as const)("detects the %s horizontal edge with bounded layout tolerance", (
+    direction,
+    metrics,
+    expected
+  ) => {
+    expect(horizontalScrollEdge(direction, metrics)).toBe(expected)
+  })
+
   test.each([
     ["n", false, false, { direction: "next", kind: "adjacent" }],
     ["f", false, false, { direction: "previous", kind: "adjacent" }],
