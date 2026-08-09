@@ -1524,6 +1524,34 @@ test("all-results replaces response-invalid pages without history or request loo
   expect((await requests(request)).map(entry => entry.body.page)).toEqual([2, 1])
 })
 
+test("all-results canonicalizes raw page-one aliases without requesting or retaining them", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?keep&keep=ja&filter=all-pagination", {
+    waitUntil: "networkidle"
+  })
+  await expect(page.locator("[data-library-result]")).toHaveCount(100)
+  await reset(request)
+
+  for (const rawPage of ["1", "0", "101", "malformed"]) {
+    await pushRoute(
+      page,
+      `/bibliotek?keep&keep=ja&filter=all-pagination&sida=${rawPage}`
+    )
+    await expect.poll(() => new URL(page.url()).searchParams.has("sida")).toBe(false)
+    expect(new URL(page.url()).searchParams.getAll("keep")).toEqual(["", "ja"])
+    await expect(page.locator("[data-library-result]")).toHaveCount(100)
+
+    await page.goBack()
+    expect(new URL(page.url()).searchParams.has("sida")).toBe(false)
+    await page.goForward()
+    expect(new URL(page.url()).searchParams.has("sida")).toBe(false)
+  }
+
+  expect(await requests(request)).toEqual([])
+})
+
 test("standalone EPUB keeps both format counts current without replacing active rows", async ({
   page,
   request

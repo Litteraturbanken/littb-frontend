@@ -1615,8 +1615,15 @@ async function commitChronologyDraft(endpoint: "from" | "to", value: string) {
 }
 
 watch(
-    () => stateKey(requestState(routeState(route.path, route.query))),
     () => {
+        const state = requestState(routeState(route.path, route.query))
+        return JSON.stringify([
+            stateKey(state),
+            state.mode === "all" ? route.query.sida : null
+        ])
+    },
+    () => {
+        const previousStateKey = stateKey(currentState())
         const parsedRoute = routeState(route.path, route.query)
         const state = requestState(parsedRoute)
         syncAdvancedControls(parsedRoute)
@@ -1636,6 +1643,14 @@ watch(
             selectedBrowseSort.value = state.sort as BrowseSortKey
         }
         if (ownedNavigation?.key === stateKey(state)) return
+        if (
+            state.mode === "all"
+            && previousStateKey === stateKey(state)
+            && !hasCanonicalPageQuery(state.page)
+        ) {
+            void replaceBrowserRoute(state, requestVersion)
+            return
+        }
         const version = invalidateIntent()
         void runBrowserRequest(state, version)
     },
