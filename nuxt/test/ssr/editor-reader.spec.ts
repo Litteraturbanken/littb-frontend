@@ -51,7 +51,7 @@ test("SSR renders editor metadata, OCR, and generated page bounds", async ({ req
     endPageName: "-1",
     imprintYear: "1905",
     metadataAvailable: true,
-    pageName: null
+    pageName: "-2"
   })
   expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
     "/v2/works/lb-editor-doktor/editor-manifest?media_type=faksimil"
@@ -88,7 +88,7 @@ test("SSR renders editor metadata, OCR, and generated page bounds", async ({ req
   expect(document.querySelector(".reader-context-ssr .editor-imprint-year")?.textContent)
     .toBe(" (1905)")
   expect(document.querySelector(".reader-context-ssr .pages")?.textContent)
-    .toBe("av -1")
+    .toBe("-2 av -1")
   expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
     "/v2/works/lb-editor-doktor/editor-manifest?media_type=faksimil"
   ])

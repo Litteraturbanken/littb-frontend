@@ -99,7 +99,7 @@ const facsimileManifest = {
   declared_page_count: 100,
   display_title: "Rallarliv",
   editor_work_id: null,
-  end_page_name: "99",
+  end_page_name: "58",
   full_title: "Rallarliv",
   has_dramawebben: false,
   has_nya_vagar: false,

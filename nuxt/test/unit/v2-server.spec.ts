@@ -699,9 +699,9 @@ describe("v2 fixture server operations", () => {
       media_type: "faksimil",
       bounds: { kind: "dense", page_count: 3 },
       pages: [
-        { page_name: "-3", page_index: 1 },
-        { page_name: "-2", page_index: 2 },
-        { page_name: "-1", page_index: 3 }
+        { page_name: "-3", page_index: 0 },
+        { page_name: "-2", page_index: 1 },
+        { page_name: "-1", page_index: 2 }
       ],
       sizes: [
         { size: 2, width: 450 },

@@ -1029,6 +1029,13 @@ function editorBoyeRepresentation(workId = "lb-editor-boye") {
   }
 }
 
+function editorDoktorPages() {
+  return structuredClone(readerWorkInfoResponse.data[0].pages).map((page, pageindex) => ({
+    ...page,
+    pageindex
+  }))
+}
+
 function editorRawRepresentations(workId) {
   if (workId === "lb-editor-doktor-glas") {
     return [{
@@ -1036,6 +1043,7 @@ function editorRawRepresentations(workId) {
       editor_lbworkid: "lb-editor-doktor-glas",
       lbworkid: workId,
       page_count: 3,
+      pages: editorDoktorPages(),
       urn: "urn:nbn:se:lb-lb-reader-doktor-glas"
     }]
   }
@@ -1045,6 +1053,7 @@ function editorRawRepresentations(workId) {
       lbworkid: workId,
       mediatype: "faksimil",
       page_count: 3,
+      pages: editorDoktorPages(),
       parts: [],
       mediatypes: [],
       width: { size_2: 450, size_3: 625, size_4: 900 }
@@ -1106,6 +1115,7 @@ function editorRawRepresentations(workId) {
       lbworkid: workId,
       mediatype: "faksimil",
       page_count: 3,
+      pages: editorDoktorPages(),
       width: { size_2: 450, size_3: 625, size_4: 900 }
     }]
   }
@@ -1116,6 +1126,7 @@ function editorRawRepresentations(workId) {
       faksimil_sizes: [1, 2, 3, 4],
       mediatype: "faksimil",
       page_count: 3,
+      pages: editorDoktorPages(),
       parts: [],
       width: { size_2: 450, size_3: 625, size_4: 900, size_5: 1250 },
       mediatypes: [{
