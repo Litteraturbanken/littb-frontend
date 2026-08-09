@@ -3204,6 +3204,24 @@ test("an obsolete direct target lookup cannot navigate after an A-B-A route cycl
   await request.put(`${fixture}/_reader_hit_delays`, {
     data: { [slowTargetKey]: 350 }
   })
+  await page.evaluate(() => {
+    const scope = window as typeof window & {
+      __readerDirectHitAbortSeen?: boolean
+    }
+    scope.__readerDirectHitAbortSeen = false
+    const originalFetch = window.fetch.bind(window)
+    window.fetch = (input, init) => {
+      const request = input instanceof Request ? input : null
+      const url = request?.url ?? String(input)
+      const signal = request?.signal ?? init?.signal
+      if (url.includes("/search-hits") && url.includes("offset=3")) {
+        signal?.addEventListener("abort", () => {
+          scope.__readerDirectHitAbortSeen = true
+        }, { once: true })
+      }
+      return originalFetch(input, init)
+    }
+  })
 
   await page.locator("#search_nav")
     .getByRole("button", { name: "Gå till sista träffen" }).click()
@@ -3212,6 +3230,9 @@ test("an obsolete direct target lookup cannot navigate after an A-B-A route cycl
   )).toBe(true)
 
   await navigateClient(page, `${storedReaderPath}?q=glas&hit=0`)
+  await expect.poll(() => page.evaluate(() => (
+    window as typeof window & { __readerDirectHitAbortSeen?: boolean }
+  ).__readerDirectHitAbortSeen)).toBe(true)
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -2")
   await navigateClient(page, sourcePath)
   await expect(page.locator("#search_nav")).toContainText("Träff 2, sida -2")
@@ -3494,6 +3515,20 @@ test("a delayed obsolete public hit response cannot overwrite a later client rou
   await request.put(`${fixture}/_reader_hit_delays`, {
     data: { [slowKey]: 350 }
   })
+  await page.evaluate(() => {
+    const scope = window as typeof window & { __readerHitFailureSeen?: boolean }
+    scope.__readerHitFailureSeen = false
+    const recordFailure = () => {
+      if (document.body.textContent?.includes("Sökträffen kunde inte hämtas.")) {
+        scope.__readerHitFailureSeen = true
+      }
+    }
+    new MutationObserver(recordFailure).observe(document.body, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    })
+  })
 
   await page.evaluate(() => {
     const nuxt = (window as typeof window & {
@@ -3532,6 +3567,9 @@ test("a delayed obsolete public hit response cannot overwrite a later client rou
   await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=glas&hit=0$/)
   await expect(page.locator("#search_nav")).toContainText("1 sökträff")
   await expect(page.locator(".reader_main .markee")).toHaveCount(1)
+  expect(await page.evaluate(() => (
+    window as typeof window & { __readerHitFailureSeen?: boolean }
+  ).__readerHitFailureSeen)).toBe(false)
   expect(problems).toEqual([])
 })
 

@@ -1008,8 +1008,16 @@ function currentPartAuthorLabel(index: number): string {
   return readerManifestPartAuthorLabel(author, part.authors.length > 1)
 }
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError"
+}
+
 let activeHitRequestController: AbortController | null = null
-onBeforeUnmount(() => activeHitRequestController?.abort())
+let hitNavigationController: AbortController | null = null
+onBeforeUnmount(() => {
+  activeHitRequestController?.abort()
+  hitNavigationController?.abort()
+})
 
 const hitFetch = await useAsyncData(
   computed(() => [
@@ -1066,7 +1074,10 @@ const hitFetch = await useAsyncData(
             return { status: "error" as const, identity }
           }
           return { status: "success" as const, identity, response: result.data }
-        } catch {
+        } catch (error) {
+          if (isAbortError(error) || identity !== dialogNeutralIdentity.value) {
+            return { status: "inactive" as const, identity }
+          }
           return { status: "error" as const, identity }
         } finally {
           if (activeHitRequestController === controller) activeHitRequestController = null
@@ -1199,6 +1210,8 @@ let hitNavigationGeneration = 0
 
 watch(rawFullPath, () => {
   hitNavigationGeneration += 1
+  hitNavigationController?.abort()
+  hitNavigationController = null
   gotoHitPending.value = false
 }, { flush: "sync" })
 
@@ -1256,13 +1269,15 @@ function hitLookupIsCurrent(context: HitLookupContext): boolean {
 
 async function fetchHitAtIndex(
   context: HitLookupContext,
-  index: number
+  index: number,
+  signal: AbortSignal
 ): Promise<WorkSearchHit | null> {
   const { currentReader, response, state } = context
   const offset = Math.max(index - 1, 0)
   const limit = 3
   const client = createLbApiClient(config.public.apiBase)
   const result = await client.GET("/works/{work_id}/search-hits", {
+    signal,
     params: {
       path: { work_id: currentReader.reader.workId },
       query: {
@@ -1290,7 +1305,7 @@ async function fetchHitAtIndex(
   return workSearchHitAt(result.data.items, index)
 }
 
-async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
+async function hitAtIndex(index: number, signal: AbortSignal): Promise<WorkSearchHit | null> {
   const context = hitLookupContext(index)
   if (!context) return null
 
@@ -1298,7 +1313,7 @@ async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
   if (cached) return cached
 
   try {
-    return await fetchHitAtIndex(context, index)
+    return await fetchHitAtIndex(context, index, signal)
   } catch {
     return null
   }
@@ -1324,14 +1339,18 @@ function rawHitFullPath(hit: WorkSearchHit): string {
 
 async function navigateToHit(index: number): Promise<void> {
   const generation = ++hitNavigationGeneration
+  hitNavigationController?.abort()
+  hitNavigationController = null
   if (searchState.value?.hit === index) {
     gotoHitInputOpen.value = false
     gotoHitOrdinal.value = ""
     return
   }
+  const controller = new AbortController()
+  hitNavigationController = controller
   gotoHitPending.value = true
   try {
-    const hit = await hitAtIndex(index)
+    const hit = await hitAtIndex(index, controller.signal)
     if (generation !== hitNavigationGeneration) return
     if (!hit) {
       gotoHitInput.value?.focus()
@@ -1341,6 +1360,7 @@ async function navigateToHit(index: number): Promise<void> {
     gotoHitOrdinal.value = ""
     await navigateRawFullPath(rawHitFullPath(hit), false, rawFullPath.value)
   } finally {
+    if (hitNavigationController === controller) hitNavigationController = null
     if (generation === hitNavigationGeneration) gotoHitPending.value = false
   }
 }
