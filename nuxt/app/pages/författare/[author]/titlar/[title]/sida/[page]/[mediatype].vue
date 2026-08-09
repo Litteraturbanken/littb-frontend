@@ -396,11 +396,15 @@ function isExpectedHitItem(
   offset: number,
   totalHits: number,
   workId: string,
-  mediaType: "etext" | "faksimil"
+  mediaType: "etext" | "faksimil",
+  pageMap: ReaderPage["pageMap"]
 ): item is WorkSearchHit {
   return isWorkSearchHit(item, workId, mediaType)
     && item.index === offset + position
     && item.index < totalHits
+    && pageMap.some(page =>
+      page.page_name === item.page_name && page.page_index === item.page_index
+    )
 }
 
 function isExpectedHitResponse(
@@ -409,6 +413,7 @@ function isExpectedHitResponse(
   offset: number,
   workId: string,
   mediaType: "etext" | "faksimil",
+  pageMap: ReaderPage["pageMap"],
   expectedHitIndex: number,
   limit = 3
 ): value is WorkSearchHitsResponse {
@@ -426,7 +431,8 @@ function isExpectedHitResponse(
     offset,
     totalHits,
     workId,
-    mediaType
+    mediaType,
+    pageMap
   ))
   const requestedHitIsPresent = expectedHitIndex >= totalHits ||
     value.items.some(item => isRecord(item) && item.index === expectedHitIndex)
@@ -445,6 +451,12 @@ const authorParam = computed(() => routeParam("author"))
 const titleParam = computed(() => routeParam("title"))
 const pageParam = computed(() => routeParam("page"))
 const mediaTypeParam = computed(() => routeParam("mediatype"))
+function readerRouteOwnerIdentity(params: Record<string, unknown>): string | null {
+  const values = [params.author, params.title, params.mediatype]
+  return values.every(value => typeof value === "string" && value.length > 0)
+    ? JSON.stringify(values)
+    : null
+}
 const explicitOcrRequested = computed(() => route.query.ocr !== undefined)
 const readerRequestIdentity = computed(() => JSON.stringify([
   authorParam.value,
@@ -617,7 +629,6 @@ watch(sourceInfoRequested, open => {
     void sourceInfoFetch.execute()
   }
 })
-watch(sourceInfoRequestIdentity, () => sourceInfoController?.abort())
 onBeforeUnmount(() => sourceInfoController?.abort())
 
 const currentReader = computed(() => {
@@ -795,6 +806,21 @@ const pageRouteDraftName = ref(pageParam.value)
 let pendingPageNavigations = 0
 let pageNavigationGeneration = 0
 let pageNavigationChain = Promise.resolve()
+let pageNavigationDisposed = false
+const pageNavigationOwnerIdentity = readerRouteOwnerIdentity(route.params)
+function disposePageNavigation(): void {
+  pageNavigationDisposed = true
+  pageNavigationGeneration += 1
+}
+const removePageNavigationAfterEach = router.afterEach((to, _from, failure) => {
+  if (!failure && readerRouteOwnerIdentity(to.params) !== pageNavigationOwnerIdentity) {
+    disposePageNavigation()
+  }
+})
+onBeforeUnmount(() => {
+  removePageNavigationAfterEach()
+  disposePageNavigation()
+})
 watch(pageParam, pageName => {
   if (pendingPageNavigations === 0) pageRouteDraftName.value = pageName
 }, { flush: "sync" })
@@ -807,6 +833,7 @@ function draftAdjacentPageName(direction: -1 | 1): string | null {
 const draftPreviousPageName = computed(() => draftAdjacentPageName(-1))
 const draftNextPageName = computed(() => draftAdjacentPageName(1))
 function queueReaderPage(pageName: string): void {
+  if (pageNavigationDisposed) return
   const currentReader = reader.value
   if (!currentReader?.pageMap.some(page => page.page_name === pageName)) return
   const generation = ++pageNavigationGeneration
@@ -815,17 +842,20 @@ function queueReaderPage(pageName: string): void {
   pendingPageNavigations += 1
   pageNavigationChain = pageNavigationChain
     .then(async () => {
+      if (pageNavigationDisposed) return
       try {
         await router.push(href)
       } catch {
-        if (generation === pageNavigationGeneration) {
+        if (!pageNavigationDisposed && generation === pageNavigationGeneration) {
           pageRouteDraftName.value = pageParam.value
         }
       }
     })
     .finally(() => {
       pendingPageNavigations -= 1
-      if (pendingPageNavigations === 0) pageRouteDraftName.value = pageParam.value
+      if (!pageNavigationDisposed && pendingPageNavigations === 0) {
+        pageRouteDraftName.value = pageParam.value
+      }
     })
 }
 function queueReaderHref(href: string): void {
@@ -1034,6 +1064,7 @@ const hitFetch = await useAsyncData(
             offset,
             currentReader.reader.workId,
             currentReader.reader.mediaType,
+            currentReader.reader.pageMap,
             state.hit
           )) {
             return { status: "error" as const, identity }
@@ -1263,6 +1294,7 @@ async function fetchHitAtIndex(
     offset,
     currentReader.reader.workId,
     currentReader.reader.mediaType,
+    currentReader.reader.pageMap,
     index,
     limit
   )) return null

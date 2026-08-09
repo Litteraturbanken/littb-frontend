@@ -450,6 +450,14 @@ function hitsForQuery(query, workId) {
       highlight: { from_word_id: "w3_1", to_word_id: "w3_1" }
     }]
   }
+  if (query === "missing-reader-page") {
+    return [{
+      index: 0,
+      page_name: "999",
+      page_index: 998,
+      highlight: { from_word_id: "w998_1", to_word_id: "w998_1" }
+    }]
+  }
   if (query === "leading-zero-page") {
     return [{
       index: 0,

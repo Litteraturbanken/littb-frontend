@@ -1239,6 +1239,20 @@ test("a malformed hit response is contained locally", async ({ request }) => {
   ])
 })
 
+test("a self-consistent hit for a page outside the Reader manifest is rejected", async ({
+  request
+}) => {
+  const response = await request.get(`${readerPath}?q=missing-reader-page&hit=0`)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expect(html).toContain("DOKTOR")
+  expect(html).toContain("Sökträffen kunde inte hämtas.")
+  expect(html).not.toContain("markee")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "DoktorGlas")
+  ])
+})
+
 test("an incomplete hit window is contained locally", async ({ request }) => {
   const response = await request.get(`${readerPath}?q=incomplete-window&hit=1`)
   expect(response.status()).toBe(200)

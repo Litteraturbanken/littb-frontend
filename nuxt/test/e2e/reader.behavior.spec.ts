@@ -4257,6 +4257,59 @@ test("a canceled leave keeps Reader keyboard paging active", async ({ page }) =>
   expect(problems).toEqual([])
 })
 
+test("a successful leave disposes queued Reader page navigations", async ({ page }) => {
+  const start = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-4/etext"
+  await page.goto(start, { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: {
+        beforeEach: (guard: (to: { fullPath: string }) => unknown) => void
+      } } } }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    const state = window as typeof window & {
+      __readerLeaveQueue?: { started: boolean, release?: () => void }
+    }
+    state.__readerLeaveQueue = { started: false }
+    router.beforeEach(to => {
+      if (
+        state.__readerLeaveQueue!.started
+        || !to.fullPath.endsWith("/sida/-3/etext")
+      ) return
+      state.__readerLeaveQueue!.started = true
+      return new Promise<void>(resolve => {
+        state.__readerLeaveQueue!.release = resolve
+      })
+    })
+    document.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "n" }))
+    document.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "n" }))
+  })
+  await expect.poll(() => page.evaluate(() => Boolean((window as typeof window & {
+    __readerLeaveQueue?: { started: boolean }
+  }).__readerLeaveQueue?.started))).toBe(true)
+
+  await page.evaluate(async () => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: {
+        push: (path: string) => Promise<unknown>
+      } } } }
+    }
+    await root.__vue_app__?.config.globalProperties.$router.push("/bibliotek")
+  })
+  await expect(page).toHaveURL(/\/bibliotek$/u)
+
+  await page.evaluate(() => {
+    const queue = (window as typeof window & {
+      __readerLeaveQueue?: { release?: () => void }
+    }).__readerLeaveQueue
+    if (!queue?.release) throw new Error("queued Reader navigation was not delayed")
+    queue.release()
+  })
+  await page.waitForTimeout(100)
+  await expect(page).toHaveURL(/\/bibliotek$/u)
+})
+
 test("a bare page-position track click previews its integer and commits once", async ({
   page,
   request
