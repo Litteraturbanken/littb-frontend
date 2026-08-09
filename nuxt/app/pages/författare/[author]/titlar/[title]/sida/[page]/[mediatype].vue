@@ -1289,8 +1289,8 @@ async function hitAtIndex(index: number, signal: AbortSignal): Promise<WorkSearc
   }
 }
 
-function rawHitFullPath(hit: WorkSearchHit): string {
-  const pagePath = readerPageFullPath(rawFullPath.value, hit.page_name)
+function rawHitFullPath(hit: WorkSearchHit, sourceFullPath = rawFullPath.value): string {
+  const pagePath = readerPageFullPath(sourceFullPath, hit.page_name)
   const fragmentIndex = pagePath.indexOf("#")
   const fragment = fragmentIndex < 0 ? "" : pagePath.slice(fragmentIndex)
   const beforeHash = fragmentIndex < 0 ? pagePath : pagePath.slice(0, fragmentIndex)
@@ -1353,6 +1353,17 @@ const workSearchOpen = ref(false)
 const workSearchQuery = ref("")
 const workSearchMessage = ref("")
 const workSearchInput = ref<HTMLInputElement | null>(null)
+let workSearchSubmissionController: AbortController | null = null
+let workSearchSubmissionGeneration = 0
+
+function cancelPendingWorkSearchSubmission(): void {
+  workSearchSubmissionGeneration += 1
+  workSearchSubmissionController?.abort()
+  workSearchSubmissionController = null
+}
+
+watch(rawFullPath, cancelPendingWorkSearchSubmission, { flush: "sync" })
+onBeforeUnmount(cancelPendingWorkSearchSubmission)
 const workSearchLemma = ref(false)
 const workSearchOlderSpellings = ref(true)
 const workSearchPrefix = ref(false)
@@ -1420,6 +1431,7 @@ watch(
 function toggleWorkSearch(): void {
   if (!etextReader.value) return
   workSearchOpen.value = !workSearchOpen.value
+  if (!workSearchOpen.value) cancelPendingWorkSearchSubmission()
   workSearchMessage.value = ""
   if (workSearchOpen.value) {
     syncWorkSearchFromRoute()
@@ -1428,6 +1440,7 @@ function toggleWorkSearch(): void {
 }
 
 function chooseWorkSearchOption(option: WorkSearchOption): void {
+  cancelPendingWorkSearchSubmission()
   const next = nextWorkSearchOptions({
     lemma: workSearchLemma.value,
     olderSpellings: workSearchOlderSpellings.value,
@@ -1445,15 +1458,15 @@ const workSearchQueryKeys = new Set<string>([
   ...legacySearchMarkerKeys
 ])
 
-function appendWorkSearchQuery(segments: string[], query: string): void {
-  segments.push(new URLSearchParams({ q: query }).toString(), "hit=0")
-  if (workSearchLemma.value) segments.push("lemma=1")
-  if (!workSearchOlderSpellings.value) segments.push("ej_modern=1")
-  if (workSearchPrefix.value) segments.push("prefix=1")
-  if (workSearchSuffix.value) segments.push("suffix=1")
+function appendWorkSearchQuery(segments: string[], state: CanonicalSearchState): void {
+  segments.push(new URLSearchParams({ q: state.query }).toString(), "hit=0")
+  if (state.wordForms) segments.push("lemma=1")
+  if (!state.includeOlderSpellings) segments.push("ej_modern=1")
+  if (state.prefix) segments.push("prefix=1")
+  if (state.suffix) segments.push("suffix=1")
 }
 
-function workSearchFullPath(query: string | null): string {
+function workSearchFullPath(state: CanonicalSearchState | null): string {
   const fragmentIndex = rawFullPath.value.indexOf("#")
   const fragment = fragmentIndex < 0 ? "" : rawFullPath.value.slice(fragmentIndex)
   const beforeFragment = fragmentIndex < 0
@@ -1468,13 +1481,54 @@ function workSearchFullPath(query: string | null): string {
     new Map()
   )
 
-  if (query !== null) appendWorkSearchQuery(retained, query)
+  if (state !== null) appendWorkSearchQuery(retained, state)
   return `${path}${retained.length > 0 ? `?${retained.join("&")}` : ""}${fragment}`
 }
 
 const closeWorkSearchHref = computed(() => workSearchFullPath(null))
 
-function submitWorkSearch(): void {
+type FirstWorkSearchHitResult =
+  | Readonly<{ status: "empty" }>
+  | Readonly<{ status: "error" }>
+  | Readonly<{ status: "hit", hit: WorkSearchHit }>
+
+async function requestFirstWorkSearchHit(
+  currentReader: ReaderPage,
+  state: CanonicalSearchState,
+  signal: AbortSignal
+): Promise<FirstWorkSearchHitResult> {
+  const client = createLbApiClient(config.public.apiBase)
+  const result = await client.GET("/works/{work_id}/search-hits", {
+    signal,
+    params: {
+      path: { work_id: currentReader.workId },
+      query: {
+        media_type: currentReader.mediaType,
+        query: state.query,
+        offset: 0,
+        limit: 1,
+        word_forms: state.wordForms,
+        include_older_spellings: state.includeOlderSpellings,
+        prefix: state.prefix,
+        suffix: state.suffix
+      }
+    }
+  })
+  if (result.error || !isExpectedHitResponse(
+    result.data,
+    state,
+    0,
+    currentReader.workId,
+    currentReader.mediaType,
+    currentReader.pageMap,
+    0,
+    1
+  )) return { status: "error" }
+  const hit = workSearchHitAt(result.data.items, 0)
+  return hit ? { status: "hit", hit } : { status: "empty" }
+}
+
+async function submitWorkSearch(): Promise<void> {
   const query = workSearchQuery.value.trim()
   if (query.length < 1) {
     workSearchMessage.value = "Ange ett sökord eller en fras."
@@ -1486,12 +1540,48 @@ function submitWorkSearch(): void {
     workSearchInput.value?.focus()
     return
   }
+  const currentReader = reader.value
+  if (!currentReader?.searchable) return
+  const state: CanonicalSearchState = Object.freeze({
+    query,
+    hit: 0,
+    wordForms: workSearchLemma.value,
+    includeOlderSpellings: workSearchOlderSpellings.value,
+    prefix: workSearchPrefix.value,
+    suffix: workSearchSuffix.value
+  })
+  cancelPendingWorkSearchSubmission()
+  const generation = workSearchSubmissionGeneration
+  const controller = new AbortController()
+  workSearchSubmissionController = controller
   workSearchMessage.value = ""
   workSearchQuery.value = query
-  void navigateRawFullPath(workSearchFullPath(query), false, rawFullPath.value)
+  try {
+    const result = await requestFirstWorkSearchHit(currentReader, state, controller.signal)
+    if (generation !== workSearchSubmissionGeneration) return
+    if (result.status !== "hit") {
+      workSearchMessage.value = result.status === "empty"
+        ? "Inga träffar."
+        : "Sökningen kunde inte genomföras."
+      return
+    }
+    const searchFullPath = workSearchFullPath(state)
+    await navigateRawFullPath(
+      rawHitFullPath(result.hit, searchFullPath),
+      false,
+      rawFullPath.value
+    )
+  } catch (error) {
+    if (!isAbortError(error)) workSearchMessage.value = "Sökningen kunde inte genomföras."
+  } finally {
+    if (workSearchSubmissionController === controller) {
+      workSearchSubmissionController = null
+    }
+  }
 }
 
 function closeWorkSearchHits(): void {
+  cancelPendingWorkSearchSubmission()
   workSearchOpen.value = false
   workSearchQuery.value = ""
   workSearchMessage.value = ""

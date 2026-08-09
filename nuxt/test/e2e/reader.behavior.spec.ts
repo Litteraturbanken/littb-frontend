@@ -2727,6 +2727,7 @@ test("submits a canonical work search, preserves raw owners, and follows History
   const problems = captureBrowserProblems(page)
   const rawQuery = "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F&q=old&hit=2"
   const retained = "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
+  const firstHitPath = readerPath.replace("sida/-2", "sida/-3")
   await page.goto(`${readerPath}${rawQuery}`, { waitUntil: "networkidle" })
   await request.delete(`${fixture}/_reader_hit_requests`)
 
@@ -2740,23 +2741,25 @@ test("submits a canonical work search, preserves raw owners, and follows History
   await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
 
   const canonicalQuery = `${retained}&q=doktor+glas&hit=0`
-  await expect(page).toHaveURL(`${readerPath}${canonicalQuery}`)
+  await expect(page).toHaveURL(`${firstHitPath}${canonicalQuery}`)
   await expect(page.locator("#search_nav")).toContainText("5 sökträffar")
-  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -2")
-  expect(await readerHitRequests(request)).toEqual([
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -3")
+  await expect(page.locator("#w1_1.markee")).toHaveCount(1)
+  expect(await readerHitRequests(request)).toEqual(expect.arrayContaining([
     expect.objectContaining({
       path: "/v2/works/lb-reader-doktor-glas/search-hits",
       query: expect.stringContaining("query=doktor%20glas&offset=0&limit=3")
     })
-  ])
+  ]))
 
   await page.goBack({ waitUntil: "networkidle" })
   await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
   await expect(input).toHaveValue("old")
   await page.goForward({ waitUntil: "networkidle" })
-  await expect(page).toHaveURL(`${readerPath}${canonicalQuery}`)
+  await expect(page).toHaveURL(`${firstHitPath}${canonicalQuery}`)
   await expect(input).toHaveValue("doktor glas")
-  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -2")
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -3")
+  await expect(page.locator("#w1_1.markee")).toHaveCount(1)
   expect(problems).toEqual([])
 })
 
@@ -2795,6 +2798,55 @@ test("validates empty work searches and closes active hits without touching raw 
   await expect(searchbox).toBeHidden()
   await expect(searchbox.locator('input[type="search"]')).toHaveValue("")
   expect(problems).toEqual([])
+})
+
+test("keeps work-search submission on the current page for empty or invalid hit data", async ({
+  page
+}) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.locator(".reader-context .subnav")
+    .getByRole("button", { name: "Sök i verket", exact: true }).click()
+  const searchbox = page.locator(".reader-context .searchbox")
+  const input = searchbox.getByRole("searchbox")
+
+  await input.fill("inga")
+  await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
+  await expect(searchbox.getByRole("status")).toHaveText("Inga träffar.")
+  await expect(page).toHaveURL(readerPath)
+
+  await input.fill("malformed-response")
+  await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
+  await expect(searchbox.getByRole("status")).toHaveText("Sökningen kunde inte genomföras.")
+  await expect(page).toHaveURL(readerPath)
+})
+
+test("a newer work-search submission cancels a delayed first-hit lookup", async ({
+  page,
+  request
+}) => {
+  const delayedKey = "lb-reader-doktor-glas|doktor glas|0|1|false|true|false|false"
+  await request.put(`${fixture}/_reader_hit_delays`, { data: { [delayedKey]: 600 } })
+  try {
+    await page.goto(readerPath, { waitUntil: "networkidle" })
+    await page.locator(".reader-context .subnav")
+      .getByRole("button", { name: "Sök i verket", exact: true }).click()
+    const searchbox = page.locator(".reader-context .searchbox")
+    const input = searchbox.getByRole("searchbox")
+    await input.fill("doktor glas")
+    await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
+    await expect.poll(async () => (await readerHitRequests(request)).some(hit =>
+      hit.query.includes("query=doktor%20glas&offset=0&limit=1")
+    )).toBe(true)
+
+    await input.fill("glas")
+    await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
+    await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0`)
+    await expect(page.locator("#w2_2.markee")).toHaveCount(1)
+    await page.waitForTimeout(700)
+    await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0`)
+  } finally {
+    await request.delete(`${fixture}/_reader_hit_delays`)
+  }
 })
 
 test("canonical search options reject a mismatched legacy marker", async ({ page }) => {
@@ -2891,8 +2943,12 @@ test("projects Angular work-search options onto canonical generated hit flags", 
   await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
 
   await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0&lemma=1&ej_modern=1`)
-  await expect.poll(async () => (await readerHitRequests(request)).length).toBe(1)
+  await expect.poll(async () => (await readerHitRequests(request)).length).toBe(2)
   expect(await readerHitRequests(request)).toEqual([
+    expect.objectContaining({
+      query: "media_type=etext&query=glas&offset=0&limit=1" +
+        "&word_forms=true&include_older_spellings=false&prefix=false&suffix=false"
+    }),
     expect.objectContaining({
       query: "media_type=etext&query=glas&offset=0&limit=3" +
         "&word_forms=true&include_older_spellings=false&prefix=false&suffix=false"
