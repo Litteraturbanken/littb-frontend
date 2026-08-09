@@ -4516,31 +4516,43 @@ describe("v2 fixture server operations", () => {
     expect(ledger.counts.map((entry: { body: LibraryCountRequest }) => entry.body)).toEqual(counts)
   })
 
-  test("serves the unique second page of the paged Library all fixture", async () => {
-    const response = await fetch(`${origin}/v2/library/search`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        mode: "all",
-        filters: {
-          query: "all-pagination", gender: null, categories: [], narrowing_categories: [],
-          about_author_ids: [], media: [], languages: [], year_from: null, year_to: null
-        },
-        sort: "relevance",
-        reverse: false,
-        page: 2
+  test("slices the deterministic 101-item Library all fixture by page", async () => {
+    async function page(page: number) {
+      const response = await fetch(`${origin}/v2/library/search`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          mode: "all",
+          filters: {
+            query: "all-pagination", gender: null, categories: [], narrowing_categories: [],
+            about_author_ids: [], media: [], languages: [], year_from: null, year_to: null
+          },
+          sort: "relevance",
+          reverse: false,
+          page
+        })
       })
-    })
+      expect(response.status).toBe(200)
+      return await response.json() as components["schemas"]["LibraryAllSearchResponse"]
+    }
 
-    expect(response.status).toBe(200)
-    const body = await response.json() as components["schemas"]["LibraryAllSearchResponse"]
-    expect(body.total_hits).toBe(101)
-    expect(body.items).toHaveLength(1)
-    expect(body.items[0]).toMatchObject({
+    const first = await page(1)
+    expect(first.total_hits).toBe(101)
+    expect(first.items).toHaveLength(100)
+    expect(first.items[0]).toMatchObject({ kind: "author", author_id: "AllPaginationA1" })
+
+    const second = await page(2)
+    expect(second.total_hits).toBe(101)
+    expect(second.items).toHaveLength(1)
+    expect(second.items[0]).toMatchObject({
       kind: "text",
       title: "Den unika träffen på sida två",
       title_id: "AllPaginationPageTwo"
     })
+
+    const third = await page(3)
+    expect(third.total_hits).toBe(101)
+    expect(third.items).toEqual([])
   })
 
   test("strictly rejects malformed Library method, query, filters, lists, and mode fields", async () => {

@@ -1495,6 +1495,19 @@ const defaultLatestGroups = [
   { imported_on: "2026-07-17", source_count: 1, items: [libraryLatestItem(bauerEpub, "2026-07-17")] }
 ]
 
+const libraryAllPaginationItems = [
+  ...Array.from({ length: 100 }, (_, index) => libraryAllAuthor(
+    `AllPaginationA${index + 1}`,
+    `Paginering, Träff ${index + 1}`
+  )),
+  libraryAllText({
+    title: "Den unika träffen på sida två",
+    year: "1902",
+    author: libraryAuthors.lagerlof,
+    titleId: "AllPaginationPageTwo"
+  })
+]
+
 function libraryAllResponse(query, page) {
   if (query === "inga") return { mode: "all", total_hits: 0, items: [] }
   if (query === "Röda rummet") {
@@ -1534,20 +1547,11 @@ function libraryAllResponse(query, page) {
     }
   }
   if (query === "all-pagination") {
+    const pageStart = (page - 1) * 100
     return {
       mode: "all",
-      total_hits: 101,
-      items: page === 2
-        ? [libraryAllText({
-            title: "Den unika träffen på sida två",
-            year: "1902",
-            author: libraryAuthors.lagerlof,
-            titleId: "AllPaginationPageTwo"
-          })]
-        : Array.from({ length: 100 }, (_, index) => libraryAllAuthor(
-            `AllPaginationA${index + 1}`,
-            `Paginering, Träff ${index + 1}`
-          ))
+      total_hits: libraryAllPaginationItems.length,
+      items: libraryAllPaginationItems.slice(pageStart, pageStart + 100)
     }
   }
   if (query === "titelmetadata") {

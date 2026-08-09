@@ -1494,6 +1494,36 @@ test("all-results pagination owns page state and resets it for new searches and 
   })
 })
 
+test("all-results replaces response-invalid pages without history or request loops", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?keep&keep=ja&filter=all-pagination", {
+    waitUntil: "networkidle"
+  })
+  await reset(request)
+
+  await pushRoute(page, "/bibliotek?keep&keep=ja&filter=all-pagination&sida=100")
+  await expect(page.getByRole("link", { name: "Den unika träffen på sida två" })).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get("sida")).toBe("2")
+  await page.waitForTimeout(250)
+  expect((await requests(request)).map(entry => entry.body.page)).toEqual([100, 2])
+
+  await page.goBack()
+  await expect(page.locator("[data-library-result]")).toHaveCount(100)
+  expect(new URL(page.url()).searchParams.has("sida")).toBe(false)
+  await page.goForward()
+  await expect(page.getByRole("link", { name: "Den unika träffen på sida två" })).toBeVisible()
+  expect(new URL(page.url()).searchParams.get("sida")).toBe("2")
+
+  await reset(request)
+  await pushRoute(page, "/bibliotek?keep=ja&filter=inga&sida=2")
+  await expect(page.locator("[data-library-empty]")).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.has("sida")).toBe(false)
+  await page.waitForTimeout(250)
+  expect((await requests(request)).map(entry => entry.body.page)).toEqual([2, 1])
+})
+
 test("standalone EPUB keeps both format counts current without replacing active rows", async ({
   page,
   request

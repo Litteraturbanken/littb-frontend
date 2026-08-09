@@ -649,6 +649,53 @@ test("SSR renders and requests the second all-results page with preserved query 
   })
 })
 
+test("SSR canonicalizes all-results pages against response hits and preserves query keys", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/bibliotek?keep&keep=ja&filter=all-pagination&sida=100"
+  )
+  const document = parseHTML(await response.text()).document
+  const url = new URL(response.url())
+
+  expect(url.pathname).toBe("/bibliotek")
+  expect(url.searchParams.getAll("keep")).toEqual(["", "ja"])
+  expect(url.searchParams.get("filter")).toBe("all-pagination")
+  expect(url.searchParams.get("sida")).toBe("2")
+  expect(document.querySelectorAll("[data-library-result]")).toHaveLength(1)
+  expect(document.querySelector("[data-library-result]")?.textContent)
+    .toContain("Den unika träffen på sida två")
+  expect(document.querySelector('[data-library-page="2"]')?.getAttribute("aria-current"))
+    .toBe("page")
+  expect((await libraryV2Requests(request)).search
+    .filter(entry => entry.body.mode === "all")
+    .map(entry => entry.body.page)).toEqual([100, 2])
+})
+
+test("SSR canonicalizes empty and out-of-schema all-results pages without redirect loops", async ({
+  request
+}) => {
+  for (const { filter, page, expectedPages } of [
+    { filter: "inga", page: 2, expectedPages: [2, 1] },
+    { filter: "all-pagination", page: 0, expectedPages: [1, 1] },
+    { filter: "all-pagination", page: 101, expectedPages: [1, 1] }
+  ]) {
+    await reset(request)
+    const response = await request.get(
+      `/bibliotek?keep=ja&filter=${filter}&sida=${page}`
+    )
+    const url = new URL(response.url())
+
+    expect(url.pathname).toBe("/bibliotek")
+    expect(url.searchParams.get("keep")).toBe("ja")
+    expect(url.searchParams.get("filter")).toBe(filter)
+    expect(url.searchParams.has("sida")).toBe(false)
+    expect((await libraryV2Requests(request)).search
+      .filter(entry => entry.body.mode === "all")
+      .map(entry => entry.body.page)).toEqual(expectedPages)
+  }
+})
+
 test("SSR caps rendered pagination at the v2 page maximum", async ({ request }) => {
   const document = parseHTML(await (await request.get(
     "/bibliotek?visa=pdf&filter=bounded&sort=popularitet&sida=100"

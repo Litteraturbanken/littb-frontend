@@ -31,6 +31,7 @@ import {
     type PartSortKey,
     type RelevanceSortKey
 } from "~/lib/library/navigation"
+import { canonicalLibraryResultPage } from "~/lib/library/result-pagination"
 import {
     assignLibraryPageResult,
     type AuthorBrowseResponse,
@@ -570,6 +571,35 @@ const { data: initialData } = await useAsyncData<LibraryInitialData>(
     { default: emptyInitialData }
 )
 const initialPageData = initialData.value?.page ?? emptyPageData(initialState.mode)
+
+function canonicalAllResultPage(
+    state: QueryState,
+    pageData: LibraryPageState
+): number | null {
+    if (pageData.mode !== "all" || pageData.response.failed) return null
+    return canonicalLibraryResultPage(state.page, pageData.response.hits)
+}
+
+function hasCanonicalPageQuery(page: number): boolean {
+    return page > 1
+        ? route.query.sida === String(page)
+        : route.query.sida === undefined
+}
+
+const initialCanonicalPage = canonicalAllResultPage(requestState(initialState), initialPageData)
+if (
+    import.meta.server
+    && initialCanonicalPage !== null
+    && (
+        initialCanonicalPage !== initialState.page
+        || !hasCanonicalPageQuery(initialCanonicalPage)
+    )
+) {
+    await navigateTo({
+        path: route.path,
+        query: queryFor({ ...requestState(initialState), page: initialCanonicalPage })
+    }, { redirectCode: 307, replace: true })
+}
 
 const filter = ref(initialFilter)
 const selectedSort = ref(initialSort)
@@ -1161,6 +1191,24 @@ function refreshAfterPageRequest(state: QueryState, pageData: LibraryPageState):
     }
 }
 
+async function reconcileAllResultPage(
+    state: QueryState,
+    pageData: LibraryPageState,
+    version: number,
+    activeController: AbortController
+): Promise<boolean> {
+    const canonicalPage = canonicalAllResultPage(state, pageData)
+    if (canonicalPage === null) return true
+    const canonicalState = { ...state, page: canonicalPage }
+    if (canonicalPage !== state.page) {
+        if (controller === activeController) controller = null
+        await persistAndRequest(canonicalState, version)
+        return false
+    }
+    if (hasCanonicalPageQuery(canonicalPage)) return true
+    return await replaceBrowserRoute(canonicalState, version)
+}
+
 async function runBrowserRequest(state: QueryState, version: number) {
     if (version !== requestVersion) return
     const activeController = new AbortController()
@@ -1171,6 +1219,7 @@ async function runBrowserRequest(state: QueryState, version: number) {
         () => null
     )
     if (!isCurrentLibraryPageRequest(state, version, activeController, pageData)) return
+    if (!await reconcileAllResultPage(state, pageData, version, activeController)) return
     assignLibraryPageResult(pageData, pageResultHandlers)
     updatePageModeState(state, pageData)
     updateLibrarySummaryFromPage(state, pageData)
@@ -1179,8 +1228,8 @@ async function runBrowserRequest(state: QueryState, version: number) {
     refreshAfterPageRequest(state, pageData)
 }
 
-async function persistAndRequest(state: QueryState, version: number) {
-    if (version !== requestVersion) return
+async function replaceBrowserRoute(state: QueryState, version: number): Promise<boolean> {
+    if (version !== requestVersion) return false
     const navigation = { key: stateKey(state), version }
     ownedNavigation = navigation
     try {
@@ -1191,6 +1240,11 @@ async function persistAndRequest(state: QueryState, version: number) {
     } finally {
         if (ownedNavigation === navigation) ownedNavigation = null
     }
+    return version === requestVersion
+}
+
+async function persistAndRequest(state: QueryState, version: number) {
+    if (!await replaceBrowserRoute(state, version)) return
     if (version === requestVersion) await runBrowserRequest(state, version)
 }
 

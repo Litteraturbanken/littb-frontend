@@ -7,7 +7,10 @@ const filters = Object.freeze({ marker: "advanced" })
 describe("parseLibraryRouteState", () => {
   it.each([
     ["/bibliotek", {}, "all", "relevans", 1],
+    ["/bibliotek", { sida: "0" }, "all", "relevans", 1],
     ["/bibliotek", { sida: "2" }, "all", "relevans", 2],
+    ["/bibliotek", { sida: "100" }, "all", "relevans", 100],
+    ["/bibliotek", { sida: "101" }, "all", "relevans", 1],
     ["/bibliotek", { visa: "authors", sort: "namn", sida: "7" }, "authors", "namn", 1],
     ["/bibliotek", { visa: "parts", sort: "forfattare", sida: "3" }, "parts", "forfattare", 3],
     ["/bibliotek", { visa: "latest", sort: "titlar", hide1800: null }, "latest", "nytillkommet", 1],
