@@ -58,6 +58,14 @@ test("hydrates once and preserves the legacy one-hit, next, previous, and all co
     }
   })
   await page.goto("/författare/StrindbergA/biblinfo", { waitUntil: "networkidle" })
+  const wholeTextSearch = page.getByRole("textbox", {
+    name: "Fritextsökning i hela databasen"
+  })
+  await expect(wholeTextSearch).toBeVisible()
+  await expect(wholeTextSearch).toHaveAttribute(
+    "aria-label",
+    "Fritextsökning i hela databasen"
+  )
   await expect(page.getByRole("combobox", { name: "Verk" })).toBeDisabled()
 
   await expect(page.locator(".num_hits")).toHaveText("3 träffar")

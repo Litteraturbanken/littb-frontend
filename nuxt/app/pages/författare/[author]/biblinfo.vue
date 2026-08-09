@@ -306,6 +306,7 @@ useHead({
           <form class="search" @submit.prevent="submitSearch">
             <input
               v-model="wholeText"
+              aria-label="Fritextsökning i hela databasen"
               maxlength="200"
               placeholder="Fritextsökning i hela databasen"
             ><button type="submit">Sök</button>{{ " " }}

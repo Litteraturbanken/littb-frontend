@@ -2767,53 +2767,6 @@ body > .header {
     }
 }
 
-.page-biblinfo {
-
-    #mainview {
-        & > * {
-            margin-bottom : 1em;
-        }
-        li {
-            margin-bottom : 0.5em;
-        }
-
-        .search {
-            margin-bottom: 1em;
-            input {
-                width : 300px;
-                margin-right : 2px;
-            }
-        }
-
-    }
-    #toolkit {
-        .num_hits {
-            margin-bottom : 1em;
-            height : 1em;
-        }
-    }
-    .results {
-
-        & > div {
-            margin-bottom : 2em;
-            padding: 1em;
-            &.even {
-                background-color : #E3E3E3;
-            }
-        }
-        h4 {
-            text-transform: uppercase;
-            color : #666;
-            font-weight: normal;
-
-        }
-        .col {
-            display: inline-block;
-            width: 49%;
-        }
-    }
-}
-
 #toolkit-biblinfo .biblinfo_action {
     appearance: none;
     padding: 0;
