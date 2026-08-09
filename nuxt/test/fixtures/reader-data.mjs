@@ -366,6 +366,14 @@ const phraseHits = [
 ]
 
 function hitsForQuery(query, workId) {
+  if (query === "frihet" && workId === "lb238704") {
+    return [{
+      index: 0,
+      page_name: "1",
+      page_index: 1,
+      highlight: { from_word_id: "w1_11", to_word_id: "w1_11" }
+    }]
+  }
   if (query === "brev" && (workId === "lb8345227" || workId === "lb-editor-boye")) {
     return [
       {
