@@ -387,9 +387,18 @@ const navigatorSnapshot = shallowRef<Readonly<{
   facets: readonly SearchFacetView[]
   totalWorks: number
 }> | null>(null)
-const navigatorSnapshotInFlight = new Map<string, TextSearchOwnedRequest>()
 const navigatorSnapshotRequestOwner = createTextSearchRequestOwner()
-watch(navigatorIdentity, navigatorSnapshotRequestOwner.cancel, { flush: "sync" })
+let navigatorSnapshotInFlight: TextSearchOwnedRequest | null = null
+
+function cancelNavigatorSnapshot() {
+  navigatorSnapshotRequestOwner.cancel()
+  navigatorSnapshotInFlight = null
+}
+
+watch(navigatorIdentity, cancelNavigatorSnapshot, { flush: "sync" })
+watch(() => state.value.facetAuthorId, facetAuthorId => {
+  if (facetAuthorId === null) cancelNavigatorSnapshot()
+}, { flush: "sync" })
 
 async function loadNavigatorSnapshot() {
   const requestedState = {
@@ -401,10 +410,13 @@ async function loadNavigatorSnapshot() {
   const identity = navigatorIdentity.value
   if (
     navigatorSnapshot.value?.identity === identity
-    || navigatorSnapshotInFlight.has(identity)
+    || (
+      navigatorSnapshotInFlight !== null
+      && navigatorSnapshotRequestOwner.isCurrent(navigatorSnapshotInFlight, identity)
+    )
   ) return
   const request = navigatorSnapshotRequestOwner.start(identity)
-  navigatorSnapshotInFlight.set(identity, request)
+  navigatorSnapshotInFlight = request
   const body = buildTextSearchResultsRequest(requestedState)
   const requestIdentity = textSearchResultsRequestIdentity(body)
   try {
@@ -426,9 +438,7 @@ async function loadNavigatorSnapshot() {
   } catch {
     // Failed and aborted requests remain retryable after route re-entry.
   } finally {
-    if (navigatorSnapshotInFlight.get(identity) === request) {
-      navigatorSnapshotInFlight.delete(identity)
-    }
+    if (navigatorSnapshotInFlight === request) navigatorSnapshotInFlight = null
     navigatorSnapshotRequestOwner.finish(request)
   }
 }
@@ -1128,6 +1138,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", handlePaginationKeydown)
   primaryRequestOwner.cancel()
+  cancelNavigatorSnapshot()
   countRequestOwner.cancel()
   countInFlight.clear()
   optionsRequestOwner.cancel()

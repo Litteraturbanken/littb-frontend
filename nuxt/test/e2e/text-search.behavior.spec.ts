@@ -37,6 +37,27 @@ function browserProblems(page: Page) {
   return problems
 }
 
+function observeUnfilteredResults(page: Page) {
+  const failed: string[] = []
+  const completed: number[] = []
+  page.on("requestfailed", request => {
+    if (
+      request.method() === "POST"
+      && new URL(request.url()).pathname === "/api/v2/text-search/results"
+      && !Object.hasOwn(request.postDataJSON(), "facet_author_id")
+    ) failed.push(request.failure()?.errorText ?? "")
+  })
+  page.on("response", response => {
+    const request = response.request()
+    if (
+      request.method() === "POST"
+      && new URL(request.url()).pathname === "/api/v2/text-search/results"
+      && !Object.hasOwn(request.postDataJSON(), "facet_author_id")
+    ) completed.push(response.status())
+  })
+  return { failed, completed }
+}
+
 async function openSearch(page: Page, route = "/s%C3%B6k") {
   const response = await page.goto(route, { waitUntil: "domcontentloaded" })
   expect(response?.status()).toBe(200)
@@ -976,6 +997,101 @@ test("a direct author-filtered load keeps the unfiltered navigator and pager bas
     page: 1
   }))
   expect(resultBodies.filter(body => !Object.hasOwn(body, "facet_author_id"))).toHaveLength(1)
+})
+
+test("rapid faceted A to B to A navigation retries the current navigator snapshot", async ({
+  page,
+  request
+}) => {
+  await page.addInitScript(() => {
+    const NativeAbortController = window.AbortController
+    class DelayedAbortController extends NativeAbortController {
+      override abort(reason?: unknown) {
+        window.setTimeout(() => super.abort(reason), 500)
+      }
+    }
+    Object.defineProperty(window, "AbortController", { value: DelayedAbortController })
+  })
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "frihet", delay: 1200 }
+  })
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "overflow", delay: 1200 }
+  })
+  await openSearch(page, "/s%C3%B6k?fras=frihet&sok_filter=StrindbergA")
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
+  await request.delete(`${fixture}/_text_search/requests/results`)
+
+  await page.evaluate(async () => {
+    type VueRoot = HTMLElement & {
+      __vue_app__: { config: { globalProperties: {
+        $router: { push: (value: string) => Promise<void> }
+      } } }
+    }
+    const router = (document.querySelector("#__nuxt") as VueRoot)
+      .__vue_app__.config.globalProperties.$router
+    await router.push("/s%C3%B6k?fras=overflow&sok_filter=StrindbergA")
+    await router.push("/s%C3%B6k?fras=frihet&sok_filter=StrindbergA")
+  })
+
+  await expect.poll(async () => (await requests(request, "results")).filter(entry => (
+    entry.body.query === "frihet" && !Object.hasOwn(entry.body, "facet_author_id")
+  )).length).toBe(1)
+  await expect(page.locator(".navigator").getByRole("button")).toHaveText([
+    "Visa alla",
+    "Strindberg, August",
+    "Lagerlöf, Selma"
+  ])
+})
+
+test("removing a pending direct facet cancels its auxiliary snapshot", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "frihet", delay: 1200 }
+  })
+  const observed = observeUnfilteredResults(page)
+
+  await openSearch(page, "/s%C3%B6k?fras=frihet&sok_filter=StrindbergA")
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
+  await pushRoute(page, "/s%C3%B6k?fras=frihet")
+
+  await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true }))
+    .toBeVisible({ timeout: 5000 })
+  await expect.poll(() => observed.failed.length).toBe(1)
+  expect(observed.completed).toEqual([200])
+  expect((await requests(request, "results")).filter(entry => (
+    !Object.hasOwn(entry.body, "facet_author_id")
+  ))).toHaveLength(2)
+})
+
+test("unmounting a pending direct facet releases auxiliary ownership before re-entry", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "frihet", delay: 1200 }
+  })
+  const observed = observeUnfilteredResults(page)
+
+  await openSearch(page, "/s%C3%B6k?fras=frihet&sok_filter=StrindbergA")
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
+  await pushRoute(page, "/om/ide")
+  await expect(page).toHaveURL(/\/om\/ide$/)
+  await request.delete(`${fixture}/_text_search/delays/results`)
+
+  await pushRoute(page, "/s%C3%B6k?fras=frihet&sok_filter=StrindbergA")
+  await expect(page.locator(".navigator").getByRole("button")).toHaveText([
+    "Visa alla",
+    "Strindberg, August",
+    "Lagerlöf, Selma"
+  ])
+  await expect.poll(() => observed.failed.length).toBe(1)
+  expect(observed.completed).toEqual([200])
+  expect((await requests(request, "results")).filter(entry => (
+    !Object.hasOwn(entry.body, "facet_author_id")
+  ))).toHaveLength(2)
 })
 
 test("author filtering keeps the main search pager totals", async ({ page, request }) => {
