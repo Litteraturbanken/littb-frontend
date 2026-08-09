@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext } from "@playwright/test"
 import { parseHTML } from "linkedom"
 
 import type { operations } from "../../app/lib/api/generated/lbapi"
+import { libraryImprintYearCases } from "../helpers/library-imprint-year-cases"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 type LibrarySearchRequest = operations["v2_post_library_search"]["requestBody"]["content"]["application/json"]
@@ -343,6 +344,38 @@ test("SSR distinguishes a typed empty success from a typed primary failure", asy
     reverse: false,
     limit: 150
   }])
+})
+
+for (const item of libraryImprintYearCases) {
+  test(`SSR ${item.mode} imprint year is a stateful first-page chronology link`, async ({
+    request
+  }) => {
+    const document = parseHTML(await (await request.get(item.path)).text()).document
+    const link = document.querySelector<HTMLAnchorElement>("[data-library-imprint-year]")
+
+    expect(link?.textContent?.trim()).toBe(item.year)
+    const target = new URL(link!.href, "http://litteraturbanken.test")
+    expect(target.pathname).toBe("/bibliotek")
+    expect(target.searchParams.get("intervall")).toBe(`${item.year},${item.year}`)
+    expect(target.searchParams.has("sida")).toBe(false)
+    expect(target.searchParams.get("avancerat")).toBe("1")
+    expect(target.searchParams.get("kön")).toBe("female")
+    expect(target.searchParams.getAll("keep")).toEqual(["one", "two"])
+    expect(target.searchParams.get("filter")).toBe(
+      item.mode === "all" ? "all-pagination" : null
+    )
+    expect(target.searchParams.get("visa")).toBe(item.mode === "all" ? null : item.mode)
+    expect(target.searchParams.get("sort")).toBe(item.sort)
+    expect(target.searchParams.has("hide1800")).toBe(item.mode === "latest")
+  })
+}
+
+test("SSR leaves author lifespan text inert in the mixed all-results view", async ({ request }) => {
+  const document = parseHTML(await (await request.get("/bibliotek?filter=Selma")).text()).document
+  const row = document.querySelector("[data-library-result]")
+
+  expect(row?.textContent).toContain("1858–1940")
+  expect(row?.querySelector("[data-library-imprint-year]")).toBeNull()
 })
 
 test("SSR renders authors, works, parts, and latest from discriminated search responses", async ({

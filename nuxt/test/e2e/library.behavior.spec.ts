@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type Locator } from "@playwright/test"
 
 import type { operations } from "../../app/lib/api/generated/lbapi"
+import { libraryImprintYearCases } from "../helpers/library-imprint-year-cases"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 type LibrarySearchRequest = operations["v2_post_library_search"]["requestBody"]["content"]["application/json"]
@@ -526,6 +527,45 @@ test("Författare, Verk, and Dikt tabs navigate, render, and restore through his
     .toBeVisible()
 })
 
+for (const item of libraryImprintYearCases) {
+  test(`${item.mode} imprint year uses keyboard SPA navigation and restores through Back`, async ({
+    page,
+    request
+  }) => {
+    await page.goto(item.path, { waitUntil: "networkidle" })
+    await reset(request)
+
+    const link = page.locator("[data-library-imprint-year]").first()
+    await expect(link).toHaveText(item.year)
+    await link.focus()
+    await expect(link).toBeFocused()
+    await page.keyboard.press("Enter")
+
+    await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+      .toBe(`${item.year},${item.year}`)
+    let url = new URL(page.url())
+    expect(url.searchParams.has("sida")).toBe(false)
+    expect(url.searchParams.get("avancerat")).toBe("1")
+    expect(url.searchParams.get("kön")).toBe("female")
+    expect(url.searchParams.getAll("keep")).toEqual(["one", "two"])
+
+    const modeRequests = (await libraryV2Requests(request)).search.filter(entry => (
+      entry.body.mode === item.mode
+    ))
+    expect(modeRequests.at(-1)?.body.filters).toMatchObject({
+      year_from: Number(item.year),
+      year_to: Number(item.year)
+    })
+
+    await page.goBack()
+    await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+      .toBe("1800,2000")
+    url = new URL(page.url())
+    expect(url.searchParams.get("sida")).toBe("2")
+    expect(url.searchParams.getAll("keep")).toEqual(["one", "two"])
+  })
+}
+
 for (const mode of ["works", "latest", "epub", "pdf"] as const) {
   test(`${mode} restores delayed full title and author hover details`, async ({ page, request }) => {
     const problems: string[] = []
@@ -822,10 +862,18 @@ test("Works titles are black keyboard disclosures linked to their representation
   await expectFocusRingNotClipped(toggle)
 
   await page.keyboard.press("Tab")
+  const year = work.getByRole("link", { name: "1905", exact: true })
+  await expect(year).toBeFocused()
+  await expectKeyboardFocusRing(year)
+  await expectFocusRingNotClipped(year)
+
+  await page.keyboard.press("Tab")
   const author = work.getByRole("link", { name: "Söderberg", exact: true })
   await expect(author).toBeFocused()
   await expectKeyboardFocusRing(author)
   await expectFocusRingNotClipped(author)
+  await page.keyboard.press("Shift+Tab")
+  await expect(year).toBeFocused()
   await page.keyboard.press("Shift+Tab")
   await expect(toggle).toBeFocused()
 

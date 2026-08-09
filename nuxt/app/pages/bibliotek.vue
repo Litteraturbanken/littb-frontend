@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CSSProperties } from "vue"
-import type { LocationQuery } from "vue-router"
+import type { LocationQuery, RouteLocationRaw } from "vue-router"
 import { libraryTooltipDirective } from "~/directives/library-tooltip"
 import { createLbApiClient } from "~/lib/api/client"
 import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
@@ -1778,6 +1778,18 @@ function stateHref(state: LibraryHrefState): string {
     return `${route.path}${query ? `?${query}` : ""}`
 }
 
+function isImprintYear(year: string): boolean {
+    return /^\d{4}$/.test(year)
+}
+
+function imprintYearTo(year: string): RouteLocationRaw {
+    const query = queryFromLiveAdvancedControls()
+    delete query.sida
+    delete query.title
+    replaceQueryValue(query, "intervall", `${year},${year}`)
+    return { path: route.path, query }
+}
+
 const allTabHref = computed(() =>
     stateHref({
         mode: "all",
@@ -2657,7 +2669,16 @@ onUnmounted(() => {
                                         <td
                                             class="lg:text-right hidden lg:table-cell text-base w-28 whitespace-nowrap"
                                         >
-                                            {{ item.yearLabel }}
+                                            <NuxtLink
+                                                v-if="
+                                                    item.index !== 'author' &&
+                                                    isImprintYear(item.yearLabel)
+                                                "
+                                                data-library-imprint-year
+                                                class="text-current"
+                                                :to="imprintYearTo(item.yearLabel)"
+                                                >{{ item.yearLabel }}</NuxtLink
+                                            ><template v-else>{{ item.yearLabel }}</template>
                                         </td>
                                         <td
                                             class="lg:text-right lg:uppercase lg:text-sm lg:pl-4 order-1 lg:max-w-40"
@@ -2846,7 +2867,13 @@ onUnmounted(() => {
                                             </div>
                                         </td>
                                         <td class="text-left hidden sm:block w-28 text-base">
-                                            {{ item.year }}
+                                            <NuxtLink
+                                                v-if="isImprintYear(item.year)"
+                                                data-library-imprint-year
+                                                class="text-current"
+                                                :to="imprintYearTo(item.year)"
+                                                >{{ item.year }}</NuxtLink
+                                            ><template v-else>{{ item.year }}</template>
                                         </td>
                                         <td class="block w-44 text-right">
                                             <div
@@ -3150,7 +3177,13 @@ onUnmounted(() => {
                                         </div>
                                     </td>
                                     <td class="text-left hidden sm:block w-28 text-base">
-                                        {{ item.year }}
+                                        <NuxtLink
+                                            v-if="isImprintYear(item.year)"
+                                            data-library-imprint-year
+                                            class="text-current"
+                                            :to="imprintYearTo(item.year)"
+                                            >{{ item.year }}</NuxtLink
+                                        ><template v-else>{{ item.year }}</template>
                                     </td>
                                     <td class="block w-44 text-right">
                                         <div
@@ -3196,7 +3229,15 @@ onUnmounted(() => {
                                             ></span
                                         >
                                     </td>
-                                    <td class="hidden lg:table-cell w-28">{{ item.year }}</td>
+                                    <td class="hidden lg:table-cell w-28">
+                                        <NuxtLink
+                                            v-if="isImprintYear(item.year)"
+                                            data-library-imprint-year
+                                            class="text-current"
+                                            :to="imprintYearTo(item.year)"
+                                            >{{ item.year }}</NuxtLink
+                                        ><template v-else>{{ item.year }}</template>
+                                    </td>
                                     <td class="text-right uppercase text-sm w-40">
                                         <NuxtLink
                                             v-library-tooltip="item.authorTooltip"
@@ -3374,7 +3415,13 @@ onUnmounted(() => {
                                             :data-library-pdf-year="
                                                 currentMode === 'pdf' || undefined
                                             "
-                                            >{{ item.year }}</span
+                                            ><NuxtLink
+                                                v-if="isImprintYear(item.year)"
+                                                data-library-imprint-year
+                                                class="text-current"
+                                                :to="imprintYearTo(item.year)"
+                                                >{{ item.year }}</NuxtLink
+                                            ><template v-else>{{ item.year }}</template></span
                                         >
                                     </td>
                                     <td class="block w-44 text-left">
