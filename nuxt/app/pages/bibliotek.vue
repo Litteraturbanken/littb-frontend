@@ -1793,6 +1793,19 @@ const pdfTabHref = computed(() =>
     })
 )
 
+function relevanceSortHref(sort: RelevanceSortKey): string {
+    return stateHref({ mode: "all", filter: filter.value, sort })
+}
+
+const latestSortHref = computed(() =>
+    stateHref({
+        mode: "latest",
+        filter: filter.value,
+        sort: "nytillkommet",
+        hide1800: hide1800.value
+    })
+)
+
 function epubSortHref(sort: EpubSortKey): string {
     return stateHref({
         mode: currentMode.value === "pdf" ? "pdf" : "epub",
@@ -2455,7 +2468,7 @@ onUnmounted(() => {
                             <ul class="part_header top_header mb-4 inline-block">
                                 <li v-for="item in sorts" :key="item.key" class="inline-block sc">
                                     <a
-                                        href=""
+                                        :href="relevanceSortHref(item.key)"
                                         class="sort_item"
                                         :class="{ active: selectedSort === item.key }"
                                         :data-library-sort="item.key"
@@ -2701,7 +2714,7 @@ onUnmounted(() => {
                                         <a
                                             data-library-sort="nytillkommet"
                                             class="sort_item active"
-                                            :href="latestTabHref"
+                                            :href="latestSortHref"
                                             @click.prevent="selectSort('nytillkommet')"
                                             >Nytt</a
                                         >{{ " "
