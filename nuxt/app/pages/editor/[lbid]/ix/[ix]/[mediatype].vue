@@ -631,15 +631,16 @@ function isWorkSearchHit(value: unknown, current: EditorReaderPage): value is Wo
 
 function hasExpectedHitEnvelope(
   value: unknown,
-  state: EditorSearchState,
+  query: string,
   current: EditorReaderPage,
   offset: number,
   limit: number
 ): value is WorkSearchHitsResponse {
   return isRecord(value)
     && Array.isArray(value.items)
-    && typeof value.total_hits === "number"
-    && value.query === state.query
+    && Number.isSafeInteger(value.total_hits)
+    && Number(value.total_hits) >= 0
+    && value.query === query
     && value.media_type === current.mediaType
     && value.offset === offset
     && value.limit === limit
@@ -653,13 +654,27 @@ function isExpectedHitResponse(
   expectedHitIndex: number,
   limit: number
 ): value is WorkSearchHitsResponse {
-  if (!hasExpectedHitEnvelope(value, state, current, offset, limit)) return false
+  if (!hasExpectedHitEnvelope(value, state.query, current, offset, limit)) return false
   const totalHits = value.total_hits
-  if (!Number.isSafeInteger(totalHits) || totalHits < 0 ||
-    value.items.length > limit || expectedHitIndex >= totalHits) return false
-  return value.items.every((item, position) => isWorkSearchHit(item, current) &&
-    item.index === offset + position && item.index < totalHits) &&
-    value.items.some(item => isRecord(item) && item.index === expectedHitIndex)
+  if (value.items.length > limit || expectedHitIndex >= totalHits) return false
+  const itemsAreExpected = value.items.every((item, position) =>
+    isWorkSearchHit(item, current) && item.index === offset + position && item.index < totalHits
+  )
+  return itemsAreExpected && value.items.some(item =>
+    isRecord(item) && item.index === expectedHitIndex
+  )
+}
+
+function responseHitMatchesRoute(
+  value: WorkSearchHitsResponse,
+  state: EditorSearchState,
+  expectedHitIndex: number
+): boolean {
+  return value.items.some(item =>
+    isRecord(item) && item.index === expectedHitIndex && isRecord(item.highlight) &&
+    item.highlight.from_word_id === state.fromWordId &&
+    item.highlight.to_word_id === state.toWordId
+  )
 }
 
 const searchRequestIdentity = computed(() => JSON.stringify([
@@ -704,7 +719,7 @@ const hitFetch = await useAsyncData(
         offset,
         state.hit,
         3
-      )) {
+      ) || !responseHitMatchesRoute(result.data, state, state.hit)) {
         return { status: "error" as const, identity }
       }
       return { status: "success" as const, identity, response: result.data }
@@ -859,6 +874,28 @@ function isValidSubmittedHit(value: unknown, current: EditorReaderPage): value i
   return isWorkSearchHit(value, current)
 }
 
+type SubmittedSearchResponse =
+  | Readonly<{ status: "empty" }>
+  | Readonly<{ status: "hit", hit: WorkSearchHit }>
+  | Readonly<{ status: "invalid" }>
+
+function submittedSearchResponse(
+  value: unknown,
+  submission: WorkSearchSubmission,
+  current: EditorReaderPage
+): SubmittedSearchResponse {
+  if (!hasExpectedHitEnvelope(value, submission.query, current, 0, 1)) {
+    return { status: "invalid" }
+  }
+  if (value.total_hits === 0) {
+    return value.items.length === 0 ? { status: "empty" } : { status: "invalid" }
+  }
+  const hit = value.items[0]
+  return value.items.length === 1 && isValidSubmittedHit(hit, current) && hit.index === 0
+    ? { status: "hit", hit }
+    : { status: "invalid" }
+}
+
 async function submitWorkSearch(): Promise<void> {
   const query = workSearchQuery.value.trim()
   if (!workSearchQueryIsValid(query)) return
@@ -895,12 +932,18 @@ async function submitWorkSearch(): Promise<void> {
       }
     })
     if (!isCurrentWorkSearch(generation, controller)) return
-    const hit = result.error ? null : result.data?.items[0]
-    if (!isValidSubmittedHit(hit, current)) {
-      workSearchMessage.value = result.error ? "Sökningen kunde inte genomföras." : "Inga träffar."
+    if (result.error) {
+      workSearchMessage.value = "Sökningen kunde inte genomföras."
       return
     }
-    await navigateRawFullPath(workSearchHitHref(hit, submission))
+    const response = submittedSearchResponse(result.data, submission, current)
+    if (response.status !== "hit") {
+      workSearchMessage.value = response.status === "empty"
+        ? "Inga träffar."
+        : "Sökningen kunde inte genomföras."
+      return
+    }
+    await navigateRawFullPath(workSearchHitHref(response.hit, submission))
   } catch (searchError) {
     if (!isAbortError(searchError)) {
       workSearchMessage.value = "Sökningen kunde inte genomföras."
@@ -1020,6 +1063,8 @@ async function navigateToHit(index: number): Promise<void> {
 }
 
 function closeWorkSearchHits(): void {
+  cancelPendingHitNavigation()
+  cancelPendingWorkSearch()
   workSearchOpen.value = false
   workSearchQuery.value = ""
   workSearchMessage.value = ""

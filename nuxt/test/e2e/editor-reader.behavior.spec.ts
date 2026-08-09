@@ -276,9 +276,41 @@ test("editor Reader aborts a superseded direct-hit lookup", async ({ page, reque
       window as typeof window & { __editorDirectHitAbortSeen?: boolean }
     ).__editorDirectHitAbortSeen)).toBe(true)
     await expect(page).toHaveURL(editorSearchHit)
+
+    await page.evaluate(() => {
+      ;(window as typeof window & { __editorDirectHitAbortSeen?: boolean })
+        .__editorDirectHitAbortSeen = false
+    })
+    await navigation.getByRole("link", { name: "Gå till sista träffen", exact: true }).click()
+    await expect.poll(async () => (
+      await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    ).requests.filter((hit: { query: string }) => hit.query.includes("offset=235&limit=3"))
+    ).toHaveLength(2)
+    const closeAbortedSynchronously = await navigation.evaluate(element => {
+      const close = [...element.querySelectorAll<HTMLAnchorElement>("a")]
+        .find(link => link.textContent?.trim() === "Stäng träffvisningen")!
+      close.click()
+      return (window as typeof window & { __editorDirectHitAbortSeen?: boolean })
+        .__editorDirectHitAbortSeen
+    })
+    expect(closeAbortedSynchronously).toBe(true)
+    await expect(page).toHaveURL("/editor/lb8345227/ix/4/f")
   } finally {
     await request.delete(`${fixture}/_reader_hit_delays`)
   }
+})
+
+test("editor Reader rejects a mismatched submitted-search envelope", async ({ page }) => {
+  const initial = "/editor/lb8345227/ix/4/f"
+  await page.goto(initial, { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Sök i verket", exact: true }).click()
+  await page.getByRole("searchbox", { name: "Sök i verket" })
+    .fill("mismatched-submit-envelope")
+  await page.getByRole("button", { name: "Sök", exact: true }).click()
+
+  await expect(page.getByRole("status")).toHaveText("Sökningen kunde inte genomföras.")
+  await expect(page).toHaveURL(initial)
+  await expect(page.getByRole("navigation", { name: "Sökträffsnavigering" })).toHaveCount(0)
 })
 
 test("editor Reader keeps direct hit lookup inside the maximum API offset", async ({

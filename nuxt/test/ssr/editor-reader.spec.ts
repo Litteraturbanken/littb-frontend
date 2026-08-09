@@ -368,6 +368,22 @@ test("SSR restores a serialized Editor search hit and marquee", async ({ request
   ])
 })
 
+test("SSR rejects serialized Editor markers that do not match the fetched hit", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/editor/lb8345227/ix/4/f?s_query=brev" +
+    "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
+    "&s_include_modernized=true&hit_index=0&traff=w5_9&traffslut=w5_9"
+  )
+
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector("#search_nav")?.textContent)
+    .toContain("Sökträffen kunde inte hämtas.")
+  expect(document.querySelector(".editor-reader .markee")).toBeNull()
+})
+
 test("SSR restores a live-style bare prefix Editor search session", async ({ request }) => {
   const response = await request.get(
     "/editor/lb8345227/ix/4/f?keep=%2f&keep=%2F&show_search_work&s_query=brev" +

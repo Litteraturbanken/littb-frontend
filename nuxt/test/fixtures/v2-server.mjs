@@ -5337,6 +5337,18 @@ const server = createServer(async (request, response) => {
       malformed.items[0].highlight.to_word_id = ["w5_2"]
       return sendJson(response, 200, malformed)
     }
+    if (query.query === "mismatched-submit-envelope") {
+      const mismatched = readerSearchHitResponse(
+        readerHitWork.workId,
+        "brev",
+        query.offset,
+        query.limit,
+        query.mediaType,
+        query
+      )
+      mismatched.query = "different-query"
+      return sendJson(response, 200, mismatched)
+    }
     return sendJson(response, 200, readerSearchHitResponse(
       readerHitWork.workId,
       query.query,
