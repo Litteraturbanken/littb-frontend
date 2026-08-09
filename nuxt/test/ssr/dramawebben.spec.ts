@@ -422,6 +422,16 @@ test("SSR rejects non-string catalog media types instead of coercing them", asyn
   await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
 })
 
+test("SSR rejects catalog author IDs that cannot form a safe profile route", async ({ request }) => {
+  await setCatalogFailure(request, "unsafe-author-id-200")
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(502)
+  expectManagedShell(await response.text(), "pjäser", neutralError)
+  expect(await catalogRequests(request)).toHaveLength(1)
+  await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
+
 test("SSR accepts catalog works with omitted optional range metadata", async ({ request }) => {
   await setCatalogFailure(request, "omitted-range-field-200")
   const response = await request.get("/dramawebben/pjäser")

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { queryWithoutKey } from "../../app/lib/dramawebben-query"
+import { queryWithoutKey, queryWithoutKeys } from "../../app/lib/dramawebben-query"
 
 describe("queryWithoutKey", () => {
   test("removes only the selected key while preserving ordered repeated values", () => {
@@ -13,6 +13,20 @@ describe("queryWithoutKey", () => {
       first: "1",
       repeat: ["a", "b"],
       last: "2"
+    })
+  })
+})
+
+describe("queryWithoutKeys", () => {
+  test("removes the owned keys while preserving unrelated and repeated values", () => {
+    expect(queryWithoutKeys({
+      gender: "female",
+      repeat: ["a", "b"],
+      filterTxt: "Julie",
+      keep: "one"
+    }, new Set(["gender", "filterTxt"]))).toEqual({
+      repeat: ["a", "b"],
+      keep: "one"
     })
   })
 })

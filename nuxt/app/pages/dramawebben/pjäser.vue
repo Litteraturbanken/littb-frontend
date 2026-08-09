@@ -23,7 +23,7 @@ import dramawebbenSubpageBackground from "~/assets/img/dramawebben_fade.jpg"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import { authorProfilePath } from "~/lib/author-profile"
-import { queryWithoutKey } from "~/lib/dramawebben-query"
+import { queryWithoutKey, queryWithoutKeys } from "~/lib/dramawebben-query"
 import { catalogSourceInfoKey } from "~/lib/dramawebben-source-info"
 import { canonicalNuxtHref, validRouteSegment } from "~/lib/internal-navigation"
 import { readerSourceInfoIsOpen } from "~/lib/reader-routes"
@@ -58,6 +58,15 @@ const rangeFields: readonly { key: RangeKey, label: string }[] = [
   { key: "male_roles", label: "Antal manliga roller" },
   { key: "other_roles", label: "Antal övriga roller" }
 ]
+const catalogFilterKeys = new Set([
+  "visa",
+  "author",
+  "gender",
+  "mediatype",
+  "filterTxt",
+  "barnlitteratur",
+  ...rangeFields.map(({ key }) => key)
+])
 
 const genderOptions = [
   { value: "all", label: "Alla författare" },
@@ -84,6 +93,7 @@ function isStringOrNull(value: unknown): value is string | null {
 function isCatalogAuthor(value: unknown): value is CatalogAuthor {
   return isRecord(value)
     && typeof value.author_id === "string"
+    && validRouteSegment(value.author_id, 100)
     && typeof value.full_name === "string"
     && typeof value.name_for_index === "string"
     && isStringOrNull(value.surname)
@@ -494,6 +504,9 @@ const mediaLabel = computed(() => {
 })
 const filterText = computed(() => oneQuery(route.query.filterTxt) || "")
 const childrenOnly = computed(() => Object.prototype.hasOwnProperty.call(route.query, "barnlitteratur"))
+const catalogFiltersActive = computed(() => (
+  Object.keys(route.query).some(key => catalogFilterKeys.has(key))
+))
 const authorSearch = ref("")
 
 const mediaAuthorIds = computed<ReadonlySet<string>>(() => {
@@ -607,7 +620,7 @@ function setSelectQuery(key: "gender" | "mediatype", value: string): void {
 }
 
 function clearFilters(): void {
-  void writeRouteQuery({}, "replace")
+  void writeRouteQuery(queryWithoutKeys(latestRouteQuery(), catalogFilterKeys), "replace")
 }
 
 function chooseAuthor(author: CatalogAuthor | null) {
@@ -843,7 +856,7 @@ useHead(() => ({
           aria-label="Sök"
           @input="setQuery('filterTxt', ($event.target as HTMLInputElement).value)"
         >
-        <button v-if="Object.keys(route.query).length" type="button" class="btn btn-small clear_filter" @click="clearFilters">
+        <button v-if="catalogFiltersActive" type="button" class="btn btn-small clear_filter" @click="clearFilters">
           Rensa filter
         </button>
       </div>

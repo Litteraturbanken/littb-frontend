@@ -3442,6 +3442,7 @@ const server = createServer(async (request, response) => {
       "backslash-media-url-200",
       "dot-segment-media-url-200",
       "array-media-type-200",
+      "unsafe-author-id-200",
       "omitted-range-field-200",
       "pdf-primary-200",
       "long-mixed-media-author-200",
@@ -4578,6 +4579,12 @@ const server = createServer(async (request, response) => {
     if (dramawebbenCatalogFailure === "array-media-type-200") {
       const catalog = dramawebbenCatalogFixture()
       catalog.works[0].media[0].media_type = ["etext"]
+      return sendJson(response, 200, catalog)
+    }
+    if (dramawebbenCatalogFailure === "unsafe-author-id-200") {
+      const catalog = dramawebbenCatalogFixture()
+      catalog.authors[0].author_id = "unsafe\ud800author"
+      catalog.works[0].authors[0].author_id = "unsafe\ud800author"
       return sendJson(response, 200, catalog)
     }
     if (dramawebbenCatalogFailure === "omitted-range-field-200") {

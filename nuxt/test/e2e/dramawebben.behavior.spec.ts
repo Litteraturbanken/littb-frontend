@@ -871,6 +871,23 @@ test("a same-tick clear supersedes queued catalog filter writes", async ({ page 
   await expectPlayRows(page, dramawebbenCatalogExpected.plays)
 })
 
+test("clear removes only catalog-owned filters and stays hidden for unrelated query state", async ({
+  page
+}) => {
+  await page.goto(
+    "/dramawebben/pj%C3%A4ser?keep=one&gender=female",
+    { waitUntil: "networkidle" }
+  )
+
+  const clear = page.getByRole("button", { name: "Rensa filter", exact: true })
+  await clear.click()
+
+  await expectQuery(page, "gender", null)
+  await expectQuery(page, "keep", "one")
+  await expect(clear).toHaveCount(0)
+  await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+})
+
 test("same-page browser history supersedes a queued catalog filter write", async ({ page }) => {
   await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "networkidle" })
   await page.getByRole("button", { name: "Författare", exact: true }).click()
