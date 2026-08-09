@@ -2354,7 +2354,7 @@ watch(readerRequestIdentity, () => {
           </div>
           <p v-else-if="searchState && hitMessage" class="text">{{ hitMessage }}</p>
           <ul class="ctrls">
-            <template v-if="searchState">
+            <template v-if="searchState && hitResponse">
             <li class="arrows">
               <NuxtLink
                 v-if="previousHit"

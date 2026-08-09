@@ -2571,6 +2571,12 @@ for (const mismatch of [
     await expect(page.locator("#search_nav").getByRole("link", {
       name: /^(?:Föregående|Nästa) sökträff$/
     })).toHaveCount(0)
+    await expect(page.locator("#search_nav").getByRole("button", {
+      name: /^(?:Gå till första träffen|Gå till sista träffen|Gå direkt till träff)/u
+    })).toHaveCount(0)
+    await expect(page.locator("#search_nav").getByRole("button", {
+      name: "Stäng träffvisningen"
+    })).toHaveCount(1)
     await expect(page.locator(".reader_main .markee")).toHaveCount(0)
     expect(await readerHitRequests(request)).toEqual([expect.objectContaining({
       path: expect.stringContaining("/works/"),
@@ -3528,6 +3534,12 @@ test("a public hit failure stays local to the hydrated Reader", async ({ page, r
   )
   await expect(page.locator(".reader-search-state[aria-live], #search_nav [aria-live]"))
     .toHaveCount(1)
+  await expect(page.locator("#search_nav").getByRole("button", {
+    name: /^(?:Gå till första träffen|Gå till sista träffen|Gå direkt till träff)/u
+  })).toHaveCount(0)
+  await expect(page.locator("#search_nav").getByRole("button", {
+    name: "Stäng träffvisningen"
+  })).toHaveCount(1)
   await expect(page.locator(".reader_main .markee")).toHaveCount(0)
   await expect(page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" }))
     .toBeVisible()
