@@ -43,7 +43,7 @@ import {
 } from "~/lib/production-shortcuts"
 import {
   parseTextSearchReturnHref,
-  type TextSearchRouteQuery
+  rawTextSearchReturnQuery
 } from "~/lib/text-search-navigation"
 import {
   readerAuthorHref,
@@ -729,35 +729,8 @@ const searchState = computed(() => reader.value?.searchable
   ? parseCanonicalSearchState()
   : null
 )
-function decodeRawQueryComponent(value: string): string | null {
-  try {
-    return decodeURIComponent(value.replace(/\+/g, " "))
-  } catch {
-    return null
-  }
-}
-
-function rawReaderReturnQuery(fullPath: string): TextSearchRouteQuery {
-  const beforeHash = beforeFragment(fullPath)
-  const queryIndex = beforeHash.indexOf("?")
-  if (queryIndex < 0) return {}
-
-  const values: string[] = []
-  for (const segment of beforeHash.slice(queryIndex + 1).split("&")) {
-    const separator = segment.indexOf("=")
-    const rawKey = separator < 0 ? segment : segment.slice(0, separator)
-    const key = decodeRawQueryComponent(rawKey)
-    if (key !== "s_return") continue
-    const rawValue = separator < 0 ? "" : segment.slice(separator + 1)
-    const value = decodeRawQueryComponent(rawValue)
-    if (value === null) return { s_return: null }
-    values.push(value)
-  }
-  if (values.length === 0) return {}
-  return { s_return: values.length === 1 ? values[0]! : values }
-}
 const searchReturnHref = computed(() => parseTextSearchReturnHref(
-  rawReaderReturnQuery(rawFullPath.value)
+  rawTextSearchReturnQuery(rawFullPath.value)
 ))
 const hasActiveSearchOrigin = computed(() => searchReturnHref.value !== null &&
   typeof route.query.q === "string" && typeof route.query.hit === "string"

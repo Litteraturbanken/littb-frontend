@@ -217,6 +217,38 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
   await expect(hitNavigation).toHaveCount(0)
 })
 
+test("editor Reader keeps a serialized work-search panel open while its page changes", async ({
+  page
+}) => {
+  let releasePageRequest = () => {}
+  let notePageRequest = () => {}
+  const pageRequestStarted = new Promise<void>(resolve => {
+    notePageRequest = resolve
+  })
+  const pageRequestReleased = new Promise<void>(resolve => {
+    releasePageRequest = resolve
+  })
+  await page.route("**/api/editor/lb8345227/5/f", async route => {
+    notePageRequest()
+    await pageRequestReleased
+    await route.continue()
+  })
+  await page.goto(editorSearchHit, { waitUntil: "networkidle" })
+  const input = page.getByRole("searchbox", { name: "Sök i verket" })
+  await expect(input).toBeVisible()
+
+  try {
+    await page.getByRole("navigation", { name: "Sökträffsnavigering" })
+      .getByRole("link", { name: "Nästa sökträff" }).click()
+    await pageRequestStarted
+    await expect(input).toBeVisible()
+  } finally {
+    releasePageRequest()
+  }
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/5\/f/u)
+  await expect(input).toBeVisible()
+})
+
 test("editor Reader does not push history for the already-active search hit", async ({ page }) => {
   await page.goto(editorSearchHit, { waitUntil: "networkidle" })
   await page.evaluate(() => {

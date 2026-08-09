@@ -384,6 +384,34 @@ test("SSR rejects serialized Editor markers that do not match the fetched hit", 
   expect(document.querySelector(".editor-reader .markee")).toBeNull()
 })
 
+test("SSR rejects an Editor hit serialized for a different page", async ({ request }) => {
+  const response = await request.get(
+    "/editor/lb8345227/ix/5/f?s_query=brev" +
+    "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
+    "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2"
+  )
+
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector("#search_nav")?.textContent)
+    .toContain("Sökträffen kunde inte hämtas.")
+  expect(document.querySelector(".editor-reader .markee")).toBeNull()
+})
+
+test("SSR preserves the exact nested search-return URL", async ({ request }) => {
+  const response = await request.get(
+    "/editor/lb8345227/ix/4/f?s_query=brev" +
+    "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
+    "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2" +
+    "&s_return=%2Fs%25C3%25B6k%3Ffras%3Da%252Bb%26keep%3D%252f%26keep%3D%252F"
+  )
+
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector("#search_nav a[href^='/s']")?.getAttribute("href"))
+    .toBe("/s%C3%B6k?fras=a%2Bb&keep=%2f&keep=%2F")
+})
+
 test("SSR restores a live-style bare prefix Editor search session", async ({ request }) => {
   const response = await request.get(
     "/editor/lb8345227/ix/4/f?keep=%2f&keep=%2F&show_search_work&s_query=brev" +

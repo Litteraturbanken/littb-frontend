@@ -14,7 +14,10 @@ import {
   type KeyboardNavigationAction,
   type KeyboardNavigationDirection
 } from "~/lib/reader-keyboard-navigation"
-import { parseTextSearchReturnHref } from "~/lib/text-search-navigation"
+import {
+  parseTextSearchReturnHref,
+  rawTextSearchReturnQuery
+} from "~/lib/text-search-navigation"
 import {
   nextWorkSearchOptions,
   replaceWorkSearchQuerySegments,
@@ -490,7 +493,7 @@ function cancelPendingWorkSearch(): void {
 onBeforeUnmount(cancelPendingWorkSearch)
 watch(requestIdentity, () => {
   cancelPendingWorkSearch()
-  workSearchOpen.value = false
+  workSearchOpen.value = route.query.show_search_work !== undefined
   workSearchMessage.value = ""
 })
 
@@ -668,10 +671,12 @@ function isExpectedHitResponse(
 function responseHitMatchesRoute(
   value: WorkSearchHitsResponse,
   state: EditorSearchState,
+  current: EditorReaderPage,
   expectedHitIndex: number
 ): boolean {
   return value.items.some(item =>
-    isRecord(item) && item.index === expectedHitIndex && isRecord(item.highlight) &&
+    isRecord(item) && item.index === expectedHitIndex && item.page_index === current.pageIndex &&
+    isRecord(item.highlight) &&
     item.highlight.from_word_id === state.fromWordId &&
     item.highlight.to_word_id === state.toWordId
   )
@@ -719,7 +724,7 @@ const hitFetch = await useAsyncData(
         offset,
         state.hit,
         3
-      ) || !responseHitMatchesRoute(result.data, state, state.hit)) {
+      ) || !responseHitMatchesRoute(result.data, state, current, state.hit)) {
         return { status: "error" as const, identity }
       }
       return { status: "success" as const, identity, response: result.data }
@@ -1072,12 +1077,9 @@ function closeWorkSearchHits(): void {
 }
 
 const searchCloseHref = computed(() => searchNeutralHref(rawFullPath.value))
-const searchReturnHref = computed(() => {
-  const value = route.query.s_return
-  return parseTextSearchReturnHref({
-    s_return: Array.isArray(value) ? value.map(item => item ?? "") : value ?? undefined
-  })
-})
+const searchReturnHref = computed(() => parseTextSearchReturnHref(
+  rawTextSearchReturnQuery(rawFullPath.value)
+))
 function isEditableTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && (
     target.isContentEditable || ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)

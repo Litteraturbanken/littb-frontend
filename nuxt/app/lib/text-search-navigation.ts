@@ -36,6 +36,33 @@ function validateTextSearchReturnOrigin(value: unknown): string | null {
   return phrase.length >= 1 && phrase.length <= 200 ? value : null
 }
 
+function decodeRawQueryComponent(value: string): string | null {
+  try {
+    return decodeURIComponent(value.replaceAll("+", " "))
+  } catch {
+    return null
+  }
+}
+
+export function rawTextSearchReturnQuery(fullPath: string): TextSearchRouteQuery {
+  const beforeHash = fullPath.split("#", 1)[0] ?? ""
+  const queryIndex = beforeHash.indexOf("?")
+  if (queryIndex < 0) return {}
+
+  const values: string[] = []
+  for (const segment of beforeHash.slice(queryIndex + 1).split("&")) {
+    const separator = segment.indexOf("=")
+    const rawKey = separator < 0 ? segment : segment.slice(0, separator)
+    if (decodeRawQueryComponent(rawKey) !== "s_return") continue
+    const rawValue = separator < 0 ? "" : segment.slice(separator + 1)
+    const value = decodeRawQueryComponent(rawValue)
+    if (value === null) return { s_return: null }
+    values.push(value)
+  }
+  if (values.length === 0) return {}
+  return { s_return: values.length === 1 ? values[0]! : values }
+}
+
 export function parseTextSearchReturnHref(query: TextSearchRouteQuery): string | null {
   return validateTextSearchReturnOrigin(query.s_return)
 }
