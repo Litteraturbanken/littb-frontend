@@ -228,7 +228,9 @@ test("valid history is filtered before the 50-row limit and resolved once in sto
     { author: "StrindbergA", label: "Absolute", url: "https://evil.invalid/work" },
     { author: "StrindbergA", label: "Protocol relative", url: "//evil.invalid/work" },
     { author: "StrindbergA", label: "Backslash", url: "/bad\\path" },
+    { author: "StrindbergA", label: "Encoded backslash", url: "/%5Cevil.invalid/unsafe" },
     { author: "StrindbergA", label: "Control", url: "/bad\u0001path" },
+    { author: "StrindbergA", label: "Encoded control", url: "/bad%00path" },
     { author: "StrindbergA", label: "Malformed percent", url: "/bad%ZZpath" }
   ]
   const stored = [unsafe[0], valid[0], ...unsafe.slice(1), ...valid.slice(1)]
