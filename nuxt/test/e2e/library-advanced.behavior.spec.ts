@@ -399,7 +399,8 @@ test("download sidebar scrolling does not clip the body-level format popover", a
   await page.locator("[data-library-source-checkbox]").first().check({ force: true })
 
   const button = page.locator("[data-library-format-button]")
-  await button.click({ force: true })
+  await button.focus()
+  await page.keyboard.press("Enter")
   const popover = page.locator("body > [data-library-format-popover]")
   await expect(popover).toBeVisible()
 
@@ -409,11 +410,11 @@ test("download sidebar scrolling does not clip the body-level format popover", a
   ])
   expect(buttonBox).not.toBeNull()
   expect(popoverBox).not.toBeNull()
-  expect(Math.abs(
-    popoverBox!.x + popoverBox!.width / 2
-      - (buttonBox!.x + buttonBox!.width / 2)
-  )).toBeLessThanOrEqual(1)
+  const viewport = await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }))
+  expect(popoverBox!.x).toBeGreaterThanOrEqual(8)
+  expect(popoverBox!.x + popoverBox!.width).toBeLessThanOrEqual(viewport.width - 8)
   expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(buttonBox!.y)
+  await expect(popover).toHaveCSS("overflow-y", "visible")
   await expect(popover.locator(".arrow")).toHaveCount(1)
   await expect(button).toHaveAttribute("aria-haspopup", "dialog")
   await expect(button).toHaveAttribute("aria-controls", "library-format-popover")
@@ -424,6 +425,77 @@ test("download sidebar scrolling does not clip the body-level format popover", a
   await expect(popover).toHaveCount(0)
   await expect(button).toHaveAttribute("aria-expanded", "false")
   await expect(button).toBeFocused()
+})
+
+test("sticky download format chooser keeps controls reachable without clipping its arrow", async ({
+  page
+}) => {
+  const viewportSize = page.viewportSize()
+  expect(viewportSize).not.toBeNull()
+  await page.setViewportSize({ width: viewportSize!.width, height: 240 })
+  await page.goto("/bibliotek?avancerat=1&nedladdning=1", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  await page.locator("[data-library-source-checkbox]").first().check({ force: true })
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  await page.locator(".dl").evaluate(element => { element.scrollTop = element.scrollHeight })
+
+  const button = page.locator("[data-library-format-button]")
+  await button.focus()
+  await page.keyboard.press("Enter")
+
+  const popover = page.locator("body > [data-library-format-popover]")
+  const scrollport = popover.locator("[data-library-format-scrollport]")
+  await expect(popover).toBeVisible()
+  await expect(popover).toHaveCSS("overflow-y", "visible")
+  await expect(scrollport).toHaveCSS("overflow-y", "auto")
+  await expect.poll(() => scrollport.evaluate(element => element.scrollHeight > element.clientHeight))
+    .toBe(true)
+
+  const format = page.locator('[data-library-source-format="etext:txt"]')
+  await format.focus()
+  await expect(format).toBeFocused()
+  await expect(format).toBeInViewport()
+  await page.keyboard.press("Space")
+  await expect(format).toBeChecked()
+  await expect(format).toBeFocused()
+
+  const submit = page.locator("[data-library-download-submit]")
+  await expect(submit).toBeEnabled()
+  const pdf = page.locator('[data-library-source-format="faksimil:pdf"]')
+  await page.keyboard.press("Tab")
+  await expect(pdf).toBeFocused()
+  await expect.poll(() => scrollport.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
+  await page.evaluate(() => new Promise(requestAnimationFrame))
+  await page.keyboard.press("Tab")
+  expect(await submit.evaluate(element => document.activeElement === element)).toBe(true)
+  await expect(submit).toBeInViewport()
+
+  const [buttonBox, popoverBox, arrowBox] = await Promise.all([
+    button.boundingBox(),
+    popover.boundingBox(),
+    popover.locator(".arrow").boundingBox()
+  ])
+  const viewport = await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }))
+  expect(buttonBox).not.toBeNull()
+  expect(popoverBox).not.toBeNull()
+  expect(arrowBox).not.toBeNull()
+  expect(popoverBox!.x).toBeGreaterThanOrEqual(8)
+  expect(popoverBox!.y).toBeGreaterThanOrEqual(8)
+  expect(popoverBox!.x + popoverBox!.width).toBeLessThanOrEqual(viewport.width - 8)
+  expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(viewport.height - 8)
+  const opensBelow = popoverBox!.y >= buttonBox!.y + buttonBox!.height
+  if (opensBelow) {
+    await expect(popover).toHaveClass(/\bbottom\b/u)
+    expect(arrowBox!.y).toBeLessThan(popoverBox!.y)
+    expect(arrowBox!.y + arrowBox!.height).toBeGreaterThan(popoverBox!.y)
+  } else {
+    expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(buttonBox!.y)
+    await expect(popover).toHaveClass(/\btop\b/u)
+    expect(arrowBox!.y).toBeLessThan(popoverBox!.y + popoverBox!.height)
+    expect(arrowBox!.y + arrowBox!.height).toBeGreaterThan(popoverBox!.y + popoverBox!.height)
+  }
+  expect(arrowBox!.y).toBeGreaterThanOrEqual(0)
+  expect(arrowBox!.y + arrowBox!.height).toBeLessThanOrEqual(viewport.height)
 })
 
 test("vue-multiselect Library facets keep groups, disabled narrowing choices, and ordered route state", async ({

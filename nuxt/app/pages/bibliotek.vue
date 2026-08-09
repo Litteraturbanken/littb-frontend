@@ -606,11 +606,14 @@ const selectedSourceFormats = ref<Set<string>>(new Set())
 const formatPopoverOpen = ref(false)
 const formatButtonElement = ref<HTMLButtonElement | null>(null)
 const formatPopoverElement = ref<HTMLDivElement | null>(null)
+const formatPopoverScrollportElement = ref<HTMLDivElement | null>(null)
+const formatPopoverPlacement = ref<"top" | "bottom">("top")
 const formatPopoverStyle = ref<CSSProperties>({
     top: "0px",
     left: "0px",
     visibility: "hidden"
 })
+const formatPopoverScrollportStyle = ref<CSSProperties>({})
 const sourceFormatGroups = [
     {
         mediatype: "etext" as const,
@@ -1314,15 +1317,45 @@ function positionFormatPopover() {
     if (!formatPopoverOpen.value) return
     const button = formatButtonElement.value
     const popover = formatPopoverElement.value
-    if (!button || !popover) return
+    const scrollport = formatPopoverScrollportElement.value
+    if (!button || !popover || !scrollport) return
     const buttonBox = button.getBoundingClientRect()
     const popoverBox = popover.getBoundingClientRect()
-    const buttonLeft = Math.round(window.scrollX + buttonBox.left)
+    const viewportPadding = 8
+    const triggerGap = 10
+    const popoverChromeHeight = popoverBox.height - scrollport.clientHeight
+    const naturalHeight = scrollport.scrollHeight + popoverChromeHeight
+    const availableAbove = Math.max(0, buttonBox.top - triggerGap - viewportPadding)
+    const availableBelow = Math.max(
+        0,
+        window.innerHeight - buttonBox.bottom - triggerGap - viewportPadding
+    )
+    const placement = naturalHeight <= availableAbove || availableAbove >= availableBelow
+        ? "top"
+        : "bottom"
+    const availableHeight = placement === "top" ? availableAbove : availableBelow
+    const boundedScrollportHeight = Math.max(0, availableHeight - popoverChromeHeight)
+    const renderedHeight = Math.min(naturalHeight, availableHeight)
+    const viewportTop = placement === "top"
+        ? buttonBox.top - triggerGap - renderedHeight
+        : buttonBox.bottom + triggerGap
     const buttonWidth = Math.round(buttonBox.width)
+    const centeredLeft = buttonBox.left + buttonWidth / 2 - popoverBox.width / 2
+    const maximumLeft = Math.max(
+        viewportPadding,
+        window.innerWidth - popoverBox.width - viewportPadding
+    )
+    const viewportLeft = Math.min(Math.max(centeredLeft, viewportPadding), maximumLeft)
+    formatPopoverPlacement.value = placement
     formatPopoverStyle.value = {
-        top: `${Math.round(window.scrollY + buttonBox.top - popoverBox.height - 10)}px`,
-        left: `${Math.round(buttonLeft + buttonWidth / 2 - popover.offsetWidth / 2)}px`,
-        visibility: "visible"
+        top: `${Math.round(window.scrollY + viewportTop)}px`,
+        left: `${Math.round(window.scrollX + viewportLeft)}px`,
+        visibility: "visible",
+        marginTop: "0px"
+    }
+    formatPopoverScrollportStyle.value = {
+        maxHeight: `${Math.floor(boundedScrollportHeight)}px`,
+        overflowY: naturalHeight > availableHeight ? "auto" : "visible"
     }
 }
 
@@ -1331,7 +1364,13 @@ async function toggleFormatPopover() {
         formatPopoverOpen.value = false
         return
     }
-    formatPopoverStyle.value = { top: "0px", left: "0px", visibility: "hidden" }
+    formatPopoverStyle.value = {
+        top: "0px",
+        left: "0px",
+        visibility: "hidden",
+        marginTop: "0px"
+    }
+    formatPopoverScrollportStyle.value = {}
     formatPopoverOpen.value = true
     await nextTick()
     positionFormatPopover()
@@ -3282,120 +3321,127 @@ onUnmounted(() => {
                                     id="library-format-popover"
                                     ref="formatPopoverElement"
                                     data-library-format-popover
-                                    class="popover top block bg-white border border-gray-700"
+                                    class="popover block bg-white border border-gray-700"
+                                    :class="formatPopoverPlacement"
                                     role="dialog"
                                     aria-label="Välj format"
                                     :style="formatPopoverStyle"
                                 >
                                     <div class="arrow" aria-hidden="true" />
-                                    <div class="text-sm italic">
-                                        {{ sourceFormatAvailability.get("etext:workdb") ?? 0 }}
-                                        etext<span
-                                            v-if="
-                                                (sourceFormatAvailability.get('etext:workdb') ??
-                                                    0) !== 1
-                                            "
-                                            >er</span
-                                        >
-                                        vald<span
-                                            v-if="
-                                                (sourceFormatAvailability.get('etext:workdb') ??
-                                                    0) !== 1
-                                            "
-                                            >a</span
-                                        >,
-                                        {{ sourceFormatAvailability.get("faksimil:workdb") ?? 0 }}
-                                        faksimil<span
-                                            v-if="
-                                                (sourceFormatAvailability.get('faksimil:workdb') ??
-                                                    0) !== 1
-                                            "
-                                            >er</span
-                                        >
-                                        vald<span
-                                            v-if="
-                                                (sourceFormatAvailability.get('faksimil:workdb') ??
-                                                    0) !== 1
-                                            "
-                                            >a</span
-                                        >
-                                    </div>
-                                    <div class="flex justify-between w-64">
-                                        <div
-                                            v-for="group in sourceFormatGroups"
-                                            :key="group.mediatype"
-                                            :class="group.mediatype === 'etext' ? 'mr-4' : 'mx-2'"
-                                        >
-                                            <h3 class="uppercase text-base">{{ group.label }}</h3>
-                                            <ul class="checks">
-                                                <li
-                                                    v-for="format in group.formats"
-                                                    :key="format.type"
-                                                    class="whitespace-nowrap"
-                                                >
-                                                    <input
-                                                        :id="`source-${group.mediatype}-${format.type}`"
-                                                        :data-library-source-format="`${group.mediatype}:${format.type}`"
-                                                        type="checkbox"
-                                                        class="mb-1 mr-1"
-                                                        :checked="
-                                                            selectedSourceFormats.has(
-                                                                `${group.mediatype}:${format.type}`
-                                                            )
-                                                        "
-                                                        :disabled="
-                                                            !(
-                                                                sourceFormatAvailability.get(
-                                                                    `${group.mediatype}:${format.type}`
-                                                                ) ?? 0
-                                                            )
-                                                        "
-                                                        @change="
-                                                            toggleSourceFormat(
-                                                                `${group.mediatype}:${format.type}`
-                                                            )
-                                                        "
-                                                    >
-                                                    <label
-                                                        class="capitalize"
-                                                        :class="{
-                                                            'text-gray-500': !(
-                                                                sourceFormatAvailability.get(
-                                                                    `${group.mediatype}:${format.type}`
-                                                                ) ?? 0
-                                                            )
-                                                        }"
-                                                        :for="`source-${group.mediatype}-${format.type}`"
-                                                        >{{ format.label }}</label
-                                                    >
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <form
-                                        action="/api/download"
-                                        method="POST"
-                                        class="mt-8 mb-4 flex justify-between"
+                                    <div
+                                        ref="formatPopoverScrollportElement"
+                                        data-library-format-scrollport
+                                        :style="formatPopoverScrollportStyle"
                                     >
-                                        <input
-                                            type="hidden"
-                                            name="files"
-                                            :value="selectedDownloadFiles.join(',')"
+                                        <div class="text-sm italic">
+                                            {{ sourceFormatAvailability.get("etext:workdb") ?? 0 }}
+                                            etext<span
+                                                v-if="
+                                                    (sourceFormatAvailability.get('etext:workdb') ??
+                                                        0) !== 1
+                                                "
+                                                >er</span
+                                            >
+                                            vald<span
+                                                v-if="
+                                                    (sourceFormatAvailability.get('etext:workdb') ??
+                                                        0) !== 1
+                                                "
+                                                >a</span
+                                            >,
+                                            {{ sourceFormatAvailability.get("faksimil:workdb") ?? 0 }}
+                                            faksimil<span
+                                                v-if="
+                                                    (sourceFormatAvailability.get('faksimil:workdb') ??
+                                                        0) !== 1
+                                                "
+                                                >er</span
+                                            >
+                                            vald<span
+                                                v-if="
+                                                    (sourceFormatAvailability.get('faksimil:workdb') ??
+                                                        0) !== 1
+                                                "
+                                                >a</span
+                                            >
+                                        </div>
+                                        <div class="flex justify-between w-64">
+                                            <div
+                                                v-for="group in sourceFormatGroups"
+                                                :key="group.mediatype"
+                                                :class="group.mediatype === 'etext' ? 'mr-4' : 'mx-2'"
+                                            >
+                                                <h3 class="uppercase text-base">{{ group.label }}</h3>
+                                                <ul class="checks">
+                                                    <li
+                                                        v-for="format in group.formats"
+                                                        :key="format.type"
+                                                        class="whitespace-nowrap"
+                                                    >
+                                                        <input
+                                                            :id="`source-${group.mediatype}-${format.type}`"
+                                                            :data-library-source-format="`${group.mediatype}:${format.type}`"
+                                                            type="checkbox"
+                                                            class="mb-1 mr-1"
+                                                            :checked="
+                                                                selectedSourceFormats.has(
+                                                                    `${group.mediatype}:${format.type}`
+                                                                )
+                                                            "
+                                                            :disabled="
+                                                                !(
+                                                                    sourceFormatAvailability.get(
+                                                                        `${group.mediatype}:${format.type}`
+                                                                    ) ?? 0
+                                                                )
+                                                            "
+                                                            @change="
+                                                                toggleSourceFormat(
+                                                                    `${group.mediatype}:${format.type}`
+                                                                )
+                                                            "
+                                                        >
+                                                        <label
+                                                            class="capitalize"
+                                                            :class="{
+                                                                'text-gray-500': !(
+                                                                    sourceFormatAvailability.get(
+                                                                        `${group.mediatype}:${format.type}`
+                                                                    ) ?? 0
+                                                                )
+                                                            }"
+                                                            :for="`source-${group.mediatype}-${format.type}`"
+                                                            >{{ format.label }}</label
+                                                        >
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <form
+                                            action="/api/download"
+                                            method="POST"
+                                            class="mt-8 mb-4 flex justify-between"
                                         >
-                                        <span
-                                            data-library-download-size
-                                            class="text-sm self-center"
-                                            >{{ downloadSizeLabel }}</span
-                                        >
-                                        <button
-                                            type="submit"
-                                            data-library-download-submit
-                                            class="btn text-xs pull-right"
-                                            :disabled="selectedDownloadFiles.length === 0"
-                                        >
-                                            Hämta <i class="fa fa-download ml-2" />
-                                        </button>
-                                    </form>
+                                            <input
+                                                type="hidden"
+                                                name="files"
+                                                :value="selectedDownloadFiles.join(',')"
+                                            >
+                                            <span
+                                                data-library-download-size
+                                                class="text-sm self-center"
+                                                >{{ downloadSizeLabel }}</span
+                                            >
+                                            <button
+                                                type="submit"
+                                                data-library-download-submit
+                                                class="btn text-xs pull-right"
+                                                :disabled="selectedDownloadFiles.length === 0"
+                                            >
+                                                Hämta <i class="fa fa-download ml-2" />
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             </Teleport>
 
