@@ -1060,6 +1060,8 @@ function replacePage(page: number) {
 
 watch([displayPrimary, primaryIdentity, totalPages], ([candidate, identity, pageCount]) => {
   if (import.meta.client && candidate?.identity === identity && candidate.status === 200
+    && (state.value.facetAuthorId === null
+      || navigatorSnapshot.value?.identity === navigatorIdentity.value)
     && state.value.page > pageCount) {
     replacePage(pageCount)
   }

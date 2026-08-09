@@ -1188,6 +1188,27 @@ test("a direct author-filtered load keeps the unfiltered navigator and pager bas
   expect(resultBodies.filter(body => !Object.hasOwn(body, "facet_author_id"))).toHaveLength(1)
 })
 
+test("author-filtered reconciliation waits for the unfiltered pager basis", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "overflow:unfiltered", delay: 1200 }
+  })
+  await openSearch(
+    page,
+    "/s%C3%B6k?fras=overflow&traffsida=2&sok_filter=StrindbergA"
+  )
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+  await expect(page.locator("#toolkit .littb_pager"))
+    .toContainText("Visar verk 31-60 av 64, sida 2 av 3.")
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
+  await page.waitForTimeout(200)
+  expect(new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+  expect((await requests(request, "results")).map(entry => entry.body.page).sort()).toEqual([1, 2])
+})
+
 test("rapid faceted A to B to A navigation retries the current navigator snapshot", async ({
   page,
   request
@@ -1689,7 +1710,7 @@ test("SSR hydration is single-fetch and Reader hit destination is navigable", as
 })
 
 test("Search result return restores the exact origin and Reader hit", async ({ page }) => {
-  const origin = "/s%C3%B6k?fras=frihet&avancerad=1&forfattare=StrindbergA&utm=a+b&repeat=%2f&repeat=%2F"
+  const origin = "/s%C3%B6k?fras=overflow&traffsida=2&avancerad=1&forfattare=StrindbergA&utm=a+b&repeat=%2f&repeat=%2F"
   await openSearch(page, origin)
   const readerHref = await page.locator("#results .match a").first().getAttribute("href")
   expect(readerHref).not.toBeNull()
@@ -1705,7 +1726,7 @@ test("Search result return restores the exact origin and Reader hit", async ({ p
 
   await page.goBack({ waitUntil: "networkidle" })
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida 1")
-  await expect(page).toHaveURL(/q=frihet&hit=0&traff=w1_11/)
+  await expect(page).toHaveURL(/q=overflow&hit=0&traff=w1_11/)
   await page.reload({ waitUntil: "networkidle" })
   await expect(page.locator("#search_nav").getByRole("link", {
     name: "Tillbaka till sökningen"

@@ -366,7 +366,7 @@ const phraseHits = [
 ]
 
 function hitsForQuery(query, workId) {
-  if (query === "frihet" && workId === "lb238704") {
+  if ((query === "frihet" || query === "overflow") && workId === "lb238704") {
     return [{
       index: 0,
       page_name: "1",

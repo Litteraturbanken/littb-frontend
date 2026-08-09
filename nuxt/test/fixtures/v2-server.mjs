@@ -637,7 +637,13 @@ function textSearchSelector(operation, body) {
 }
 
 function waitForTextSearchDelay(operation, body) {
-  const delay = textSearchDelays[operation][textSearchSelector(operation, body)] || 0
+  const selector = textSearchSelector(operation, body)
+  const scopedSelector = operation === "results" && !body.facet_author_id
+    ? `${selector}:unfiltered`
+    : null
+  const delay = (scopedSelector && textSearchDelays[operation][scopedSelector])
+    || textSearchDelays[operation][selector]
+    || 0
   return new Promise(resolve => setTimeout(resolve, delay))
 }
 
@@ -2253,6 +2259,7 @@ function textSearchResultsResponse(body) {
     rich.works = rich.works.filter(work => work.author_id === body.facet_author_id)
     rich.author_facets = rich.author_facets
       .filter(facet => facet.author_id === body.facet_author_id)
+      .map(facet => ({ ...facet, count: rich.works.length }))
     rich.total_work_hits = rich.works.length
   }
   if (body.highlight_limit === 100) {
