@@ -247,6 +247,14 @@ function stalePacketSnapshot(record, evidence) {
         endLine: finding.line,
         lines: [[finding.line, finding.line]]
       })
+      continue
+    }
+    const unit = units.get(finding.unitId)
+    unit.startLine = Math.min(unit.startLine, finding.line)
+    unit.endLine = Math.max(unit.endLine, finding.line)
+    if (!unit.lines.some(([start]) => start === finding.line)) {
+      unit.lines.push([finding.line, finding.line])
+      unit.lines.sort((left, right) => left[0] - right[0])
     }
   }
   return {

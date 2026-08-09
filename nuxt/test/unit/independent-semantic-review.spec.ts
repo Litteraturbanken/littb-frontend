@@ -222,4 +222,28 @@ describe("independent semantic review runner", () => {
     expect(ledger.records[0].packetId).toContain("loadTitles")
     expect(readdirSync(resolve(root, "quality/semantic-reviews"))).toHaveLength(1)
   })
+
+  test("retires stale evidence when a packet keeps its id but changes fingerprint", () => {
+    const root = createRoot()
+    const first = run(root)
+    expect(first.result.status).toBe(0)
+    const firstRecord = JSON.parse(readFileSync(
+      resolve(root, "quality/semantic-review-ledger.json"),
+      "utf8"
+    )).records[0]
+
+    write(root, "app/lib/books.ts", "export function loadBooks() { return ['Doktor Glas', 'Gertrud'] }\n")
+    const second = run(root)
+
+    expect(second.result.status).toBe(0)
+    expect(readFileSync(second.log, "utf8").trim().split("\n")).toHaveLength(2)
+    const records = JSON.parse(readFileSync(
+      resolve(root, "quality/semantic-review-ledger.json"),
+      "utf8"
+    )).records
+    expect(records).toHaveLength(1)
+    expect(records[0].packetId).toBe(firstRecord.packetId)
+    expect(records[0].fingerprint).not.toBe(firstRecord.fingerprint)
+    expect(readdirSync(resolve(root, "quality/semantic-reviews"))).toHaveLength(1)
+  })
 })

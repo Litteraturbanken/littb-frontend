@@ -134,7 +134,10 @@ describe("semantic review ledger", () => {
       evidenceByPath: new Map()
     })).toMatchObject({ unreviewed: [packet().id] })
 
-    const staleEvidenceValue = evidence({ findings: [finding()] })
+    const staleEvidenceValue = evidence({ findings: [
+      finding(),
+      finding({ id: "finding-2", line: 25 })
+    ] })
     const staleRecord = record(staleEvidenceValue)
     expect(validateLedger({
       ledger: { version: 1, records: [staleRecord] },
