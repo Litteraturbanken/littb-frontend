@@ -350,7 +350,7 @@ test("the catalog hydrates once from SSR without a browser or legacy data reques
   expect(problems).toEqual([])
 })
 
-test("a visible infopost link owns the exact live query and close returns to the bare catalog", async ({
+test("a visible infopost link owns only its query keys and close restores catalog filters", async ({
   page,
   request
 }) => {
@@ -368,7 +368,14 @@ test("a visible infopost link owns the exact live query and close returns to the
   await expect(dialog).toBeFocused()
   const opened = new URL(page.url())
   expect(opened.hash).toBe("#dw")
-  expect([...opened.searchParams.keys()]).toEqual(["om-boken", "authorid", "titlepath"])
+  expect([...opened.searchParams.entries()]).toEqual([
+    ["visa", "pjäser"],
+    ["keep", "one"],
+    ["keep", "two"],
+    ["om-boken", ""],
+    ["authorid", "Anonym"],
+    ["titlepath", "BarnensTeater"]
+  ])
   await expect.poll(() => new URL(page.url()).searchParams.has("om-boken")).toBe(true)
 
   await page.getByRole("button", { name: "Stäng", exact: true }).click()
@@ -376,7 +383,7 @@ test("a visible infopost link owns the exact live query and close returns to the
   await expect(trigger).toBeFocused()
   const closed = new URL(page.url())
   expect(closed.pathname).toBe("/dramawebben/pj%C3%A4ser")
-  expect(closed.search).toBe("")
+  expect(closed.search).toBe("?visa=pj%C3%A4ser&keep=one&keep=two")
   expect(closed.hash).toBe("#dw")
 
   await page.goBack()
@@ -445,7 +452,8 @@ test("a long mixed-author catalog uses the clicked infopost identity without scr
   })
   const opened = new URL(page.url())
   expect(opened.hash).toBe("#dw")
-  expect(opened.searchParams.has("keep")).toBe(false)
+  expect(opened.searchParams.get("visa")).toBe("pjäser")
+  expect(opened.searchParams.get("keep")).toBe("scroll")
   expect(opened.searchParams.get("authorid")).toBe("Anonym")
   expect(opened.searchParams.get("titlepath")).toBe("BarnensTeater")
 
@@ -455,7 +463,7 @@ test("a long mixed-author catalog uses the clicked infopost identity without scr
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(before)
   const closed = new URL(page.url())
   expect(closed.hash).toBe("#dw")
-  expect(closed.search).toBe("")
+  expect(closed.search).toBe("?visa=pj%C3%A4ser&keep=scroll")
   expect(await sourceInfoRequests(request)).toEqual([{
     scope: "private",
     path: "/private-v2/works/Anonym/BarnensTeater/source-info",

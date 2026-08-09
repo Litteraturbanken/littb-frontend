@@ -14,6 +14,7 @@ import {
   PopoverPanel
 } from "@headlessui/vue"
 import { defineComponent, Fragment as VueFragment, h } from "vue"
+import type { LocationQueryRaw } from "vue-router"
 
 import DramawebbenShell from "~/components/dramawebben/DramawebbenShell.vue"
 import ReaderSourceInfoDialog from "~/components/reader/ReaderSourceInfoDialog.vue"
@@ -322,19 +323,17 @@ onBeforeUnmount(() => sourceInfoController?.abort())
 
 let sourceInfoTrigger: HTMLElement | null = null
 
-function sourceInfoQuery(authorId?: string, titlePath?: string) {
-  if (authorId && titlePath) {
-    return {
-      "om-boken": null,
-      authorid: authorId,
-      titlepath: titlePath
-    }
+function sourceInfoQuery(authorId: string, titlePath: string): LocationQueryRaw {
+  return {
+    ...route.query,
+    "om-boken": null,
+    authorid: authorId,
+    titlepath: titlePath
   }
-  return {}
 }
 
 async function pushSourceInfoQuery(
-  query: ReturnType<typeof sourceInfoQuery>,
+  query: LocationQueryRaw,
   hash: string
 ): Promise<void> {
   await router.push({ path: route.path, query })
