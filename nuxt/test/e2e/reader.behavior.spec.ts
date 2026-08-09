@@ -3415,6 +3415,47 @@ test("a delayed primary Reader request keeps the reader shell mounted until the 
   expect(problems).toEqual([])
 })
 
+test("a remounted Reader never exposes a retained page under a different page URL", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await expect(page.locator(".reader-page-position")).toHaveText("-2 av 3")
+  await navigateClient(page, "/bibliotek")
+  await expect(page).toHaveURL(/\/bibliotek$/u)
+  await expect(page.locator('[data-library-mounted="true"]')).toBeAttached()
+  await expect(page.locator(".reader_main")).toHaveCount(0)
+
+  let releaseRequest!: () => void
+  const release = new Promise<void>(resolve => { releaseRequest = resolve })
+  let markRequestStarted!: () => void
+  const requestStarted = new Promise<void>(resolve => { markRequestStarted = resolve })
+  await page.route("**/api/reader/**/-1/etext", async route => {
+    markRequestStarted()
+    await release
+    await route.continue()
+  })
+
+  await page.evaluate(nextPath => {
+    const nuxt = (window as typeof window & { useNuxtApp?: () => {
+      $router: { push: (target: string) => Promise<unknown> }
+    } }).useNuxtApp?.()
+    void nuxt?.$router.push(nextPath)
+  }, storedNextReaderPath)
+  await requestStarted
+
+  await expect(page).toHaveURL(storedNextReaderPath)
+  await expect(page.locator(".reader_main")).toHaveCount(0)
+  await expect(page.locator(".reader-page-position")).toHaveCount(0)
+  await expect(page).not.toHaveTitle("Doktor Glas sida -2 etext | Litteraturbanken")
+
+  releaseRequest()
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
+  await expect(page.locator(".reader_main .etext.txt")).toContainText("NÄSTA SIDA")
+  await expect(page).toHaveTitle("Doktor Glas sida -1 etext | Litteraturbanken")
+  expect(problems).toEqual([])
+})
+
 test("a failed primary Reader client request shows a bounded state without stale content or History", async ({
   page
 }) => {

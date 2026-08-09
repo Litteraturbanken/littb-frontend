@@ -658,10 +658,7 @@ const currentReader = computed(() => {
     ? current.reader
     : null
 })
-const retainedReaderKey = [authorParam.value, titleParam.value, mediaTypeParam.value].join(":")
-const retainedReader = import.meta.client
-  ? useState<ReaderPage | null>(`reader-retained:${retainedReaderKey}`, () => currentReader.value)
-  : shallowRef<ReaderPage | null>(currentReader.value)
+const retainedReader = shallowRef<ReaderPage | null>(currentReader.value)
 watch(data, current => {
   if (current?.status === "success") {
     retainedReader.value = current.reader
