@@ -98,6 +98,7 @@ function isCatalogAuthor(value: unknown): value is CatalogAuthor {
 function safeCatalogUrlShape(url: string): boolean {
   return url.startsWith("/")
     && !url.startsWith("//")
+    && !url.includes("\\")
     && !hasC0OrDelete(url)
     && !hasEcmaWhitespace(url)
 }

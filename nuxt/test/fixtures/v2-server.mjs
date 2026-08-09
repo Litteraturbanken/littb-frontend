@@ -3439,6 +3439,7 @@ const server = createServer(async (request, response) => {
       "status-503",
       "malformed-200",
       "unsafe-media-url-200",
+      "backslash-media-url-200",
       "omitted-range-field-200",
       "pdf-primary-200",
       "long-mixed-media-author-200",
@@ -4560,6 +4561,11 @@ const server = createServer(async (request, response) => {
     if (dramawebbenCatalogFailure === "unsafe-media-url-200") {
       const catalog = dramawebbenCatalogFixture()
       catalog.works[0].media[0].url = "javascript:alert('unsafe-media-url-probe')"
+      return sendJson(response, 200, catalog)
+    }
+    if (dramawebbenCatalogFailure === "backslash-media-url-200") {
+      const catalog = dramawebbenCatalogFixture()
+      catalog.works[0].media[0].url = "/författare/AgrellA\\escaped/titlar/Domd/sida/I/etext"
       return sendJson(response, 200, catalog)
     }
     if (dramawebbenCatalogFailure === "omitted-range-field-200") {

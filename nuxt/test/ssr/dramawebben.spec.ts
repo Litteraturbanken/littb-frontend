@@ -383,6 +383,20 @@ test("SSR rejects a structurally valid catalog with an unsafe media URL", async 
   await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
 })
 
+test("SSR rejects a catalog media URL that browsers normalize at a backslash", async ({
+  request
+}) => {
+  await setCatalogFailure(request, "backslash-media-url-200")
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(502)
+  const html = await response.text()
+  expectManagedShell(html, "pjäser", neutralError)
+  expect(html).not.toContain("AgrellA\\escaped")
+  expect(await catalogRequests(request)).toHaveLength(1)
+  await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
+
 test("SSR accepts catalog works with omitted optional range metadata", async ({ request }) => {
   await setCatalogFailure(request, "omitted-range-field-200")
   const response = await request.get("/dramawebben/pjäser")
