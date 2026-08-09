@@ -213,7 +213,7 @@ test("SSR renders the populated catalog through one private typed request", asyn
   expectManagedShell(html, "pjäser", "Dömd")
   const { document } = parseHTML(html)
   expectCatalogRootSiblings(document, false)
-  const rows = [...document.querySelectorAll("table.contenttable:not(.authors) tr")]
+  const rows = [...document.querySelectorAll("table.contenttable:not(.authors) tbody tr")]
   expect(rows.map(row => normalizedText(row.textContent))).toEqual(
     dramawebbenCatalogExpected.plays
   )
@@ -235,6 +235,33 @@ test("SSR renders the populated catalog through one private typed request", asyn
     cookie: null
   }])
   await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
+
+test("SSR gives both catalog tables stable non-visual column semantics", async ({ request }) => {
+  const plays = parseHTML(await (await request.get("/dramawebben/pjäser")).text()).document
+  const authors = parseHTML(await (await request.get(
+    "/dramawebben/pjäser?visa=f%C3%B6rfattare"
+  )).text()).document
+
+  expect(normalizedText(plays.querySelector("table.contenttable caption")?.textContent))
+    .toBe("Pjäser")
+  expect([...plays.querySelectorAll("table.contenttable thead th")].map(header => ({
+    scope: header.getAttribute("scope"),
+    text: normalizedText(header.textContent)
+  }))).toEqual([
+    { scope: "col", text: "Författare" },
+    { scope: "col", text: "Titel" },
+    { scope: "col", text: "Format" }
+  ])
+  expect(normalizedText(authors.querySelector("table.authors caption")?.textContent))
+    .toBe("Författare")
+  expect([...authors.querySelectorAll("table.authors thead th")].map(header => ({
+    scope: header.getAttribute("scope"),
+    text: normalizedText(header.textContent)
+  }))).toEqual([
+    { scope: "col", text: "Författare" },
+    { scope: "col", text: "Levnadsår" }
+  ])
 })
 
 test("SSR renders a valid catalog source-information query in the initial HTML", async ({
@@ -325,7 +352,7 @@ for (const query of [
 
     expect(response.status()).toBe(200)
     const { document } = parseHTML(await response.text())
-    const rows = [...document.querySelectorAll("table.contenttable:not(.authors) tr")]
+    const rows = [...document.querySelectorAll("table.contenttable:not(.authors) tbody tr")]
     expect(rows.map(row => normalizedText(row.textContent))).toEqual(
       dramawebbenCatalogExpected.plays
     )
@@ -362,7 +389,7 @@ test("SSR accepts catalog works with omitted optional range metadata", async ({ 
 
   expect(response.status()).toBe(200)
   const { document } = parseHTML(await response.text())
-  const rows = [...document.querySelectorAll("table.contenttable:not(.authors) tr")]
+  const rows = [...document.querySelectorAll("table.contenttable:not(.authors) tbody tr")]
   expect(rows.map(row => normalizedText(row.textContent))).toEqual(
     dramawebbenCatalogExpected.plays
   )
@@ -376,7 +403,7 @@ test("SSR keeps #dw on a PDF-primary title while its media action downloads", as
 
   expect(response.status()).toBe(200)
   const { document } = parseHTML(await response.text())
-  const firstRow = document.querySelector("table.contenttable:not(.authors) tr")
+  const firstRow = document.querySelector("table.contenttable:not(.authors) tbody tr")
   expect(firstRow?.querySelector("td.title a")?.getAttribute("href"))
     .toBe("/txt/lb-dramat-001/lb-dramat-001.pdf#dw")
   const mediaAction = firstRow?.querySelector("ul.mediatypes a")

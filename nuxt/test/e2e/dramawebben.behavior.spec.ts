@@ -56,11 +56,11 @@ async function expectOneCatalogRequest(request: APIRequestContext) {
 }
 
 async function expectPlayRows(page: Page, rows: readonly string[]) {
-  await expect(page.locator("table.contenttable:not(.authors) tr")).toHaveText([...rows])
+  await expect(page.locator("table.contenttable:not(.authors) tbody tr")).toHaveText([...rows])
 }
 
 async function expectAuthorRows(page: Page, rows: readonly string[]) {
-  await expect(page.locator("table.contenttable.authors tr")).toHaveText([...rows])
+  await expect(page.locator("table.contenttable.authors tbody tr")).toHaveText([...rows])
 }
 
 async function expectQuery(page: Page, key: string, value: string | null) {
@@ -335,7 +335,7 @@ test("the catalog hydrates once from SSR without a browser or legacy data reques
   await expect(page.locator("#mainview > .subpage")).toHaveCount(1)
   await expectClosedCatalogRootSiblings(page)
   await expectExactLinks(page, "pjäser")
-  await expect(page.locator("table.contenttable:not(.authors) tr")).toHaveText(
+  await expect(page.locator("table.contenttable:not(.authors) tbody tr")).toHaveText(
     dramawebbenCatalogExpected.plays
   )
   expect(browserCatalogRequests).toEqual([])
@@ -739,6 +739,25 @@ test("every legacy catalog filter is query-owned, local, inclusive, and clearabl
   await expectPlayRows(page, dramawebbenCatalogExpected.plays)
   await expectOneCatalogRequest(request)
   expect(problems).toEqual([])
+})
+
+test("author results compose gender and text filters and apply media filters", async ({
+  page
+}) => {
+  await page.goto(
+    "/dramawebben/pj%C3%A4ser?visa=f%C3%B6rfattare&gender=female&filterTxt=wahlenberg",
+    { waitUntil: "networkidle" }
+  )
+
+  await expectAuthorRows(page, [dramawebbenCatalogExpected.authors[3]!])
+  await page.goto(
+    "/dramawebben/pj%C3%A4ser?visa=f%C3%B6rfattare&mediatype=pdf",
+    { waitUntil: "networkidle" }
+  )
+  await expectAuthorRows(page, [
+    dramawebbenCatalogExpected.authors[0]!,
+    dramawebbenCatalogExpected.authors[2]!
+  ])
 })
 
 test("range bare-track pointers choose the nearest handle and mutate the route once", async ({

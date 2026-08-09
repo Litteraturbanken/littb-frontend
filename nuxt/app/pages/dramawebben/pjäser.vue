@@ -430,6 +430,13 @@ const filterText = computed(() => oneQuery(route.query.filterTxt) || "")
 const childrenOnly = computed(() => Object.prototype.hasOwnProperty.call(route.query, "barnlitteratur"))
 const authorSearch = ref("")
 
+const mediaAuthorIds = computed<ReadonlySet<string>>(() => {
+  if (mediaType.value === "all") return new Set()
+  return new Set((catalog.value?.works ?? [])
+    .filter(work => work.media.some(media => media.media_type === mediaType.value))
+    .flatMap(work => work.authors.map(author => author.author_id)))
+})
+
 const ranges = computed(() => Object.fromEntries(rangeFields.map(({ key }) => {
   const values = (catalog.value?.works ?? [])
     .map(work => work[key])
@@ -466,7 +473,8 @@ function selectedRange(key: RangeKey): { from: number, to: number, active: boole
 const filteredAuthors = computed(() => {
   const tokens = normalizedTokens(filterText.value)
   return (catalog.value?.authors ?? []).filter(author => {
-    if (gender.value !== "all") return author.gender === gender.value
+    if (gender.value !== "all" && author.gender !== gender.value) return false
+    if (mediaType.value !== "all" && !mediaAuthorIds.value.has(author.author_id)) return false
     if (!tokens.length) return true
     const haystack = [author.full_name, author.birth_year, author.death_year]
       .filter(Boolean).join(" ").toLocaleLowerCase("sv-SE")
@@ -756,6 +764,14 @@ useHead(() => ({
       </div>
 
       <table v-if="listType === 'pjäser'" class="contenttable">
+        <caption class="sr-only">Pjäser</caption>
+        <thead class="sr-only">
+          <tr>
+            <th scope="col">Författare</th>
+            <th scope="col">Titel</th>
+            <th scope="col">Format</th>
+          </tr>
+        </thead>
         <tbody>
           <tr v-for="work in filteredWorks" :key="work.work_id">
             <td class="author">
@@ -790,6 +806,13 @@ useHead(() => ({
       </table>
 
       <table v-else class="contenttable authors">
+        <caption class="sr-only">Författare</caption>
+        <thead class="sr-only">
+          <tr>
+            <th scope="col">Författare</th>
+            <th scope="col">Levnadsår</th>
+          </tr>
+        </thead>
         <tbody>
           <tr v-for="author in filteredAuthors" :key="author.author_id">
             <td class="author">

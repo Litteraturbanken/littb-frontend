@@ -134,7 +134,7 @@ for (const catalogCase of catalogCases) {
       ? dramawebbenCatalogExpected.authors
       : dramawebbenCatalogExpected.plays
     await expect(table).toBeVisible()
-    await expect(table.locator("tr")).toHaveText(expectedRows)
+    await expect(table.locator("tbody tr")).toHaveText(expectedRows)
 
     if (catalogCase.openRanges) {
       const rangeButton = page.getByRole("button", { name: "Akter och roller", exact: true })
