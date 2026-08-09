@@ -316,6 +316,64 @@ test("a delayed advanced request cannot replace a newer route-owned result", asy
   await expect(page.getByRole("link", { name: "Röda rummet" })).toHaveCount(0)
 })
 
+test("advanced facets retain a filter still waiting in the debounce window", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?avancerat=1&keep=ja", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  await resetRequests(request)
+
+  await page.locator("[data-library-filter]").fill("Senaste")
+  await page.locator("[data-library-gender]").selectOption("female")
+
+  await expect.poll(() => {
+    const params = new URL(page.url()).searchParams
+    return {
+      filter: params.get("filter"),
+      gender: params.get("kön"),
+      keep: params.get("keep")
+    }
+  }).toEqual({ filter: "Senaste", gender: "female", keep: "ja" })
+  await expect.poll(async () => (await relevanceQueries(request)).length).toBe(1)
+  expect((await relevanceQueries(request)).at(-1)?.body.filters).toEqual(libraryFilters({
+    query: "Senaste",
+    gender: "female"
+  }))
+})
+
+test("overlapping advanced facet commits compose from the live controls", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?avancerat=1&keep=ja", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  await resetRequests(request)
+
+  await page.evaluate(() => {
+    const gender = document.querySelector<HTMLSelectElement>("[data-library-gender]")!
+    gender.value = "female"
+    gender.dispatchEvent(new Event("change", { bubbles: true }))
+    const from = document.querySelector<HTMLInputElement>(
+      "[data-library-chronology-range] input[type=range]"
+    )!
+    from.value = "1900"
+    from.dispatchEvent(new Event("input", { bubbles: true }))
+    from.dispatchEvent(new Event("change", { bubbles: true }))
+  })
+
+  await expect.poll(() => {
+    const params = new URL(page.url()).searchParams
+    return {
+      gender: params.get("kön"),
+      interval: params.get("intervall"),
+      keep: params.get("keep")
+    }
+  }).toEqual({ gender: "female", interval: "1900,2026", keep: "ja" })
+  await expect.poll(async () => (await relevanceQueries(request)).at(-1)?.body.filters)
+    .toEqual(libraryFilters({ gender: "female", year_from: 1900, year_to: 2026 }))
+})
+
 test("category, publisher, about-author, and narrowing collections restore through history", async ({
   page,
   request

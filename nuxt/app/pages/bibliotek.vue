@@ -1509,23 +1509,43 @@ function syncAdvancedControls(state: LibraryRouteState) {
     }
 }
 
-async function pushAdvancedQuery(
-    key:
-        | "kön"
-        | "keywords"
-        | "keywords_aux"
-        | "about_authors"
-        | "mediatypes"
-        | "languages"
-        | "intervall",
-    value: string
-) {
-    invalidateIntent()
-    const query = Object.fromEntries(
-        Object.entries(route.query).filter(([name]) => name !== key)
-    ) as LocationQuery
-    delete query.sida
+type AdvancedQueryKey =
+    | "kön"
+    | "keywords"
+    | "keywords_aux"
+    | "about_authors"
+    | "mediatypes"
+    | "languages"
+    | "intervall"
+
+function replaceQueryValue(query: LocationQuery, key: string, value: string): void {
+    Reflect.deleteProperty(query, key)
     if (value) query[key] = value
+}
+
+function queryFromLiveAdvancedControls(): LocationQuery {
+    const query: LocationQuery = { ...route.query }
+    const state = currentState()
+    replaceQueryValue(query, "filter", state.filter)
+    replaceQueryValue(query, "kön", state.advancedFilters.gender)
+    replaceQueryValue(query, "keywords", state.advancedFilters.keywords.join(","))
+    replaceQueryValue(
+        query,
+        "keywords_aux",
+        state.advancedFilters.narrowingKeywords.join(",")
+    )
+    replaceQueryValue(query, "about_authors", state.advancedFilters.aboutAuthorIds.join(","))
+    replaceQueryValue(query, "mediatypes", state.advancedFilters.media.join(","))
+    replaceQueryValue(query, "languages", state.advancedFilters.languages.join(","))
+    replaceQueryValue(query, "intervall", state.advancedFilters.yearRange?.join(",") ?? "")
+    return query
+}
+
+async function pushAdvancedQuery(key: AdvancedQueryKey, value: string) {
+    const query = queryFromLiveAdvancedControls()
+    invalidateIntent()
+    delete query.sida
+    replaceQueryValue(query, key, value)
     await router.push({ path: route.path, query })
 }
 
