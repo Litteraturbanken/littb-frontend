@@ -2,7 +2,7 @@
 import type { CSSProperties } from "vue"
 import type { LocationQuery, RouteLocationRaw } from "vue-router"
 import { libraryTooltipDirective } from "~/directives/library-tooltip"
-import { createLbApiClient } from "~/lib/api/client"
+import { useLbApiClient } from "~/composables/useLbApiClient"
 import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
 import { legacyPaginationItems } from "~/lib/legacy-pagination"
 import {
@@ -134,7 +134,6 @@ const partSorts: Array<{ key: PartSortKey; label: string }> = [
 
 const route = useRoute()
 const router = useRouter()
-const config = useRuntimeConfig()
 const { rememberLibraryHref } = useLibraryNavigation()
 
 watch(
@@ -418,7 +417,7 @@ function emptyPageData(mode: LibraryMode, failed = false): LibraryPageState {
     }
 }
 
-const libraryClient = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
+const libraryClient = useLbApiClient()
 
 async function fetchLibraryCount(
     mode: LibraryCountMode,

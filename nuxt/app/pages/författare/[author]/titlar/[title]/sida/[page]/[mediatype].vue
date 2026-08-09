@@ -11,6 +11,7 @@ import {
 import { readerManifestPartAuthorLabel } from "#shared/utils/reader-author"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
+import { useLbApiClient } from "~/composables/useLbApiClient"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import { usefulLibraryTooltipText } from "~/lib/library-tooltip"
@@ -83,6 +84,7 @@ const router = useRouter()
 const vReaderTitleTooltip = readerTitleTooltipDirective
 const nuxtApp = useNuxtApp()
 const config = useRuntimeConfig()
+const runtimeClient = useLbApiClient()
 const requestUrl = useRequestURL()
 const initialRawFullPath = useState(
   `reader-initial-raw-full-path:${route.path}`,
@@ -560,10 +562,7 @@ const sourceInfoFetch = await useAsyncData<CurrentReaderSourceInfo>(
       let similarWorks: SimilarWork[] = []
       if (sourceInfo.mediaType === "etext" || sourceInfo.mediaType === "faksimil") {
         try {
-          const client = createLbApiClient(
-            import.meta.server ? config.apiBase : config.public.apiBase
-          )
-          const result = await client.GET("/works/{work_id}/similar", {
+          const result = await runtimeClient.GET("/works/{work_id}/similar", {
             params: {
               path: { work_id: sourceInfo.workId },
               query: { media_type: sourceInfo.mediaType }
@@ -1012,10 +1011,7 @@ const hitFetch = await useAsyncData(
         const requestSignal = AbortSignal.any([signal, controller.signal])
         const offset = Math.max(state.hit - 1, 0)
         try {
-          const client = createLbApiClient(
-            import.meta.server ? config.apiBase : config.public.apiBase
-          )
-          const result = await client.GET("/works/{work_id}/search-hits", {
+          const result = await runtimeClient.GET("/works/{work_id}/search-hits", {
             signal: requestSignal,
             params: {
               path: { work_id: currentReader.reader.workId },

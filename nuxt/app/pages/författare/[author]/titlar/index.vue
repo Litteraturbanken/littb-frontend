@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AuthorWorksContent from "~/components/author/AuthorWorksContent.vue"
 import ordinaryBackground from "~/assets/img/forf2_bkg.jpg"
-import { createLbApiClient } from "~/lib/api/client"
+import { useLbApiClient } from "~/composables/useLbApiClient"
 import {
   isAuthorWorksResponse,
   type AuthorWorksResponse
@@ -24,14 +24,13 @@ definePageMeta({
 })
 
 const route = useRoute()
-const config = useRuntimeConfig()
 const authorId = computed(() => {
   const value = Array.isArray(route.params.author) ? route.params.author[0] : route.params.author
   return typeof value === "string" ? value : ""
 })
 const currentIdentity = computed(() => `titlar:${authorId.value}`)
 const asyncKey = computed(() => `author-works:${currentIdentity.value}`)
-const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
+const client = useLbApiClient()
 
 const { data } = await useAsyncData<WorksPageResponse>(
   asyncKey,

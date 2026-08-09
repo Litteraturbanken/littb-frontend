@@ -443,6 +443,76 @@ function auditLegacyReaderEditorMetadata(record) {
   auditTemplateNode(record.template.ast)
 }
 
+function originatesFromRuntimeConfig(node, semantic, atNode, seen = new Set()) {
+  const expression = unwrapExpression(node)
+  if (ts.isCallExpression(expression)) {
+    return callIdentity(expression.expression) === "useRuntimeConfig"
+  }
+  if (!ts.isIdentifier(expression) || seen.has(expression.text)) return false
+  seen.add(expression.text)
+  const entry = resolveDeclaration(expression.text, atNode, semantic)
+  const initializer = declarationInitializer(entry, atNode, semantic)
+  return Boolean(initializer)
+    && initializer.extracted === null
+    && originatesFromRuntimeConfig(initializer.expression, semantic, atNode, seen)
+}
+
+function directBindingPropertyName(binding) {
+  if (!ts.isBindingElement(binding)) return null
+  if (binding.propertyName
+    && (ts.isIdentifier(binding.propertyName)
+      || ts.isStringLiteralLike(binding.propertyName))) {
+    return binding.propertyName.text
+  }
+  if (binding.propertyName && ts.isComputedPropertyName(binding.propertyName)) {
+    const expression = unwrapExpression(binding.propertyName.expression)
+    return ts.isStringLiteralLike(expression) ? expression.text : "__dynamic__"
+  }
+  return ts.isIdentifier(binding.name) ? binding.name.text : null
+}
+
+function auditPrivateApiBasePageAccess(record) {
+  if (!record.relativePath.startsWith("app/pages/")) return
+  for (const unit of record.units) {
+    const semantic = buildSemantic(unit)
+    visitAst(unit.sourceFile, node => {
+      const elementArgument = ts.isElementAccessExpression(node)
+        ? unwrapExpression(node.argumentExpression)
+        : null
+      const isPrivateAccess = originatesFromRuntimeConfig(
+        ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)
+          ? node.expression
+          : node,
+        semantic,
+        node
+      ) && ((ts.isPropertyAccessExpression(node) && node.name.text === "apiBase")
+        || (ts.isElementAccessExpression(node)
+          && (!elementArgument
+            || !ts.isStringLiteralLike(elementArgument)
+            || elementArgument.text === "apiBase")))
+      const owner = ts.isBindingElement(node)
+        && ts.isObjectBindingPattern(node.parent)
+        && ts.isVariableDeclaration(node.parent.parent)
+        ? node.parent.parent
+        : null
+      const bindingProperty = directBindingPropertyName(node)
+      const isPrivateBinding = owner
+        && (bindingProperty === "apiBase" || bindingProperty === "__dynamic__")
+        && owner.initializer
+        && originatesFromRuntimeConfig(owner.initializer, semantic, node)
+      if (!isPrivateAccess && !isPrivateBinding) return
+      addViolation(
+        record.relativePath,
+        lineNumberAt(
+          record.source,
+          unit.sourceOffset + node.getStart(unit.sourceFile)
+        ),
+        "authored pages must use the contextual lb-api client for private backend access"
+      )
+    })
+  }
+}
+
 function visitAst(node, callback) {
   callback(node)
   ts.forEachChild(node, child => visitAst(child, callback))
@@ -3131,6 +3201,7 @@ const capabilityRegistry = buildCapabilityRegistry(sourceRecords)
 for (const record of sourceRecords) {
   auditComments(record)
   auditLegacyReaderEditorMetadata(record)
+  auditPrivateApiBasePageAccess(record)
   auditVueTemplate(record)
   auditChronologyRangeOwnership(record)
   auditCrossEngineRangePointerSupport(record)

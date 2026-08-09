@@ -2,12 +2,34 @@ import createClient, { type ClientOptions } from "openapi-fetch"
 
 import type { paths } from "./generated/lbapi"
 
-const CORRELATION_TOKEN_PATTERN
+const CORRELATION_ID_PATTERN
   = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u
+const TRACEPARENT_PATTERN
+  = /^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/u
 
 export interface ApiFailureCorrelation {
   correlationToken: string | null
   errorType: "ApiNetworkError" | "ApiResponseError"
+}
+
+export interface ApiRequestCorrelation {
+  requestId: string
+  traceparent: string
+}
+
+export function normalizeApiRequestCorrelation(
+  value: unknown
+): ApiRequestCorrelation | undefined {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return undefined
+  }
+  const { requestId, traceparent } = value as Record<string, unknown>
+  return typeof requestId === "string"
+    && CORRELATION_ID_PATTERN.test(requestId)
+    && typeof traceparent === "string"
+    && TRACEPARENT_PATTERN.test(traceparent)
+    ? { requestId, traceparent }
+    : undefined
 }
 
 let apiFailureObserver:
@@ -51,7 +73,7 @@ export function createLbApiClient(
     if (response.status >= 500) {
       const candidate = response.headers.get("x-lb-observability-correlation")
       reportApiFailure({
-        correlationToken: candidate && CORRELATION_TOKEN_PATTERN.test(candidate)
+        correlationToken: candidate && CORRELATION_ID_PATTERN.test(candidate)
           ? candidate
           : null,
         errorType: "ApiResponseError"
@@ -64,4 +86,19 @@ export function createLbApiClient(
     baseUrl: baseUrl.replace(/\/$/, ""),
     fetch: fetchWithCorrelation
   })
+}
+
+export function createCorrelatedLbApiClient(
+  baseUrl: string,
+  correlation: ApiRequestCorrelation | undefined,
+  customFetch?: ClientOptions["fetch"]
+): ReturnType<typeof createLbApiClient> {
+  if (!correlation) return createLbApiClient(baseUrl, customFetch)
+
+  const fetchWithRequestCorrelation = (request: Request): Promise<Response> => {
+    request.headers.set("x-request-id", correlation.requestId)
+    request.headers.set("traceparent", correlation.traceparent)
+    return (customFetch ?? globalThis.fetch)(request)
+  }
+  return createLbApiClient(baseUrl, fetchWithRequestCorrelation)
 }

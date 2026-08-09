@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AboutPageShell from "../../components/about/AboutPageShell.vue"
-import { createLbApiClient } from "../../lib/api/client"
+import { useLbApiClient } from "../../composables/useLbApiClient"
 import type { components } from "../../lib/api/generated/lbapi"
 import { authorProfilePath, encodeRfc3986Segment } from "../../lib/author-profile"
 
@@ -19,10 +19,7 @@ useHead({
   bodyAttrs: { class: "focus page-about ready" }
 })
 
-const config = useRuntimeConfig()
-const client = createLbApiClient(
-  import.meta.server ? config.apiBase : config.public.apiBase
-)
+const client = useLbApiClient()
 
 function reportFailure(resource: string, error: unknown) {
   if (import.meta.dev) console.error(`Statistics ${resource} request failed`, error)

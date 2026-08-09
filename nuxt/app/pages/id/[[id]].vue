@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { createLbApiClient } from "../../lib/api/client"
+import { useLbApiClient } from "../../composables/useLbApiClient"
 import type { components } from "../../lib/api/generated/lbapi"
 
 type LookupBody =
@@ -59,10 +59,7 @@ function bodyForRouteValue(value: string): LookupBody | null {
 }
 
 const route = useRoute()
-const config = useRuntimeConfig()
-const api = createLbApiClient(
-  import.meta.server ? config.apiBase : config.public.apiBase
-)
+const api = useLbApiClient()
 
 function postLookup(body: LookupBody, signal?: AbortSignal) {
   // openapi-fetch 0.17's Writable helper drops required null-only properties.

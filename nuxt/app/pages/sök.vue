@@ -7,7 +7,7 @@ import type {
   SearchMultiSelectOptionGroup
 } from "~/components/search/SearchMultiSelect.vue"
 import SearchMultiSelect from "~/components/search/SearchMultiSelect.vue"
-import { createLbApiClient } from "~/lib/api/client"
+import { useLbApiClient } from "~/composables/useLbApiClient"
 import {
   createTextSearchRequestOwner,
   type TextSearchOwnedRequest
@@ -138,64 +138,8 @@ const categoryOptions = [
 const route = useRoute()
 const router = useRouter()
 const nuxtApp = useNuxtApp()
-const config = useRuntimeConfig()
 const requestUrl = useRequestURL()
-const requestFetch = useRequestFetch()
-const contextualFetch = requestFetch as unknown as {
-  (
-    input: RequestInfo | URL,
-    init?: RequestInit & { ignoreResponseError?: boolean, retry?: number }
-  ): Promise<unknown>
-  raw?: (
-    input: RequestInfo | URL,
-    init?: RequestInit & { ignoreResponseError?: boolean, retry?: number }
-  ) => Promise<Response & { _data?: unknown }>
-}
-const generatedClientFetch: typeof globalThis.fetch = async (input, init) => {
-  const request = input instanceof Request ? input : new Request(input, init)
-  const body = request.method === "GET" || request.method === "HEAD"
-    ? undefined
-    : await request.clone().text()
-  const requestOptions = {
-    method: request.method,
-    headers: request.headers,
-    body,
-    signal: request.signal,
-    retry: 0
-  } satisfies RequestInit & { retry: number }
-  if (contextualFetch.raw) {
-    const raw = await contextualFetch.raw(request.url, {
-      ...requestOptions,
-      ignoreResponseError: true
-    })
-    return new Response(JSON.stringify(raw._data), {
-      status: raw.status,
-      statusText: raw.statusText,
-      headers: raw.headers
-    })
-  }
-  try {
-    const data = await contextualFetch(request.url, requestOptions)
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: { "content-type": "application/json; charset=utf-8" }
-    })
-  } catch (error) {
-    const response = (error as {
-      response?: Response & { _data?: unknown }
-    }).response
-    if (!response) throw error
-    return new Response(JSON.stringify(response._data), {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers
-    })
-  }
-}
-const client = createLbApiClient(
-  import.meta.server ? config.apiBase : config.public.apiBase,
-  generatedClientFetch
-)
+const client = useLbApiClient()
 const rawQuery = computed(() => route.query as unknown as TextSearchRouteQuery)
 const state = computed(() => parseTextSearchRouteQuery(rawQuery.value))
 const initialSearchFullPath = useState(

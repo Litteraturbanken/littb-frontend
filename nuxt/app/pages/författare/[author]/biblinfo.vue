@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import ordinaryBackground from "~/assets/img/forf2_bkg.jpg"
 import { createLbApiClient } from "~/lib/api/client"
+import { useLbApiClient } from "~/composables/useLbApiClient"
 import {
   authorProfilePath,
   createAuthorProfileView,
@@ -74,7 +75,7 @@ const authorId = computed(() => {
 })
 const currentIdentity = computed(() => `biblinfo:${authorId.value}`)
 const asyncKey = computed(() => `author-biblinfo:${currentIdentity.value}`)
-const initialClient = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
+const initialClient = useLbApiClient()
 
 async function loadInitial(author: string, identity: string): Promise<InitialResult> {
   let profileResult

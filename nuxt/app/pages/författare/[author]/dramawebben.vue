@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AuthorProfileContent from "~/components/author/AuthorProfileContent.vue"
-import { createLbApiClient } from "~/lib/api/client"
+import { useLbApiClient } from "~/composables/useLbApiClient"
 import {
   authorProfilePath,
   createAuthorProfileView,
@@ -27,7 +27,6 @@ definePageMeta({
 })
 
 const route = useRoute()
-const config = useRuntimeConfig()
 const authorId = computed(() => {
   const value = Array.isArray(route.params.author) ? route.params.author[0] : route.params.author
   return typeof value === "string" ? value : ""
@@ -43,7 +42,7 @@ watch(currentIdentity, identity => {
   if (pendingIdentity.value === identity) pendingIdentity.value = null
 }, { flush: "sync" })
 const acceptedIdentity = computed(() => pendingIdentity.value ?? currentIdentity.value)
-const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
+const client = useLbApiClient()
 const profileHandoffs = useState<Partial<Record<string, ProfileResponse>>>(
   "author-profile-handoffs",
   () => ({})

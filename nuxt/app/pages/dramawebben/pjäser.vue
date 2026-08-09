@@ -20,7 +20,7 @@ import DramawebbenShell from "~/components/dramawebben/DramawebbenShell.vue"
 import ReaderSourceInfoDialog from "~/components/reader/ReaderSourceInfoDialog.vue"
 import dramawebbenBackground from "~/assets/img/dramawebben.jpg"
 import dramawebbenSubpageBackground from "~/assets/img/dramawebben_fade.jpg"
-import { createLbApiClient } from "~/lib/api/client"
+import { useLbApiClient } from "~/composables/useLbApiClient"
 import type { components } from "~/lib/api/generated/lbapi"
 import { authorProfilePath } from "~/lib/author-profile"
 import { queryWithoutKey, queryWithoutKeys } from "~/lib/dramawebben-query"
@@ -274,9 +274,8 @@ function sourceInfoIdentityFromMedia(media: CatalogMedia) {
 
 const route = useRoute()
 const router = useRouter()
-const config = useRuntimeConfig()
 const requestFetch = useRequestFetch()
-const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
+const client = useLbApiClient()
 
 type QueryWriteMode = "push" | "replace"
 

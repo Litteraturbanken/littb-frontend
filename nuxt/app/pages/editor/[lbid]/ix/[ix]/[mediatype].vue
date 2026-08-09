@@ -3,6 +3,7 @@ import type { EditorReaderPage } from "#shared/types/editor-reader"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import { createLbApiClient } from "~/lib/api/client"
+import { useLbApiClient } from "~/composables/useLbApiClient"
 import type { components } from "~/lib/api/generated/lbapi"
 import {
   markEditorEtextHtml,
@@ -68,6 +69,7 @@ const requestIdentity = computed(() => JSON.stringify([
 ]))
 const requestFetch = useRequestFetch()
 const config = useRuntimeConfig()
+const runtimeClient = useLbApiClient()
 function requestPage(): Promise<EditorReaderPage> {
   return requestFetch<EditorReaderPage>(
     `/api/editor/${encodeURIComponent(workId.value)}/${index.value}/${alias.value}`,
@@ -700,8 +702,7 @@ const hitFetch = await useAsyncData(
     const controller = new AbortController()
     hitFetchController = controller
     try {
-      const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
-      const result = await client.GET("/works/{work_id}/search-hits", {
+      const result = await runtimeClient.GET("/works/{work_id}/search-hits", {
         signal: AbortSignal.any([signal, controller.signal]),
         params: {
           path: { work_id: current.workId },
@@ -919,8 +920,7 @@ async function submitWorkSearch(): Promise<void> {
   workSearchController = controller
   workSearchMessage.value = ""
   try {
-    const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
-    const result = await client.GET("/works/{work_id}/search-hits", {
+    const result = await runtimeClient.GET("/works/{work_id}/search-hits", {
       signal: controller.signal,
       params: {
         path: { work_id: current.workId },

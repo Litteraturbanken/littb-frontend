@@ -781,6 +781,89 @@ input[type="range"]::-moz-range-thumb { pointer-events: auto; }
 
   test.each([
     [
+      "direct generated client",
+      [
+        "const config = useRuntimeConfig()",
+        "createLbApiClient(config.apiBase)"
+      ].join("\n")
+    ],
+    [
+      "request fetch against the private origin",
+      [
+        "const config = useRuntimeConfig()",
+        "const requestFetch = useRequestFetch()",
+        "requestFetch(`${config.apiBase}/stats`)"
+      ].join("\n")
+    ],
+    [
+      "aliased bracket access",
+      [
+        "const config = useRuntimeConfig()",
+        "const alias = config",
+        "createLbApiClient(alias[\"apiBase\"])"
+      ].join("\n")
+    ],
+    [
+      "destructured private origin",
+      [
+        "const { apiBase: privateBase } = useRuntimeConfig()",
+        "createLbApiClient(privateBase)"
+      ].join("\n")
+    ],
+    [
+      "dynamic private-origin access",
+      [
+        "const config = useRuntimeConfig()",
+        "const key = getRuntimeKey()",
+        "createLbApiClient(config[key])"
+      ].join("\n")
+    ],
+    [
+      "dynamic private-origin destructuring",
+      [
+        "const config = useRuntimeConfig()",
+        "const key = getRuntimeKey()",
+        "const { [key]: privateBase } = config",
+        "createLbApiClient(privateBase)"
+      ].join("\n")
+    ]
+  ])("rejects %s in an authored page", (_label, source) => {
+    const root = createTree()
+    const path = "app/pages/unsafe.vue"
+    writeSource(root, path, `<script setup lang="ts">\n${source}\n</script>`)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}:`)
+    expect(result.stderr).toContain(
+      "authored pages must use the contextual lb-api client for private backend access"
+    )
+  })
+
+  test("allows unrelated and public apiBase properties in authored pages", () => {
+    const root = createTree()
+    writeSource(root, "app/pages/safe.vue", [
+      "<script setup lang=\"ts\">",
+      "const config = useRuntimeConfig()",
+      "const model = { apiBase: \"display value\" }",
+      "const key = \"apiBase\"",
+      "void model.apiBase",
+      "void model[\"apiBase\"]",
+      "void model[key]",
+      "createLbApiClient(config.public.apiBase)",
+      "createLbApiClient(config.public[\"apiBase\"])",
+      "</script>"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test.each([
+    [
       "app/lib/template-bypass.ts",
       "const id = getId()\nfetch(`/count_pages/${id}/etext`)"
     ],
