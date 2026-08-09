@@ -800,6 +800,26 @@ test("play gender filtering includes matching secondary authors", async ({ page,
   ])
 })
 
+test("same-tick catalog filters merge into one intended route state", async ({ page }) => {
+  await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Akter och roller", exact: true }).click()
+
+  await page.evaluate(() => {
+    const range = document.querySelector<HTMLInputElement>(
+      'input[aria-label="Antal sidor från"]'
+    )!
+    const filter = document.querySelector<HTMLInputElement>('input[aria-label="Sök"]')!
+    range.value = "90"
+    range.dispatchEvent(new Event("change", { bubbles: true }))
+    filter.value = "Julie"
+    filter.dispatchEvent(new Event("input", { bubbles: true }))
+  })
+
+  await expectQuery(page, "number_of_pages", "90,120")
+  await expectQuery(page, "filterTxt", "Julie")
+  await expectPlayRows(page, [dramawebbenCatalogExpected.plays[2]!])
+})
+
 test("range bare-track pointers choose the nearest handle and mutate the route once", async ({
   page
 }) => {

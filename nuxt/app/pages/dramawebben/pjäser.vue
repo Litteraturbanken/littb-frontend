@@ -519,11 +519,26 @@ const filteredWorks = computed(() => {
   })
 })
 
-async function setQuery(key: string, value: string | null, push = false) {
+let intendedCatalogQuery: LocationQueryRaw | null = null
+let catalogQueryWrite: Promise<void> = Promise.resolve()
+
+async function setQuery(key: string, value: string | null, push = false): Promise<void> {
+  const baseQuery = intendedCatalogQuery ?? route.query
   const query = value === null || value === "" || value === "all"
-    ? queryWithoutKey(route.query, key)
-    : { ...route.query, [key]: value }
-  await (push ? router.push({ path: route.path, query }) : router.replace({ path: route.path, query }))
+    ? queryWithoutKey(baseQuery, key)
+    : { ...baseQuery, [key]: value }
+  const path = route.path
+  intendedCatalogQuery = query
+  const navigate = async () => {
+    if (route.path !== path) return
+    await (push ? router.push({ path, query }) : router.replace({ path, query }))
+  }
+  catalogQueryWrite = catalogQueryWrite
+    .catch(() => {})
+    .then(navigate)
+    .catch(() => {})
+  await catalogQueryWrite
+  if (intendedCatalogQuery === query) intendedCatalogQuery = null
 }
 
 function chooseAuthor(author: CatalogAuthor | null) {
@@ -753,7 +768,7 @@ useHead(() => ({
         <input
           class="filter"
           :value="filterText"
-          autofocus
+          :autofocus="!sourceInfoOpen"
           placeholder="Sök"
           aria-label="Sök"
           @input="setQuery('filterTxt', ($event.target as HTMLInputElement).value)"

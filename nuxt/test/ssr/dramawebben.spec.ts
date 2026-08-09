@@ -278,6 +278,7 @@ test("SSR renders a valid catalog source-information query in the initial HTML",
   expect(dialog?.getAttribute("aria-modal")).toBe("true")
   expect(normalizedText(dialog?.textContent)).toContain("Affärer")
   expect(dialog?.querySelector(".error")).toBeNull()
+  expect(document.querySelector("input.filter")?.hasAttribute("autofocus")).toBe(false)
   expect(await sourceInfoRequests(request)).toEqual([{
     scope: "private",
     path: "/private-v2/works/Alml%C3%B6fN/Affarer/source-info",
