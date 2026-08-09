@@ -275,7 +275,6 @@ function queryList<T extends string>(value: unknown, allowed: ReadonlySet<T>): T
         return []
     const output: T[] = []
     for (const item of items) {
-        if (output.includes(item as T)) continue
         output.push(item as T)
     }
     return output
