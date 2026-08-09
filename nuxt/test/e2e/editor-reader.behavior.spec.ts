@@ -139,7 +139,7 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
   const initial = "/editor/lb8345227/ix/4/f?keep=%2f&keep=%2F"
   await page.goto(initial, { waitUntil: "networkidle" })
 
-  const trigger = page.getByRole("link", { name: "Sök i verket", exact: true })
+  const trigger = page.getByRole("button", { name: "Sök i verket", exact: true })
   await trigger.click()
   const input = page.getByRole("searchbox", { name: "Sök i verket" })
   await expect(input).toBeFocused()
@@ -353,6 +353,42 @@ test("editor Reader search state fails closed on mismatched identity and backend
     await request.delete(`${fixture}/_reader_hit_failure`)
   }
 })
+
+for (const action of ["change options", "close the panel"] as const) {
+  test(`editor Reader cancels a pending work search when users ${action}`, async ({
+    page,
+    request
+  }) => {
+    const initial = "/editor/lb8345227/ix/4/f"
+    await page.goto(initial, { waitUntil: "networkidle" })
+    await request.delete(`${fixture}/_reader_hit_requests`)
+    const slowKey = "lb8345227|brev|0|1|false|true|false|false"
+    await request.put(`${fixture}/_reader_hit_delays`, { data: { [slowKey]: 600 } })
+    try {
+      const trigger = page.getByRole("button", { name: "Sök i verket", exact: true })
+      await trigger.click()
+      await page.getByRole("searchbox", { name: "Sök i verket" }).fill("brev")
+      await page.getByRole("button", { name: "Sök", exact: true }).click()
+      await expect.poll(async () => (
+        await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+      ).requests.length).toBe(1)
+
+      if (action === "change options") {
+        await page.getByRole("button", { name: "SÖK EFTER ORDBÖRJAN" }).click()
+      } else {
+        await trigger.click()
+        await expect(page.getByRole("searchbox", { name: "Sök i verket" })).toBeHidden()
+      }
+
+      await page.waitForTimeout(700)
+      await expect(page).toHaveURL(initial)
+      await expect(page.getByRole("navigation", { name: "Sökträffsnavigering" }))
+        .toHaveCount(0)
+    } finally {
+      await request.delete(`${fixture}/_reader_hit_delays`)
+    }
+  })
+}
 
 test("a delayed obsolete Editor hit cannot mark a later raw route", async ({ page, request }) => {
   await page.goto("/editor/lb8345227/ix/4/f", { waitUntil: "networkidle" })

@@ -15,7 +15,6 @@ import {
 } from "~/lib/reader-keyboard-navigation"
 import { parseTextSearchReturnHref } from "~/lib/text-search-navigation"
 import {
-  isWorkSearchActivationKey,
   nextWorkSearchOptions,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
@@ -452,6 +451,10 @@ type EditorSearchState = Readonly<{
   toWordId: string
   wordForms: boolean
 }>
+type WorkSearchSubmission = Readonly<Pick<
+  EditorSearchState,
+  "includeOlderSpellings" | "prefix" | "query" | "suffix" | "wordForms"
+>>
 const workSearchOpen = ref(false)
 const workSearchQuery = ref("")
 const workSearchMessage = ref("")
@@ -473,9 +476,17 @@ const workSearchOptions = computed<ReadonlyArray<{
   { key: "infix", label: "SÖK EFTER DEL AV ORD", selected: workSearchPrefix.value && workSearchSuffix.value }
 ])
 let workSearchController: AbortController | null = null
-onBeforeUnmount(() => workSearchController?.abort())
-watch(requestIdentity, () => {
+let workSearchGeneration = 0
+
+function cancelPendingWorkSearch(): void {
+  workSearchGeneration += 1
   workSearchController?.abort()
+  workSearchController = null
+}
+
+onBeforeUnmount(cancelPendingWorkSearch)
+watch(requestIdentity, () => {
+  cancelPendingWorkSearch()
   workSearchOpen.value = false
   workSearchMessage.value = ""
 })
@@ -483,11 +494,13 @@ watch(requestIdentity, () => {
 function toggleWorkSearch(): void {
   if (!page.value?.searchable) return
   workSearchOpen.value = !workSearchOpen.value
+  if (!workSearchOpen.value) cancelPendingWorkSearch()
   workSearchMessage.value = ""
   if (workSearchOpen.value) void nextTick(() => workSearchInput.value?.focus())
 }
 
 function chooseWorkSearchOption(option: WorkSearchOption): void {
+  cancelPendingWorkSearch()
   const next = nextWorkSearchOptions({
     lemma: workSearchLemma.value,
     olderSpellings: workSearchOlderSpellings.value,
@@ -498,12 +511,6 @@ function chooseWorkSearchOption(option: WorkSearchOption): void {
   workSearchOlderSpellings.value = next.olderSpellings
   workSearchPrefix.value = next.prefix
   workSearchSuffix.value = next.suffix
-}
-
-function activateWorkSearchOption(event: KeyboardEvent, option: WorkSearchOption): void {
-  if (!isWorkSearchActivationKey(event.key)) return
-  event.preventDefault()
-  chooseWorkSearchOption(option)
 }
 
 function routeSingleString(key: string): string | null {
@@ -761,7 +768,7 @@ function searchNeutralHref(fullPath: string): string {
   return `${path}${retained.length ? `?${retained.join("&")}` : ""}${fragment}`
 }
 
-function workSearchHitHref(hit: WorkSearchHit, query: string): string {
+function workSearchHitHref(hit: WorkSearchHit, submission: WorkSearchSubmission): string {
   const target = href(hit.page_index)
   const fragmentIndex = target.indexOf("#")
   const fragment = fragmentIndex < 0 ? "" : target.slice(fragmentIndex)
@@ -771,14 +778,14 @@ function workSearchHitHref(hit: WorkSearchHit, query: string): string {
   const rawQuery = queryIndex < 0 ? "" : beforeHash.slice(queryIndex + 1)
   const replacements = new Map<string, string | null>([
     ["show_search_work", null],
-    ["s_query", query],
+    ["s_query", submission.query],
     ["s_lbworkid", workId.value],
     ["s_mediatype", page.value?.mediaType ?? ""],
-    ["s_word_form_only", String(!workSearchLemma.value)],
-    ["s_include_modernized", String(workSearchOlderSpellings.value)]
+    ["s_word_form_only", String(!submission.wordForms)],
+    ["s_include_modernized", String(submission.includeOlderSpellings)]
   ])
-  if (workSearchPrefix.value) replacements.set("s_prefix", "true")
-  if (workSearchSuffix.value) replacements.set("s_suffix", "true")
+  if (submission.prefix) replacements.set("s_prefix", "true")
+  if (submission.suffix) replacements.set("s_suffix", "true")
   replacements.set("hit_index", String(hit.index))
   replacements.set("traff", hit.highlight.from_word_id)
   replacements.set("traffslut", hit.highlight.to_word_id)
@@ -796,10 +803,10 @@ function workSearchHitHref(hit: WorkSearchHit, query: string): string {
 }
 
 const previousHitHref = computed(() => previousHit.value && searchState.value
-  ? workSearchHitHref(previousHit.value, searchState.value.query)
+  ? workSearchHitHref(previousHit.value, searchState.value)
   : null)
 const nextHitHref = computed(() => nextHit.value && searchState.value
-  ? workSearchHitHref(nextHit.value, searchState.value.query)
+  ? workSearchHitHref(nextHit.value, searchState.value)
   : null)
 
 async function submitWorkSearch(): Promise<void> {
@@ -816,7 +823,15 @@ async function submitWorkSearch(): Promise<void> {
   }
   const current = page.value
   if (!current?.searchable) return
-  workSearchController?.abort()
+  cancelPendingWorkSearch()
+  const submission: WorkSearchSubmission = Object.freeze({
+    query,
+    wordForms: workSearchLemma.value,
+    includeOlderSpellings: workSearchOlderSpellings.value,
+    prefix: workSearchPrefix.value,
+    suffix: workSearchSuffix.value
+  })
+  const generation = workSearchGeneration
   const controller = new AbortController()
   workSearchController = controller
   workSearchMessage.value = ""
@@ -828,22 +843,23 @@ async function submitWorkSearch(): Promise<void> {
         path: { work_id: current.workId },
         query: {
           media_type: current.mediaType,
-          query,
+          query: submission.query,
           offset: 0,
           limit: 1,
-          word_forms: workSearchLemma.value,
-          include_older_spellings: workSearchOlderSpellings.value,
-          prefix: workSearchPrefix.value,
-          suffix: workSearchSuffix.value
+          word_forms: submission.wordForms,
+          include_older_spellings: submission.includeOlderSpellings,
+          prefix: submission.prefix,
+          suffix: submission.suffix
         }
       }
     })
+    if (generation !== workSearchGeneration || workSearchController !== controller) return
     const hit = result.error ? null : result.data?.items[0]
     if (!hit || !isWorkSearchHit(hit, current)) {
       workSearchMessage.value = result.error ? "Sökningen kunde inte genomföras." : "Inga träffar."
       return
     }
-    await navigateRawFullPath(workSearchHitHref(hit, query))
+    await navigateRawFullPath(workSearchHitHref(hit, submission))
   } catch (searchError) {
     if (!isAbortError(searchError)) {
       workSearchMessage.value = "Sökningen kunde inte genomföras."
@@ -869,6 +885,7 @@ watch(searchState, state => {
 let hitNavigationGeneration = 0
 watch(rawFullPath, () => {
   hitNavigationGeneration += 1
+  cancelPendingWorkSearch()
 }, { flush: "sync" })
 
 type EditorHitLookupContext = {
@@ -933,7 +950,7 @@ async function navigateToHit(index: number): Promise<void> {
   if (!state) return
   const hit = await hitAtIndex(index)
   if (!hit || generation !== hitNavigationGeneration) return
-  await navigateRawFullPath(workSearchHitHref(hit, state.query))
+  await navigateRawFullPath(workSearchHitHref(hit, state))
 }
 
 function closeWorkSearchHits(): void {
@@ -1192,12 +1209,12 @@ useHead(() => ({
               <li v-if="sourceInfoAvailable"><a ref="sourceInfoTrigger" :href="sourceInfoHref" @click.prevent="openSourceInfo">Mer om boken</a></li>
               <li><a :href="focusHref" @click.prevent="activateFocus">Läsfokus</a></li>
               <li v-if="page.searchable">
-                <a
-                  class="reader-work-search-trigger"
-                  href=""
+                <button
+                  type="button"
+                  class="reader-work-search-trigger reader-action-button"
                   :aria-expanded="workSearchOpen"
-                  @click.prevent="toggleWorkSearch"
-                >Sök i verket</a>
+                  @click="toggleWorkSearch"
+                >Sök i verket</button>
                 <div v-show="workSearchOpen" class="searchbox">
                   <div class="collapse-content">
                     <div class="header">
@@ -1213,13 +1230,11 @@ useHead(() => ({
                       <ul class="search_opts_widget inline-block">
                         <li v-for="option in workSearchOptions" :key="option.key" class="hover:text-primary">
                           <span aria-hidden="true"><span>{{ option.selected ? "✓" : "" }}</span></span>
-                          <span
-                            role="checkbox"
-                            :aria-checked="option.selected"
-                            tabindex="0"
+                          <button
+                            type="button"
+                            class="reader-action-button"
                             @click="chooseWorkSearchOption(option.key)"
-                            @keydown="activateWorkSearchOption($event, option.key)"
-                          >{{ option.label }}</span>
+                          ><span v-if="option.selected" class="sr-only">Valt: </span>{{ option.label }}</button>
                         </li>
                       </ul>
                     </div>

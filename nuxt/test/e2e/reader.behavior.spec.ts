@@ -360,8 +360,7 @@ test("Boye work contributors persist in sidebar, contents, and work search", asy
 
   await page.goto(boyeEtextPath, { waitUntil: "networkidle" })
   await page.locator(".reader-context")
-    .getByRole("link", { name: "Sök i verket" })
-    .evaluate(link => (link as HTMLAnchorElement).click())
+    .getByRole("button", { name: "Sök i verket" }).click()
   await expectBoyeContributors(page.locator(".searchbox .header .author"))
   expect(problems).toEqual([])
 })
@@ -1412,7 +1411,7 @@ test("keyboard paging is guarded by editors and dialogs and is removed on unmoun
   await page.goto(readerPath, { waitUntil: "networkidle" })
   const initialUrl = page.url()
   const goto = page.locator(".reader-navigation form.goto")
-  await goto.getByRole("link", { name: /Gå till sida/ }).click()
+  await goto.getByRole("button", { name: /Gå till sida/ }).click()
   await goto.getByRole("textbox").focus()
   await page.keyboard.press("ArrowRight")
   await expect(page).toHaveURL(initialUrl)
@@ -1455,7 +1454,7 @@ test("goto accepts only exact page names and preserves the raw destination query
   const rawQuery = "?bare&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
   await page.goto(`${readerPath}${rawQuery}`, { waitUntil: "networkidle" })
   const goto = page.locator(".reader-navigation form.goto")
-  await goto.getByRole("link", { name: /Gå till sida/ }).click()
+  await goto.getByRole("button", { name: /Gå till sida/ }).click()
   const input = goto.getByRole("textbox")
   await expect(input).toHaveAttribute("aria-label", "Gå till sida")
   await input.fill(" -1")
@@ -2351,9 +2350,9 @@ test("faksimil search state requests its own hits and exposes live navigation", 
   const toolkit = page.locator("#search_nav")
   await expect(toolkit).toContainText("Träff 1, sida 58")
   await expect(toolkit.getByRole("link", { name: "Nästa sökträff" })).toBeVisible()
-  await expect(toolkit.getByRole("link", { name: "Gå till första träffen" })).toBeVisible()
-  await expect(toolkit.getByRole("link", { name: "Gå till sista träffen" })).toBeVisible()
-  await expect(toolkit.getByRole("link", { name: "Gå direkt till träff . . ." })).toBeVisible()
+  await expect(toolkit.getByRole("button", { name: "Gå till första träffen" })).toBeVisible()
+  await expect(toolkit.getByRole("button", { name: "Gå till sista träffen" })).toBeVisible()
+  await expect(toolkit.getByRole("button", { name: "Gå direkt till träff . . ." })).toBeVisible()
 
   await toolkit.getByRole("link", { name: "Nästa sökträff" }).click()
   await expect(page).toHaveURL(/\/sida\/99\/faksimil\?q=kyrka&hit=1/)
@@ -2376,14 +2375,14 @@ test("faksimil search state requests its own hits and exposes live navigation", 
   await expect(page).toHaveURL(/\/sida\/99\/faksimil\?q=kyrka&hit=1/)
   await expect(toolkit).toContainText("Träff 2, sida 99")
 
-  await toolkit.getByRole("link", { name: "Gå till första träffen" }).click()
+  await toolkit.getByRole("button", { name: "Gå till första träffen" }).click()
   await expect(page).toHaveURL(/\/sida\/58\/faksimil\?q=kyrka&hit=0/)
   await expect(toolkit).toContainText("Träff 1, sida 58")
-  await toolkit.getByRole("link", { name: "Gå till sista träffen" }).click()
+  await toolkit.getByRole("button", { name: "Gå till sista träffen" }).click()
   await expect(page).toHaveURL(/\/sida\/3\/faksimil\?q=kyrka&hit=2/)
   await expect(toolkit).toContainText("Träff 3, sida 3")
 
-  await toolkit.getByRole("link", { name: "Gå direkt till träff . . ." }).click()
+  await toolkit.getByRole("button", { name: "Gå direkt till träff . . ." }).click()
   const direct = toolkit.getByRole("textbox", { name: "Träffnummer" })
   await direct.fill("2")
   await direct.press("Enter")
@@ -2621,7 +2620,7 @@ test("opens the Angular Reader search panel, focuses it, and guards paging keys"
   await page.goto(readerPath, { waitUntil: "networkidle" })
 
   const trigger = page.locator(".reader-context .subnav")
-    .getByRole("link", { name: "Sök i verket", exact: true })
+    .getByRole("button", { name: "Sök i verket", exact: true })
   const searchbox = page.locator(".reader-context .searchbox")
   await expect(searchbox).toBeHidden()
   await trigger.click()
@@ -2652,7 +2651,7 @@ test("submits a canonical work search, preserves raw owners, and follows History
   await request.delete(`${fixture}/_reader_hit_requests`)
 
   const trigger = page.locator(".reader-context .subnav")
-    .getByRole("link", { name: "Sök i verket", exact: true })
+    .getByRole("button", { name: "Sök i verket", exact: true })
   await trigger.click()
   const searchbox = page.locator(".reader-context .searchbox")
   const input = searchbox.getByRole("searchbox")
@@ -2689,7 +2688,7 @@ test("validates empty work searches and closes active hits without touching raw 
   const retained = "?bare&repeat=first&repeat=second"
   await page.goto(`${readerPath}${retained}`, { waitUntil: "networkidle" })
   await page.locator(".reader-context .subnav")
-    .getByRole("link", { name: "Sök i verket", exact: true }).click()
+    .getByRole("button", { name: "Sök i verket", exact: true }).click()
   const searchbox = page.locator(".reader-context .searchbox")
   const input = searchbox.getByRole("searchbox")
   await input.fill("   ")
@@ -2708,7 +2707,7 @@ test("validates empty work searches and closes active hits without touching raw 
   await input.fill("glas")
   await input.press("Enter")
   await expect(page).toHaveURL(`${readerPath}${retained}&q=glas&hit=0`)
-  await page.locator("#search_nav").getByRole("link", {
+  await page.locator("#search_nav").getByRole("button", {
     name: "Stäng träffvisningen"
   }).click()
   await expect(page).toHaveURL(`${readerPath}${retained}`)
@@ -2761,7 +2760,7 @@ test("closing mixed search state removes legacy markers but preserves its return
     { waitUntil: "networkidle" }
   )
 
-  await page.locator("#search_nav").getByRole("link", {
+  await page.locator("#search_nav").getByRole("button", {
     name: "Stäng träffvisningen"
   }).click()
 
@@ -2780,12 +2779,12 @@ test("projects Angular work-search options onto canonical generated hit flags", 
 }) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
   await page.locator(".reader-context .subnav")
-    .getByRole("link", { name: "Sök i verket", exact: true }).click()
+    .getByRole("button", { name: "Sök i verket", exact: true }).click()
   const searchbox = page.locator(".reader-context .searchbox")
-  await searchbox.getByRole("checkbox", { name: "INKLUDERA BÖJNINGSFORMER" }).click()
-  await expect(searchbox.getByRole("checkbox", {
-    name: "INKLUDERA BÖJNINGSFORMER"
-  })).toHaveAttribute("aria-checked", "true")
+  await searchbox.getByRole("button", { name: "INKLUDERA BÖJNINGSFORMER" }).click()
+  await expect(searchbox.getByRole("button", {
+    name: "Valt: INKLUDERA BÖJNINGSFORMER"
+  })).toBeVisible()
   await searchbox.getByRole("searchbox").fill("glas")
   await request.delete(`${fixture}/_reader_hit_requests`)
   await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
@@ -2800,21 +2799,23 @@ test("projects Angular work-search options onto canonical generated hit flags", 
   ])
 })
 
-test("work-search options expose one keyboard-operable checkbox each", async ({ page }) => {
+test("work-search actions expose native keyboard-operable buttons", async ({ page }) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
   await page.locator(".reader-context .subnav")
-    .getByRole("link", { name: "Sök i verket", exact: true }).click()
+    .getByRole("button", { name: "Sök i verket", exact: true }).click()
   const searchbox = page.locator(".reader-context .searchbox")
-  const prefix = searchbox.getByRole("checkbox", { name: "SÖK EFTER ORDBÖRJAN" })
+  const prefix = searchbox.getByRole("button", { name: "SÖK EFTER ORDBÖRJAN" })
 
-  await expect(prefix).toHaveAttribute("tabindex", "0")
   await prefix.focus()
   await expect(prefix).toBeFocused()
   await prefix.press(" ")
-  await expect(prefix).toHaveAttribute("aria-checked", "true")
-  await prefix.press("Enter")
-  await expect(prefix).toHaveAttribute("aria-checked", "false")
-  await expect(searchbox.getByRole("button", { name: "SÖK EFTER ORDBÖRJAN" })).toHaveCount(0)
+  const selectedPrefix = searchbox.getByRole("button", {
+    name: "Valt: SÖK EFTER ORDBÖRJAN"
+  })
+  await expect(selectedPrefix).toBeVisible()
+  await selectedPrefix.press("Enter")
+  await expect(searchbox.getByRole("button", { name: "SÖK EFTER ORDBÖRJAN" })).toBeVisible()
+  await expect(searchbox.getByRole("checkbox")).toHaveCount(0)
 })
 
 test("keeps work search disabled for a Reader representation without typed hit support", async ({
@@ -2929,7 +2930,7 @@ test("first and last hit controls preserve raw state and push exact Reader histo
   await request.delete(`${fixture}/_reader_hit_requests`)
 
   const toolkit = page.locator("#search_nav")
-  await toolkit.getByRole("link", { name: "Gå till sista träffen" }).click()
+  await toolkit.getByRole("button", { name: "Gå till sista träffen" }).click()
   const lastQuery = `?${rawOwners}&q=doktor%20glas&hit=4`
   await expect.poll(() => page.evaluate(() => location.pathname + location.search))
     .toBe(`${storedNextReaderPath}${lastQuery}`)
@@ -2945,14 +2946,14 @@ test("first and last hit controls preserve raw state and push exact Reader histo
     .toBe(initialEncodedPath)
   await expect(toolkit).toContainText("Träff 2, sida -2")
 
-  await toolkit.getByRole("link", { name: "Gå till första träffen" }).click()
+  await toolkit.getByRole("button", { name: "Gå till första träffen" }).click()
   const firstQuery = `?${rawOwners}&q=doktor%20glas&hit=0`
   await expect.poll(() => page.evaluate(() => location.pathname + location.search))
     .toBe(`${storedReaderPath.replace("/sida/-2/", "/sida/-3/")}${firstQuery}`)
   await expect(toolkit).toContainText("Träff 1, sida -3")
   await expect(page.locator("#w1_1.markee")).toHaveCount(1)
   const historyLength = await page.evaluate(() => window.history.length)
-  await toolkit.getByRole("link", { name: "Gå till första träffen" }).click()
+  await toolkit.getByRole("button", { name: "Gå till första träffen" }).click()
   await expect.poll(() => page.evaluate(() => window.history.length)).toBe(historyLength)
   expect(problems).toEqual([])
 })
@@ -2970,7 +2971,7 @@ test("direct hit input toggles and focuses, rejects bad ordinals, and pushes a v
   await request.delete(`${fixture}/_reader_hit_requests`)
 
   const toolkit = page.locator("#search_nav")
-  const trigger = toolkit.getByRole("link", { name: "Gå direkt till träff . . ." })
+  const trigger = toolkit.getByRole("button", { name: "Gå direkt till träff . . ." })
   await trigger.click()
   const input = toolkit.getByRole("textbox", { name: "Träffnummer" })
   const submit = toolkit.getByRole("button", { name: "Gå till träff" })
@@ -3044,9 +3045,9 @@ test("no-hit first, last, and direct controls retain the exact Reader location",
   await request.delete(`${fixture}/_reader_hit_requests`)
 
   const toolkit = page.locator("#search_nav")
-  await toolkit.getByRole("link", { name: "Gå till första träffen" }).click()
-  await toolkit.getByRole("link", { name: "Gå till sista träffen" }).click()
-  const direct = toolkit.getByRole("link", { name: "Gå direkt till träff . . ." })
+  await toolkit.getByRole("button", { name: "Gå till första träffen" }).click()
+  await toolkit.getByRole("button", { name: "Gå till sista träffen" }).click()
+  const direct = toolkit.getByRole("button", { name: "Gå direkt till träff . . ." })
   await direct.click()
   const input = toolkit.getByRole("textbox", { name: "Träffnummer" })
   await input.fill("1")
@@ -3069,7 +3070,7 @@ test("direct hit lookup keeps its API window inside the maximum offset", async (
   await request.delete(`${fixture}/_reader_hit_requests`)
 
   const toolkit = page.locator("#search_nav")
-  await toolkit.getByRole("link", { name: "Gå direkt till träff . . ." }).click()
+  await toolkit.getByRole("button", { name: "Gå direkt till träff . . ." }).click()
   const input = toolkit.getByRole("textbox", { name: "Träffnummer" })
   await input.fill("1000002")
   await input.press("Enter")
@@ -3110,7 +3111,7 @@ test("an obsolete direct target lookup cannot navigate after an A-B-A route cycl
   })
 
   await page.locator("#search_nav")
-    .getByRole("link", { name: "Gå till sista träffen" }).click()
+    .getByRole("button", { name: "Gå till sista träffen" }).click()
   await expect.poll(async () => (await readerHitRequests(request)).some(
     hit => hit.query.includes("offset=3&limit=3")
   )).toBe(true)
@@ -3150,7 +3151,7 @@ test("opening Reader source information invalidates a delayed target lookup", as
   })
 
   await page.locator("#search_nav")
-    .getByRole("link", { name: "Gå till sista träffen" }).click()
+    .getByRole("button", { name: "Gå till sista träffen" }).click()
   await expect.poll(async () => (await readerHitRequests(request)).some(
     hit => hit.query.includes("offset=3&limit=3")
   )).toBe(true)
@@ -3745,7 +3746,7 @@ test("return link on faksimil preserves its origin while loading faksimil hits",
   await expect(page.locator("#search_nav").getByRole("link", {
     name: "Tillbaka till sökningen"
   })).toHaveAttribute("href", origin)
-  await page.locator("#search_nav").getByRole("link", {
+  await page.locator("#search_nav").getByRole("button", {
     name: "Stäng träffvisningen"
   }).click()
   await expect(page.locator("#search_nav")).toHaveCount(0)

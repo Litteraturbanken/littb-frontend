@@ -41,10 +41,6 @@ export function nextWorkSearchOptions(
   }
 }
 
-export function isWorkSearchActivationKey(key: string): boolean {
-  return key === "Enter" || key === " "
-}
-
 export function decodedWorkSearchQueryKey(segment: string): string | null {
   const separator = segment.indexOf("=")
   const rawKey = separator < 0 ? segment : segment.slice(0, separator)

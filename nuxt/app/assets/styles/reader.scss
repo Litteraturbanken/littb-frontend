@@ -1,6 +1,20 @@
 @use "./mixins" as *;
 
 .page-reading {
+    .reader-action-button {
+        appearance: none;
+        background: transparent;
+        border: 0;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        line-height: inherit;
+        margin: 0;
+        padding: 0;
+        text-align: inherit;
+        text-transform: inherit;
+    }
+
     --logo-l-color: var(--primary-color);
     --logo-b-color: black;
 

@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest"
 import {
   decodedWorkSearchQueryKey,
-  isWorkSearchActivationKey,
   nextWorkSearchOptions,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
@@ -34,12 +33,6 @@ describe("reader and editor work-search options", () => {
       prefix: true,
       suffix: true
     }, "modernize")).toEqual(initial)
-  })
-
-  test("recognizes only Enter and Space as option activation keys", () => {
-    expect(isWorkSearchActivationKey("Enter")).toBe(true)
-    expect(isWorkSearchActivationKey(" ")).toBe(true)
-    expect(isWorkSearchActivationKey("Spacebar")).toBe(false)
   })
 
   test("decodes a raw query key without throwing on malformed escapes", () => {

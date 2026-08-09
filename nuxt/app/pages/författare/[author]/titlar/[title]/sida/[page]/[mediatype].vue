@@ -29,7 +29,6 @@ import {
 } from "~/lib/reader-keyboard-navigation"
 import { readerTitleTooltipDirective } from "~/lib/reader-title-tooltip"
 import {
-  isWorkSearchActivationKey,
   nextWorkSearchOptions,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
@@ -1465,7 +1464,6 @@ function toggleWorkSearch(): void {
 }
 
 function chooseWorkSearchOption(option: WorkSearchOption): void {
-  if (option === "infix" && workSearchPrefix.value && workSearchSuffix.value) return
   const next = nextWorkSearchOptions({
     lemma: workSearchLemma.value,
     olderSpellings: workSearchOlderSpellings.value,
@@ -1476,12 +1474,6 @@ function chooseWorkSearchOption(option: WorkSearchOption): void {
   workSearchOlderSpellings.value = next.olderSpellings
   workSearchPrefix.value = next.prefix
   workSearchSuffix.value = next.suffix
-}
-
-function activateWorkSearchOption(event: KeyboardEvent, option: WorkSearchOption): void {
-  if (!isWorkSearchActivationKey(event.key)) return
-  event.preventDefault()
-  chooseWorkSearchOption(option)
 }
 
 const workSearchQueryKeys = new Set<string>([
@@ -2165,8 +2157,8 @@ watch(readerRequestIdentity, () => {
                 tabindex="-1"
               >Gå till sista sidan</a>
               <br>
-              <form class="goto" @submit.prevent="submitGoto"><a href="" @click.prevent="toggleGoto">Gå till sida . . .
-                <span class="pages">{{ reader.pageName }} av {{ reader.endPageName || reader.pageCount }}</span></a>
+              <form class="goto" @submit.prevent="submitGoto"><button type="button" class="reader-action-button" @click="toggleGoto">Gå till sida . . .
+                <span class="pages">{{ reader.pageName }} av {{ reader.endPageName || reader.pageCount }}</span></button>
                 <template v-if="showGotoInput">
                   <input ref="gotoInput" v-model="gotoPage" type="text" aria-label="Gå till sida">
                   <button type="submit" class="goto-submit" aria-label="Gå"><i class="fa fa-angle-double-right" /></button>
@@ -2258,12 +2250,12 @@ watch(readerRequestIdentity, () => {
                 >{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a></li>
                 <li><a :href="focusHref" @click.prevent="activateFocus">Läsfokus</a></li>
                 <li v-if="reader.searchable && etextReader">
-                  <a
-                    class="reader-work-search-trigger"
-                    href=""
+                  <button
+                    type="button"
+                    class="reader-work-search-trigger reader-action-button"
                     :aria-expanded="workSearchOpen"
-                    @click.prevent="toggleWorkSearch"
-                  >Sök i verket</a>
+                    @click="toggleWorkSearch"
+                  >Sök i verket</button>
                   <div v-show="workSearchOpen" class="searchbox">
                     <div class="collapse-content">
                       <div class="header">
@@ -2299,13 +2291,11 @@ watch(readerRequestIdentity, () => {
                             class="hover:text-primary"
                           >
                             <span aria-hidden="true"><span>{{ option.selected ? "✓" : "" }}</span></span>
-                            <span
-                              role="checkbox"
-                              :aria-checked="option.selected"
-                              tabindex="0"
+                            <button
+                              type="button"
+                              class="reader-action-button"
                               @click="chooseWorkSearchOption(option.key)"
-                              @keydown="activateWorkSearchOption($event, option.key)"
-                            >{{ option.label }}</span>
+                            ><span v-if="option.selected" class="sr-only">Valt: </span>{{ option.label }}</button>
                           </li>
                         </ul>
                       </div>
@@ -2386,13 +2376,14 @@ watch(readerRequestIdentity, () => {
               ><span class="submit btn navicon navicon-visual" aria-hidden="true"><i class="fa fa-angle-right" /></span></a></NuxtLink>
               <button v-else rel="next" class="submit btn navicon" disabled aria-hidden="true" tabindex="-1"><i class="fa fa-angle-right" /></button>
             </li>
-            <li><a href="" @click.prevent="navigateToHit(0)">Gå till första träffen</a></li>
-            <li><a
-              href=""
-              @click.prevent="navigateToHit((hitResponse?.total_hits ?? 0) - 1)"
-            >Gå till sista träffen</a></li>
+            <li><button type="button" class="reader-action-button" @click="navigateToHit(0)">Gå till första träffen</button></li>
+            <li><button
+              type="button"
+              class="reader-action-button"
+              @click="navigateToHit((hitResponse?.total_hits ?? 0) - 1)"
+            >Gå till sista träffen</button></li>
             <li :class="{ open: gotoHitInputOpen }">
-              <a href="" @click.prevent="toggleGotoHitInput">Gå direkt till träff . . .</a>
+              <button type="button" class="reader-action-button" @click="toggleGotoHitInput">Gå direkt till träff . . .</button>
               <form v-show="gotoHitInputOpen" @submit.prevent="submitGotoHit">
                 <input
                   ref="gotoHitInput"
@@ -2410,7 +2401,7 @@ watch(readerRequestIdentity, () => {
               </form>
             </li>
             </template>
-            <li><a href="" @click.prevent="closeWorkSearchHits">Stäng träffvisningen</a></li>
+            <li><button type="button" class="reader-action-button" @click="closeWorkSearchHits">Stäng träffvisningen</button></li>
             <li v-if="searchReturnHref">
               <NuxtLink :to="searchReturnHref">Tillbaka till sökningen</NuxtLink>
             </li>
