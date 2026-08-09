@@ -788,6 +788,18 @@ test("author results compose gender and text filters and apply media filters", a
   ])
 })
 
+test("play gender filtering includes matching secondary authors", async ({ page, request }) => {
+  await setCatalogFailure(request, "secondary-female-author-200")
+  await page.goto(
+    "/dramawebben/pj%C3%A4ser?gender=female&filterTxt=Barnens",
+    { waitUntil: "networkidle" }
+  )
+
+  await expectPlayRows(page, [
+    "Strindberg, August & Wahlenberg, Anna Barnens teater infopost"
+  ])
+})
+
 test("range bare-track pointers choose the nearest handle and mutate the route once", async ({
   page
 }) => {

@@ -3441,7 +3441,8 @@ const server = createServer(async (request, response) => {
       "unsafe-media-url-200",
       "omitted-range-field-200",
       "pdf-primary-200",
-      "long-mixed-media-author-200"
+      "long-mixed-media-author-200",
+      "secondary-female-author-200"
     ])
     if (
       body === null || typeof body !== "object" || Array.isArray(body)
@@ -4573,6 +4574,14 @@ const server = createServer(async (request, response) => {
         url: "/txt/lb-dramat-001/lb-dramat-001.pdf",
         downloadable: true
       }]
+      return sendJson(response, 200, catalog)
+    }
+    if (dramawebbenCatalogFailure === "secondary-female-author-200") {
+      const catalog = dramawebbenCatalogFixture()
+      const target = catalog.works.find(work => work.work_id === "lb-dramat-002")
+      const primary = catalog.authors.find(author => author.author_id === "StrindbergA")
+      const secondary = catalog.authors.find(author => author.author_id === "WahlenbergA")
+      if (target && primary && secondary) target.authors = [primary, secondary]
       return sendJson(response, 200, catalog)
     }
     if (dramawebbenCatalogFailure === "long-mixed-media-author-200") {

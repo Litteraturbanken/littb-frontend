@@ -491,7 +491,10 @@ const selectedAuthor = computed(() => (
 const filteredWorks = computed(() => {
   const tokens = normalizedTokens(filterText.value)
   return (catalog.value?.works ?? []).filter(work => {
-    if (gender.value !== "all" && work.authors[0]?.gender !== gender.value) return false
+    if (
+      gender.value !== "all"
+      && !work.authors.some(author => author.gender === gender.value)
+    ) return false
     if (authorId.value !== "all" && !work.authors.some(author => author.author_id === authorId.value)) {
       return false
     }
