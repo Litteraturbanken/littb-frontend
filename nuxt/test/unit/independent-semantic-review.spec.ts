@@ -189,6 +189,19 @@ describe("independent semantic review runner", () => {
       .toMatchObject({ records: [{ state: "changes-requested", findingIds: ["finding-1"] }] })
   })
 
+  test("re-reviews a current changes-requested packet", () => {
+    const root = createRoot()
+    const first = run(root, "changes-requested")
+    expect(first.result.status).toBe(1)
+
+    const second = run(root)
+
+    expect(second.result.status).toBe(0)
+    expect(readFileSync(second.log, "utf8").trim().split("\n")).toHaveLength(2)
+    expect(JSON.parse(readFileSync(resolve(root, "quality/semantic-review-ledger.json"), "utf8")))
+      .toMatchObject({ records: [{ state: "approved", findingIds: [] }] })
+  })
+
   test("resumes without invoking the reviewer for a current approved packet", () => {
     const root = createRoot()
     const first = run(root)

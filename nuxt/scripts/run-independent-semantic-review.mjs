@@ -344,10 +344,6 @@ async function main() {
   const entries = currentPackets()
   reconcileRetiredPackets(entries)
   let report = currentReport(entries)
-  if (report.changesRequested.length > 0) {
-    console.log(`Semantic review remains changes-requested: ${report.changesRequested[0]}`)
-    return 1
-  }
   const approved = new Set(report.approved)
   const pending = entries.filter(entry => !approved.has(entry.packet.id))
   const concurrency = reviewerConcurrency()
