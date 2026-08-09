@@ -715,6 +715,10 @@ test("every legacy catalog filter is query-owned, local, inclusive, and clearabl
   await page.getByRole("button", { name: "Kön", exact: true }).click()
   await page.getByRole("option", { name: "Kvinnliga författare", exact: true }).click()
   await expectQuery(page, "gender", "female")
+  await expect(page.getByRole("button", {
+    name: "Kön: Kvinnliga författare",
+    exact: true
+  })).toBeVisible()
   await expectPlayRows(page, [
     dramawebbenCatalogExpected.plays[0]!,
     dramawebbenCatalogExpected.plays[3]!
@@ -724,6 +728,10 @@ test("every legacy catalog filter is query-owned, local, inclusive, and clearabl
   await page.getByRole("button", { name: "Utgivningsformat", exact: true }).click()
   await page.getByRole("option", { name: "PDF", exact: true }).click()
   await expectQuery(page, "mediatype", "pdf")
+  await expect(page.getByRole("button", {
+    name: "Utgivningsformat: PDF",
+    exact: true
+  })).toBeVisible()
   await expectPlayRows(page, [
     dramawebbenCatalogExpected.plays[0]!,
     dramawebbenCatalogExpected.plays[2]!
@@ -1157,7 +1165,7 @@ test("Headless UI catalog controls support keyboard, Escape, outside close, and 
   const problems = collectProblems(page)
   await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
 
-  const genderButton = page.getByRole("button", { name: "Kön", exact: true })
+  const genderButton = page.getByRole("button", { name: /^Kön(?:$|:)/u })
   await genderButton.focus()
   await page.keyboard.press("Enter")
   await expect(page.getByRole("option", { name: "Alla författare", exact: true })).toBeVisible()
@@ -1173,7 +1181,7 @@ test("Headless UI catalog controls support keyboard, Escape, outside close, and 
   await routerPush(page, "/dramawebben/pj%C3%A4ser")
   await expectQuery(page, "gender", null)
 
-  const mediaButton = page.getByRole("button", { name: "Utgivningsformat", exact: true })
+  const mediaButton = page.getByRole("button", { name: /^Utgivningsformat(?:$|:)/u })
   await mediaButton.click()
   await expect(page.getByRole("option", { name: "PDF", exact: true })).toBeVisible()
   await page.locator(".page_content p").first().click()

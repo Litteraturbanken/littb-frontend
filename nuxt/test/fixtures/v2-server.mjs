@@ -3441,6 +3441,7 @@ const server = createServer(async (request, response) => {
       "unsafe-media-url-200",
       "backslash-media-url-200",
       "dot-segment-media-url-200",
+      "dot-segment-infopost-url-200",
       "array-media-type-200",
       "unsafe-author-id-200",
       "omitted-range-field-200",
@@ -4574,6 +4575,15 @@ const server = createServer(async (request, response) => {
     if (dramawebbenCatalogFailure === "dot-segment-media-url-200") {
       const catalog = dramawebbenCatalogFixture()
       catalog.works[0].media[0].url = "/författare/../titlar/Domd/sida/I/etext"
+      return sendJson(response, 200, catalog)
+    }
+    if (dramawebbenCatalogFailure === "dot-segment-infopost-url-200") {
+      const catalog = dramawebbenCatalogFixture()
+      const infopost = catalog.works
+        .flatMap(work => work.media)
+        .find(media => media.media_type === "infopost")
+      infopost.url = "/dramawebben/%2e%2e/dramawebben/pj%C3%A4ser?om-boken"
+        + "&authorid=Alml%C3%B6fN&titlepath=Affarer"
       return sendJson(response, 200, catalog)
     }
     if (dramawebbenCatalogFailure === "array-media-type-200") {

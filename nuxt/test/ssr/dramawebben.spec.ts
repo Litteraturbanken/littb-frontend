@@ -412,6 +412,20 @@ test("SSR rejects catalog media paths containing URL-normalized dot segments", a
   await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
 })
 
+test("SSR rejects infopost paths containing URL-normalized dot segments", async ({
+  request
+}) => {
+  await setCatalogFailure(request, "dot-segment-infopost-url-200")
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(502)
+  const html = await response.text()
+  expectManagedShell(html, "pjäser", neutralError)
+  expect(html).not.toContain("/dramawebben/%2e%2e/dramawebben")
+  expect(await catalogRequests(request)).toHaveLength(1)
+  await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
+
 test("SSR rejects non-string catalog media types instead of coercing them", async ({ request }) => {
   await setCatalogFailure(request, "array-media-type-200")
   const response = await request.get("/dramawebben/pjäser")

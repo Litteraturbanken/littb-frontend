@@ -115,6 +115,13 @@ function safeCatalogUrlShape(url: string): boolean {
 }
 
 function safeCatalogInfoPostUrl(url: string): boolean {
+  const separator = url.search(/[?#]/u)
+  const rawPath = separator === -1 ? url : url.slice(0, separator)
+  const canonicalRawPath = rawPath.replace(/%[0-9a-f]{2}/giu, escape => escape.toUpperCase())
+  if (
+    rawPath !== "/dramawebben/pjäser"
+    && canonicalRawPath !== "/dramawebben/pj%C3%A4ser"
+  ) return false
   try {
     const parsed = new URL(url, "http://catalog.local")
     return parsed.origin === "http://catalog.local"
@@ -775,7 +782,10 @@ useHead(() => ({
 
         <Listbox :model-value="gender" @update:model-value="setSelectQuery('gender', $event as string)">
           <div class="catalog_select gender_select select2 select2-container select2-container--default">
-            <ListboxButton class="select2-selection select2-selection--single" aria-label="Kön">
+            <ListboxButton
+              class="select2-selection select2-selection--single"
+              :aria-label="gender === 'all' ? 'Kön' : `Kön: ${genderLabel}`"
+            >
               <span class="select2-selection__rendered">{{ genderLabel }}</span>
               <span class="select2-selection__arrow"><b /></span>
             </ListboxButton>
@@ -789,7 +799,10 @@ useHead(() => ({
 
         <Listbox :model-value="mediaType" @update:model-value="setSelectQuery('mediatype', $event as string)">
           <div class="catalog_select filter_select keyword_select select2 select2-container select2-container--default">
-            <ListboxButton class="select2-selection select2-selection--single" aria-label="Utgivningsformat">
+            <ListboxButton
+              class="select2-selection select2-selection--single"
+              :aria-label="mediaType === 'all' ? 'Utgivningsformat' : `Utgivningsformat: ${mediaLabel}`"
+            >
               <span class="select2-selection__rendered">{{ mediaLabel }}</span>
               <span class="select2-selection__arrow"><b /></span>
             </ListboxButton>
