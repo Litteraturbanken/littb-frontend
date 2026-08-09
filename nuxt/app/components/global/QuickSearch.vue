@@ -9,7 +9,7 @@ import {
   DialogTitle
 } from "@headlessui/vue"
 
-import { createLbApiClient } from "../../lib/api/client"
+import { useLbApiClient } from "../../composables/useLbApiClient"
 import type { components } from "../../lib/api/generated/lbapi"
 import {
   developerQuickSearchCommands,
@@ -79,8 +79,7 @@ const requestState = ref<"idle" | "loading" | "success" | "failure">("idle")
 const developerOutput = ref<DeveloperOutput | null>(null)
 const developerContext = useQuickSearchContext()
 
-const config = useRuntimeConfig()
-const client = createLbApiClient(config.public.apiBase)
+const client = useLbApiClient()
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 let requestController: AbortController | null = null

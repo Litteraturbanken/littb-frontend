@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AboutPageShell from "../../components/about/AboutPageShell.vue"
-import { createLbApiClient } from "../../lib/api/client"
+import { useLbApiClient } from "../../composables/useLbApiClient"
 
 const angularEmail = /^(?=.{1,254}$)(?=.{1,64}@)[-!#$%&'*+/0-9=?A-Z^_`a-z{|}~]+(\.[-!#$%&'*+/0-9=?A-Z^_`a-z{|}~]+)*@[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/
 
@@ -42,8 +42,7 @@ const contactValid = computed(() => emailValid.value && messageValid.value)
 const newsletterValid = computed(() => angularEmail.test(newsletterEmail.value))
 const showForms = computed(() => !showContact.value && !showNewsletter.value && !showError.value)
 
-const config = useRuntimeConfig()
-const client = createLbApiClient(config.public.apiBase)
+const client = useLbApiClient()
 
 function hideSuccessAfterDelay() {
   window.setTimeout(() => {

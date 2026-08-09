@@ -12,7 +12,6 @@ import { readerManifestPartAuthorLabel } from "#shared/utils/reader-author"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
 import { useLbApiClient } from "~/composables/useLbApiClient"
-import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import { usefulLibraryTooltipText } from "~/lib/library-tooltip"
 import {
@@ -83,7 +82,6 @@ const route = useRoute()
 const router = useRouter()
 const vReaderTitleTooltip = readerTitleTooltipDirective
 const nuxtApp = useNuxtApp()
-const config = useRuntimeConfig()
 const runtimeClient = useLbApiClient()
 const requestUrl = useRequestURL()
 const initialRawFullPath = useState(
@@ -1242,8 +1240,7 @@ async function fetchHitAtIndex(
   const { currentReader, response, state } = context
   const offset = Math.max(index - 1, 0)
   const limit = 3
-  const client = createLbApiClient(config.public.apiBase)
-  const result = await client.GET("/works/{work_id}/search-hits", {
+  const result = await runtimeClient.GET("/works/{work_id}/search-hits", {
     signal,
     params: {
       path: { work_id: currentReader.reader.workId },
@@ -1494,8 +1491,7 @@ async function requestFirstWorkSearchHit(
   state: CanonicalSearchState,
   signal: AbortSignal
 ): Promise<FirstWorkSearchHitResult> {
-  const client = createLbApiClient(config.public.apiBase)
-  const result = await client.GET("/works/{work_id}/search-hits", {
+  const result = await runtimeClient.GET("/works/{work_id}/search-hits", {
     signal,
     params: {
       path: { work_id: currentReader.workId },

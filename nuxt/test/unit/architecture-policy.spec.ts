@@ -781,78 +781,148 @@ input[type="range"]::-moz-range-thumb { pointer-events: auto; }
 
   test.each([
     [
-      "direct generated client",
+      "a named alias passed through an assignment",
+      "app/components/unsafe.vue",
       [
-        "const config = useRuntimeConfig()",
-        "createLbApiClient(config.apiBase)"
+        "<script setup lang=\"ts\">",
+        "import { createLbApiClient as makeClient } from \"~/lib/api/client\"",
+        "let assigned = makeClient",
+        "assigned = makeClient",
+        "void assigned",
+        "</script>"
       ].join("\n")
     ],
     [
-      "request fetch against the private origin",
+      "a namespace import spread into an object",
+      "app/lib/unsafe.ts",
       [
-        "const config = useRuntimeConfig()",
-        "const requestFetch = useRequestFetch()",
-        "requestFetch(`${config.apiBase}/stats`)"
+        "import * as apiClient from \"./api/client\"",
+        "export const copied = { ...apiClient }"
       ].join("\n")
     ],
     [
-      "aliased bracket access",
+      "a low-level client passed through a function parameter",
+      "app/components/unsafe.ts",
       [
-        "const config = useRuntimeConfig()",
-        "const alias = config",
-        "createLbApiClient(alias[\"apiBase\"])"
+        "import { createLbApiClient } from \"~/lib/api/client\"",
+        "function accept(factory: typeof createLbApiClient) { return factory }",
+        "export const clientFactory = accept(createLbApiClient)"
       ].join("\n")
     ],
     [
-      "destructured private origin",
+      "a low-level client passed through rest binding",
+      "app/pages/unsafe.vue",
       [
-        "const { apiBase: privateBase } = useRuntimeConfig()",
-        "createLbApiClient(privateBase)"
+        "<script setup lang=\"ts\">",
+        "import { createLbApiClient } from \"~/lib/api/client\"",
+        "const [factory, ...rest] = [createLbApiClient]",
+        "void factory",
+        "void rest",
+        "</script>"
       ].join("\n")
     ],
     [
-      "dynamic private-origin access",
+      "a re-exported low-level client",
+      "app/lib/unsafe.ts",
+      "export { createLbApiClient as backendClient } from \"./api/client\""
+    ],
+    [
+      "an export-star bypass",
+      "app/lib/unsafe.ts",
+      "export * from \"./api/client\""
+    ],
+    [
+      "a dynamic-import bypass",
+      "app/lib/unsafe.ts",
+      "export const api = import(\"./api/client\")"
+    ],
+    [
+      "a const-resolvable dynamic-import bypass",
+      "app/lib/unsafe.ts",
       [
-        "const config = useRuntimeConfig()",
-        "const key = getRuntimeKey()",
-        "createLbApiClient(config[key])"
+        "const moduleName = \"client\"",
+        "export const api = import(`./api/${moduleName}`)"
       ].join("\n")
     ],
     [
-      "dynamic private-origin destructuring",
+      "a require bypass",
+      "app/lib/unsafe.ts",
+      "export const api = require(\"./api/client\")"
+    ],
+    [
+      "a const-resolvable require bypass",
+      "app/lib/unsafe.ts",
       [
-        "const config = useRuntimeConfig()",
-        "const key = getRuntimeKey()",
-        "const { [key]: privateBase } = config",
-        "createLbApiClient(privateBase)"
+        "const moduleName = \"client\"",
+        "export const api = require(\"./api/\" + moduleName)"
       ].join("\n")
     ]
-  ])("rejects %s in an authored page", (_label, source) => {
+  ])("rejects %s across authored frontend production files", (_label, path, source) => {
     const root = createTree()
-    const path = "app/pages/unsafe.vue"
-    writeSource(root, path, `<script setup lang="ts">\n${source}\n</script>`)
+    writeSource(root, path, source)
 
     const result = runVerifier(root)
 
     expect(result.status).toBe(1)
     expect(result.stderr).toContain(`${path}:`)
     expect(result.stderr).toContain(
-      "authored pages must use the contextual lb-api client for private backend access"
+      "low-level lb-api client capability is restricted to its contextual owner"
     )
   })
 
-  test("allows unrelated and public apiBase properties in authored pages", () => {
+  test("rejects low-level client access moved behind an imported frontend module", () => {
     const root = createTree()
+    writeSource(root, "app/lib/backend-access.ts", [
+      "import { createLbApiClient } from \"./api/client\"",
+      "export const backendClient = createLbApiClient"
+    ].join("\n"))
+    writeSource(root, "app/pages/consumer.vue", [
+      "<script setup lang=\"ts\">",
+      "import { backendClient } from \"~/lib/backend-access\"",
+      "void backendClient",
+      "</script>"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("app/lib/backend-access.ts:")
+    expect(result.stderr).toContain(
+      "low-level lb-api client capability is restricted to its contextual owner"
+    )
+  })
+
+  test("allows the contextual owner and unrelated runtime-config shadows", () => {
+    const root = createTree()
+    writeSource(root, "app/composables/useLbApiClient.ts", [
+      "import { createCorrelatedLbApiClient } from \"../lib/api/client\"",
+      "export function useLbApiClient() {",
+      "  const config = useRuntimeConfig()",
+      "  return createCorrelatedLbApiClient(config.apiBase, undefined)",
+      "}"
+    ].join("\n"))
+    writeSource(root, "app/plugins/observability.client.ts", [
+      "import { observeApiFailures } from \"../lib/api/client\"",
+      "observeApiFailures(() => undefined)"
+    ].join("\n"))
+    writeSource(root, "app/lib/type-consumer.ts", [
+      "import type { createLbApiClient } from \"./api/client\"",
+      "export type ClientFactory = typeof createLbApiClient",
+      "export type { createLbApiClient } from \"./api/client\""
+    ].join("\n"))
     writeSource(root, "app/pages/safe.vue", [
       "<script setup lang=\"ts\">",
+      "function useRuntimeConfig() {",
+      "  return { apiBase: \"display value\", public: { apiBase: \"/api/v2\" } }",
+      "}",
       "const config = useRuntimeConfig()",
-      "const model = { apiBase: \"display value\" }",
+      "const model = { apiBase: config.apiBase }",
       "const key = \"apiBase\"",
       "void model.apiBase",
-      "void model[\"apiBase\"]",
       "void model[key]",
-      "createLbApiClient(config.public.apiBase)",
-      "createLbApiClient(config.public[\"apiBase\"])",
+      "void config.public.apiBase",
+      "function require(_module: string) { return { display: true } }",
+      "void require(\"~/lib/api/client\")",
       "</script>"
     ].join("\n"))
 

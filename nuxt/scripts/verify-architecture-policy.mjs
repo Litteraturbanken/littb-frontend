@@ -14,6 +14,12 @@ const chronologyRangeConsumerPaths = new Set([
   "app/pages/sök.vue"
 ])
 const htmlDocumentPath = "app/lib/html-document.ts"
+const lbApiClientModulePath = "app/lib/api/client"
+const lbApiClientOwnerPath = "app/composables/useLbApiClient.ts"
+const restrictedLbApiClientExports = new Set([
+  "createCorrelatedLbApiClient",
+  "createLbApiClient"
+])
 const contractAllowlist = new Set([
   "test/nuxt/author-works-contract.ts",
   "test/nuxt/observability-contract.ts",
@@ -443,71 +449,99 @@ function auditLegacyReaderEditorMetadata(record) {
   auditTemplateNode(record.template.ast)
 }
 
-function originatesFromRuntimeConfig(node, semantic, atNode, seen = new Set()) {
-  const expression = unwrapExpression(node)
-  if (ts.isCallExpression(expression)) {
-    return callIdentity(expression.expression) === "useRuntimeConfig"
+function modulePathFrom(record, moduleSpecifier) {
+  if (moduleSpecifier.startsWith("~/") || moduleSpecifier.startsWith("@/")) {
+    return `app/${moduleSpecifier.slice(2)}`.replace(/\.(?:[cm]?[jt]sx?)$/u, "")
   }
-  if (!ts.isIdentifier(expression) || seen.has(expression.text)) return false
-  seen.add(expression.text)
-  const entry = resolveDeclaration(expression.text, atNode, semantic)
-  const initializer = declarationInitializer(entry, atNode, semantic)
-  return Boolean(initializer)
-    && initializer.extracted === null
-    && originatesFromRuntimeConfig(initializer.expression, semantic, atNode, seen)
+  if (!moduleSpecifier.startsWith(".")) return null
+  return resolve("/", dirname(record.relativePath), moduleSpecifier)
+    .slice(1)
+    .replace(/\.(?:[cm]?[jt]sx?)$/u, "")
 }
 
-function directBindingPropertyName(binding) {
-  if (!ts.isBindingElement(binding)) return null
-  if (binding.propertyName
-    && (ts.isIdentifier(binding.propertyName)
-      || ts.isStringLiteralLike(binding.propertyName))) {
-    return binding.propertyName.text
-  }
-  if (binding.propertyName && ts.isComputedPropertyName(binding.propertyName)) {
-    const expression = unwrapExpression(binding.propertyName.expression)
-    return ts.isStringLiteralLike(expression) ? expression.text : "__dynamic__"
-  }
-  return ts.isIdentifier(binding.name) ? binding.name.text : null
+function isLbApiClientModule(record, moduleSpecifier) {
+  return modulePathFrom(record, moduleSpecifier) === lbApiClientModulePath
 }
 
-function auditPrivateApiBasePageAccess(record) {
-  if (!record.relativePath.startsWith("app/pages/")) return
+function namedImportViolatesOwner(record, importedName) {
+  if (!restrictedLbApiClientExports.has(importedName)) return false
+  return record.relativePath !== lbApiClientOwnerPath
+    || importedName !== "createCorrelatedLbApiClient"
+}
+
+function auditLbApiClientCapability(record) {
+  if (!record.relativePath.startsWith("app/")) return
   for (const unit of record.units) {
     const semantic = buildSemantic(unit)
     visitAst(unit.sourceFile, node => {
-      const elementArgument = ts.isElementAccessExpression(node)
-        ? unwrapExpression(node.argumentExpression)
-        : null
-      const isPrivateAccess = originatesFromRuntimeConfig(
-        ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)
-          ? node.expression
-          : node,
-        semantic,
-        node
-      ) && ((ts.isPropertyAccessExpression(node) && node.name.text === "apiBase")
-        || (ts.isElementAccessExpression(node)
-          && (!elementArgument
-            || !ts.isStringLiteralLike(elementArgument)
-            || elementArgument.text === "apiBase")))
-      const owner = ts.isBindingElement(node)
-        && ts.isObjectBindingPattern(node.parent)
-        && ts.isVariableDeclaration(node.parent.parent)
-        ? node.parent.parent
-        : null
-      const bindingProperty = directBindingPropertyName(node)
-      const isPrivateBinding = owner
-        && (bindingProperty === "apiBase" || bindingProperty === "__dynamic__")
-        && owner.initializer
-        && originatesFromRuntimeConfig(owner.initializer, semantic, node)
-      if (!isPrivateAccess && !isPrivateBinding) return
+      let violationNode = null
+      if (ts.isImportDeclaration(node)
+        && ts.isStringLiteralLike(node.moduleSpecifier)
+        && isLbApiClientModule(record, node.moduleSpecifier.text)) {
+        const clause = node.importClause
+        if (clause && !clause.isTypeOnly) {
+          if (clause.name || clause.namedBindings && ts.isNamespaceImport(clause.namedBindings)) {
+            violationNode = node
+          } else if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
+            const forbidden = clause.namedBindings.elements.find(specifier => (
+              !specifier.isTypeOnly
+              && namedImportViolatesOwner(
+                record,
+                specifier.propertyName?.text ?? specifier.name.text
+              )
+            ))
+            if (forbidden) violationNode = forbidden
+          }
+        }
+      } else if (ts.isExportDeclaration(node)
+        && node.moduleSpecifier
+        && ts.isStringLiteralLike(node.moduleSpecifier)
+        && isLbApiClientModule(record, node.moduleSpecifier.text)
+        && !node.isTypeOnly) {
+        if (!node.exportClause || ts.isNamespaceExport(node.exportClause)) {
+          violationNode = node
+        } else {
+          const forbidden = node.exportClause.elements.find(specifier => (
+            !specifier.isTypeOnly
+            && namedImportViolatesOwner(
+              record,
+              specifier.propertyName?.text ?? specifier.name.text
+            )
+          ))
+          if (forbidden) violationNode = forbidden
+        }
+      } else if (ts.isCallExpression(node) && node.arguments.length === 1) {
+        const dynamicImport = node.expression.kind === ts.SyntaxKind.ImportKeyword
+        const unshadowedRequire = ts.isIdentifier(node.expression)
+          && node.expression.text === "require"
+          && !resolveDeclaration("require", node, semantic)
+        if (dynamicImport || unshadowedRequire) {
+          const moduleSpecifier = constantString(
+            node.arguments[0],
+            unit,
+            semantic,
+            node
+          )
+          if (moduleSpecifier && isLbApiClientModule(record, moduleSpecifier)) {
+            violationNode = node
+          }
+        }
+      } else if (ts.isImportEqualsDeclaration(node)
+        && !node.isTypeOnly
+        && ts.isExternalModuleReference(node.moduleReference)
+        && node.moduleReference.expression
+        && ts.isStringLiteralLike(node.moduleReference.expression)
+        && isLbApiClientModule(record, node.moduleReference.expression.text)) {
+        violationNode = node
+      }
+      if (!violationNode) return
       addViolation(
         record.relativePath,
         lineNumberAt(
           record.source,
-          unit.sourceOffset + node.getStart(unit.sourceFile)
+          unit.sourceOffset + violationNode.getStart(unit.sourceFile)
         ),
-        "authored pages must use the contextual lb-api client for private backend access"
+        "low-level lb-api client capability is restricted to its contextual owner"
       )
     })
   }
@@ -3201,7 +3235,7 @@ const capabilityRegistry = buildCapabilityRegistry(sourceRecords)
 for (const record of sourceRecords) {
   auditComments(record)
   auditLegacyReaderEditorMetadata(record)
-  auditPrivateApiBasePageAccess(record)
+  auditLbApiClientCapability(record)
   auditVueTemplate(record)
   auditChronologyRangeOwnership(record)
   auditCrossEngineRangePointerSupport(record)

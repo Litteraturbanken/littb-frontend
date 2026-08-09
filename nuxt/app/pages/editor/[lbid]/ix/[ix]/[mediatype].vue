@@ -2,7 +2,6 @@
 import type { EditorReaderPage } from "#shared/types/editor-reader"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
-import { createLbApiClient } from "~/lib/api/client"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import type { components } from "~/lib/api/generated/lbapi"
 import {
@@ -68,7 +67,6 @@ const requestIdentity = computed(() => JSON.stringify([
   alias.value
 ]))
 const requestFetch = useRequestFetch()
-const config = useRuntimeConfig()
 const runtimeClient = useLbApiClient()
 function requestPage(): Promise<EditorReaderPage> {
   return requestFetch<EditorReaderPage>(
@@ -1008,8 +1006,7 @@ async function fetchEditorHitAtIndex(
   const { state, current, response, sourceIdentity } = context
   const offset = Math.max(index - 1, 0)
   const limit = 3
-  const client = createLbApiClient(config.public.apiBase)
-  const result = await client.GET("/works/{work_id}/search-hits", {
+  const result = await runtimeClient.GET("/works/{work_id}/search-hits", {
     signal,
     params: {
       path: { work_id: current.workId },

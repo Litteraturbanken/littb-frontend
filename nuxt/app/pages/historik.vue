@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { createLbApiClient } from "../lib/api/client"
+import { useLbApiClient } from "../composables/useLbApiClient"
 import type { components } from "../lib/api/generated/lbapi"
 import {
   canonicalNuxtHref,
@@ -98,7 +98,7 @@ function resolvedAuthors(
   return Object.fromEntries(entries)
 }
 
-const config = useRuntimeConfig()
+const client = useLbApiClient()
 const history = ref<StoredHistory[]>([])
 const authorsById = ref<Record<string, AuthorSummary>>({})
 const controller = new AbortController()
@@ -128,7 +128,6 @@ async function loadHistory() {
   if (history.value.length === 0) return
 
   const authorIds = [...new Set(history.value.map(record => record.author))]
-  const client = createLbApiClient(config.public.apiBase)
   try {
     const { data, error } = await client.POST("/authors/resolve", {
       body: { author_ids: authorIds },

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import ordinaryBackground from "~/assets/img/forf2_bkg.jpg"
-import { createLbApiClient } from "~/lib/api/client"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import {
   authorProfilePath,
@@ -68,19 +67,18 @@ definePageMeta({
 })
 
 const route = useRoute()
-const config = useRuntimeConfig()
 const authorId = computed(() => {
   const value = Array.isArray(route.params.author) ? route.params.author[0] : route.params.author
   return typeof value === "string" ? value : ""
 })
 const currentIdentity = computed(() => `biblinfo:${authorId.value}`)
 const asyncKey = computed(() => `author-biblinfo:${currentIdentity.value}`)
-const initialClient = useLbApiClient()
+const client = useLbApiClient()
 
 async function loadInitial(author: string, identity: string): Promise<InitialResult> {
   let profileResult
   try {
-    profileResult = await initialClient.GET("/authors/{author_id}", {
+    profileResult = await client.GET("/authors/{author_id}", {
       params: { path: { author_id: author } }
     })
   } catch {
@@ -96,7 +94,7 @@ async function loadInitial(author: string, identity: string): Promise<InitialRes
   }
   const profile = createAuthorProfileView(profileResult.data, "ordinary")
   try {
-    const bibliographyResult = await initialClient.GET("/bibliography/entries")
+    const bibliographyResult = await client.GET("/bibliography/entries")
     const items = bibliographyItems(bibliographyResult.data)
     if (!items) {
       return { identity, status: "bibliography-unavailable", profile, items: [] }
@@ -220,7 +218,6 @@ async function submitSearch(): Promise<void> {
   }
   searching.value = true
   try {
-    const client = createLbApiClient(config.public.apiBase)
     const result = await client.GET("/bibliography/entries", {
       params: {
         query: {

@@ -2,7 +2,7 @@
 import type { components } from "~/lib/api/generated/lbapi"
 import type { SanitizedHtml } from "#shared/types/renderable-html"
 import { emptyRenderableHtml } from "#shared/utils/renderable-html"
-import { createLbApiClient } from "~/lib/api/client"
+import { useLbApiClient } from "~/composables/useLbApiClient"
 import {
   readerWordFromTarget,
   sanitizeDictionaryArticle,
@@ -12,7 +12,7 @@ import {
 type DictionaryArticle = components["schemas"]["DictionaryArticleResponse"]
 
 const route = useRoute()
-const config = useRuntimeConfig()
+const client = useLbApiClient()
 const indicator = ref<{ left: number, top: number, word: string } | null>(null)
 const article = ref<DictionaryArticle | null>(null)
 const articleHtml = ref<SanitizedHtml<"dictionary-article">>(emptyRenderableHtml())
@@ -106,7 +106,6 @@ async function lookup(): Promise<void> {
   window.getSelection()?.removeAllRanges()
   if (!selected) return
   try {
-    const client = createLbApiClient(config.public.apiBase)
     const result = await client.GET("/dictionary/articles", {
       params: { query: { word: selected.word } }
     })
