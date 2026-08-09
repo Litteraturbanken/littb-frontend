@@ -4,11 +4,16 @@ import type { components } from "../lib/api/generated/lbapi"
 import {
   canonicalNuxtHref,
   isNuxtInternalHref,
-  safeNativeHref
+  safeNativeHref,
+  validRouteSegment
 } from "../lib/internal-navigation"
+import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 
 type AuthorSummary = components["schemas"]["AuthorSummary"]
 type StoredHistory = { author: string, label: string, url: string }
+
+const maximumHistoryLabelLength = 20_000
+const maximumResolvedAuthorNameLength = 2_000
 
 useSeoMeta({ title: "History | Litteraturbanken" })
 useHead({ bodyAttrs: { class: "focus page-history ready" } })
@@ -22,9 +27,75 @@ function storedHistory(value: unknown): StoredHistory | null {
   const record = value as Record<string, unknown>
   const author = typeof record.author === "string" ? record.author.trim() : ""
   if (author.length < 1 || author.length > 100) return null
-  if (typeof record.label !== "string" || !record.label.trim()) return null
+  if (typeof record.label !== "string"
+    || !record.label.trim()
+    || record.label.length > maximumHistoryLabelLength) return null
   if (!safeHistoryUrl(record.url)) return null
   return { author, label: record.label, url: record.url }
+}
+
+function hasExactKeys(record: Record<string, unknown>, expected: readonly string[]): boolean {
+  const actual = Object.keys(record).sort()
+  return actual.length === expected.length
+    && expected.every((key, index) => key === actual[index])
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+}
+
+function isResolvedAuthorName(value: unknown): value is string {
+  return typeof value === "string"
+    && value.length > 0
+    && value.length <= maximumResolvedAuthorNameLength
+    && value === value.trim()
+    && !hasC0OrC1Control(value)
+    && !hasLoneSurrogate(value)
+}
+
+function isAcceptedResolvedAuthorId(
+  value: unknown,
+  requested: ReadonlySet<string>,
+  seen: ReadonlySet<string>
+): value is string {
+  return typeof value === "string"
+    && validRouteSegment(value, 100)
+    && requested.has(value)
+    && !seen.has(value)
+}
+
+function resolvedAuthor(
+  value: unknown,
+  requested: ReadonlySet<string>,
+  seen: ReadonlySet<string>
+): AuthorSummary | null {
+  if (!isRecord(value) || !hasExactKeys(value, ["author_id", "full_name", "surname"])) {
+    return null
+  }
+  const { author_id: authorId, full_name: fullName, surname } = value
+  if (!isAcceptedResolvedAuthorId(authorId, requested, seen)
+    || !isResolvedAuthorName(fullName)
+    || (surname !== null && !isResolvedAuthorName(surname))) return null
+  return { author_id: authorId, full_name: fullName, surname }
+}
+
+function resolvedAuthors(
+  value: unknown,
+  requestedIds: readonly string[]
+): Record<string, AuthorSummary> | null {
+  if (!isRecord(value) || !hasExactKeys(value, ["items"]) || !Array.isArray(value.items)
+    || value.items.length > requestedIds.length) return null
+
+  const requested = new Set(requestedIds)
+  const seen = new Set<string>()
+  const entries: Array<[string, AuthorSummary]> = []
+  for (const item of value.items) {
+    const author = resolvedAuthor(item, requested, seen)
+    if (author === null) return null
+    seen.add(author.author_id)
+    entries.push([author.author_id, author])
+  }
+  return Object.fromEntries(entries)
 }
 
 const config = useRuntimeConfig()
@@ -64,9 +135,8 @@ async function loadHistory() {
       signal: controller.signal
     })
     if (error || !data || unmounted || controller.signal.aborted) return
-    authorsById.value = Object.fromEntries(
-      data.items.map(author => [author.author_id, author])
-    )
+    const resolved = resolvedAuthors(data, authorIds)
+    if (resolved !== null) authorsById.value = resolved
   } catch {
     // The legacy page has no visible error state.
   }

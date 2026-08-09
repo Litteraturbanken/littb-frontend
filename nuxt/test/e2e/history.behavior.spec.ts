@@ -20,7 +20,8 @@ async function reset(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_author_resolve_requests`),
     request.delete(`${fixture}/_author_resolve_failure`),
-    request.delete(`${fixture}/_author_resolve_delays`)
+    request.delete(`${fixture}/_author_resolve_delays`),
+    request.delete(`${fixture}/_author_resolve_scenario`)
   ])
 }
 
@@ -233,6 +234,7 @@ test("valid history is filtered before the 50-row limit and resolved once in sto
     { author: "StrindbergA", label: "", url: "/empty-label" },
     { author: " ", label: "Blank author", url: "/blank-author" },
     { author: "x".repeat(101), label: "Long author", url: "/long-author" },
+    { author: "StrindbergA", label: "x".repeat(20_001), url: "/long-label" },
     { author: "StrindbergA", label: "Absolute", url: "https://evil.invalid/work" },
     { author: "StrindbergA", label: "Protocol relative", url: "//evil.invalid/work" },
     { author: "StrindbergA", label: "Backslash", url: "/bad\\path" },
@@ -349,6 +351,53 @@ test("a successful empty resolver response renders an unchanged blank-author row
   expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
   expect(problems).toEqual([])
 })
+
+for (const scenario of [
+  "primitive",
+  "wrong-container",
+  "non-array-items",
+  "oversized-items",
+  "extra-top-key",
+  "malformed-item",
+  "extra-item-key",
+  "duplicate",
+  "unrequested",
+  "empty-id",
+  "whitespace-id",
+  "control-id",
+  "overlong-id",
+  "empty-name",
+  "whitespace-name",
+  "control-name",
+  "overlong-name",
+  "wrong-surname",
+  "empty-surname",
+  "whitespace-surname",
+  "control-surname",
+  "overlong-surname"
+] as const) {
+  test(`malformed resolver response ${scenario} leaves history unenriched`, async ({
+    page,
+    request
+  }) => {
+    const { problems } = captureBrowserProblems(page)
+    const raw = JSON.stringify([{
+      author: "StrindbergA",
+      label: "Röda rummet",
+      url: "/verk/roda-rummet"
+    }])
+    await seedRawHistory(page, raw)
+    await request.put(`${fixture}/_author_resolve_scenario`, {
+      data: { scenario }
+    })
+
+    await openHistory(page)
+
+    await expectUnenrichedHistoryRow(page)
+    expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
+    expect(problems).toEqual([])
+  })
+}
 
 for (const [name, raw] of [
   ["missing storage", null],
