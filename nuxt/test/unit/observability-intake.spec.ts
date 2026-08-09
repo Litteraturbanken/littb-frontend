@@ -77,12 +77,28 @@ describe("observability intake guard", () => {
   test("deduplicates event IDs temporarily and releases failed deliveries", () => {
     const guard = new ObservabilityIntakeGuard()
     const event = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d" }
+    const firstOwner = Symbol("first request")
 
-    expect(guard.reserveNewEvents([event], 1_000)).toEqual([event])
-    expect(guard.reserveNewEvents([event], 2_000)).toEqual([])
-    guard.release([event.event_id])
-    expect(guard.reserveNewEvents([event], 3_000)).toEqual([event])
-    expect(guard.reserveNewEvents([event], 303_001)).toEqual([event])
+    expect(guard.reserveNewEvents([event], 1_000, firstOwner)).toEqual([event])
+    expect(guard.reserveNewEvents([event], 2_000, Symbol("duplicate"))).toEqual([])
+    guard.release([event.event_id], firstOwner)
+    expect(guard.reserveNewEvents([event], 3_000, Symbol("retry"))).toEqual([event])
+    expect(guard.reserveNewEvents([event], 303_001, Symbol("expired")))
+      .toEqual([event])
+  })
+
+  test("an expired reservation cannot release a newer owner of the same ID", () => {
+    const guard = new ObservabilityIntakeGuard()
+    const event = { event_id: intakeEventId }
+    const oldOwner = Symbol("old request")
+    const newOwner = Symbol("new request")
+
+    expect(guard.reserveNewEvents([event], 1_000, oldOwner)).toEqual([event])
+    expect(guard.reserveNewEvents([event], 301_001, newOwner)).toEqual([event])
+    guard.release([event.event_id], oldOwner)
+
+    expect(guard.reserveNewEvents([event], 301_002, Symbol("third request")))
+      .toEqual([])
   })
 
   test("releases event IDs when signing preparation fails before delivery", async () => {

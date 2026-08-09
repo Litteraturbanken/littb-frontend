@@ -88,7 +88,10 @@ interface RateEntry {
 
 export class ObservabilityIntakeGuard {
   readonly #clients = new Map<string, RateEntry>()
-  readonly #eventIds = new Map<string, number>()
+  readonly #eventIds = new Map<string, Readonly<{
+    acceptedAt: number
+    owner: symbol
+  }>>()
 
   enforceRate(clientKey: string, now = Date.now()): void {
     for (const [key, entry] of this.#clients) {
@@ -112,10 +115,13 @@ export class ObservabilityIntakeGuard {
 
   reserveNewEvents<T extends { event_id: string }>(
     events: T[],
-    now = Date.now()
+    now: number,
+    owner: symbol
   ): T[] {
-    for (const [eventId, acceptedAt] of this.#eventIds) {
-      if (now - acceptedAt >= REPLAY_WINDOW_MS) this.#eventIds.delete(eventId)
+    for (const [eventId, reservation] of this.#eventIds) {
+      if (now - reservation.acceptedAt >= REPLAY_WINDOW_MS) {
+        this.#eventIds.delete(eventId)
+      }
     }
     const unseen: T[] = []
     const batchIds = new Set<string>()
@@ -126,7 +132,9 @@ export class ObservabilityIntakeGuard {
       batchIds.add(event.event_id)
       if (!this.#eventIds.has(event.event_id)) unseen.push(event)
     }
-    for (const event of unseen) this.#eventIds.set(event.event_id, now)
+    for (const event of unseen) {
+      this.#eventIds.set(event.event_id, { acceptedAt: now, owner })
+    }
     while (this.#eventIds.size > MAX_EVENT_IDS) {
       const oldest = this.#eventIds.keys().next().value
       if (oldest === undefined) break
@@ -135,8 +143,12 @@ export class ObservabilityIntakeGuard {
     return unseen
   }
 
-  release(eventIds: string[]): void {
-    for (const eventId of eventIds) this.#eventIds.delete(eventId)
+  release(eventIds: string[], owner: symbol): void {
+    for (const eventId of eventIds) {
+      if (this.#eventIds.get(eventId)?.owner === owner) {
+        this.#eventIds.delete(eventId)
+      }
+    }
   }
 }
 
@@ -329,6 +341,7 @@ type PreparedIntake = Readonly<{
   guard: ObservabilityIntakeGuard
   intakeEvents: BrowserIntakeEvent[]
   now: number
+  reservationOwner: symbol
 }>
 
 function validateIntakeHeaders(event: H3Event, config: ObservabilityIntakeConfig): void {
@@ -355,11 +368,13 @@ async function prepareIntake(
   const batch = parseBatch(await readBoundedRequestBody(event))
   const guard = options.guard ?? intakeGuard
   const now = (options.now ?? Date.now)()
+  const reservationOwner = Symbol("observability intake reservation")
   guard.enforceRate(clientKey(event), now)
   return {
     guard,
-    intakeEvents: guard.reserveNewEvents(batch.events, now),
-    now
+    intakeEvents: guard.reserveNewEvents(batch.events, now, reservationOwner),
+    now,
+    reservationOwner
   }
 }
 
@@ -395,12 +410,13 @@ async function forwardEvents(
   request: Awaited<ReturnType<typeof signedForwardRequest>>,
   intakeEvents: BrowserIntakeEvent[],
   guard: ObservabilityIntakeGuard,
+  reservationOwner: symbol,
   fetchImplementation: typeof globalThis.fetch
 ): Promise<Response> {
   try {
     return await fetchImplementation(request.target, request.init)
   } catch {
-    guard.release(intakeEvents.map(item => item.event_id))
+    guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
     throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
   }
 }
@@ -408,9 +424,10 @@ async function forwardEvents(
 function rejectFailedForward(
   response: Response,
   intakeEvents: BrowserIntakeEvent[],
-  guard: ObservabilityIntakeGuard
+  guard: ObservabilityIntakeGuard,
+  reservationOwner: symbol
 ): never {
-  guard.release(intakeEvents.map(item => item.event_id))
+  guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
   throw createError({
     statusCode: response.status >= 400 && response.status < 500 ? 422 : 502,
     statusMessage: "Event intake unavailable"
@@ -422,7 +439,12 @@ export async function handleObservabilityIntake(
   config: ObservabilityIntakeConfig,
   options: ObservabilityIntakeOptions = {}
 ): Promise<{ accepted: number }> {
-  const { guard, intakeEvents, now } = await prepareIntake(event, config, options)
+  const {
+    guard,
+    intakeEvents,
+    now,
+    reservationOwner
+  } = await prepareIntake(event, config, options)
   if (intakeEvents.length === 0) {
     setResponseStatus(event, 202)
     return { accepted: 0 }
@@ -438,13 +460,14 @@ export async function handleObservabilityIntake(
   try {
     request = await signedForwardRequest(event, config, events, now)
   } catch (error) {
-    guard.release(intakeEvents.map(item => item.event_id))
+    guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
     throw error
   }
   const response = await forwardEvents(
     request,
     intakeEvents,
     guard,
+    reservationOwner,
     options.fetch ?? globalThis.fetch
   )
   if (response.status === 409) {
@@ -452,7 +475,7 @@ export async function handleObservabilityIntake(
     return { accepted: 0 }
   }
   if (!response.ok) {
-    rejectFailedForward(response, intakeEvents, guard)
+    rejectFailedForward(response, intakeEvents, guard, reservationOwner)
   }
   const result = await response.json() as { accepted?: unknown }
   const accepted = typeof result.accepted === "number"
