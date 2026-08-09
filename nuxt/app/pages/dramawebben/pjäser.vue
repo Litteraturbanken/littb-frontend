@@ -538,13 +538,16 @@ function setRange(key: RangeKey, side: "from" | "to", value: string) {
   const current = selectedRange(key)
   const number = Number(value)
   if (!Number.isFinite(number)) return
-  let from = side === "from" ? number : current.from
-  let to = side === "to" ? number : current.to
-  if (from > to) [from, to] = [to, from]
+  const from = side === "from" ? Math.min(number, current.to) : current.from
+  const to = side === "to" ? Math.max(number, current.from) : current.to
   void setQuery(key, `${from},${to}`)
 }
 
-const rangePointer = ref<{ key: RangeKey, side: "from" | "to" } | null>(null)
+const rangePointer = ref<{
+  key: RangeKey
+  pointerId: number
+  side: "from" | "to"
+} | null>(null)
 
 function rangePointerValue(event: PointerEvent, key: RangeKey): number | null {
   if (!(event.currentTarget instanceof HTMLElement)) return null
@@ -567,7 +570,7 @@ function beginRangePointer(event: PointerEvent, key: RangeKey) {
   event.preventDefault()
   const current = selectedRange(key)
   const side = Math.abs(value - current.from) < Math.abs(value - current.to) ? "from" : "to"
-  rangePointer.value = { key, side }
+  rangePointer.value = { key, pointerId: event.pointerId, side }
   track.querySelector<HTMLInputElement>(`input[data-range-endpoint="${side}"]`)
     ?.focus({ preventScroll: true })
   track.setPointerCapture(event.pointerId)
@@ -575,7 +578,7 @@ function beginRangePointer(event: PointerEvent, key: RangeKey) {
 
 function finishRangePointer(event: PointerEvent, key: RangeKey) {
   const pointer = rangePointer.value
-  if (!pointer || pointer.key !== key) return
+  if (!pointer || pointer.key !== key || pointer.pointerId !== event.pointerId) return
   const value = rangePointerValue(event, key)
   rangePointer.value = null
   if (value === null) return
@@ -586,8 +589,8 @@ function finishRangePointer(event: PointerEvent, key: RangeKey) {
   setRange(key, pointer.side, String(bounded))
 }
 
-function cancelRangePointer() {
-  if (!rangePointer.value) return
+function cancelRangePointer(event: PointerEvent) {
+  if (rangePointer.value?.pointerId !== event.pointerId) return
   rangePointer.value = null
 }
 

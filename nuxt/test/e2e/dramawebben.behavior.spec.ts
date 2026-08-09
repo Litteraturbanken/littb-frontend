@@ -868,6 +868,75 @@ test("all drama range tracks share pointer behavior while native keyboard input 
   expect(page.url()).toBe(beforeRightClick)
 })
 
+test("native drama range endpoints constrain only the endpoint being edited", async ({ page }) => {
+  await page.goto(
+    "/dramawebben/pj%C3%A4ser?number_of_pages=24,60",
+    { waitUntil: "networkidle" }
+  )
+  await page.getByRole("button", { name: "Akter och roller", exact: true }).click()
+
+  const from = page.getByRole("slider", { name: "Antal sidor från" })
+  await from.evaluate((element: HTMLInputElement) => {
+    element.value = "90"
+    element.dispatchEvent(new Event("change", { bubbles: true }))
+  })
+  await expectQuery(page, "number_of_pages", "60,60")
+
+  const to = page.getByRole("slider", { name: "Antal sidor till" })
+  await to.evaluate((element: HTMLInputElement) => {
+    element.value = "40"
+    element.dispatchEvent(new Event("change", { bubbles: true }))
+  })
+  await expectQuery(page, "number_of_pages", "60,60")
+})
+
+test("drama range pointers ignore completion and cancellation from other pointers", async ({
+  page
+}) => {
+  await page.goto(
+    "/dramawebben/pj%C3%A4ser?number_of_pages=24,120&keep=pointer",
+    { waitUntil: "networkidle" }
+  )
+  await page.getByRole("button", { name: "Akter och roller", exact: true }).click()
+  const track = page.locator("[data-drama-range=number_of_pages]")
+  const box = await track.boundingBox()
+  const lineBox = await track.locator("input[type=range]").first().boundingBox()
+  expect(box).not.toBeNull()
+  expect(lineBox).not.toBeNull()
+  const valueX = (value: number) => (
+    box!.x + 7.5 + (box!.width - 15) * (value - 18) / (120 - 18)
+  )
+  const y = lineBox!.y + lineBox!.height / 2
+
+  await track.evaluate(element => {
+    element.setPointerCapture = () => undefined
+  })
+  await track.dispatchEvent("pointerdown", {
+    button: 0,
+    clientX: valueX(30),
+    clientY: y,
+    pointerId: 91
+  })
+  await track.dispatchEvent("pointercancel", { pointerId: 92 })
+  await track.dispatchEvent("pointerup", {
+    button: 0,
+    clientX: valueX(80),
+    clientY: y,
+    pointerId: 92
+  })
+  await page.waitForTimeout(50)
+  await expectQuery(page, "number_of_pages", "24,120")
+
+  await track.dispatchEvent("pointerup", {
+    button: 0,
+    clientX: valueX(40),
+    clientY: y,
+    pointerId: 91
+  })
+  await expectQuery(page, "number_of_pages", "40,120")
+  expect(new URL(page.url()).searchParams.get("keep")).toBe("pointer")
+})
+
 test("drama range capture loss prevents a later stale pointer commit", async ({ page }) => {
   await page.goto(
     "/dramawebben/pj%C3%A4ser?number_of_pages=24,120&keep=capture",
