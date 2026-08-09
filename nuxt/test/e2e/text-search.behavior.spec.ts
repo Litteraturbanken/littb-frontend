@@ -1286,6 +1286,17 @@ test("Search result return restores the exact origin and Reader hit", async ({ p
   })).toHaveAttribute("href", origin)
 })
 
+test("a remounted Search result links back to its new SPA query", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+  await pushRoute(page, "/om/ide")
+  await pushRoute(page, "/s%C3%B6k?fras=overflow")
+
+  const readerHref = await page.locator("#results .match a").first().getAttribute("href")
+  expect(readerHref).not.toBeNull()
+  expect(new URL(readerHref!, "http://litteraturbanken.test").searchParams.get("s_return"))
+    .toBe("/s%C3%B6k?fras=overflow")
+})
+
 test("completed searches hide the top-row activity indicator", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet")
   await expect(page.locator(".submit_form .top_row .spinner")).toBeHidden()

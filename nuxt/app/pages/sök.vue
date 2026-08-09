@@ -137,6 +137,7 @@ const categoryOptions = [
 
 const route = useRoute()
 const router = useRouter()
+const nuxtApp = useNuxtApp()
 const config = useRuntimeConfig()
 const requestUrl = useRequestURL()
 const requestFetch = useRequestFetch()
@@ -201,15 +202,14 @@ const initialSearchFullPath = useState(
   `text-search-initial-full-path:${route.path}`,
   () => `${requestUrl.pathname}${requestUrl.search}`
 )
-const clientSearchFullPath = ref<string | null>(null)
-const { rememberTextSearchHref } = useTextSearchNavigation()
-rememberTextSearchHref(import.meta.client
+const searchOriginFullPath = ref(import.meta.client && !nuxtApp.isHydrating
   ? `${window.location.pathname}${window.location.search}`
   : initialSearchFullPath.value)
+const { rememberTextSearchHref } = useTextSearchNavigation()
+rememberTextSearchHref(searchOriginFullPath.value)
 
 function currentSearchFullPath(): string {
-  if (import.meta.client && clientSearchFullPath.value !== null) return clientSearchFullPath.value
-  return initialSearchFullPath.value
+  return searchOriginFullPath.value
 }
 
 function readerHrefWithReturn(href: string | undefined): string | undefined {
@@ -218,8 +218,8 @@ function readerHrefWithReturn(href: string | undefined): string | undefined {
 
 watch(() => route.fullPath, () => {
   if (import.meta.client) {
-    clientSearchFullPath.value = `${window.location.pathname}${window.location.search}`
-    rememberTextSearchHref(clientSearchFullPath.value)
+    searchOriginFullPath.value = `${window.location.pathname}${window.location.search}`
+    rememberTextSearchHref(searchOriginFullPath.value)
   }
 }, { flush: "sync" })
 
