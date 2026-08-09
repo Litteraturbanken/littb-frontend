@@ -97,6 +97,14 @@ async function expectHeadingOnly(page: Page) {
   await expect(page.locator("#mainview > div > ul")).toHaveCount(0)
 }
 
+async function expectUnenrichedHistoryRow(page: Page) {
+  const row = page.locator("#mainview > div > ul > li")
+  await expect(row).toHaveCount(1)
+  await expect(row.locator("span").first()).toHaveText("")
+  await expect(row.locator("span").last()).toHaveText("Röda rummet")
+  await expect(row.locator("a")).toHaveAttribute("href", "/verk/roda-rummet")
+}
+
 async function pushRoute(page: Page, path: string) {
   await page.evaluate(async target => {
     type VueRoot = HTMLElement & {
@@ -386,7 +394,7 @@ test("storage access failure keeps the heading-only page without requesting auth
   expect(problems).toEqual([])
 })
 
-test("typed API failure leaves valid stored history hidden and unchanged", async ({
+test("typed API failure leaves valid stored history navigable and unchanged", async ({
   page,
   request
 }) => {
@@ -405,7 +413,7 @@ test("typed API failure leaves valid stored history hidden and unchanged", async
 
   await openHistory(page)
 
-  await expectHeadingOnly(page)
+  await expectUnenrichedHistoryRow(page)
   expect(await authorRequests(request)).toEqual([{
     path: "/v2/authors/resolve",
     body: { author_ids: ["StrindbergA"] }
@@ -423,7 +431,7 @@ test("typed API failure leaves valid stored history hidden and unchanged", async
   expect(browser.problems).toEqual([])
 })
 
-test("thrown fetch failure leaves valid stored history hidden and unchanged", async ({
+test("thrown fetch failure leaves valid stored history navigable and unchanged", async ({
   page,
   request
 }) => {
@@ -442,7 +450,7 @@ test("thrown fetch failure leaves valid stored history hidden and unchanged", as
 
   await openHistory(page)
 
-  await expectHeadingOnly(page)
+  await expectUnenrichedHistoryRow(page)
   expect(await authorRequests(request)).toEqual([])
   expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
   expect(transport.responses).toEqual([])

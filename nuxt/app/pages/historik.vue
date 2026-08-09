@@ -30,7 +30,6 @@ function storedHistory(value: unknown): StoredHistory | null {
 const config = useRuntimeConfig()
 const history = ref<StoredHistory[]>([])
 const authorsById = ref<Record<string, AuthorSummary>>({})
-const authorsResolved = ref(false)
 const controller = new AbortController()
 let unmounted = false
 
@@ -68,7 +67,6 @@ async function loadHistory() {
     authorsById.value = Object.fromEntries(
       data.items.map(author => [author.author_id, author])
     )
-    authorsResolved.value = true
   } catch {
     // The legacy page has no visible error state.
   }
@@ -84,7 +82,7 @@ onBeforeUnmount(() => {
 <template>
   <div>
     <h1>Senast lästa verk</h1>
-    <ul v-if="authorsResolved">
+    <ul v-if="history.length > 0">
       <li v-for="(pageview, index) in history" :key="`${index}:${pageview.url}`">
         <NuxtLink v-if="isNuxtInternalHref(pageview.url)" :to="canonicalNuxtHref(pageview.url)">
           <span>{{ authorsById[pageview.author]?.full_name ?? "" }}</span> –
