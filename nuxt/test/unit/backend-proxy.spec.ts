@@ -31,7 +31,7 @@ async function exerciseProxy(options: {
   method: "GET" | "HEAD" | "POST"
   path?: string
   query?: string
-  reply?: UpstreamReply
+  reply?: UpstreamReply | ((request: UpstreamRequest) => UpstreamReply)
   root?: boolean
 }): Promise<{ request: UpstreamRequest, response: Response }> {
   let resolveRequest!: (request: UpstreamRequest) => void
@@ -42,13 +42,16 @@ async function exerciseProxy(options: {
     const chunks: Buffer[] = []
     request.on("data", chunk => chunks.push(Buffer.from(chunk)))
     request.on("end", () => {
-      resolveRequest({
+      const upstreamRequest = {
         body: Buffer.concat(chunks),
         headers: new Headers(request.headers as Record<string, string>),
         method: request.method ?? "",
         url: request.url ?? ""
-      })
-      const reply = options.reply ?? {}
+      }
+      resolveRequest(upstreamRequest)
+      const reply = typeof options.reply === "function"
+        ? options.reply(upstreamRequest)
+        : options.reply ?? {}
       response.writeHead(reply.status ?? 200, reply.statusMessage, reply.headers ?? {
         "content-type": "application/json"
       })
@@ -358,6 +361,67 @@ describe("backend proxy trust boundary", () => {
     expect(response.headers.get("www-authenticate"))
       .toBe('Bearer realm="lb", error="invalid_token"')
     expect(await response.text()).toBe("authentication required")
+  })
+
+  test("forwards cache validators and preserves an upstream 304 response", async () => {
+    const requestHeaders = {
+      "cache-control": "max-age=0",
+      "if-modified-since": "Wed, 21 Oct 2015 07:28:00 GMT",
+      "if-none-match": '"current-representation"',
+      pragma: "no-cache"
+    }
+    const { request, response } = await exerciseProxy({
+      method: "GET",
+      headers: requestHeaders,
+      reply: upstreamRequest => ({
+        status: upstreamRequest.headers.get("if-none-match")
+          === requestHeaders["if-none-match"] ? 304 : 200,
+        headers: {
+          "cache-control": "public, max-age=3600",
+          etag: '"current-representation"',
+          "last-modified": requestHeaders["if-modified-since"]
+        }
+      })
+    })
+
+    expect(Object.fromEntries(Object.keys(requestHeaders).map(name => (
+      [name, request.headers.get(name)]
+    )))).toEqual(requestHeaders)
+    expect(response.status).toBe(304)
+    expect(response.headers.get("cache-control")).toBe("public, max-age=3600")
+    expect(response.headers.get("etag")).toBe('"current-representation"')
+    expect(response.headers.get("last-modified"))
+      .toBe("Wed, 21 Oct 2015 07:28:00 GMT")
+    expect(await response.text()).toBe("")
+  })
+
+  test("forwards write preconditions and preserves an upstream 412 response", async () => {
+    const requestHeaders = {
+      "content-type": "application/octet-stream",
+      "if-match": '"stale-representation"',
+      "if-unmodified-since": "Wed, 21 Oct 2015 07:28:00 GMT"
+    }
+    const body = Buffer.from([0, 255, 10])
+    const { request, response } = await exerciseProxy({
+      method: "POST",
+      body,
+      headers: requestHeaders,
+      reply: upstreamRequest => ({
+        status: upstreamRequest.headers.get("if-match")
+          === requestHeaders["if-match"] ? 412 : 202,
+        statusMessage: "Precondition Failed",
+        body: "stale write",
+        headers: { "content-type": "text/plain; charset=utf-8" }
+      })
+    })
+
+    expect(request.body).toEqual(body)
+    expect(request.headers.get("if-match")).toBe(requestHeaders["if-match"])
+    expect(request.headers.get("if-unmodified-since"))
+      .toBe(requestHeaders["if-unmodified-since"])
+    expect(response.status).toBe(412)
+    expect(response.statusText).toBe("Precondition Failed")
+    expect(await response.text()).toBe("stale write")
   })
 
   test("returns cross-origin redirects without contacting or disclosing correlation to the target", async () => {

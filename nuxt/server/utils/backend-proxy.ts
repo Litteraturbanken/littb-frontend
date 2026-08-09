@@ -14,6 +14,15 @@ import { correlationHeaders } from "./observability"
 
 type ProxyMethod = "GET" | "HEAD" | "POST"
 
+const conditionalRequestHeaders = [
+  "cache-control",
+  "if-match",
+  "if-modified-since",
+  "if-none-match",
+  "if-unmodified-since",
+  "pragma"
+] as const
+
 const responseHeaders = [
   "accept-ranges",
   "allow",
@@ -72,6 +81,10 @@ function outboundHeaders(event: H3Event, method: ProxyMethod): Headers {
   const headers = new Headers(correlationHeaders(event))
   const accept = getHeader(event, "accept")
   if (accept) headers.set("accept", accept)
+  for (const name of conditionalRequestHeaders) {
+    const value = getHeader(event, name)
+    if (value) headers.set(name, value)
+  }
   if (method === "POST") {
     const contentType = getHeader(event, "content-type")
     if (contentType) headers.set("content-type", contentType)
