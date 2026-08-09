@@ -522,6 +522,9 @@ const chronologyBounds = computed<ImprintBounds | null>(() => {
     const chronology = libraryOptionsData.value?.chronology
     return chronology ? { from: chronology.year_from, to: chronology.year_to } : null
 })
+const aboutAuthorOptionsAvailable = computed(
+    () => Array.isArray(libraryOptionsData.value?.about_authors)
+)
 const chronologyFloor = computed(() => chronologyBounds.value?.from ?? 0)
 const chronologyCeiling = computed(() => chronologyBounds.value?.to ?? 0)
 const aboutAuthorOptions = computed<AboutAuthorOption[]>(() =>
@@ -1534,10 +1537,17 @@ function queryFromLiveAdvancedControls(): LocationQuery {
         "keywords_aux",
         state.advancedFilters.narrowingKeywords.join(",")
     )
-    replaceQueryValue(query, "about_authors", state.advancedFilters.aboutAuthorIds.join(","))
+    if (aboutAuthorOptionsAvailable.value) {
+        replaceQueryValue(query, "about_authors", state.advancedFilters.aboutAuthorIds.join(","))
+    }
     replaceQueryValue(query, "mediatypes", state.advancedFilters.media.join(","))
     replaceQueryValue(query, "languages", state.advancedFilters.languages.join(","))
-    replaceQueryValue(query, "intervall", state.advancedFilters.yearRange?.join(",") ?? "")
+    const bounds = chronologyBounds.value
+    const range = bounds ? chronologyDraftRange(bounds) : null
+    if (bounds && range) {
+        const isFullRange = range[0] === bounds.from && range[1] === bounds.to
+        replaceQueryValue(query, "intervall", isFullRange ? "" : range.join(","))
+    }
     return query
 }
 

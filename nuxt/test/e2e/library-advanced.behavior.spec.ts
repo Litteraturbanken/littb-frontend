@@ -374,6 +374,66 @@ test("overlapping advanced facet commits compose from the live controls", async 
     .toEqual(libraryFilters({ gender: "female", year_from: 1900, year_to: 2026 }))
 })
 
+test("unavailable option sections retain their routed advanced values", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_library_v2/failures`, {
+    data: { operation: "options", section: "chronology" }
+  })
+  await request.put(`${fixture}/_library_v2/failures`, {
+    data: { operation: "options", section: "about_authors" }
+  })
+  await page.goto(
+    "/bibliotek?avancerat=1&intervall=1900,1910&about_authors=LagerlofS&keep=ja",
+    { waitUntil: "networkidle" }
+  )
+  await waitForHydration(page)
+
+  await page.locator("[data-library-gender]").selectOption("female")
+  await expect.poll(() => {
+    const params = new URL(page.url()).searchParams
+    return {
+      aboutAuthors: params.get("about_authors"),
+      gender: params.get("kön"),
+      interval: params.get("intervall"),
+      keep: params.get("keep")
+    }
+  }).toEqual({
+    aboutAuthors: "LagerlofS",
+    gender: "female",
+    interval: "1900,1910",
+    keep: "ja"
+  })
+})
+
+test("an invalid chronology draft cannot erase the committed range through another facet", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?avancerat=1&intervall=1900,1910&keep=ja", {
+    waitUntil: "networkidle"
+  })
+  await waitForHydration(page)
+
+  await page.evaluate(() => {
+    const from = document.querySelector<HTMLInputElement>("[aria-label='Från tryckår']")!
+    from.value = "inte ett år"
+    from.dispatchEvent(new Event("input", { bubbles: true }))
+    const gender = document.querySelector<HTMLSelectElement>("[data-library-gender]")!
+    gender.value = "female"
+    gender.dispatchEvent(new Event("change", { bubbles: true }))
+  })
+
+  await expect.poll(() => {
+    const params = new URL(page.url()).searchParams
+    return {
+      gender: params.get("kön"),
+      interval: params.get("intervall"),
+      keep: params.get("keep")
+    }
+  }).toEqual({ gender: "female", interval: "1900,1910", keep: "ja" })
+})
+
 test("category, publisher, about-author, and narrowing collections restore through history", async ({
   page,
   request
