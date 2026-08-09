@@ -984,7 +984,7 @@ let activeHitRequestController: AbortController | null = null
 let hitNavigationController: AbortController | null = null
 onBeforeUnmount(() => {
   activeHitRequestController?.abort()
-  hitNavigationController?.abort()
+  cancelPendingHitNavigation()
 })
 
 const hitFetch = await useAsyncData(
@@ -1177,12 +1177,14 @@ const gotoHitInput = ref<HTMLInputElement | null>(null)
 const gotoHitPending = ref(false)
 let hitNavigationGeneration = 0
 
-watch(rawFullPath, () => {
+function cancelPendingHitNavigation(): void {
   hitNavigationGeneration += 1
   hitNavigationController?.abort()
   hitNavigationController = null
   gotoHitPending.value = false
-}, { flush: "sync" })
+}
+
+watch(rawFullPath, cancelPendingHitNavigation, { flush: "sync" })
 
 function toggleGotoHitInput(): void {
   gotoHitInputOpen.value = !gotoHitInputOpen.value
@@ -1308,9 +1310,8 @@ function rawHitFullPath(hit: WorkSearchHit, sourceFullPath = rawFullPath.value):
 }
 
 async function navigateToHit(index: number): Promise<void> {
-  const generation = ++hitNavigationGeneration
-  hitNavigationController?.abort()
-  hitNavigationController = null
+  cancelPendingHitNavigation()
+  const generation = hitNavigationGeneration
   if (searchState.value?.hit === index) {
     gotoHitInputOpen.value = false
     gotoHitOrdinal.value = ""
@@ -1583,6 +1584,7 @@ async function submitWorkSearch(): Promise<void> {
 }
 
 function closeWorkSearchHits(): void {
+  cancelPendingHitNavigation()
   cancelPendingWorkSearchSubmission()
   workSearchOpen.value = false
   workSearchQuery.value = ""

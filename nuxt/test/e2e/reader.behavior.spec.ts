@@ -3343,6 +3343,56 @@ test("an obsolete direct target lookup cannot navigate after an A-B-A route cycl
   expect(problems).toEqual([])
 })
 
+test("closing hit view synchronously aborts a pending direct target lookup", async ({
+  page,
+  request
+}) => {
+  const sourcePath = `${storedReaderPath}?q=doktor%20glas&hit=1`
+  const slowTargetKey = "lb-reader-doktor-glas|doktor glas|3|3|false|true|false|false"
+  await request.put(`${fixture}/_reader_hit_delays`, {
+    data: { [slowTargetKey]: 600 }
+  })
+  try {
+    await page.goto(sourcePath, { waitUntil: "networkidle" })
+    await request.delete(`${fixture}/_reader_hit_requests`)
+    await page.evaluate(() => {
+      const scope = window as typeof window & { __readerDirectHitAbortSeen?: boolean }
+      scope.__readerDirectHitAbortSeen = false
+      const originalFetch = window.fetch.bind(window)
+      window.fetch = (input, init) => {
+        const request = input instanceof Request ? input : null
+        const url = request?.url ?? String(input)
+        const signal = request?.signal ?? init?.signal
+        if (url.includes("/search-hits") && url.includes("offset=3")) {
+          signal?.addEventListener("abort", () => {
+            scope.__readerDirectHitAbortSeen = true
+          }, { once: true })
+        }
+        return originalFetch(input, init)
+      }
+    })
+    const navigation = page.locator("#search_nav")
+    await navigation.getByRole("button", { name: "Gå till sista träffen" }).click()
+    await expect.poll(async () => (await readerHitRequests(request)).some(
+      hit => hit.query.includes("offset=3&limit=3")
+    )).toBe(true)
+
+    const abortedSynchronously = await navigation.evaluate(element => {
+      const close = [...element.querySelectorAll<HTMLButtonElement>("button")]
+        .find(button => button.textContent?.trim() === "Stäng träffvisningen")!
+      close.click()
+      return (window as typeof window & { __readerDirectHitAbortSeen?: boolean })
+        .__readerDirectHitAbortSeen
+    })
+    expect(abortedSynchronously).toBe(true)
+    await expect(page).toHaveURL(storedReaderPath)
+    await page.waitForTimeout(700)
+    await expect(page).toHaveURL(storedReaderPath)
+  } finally {
+    await request.delete(`${fixture}/_reader_hit_delays`)
+  }
+})
+
 test("opening Reader source information invalidates a delayed target lookup", async ({
   page,
   request
