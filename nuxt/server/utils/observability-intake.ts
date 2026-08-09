@@ -434,7 +434,13 @@ export async function handleObservabilityIntake(
     now,
     options.resolveCorrelation ?? resolveCorrelationToken
   ))
-  const request = await signedForwardRequest(event, config, events, now)
+  let request: Awaited<ReturnType<typeof signedForwardRequest>>
+  try {
+    request = await signedForwardRequest(event, config, events, now)
+  } catch (error) {
+    guard.release(intakeEvents.map(item => item.event_id))
+    throw error
+  }
   const response = await forwardEvents(
     request,
     intakeEvents,
