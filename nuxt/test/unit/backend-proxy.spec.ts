@@ -424,6 +424,85 @@ describe("backend proxy trust boundary", () => {
     expect(await response.text()).toBe("stale write")
   })
 
+  test.each([
+    {
+      label: "a byte range",
+      range: "bytes=10-19",
+      ifRange: undefined,
+      expectedStatus: 206,
+      expectedContentRange: "bytes 10-19/100",
+      expectedLength: 10
+    },
+    {
+      label: "a byte range with a matching validator",
+      range: "bytes=10-19",
+      ifRange: '"current-download"',
+      expectedStatus: 206,
+      expectedContentRange: "bytes 10-19/100",
+      expectedLength: 10
+    },
+    {
+      label: "the full representation for a stale validator",
+      range: "bytes=10-19",
+      ifRange: '"stale-download"',
+      expectedStatus: 200,
+      expectedContentRange: null,
+      expectedLength: 100
+    },
+    {
+      label: "an unsatisfiable byte range",
+      range: "bytes=999-1000",
+      ifRange: undefined,
+      expectedStatus: 416,
+      expectedContentRange: "bytes */100",
+      expectedLength: 0
+    }
+  ])("preserves $label", async ({
+    range,
+    ifRange,
+    expectedStatus,
+    expectedContentRange,
+    expectedLength
+  }) => {
+    const fullBody = Buffer.alloc(100, 1)
+    const headers: Record<string, string> = { range }
+    if (ifRange) headers["if-range"] = ifRange
+    const { request, response } = await exerciseProxy({
+      method: "GET",
+      headers,
+      reply: upstreamRequest => {
+        const upstreamRange = upstreamRequest.headers.get("range")
+        const upstreamIfRange = upstreamRequest.headers.get("if-range")
+        const responseHeaders = {
+          "accept-ranges": "bytes",
+          etag: '"current-download"'
+        }
+        if (upstreamRange === "bytes=999-1000") {
+          return {
+            status: 416,
+            body: Buffer.alloc(0),
+            headers: { ...responseHeaders, "content-range": "bytes */100" }
+          }
+        }
+        if (upstreamRange === "bytes=10-19" && upstreamIfRange !== '"stale-download"') {
+          return {
+            status: 206,
+            body: fullBody.subarray(10, 20),
+            headers: { ...responseHeaders, "content-range": "bytes 10-19/100" }
+          }
+        }
+        return { body: fullBody, headers: responseHeaders }
+      }
+    })
+
+    expect(request.headers.get("range")).toBe(range)
+    expect(request.headers.get("if-range")).toBe(ifRange ?? null)
+    expect(response.status).toBe(expectedStatus)
+    expect(response.headers.get("accept-ranges")).toBe("bytes")
+    expect(response.headers.get("content-range")).toBe(expectedContentRange)
+    expect((await response.arrayBuffer()).byteLength).toBe(expectedLength)
+  })
+
   test("returns cross-origin redirects without contacting or disclosing correlation to the target", async () => {
     let targetContacted = false
     let targetHeaders: Headers | null = null

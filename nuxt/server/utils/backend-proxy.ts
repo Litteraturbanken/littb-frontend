@@ -23,6 +23,14 @@ const conditionalRequestHeaders = [
   "pragma"
 ] as const
 
+const rangeRequestHeaders = ["range", "if-range"] as const
+
+const requestHeadersByMethod = {
+  GET: ["accept", ...conditionalRequestHeaders, ...rangeRequestHeaders],
+  HEAD: ["accept", ...conditionalRequestHeaders, ...rangeRequestHeaders],
+  POST: ["accept", ...conditionalRequestHeaders, "content-type"]
+} as const satisfies Record<ProxyMethod, readonly string[]>
+
 const responseHeaders = [
   "accept-ranges",
   "allow",
@@ -79,15 +87,9 @@ export function safeBackendPath(value: string | undefined): string {
 
 function outboundHeaders(event: H3Event, method: ProxyMethod): Headers {
   const headers = new Headers(correlationHeaders(event))
-  const accept = getHeader(event, "accept")
-  if (accept) headers.set("accept", accept)
-  for (const name of conditionalRequestHeaders) {
+  for (const name of requestHeadersByMethod[method]) {
     const value = getHeader(event, name)
     if (value) headers.set(name, value)
-  }
-  if (method === "POST") {
-    const contentType = getHeader(event, "content-type")
-    if (contentType) headers.set("content-type", contentType)
   }
   return headers
 }
