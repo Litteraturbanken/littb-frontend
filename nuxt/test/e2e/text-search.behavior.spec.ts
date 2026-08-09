@@ -1062,7 +1062,6 @@ test("vue-multiselect filters traverse by keyboard and remove accessibly", async
   await gender.getByRole("button").focus()
   await page.keyboard.press("Space")
   await page.keyboard.press("ArrowDown")
-  await page.keyboard.press("ArrowDown")
   const female = gender.getByRole("option", { name: "Kvinnliga författare" })
   await expect(female).toHaveClass(/select2-results__option--highlighted/)
   await page.keyboard.press("Enter")

@@ -1292,7 +1292,7 @@ function resetSearch() {
     const query: LocationQuery = { ...route.query }
     delete query.filter
     delete query.sida
-    delete query.hide1800
+    if (currentMode.value === "latest") delete query.hide1800
     if (parsed.gender) delete query.kön
     if (parsed.keywords.length) delete query.keywords
     if (parsed.narrowingKeywords.length) delete query.keywords_aux

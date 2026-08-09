@@ -389,31 +389,72 @@ test("Library reset and sort links update supported query state", async ({ page 
   await expect(page.locator('[data-library-sort="titlar"]')).toHaveClass(/active/)
 })
 
-test("Library reset clears the latest hide-1800 filter without changing retained query state", async ({
-  page,
-  request
-}) => {
-  await page.goto("/bibliotek?visa=latest&sort=nytillkommet&hide1800&keep=ja", {
-    waitUntil: "networkidle"
+for (const rawFlag of [
+  { label: "bare", query: "hide1800", value: "" },
+  { label: "empty", query: "hide1800=", value: "" },
+  { label: "true", query: "hide1800=true", value: "true" },
+  { label: "false", query: "hide1800=false", value: "false" }
+] as const) {
+  test(`Library reset clears the latest ${rawFlag.label} hide-1800 flag and restores history`, async ({
+    page,
+    request
+  }) => {
+    await page.goto(
+      `/bibliotek?visa=latest&sort=nytillkommet&${rawFlag.query}&keep&keep=ja`,
+      { waitUntil: "networkidle" }
+    )
+    await expect(page.locator("[data-library-reset]")).toBeVisible()
+
+    await reset(request)
+    await page.locator("[data-library-reset]").click()
+    await expect(page).not.toHaveURL(/(?:\?|&)hide1800(?:=|&|$)/)
+
+    let url = new URL(page.url())
+    expect(url.searchParams.get("visa")).toBe("latest")
+    expect(url.searchParams.get("sort")).toBe("nytillkommet")
+    expect(url.searchParams.getAll("keep")).toEqual(["", "ja"])
+    await expect.poll(async () => (
+      publicEpubRequests(await epubRequests(request)).map(entry => entry.body.hide_1800)
+    )).toEqual([false])
+
+    await page.goBack()
+    await expect(page).toHaveURL(/(?:\?|&)hide1800(?:=|&|$)/)
+    url = new URL(page.url())
+    expect(url.searchParams.get("hide1800")).toBe(rawFlag.value)
+    expect(url.searchParams.getAll("keep")).toEqual(["", "ja"])
+    await expect(page.locator("[data-library-reset]")).toBeVisible()
+    await expect.poll(async () => (
+      publicEpubRequests(await epubRequests(request)).map(entry => entry.body.hide_1800)
+    )).toEqual([false, true])
+
+    await page.goForward()
+    await expect(page).not.toHaveURL(/(?:\?|&)hide1800(?:=|&|$)/)
+    url = new URL(page.url())
+    expect(url.searchParams.get("visa")).toBe("latest")
+    expect(url.searchParams.get("sort")).toBe("nytillkommet")
+    expect(url.searchParams.getAll("keep")).toEqual(["", "ja"])
+    await expect(page.locator("[data-library-reset]")).toBeHidden()
+    await expect.poll(async () => (
+      publicEpubRequests(await epubRequests(request)).map(entry => entry.body.hide_1800)
+    )).toEqual([false, true, false])
   })
+}
+
+test("Library reset preserves a raw hide-1800 flag outside latest mode", async ({ page }) => {
+  await page.goto(
+    "/bibliotek?visa=works&sort=popularitet&filter=Selma&hide1800=false&keep=ett&keep=två",
+    { waitUntil: "networkidle" }
+  )
   await expect(page.locator("[data-library-reset]")).toBeVisible()
 
-  await reset(request)
   await page.locator("[data-library-reset]").click()
-  await expect(page).not.toHaveURL(/(?:\?|&)hide1800(?:=|&|$)/)
+  await expect(page).not.toHaveURL(/(?:\?|&)filter(?:=|&|$)/)
 
   const url = new URL(page.url())
-  expect(url.searchParams.get("visa")).toBe("latest")
-  expect(url.searchParams.get("sort")).toBe("nytillkommet")
-  expect(url.searchParams.get("keep")).toBe("ja")
-
-  const ledger = publicEpubRequests(await epubRequests(request))
-  expect(ledger).toHaveLength(1)
-  expect(ledger[0]?.body).toMatchObject({
-    mode: "latest",
-    filters: libraryFilters(),
-    hide_1800: false
-  })
+  expect(url.searchParams.get("visa")).toBe("works")
+  expect(url.searchParams.get("sort")).toBe("popularitet")
+  expect(url.searchParams.get("hide1800")).toBe("false")
+  expect(url.searchParams.getAll("keep")).toEqual(["ett", "två"])
 })
 
 test("Nytt owns its canonical query state and restores through browser history", async ({
