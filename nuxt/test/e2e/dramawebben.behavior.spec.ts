@@ -820,6 +820,38 @@ test("same-tick catalog filters merge into one intended route state", async ({ p
   await expectPlayRows(page, [dramawebbenCatalogExpected.plays[2]!])
 })
 
+test("same-tick range endpoint changes merge through the intended query", async ({ page }) => {
+  await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Akter och roller", exact: true }).click()
+
+  await page.evaluate(() => {
+    const from = document.querySelector<HTMLInputElement>(
+      'input[aria-label="Antal sidor från"]'
+    )!
+    const to = document.querySelector<HTMLInputElement>(
+      'input[aria-label="Antal sidor till"]'
+    )!
+    from.value = "90"
+    from.dispatchEvent(new Event("change", { bubbles: true }))
+    to.value = "100"
+    to.dispatchEvent(new Event("change", { bubbles: true }))
+  })
+
+  await expectQuery(page, "number_of_pages", "90,100")
+  await expectPlayRows(page, [dramawebbenCatalogExpected.plays[2]!])
+})
+
+test("the literal free-text search value all is not treated as an enum sentinel", async ({
+  page
+}) => {
+  await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "networkidle" })
+
+  await page.getByRole("textbox", { name: "Sök", exact: true }).fill("all")
+
+  await expectQuery(page, "filterTxt", "all")
+  await expectPlayRows(page, [])
+})
+
 test("a same-tick clear supersedes queued catalog filter writes", async ({ page }) => {
   await page.goto(
     "/dramawebben/pj%C3%A4ser?gender=female",

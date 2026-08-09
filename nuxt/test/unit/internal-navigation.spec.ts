@@ -3,7 +3,8 @@ import { describe, expect, test } from "vitest"
 import {
   canonicalNuxtHref,
   isNuxtInternalHref,
-  safeNativeHref
+  safeNativeHref,
+  validRouteSegment
 } from "../../app/lib/internal-navigation"
 
 const slaArticleIds = [
@@ -159,5 +160,20 @@ describe("safe native navigation hrefs", () => {
     ["", null]
   ])("bounds %s to %s", (value, expected) => {
     expect(safeNativeHref(value)).toBe(expected)
+  })
+})
+
+describe("internal route segments", () => {
+  test.each([
+    ["Book", 200, true],
+    [".", 200, false],
+    ["..", 200, false],
+    ["Book%2FPart", 200, false],
+    ["Book/Part", 200, false],
+    ["Book\\Part", 200, false],
+    [" Book", 200, false],
+    ["x".repeat(201), 200, false]
+  ])("classifies %s within maximum %i as safe=%s", (value, maximum, expected) => {
+    expect(validRouteSegment(value, maximum)).toBe(expected)
   })
 })

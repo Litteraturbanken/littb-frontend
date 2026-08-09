@@ -25,7 +25,7 @@ import type { components } from "~/lib/api/generated/lbapi"
 import { authorProfilePath } from "~/lib/author-profile"
 import { queryWithoutKey } from "~/lib/dramawebben-query"
 import { catalogSourceInfoKey } from "~/lib/dramawebben-source-info"
-import { canonicalNuxtHref } from "~/lib/internal-navigation"
+import { canonicalNuxtHref, validRouteSegment } from "~/lib/internal-navigation"
 import { readerSourceInfoIsOpen } from "~/lib/reader-routes"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 import {
@@ -71,6 +71,7 @@ const mediaOptions = [
   { value: "pdf", label: "PDF" },
   { value: "infopost", label: "Verk som saknar text" }
 ] as const
+const catalogReaderMedia = new Set(["etext", "faksimil"])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -117,23 +118,44 @@ function safeCatalogInfoPostUrl(url: string): boolean {
   }
 }
 
+function safeCatalogPdfUrl(url: string, downloadable: boolean): boolean {
+  if (!downloadable) return false
+  const [root, directory, file, ...rest] = url.split("/").slice(1)
+  if (root !== "txt" || rest.length || !file?.endsWith(".pdf")) return false
+  return validRouteSegment(directory ?? "", 200)
+    && validRouteSegment(file.slice(0, -4), 200)
+}
+
+function safeCatalogReaderUrl(mediaType: string, url: string): boolean {
+  if (!catalogReaderMedia.has(mediaType)) return false
+  if (!/^\/författare\/[^/]+\/titlar\/[^/]+\/sida\/[^/]+\/(?:etext|faksimil)$/u.test(url)) {
+    return false
+  }
+  if (!url.endsWith(`/${mediaType}`)) return false
+  const segments = url.split("/")
+  const variableSegments: readonly [string, number][] = [
+    [segments[2] ?? "", 100],
+    [segments[4] ?? "", 200],
+    [segments[6] ?? "", 512]
+  ]
+  return variableSegments.every(([segment, maximum]) => validRouteSegment(segment, maximum))
+}
+
 function isSafeCatalogMediaUrl(mediaType: string, url: string, downloadable: boolean): boolean {
   if (!safeCatalogUrlShape(url)) return false
-  if (mediaType === "pdf") {
-    return downloadable && /^\/txt\/[^/?#]+\/[^/?#]+\.pdf$/u.test(url)
-  }
+  if (mediaType === "pdf") return safeCatalogPdfUrl(url, downloadable)
   if (downloadable) return false
-  if (mediaType === "etext") return /^\/författare\/[^/?#]+\/titlar\/[^/?#]+\/sida\/[^/?#]+\/etext$/u.test(url)
-  if (mediaType === "faksimil") return /^\/författare\/[^/?#]+\/titlar\/[^/?#]+\/sida\/[^/?#]+\/faksimil$/u.test(url)
-  return mediaType === "infopost" && safeCatalogInfoPostUrl(url)
+  if (mediaType === "infopost") return safeCatalogInfoPostUrl(url)
+  return safeCatalogReaderUrl(mediaType, url)
 }
 
 function isCatalogMedia(value: unknown): value is CatalogMedia {
   return isRecord(value)
-    && ["etext", "faksimil", "pdf", "infopost"].includes(String(value.media_type))
+    && typeof value.media_type === "string"
+    && ["etext", "faksimil", "pdf", "infopost"].includes(value.media_type)
     && typeof value.url === "string"
     && typeof value.downloadable === "boolean"
-    && isSafeCatalogMediaUrl(String(value.media_type), value.url, value.downloadable)
+    && isSafeCatalogMediaUrl(value.media_type, value.url, value.downloadable)
     && Object.keys(value).every(key => ["media_type", "url", "downloadable"].includes(key))
 }
 
@@ -491,9 +513,12 @@ const ranges = computed(() => Object.fromEntries(rangeFields.map(({ key }) => {
   }]
 })) as Record<RangeKey, { floor: number, ceil: number }>)
 
-function selectedRange(key: RangeKey): { from: number, to: number, active: boolean } {
+function selectedRange(
+  key: RangeKey,
+  query: LocationQueryRaw = route.query
+): { from: number, to: number, active: boolean } {
   const fallback = ranges.value[key]
-  const raw = oneQuery(route.query[key])
+  const raw = oneQuery(query[key])
   if (!raw) return { from: fallback.floor, to: fallback.ceil, active: false }
   const parts = raw.split(",")
   if (parts.length !== 2 || !parts.every(part => /^\d+$/u.test(part))) {
@@ -571,10 +596,14 @@ const filteredWorks = computed(() => {
 
 async function setQuery(key: string, value: string | null, push = false): Promise<void> {
   const baseQuery = latestRouteQuery()
-  const query = value === null || value === "" || value === "all"
+  const query = value === null || value === ""
     ? queryWithoutKey(baseQuery, key)
     : { ...baseQuery, [key]: value }
   await writeRouteQuery(query, push ? "push" : "replace")
+}
+
+function setSelectQuery(key: "gender" | "mediatype", value: string): void {
+  void setQuery(key, value === "all" ? null : value)
 }
 
 function clearFilters(): void {
@@ -587,7 +616,7 @@ function chooseAuthor(author: CatalogAuthor | null) {
 }
 
 function setRange(key: RangeKey, side: "from" | "to", value: string) {
-  const current = selectedRange(key)
+  const current = selectedRange(key, latestRouteQuery())
   const number = Number(value)
   if (!Number.isFinite(number)) return
   const from = side === "from" ? Math.min(number, current.to) : current.from
@@ -731,7 +760,7 @@ useHead(() => ({
           </Combobox>
         </div>
 
-        <Listbox :model-value="gender" @update:model-value="setQuery('gender', $event as string)">
+        <Listbox :model-value="gender" @update:model-value="setSelectQuery('gender', $event as string)">
           <div class="catalog_select gender_select select2 select2-container select2-container--default">
             <ListboxButton class="select2-selection select2-selection--single" aria-label="Kön">
               <span class="select2-selection__rendered">{{ genderLabel }}</span>
@@ -745,7 +774,7 @@ useHead(() => ({
           </div>
         </Listbox>
 
-        <Listbox :model-value="mediaType" @update:model-value="setQuery('mediatype', $event as string)">
+        <Listbox :model-value="mediaType" @update:model-value="setSelectQuery('mediatype', $event as string)">
           <div class="catalog_select filter_select keyword_select select2 select2-container select2-container--default">
             <ListboxButton class="select2-selection select2-selection--single" aria-label="Utgivningsformat">
               <span class="select2-selection__rendered">{{ mediaLabel }}</span>

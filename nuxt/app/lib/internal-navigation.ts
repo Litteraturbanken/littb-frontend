@@ -30,7 +30,7 @@ const dramawebbenPages = new Set(["pjäser", "om", "kringtexter"])
 const authorPages = new Set(["titlar", "dramawebben", "biblinfo", "mer"])
 const authorDocuments = new Set(["presentation", "bibliografi", "semer"])
 const readerMedia = new Set(["etext", "faksimil"])
-function validRouteSegment(value: string, maximumLength: number): boolean {
+export function validRouteSegment(value: string, maximumLength: number): boolean {
   return value.length > 0
     && value.length <= maximumLength
     && value === value.trim()

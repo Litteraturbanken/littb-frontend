@@ -398,6 +398,30 @@ test("SSR rejects a catalog media URL that browsers normalize at a backslash", a
   await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
 })
 
+test("SSR rejects catalog media paths containing URL-normalized dot segments", async ({
+  request
+}) => {
+  await setCatalogFailure(request, "dot-segment-media-url-200")
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(502)
+  const html = await response.text()
+  expectManagedShell(html, "pjäser", neutralError)
+  expect(html).not.toContain("/författare/../titlar")
+  expect(await catalogRequests(request)).toHaveLength(1)
+  await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
+
+test("SSR rejects non-string catalog media types instead of coercing them", async ({ request }) => {
+  await setCatalogFailure(request, "array-media-type-200")
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(502)
+  expectManagedShell(await response.text(), "pjäser", neutralError)
+  expect(await catalogRequests(request)).toHaveLength(1)
+  await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
+
 test("SSR accepts catalog works with omitted optional range metadata", async ({ request }) => {
   await setCatalogFailure(request, "omitted-range-field-200")
   const response = await request.get("/dramawebben/pjäser")
