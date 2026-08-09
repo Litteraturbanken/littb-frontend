@@ -301,8 +301,14 @@ async function invokeReviewer({ packetEntry, author, reviewer }) {
       const normalized = error instanceof SyntaxError
         ? new Error("Independent reviewer output is not valid JSON")
         : error
-      if (attempt === 1) throw normalized
       validationError = evidenceValidationMessage(normalized, evidence, packetEntry.packet)
+      if (attempt === 1) {
+        const rejectedPath = `.quality/semantic-review/rejected-${artifactName(packetEntry.packet.id)}.txt`
+        atomicWrite(resolve(root, rejectedPath), text)
+        throw new Error(`${validationError}; rejected evidence saved at ${rejectedPath}`, {
+          cause: error
+        })
+      }
     }
   }
   throw new Error("Independent reviewer exhausted its validation attempts")

@@ -158,6 +158,8 @@ describe("independent semantic review runner", () => {
 
     expect(result.status).toBe(2)
     expect(result.stderr).toContain("Independent reviewer output is not valid JSON")
+    expect(readdirSync(resolve(root, ".quality/semantic-review")))
+      .toContainEqual(expect.stringMatching(/^rejected-[a-f0-9]{64}\.txt$/u))
     expect(JSON.parse(readFileSync(resolve(root, "quality/semantic-review-ledger.json"), "utf8")))
       .toEqual({ version: 1, records: [] })
   })
