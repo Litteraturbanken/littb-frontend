@@ -257,6 +257,7 @@ function collectTemplateExpressions(node, templateStart, expressions, comments) 
 
 function parseVueRecord(record) {
   const parsed = parseVueSfc(record.source, { filename: record.relativePath })
+  record.styles = parsed.descriptor.styles.map(block => block.content)
   const scripts = [parsed.descriptor.script, parsed.descriptor.scriptSetup].filter(Boolean)
   for (const block of scripts) {
     record.units.push(createScriptUnit(
@@ -1596,6 +1597,41 @@ function auditChronologyRangeOwnership(record) {
       rawTrackLine ?? 1,
       "Chronology range interaction must be owned by ChronologyRangeSlider"
     )
+  }
+}
+
+function auditCrossEngineRangePointerSupport(record) {
+  for (const style of record.styles) {
+    const rules = [...style.matchAll(/([^{}]+)\{([^{}]*)\}/gu)].map(match => ({
+      declarations: match[2] ?? "",
+      selector: match[1] ?? ""
+    }))
+    const hasPointerEvents = (rule, value) => new RegExp(
+      `(?:^|;)\\s*pointer-events\\s*:\\s*${value}\\s*(?:;|$)`,
+      "u"
+    ).test(rule.declarations)
+    const disablesNativeRangePointers = rules.some(rule => (
+      rule.selector.includes('input[type="range"]')
+      && !rule.selector.includes("::")
+      && hasPointerEvents(rule, "none")
+    ))
+    const restoresWebKitThumbPointers = rules.some(rule => (
+      rule.selector.includes("::-webkit-slider-thumb")
+      && hasPointerEvents(rule, "auto")
+    ))
+    const restoresFirefoxThumbPointers = rules.some(rule => (
+      rule.selector.includes("::-moz-range-thumb")
+      && hasPointerEvents(rule, "auto")
+    ))
+    if (disablesNativeRangePointers
+      && restoresWebKitThumbPointers
+      && !restoresFirefoxThumbPointers) {
+      addViolation(
+        record.relativePath,
+        0,
+        "WebKit-only range pointer restoration must include an equivalent ::-moz-range-thumb rule"
+      )
+    }
   }
 }
 
@@ -3075,7 +3111,14 @@ function walk(absoluteDirectory) {
     const source = readSource(absolutePath, relativePath)
     if (source === null) continue
     auditedFileCount += 1
-    const record = { relativePath, source, units: [], htmlComments: [], template: null }
+    const record = {
+      relativePath,
+      source,
+      units: [],
+      htmlComments: [],
+      template: null,
+      styles: []
+    }
     parseRecord(record)
     sourceRecords.push(record)
   }
@@ -3090,6 +3133,7 @@ for (const record of sourceRecords) {
   auditLegacyReaderEditorMetadata(record)
   auditVueTemplate(record)
   auditChronologyRangeOwnership(record)
+  auditCrossEngineRangePointerSupport(record)
   auditDomOperations(record)
   auditNativeVNodeCalls(record)
   if (record.relativePath === capabilityPath) auditCapabilityUtility(record)

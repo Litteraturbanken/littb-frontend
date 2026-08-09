@@ -982,7 +982,14 @@ useHead(() => ({
   height: 4px;
   background: #7a1400;
 }
+.catalog_range input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: #7a1400;
+}
 .catalog_range input[type="range"]:last-of-type::-webkit-slider-runnable-track {
+  background: transparent;
+}
+.catalog_range input[type="range"]:last-of-type::-moz-range-track {
   background: transparent;
 }
 .catalog_range input[type="range"]::-webkit-slider-thumb {
@@ -990,6 +997,15 @@ useHead(() => ({
   width: 15px;
   height: 15px;
   margin-top: -6px;
+  border: 1px solid darkgrey;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 1px 1px 3px grey;
+  pointer-events: auto;
+}
+.catalog_range input[type="range"]::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
   border: 1px solid darkgrey;
   border-radius: 50%;
   background: white;

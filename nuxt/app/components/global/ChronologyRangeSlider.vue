@@ -162,11 +162,27 @@ input[type="range"]::-webkit-slider-runnable-track {
   background: transparent;
 }
 
+input[type="range"]::-moz-range-track {
+  height: 8px;
+  border-radius: 4px;
+  background: transparent;
+}
+
 input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 20px;
   height: 20px;
   margin-top: -6px;
+  border: 1px solid darkgrey;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 1px 1px 3px grey;
+  pointer-events: auto;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
   border: 1px solid darkgrey;
   border-radius: 50%;
   background: white;

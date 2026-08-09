@@ -474,6 +474,58 @@ describe("architecture policy verifier", () => {
     )
   })
 
+  test("rejects WebKit-only pointer restoration for an overlaid range control", () => {
+    const root = createTree()
+    const path = "app/components/global/UnsafeRange.vue"
+    writeSource(
+      root,
+      path,
+      `<template><input type="range"></template>
+<style scoped>
+input[type="range"] { pointer-events: none; }
+input[type="range"]::-webkit-slider-thumb { pointer-events: auto; }
+</style>
+`
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      `${path}: WebKit-only range pointer restoration must include an equivalent ::-moz-range-thumb rule`
+    )
+  })
+
+  test.each([
+    [
+      "native pointer handling",
+      `<template><input type="range"></template>
+<style scoped>
+input[type="range"] { pointer-events: auto; }
+input[type="range"]::-webkit-slider-thumb { pointer-events: auto; }
+</style>
+`
+    ],
+    [
+      "equivalent Firefox thumb handling",
+      `<template><input type="range"></template>
+<style scoped>
+input[type="range"] { pointer-events: none; }
+input[type="range"]::-webkit-slider-thumb { pointer-events: auto; }
+input[type="range"]::-moz-range-thumb { pointer-events: auto; }
+</style>
+`
+    ]
+  ])("accepts cross-engine range pointer support through %s", (_description, source) => {
+    const root = createTree()
+    writeSource(root, "app/components/global/SafeRange.vue", source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
   test("accepts the exact imported HTML document helper as detached provenance", () => {
     const root = createTree()
     const path = "app/lib/author-profile.ts"
