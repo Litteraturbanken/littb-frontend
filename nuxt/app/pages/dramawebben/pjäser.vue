@@ -100,10 +100,6 @@ function isCatalogAuthor(value: unknown): value is CatalogAuthor {
     && isStringOrNull(value.gender)
     && isStringOrNull(value.birth_year)
     && isStringOrNull(value.death_year)
-    && Object.keys(value).every(key => [
-      "author_id", "full_name", "name_for_index", "surname", "gender",
-      "birth_year", "death_year"
-    ].includes(key))
 }
 
 function safeCatalogUrlShape(url: string): boolean {
@@ -124,12 +120,16 @@ function safeCatalogInfoPostUrl(url: string): boolean {
   ) return false
   try {
     const parsed = new URL(url, "http://catalog.local")
+    const requiredKeys = ["om-boken", "authorid", "titlepath"] as const
+    const authorId = parsed.searchParams.get("authorid") ?? ""
+    const titlePath = parsed.searchParams.get("titlepath") ?? ""
     return parsed.origin === "http://catalog.local"
       && parsed.pathname === "/dramawebben/pj%C3%A4ser"
-      && [...parsed.searchParams.keys()].join(",") === "om-boken,authorid,titlepath"
+      && [...parsed.searchParams.keys()].length === requiredKeys.length
+      && requiredKeys.every(key => parsed.searchParams.getAll(key).length === 1)
       && parsed.searchParams.get("om-boken") === ""
-      && Boolean(parsed.searchParams.get("authorid"))
-      && Boolean(parsed.searchParams.get("titlepath"))
+      && validRouteSegment(authorId, 100)
+      && validRouteSegment(titlePath, 200)
   } catch {
     return false
   }
@@ -173,7 +173,6 @@ function isCatalogMedia(value: unknown): value is CatalogMedia {
     && typeof value.url === "string"
     && typeof value.downloadable === "boolean"
     && isSafeCatalogMediaUrl(value.media_type, value.url, value.downloadable)
-    && Object.keys(value).every(key => ["media_type", "url", "downloadable"].includes(key))
 }
 
 function isMetric(value: unknown): value is number | null {
@@ -199,19 +198,13 @@ function hasCatalogWorkCollections(value: Record<string, unknown>): boolean {
 
 function isCatalogWork(value: unknown): value is CatalogWork {
   if (!isRecord(value)) return false
-  const keys = [
-    "work_id", "title_path", "title", "short_title", "authors", "media",
-    "is_childrens_play", ...rangeFields.map(field => field.key)
-  ]
   return hasCatalogWorkIdentity(value)
     && hasCatalogWorkCollections(value)
     && rangeFields.every(field => value[field.key] === undefined || isMetric(value[field.key]))
-    && Object.keys(value).every(key => keys.includes(key))
 }
 
 function isCatalog(value: unknown): value is Catalog {
   return isRecord(value)
-    && Object.keys(value).length === 2
     && Array.isArray(value.works) && value.works.every(isCatalogWork)
     && Array.isArray(value.authors) && value.authors.every(isCatalogAuthor)
 }

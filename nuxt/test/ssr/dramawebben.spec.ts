@@ -426,6 +426,31 @@ test("SSR rejects infopost paths containing URL-normalized dot segments", async 
   await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
 })
 
+test("SSR accepts safe infopost query keys in any order", async ({ request }) => {
+  await setCatalogFailure(request, "reordered-infopost-query-200")
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const infopost = [...document.querySelectorAll("a")]
+    .find(link => normalizedText(link.textContent) === "infopost")
+  expect(infopost?.getAttribute("href")).toContain(
+    "authorid=Alml%C3%B6fN&titlepath=Affarer&om-boken"
+  )
+  expect(await catalogRequests(request)).toHaveLength(1)
+  await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
+
+test("SSR tolerates additive catalog fields that no consumer reads", async ({ request }) => {
+  await setCatalogFailure(request, "additive-catalog-fields-200")
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(200)
+  expectManagedShell(await response.text(), "pjäser", "Dömd")
+  expect(await catalogRequests(request)).toHaveLength(1)
+  await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
+
 test("SSR rejects non-string catalog media types instead of coercing them", async ({ request }) => {
   await setCatalogFailure(request, "array-media-type-200")
   const response = await request.get("/dramawebben/pjäser")
