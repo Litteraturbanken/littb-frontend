@@ -238,7 +238,7 @@ describe("generated Reader manifest client", () => {
     )).resolves.toEqual(body)
   })
 
-  test("preserves the exact part-author maximum and arbitrary valid source index", async () => {
+  test("preserves the exact part-author maximum and ordered source index", async () => {
     const body = {
       ...readerManifest,
       parts: [{
@@ -247,7 +247,7 @@ describe("generated Reader manifest client", () => {
         end_page_name: "2",
         nav_title: null,
         short_title: null,
-        source_index: 9_999,
+        source_index: 0,
         start_page_index: 0,
         start_page_name: "1",
         title: "Del",
@@ -349,6 +349,21 @@ describe("generated Reader manifest client", () => {
         nav_title: null,
         short_title: null,
         source_index: 10_000,
+        start_page_index: 0,
+        start_page_name: "1",
+        title: "Del",
+        title_id: null
+      }]
+    }],
+    ["a part source index that does not match its source order", {
+      ...readerManifest,
+      parts: [{
+        authors: [],
+        end_page_index: 1,
+        end_page_name: "2",
+        nav_title: null,
+        short_title: null,
+        source_index: 1,
         start_page_index: 0,
         start_page_name: "1",
         title: "Del",
@@ -605,7 +620,7 @@ describe("generated Editor manifest client", () => {
       parts: [{
         ...completeManifest.parts[0],
         authors: partAuthors(100),
-        source_index: 9_999
+        source_index: 0
       }],
       sizes: [{ size: 3, width: 10_000 }]
     }]
@@ -673,6 +688,10 @@ describe("generated Editor manifest client", () => {
     ["more than 100 complete part authors", {
       ...completeManifest,
       parts: [{ ...completeManifest.parts[0], authors: partAuthors(101) }]
+    }],
+    ["a complete part source index that does not match its source order", {
+      ...completeManifest,
+      parts: [{ ...completeManifest.parts[0], source_index: 1 }]
     }],
     ["a complete facsimile width above the maximum", {
       ...completeManifest,

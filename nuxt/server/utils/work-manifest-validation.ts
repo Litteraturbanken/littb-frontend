@@ -210,11 +210,11 @@ function validPartAuthors(value: unknown): boolean {
   return boundedArray(value, 0, 100) && value.every(validPartAuthor)
 }
 
-function validPart(value: unknown, pages: unknown): boolean {
+function validPart(value: unknown, pages: unknown, sourceIndex: number): boolean {
   if (!isReaderSourceRecord(value)) return false
   return passes(
     exactKeys(value, partKeys),
-    partSourceIndex(value.source_index),
+    partSourceIndex(value.source_index) && value.source_index === sourceIndex,
     orderedPartIndexes(value.start_page_index, value.end_page_index),
     manifestPageName(value.start_page_name),
     manifestPageName(value.end_page_name),
@@ -229,7 +229,8 @@ function validPart(value: unknown, pages: unknown): boolean {
 }
 
 function validParts(value: unknown, pages: unknown): boolean {
-  return boundedArray(value, 0, 10_000) && value.every(part => validPart(part, pages))
+  return boundedArray(value, 0, 10_000)
+    && value.every((part, sourceIndex) => validPart(part, pages, sourceIndex))
 }
 
 function validNavigationName(value: unknown, pages: unknown): boolean {
