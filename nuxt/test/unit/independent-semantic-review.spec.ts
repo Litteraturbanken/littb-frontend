@@ -44,6 +44,7 @@ function createRoot(): string {
     "const args = process.argv.slice(2)",
     "const prompt = readFileSync(0, 'utf8')",
     "appendFileSync(process.env.REVIEW_FIXTURE_LOG, `${JSON.stringify({ args, prompt, startedAt: Date.now() })}\\n`)",
+    "const invocationCount = readFileSync(process.env.REVIEW_FIXTURE_LOG, 'utf8').trim().split('\\n').length",
     "const delay = Number(process.env.REVIEW_FIXTURE_DELAY || 0)",
     "if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay))",
     "const outputIndex = args.indexOf('--output-last-message')",
@@ -51,10 +52,11 @@ function createRoot(): string {
     "if (process.env.REVIEW_FIXTURE_MODE === 'malformed') { writeFileSync(output, 'not json'); process.exit(0) }",
     "const match = prompt.match(/Packet JSON: `([^`]+)`/)",
     "const packet = JSON.parse(readFileSync(match[1], 'utf8')).packet",
-    "const requested = process.env.REVIEW_FIXTURE_MODE === 'changes-requested'",
+    "const invalidLine = process.env.REVIEW_FIXTURE_MODE === 'invalid-line-once' && invocationCount === 1",
+    "const requested = process.env.REVIEW_FIXTURE_MODE === 'changes-requested' || invalidLine",
     "const unit = packet.units[0]",
     "const findings = requested ? [{",
-    "  id: 'finding-1', severity: 'important', category: 'correctness', path: unit.path, unitId: unit.id, line: unit.startLine,",
+    "  id: 'finding-1', severity: 'important', category: 'correctness', path: unit.path, unitId: unit.id, line: invalidLine ? unit.endLine + 1 : unit.startLine,",
     "  summary: 'Incorrect branch', consequence: 'The branch returns stale data.', evidence: 'The current branch ignores its input.',",
     "  recommendation: 'Use the current input.', status: 'unresolved', resolution: null, resolutionCommit: null,",
     "  verification: ['git diff --check']",
@@ -158,6 +160,19 @@ describe("independent semantic review runner", () => {
     expect(result.stderr).toContain("Independent reviewer output is not valid JSON")
     expect(JSON.parse(readFileSync(resolve(root, "quality/semantic-review-ledger.json"), "utf8")))
       .toEqual({ version: 1, records: [] })
+  })
+
+  test("retries one semantically invalid review without weakening packet ownership", () => {
+    const root = createRoot()
+
+    const { result, log } = run(root, "invalid-line-once")
+
+    expect(result.status).toBe(0)
+    const invocations = readFileSync(log, "utf8").trim().split("\n").map(line => JSON.parse(line))
+    expect(invocations).toHaveLength(2)
+    expect(invocations[1].prompt).toContain("Finding finding-1 line is outside unit range")
+    expect(JSON.parse(readFileSync(resolve(root, "quality/semantic-review-ledger.json"), "utf8")))
+      .toMatchObject({ records: [{ state: "approved" }] })
   })
 
   test("records changes-requested evidence and stops the audit", () => {

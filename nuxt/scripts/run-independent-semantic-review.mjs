@@ -170,8 +170,8 @@ function reviewerConcurrency() {
   return Number(raw)
 }
 
-function reviewPrompt({ packetPath, author, reviewer }) {
-  return [
+function reviewPrompt({ packetPath, author, reviewer, validationError = null }) {
+  const prompt = [
     "Perform an independent semantic code review of exactly one generated packet.",
     `Review contract: \`${contractPath}\``,
     `Packet JSON: \`${packetPath}\``,
@@ -181,7 +181,15 @@ function reviewPrompt({ packetPath, author, reviewer }) {
     "Cite findings only on physical lines listed in the owned unit's lines ranges.",
     "Use read-only commands. Return only JSON matching the supplied schema.",
     "Do not review or summarize any other packet."
-  ].join("\n")
+  ]
+  if (validationError) {
+    const boundedError = validationError.replace(/[\r\n]+/gu, " ").slice(0, 500)
+    prompt.push(
+      `Previous evidence was rejected by the strict validator: ${boundedError}`,
+      "This is the final retry. Cite a finding only when its path, unitId, and physical line are owned by that packet unit; otherwise omit it."
+    )
+  }
+  return prompt.join("\n")
 }
 
 function reviewerProcess(command, args, input) {
@@ -230,7 +238,6 @@ function reviewerProcess(command, args, input) {
 
 async function invokeReviewer({ packetEntry, author, reviewer }) {
   const outputPath = resolve(reportDirectory, `.review-${process.pid}-${artifactName(packetEntry.packet.id)}.json`)
-  rmSync(outputPath, { force: true })
   const command = reviewerCommand()
   const args = [
     ...command.slice(1),
@@ -242,33 +249,41 @@ async function invokeReviewer({ packetEntry, author, reviewer }) {
     "--output-last-message", outputPath,
     "-"
   ]
-  const before = sourceSnapshot()
-  const result = await reviewerProcess(
-    command,
-    args,
-    reviewPrompt({ packetPath: packetEntry.path, author, reviewer })
-  )
-  assertSourceSnapshot(before)
-  if (result.signal || result.status === null) {
-    throw new Error(`Independent reviewer terminated by ${result.signal ?? "an unknown signal"}`)
+  let validationError = null
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    rmSync(outputPath, { force: true })
+    const before = sourceSnapshot()
+    const result = await reviewerProcess(
+      command,
+      args,
+      reviewPrompt({ packetPath: packetEntry.path, author, reviewer, validationError })
+    )
+    assertSourceSnapshot(before)
+    if (result.signal || result.status === null) {
+      throw new Error(`Independent reviewer terminated by ${result.signal ?? "an unknown signal"}`)
+    }
+    if (result.status !== 0) {
+      throw new Error(`Independent reviewer exited ${result.status}: ${(result.stderr || result.stdout).trim()}`)
+    }
+    if (!existsSync(outputPath)) throw new Error("Independent reviewer did not produce evidence")
+    const text = readFileSync(outputPath, "utf8")
+    rmSync(outputPath, { force: true })
+    try {
+      const evidence = JSON.parse(text)
+      if (evidence.author !== author || evidence.reviewer !== reviewer) {
+        throw new Error("Independent reviewer identities do not match the requested review")
+      }
+      parseEvidence(evidence, packetEntry.packet)
+      return { evidence, text }
+    } catch (error) {
+      const normalized = error instanceof SyntaxError
+        ? new Error("Independent reviewer output is not valid JSON")
+        : error
+      if (attempt === 1) throw normalized
+      validationError = normalized instanceof Error ? normalized.message : String(normalized)
+    }
   }
-  if (result.status !== 0) {
-    throw new Error(`Independent reviewer exited ${result.status}: ${(result.stderr || result.stdout).trim()}`)
-  }
-  if (!existsSync(outputPath)) throw new Error("Independent reviewer did not produce evidence")
-  const text = readFileSync(outputPath, "utf8")
-  rmSync(outputPath, { force: true })
-  let evidence
-  try {
-    evidence = JSON.parse(text)
-  } catch {
-    throw new Error("Independent reviewer output is not valid JSON")
-  }
-  if (evidence.author !== author || evidence.reviewer !== reviewer) {
-    throw new Error("Independent reviewer identities do not match the requested review")
-  }
-  parseEvidence(evidence, packetEntry.packet)
-  return { evidence, text }
+  throw new Error("Independent reviewer exhausted its validation attempts")
 }
 
 function saveEvidence(packet, text) {
