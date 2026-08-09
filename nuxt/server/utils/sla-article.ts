@@ -1,7 +1,6 @@
 import { createError, type H3Event } from "h3"
 import { parseHTML } from "linkedom"
 
-import { createLbApiClient } from "../../app/lib/api/client"
 import type { components } from "../../app/lib/api/generated/lbapi"
 import {
   SLA_ARTICLE_REGISTRY_BY_ID,
@@ -27,6 +26,7 @@ import {
   readAuthorDocumentResponse,
   validManagedSegment
 } from "./author-document"
+import { createServerLbApiClient } from "./server-lb-api-client"
 
 export type SlaArticleDescriptor = components["schemas"]["SlaArticleDescriptor"]
 
@@ -496,7 +496,7 @@ export async function loadSlaArticle(
   requestedArticle: SlaArticleId
 ): Promise<SlaArticlePage> {
   const config = useRuntimeConfig(event)
-  const client = createLbApiClient(config.apiBase)
+  const client = createServerLbApiClient(event)
   let result
   try {
     result = await client.GET(

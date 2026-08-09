@@ -1,7 +1,6 @@
 import { createError, type H3Event } from "h3"
 import { parseHTML } from "linkedom"
 
-import { createLbApiClient } from "../../app/lib/api/client"
 import type { components } from "../../app/lib/api/generated/lbapi"
 import type {
   AuthorDocumentErrorCode,
@@ -11,6 +10,7 @@ import type {
 import type { SanitizedHtml } from "../../shared/types/renderable-html"
 import { issueAuthorDocumentHtml } from "../../shared/utils/renderable-html"
 import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
+import { createServerLbApiClient } from "./server-lb-api-client"
 
 export type AuthorDocumentDescriptor = components["schemas"]["AuthorDocumentDescriptor"]
 type UnknownRecord = Record<string, unknown>
@@ -501,7 +501,7 @@ export async function loadAuthorDocument(
   requestedKind: AuthorDocumentKind
 ): Promise<AuthorSupplementalPage> {
   const config = useRuntimeConfig(event)
-  const client = createLbApiClient(config.apiBase)
+  const client = createServerLbApiClient(event)
   let result
   try {
     result = await client.GET("/authors/{author_id}/documents/{document_kind}", {

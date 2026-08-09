@@ -1,7 +1,6 @@
 import { createError, type H3Event } from "h3"
 import type { PathSerializer } from "openapi-fetch"
 
-import { createLbApiClient } from "../../app/lib/api/client"
 import type {
   EditorManifestResponse,
   ReaderManifestResponse
@@ -11,6 +10,7 @@ import {
   isEditorManifestResponse,
   isReaderManifestResponse
 } from "./work-manifest-validation"
+import { createServerLbApiClient } from "./server-lb-api-client"
 
 function readerPageNotFound(): never {
   throw createError({ statusCode: 404, statusMessage: "Reader page not found" })
@@ -76,7 +76,7 @@ export async function fetchReaderManifest(
   titlePath: string,
   mediaType: ReaderMediaType
 ): Promise<ReaderManifestResponse> {
-  const client = createLbApiClient(useRuntimeConfig(event).apiBase)
+  const client = createServerLbApiClient(event)
   const request = () => client.GET("/works/{author_id}/{title_path}/manifest", {
     params: {
       path: { author_id: authorId, title_path: titlePath },
@@ -112,7 +112,7 @@ export async function fetchEditorManifest(
   workId: string,
   mediaType: ReaderMediaType
 ): Promise<EditorManifestResponse> {
-  const client = createLbApiClient(useRuntimeConfig(event).apiBase)
+  const client = createServerLbApiClient(event)
   const request = () => client.GET("/works/{work_id}/editor-manifest", {
     params: {
       path: { work_id: workId },

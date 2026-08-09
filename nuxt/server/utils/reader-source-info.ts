@@ -1,6 +1,5 @@
 import type { H3Event } from "h3"
 
-import { createLbApiClient } from "../../app/lib/api/client"
 import type { ReaderSourceInfo } from "../../shared/types/reader-source-info"
 import {
   loadCachedReaderSourceInfoStaticDefinitions,
@@ -15,6 +14,10 @@ import {
   type ReaderMediaQuery,
   type WorkSourceInfoResponse
 } from "./reader-source-info-validation"
+import {
+  createServerLbApiClient,
+  type ServerLbApiClient
+} from "./server-lb-api-client"
 
 export {
   clearReaderSourceInfoStaticCache,
@@ -34,10 +37,8 @@ export {
   validateReaderSourceInfoResponse
 } from "./reader-source-info-validation"
 
-type LbApiClient = ReturnType<typeof createLbApiClient>
-
 export async function fetchWorkSourceInfo(
-  client: LbApiClient,
+  client: ServerLbApiClient,
   authorId: string,
   titlePath: string,
   mediaType: ReaderMediaQuery | null
@@ -73,7 +74,7 @@ export async function fetchWorkSourceInfo(
 }
 
 async function resolveAttributionAuthors(
-  client: LbApiClient,
+  client: ServerLbApiClient,
   ids: string[]
 ): Promise<unknown> {
   const request = () => client.POST("/authors/resolve", {
@@ -100,7 +101,7 @@ export async function loadReaderSourceInfo(
   mediaType: ReaderMediaQuery | null
 ): Promise<ReaderSourceInfo> {
   const config = useRuntimeConfig(event)
-  const client = createLbApiClient(config.apiBase)
+  const client = createServerLbApiClient(event)
   const source = await fetchWorkSourceInfo(client, authorId, titlePath, mediaType)
   let definitions: ReaderSourceInfoStaticDefinitions
   try {

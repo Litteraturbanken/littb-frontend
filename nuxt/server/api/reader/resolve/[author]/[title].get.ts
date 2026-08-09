@@ -1,8 +1,8 @@
 import type { ReaderRouteResolution } from "#shared/types/reader"
 
-import { createLbApiClient } from "../../../../../app/lib/api/client"
 import { fetchWorkSourceInfo } from "../../../../utils/reader-source-info"
 import { parseReaderSourceInfoRequest } from "../../../../utils/reader-source-info-validation"
+import { createServerLbApiClient } from "../../../../utils/server-lb-api-client"
 
 function encodeRfc3986Segment(value: string): string {
   return encodeURIComponent(value).replace(
@@ -18,7 +18,7 @@ export default defineEventHandler(async event => {
     getRouterParam(event, "title", { decode: true }),
     getQuery(event)
   )
-  const client = createLbApiClient(useRuntimeConfig(event).apiBase)
+  const client = createServerLbApiClient(event)
   const source = await fetchWorkSourceInfo(
     client,
     request.authorId,

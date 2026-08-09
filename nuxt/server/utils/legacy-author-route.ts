@@ -1,8 +1,8 @@
 import { createError, type H3Event } from "h3"
 
-import { createLbApiClient } from "../../app/lib/api/client"
 import type { components } from "../../app/lib/api/generated/lbapi"
 import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
+import { createServerLbApiClient } from "./server-lb-api-client"
 
 export type LegacyAuthorRouteRequest =
   components["schemas"]["LegacyAuthorRouteRequest"]
@@ -116,7 +116,7 @@ export async function resolveLegacyAuthorRoutePrivately(
   event: H3Event,
   request: LegacyAuthorRouteRequest
 ): Promise<LegacyAuthorRouteResolution> {
-  const client = createLbApiClient(useRuntimeConfig(event).apiBase)
+  const client = createServerLbApiClient(event)
   let result
   try {
     result = await client.POST("/legacy-author-routes/resolve", {

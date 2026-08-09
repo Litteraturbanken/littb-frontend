@@ -1,8 +1,8 @@
 import { createError, type H3Event } from "h3"
 
-import { createLbApiClient } from "../../app/lib/api/client"
 import type { components } from "../../app/lib/api/generated/lbapi"
 import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
+import { createServerLbApiClient } from "./server-lb-api-client"
 
 export type LegacyDramawebbenRouteRequest =
   components["schemas"]["LegacyDramawebbenRouteRequest"]
@@ -141,7 +141,7 @@ export async function resolveLegacyDramawebbenRoutePrivately(
   event: H3Event,
   request: LegacyDramawebbenRouteRequest
 ): Promise<LegacyDramawebbenRouteResolution | null> {
-  const client = createLbApiClient(useRuntimeConfig(event).apiBase)
+  const client = createServerLbApiClient(event)
   let result
   try {
     result = await client.POST("/dramawebben/legacy-routes/resolve", {
