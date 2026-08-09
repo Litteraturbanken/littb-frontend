@@ -246,6 +246,56 @@ const config = useRuntimeConfig()
 const requestFetch = useRequestFetch()
 const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
 
+type QueryWriteMode = "push" | "replace"
+
+let intendedRouteQuery: LocationQueryRaw | null = null
+let routeQueryWrite: Promise<void> = Promise.resolve()
+let routeQueryRevision = 0
+let ownedRouteTarget: string | null = null
+
+onBeforeRouteUpdate((to) => {
+  if (to.fullPath === ownedRouteTarget) return
+  routeQueryRevision += 1
+  intendedRouteQuery = null
+})
+
+function latestRouteQuery(): LocationQueryRaw {
+  return intendedRouteQuery ?? route.query
+}
+
+async function writeRouteQuery(
+  query: LocationQueryRaw,
+  mode: QueryWriteMode
+): Promise<boolean> {
+  const revision = ++routeQueryRevision
+  const path = route.path
+  const target = { path, query }
+  const targetFullPath = router.resolve(target).fullPath
+  intendedRouteQuery = query
+
+  const navigation = routeQueryWrite.then(async () => {
+    if (revision !== routeQueryRevision || route.path !== path) return false
+    ownedRouteTarget = targetFullPath
+    try {
+      await router[mode](target)
+      return true
+    } finally {
+      if (ownedRouteTarget === targetFullPath) ownedRouteTarget = null
+    }
+  })
+  routeQueryWrite = navigation.then(() => undefined, () => undefined)
+
+  try {
+    return await navigation
+  } catch {
+    return false
+  } finally {
+    if (revision === routeQueryRevision && intendedRouteQuery === query) {
+      intendedRouteQuery = null
+    }
+  }
+}
+
 const sourceInfoIdentity = computed(() => {
   const marker = route.query["om-boken"]
   if (
@@ -326,7 +376,7 @@ let sourceInfoTrigger: HTMLElement | null = null
 
 function sourceInfoQuery(authorId: string, titlePath: string): LocationQueryRaw {
   return {
-    ...route.query,
+    ...latestRouteQuery(),
     "om-boken": null,
     authorid: authorId,
     titlepath: titlePath
@@ -337,8 +387,8 @@ async function pushSourceInfoQuery(
   query: LocationQueryRaw,
   hash: string
 ): Promise<void> {
-  await router.push({ path: route.path, query })
-  if (import.meta.client && hash) {
+  const committed = await writeRouteQuery(query, "push")
+  if (committed && import.meta.client && hash) {
     const target = router.resolve({ path: route.path, query, hash }).fullPath
     window.history.replaceState(window.history.state, "", target)
   }
@@ -362,7 +412,7 @@ async function closeCatalogSourceInfo(): Promise<void> {
   const hash = import.meta.client ? window.location.hash : route.hash
   const query = queryWithoutKey(
     queryWithoutKey(
-      queryWithoutKey(route.query, "om-boken"),
+      queryWithoutKey(latestRouteQuery(), "om-boken"),
       "authorid"
     ),
     "titlepath"
@@ -519,26 +569,16 @@ const filteredWorks = computed(() => {
   })
 })
 
-let intendedCatalogQuery: LocationQueryRaw | null = null
-let catalogQueryWrite: Promise<void> = Promise.resolve()
-
 async function setQuery(key: string, value: string | null, push = false): Promise<void> {
-  const baseQuery = intendedCatalogQuery ?? route.query
+  const baseQuery = latestRouteQuery()
   const query = value === null || value === "" || value === "all"
     ? queryWithoutKey(baseQuery, key)
     : { ...baseQuery, [key]: value }
-  const path = route.path
-  intendedCatalogQuery = query
-  const navigate = async () => {
-    if (route.path !== path) return
-    await (push ? router.push({ path, query }) : router.replace({ path, query }))
-  }
-  catalogQueryWrite = catalogQueryWrite
-    .catch(() => {})
-    .then(navigate)
-    .catch(() => {})
-  await catalogQueryWrite
-  if (intendedCatalogQuery === query) intendedCatalogQuery = null
+  await writeRouteQuery(query, push ? "push" : "replace")
+}
+
+function clearFilters(): void {
+  void writeRouteQuery({}, "replace")
 }
 
 function chooseAuthor(author: CatalogAuthor | null) {
@@ -552,7 +592,8 @@ function setRange(key: RangeKey, side: "from" | "to", value: string) {
   if (!Number.isFinite(number)) return
   const from = side === "from" ? Math.min(number, current.to) : current.from
   const to = side === "to" ? Math.max(number, current.from) : current.to
-  void setQuery(key, `${from},${to}`)
+  const bounds = ranges.value[key]
+  void setQuery(key, from === bounds.floor && to === bounds.ceil ? null : `${from},${to}`)
 }
 
 const rangePointer = ref<{
@@ -773,7 +814,7 @@ useHead(() => ({
           aria-label="Sök"
           @input="setQuery('filterTxt', ($event.target as HTMLInputElement).value)"
         >
-        <button v-if="Object.keys(route.query).length" type="button" class="btn btn-small clear_filter" @click="router.replace({ path: route.path, query: {} })">
+        <button v-if="Object.keys(route.query).length" type="button" class="btn btn-small clear_filter" @click="clearFilters">
           Rensa filter
         </button>
       </div>

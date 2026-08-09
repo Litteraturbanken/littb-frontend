@@ -820,6 +820,61 @@ test("same-tick catalog filters merge into one intended route state", async ({ p
   await expectPlayRows(page, [dramawebbenCatalogExpected.plays[2]!])
 })
 
+test("a same-tick clear supersedes queued catalog filter writes", async ({ page }) => {
+  await page.goto(
+    "/dramawebben/pj%C3%A4ser?gender=female",
+    { waitUntil: "networkidle" }
+  )
+
+  await page.evaluate(() => {
+    const filter = document.querySelector<HTMLInputElement>('input[aria-label="Sök"]')!
+    const clear = [...document.querySelectorAll<HTMLButtonElement>("button")]
+      .find(button => button.textContent?.trim() === "Rensa filter")!
+    filter.value = "Julie"
+    filter.dispatchEvent(new Event("input", { bubbles: true }))
+    clear.click()
+  })
+
+  await expect(page).toHaveURL(/\/dramawebben\/pj%C3%A4ser$/u)
+  await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+})
+
+test("same-page browser history supersedes a queued catalog filter write", async ({ page }) => {
+  await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Författare", exact: true }).click()
+  await expectQuery(page, "visa", "författare")
+
+  await page.evaluate(() => {
+    const filter = document.querySelector<HTMLInputElement>('input[aria-label="Sök"]')!
+    filter.value = "Julie"
+    filter.dispatchEvent(new Event("input", { bubbles: true }))
+    history.back()
+  })
+
+  await expectQuery(page, "visa", null)
+  await expectQuery(page, "filterTxt", null)
+  await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+})
+
+test("restoring a catalog range to its full bounds removes the inactive filter", async ({
+  page
+}) => {
+  await page.goto(
+    "/dramawebben/pj%C3%A4ser?number_of_pages=24,120",
+    { waitUntil: "networkidle" }
+  )
+  await page.getByRole("button", { name: "Akter och roller", exact: true }).click()
+
+  await page.getByRole("slider", { name: "Antal sidor från", exact: true })
+    .evaluate((input: HTMLInputElement) => {
+      input.value = input.min
+      input.dispatchEvent(new Event("change", { bubbles: true }))
+    })
+
+  await expectQuery(page, "number_of_pages", null)
+  await expect(page.getByRole("button", { name: "Rensa filter", exact: true })).toHaveCount(0)
+})
+
 test("range bare-track pointers choose the nearest handle and mutate the route once", async ({
   page
 }) => {
@@ -884,7 +939,8 @@ test("range bare-track pointers choose the nearest handle and mutate the route o
   expect(box).not.toBeNull()
   expect(lineBox).not.toBeNull()
   await page.mouse.click(box!.x + 1, lineBox!.y + lineBox!.height / 2)
-  await expectQuery(page, "number_of_pages", "18,120")
+  await expectQuery(page, "number_of_pages", null)
+  expect(new URL(page.url()).searchParams.getAll("keep")).toEqual(["one", "two"])
   expect(await mutationCount()).toBe(1)
 })
 
@@ -907,7 +963,7 @@ test("all drama range tracks share pointer behavior while native keyboard input 
     const lineBox = await track.locator("input[type=range]").first().boundingBox()
     expect(box).not.toBeNull()
     expect(lineBox).not.toBeNull()
-    await page.mouse.click(box!.x + box!.width * 0.25, lineBox!.y + lineBox!.height / 2)
+    await page.mouse.click(box!.x + box!.width * 0.4, lineBox!.y + lineBox!.height / 2)
     await expect.poll(() => new URL(page.url()).searchParams.has(key)).toBe(true)
   }
 
