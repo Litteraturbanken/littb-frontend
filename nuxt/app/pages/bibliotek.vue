@@ -1619,6 +1619,7 @@ watch(
         const state = requestState(routeState(route.path, route.query))
         return JSON.stringify([
             stateKey(state),
+            state.mode === "all" && Object.hasOwn(route.query, "sida"),
             state.mode === "all" ? route.query.sida : null
         ])
     },

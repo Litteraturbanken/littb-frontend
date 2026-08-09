@@ -1534,10 +1534,10 @@ test("all-results canonicalizes raw page-one aliases without requesting or retai
   await expect(page.locator("[data-library-result]")).toHaveCount(100)
   await reset(request)
 
-  for (const rawPage of ["1", "0", "101", "malformed"]) {
+  for (const pageQuery of ["sida", "sida=1", "sida=0", "sida=101", "sida=malformed"]) {
     await pushRoute(
       page,
-      `/bibliotek?keep&keep=ja&filter=all-pagination&sida=${rawPage}`
+      `/bibliotek?keep&keep=ja&filter=all-pagination&${pageQuery}`
     )
     await expect.poll(() => new URL(page.url()).searchParams.has("sida")).toBe(false)
     expect(new URL(page.url()).searchParams.getAll("keep")).toEqual(["", "ja"])
