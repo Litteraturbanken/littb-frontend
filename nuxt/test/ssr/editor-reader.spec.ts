@@ -356,6 +356,19 @@ test("SSR renders a requested Editor source-information dialog", async ({ reques
   ])
 })
 
+test("SSR renders a requested Editor contents dialog", async ({ request }) => {
+  const response = await request.get("/editor/lb-editor-boye/ix/4/f?keep=%2f&innehall")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const dialog = document.querySelector('.modal.chapters[role="dialog"]')
+  expect(dialog?.textContent).toContain("Innehållsförteckning")
+  expect(dialog?.querySelector('a[href="/editor/lb-editor-boye/ix/4/f?keep=%2f"]')?.textContent)
+    .toContain("Förord")
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-boye/editor-manifest?media_type=faksimil"
+  ])
+})
+
 test("SSR restores a serialized Editor search hit and marquee", async ({ request }) => {
   const response = await request.get(
     "/editor/lb8345227/ix/4/f?show_search_work&s_query=brev" +

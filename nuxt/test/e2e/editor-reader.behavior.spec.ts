@@ -120,6 +120,18 @@ test("editor Reader restores contents and source dialogs with focus return", asy
   await expect(sourceTrigger).toBeFocused()
 })
 
+test("editor Reader hydrates a directly requested contents dialog once", async ({ page }) => {
+  await page.goto("/editor/lb-editor-boye/ix/4/f?keep=%2f&innehall", {
+    waitUntil: "networkidle"
+  })
+
+  const contents = page.getByRole("dialog", { name: "Innehållsförteckning" })
+  await expect(contents).toHaveCount(1)
+  await expect(contents).toBeVisible()
+  await contents.getByRole("button", { name: "Stäng" }).click()
+  await expect(contents).toHaveCount(0)
+})
+
 test("editor Reader restores focus mode through raw-preserving router history", async ({ page }) => {
   const initial = `${editorFaksimil}?bare&repeat=%2f&repeat=%2F#focus-marker`
   await page.goto(initial, { waitUntil: "networkidle" })
@@ -857,6 +869,21 @@ test("editor links preserve raw queries and fragments while Back restores histor
   await page.goBack()
   expect(new URL(page.url()).pathname + new URL(page.url()).search + new URL(page.url()).hash)
     .toBe(initial)
+})
+
+test("editor page links keep question marks inside fragments out of the query", async ({ page }) => {
+  const initial = `${editorFaksimil}#note?om-boken`
+  await page.goto(initial, { waitUntil: "networkidle" })
+
+  const nextPage = page.getByRole("link", { name: "Nästa sida" })
+  await expect(nextPage).toHaveAttribute(
+    "href",
+    "/editor/lb-editor-doktor/ix/2/f#note?om-boken"
+  )
+  await nextPage.click()
+  expect(new URL(page.url()).pathname + new URL(page.url()).search + new URL(page.url()).hash)
+    .toBe("/editor/lb-editor-doktor/ix/2/f#note?om-boken")
+  await expect(page.getByRole("dialog", { name: "Om boken" })).toHaveCount(0)
 })
 
 test("editor n/f and d/m shortcuts push bounded raw-page history", async ({ page }) => {

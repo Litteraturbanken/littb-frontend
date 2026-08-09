@@ -115,7 +115,7 @@ watch(requestIdentity, async identity => {
 function rawSuffix(fullPath: string): string {
   const query = fullPath.indexOf("?")
   const hash = fullPath.indexOf("#")
-  const suffix = query >= 0 ? query : hash
+  const suffix = query >= 0 && (hash < 0 || query < hash) ? query : hash
   return suffix >= 0 ? fullPath.slice(suffix) : ""
 }
 function href(pageIndex: number): string {
@@ -1409,19 +1409,17 @@ useHead(() => ({
         </aside>
       </template>
     </ClientOnly>
-    <ClientOnly>
-      <ReaderContentsDialog
-        v-if="page"
-        :open="contentsOpen"
-        :contributors="page.contributors"
-        :title="page.title ?? page.workId"
-        :imprint-year="page.imprintYear"
-        :parts="page.parts"
-        :part-hrefs="contentsPartHrefs"
-        @close="closeContents"
-        @select-page="selectContentsPage"
-      />
-    </ClientOnly>
+    <ReaderContentsDialog
+      v-if="page"
+      :open="contentsOpen"
+      :contributors="page.contributors"
+      :title="page.title ?? page.workId"
+      :imprint-year="page.imprintYear"
+      :parts="page.parts"
+      :part-hrefs="contentsPartHrefs"
+      @close="closeContents"
+      @select-page="selectContentsPage"
+    />
     <ReaderSourceInfoDialog
       :open="sourceInfoOpen"
       :loading="sourceInfoLoading"
