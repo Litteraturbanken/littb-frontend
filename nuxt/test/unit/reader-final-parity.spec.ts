@@ -85,6 +85,23 @@ describe("Reader final normal-parity assets", () => {
 })
 
 describe("Reader OCR managed transport", () => {
+  test("accepts the exact OCR asset beneath a configured content base path", async () => {
+    const target = "https://assets.test/content/txt/work/ocr_00001.html"
+    const response = ocrResponse(
+      '<div data-size="625x900"><span class="w">OCR fixture</span></div>',
+      target
+    )
+    const fetchMock = vi.fn<typeof fetch>(async () => response)
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(fetchReaderOcrOverlay(
+      "https://assets.test/content",
+      "work",
+      1
+    )).resolves.toMatchObject({ width: 625, height: 900 })
+    expect(fetchMock).toHaveBeenCalledWith(target, { redirect: "follow" })
+  })
+
   test("accepts an exact-boundary UTF-8 overlay from the exact HTML asset", async () => {
     const prefix = '<div data-size="625x900"><span class="w">å'
     const suffix = "</span></div>"

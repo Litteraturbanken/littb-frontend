@@ -156,9 +156,10 @@ export async function fetchReaderOcrOverlay(
   const filename = String(pageIndex).padStart(5, "0")
   try {
     const path = `/txt/${encodeURIComponent(workId)}/ocr_${filename}.html`
-    const source = await fetchManagedText(`${base}${path}`, {
+    const target = `${base}${path}`
+    const source = await fetchManagedText(target, {
       authorityOrigin: new URL(base).origin,
-      allowedPaths: [path],
+      allowedPaths: [new URL(target).pathname],
       allowedPathPrefixes: [],
       allowedContentTypes: ["text/html"],
       maximumBytes: maximumOverlayLength
