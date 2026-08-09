@@ -496,6 +496,33 @@ export function readerSearchHitResponse(
   mediaType = "etext",
   options = {}
 ) {
+  if (query === "editor-max-direct") {
+    const totalHits = 1_000_002
+    const items = Array.from({
+      length: Math.max(0, Math.min(limit, totalHits - offset))
+    }, (_, position) => ({
+      index: offset + position,
+      page_name: "5",
+      page_index: 4,
+      highlight: { from_word_id: "w5_1", to_word_id: "w5_1" }
+    }))
+    return { query, media_type: mediaType, offset, limit, total_hits: totalHits, items }
+  }
+  if (query === "editor-etext-page-mismatch") {
+    return {
+      query,
+      media_type: mediaType,
+      offset,
+      limit,
+      total_hits: 1,
+      items: [{
+        index: 0,
+        page_name: "-3",
+        page_index: 1,
+        highlight: { from_word_id: "w2_1", to_word_id: "w2_1" }
+      }]
+    }
+  }
   if (query === "max-direct") {
     const totalHits = 1_000_002
     const items = Array.from({

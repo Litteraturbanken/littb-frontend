@@ -382,6 +382,61 @@ test("SSR restores a live-style bare prefix Editor search session", async ({ req
   ])
 })
 
+test("SSR accepts the last Editor hit reachable through the bounded API offset", async ({
+  request
+}) => {
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  const response = await request.get(
+    "/editor/lb8345227/ix/4/f?s_query=editor-max-direct" +
+    "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
+    "&s_include_modernized=true&hit_index=1000001&traff=w5_1&traffslut=w5_1"
+  )
+
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector("#search_nav")?.textContent)
+    .toContain("Träff 1000002, sida 5")
+  const requests = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+  expect(requests.requests).toEqual([
+    expect.objectContaining({
+      query: expect.stringContaining(
+        "query=editor-max-direct&offset=1000000&limit=3"
+      )
+    })
+  ])
+})
+
+for (const invalidResponse of [
+  {
+    query: "incomplete-window",
+    workId: "lb8345227",
+    mediaType: "faksimil",
+    route: "/editor/lb8345227/ix/4/f",
+    range: "w5_1"
+  },
+  {
+    query: "editor-etext-page-mismatch",
+    workId: "lb-editor-doktor-glas",
+    mediaType: "etext",
+    route: "/editor/lb-editor-doktor-glas/ix/1/e",
+    range: "w2_1"
+  }
+] as const) {
+  test(`SSR rejects an Editor ${invalidResponse.query} hit response`, async ({ request }) => {
+    const response = await request.get(
+      `${invalidResponse.route}?s_query=${invalidResponse.query}` +
+      `&s_lbworkid=${invalidResponse.workId}&s_mediatype=${invalidResponse.mediaType}` +
+      "&s_word_form_only=true&s_include_modernized=true&hit_index=0" +
+      `&traff=${invalidResponse.range}&traffslut=${invalidResponse.range}`
+    )
+
+    expect(response.status()).toBe(200)
+    const { document } = parseHTML(await response.text())
+    expect(document.querySelector("#search_nav")?.textContent)
+      .toContain("Sökträffen kunde inte hämtas.")
+  })
+}
+
 test("SSR rejects partial Editor contributor and part metadata atomically", async ({ request }) => {
   for (const workId of [
     "lb-editor-malformed-contributor",

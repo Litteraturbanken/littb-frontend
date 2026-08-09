@@ -207,6 +207,35 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
   await expect(hitNavigation).toHaveCount(0)
 })
 
+test("editor Reader keeps direct hit lookup inside the maximum API offset", async ({
+  page,
+  request
+}) => {
+  const state = "s_query=editor-max-direct&s_lbworkid=lb8345227" +
+    "&s_mediatype=faksimil&s_word_form_only=true&s_include_modernized=true" +
+    "&hit_index=999999&traff=w5_1&traffslut=w5_1"
+  await page.goto(`/editor/lb8345227/ix/4/f?${state}`, { waitUntil: "networkidle" })
+  const navigation = page.getByRole("navigation", { name: "Sökträffsnavigering" })
+  await expect(navigation).toContainText("Träff 1000000, sida 5")
+  await request.delete(`${fixture}/_reader_hit_requests`)
+
+  await navigation.getByRole("link", { name: "Gå direkt till träff" }).click()
+  const input = navigation.getByRole("textbox", { name: "Träffnummer" })
+  await input.fill("1000002")
+  await input.press("Enter")
+
+  await expect(page).toHaveURL(/hit_index=1000001/u)
+  await expect(navigation).toContainText("Träff 1000002, sida 5")
+  const requests = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+  expect(requests.requests).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      query: expect.stringContaining(
+        "query=editor-max-direct&offset=1000000&limit=3"
+      )
+    })
+  ]))
+})
+
 test("editor Reader restores live-style bare prefix flags across hydration and reload", async ({
   page,
   request

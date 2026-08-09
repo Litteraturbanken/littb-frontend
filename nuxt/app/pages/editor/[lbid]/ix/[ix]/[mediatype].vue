@@ -528,6 +528,7 @@ function routeBoolean(key: string, fallback: boolean): boolean | null {
 }
 
 const maximumHitOffset = 1_000_000
+const maximumNavigableHit = maximumHitOffset + 1
 function boundedSearchQuery(): string | null {
   const query = routeSingleString("s_query")?.trim() ?? ""
   return query.length >= 1 && query.length <= 200 ? query : null
@@ -537,7 +538,9 @@ function boundedSearchHit(): number | null {
   const rawHit = routeSingleString("hit_index")
   if (!rawHit || !/^(?:0|[1-9]\d*)$/.test(rawHit)) return null
   const hit = Number(rawHit)
-  return Number.isSafeInteger(hit) && hit <= maximumHitOffset ? hit : null
+  return Number.isSafeInteger(hit) && Math.max(hit - 1, 0) <= maximumHitOffset
+    ? hit
+    : null
 }
 
 function boundedSearchWordId(key: "traff" | "traffslut"): string | null {
@@ -623,9 +626,12 @@ function hitRangeIsValid(hit: WorkSearchHit, currentWorkId: string): boolean {
 
 function hitMatchesEditorPageRange(hit: WorkSearchHit, current: EditorReaderPage): boolean {
   if (hit.page_index < 0 || hit.page_index >= (current.pageCount ?? 0)) return false
-  if (current.mediaType !== "faksimil") return true
   const from = wordPosition(String(hit.highlight.from_word_id ?? ""), current.workId)
-  return from?.page === null || String(from?.page) === hit.page_name
+  if (!from) return false
+  if (from.page === null) return true
+  return current.mediaType === "etext"
+    ? from.page === hit.page_index
+    : String(from.page) === hit.page_name
 }
 
 function isWorkSearchHit(value: unknown, current: EditorReaderPage): value is WorkSearchHit {
@@ -639,13 +645,20 @@ function isExpectedHitResponse(
   state: EditorSearchState,
   current: EditorReaderPage,
   offset: number,
+  expectedHitIndex: number,
   limit: number
 ): value is WorkSearchHitsResponse {
-  if (!isRecord(value) || !Array.isArray(value.items) || value.query !== state.query ||
-    value.media_type !== current.mediaType || value.offset !== offset || value.limit !== limit ||
-    !Number.isSafeInteger(value.total_hits) || value.items.length > limit) return false
+  if (!isRecord(value) || !Array.isArray(value.items) || typeof value.total_hits !== "number" ||
+    value.query !== state.query ||
+    value.media_type !== current.mediaType || value.offset !== offset || value.limit !== limit) {
+    return false
+  }
+  const totalHits = value.total_hits
+  if (!Number.isSafeInteger(totalHits) || totalHits < 0 ||
+    value.items.length > limit || expectedHitIndex >= totalHits) return false
   return value.items.every((item, position) => isWorkSearchHit(item, current) &&
-    item.index === offset + position && item.index < Number(value.total_hits))
+    item.index === offset + position && item.index < totalHits) &&
+    value.items.some(item => isRecord(item) && item.index === expectedHitIndex)
 }
 
 const searchRequestIdentity = computed(() => JSON.stringify([
@@ -683,7 +696,14 @@ const hitFetch = await useAsyncData(
           }
         }
       })
-      if (result.error || !isExpectedHitResponse(result.data, state, current, offset, 3)) {
+      if (result.error || !isExpectedHitResponse(
+        result.data,
+        state,
+        current,
+        offset,
+        state.hit,
+        3
+      )) {
         return { status: "error" as const, identity }
       }
       return { status: "success" as const, identity, response: result.data }
@@ -717,7 +737,7 @@ const previousHit = computed(() => {
 })
 const nextHit = computed(() => {
   const state = searchState.value
-  return state && hitResponse.value
+  return state && hitResponse.value && state.hit + 1 <= maximumNavigableHit
     ? workSearchHitAt(hitResponse.value.items, state.hit + 1)
     : null
 })
@@ -900,7 +920,7 @@ function editorHitLookupContext(index: number): EditorHitLookupContext | null {
   const current = page.value
   const response = hitResponse.value
   if (!state || !current || !response) return null
-  if (index < 0 || index >= response.total_hits || index > maximumHitOffset) return null
+  if (index < 0 || index >= response.total_hits || index > maximumNavigableHit) return null
   return { state, current, response, sourceIdentity: searchRequestIdentity.value }
 }
 
@@ -909,6 +929,8 @@ async function fetchEditorHitAtIndex(
   index: number
 ): Promise<WorkSearchHit | null> {
   const { state, current, response, sourceIdentity } = context
+  const offset = Math.max(index - 1, 0)
+  const limit = 3
   const client = createLbApiClient(config.public.apiBase)
   const result = await client.GET("/works/{work_id}/search-hits", {
     params: {
@@ -916,8 +938,8 @@ async function fetchEditorHitAtIndex(
       query: {
         media_type: current.mediaType,
         query: state.query,
-        offset: index,
-        limit: 1,
+        offset,
+        limit,
         word_forms: state.wordForms,
         include_older_spellings: state.includeOlderSpellings,
         prefix: state.prefix,
@@ -925,10 +947,17 @@ async function fetchEditorHitAtIndex(
       }
     }
   })
-  if (result.error || !isExpectedHitResponse(result.data, state, current, index, 1)) return null
+  if (result.error || !isExpectedHitResponse(
+    result.data,
+    state,
+    current,
+    offset,
+    index,
+    limit
+  )) return null
   if (result.data.total_hits !== response.total_hits) return null
   if (sourceIdentity !== searchRequestIdentity.value) return null
-  return result.data.items[0] ?? null
+  return workSearchHitAt(result.data.items, index)
 }
 
 async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
