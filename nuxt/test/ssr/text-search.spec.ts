@@ -413,7 +413,9 @@ test("Visa fler is work-scoped and route changes discard expanded hrefs", async 
   })
   await expect(page.locator("#results tr.is_faksimil.sentence .match")).toHaveCount(2)
 
-  await page.locator(".littb_pager button[rel='prev']").click()
+  const nextSearchPage = page.getByRole("button", { name: "Nästa träffsida" })
+  await expect(nextSearchPage).not.toHaveAttribute("rel")
+  await nextSearchPage.click()
   await expect(page).toHaveURL(/traffsida=2/)
   await expect(page.locator("#results")).not.toHaveClass(/searching/)
   await expect(page.locator("#results tr.is_faksimil.sentence .match")).toHaveCount(1)

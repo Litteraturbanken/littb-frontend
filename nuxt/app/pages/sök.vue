@@ -1621,7 +1621,6 @@ v-for="item in [
             <li class="arrows">
               <button
                 type="button"
-                rel="next"
                 class="submit btn navicon left"
                 aria-label="Föregående träffsida"
                 :disabled="state.page <= 1"
@@ -1631,7 +1630,6 @@ v-for="item in [
               </button>{{ " " }}
               <button
                 type="button"
-                rel="prev"
                 class="submit btn navicon"
                 aria-label="Nästa träffsida"
                 :disabled="state.page >= totalPages"

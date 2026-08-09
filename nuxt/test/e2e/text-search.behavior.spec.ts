@@ -1653,7 +1653,7 @@ test("options and more cancellation clear loading and reject stale identity data
     data: { operation: "results", selector: "overflow", delay: 1200 }
   })
   await page.locator("#results .overflow .more").last().click()
-  await page.locator(".littb_pager button[rel='prev']").click()
+  await page.getByRole("button", { name: "Nästa träffsida" }).click()
   await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
   await page.waitForTimeout(1300)
   await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(1)
