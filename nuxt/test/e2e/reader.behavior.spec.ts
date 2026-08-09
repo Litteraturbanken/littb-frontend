@@ -2849,6 +2849,43 @@ test("a newer work-search submission cancels a delayed first-hit lookup", async 
   }
 })
 
+test("a stale non-abort work-search failure cannot overwrite a newer result", async ({
+  page
+}) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    const scope = window as typeof window & { __staleWorkSearchStarted?: boolean }
+    const originalFetch = window.fetch.bind(window)
+    window.fetch = (input, init) => {
+      const request = input instanceof Request ? input : null
+      const url = request?.url ?? String(input)
+      if (url.includes("query=stale-error") && url.includes("limit=1")) {
+        scope.__staleWorkSearchStarted = true
+        return new Promise<Response>((_resolve, reject) => {
+          setTimeout(() => reject(new Error("late fixture failure")), 600)
+        })
+      }
+      return originalFetch(input, init)
+    }
+  })
+  await page.locator(".reader-context .subnav")
+    .getByRole("button", { name: "Sök i verket", exact: true }).click()
+  const searchbox = page.locator(".reader-context .searchbox")
+  const input = searchbox.getByRole("searchbox")
+  await input.fill("stale-error")
+  await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
+  await expect.poll(() => page.evaluate(() => (
+    window as typeof window & { __staleWorkSearchStarted?: boolean }
+  ).__staleWorkSearchStarted)).toBe(true)
+
+  await input.fill("glas")
+  await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
+  await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0`)
+  await expect(page.locator("#w2_2.markee")).toHaveCount(1)
+  await page.waitForTimeout(700)
+  await expect(searchbox.getByRole("status")).toHaveCount(0)
+})
+
 test("canonical search options reject a mismatched legacy marker", async ({ page }) => {
   const legacyMarker = [
     "traff=w2_1",

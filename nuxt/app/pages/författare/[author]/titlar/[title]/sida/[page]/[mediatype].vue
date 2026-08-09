@@ -1572,7 +1572,9 @@ async function submitWorkSearch(): Promise<void> {
       rawFullPath.value
     )
   } catch (error) {
-    if (!isAbortError(error)) workSearchMessage.value = "Sökningen kunde inte genomföras."
+    if (generation === workSearchSubmissionGeneration && !isAbortError(error)) {
+      workSearchMessage.value = "Sökningen kunde inte genomföras."
+    }
   } finally {
     if (workSearchSubmissionController === controller) {
       workSearchSubmissionController = null
