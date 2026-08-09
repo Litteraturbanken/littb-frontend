@@ -640,6 +640,22 @@ function isWorkSearchHit(value: unknown, current: EditorReaderPage): value is Wo
     && hitMatchesEditorPageRange(value, current)
 }
 
+function hasExpectedHitEnvelope(
+  value: unknown,
+  state: EditorSearchState,
+  current: EditorReaderPage,
+  offset: number,
+  limit: number
+): value is WorkSearchHitsResponse {
+  return isRecord(value)
+    && Array.isArray(value.items)
+    && typeof value.total_hits === "number"
+    && value.query === state.query
+    && value.media_type === current.mediaType
+    && value.offset === offset
+    && value.limit === limit
+}
+
 function isExpectedHitResponse(
   value: unknown,
   state: EditorSearchState,
@@ -648,11 +664,7 @@ function isExpectedHitResponse(
   expectedHitIndex: number,
   limit: number
 ): value is WorkSearchHitsResponse {
-  if (!isRecord(value) || !Array.isArray(value.items) || typeof value.total_hits !== "number" ||
-    value.query !== state.query ||
-    value.media_type !== current.mediaType || value.offset !== offset || value.limit !== limit) {
-    return false
-  }
+  if (!hasExpectedHitEnvelope(value, state, current, offset, limit)) return false
   const totalHits = value.total_hits
   if (!Number.isSafeInteger(totalHits) || totalHits < 0 ||
     value.items.length > limit || expectedHitIndex >= totalHits) return false
@@ -829,18 +841,31 @@ const nextHitHref = computed(() => nextHit.value && searchState.value
   ? workSearchHitHref(nextHit.value, searchState.value)
   : null)
 
-async function submitWorkSearch(): Promise<void> {
-  const query = workSearchQuery.value.trim()
+function workSearchQueryIsValid(query: string): boolean {
   if (query.length < 1) {
     workSearchMessage.value = "Ange ett sökord eller en fras."
     workSearchInput.value?.focus()
-    return
+    return false
   }
   if (query.length > 200) {
     workSearchMessage.value = "Sökningen får vara högst 200 tecken."
     workSearchInput.value?.focus()
-    return
+    return false
   }
+  return true
+}
+
+function isCurrentWorkSearch(generation: number, controller: AbortController): boolean {
+  return generation === workSearchGeneration && workSearchController === controller
+}
+
+function isValidSubmittedHit(value: unknown, current: EditorReaderPage): value is WorkSearchHit {
+  return isWorkSearchHit(value, current)
+}
+
+async function submitWorkSearch(): Promise<void> {
+  const query = workSearchQuery.value.trim()
+  if (!workSearchQueryIsValid(query)) return
   const current = page.value
   if (!current?.searchable) return
   cancelPendingWorkSearch()
@@ -873,9 +898,9 @@ async function submitWorkSearch(): Promise<void> {
         }
       }
     })
-    if (generation !== workSearchGeneration || workSearchController !== controller) return
+    if (!isCurrentWorkSearch(generation, controller)) return
     const hit = result.error ? null : result.data?.items[0]
-    if (!hit || !isWorkSearchHit(hit, current)) {
+    if (!isValidSubmittedHit(hit, current)) {
       workSearchMessage.value = result.error ? "Sökningen kunde inte genomföras." : "Inga träffar."
       return
     }

@@ -1909,10 +1909,8 @@ async function handleProductionShortcutKeydown(event: KeyboardEvent): Promise<vo
   }
 }
 
-function handleSourceInfoKeydown(event: KeyboardEvent): void {
-  if (
-    (event.key !== "o" && event.key !== "F18")
-    || event.defaultPrevented
+function sourceInfoShortcutIsGuarded(event: KeyboardEvent): boolean {
+  return event.defaultPrevented
     || event.isComposing
     || event.altKey
     || event.shiftKey
@@ -1920,7 +1918,10 @@ function handleSourceInfoKeydown(event: KeyboardEvent): void {
     || event.metaKey
     || isEditableTarget(event.target)
     || anotherDialogOwnsFocus(event.target)
-  ) return
+}
+
+function handleSourceInfoKeydown(event: KeyboardEvent): void {
+  if ((event.key !== "o" && event.key !== "F18") || sourceInfoShortcutIsGuarded(event)) return
   event.preventDefault()
   if (sourceInfoOpen.value) {
     void closeSourceInfo()
