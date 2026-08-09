@@ -64,12 +64,14 @@ test("hydrates once and preserves the legacy one-hit, next, previous, and all co
   await expect(page.locator(".results")).toContainText("Gösta Berlings saga")
   await expect(page.locator(".results")).toContainText("[tom]")
 
-  await page.getByRole("link", { name: "Visa nästa sökträff" }).click()
+  const next = page.getByRole("button", { name: "Visa nästa sökträff" })
+  await next.focus()
+  await page.keyboard.press("Space")
   await expect(page.locator(".results")).toContainText("En herrgårdssägen")
   await expect(page.locator(".results")).not.toContainText("Gösta Berlings saga")
-  await page.getByRole("link", { name: "Visa föregående sökträff" }).click()
+  await page.getByRole("button", { name: "Visa föregående sökträff" }).click()
   await expect(page.locator(".results")).toContainText("Gösta Berlings saga")
-  await page.getByRole("link", { name: "Visa alla sökträffar" }).click()
+  await page.getByRole("button", { name: "Visa alla sökträffar" }).click()
   await expect(page.locator(".results > div")).toHaveCount(3)
   await expect(page.locator(".results")).toContainText("Jerusalem i forskningen")
 

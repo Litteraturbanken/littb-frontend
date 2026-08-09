@@ -2814,6 +2814,22 @@ body > .header {
     }
 }
 
+#toolkit-biblinfo .biblinfo_action {
+    appearance: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #333;
+    cursor: pointer;
+    font: inherit;
+    line-height: inherit;
+    text-align: left;
+    &:hover,
+    &:focus {
+        color: $primarycolor;
+    }
+}
+
 .page-id {
     td {
         padding : 3px 5px;

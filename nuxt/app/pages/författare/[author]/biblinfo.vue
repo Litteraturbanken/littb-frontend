@@ -352,9 +352,9 @@ useHead({
             <hr>
             <div class="num_hits">{{ hitText }}</div>
             <ul>
-              <li><a href="" @click.prevent="increment">Visa nästa sökträff</a></li>
-              <li><a href="" @click.prevent="decrement">Visa föregående sökträff</a></li>
-              <li><a href="" @click.prevent="showEveryEntry">Visa alla sökträffar</a></li>
+              <li><button type="button" class="biblinfo_action" @click="increment">Visa nästa sökträff</button></li>
+              <li><button type="button" class="biblinfo_action" @click="decrement">Visa föregående sökträff</button></li>
+              <li><button type="button" class="biblinfo_action" @click="showEveryEntry">Visa alla sökträffar</button></li>
             </ul>
           </div>
         </Teleport>
