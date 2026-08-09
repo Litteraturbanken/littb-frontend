@@ -2,6 +2,7 @@ import { parseHTML } from "linkedom"
 
 import type { ReaderOcrOverlay } from "../../shared/types/reader"
 import { issueReaderOcrHtml } from "../../shared/utils/renderable-html"
+import { fetchManagedText } from "../../shared/utils/managed-text"
 import { hasC0OrC1Control } from "../../shared/utils/text-safety"
 
 const maximumOverlayLength = 512 * 1024
@@ -154,10 +155,14 @@ export async function fetchReaderOcrOverlay(
 ): Promise<ReaderOcrOverlay | null> {
   const filename = String(pageIndex).padStart(5, "0")
   try {
-    const source = await $fetch<string>(
-      `${base}/txt/${encodeURIComponent(workId)}/ocr_${filename}.html`,
-      { responseType: "text", retry: 0 }
-    )
+    const path = `/txt/${encodeURIComponent(workId)}/ocr_${filename}.html`
+    const source = await fetchManagedText(`${base}${path}`, {
+      authorityOrigin: new URL(base).origin,
+      allowedPaths: [path],
+      allowedPathPrefixes: [],
+      allowedContentTypes: ["text/html"],
+      maximumBytes: maximumOverlayLength
+    })
     return parseReaderOcrOverlay(source)
   } catch {
     return null
