@@ -399,6 +399,22 @@ test("a long mixed-author catalog uses the clicked infopost identity without scr
     waitUntil: "networkidle"
   })
 
+  const targetRow = page.locator("table.contenttable tbody tr").filter({
+    hasText: "Barnens teater"
+  })
+  const authorLinks = targetRow.locator("td.author a")
+  await expect(authorLinks).toHaveCount(2)
+  await expect(authorLinks.nth(0)).toHaveText("Wahlenberg, Anna")
+  await expect(authorLinks.nth(0)).toHaveAttribute(
+    "href",
+    "/f%C3%B6rfattare/WahlenbergA/dramawebben"
+  )
+  await expect(authorLinks.nth(1)).toHaveText("Anonym")
+  await expect(authorLinks.nth(1)).toHaveAttribute(
+    "href",
+    "/f%C3%B6rfattare/Anonym/dramawebben"
+  )
+
   const trigger = page.getByRole("link", { name: "infopost", exact: true })
   await trigger.scrollIntoViewIfNeeded()
   const before = await page.evaluate(() => window.scrollY)

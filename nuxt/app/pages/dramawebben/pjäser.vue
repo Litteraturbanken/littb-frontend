@@ -778,9 +778,13 @@ useHead(() => ({
         <tbody>
           <tr v-for="work in filteredWorks" :key="work.work_id">
             <td class="author">
-              <NuxtLink :to="authorProfilePath(work.authors[0]!.author_id, 'dramawebben')">
-                <span class="sc">{{ authorName(work.authors[0]!).surname }}</span><template v-if="authorName(work.authors[0]!).given">,<span class="firstname">{{ " " }}{{ authorName(work.authors[0]!).given }}</span></template>
-              </NuxtLink>
+              <template v-for="(author, authorIndex) in work.authors" :key="author.author_id">
+                <span v-if="authorIndex > 0" class="author-separator"> &amp; </span><NuxtLink
+                  :to="authorProfilePath(author.author_id, 'dramawebben')"
+                ><span class="sc">{{ authorName(author).surname }}</span><template
+                  v-if="authorName(author).given"
+                >,<span class="firstname">{{ " " }}{{ authorName(author).given }}</span></template></NuxtLink>
+              </template>
             </td>{{ " " }}
             <td class="title"><a
               v-if="work.media[0]!.downloadable"
