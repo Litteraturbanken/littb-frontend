@@ -976,7 +976,9 @@ function paginationShortcutGuarded(event: KeyboardEvent): boolean {
     ? event.target
     : document.activeElement as HTMLElement | null
   return Boolean(target?.closest(
-    "input, select, textarea, [contenteditable]:not([contenteditable='false'])"
+    "a[href], button, summary, input, select, textarea, " +
+    "[contenteditable]:not([contenteditable='false']), [role], " +
+    "[tabindex]:not([tabindex^='-'])"
   ))
 }
 

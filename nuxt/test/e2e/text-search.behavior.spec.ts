@@ -792,6 +792,22 @@ test("keyboard pagination does not intercept arrows inside form controls", async
   expect(new URL(page.url()).searchParams.get("traffsida")).toBe("2")
 })
 
+test("keyboard pagination yields to every focused interactive Search control", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow&traffsida=2&avancerad=1")
+  await expect(page.locator("#results")).not.toHaveClass(/searching/)
+
+  for (const control of [
+    page.getByRole("button", { name: "Rensa sökningen" }),
+    page.locator("#results .match a").first(),
+    page.locator(".gender_select").getByRole("button")
+  ]) {
+    await control.focus()
+    await page.keyboard.press("ArrowRight")
+    await page.waitForTimeout(100)
+    expect(new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+  }
+})
+
 test("vue-multiselect filters traverse by keyboard and remove accessibly", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
   await request.delete(`${fixture}/_text_search/requests/results`)
