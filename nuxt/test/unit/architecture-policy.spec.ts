@@ -978,6 +978,103 @@ input[type="range"]::-moz-range-thumb { pointer-events: auto; }
     )
   })
 
+  test.each([
+    ["an optional parameter", "base?: string"],
+    ["a defaulted parameter", "base = useRuntimeConfig().apiBase"],
+    ["a rest parameter", "...args: unknown[]"],
+    ["a destructured parameter", "{ base }: { base: string }"]
+  ])("rejects %s on the contextual owner", (_label, parameters) => {
+    const root = createTree()
+    const path = "app/composables/useLbApiClient.ts"
+    writeSource(root, path, [
+      "import { createCorrelatedLbApiClient } from \"../lib/api/client\"",
+      `export function useLbApiClient(${parameters}) {`,
+      "  return createCorrelatedLbApiClient(useRuntimeConfig().apiBase, undefined)",
+      "}"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}:`)
+    expect(result.stderr).toContain(
+      "contextual lb-api owner must export exactly a zero-argument useLbApiClient"
+    )
+  })
+
+  test.each([
+    [
+      "a request-derived backend base",
+      [
+        "const event = useRequestEvent()",
+        "const base = getQuery(event).base as string",
+        "return createCorrelatedLbApiClient(base, undefined)"
+      ].join("\n  ")
+    ],
+    [
+      "an aliased runtime config base",
+      [
+        "const config = useRuntimeConfig()",
+        "return createCorrelatedLbApiClient(config.apiBase, undefined)"
+      ].join("\n  ")
+    ],
+    [
+      "an arbitrary correlation object",
+      [
+        "const correlation = { requestId: crypto.randomUUID(), traceparent: getHeader(\"traceparent\")! }",
+        "return createCorrelatedLbApiClient(useRuntimeConfig().apiBase, correlation)"
+      ].join("\n  ")
+    ],
+    [
+      "an aliased request event",
+      [
+        "const event = useRequestEvent()",
+        "return createCorrelatedLbApiClient(",
+        "  useRuntimeConfig().apiBase, requestCorrelation(event)",
+        ")"
+      ].join("\n  "),
+      "function requestCorrelation(event: object) { return event }"
+    ],
+    [
+      "a custom fetch",
+      [
+        "return createCorrelatedLbApiClient(",
+        "  useRuntimeConfig().apiBase, undefined, globalThis.fetch",
+        ")"
+      ].join("\n  ")
+    ],
+    [
+      "a private raw-client wrapper",
+      [
+        "return rawClientFactory()"
+      ].join("\n  "),
+      [
+        "function rawClientFactory() {",
+        "  const config = useRuntimeConfig()",
+        "  return createCorrelatedLbApiClient(config.apiBase, undefined)",
+        "}"
+      ].join("\n")
+    ]
+  ])("rejects %s in the contextual owner", (_label, body, prefix = "") => {
+    const root = createTree()
+    const path = "app/composables/useLbApiClient.ts"
+    writeSource(root, path, [
+      "import { createCorrelatedLbApiClient } from \"../lib/api/client\"",
+      prefix,
+      "export function useLbApiClient() {",
+      `  ${body}`,
+      "}"
+    ].filter(Boolean).join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}:`)
+    expect(result.stderr).toContain(
+      "low-level lb-api client calls require owner-controlled runtime context"
+    )
+  })
+
   test("allows the contextual owner and unrelated runtime-config shadows", () => {
     const root = createTree()
     writeSource(root, "app/composables/useLbApiClient.ts", [
@@ -985,10 +1082,15 @@ input[type="range"]::-moz-range-thumb { pointer-events: auto; }
       "type Client = ReturnType<typeof createCorrelatedLbApiClient>",
       "export type PublicClient = Client",
       "export interface ClientMarker { readonly kind: \"lb-api\" }",
+      "function requestCorrelation(event: object) { return event }",
       "export function useLbApiClient() {",
-      "  const config = useRuntimeConfig()",
-      "  return (createCorrelatedLbApiClient as typeof createCorrelatedLbApiClient)(",
-      "    config.apiBase, undefined",
+      "  if (!import.meta.server) {",
+      "    return (createCorrelatedLbApiClient as typeof createCorrelatedLbApiClient)(",
+      "      useRuntimeConfig().public.apiBase, undefined",
+      "    ) as Client",
+      "  }",
+      "  return createCorrelatedLbApiClient(",
+      "    useRuntimeConfig().apiBase, requestCorrelation(useRequestEvent())",
       "  ) as Client",
       "}"
     ].join("\n"))

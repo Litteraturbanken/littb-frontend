@@ -489,7 +489,7 @@ function isTransparentExpression(node) {
     || ts.isTypeAssertionExpression(node)
 }
 
-function isDirectCallTarget(node) {
+function directCallFor(node) {
   let current = node
   while (current.parent
     && isTransparentExpression(current.parent)
@@ -497,6 +497,8 @@ function isDirectCallTarget(node) {
     current = current.parent
   }
   return ts.isCallExpression(current.parent) && current.parent.expression === current
+    ? current.parent
+    : null
 }
 
 function hasExportModifier(node) {
@@ -512,26 +514,82 @@ function ownerExportViolation(node) {
   if (ts.isExportDeclaration(node)) {
     if (node.isTypeOnly) return null
     if (!node.exportClause || ts.isNamespaceExport(node.exportClause)) return node
-    return node.exportClause.elements.find(specifier => (
-      !specifier.isTypeOnly && specifier.name.text !== "useLbApiClient"
-    )) ?? null
+    return node.exportClause.elements.find(specifier => !specifier.isTypeOnly) ?? null
   }
   if (!hasExportModifier(node)
     || ts.isInterfaceDeclaration(node)
     || ts.isTypeAliasDeclaration(node)) return null
-  if (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)
-    || ts.isEnumDeclaration(node) || ts.isModuleDeclaration(node)) {
+  if (ts.isFunctionDeclaration(node)) {
     return node.name?.text === "useLbApiClient" ? null : node
   }
-  if (ts.isVariableStatement(node)) {
-    for (const declaration of node.declarationList.declarations) {
-      const forbidden = bindingIdentifiers(declaration.name).find(identifier => (
-        identifier.text !== "useLbApiClient"
-      ))
-      if (forbidden) return forbidden
-    }
+  return node
+}
+
+function contextualOwnerFunction(unit) {
+  const candidates = unit.sourceFile.statements.filter(statement => (
+    ts.isFunctionDeclaration(statement)
+    && statement.name?.text === "useLbApiClient"
+    && hasModifier(statement, ts.SyntaxKind.ExportKeyword)
+    && !hasModifier(statement, ts.SyntaxKind.DefaultKeyword)
+  ))
+  return candidates.length === 1 ? candidates[0] : null
+}
+
+function isUnshadowedZeroArgumentCall(expression, name, semantic) {
+  const candidate = unwrapExpression(expression)
+  return ts.isCallExpression(candidate)
+    && candidate.arguments.length === 0
+    && ts.isIdentifier(candidate.expression)
+    && candidate.expression.text === name
+    && !resolveDeclaration(name, candidate.expression, semantic)
+}
+
+function propertyAccessPath(expression) {
+  const properties = []
+  let current = unwrapExpression(expression)
+  while (ts.isPropertyAccessExpression(current)) {
+    properties.unshift(current.name.text)
+    current = unwrapExpression(current.expression)
   }
-  return null
+  return { root: current, properties }
+}
+
+function isOwnerRuntimeBase(expression, semantic) {
+  const path = propertyAccessPath(expression)
+  const validPath = path.properties.length === 1 && path.properties[0] === "apiBase"
+    || path.properties.length === 2
+      && path.properties[0] === "public"
+      && path.properties[1] === "apiBase"
+  if (!validPath) return false
+  return isUnshadowedZeroArgumentCall(path.root, "useRuntimeConfig", semantic)
+}
+
+function isOwnerRequestCorrelation(expression, semantic) {
+  const candidate = unwrapExpression(expression)
+  if (ts.isIdentifier(candidate) && candidate.text === "undefined"
+    && !resolveDeclaration(candidate.text, candidate, semantic)) return true
+  if (!ts.isCallExpression(candidate)
+    || candidate.arguments.length !== 1
+    || !ts.isIdentifier(candidate.expression)) return false
+  const helper = resolveDeclaration(candidate.expression.text, candidate.expression, semantic)
+  if (!helper || !ts.isFunctionDeclaration(helper.node)
+    || helper.node.name?.text !== "requestCorrelation"
+    || helper.node.parameters.length !== 1
+    || enclosingFunction(helper.node) !== null
+    || hasExportModifier(helper.node)) return false
+  return isUnshadowedZeroArgumentCall(
+    candidate.arguments[0],
+    "useRequestEvent",
+    semantic
+  )
+}
+
+function isOwnerControlledFactoryCall(call, semantic, ownerFunction) {
+  return ownerFunction !== null
+    && enclosingFunction(call) === ownerFunction
+    && call.arguments.length === 2
+    && isOwnerRuntimeBase(call.arguments[0], semantic)
+    && isOwnerRequestCorrelation(call.arguments[1], semantic)
 }
 
 function contextualOwnerImports(unit) {
@@ -554,6 +612,18 @@ function contextualOwnerImports(unit) {
 function auditContextualOwner(record, unit, semantic) {
   if (record.relativePath !== lbApiClientOwnerPath) return
   const imports = contextualOwnerImports(unit)
+  const ownerFunction = contextualOwnerFunction(unit)
+  if (!ownerFunction || ownerFunction.parameters.length !== 0) {
+    const violationNode = ownerFunction?.parameters[0] ?? ownerFunction ?? unit.sourceFile
+    addViolation(
+      record.relativePath,
+      lineNumberAt(
+        record.source,
+        unit.sourceOffset + violationNode.getStart(unit.sourceFile)
+      ),
+      "contextual lb-api owner must export exactly a zero-argument useLbApiClient"
+    )
+  }
   visitAst(unit.sourceFile, node => {
     const exportViolation = node.parent === unit.sourceFile
       ? ownerExportViolation(node)
@@ -568,7 +638,7 @@ function auditContextualOwner(record, unit, semantic) {
         "low-level lb-api client capability must not escape its contextual owner"
       )
     }
-    if (!ts.isIdentifier(node) || isTypeOnlyUse(node) || isDirectCallTarget(node)) return
+    if (!ts.isIdentifier(node) || isTypeOnlyUse(node)) return
     const imported = imports.find(specifier => (
       node !== specifier.name
       && node !== specifier.propertyName
@@ -576,6 +646,16 @@ function auditContextualOwner(record, unit, semantic) {
       && resolveDeclaration(node.text, node, semantic)?.node === specifier
     ))
     if (!imported) return
+    const directCall = directCallFor(node)
+    if (directCall) {
+      if (isOwnerControlledFactoryCall(directCall, semantic, ownerFunction)) return
+      addViolation(
+        record.relativePath,
+        lineNumberAt(record.source, unit.sourceOffset + node.getStart(unit.sourceFile)),
+        "low-level lb-api client calls require owner-controlled runtime context"
+      )
+      return
+    }
     addViolation(
       record.relativePath,
       lineNumberAt(record.source, unit.sourceOffset + node.getStart(unit.sourceFile)),
