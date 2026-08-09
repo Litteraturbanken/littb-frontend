@@ -31,6 +31,9 @@ import {
   nextWorkSearchOptions,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
+  workSearchPageScope,
+  workSearchWordPosition,
+  type WorkSearchWordPosition,
   type WorkSearchOption
 } from "~/lib/reader/work-search"
 import {
@@ -239,7 +242,6 @@ const legacySearchMarkerKeys = [
   "s_prefix",
   "s_suffix"
 ] as const
-const wordIdPattern = /^w(?<page>[0-9]+)_(?<ordinal>[0-9]+)$/
 const maximumHitOffset = 1_000_000
 const maximumNavigableHit = maximumHitOffset + 1
 
@@ -355,32 +357,6 @@ function isSimilarWorksResponse(value: unknown): value is SimilarWorksResponse {
     && value.items.every(isSimilarWork)
 }
 
-type ReaderWordPosition = Readonly<{
-  scope: string
-  ordinal: number
-  pageIndex: number | null
-}>
-
-function readerWordPosition(value: string, workId: string): ReaderWordPosition | null {
-  const pageMatch = wordIdPattern.exec(value)
-  if (pageMatch?.groups) {
-    const pageIndex = Number(pageMatch.groups.page)
-    const ordinal = Number(pageMatch.groups.ordinal)
-    return Number.isSafeInteger(pageIndex) && Number.isSafeInteger(ordinal)
-      ? { scope: `page:${pageMatch.groups.page}`, ordinal, pageIndex }
-      : null
-  }
-
-  const prefix = `${workId}_`
-  if (!workId || !value.startsWith(prefix)) return null
-  const rawOrdinal = value.slice(prefix.length)
-  if (!/^[0-9]+$/.test(rawOrdinal)) return null
-  const ordinal = Number(rawOrdinal)
-  return Number.isSafeInteger(ordinal)
-    ? { scope: `work:${workId}`, ordinal, pageIndex: null }
-    : null
-}
-
 function workSearchHitFields(value: unknown): value is WorkSearchHit {
   if (!isRecord(value) || !isRecord(value.highlight)) return false
   return isSafeInteger(value.index)
@@ -394,15 +370,7 @@ function workSearchHitFields(value: unknown): value is WorkSearchHit {
     && value.highlight.to_word_id.length <= 100
 }
 
-function expectedHitPageScope(
-  hit: WorkSearchHit,
-  mediaType: "etext" | "faksimil"
-): string | null {
-  if (mediaType === "etext") return `page:${hit.page_index}`
-  return /^[0-9]+$/.test(hit.page_name) ? `page:${hit.page_name}` : null
-}
-
-function positionMatchesPage(position: ReaderWordPosition, pageScope: string | null): boolean {
+function positionMatchesPage(position: WorkSearchWordPosition, pageScope: string | null): boolean {
   return position.pageIndex === null || position.scope === pageScope
 }
 
@@ -412,12 +380,12 @@ function isWorkSearchHit(
   mediaType: "etext" | "faksimil"
 ): value is WorkSearchHit {
   if (!workSearchHitFields(value)) return false
-  const fromPosition = readerWordPosition(value.highlight.from_word_id, workId)
-  const toPosition = readerWordPosition(value.highlight.to_word_id, workId)
+  const fromPosition = workSearchWordPosition(value.highlight.from_word_id, workId)
+  const toPosition = workSearchWordPosition(value.highlight.to_word_id, workId)
   if (!fromPosition || !toPosition || fromPosition.scope !== toPosition.scope ||
     fromPosition.ordinal > toPosition.ordinal) return false
 
-  const pageScope = expectedHitPageScope(value, mediaType)
+  const pageScope = workSearchPageScope(value.page_index, value.page_name, mediaType)
   return positionMatchesPage(fromPosition, pageScope) &&
     positionMatchesPage(toPosition, pageScope)
 }

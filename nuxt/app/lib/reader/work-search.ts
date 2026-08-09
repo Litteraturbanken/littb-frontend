@@ -13,6 +13,46 @@ export type WorkSearchOptionsState = Readonly<{
   suffix: boolean
 }>
 
+export type WorkSearchWordPosition = Readonly<{
+  scope: string
+  ordinal: number
+  pageIndex: number | null
+}>
+
+const pageWordIdPattern = /^w(?<page>[0-9]+)_(?<ordinal>[0-9]+)$/
+
+export function workSearchWordPosition(
+  value: string,
+  workId: string
+): WorkSearchWordPosition | null {
+  const pageMatch = pageWordIdPattern.exec(value)
+  if (pageMatch?.groups) {
+    const pageIndex = Number(pageMatch.groups.page)
+    const ordinal = Number(pageMatch.groups.ordinal)
+    return Number.isSafeInteger(pageIndex) && Number.isSafeInteger(ordinal)
+      ? { scope: `page:${pageMatch.groups.page}`, ordinal, pageIndex }
+      : null
+  }
+
+  const prefix = `${workId}_`
+  if (!workId || !value.startsWith(prefix)) return null
+  const rawOrdinal = value.slice(prefix.length)
+  if (!/^[0-9]+$/.test(rawOrdinal)) return null
+  const ordinal = Number(rawOrdinal)
+  return Number.isSafeInteger(ordinal)
+    ? { scope: `work:${workId}`, ordinal, pageIndex: null }
+    : null
+}
+
+export function workSearchPageScope(
+  pageIndex: number,
+  pageName: string,
+  mediaType: "etext" | "faksimil"
+): string | null {
+  if (mediaType === "etext") return `page:${pageIndex}`
+  return /^[0-9]+$/.test(pageName) ? `page:${pageName}` : null
+}
+
 const clearedOptions: WorkSearchOptionsState = {
   lemma: false,
   olderSpellings: false,

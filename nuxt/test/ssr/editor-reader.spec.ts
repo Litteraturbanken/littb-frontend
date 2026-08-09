@@ -427,6 +427,20 @@ for (const invalidResponse of [
     mediaType: "etext",
     route: "/editor/lb-editor-doktor-glas/ix/1/e",
     range: "w2_1"
+  },
+  {
+    query: "editor-sparse-gap",
+    workId: "lb-editor-sparse",
+    mediaType: "faksimil",
+    route: "/editor/lb-editor-sparse/ix/12/f",
+    range: "w14_1"
+  },
+  {
+    query: "editor-leading-zero-page",
+    workId: "lb8345227",
+    mediaType: "faksimil",
+    route: "/editor/lb8345227/ix/4/f",
+    range: "w05_1"
   }
 ] as const) {
   test(`SSR rejects an Editor ${invalidResponse.query} hit response`, async ({ request }) => {

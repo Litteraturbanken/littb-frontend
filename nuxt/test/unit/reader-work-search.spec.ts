@@ -4,6 +4,8 @@ import {
   nextWorkSearchOptions,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
+  workSearchPageScope,
+  workSearchWordPosition,
   type WorkSearchOptionsState
 } from "../../app/lib/reader/work-search"
 
@@ -81,6 +83,26 @@ describe("reader and editor work-search options", () => {
       new Set(),
       new Map([["show_search_work", null]])
     )).toEqual(["show_search_work"])
+  })
+
+  test("preserves the raw page identity while parsing bounded word positions", () => {
+    expect(workSearchWordPosition("w01_4", "lb-work")).toEqual({
+      scope: "page:01",
+      ordinal: 4,
+      pageIndex: 1
+    })
+    expect(workSearchWordPosition("lb-work_7", "lb-work")).toEqual({
+      scope: "work:lb-work",
+      ordinal: 7,
+      pageIndex: null
+    })
+    expect(workSearchWordPosition("missing", "lb-work")).toBeNull()
+  })
+
+  test("derives the same canonical page scope for Reader and Editor hit validation", () => {
+    expect(workSearchPageScope(1, "01", "etext")).toBe("page:1")
+    expect(workSearchPageScope(1, "01", "faksimil")).toBe("page:01")
+    expect(workSearchPageScope(1, "-2", "faksimil")).toBeNull()
   })
 
 })

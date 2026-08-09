@@ -531,6 +531,36 @@ export function readerSearchHitResponse(
       }]
     }
   }
+  if (query === "editor-sparse-gap") {
+    return {
+      query,
+      media_type: mediaType,
+      offset,
+      limit,
+      total_hits: 1,
+      items: [{
+        index: 0,
+        page_name: "14",
+        page_index: 13,
+        highlight: { from_word_id: "w14_1", to_word_id: "w14_1" }
+      }]
+    }
+  }
+  if (query === "editor-leading-zero-page") {
+    return {
+      query,
+      media_type: mediaType,
+      offset,
+      limit,
+      total_hits: 1,
+      items: [{
+        index: 0,
+        page_name: "5",
+        page_index: 4,
+        highlight: { from_word_id: "w05_1", to_word_id: "w05_1" }
+      }]
+    }
+  }
   if (query === "max-direct") {
     const totalHits = 1_000_002
     const items = Array.from({
@@ -1045,6 +1075,7 @@ function editorRawRepresentations(workId) {
   if (workId === "lb-editor-sparse") {
     return [{
       ...structuredClone(readerWorkInfoResponse.data[0]),
+      faksimil_sizes: [2],
       lbworkid: workId,
       mediatype: "faksimil",
       pages: [
@@ -1052,7 +1083,11 @@ function editorRawRepresentations(workId) {
         { pagename: "12", pageindex: 12 },
         { pagename: "57", pageindex: 57 }
       ],
+      endpagename: "57",
       page_count: null,
+      parts: [],
+      searchable: true,
+      startpagename: "2",
       width: { size_3: 625 }
     }]
   }

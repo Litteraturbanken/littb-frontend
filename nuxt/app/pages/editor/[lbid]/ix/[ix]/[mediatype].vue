@@ -19,6 +19,8 @@ import {
   nextWorkSearchOptions,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
+  workSearchPageScope,
+  workSearchWordPosition,
   type WorkSearchOption
 } from "~/lib/reader/work-search"
 import {
@@ -595,28 +597,6 @@ function isBoundedString(value: unknown, minimum: number): value is string {
   return typeof value === "string" && value.length >= minimum && value.length <= 100
 }
 
-function wordPosition(value: string, currentWorkId: string): {
-  ordinal: number
-  page: number | null
-  scope: string
-} | null {
-  const match = /^w(?<page>[0-9]+)_(?<ordinal>[0-9]+)$/.exec(value)
-  if (match?.groups) {
-    const page = Number(match.groups.page)
-    const ordinal = Number(match.groups.ordinal)
-    return Number.isSafeInteger(page) && Number.isSafeInteger(ordinal)
-      ? { page, ordinal, scope: `page:${page}` }
-      : null
-  }
-  const prefix = `${currentWorkId}_`
-  const rawOrdinal = value.startsWith(prefix) ? value.slice(prefix.length) : ""
-  if (!/^[0-9]+$/.test(rawOrdinal)) return null
-  const ordinal = Number(rawOrdinal)
-  return Number.isSafeInteger(ordinal)
-    ? { page: null, ordinal, scope: `work:${currentWorkId}` }
-    : null
-}
-
 function isWorkSearchHitShape(value: unknown): value is WorkSearchHit {
   if (!isRecord(value) || !isRecord(value.highlight)) return false
   return isSafeInteger(value.index)
@@ -627,19 +607,20 @@ function isWorkSearchHitShape(value: unknown): value is WorkSearchHit {
 }
 
 function hitRangeIsValid(hit: WorkSearchHit, currentWorkId: string): boolean {
-  const from = wordPosition(hit.highlight.from_word_id, currentWorkId)
-  const to = wordPosition(hit.highlight.to_word_id, currentWorkId)
+  const from = workSearchWordPosition(hit.highlight.from_word_id, currentWorkId)
+  const to = workSearchWordPosition(hit.highlight.to_word_id, currentWorkId)
   return Boolean(from && to && from.scope === to.scope && from.ordinal <= to.ordinal)
 }
 
 function hitMatchesEditorPageRange(hit: WorkSearchHit, current: EditorReaderPage): boolean {
-  if (hit.page_index < 0 || hit.page_index >= (current.pageCount ?? 0)) return false
-  const from = wordPosition(hit.highlight.from_word_id, current.workId)
+  const pageIndexIsValid = current.pageIndexes
+    ? current.pageIndexes.includes(hit.page_index)
+    : hit.page_index >= 0 && hit.page_index < (current.pageCount ?? 0)
+  if (!pageIndexIsValid) return false
+  const from = workSearchWordPosition(hit.highlight.from_word_id, current.workId)
   if (!from) return false
-  if (from.page === null) return true
-  return current.mediaType === "etext"
-    ? from.page === hit.page_index
-    : String(from.page) === hit.page_name
+  if (from.pageIndex === null) return true
+  return from.scope === workSearchPageScope(hit.page_index, hit.page_name, current.mediaType)
 }
 
 function isWorkSearchHit(value: unknown, current: EditorReaderPage): value is WorkSearchHit {
