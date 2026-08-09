@@ -1,10 +1,6 @@
-import { getRequestURL, proxyRequest } from "h3"
-
-import { assertProxyMethod } from "../../utils/backend-proxy"
+import { proxyBackendRootRequest } from "../../utils/backend-proxy"
 
 export default defineEventHandler((event) => {
-  assertProxyMethod(event, ["GET", "HEAD", "POST"])
-  const libraryApiBase = useRuntimeConfig(event).libraryApiBase.replace(/\/$/u, "")
-  const target = `${libraryApiBase}/${getRequestURL(event).search}`
-  return proxyRequest(event, target)
+  const libraryApiBase = useRuntimeConfig(event).libraryApiBase
+  return proxyBackendRootRequest(event, libraryApiBase)
 })
