@@ -450,6 +450,9 @@ function auditLegacyReaderEditorMetadata(record) {
 }
 
 function modulePathFrom(record, moduleSpecifier) {
+  if (moduleSpecifier.startsWith("~~/") || moduleSpecifier.startsWith("@@/")) {
+    return moduleSpecifier.slice(3).replace(/\.(?:[cm]?[jt]sx?)$/u, "")
+  }
   if (moduleSpecifier.startsWith("~/") || moduleSpecifier.startsWith("@/")) {
     return `app/${moduleSpecifier.slice(2)}`.replace(/\.(?:[cm]?[jt]sx?)$/u, "")
   }
@@ -469,10 +472,123 @@ function namedImportViolatesOwner(record, importedName) {
     || importedName !== "createCorrelatedLbApiClient"
 }
 
+function isTypeOnlyUse(node) {
+  let current = node.parent
+  while (current && !ts.isStatement(current) && !ts.isSourceFile(current)) {
+    if (ts.isTypeNode(current)) return true
+    current = current.parent
+  }
+  return false
+}
+
+function isTransparentExpression(node) {
+  return ts.isAsExpression(node)
+    || ts.isNonNullExpression(node)
+    || ts.isParenthesizedExpression(node)
+    || ts.isSatisfiesExpression(node)
+    || ts.isTypeAssertionExpression(node)
+}
+
+function isDirectCallTarget(node) {
+  let current = node
+  while (current.parent
+    && isTransparentExpression(current.parent)
+    && current.parent.expression === current) {
+    current = current.parent
+  }
+  return ts.isCallExpression(current.parent) && current.parent.expression === current
+}
+
+function hasExportModifier(node) {
+  return ts.canHaveModifiers(node)
+    && (ts.getModifiers(node) ?? []).some(modifier => (
+      modifier.kind === ts.SyntaxKind.ExportKeyword
+      || modifier.kind === ts.SyntaxKind.DefaultKeyword
+    ))
+}
+
+function ownerExportViolation(node) {
+  if (ts.isExportAssignment(node)) return node
+  if (ts.isExportDeclaration(node)) {
+    if (node.isTypeOnly) return null
+    if (!node.exportClause || ts.isNamespaceExport(node.exportClause)) return node
+    return node.exportClause.elements.find(specifier => (
+      !specifier.isTypeOnly && specifier.name.text !== "useLbApiClient"
+    )) ?? null
+  }
+  if (!hasExportModifier(node)
+    || ts.isInterfaceDeclaration(node)
+    || ts.isTypeAliasDeclaration(node)) return null
+  if (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)
+    || ts.isEnumDeclaration(node) || ts.isModuleDeclaration(node)) {
+    return node.name?.text === "useLbApiClient" ? null : node
+  }
+  if (ts.isVariableStatement(node)) {
+    for (const declaration of node.declarationList.declarations) {
+      const forbidden = bindingIdentifiers(declaration.name).find(identifier => (
+        identifier.text !== "useLbApiClient"
+      ))
+      if (forbidden) return forbidden
+    }
+  }
+  return null
+}
+
+function contextualOwnerImports(unit) {
+  const imports = []
+  for (const statement of unit.sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement)
+      || !ts.isStringLiteralLike(statement.moduleSpecifier)
+      || !isLbApiClientModule(unit.record, statement.moduleSpecifier.text)) continue
+    const bindings = statement.importClause?.namedBindings
+    if (!bindings || !ts.isNamedImports(bindings)) continue
+    for (const specifier of bindings.elements) {
+      if (!specifier.isTypeOnly
+        && (specifier.propertyName?.text ?? specifier.name.text)
+          === "createCorrelatedLbApiClient") imports.push(specifier)
+    }
+  }
+  return imports
+}
+
+function auditContextualOwner(record, unit, semantic) {
+  if (record.relativePath !== lbApiClientOwnerPath) return
+  const imports = contextualOwnerImports(unit)
+  visitAst(unit.sourceFile, node => {
+    const exportViolation = node.parent === unit.sourceFile
+      ? ownerExportViolation(node)
+      : null
+    if (exportViolation) {
+      addViolation(
+        record.relativePath,
+        lineNumberAt(
+          record.source,
+          unit.sourceOffset + exportViolation.getStart(unit.sourceFile)
+        ),
+        "low-level lb-api client capability must not escape its contextual owner"
+      )
+    }
+    if (!ts.isIdentifier(node) || isTypeOnlyUse(node) || isDirectCallTarget(node)) return
+    const imported = imports.find(specifier => (
+      node !== specifier.name
+      && node !== specifier.propertyName
+      && node.text === specifier.name.text
+      && resolveDeclaration(node.text, node, semantic)?.node === specifier
+    ))
+    if (!imported) return
+    addViolation(
+      record.relativePath,
+      lineNumberAt(record.source, unit.sourceOffset + node.getStart(unit.sourceFile)),
+      "low-level lb-api client capability must not escape its contextual owner"
+    )
+  })
+}
+
 function auditLbApiClientCapability(record) {
   if (!record.relativePath.startsWith("app/")) return
   for (const unit of record.units) {
     const semantic = buildSemantic(unit)
+    auditContextualOwner(record, unit, semantic)
     visitAst(unit.sourceFile, node => {
       let violationNode = null
       if (ts.isImportDeclaration(node)
@@ -554,13 +670,7 @@ function visitAst(node, callback) {
 
 function unwrapExpression(node) {
   let current = node
-  while (current && (
-    ts.isAsExpression(current)
-    || ts.isNonNullExpression(current)
-    || ts.isParenthesizedExpression(current)
-    || ts.isSatisfiesExpression(current)
-    || ts.isTypeAssertionExpression(current)
-  )) current = current.expression
+  while (current && isTransparentExpression(current)) current = current.expression
   return current
 }
 

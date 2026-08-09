@@ -26,7 +26,7 @@ function requestCorrelation(
   return normalizeApiRequestCorrelation(stored.context)
 }
 
-export function createRuntimeLbApiClient(
+function createRuntimeLbApiClient(
   config: LbRuntimeConfig,
   event: RequestEventLike | undefined,
   server: boolean,

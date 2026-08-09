@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from "vitest"
 
 import {
   createLbApiClient,
+  normalizeApiRequestCorrelation,
   observeApiFailures
 } from "../../app/lib/api/client"
 import type {
@@ -52,6 +53,26 @@ const editorManifestFixture = {
 } satisfies EditorManifestResponse
 
 describe("generated LB API client", () => {
+  test("keeps only a complete validated request correlation pair", () => {
+    expect(normalizeApiRequestCorrelation({
+      requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+      traceparent: "00-0123456789abcdef0123456789abcdef-fedcba9876543210-01",
+      untrusted: "private"
+    })).toEqual({
+      requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+      traceparent: "00-0123456789abcdef0123456789abcdef-fedcba9876543210-01"
+    })
+  })
+
+  test.each([
+    null,
+    [],
+    { requestId: "../../spoofed", traceparent: "00-not-a-trace" },
+    { requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d" }
+  ])("rejects malformed request correlation %#", value => {
+    expect(normalizeApiRequestCorrelation(value)).toBeUndefined()
+  })
+
   test("associates a server failure with its exact response correlation token", async () => {
     const observeFailure = vi.fn()
     const stop = observeApiFailures(observeFailure)

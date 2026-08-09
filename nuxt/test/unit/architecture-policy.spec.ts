@@ -856,6 +856,16 @@ input[type="range"]::-moz-range-thumb { pointer-events: auto; }
         "const moduleName = \"client\"",
         "export const api = require(\"./api/\" + moduleName)"
       ].join("\n")
+    ],
+    [
+      "the Nuxt root alias",
+      "app/lib/unsafe.ts",
+      "import { createLbApiClient } from \"~~/app/lib/api/client\""
+    ],
+    [
+      "the alternate Nuxt root alias",
+      "app/lib/unsafe.ts",
+      "import { createLbApiClient } from \"@@/app/lib/api/client\""
     ]
   ])("rejects %s across authored frontend production files", (_label, path, source) => {
     const root = createTree()
@@ -892,13 +902,94 @@ input[type="range"]::-moz-range-thumb { pointer-events: auto; }
     )
   })
 
+  test.each([
+    [
+      "a direct re-export",
+      "export { createCorrelatedLbApiClient }"
+    ],
+    [
+      "an assignment",
+      [
+        "const rawClientFactory = createCorrelatedLbApiClient",
+        "void rawClientFactory"
+      ].join("\n")
+    ],
+    [
+      "an object spread",
+      [
+        "const rawClientFactories = { ...{ createCorrelatedLbApiClient } }",
+        "void rawClientFactories"
+      ].join("\n")
+    ],
+    [
+      "a callback escape",
+      [
+        "function identity<Value>(value: Value): Value { return value }",
+        "const rawClientFactory = identity(createCorrelatedLbApiClient)",
+        "void rawClientFactory"
+      ].join("\n")
+    ],
+    [
+      "a rest-binding escape",
+      [
+        "const [rawClientFactory, ...rest] = [createCorrelatedLbApiClient]",
+        "void rawClientFactory",
+        "void rest"
+      ].join("\n")
+    ],
+    [
+      "a raw return",
+      [
+        "function rawClientFactory() { return createCorrelatedLbApiClient }",
+        "void rawClientFactory"
+      ].join("\n")
+    ],
+    [
+      "an exported wrapper escape",
+      [
+        "export function rawClientFactory(base: string) {",
+        "  return createCorrelatedLbApiClient(base, undefined)",
+        "}"
+      ].join("\n")
+    ]
+  ])("rejects %s from the contextual owner", (_label, escape) => {
+    const root = createTree()
+    const path = "app/composables/useLbApiClient.ts"
+    writeSource(root, path, [
+      "import { createCorrelatedLbApiClient } from \"../lib/api/client\"",
+      escape,
+      "export function useLbApiClient() {",
+      "  return createCorrelatedLbApiClient(\"/api/v2\", undefined)",
+      "}"
+    ].join("\n"))
+    writeSource(root, "app/pages/consumer.vue", [
+      "<script setup lang=\"ts\">",
+      "import * as api from \"~/composables/useLbApiClient\"",
+      "void api",
+      "</script>"
+    ].join("\n"))
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}:`)
+    expect(result.stderr).toContain(
+      "low-level lb-api client capability must not escape its contextual owner"
+    )
+  })
+
   test("allows the contextual owner and unrelated runtime-config shadows", () => {
     const root = createTree()
     writeSource(root, "app/composables/useLbApiClient.ts", [
       "import { createCorrelatedLbApiClient } from \"../lib/api/client\"",
+      "type Client = ReturnType<typeof createCorrelatedLbApiClient>",
+      "export type PublicClient = Client",
+      "export interface ClientMarker { readonly kind: \"lb-api\" }",
       "export function useLbApiClient() {",
       "  const config = useRuntimeConfig()",
-      "  return createCorrelatedLbApiClient(config.apiBase, undefined)",
+      "  return (createCorrelatedLbApiClient as typeof createCorrelatedLbApiClient)(",
+      "    config.apiBase, undefined",
+      "  ) as Client",
       "}"
     ].join("\n"))
     writeSource(root, "app/plugins/observability.client.ts", [
