@@ -690,7 +690,8 @@ function cancelRangePointer(event: PointerEvent) {
 }
 
 function setChildren() {
-  void setQuery("barnlitteratur", childrenOnly.value ? null : "true")
+  const active = Object.prototype.hasOwnProperty.call(latestRouteQuery(), "barnlitteratur")
+  void setQuery("barnlitteratur", active ? null : "true")
 }
 
 useSeoMeta({

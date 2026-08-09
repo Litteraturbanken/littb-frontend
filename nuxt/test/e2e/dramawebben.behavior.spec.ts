@@ -828,6 +828,24 @@ test("same-tick catalog filters merge into one intended route state", async ({ p
   await expectPlayRows(page, [dramawebbenCatalogExpected.plays[2]!])
 })
 
+test("same-tick children-filter activations toggle the intended route state", async ({ page }) => {
+  await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Akter och roller", exact: true }).click()
+
+  await page.evaluate(() => {
+    const children = document.querySelector<HTMLButtonElement>('button[aria-label="Barnpjäs"]')!
+    const filter = document.querySelector<HTMLInputElement>('input[aria-label="Sök"]')!
+    children.click()
+    children.click()
+    filter.value = "Julie"
+    filter.dispatchEvent(new Event("input", { bubbles: true }))
+  })
+
+  await expectQuery(page, "filterTxt", "Julie")
+  await expectQuery(page, "barnlitteratur", null)
+  await expectPlayRows(page, [dramawebbenCatalogExpected.plays[2]!])
+})
+
 test("same-tick range endpoint changes merge through the intended query", async ({ page }) => {
   await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "networkidle" })
   await page.getByRole("button", { name: "Akter och roller", exact: true }).click()
