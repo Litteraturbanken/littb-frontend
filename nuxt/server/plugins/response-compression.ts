@@ -11,14 +11,14 @@ import { acceptsBrotliEncoding } from "#server/utils/response-compression"
 
 const minimumCompressibleCharacters = 1_024
 
-function isCompressibleHtmlResponse(
+function isEligibleHtmlResponse(
   event: Parameters<typeof getResponseStatus>[0],
   body: unknown
 ): body is string {
   if (typeof body !== "string" || body.length < minimumCompressibleCharacters) return false
+  if (event.method !== "GET" && event.method !== "HEAD") return false
   if (getResponseStatus(event) !== 200 || event.path.startsWith("/__nuxt_error")) return false
   if (getResponseHeader(event, "content-encoding")) return false
-  if (!acceptsBrotliEncoding(getRequestHeader(event, "accept-encoding"))) return false
   const contentType = getResponseHeader(event, "content-type")
   return typeof contentType === "string" && contentType.startsWith("text/html")
 }
@@ -26,13 +26,27 @@ function isCompressibleHtmlResponse(
 function appendAcceptEncodingVary(event: Parameters<typeof getResponseStatus>[0]): void {
   const vary = getResponseHeader(event, "vary")
   const value = Array.isArray(vary) ? vary.join(", ") : vary === undefined ? "" : String(vary)
-  if (value.split(",").some(entry => entry.trim().toLowerCase() === "accept-encoding")) return
-  setResponseHeader(event, "vary", value ? `${value}, Accept-Encoding` : "Accept-Encoding")
+  const seen = new Set<string>()
+  const tokens = value.split(",").map(token => token.trim()).filter((token) => {
+    if (!token) return false
+    const normalized = token.toLowerCase()
+    if (seen.has(normalized)) return false
+    seen.add(normalized)
+    return true
+  })
+  if (seen.has("*")) {
+    setResponseHeader(event, "vary", "*")
+    return
+  }
+  if (!seen.has("accept-encoding")) tokens.push("Accept-Encoding")
+  setResponseHeader(event, "vary", tokens.join(", "))
 }
 
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook("beforeResponse", (event, response) => {
-    if (!isCompressibleHtmlResponse(event, response.body)) return
+    if (!isEligibleHtmlResponse(event, response.body)) return
+    appendAcceptEncodingVary(event)
+    if (!acceptsBrotliEncoding(getRequestHeader(event, "accept-encoding"))) return
 
     response.body = brotliCompressSync(Buffer.from(response.body), {
       params: {
@@ -41,6 +55,5 @@ export default defineNitroPlugin((nitroApp) => {
     })
     removeResponseHeader(event, "content-length")
     setResponseHeader(event, "content-encoding", "br")
-    appendAcceptEncodingVary(event)
   })
 })
