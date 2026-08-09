@@ -42,7 +42,7 @@ async function expectReadyShell(page: Page, populated: boolean) {
 }
 
 async function expectRows(page: Page) {
-  const rows = page.locator(".table-striped tr")
+  const rows = page.locator(".table-striped tbody tr")
   await expect(rows).toHaveCount(expectedResponse.items.length)
 
   for (const [rowIndex, item] of expectedResponse.items.entries()) {
@@ -121,7 +121,7 @@ for (const populated of [false, true]) {
         { method: "POST", path: "/api/v2/works/lookup", body: expectedBody }
       ])
     } else {
-      await expect(page.locator(".table-striped tr")).toHaveCount(0)
+      await expect(page.locator(".table-striped tbody tr")).toHaveCount(0)
     }
 
     await expectReadyShell(page, populated)

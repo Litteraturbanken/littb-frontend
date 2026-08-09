@@ -93,7 +93,7 @@ function authorLabel(item: PopularWork | PopularEpub): string {
 }
 
 function readerHref(item: PopularWork): string {
-  const base = authorProfilePath(item.author.author_id, "titlar", item.title_id)
+  const base = authorProfilePath(item.author.author_id, "titlar", item.title_path)
   const page = item.representation.start_page_name
   return page === null
     ? `${base}/${encodeRfc3986Segment(item.representation.media_type)}`
@@ -107,7 +107,9 @@ function pdfHref(item: PopularWork): string {
 }
 
 function epubHref(item: PopularEpub): string {
-  return `/txt/epub/${item.author.author_id}_${item.title_id}.epub`
+  const authorId = encodeRfc3986Segment(item.author.author_id)
+  const titleId = encodeRfc3986Segment(item.title_id)
+  return `/txt/epub/${authorId}_${titleId}.epub`
 }
 </script>
 

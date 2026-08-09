@@ -58,7 +58,7 @@ function workAt(rank) {
 
   return {
     title_id: `PopularWork${rank}`,
-    title_path: `PopularWork${rank}`,
+    title_path: rank === 4 ? "PopularRoute4" : `PopularWork${rank}`,
     title: `Popular Work ${rank}`,
     short_title: rank === 5 ? "Work Five" : null,
     author: author(
@@ -92,11 +92,11 @@ function epubAt(rank) {
     }
   }
   return {
-    title_id: `EpubWork${rank}`,
+    title_id: rank === 30 ? "Epub/Work?30" : `EpubWork${rank}`,
     title: `EPUB Work ${rank}`,
     short_title: rank === 5 ? "EPUB Five" : null,
     author: author(
-      `EpubAuthor${rank}`,
+      rank === 30 ? "EpubAuthor#30" : `EpubAuthor${rank}`,
       `Full EPUB Author ${rank}`,
       rank % 2 === 0 ? `EPUB Surname ${rank}` : null
     )

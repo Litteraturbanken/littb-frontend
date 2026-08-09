@@ -79,7 +79,7 @@ test("renders exact copy, order, URLs, metadata, and no hydration errors", async
   )
   await expect(works.nth(3).locator("a").first()).toHaveAttribute(
     "href",
-    "/f%C3%B6rfattare/Author4/titlar/PopularWork4/faksimil"
+    "/f%C3%B6rfattare/Author4/titlar/PopularRoute4/faksimil"
   )
   const pdfWork = works.nth(5).locator("a").first()
   await expect(pdfWork).toHaveAttribute(
@@ -94,6 +94,10 @@ test("renders exact copy, order, URLs, metadata, and no hydration errors", async
   )
   await expect(epubs.first().locator("a").first()).toHaveAttribute("download", "")
   await expect(epubs.first().locator("a").first()).toHaveAttribute("target", "_self")
+  await expect(epubs.last().locator("a").first()).toHaveAttribute(
+    "href",
+    "/txt/epub/EpubAuthor%2330_Epub%2FWork%3F30.epub"
+  )
 
   expect(await recordedRequests(request)).toEqual(allRequests)
   expect(problems).toEqual([])

@@ -211,7 +211,7 @@ test("untrusted lookup URLs never become executable links", async ({ page }) => 
   await openIdPage(page)
   await page.getByLabel("LB-ID", { exact: true }).fill("lb-hostile")
 
-  const row = page.locator(".table-striped tr")
+  const row = page.locator(".table-striped tbody tr")
   await expect(row).toContainText("Farlig författarlänk")
   await expect(row).toContainText("Farlig titellänk")
   await expect(row).toContainText("etext")
@@ -322,7 +322,7 @@ test("same-mode replacements clear old rows while loading and latest response wi
   const problems = await openIdPage(page)
   const titleInput = page.getByPlaceholder("titel")
   await titleInput.fill("Röda rummet")
-  await expect(page.locator(".table-striped tr")).toHaveCount(1)
+  await expect(page.locator(".table-striped tbody tr")).toHaveCount(1)
 
   const slowBody = { work_id: null, titles: ["Gösta Berlings saga"] }
   await request.put(`${fixture}/_work_lookup_delays`, {
@@ -330,15 +330,17 @@ test("same-mode replacements clear old rows while loading and latest response wi
   })
   await titleInput.fill("Gösta Berlings saga")
   await expect.poll(async () => (await lookupBodies(request)).length).toBe(2)
-  await expect(page.locator(".table-striped tr")).toHaveCount(0)
+  await expect(page.locator(".table-striped tbody tr")).toHaveCount(0)
+  await expect(page.getByRole("status")).toContainText("Hämtar resultat")
   await expect(page.locator("#mainview > div")).toHaveClass(/\bsearching\b/)
   await expect(page.locator(".preloader")).toBeVisible()
 
   await titleInput.fill("Röda rummet")
   await expect.poll(async () => (await lookupBodies(request)).length).toBe(3)
-  await expect(page.locator(".table-striped tr td").nth(0)).toHaveText("lb238704")
+  await expect(page.locator(".table-striped tbody tr td").nth(0)).toHaveText("lb238704")
   await page.waitForTimeout(550)
-  await expect(page.locator(".table-striped tr td").nth(0)).toHaveText("lb238704")
+  await expect(page.locator(".table-striped tbody tr td").nth(0)).toHaveText("lb238704")
+  await expect(page.locator(".preloader .sr-only")).toHaveText("")
   await expect(page.locator("#mainview > div")).not.toHaveClass(/\bsearching\b/)
   expect(problems).toEqual([])
 })
@@ -349,7 +351,7 @@ test("request versions win when an aborted transport still resolves or rejects",
   await installIgnoringAbortTransport(page)
   const problems = await openIdPage(page)
   const idInput = page.getByPlaceholder("lbid")
-  const rows = page.locator(".table-striped tr")
+  const rows = page.locator(".table-striped tbody tr")
   const mainview = page.locator("#mainview > div")
 
   await idInput.fill("lb-older-data")
@@ -384,7 +386,7 @@ test("duplicate representations render twice in order without duplicate-key warn
   const problems = await openIdPage(page)
   await page.getByPlaceholder("lbid").fill("lb-duplicate")
 
-  const links = page.locator(".table-striped tr td").nth(3).locator("a")
+  const links = page.locator(".table-striped tbody tr td").nth(3).locator("a")
   await expect(links).toHaveCount(2)
   await expect(links).toHaveText(["etext", "etext"])
   await expect(links.nth(0)).toHaveAttribute(
@@ -395,7 +397,7 @@ test("duplicate representations render twice in order without duplicate-key warn
     "href",
     "/f%C3%B6rfattare/TestAuthor/titlar/Duplicate/etext"
   )
-  await expect(page.locator(".table-striped tr td").nth(3)).toHaveText(
+  await expect(page.locator(".table-striped tbody tr td").nth(3)).toHaveText(
     "etext:::etext"
   )
   expect(problems).toEqual([])
@@ -410,13 +412,13 @@ test("typed and thrown network failures clear loading and rows without browser e
   await page.getByPlaceholder("lbid").fill("lb238704")
   await expect.poll(async () => (await lookupBodies(request)).length).toBe(1)
   await expect(page.locator("#mainview > div")).not.toHaveClass(/\bsearching\b/)
-  await expect(page.locator(".table-striped tr")).toHaveCount(0)
+  await expect(page.locator(".table-striped tbody tr")).toHaveCount(0)
 
   await request.delete(`${fixture}/_work_lookup_failure`)
   await page.route("**/api/v2/works/lookup", route => route.abort("failed"))
   await page.getByPlaceholder("lbid").fill("lb278171")
   await expect(page.locator("#mainview > div")).not.toHaveClass(/\bsearching\b/)
-  await expect(page.locator(".table-striped tr")).toHaveCount(0)
+  await expect(page.locator(".table-striped tbody tr")).toHaveCount(0)
   expect(problems).toEqual([])
 })
 
@@ -429,19 +431,19 @@ test("empty invalid and no-hit values do not leave stale requests or rows", asyn
   const titleInput = page.getByPlaceholder("titel")
 
   await idInput.fill("lb238704")
-  await expect(page.locator(".table-striped tr")).toHaveCount(1)
+  await expect(page.locator(".table-striped tbody tr")).toHaveCount(1)
   await reset(request)
   await idInput.fill("not-an-id")
   await page.waitForTimeout(550)
   expect(await lookupBodies(request)).toEqual([])
-  await expect(page.locator(".table-striped tr")).toHaveCount(0)
+  await expect(page.locator(".table-striped tbody tr")).toHaveCount(0)
 
   await idInput.fill("")
   await titleInput.fill("no match")
   await expect.poll(() => lookupBodies(request)).toEqual([
     { work_id: null, titles: ["no match"] }
   ])
-  await expect(page.locator(".table-striped tr")).toHaveCount(0)
+  await expect(page.locator(".table-striped tbody tr")).toHaveCount(0)
   await reset(request)
   await titleInput.fill(" ")
   await page.waitForTimeout(550)
@@ -493,7 +495,7 @@ test("route changes seed lower-case state, clean up pending work, and restore me
   )
   await expectBodyClasses(page, ["focus", "page-id", "ready"])
   await expect(page.getByPlaceholder("lbid")).toHaveValue("lb238704")
-  await expect(page.locator(".table-striped tr")).toHaveCount(1)
+  await expect(page.locator(".table-striped tbody tr")).toHaveCount(1)
 
   const slowBody = { work_id: null, titles: ["Gösta Berlings saga"] }
   await request.put(`${fixture}/_work_lookup_delays`, {

@@ -23,7 +23,7 @@ async function lookupRequests(request: APIRequestContext): Promise<LookupRequest
 }
 
 async function expectRenderedRodaRummet(page: Page) {
-  const row = page.locator(".table-striped tr")
+  const row = page.locator(".table-striped tbody tr")
   await expect(row).toHaveCount(1)
   await expect(row.locator("td")).toHaveCount(4)
   await expect(row.locator("td").nth(0)).toHaveText("lb238704")
@@ -65,15 +65,19 @@ test("empty ID route renders exact authority shell without a lookup", async ({
     "titel",
     "flera titlar separarade med nyrad"
   ])
-  expect(controls.map(control => control.getAttribute("aria-label"))).toEqual([
-    "LB-ID",
-    "Titel",
-    "Flera titlar, en per rad"
-  ])
+  expect(controls.map(control => document.querySelector(
+    `label[for="${control.id}"]`
+  )?.textContent)).toEqual(["LB-ID", "Titel", "Flera titlar, en per rad"])
   expect(controls[0]?.hasAttribute("autofocus")).toBe(true)
-  expect(document.querySelector(".preloader")?.textContent?.trim()).toContain("Hämtar")
-  expect(document.querySelector(".preloader .dots_blink")).not.toBeNull()
-  expect(document.querySelector("table.table-striped")).not.toBeNull()
+  const status = document.querySelector('.preloader[role="status"]')
+  expect(status?.getAttribute("aria-live")).toBe("polite")
+  expect(status?.querySelector(".dots_blink")).not.toBeNull()
+  expect(status?.querySelector(".sr-only")?.textContent).toBe("")
+  const table = document.querySelector("table.table-striped")
+  expect(table?.querySelector("caption")?.textContent).toBe("Sökresultat för verk")
+  expect([...table?.querySelectorAll('th[scope="col"]') ?? []].map(header => (
+    header.textContent
+  ))).toEqual(["LB-ID", "Författare", "Titel", "Format"])
   expect(await lookupRequests(request)).toEqual([])
 })
 

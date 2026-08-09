@@ -209,26 +209,43 @@ onUnmounted(clearLookup)
 <template>
   <div :class="{ searching: loading }">
     <input
+      id="work-lookup-id"
       :value="workId"
       placeholder="lbid"
-      aria-label="LB-ID"
       autofocus
       @input="onWorkIdInput"
     >
     <input
+      id="work-lookup-title"
       :value="titles[0] ?? ''"
       placeholder="titel"
-      aria-label="Titel"
       @input="onTitleInput"
     >
     <textarea
+      id="work-lookup-titles"
       :value="textarea"
       placeholder="flera titlar separarade med nyrad"
-      aria-label="Flera titlar, en per rad"
       @input="onTextareaInput"
     />
-    <div class="preloader">Hämtar <span class="dots_blink" /></div>
+    <span class="sr-only">
+      <label for="work-lookup-id">LB-ID</label>
+      <label for="work-lookup-title">Titel</label>
+      <label for="work-lookup-titles">Flera titlar, en per rad</label>
+    </span>
+    <div class="preloader" role="status" aria-live="polite" aria-atomic="true">
+      <span aria-hidden="true">Hämtar <span class="dots_blink" /></span>
+      <span class="sr-only">{{ loading ? "Hämtar resultat" : "" }}</span>
+    </div>
     <table class="table-striped">
+      <caption class="sr-only">Sökresultat för verk</caption>
+      <thead class="sr-only">
+        <tr>
+          <th scope="col">LB-ID</th>
+          <th scope="col">Författare</th>
+          <th scope="col">Titel</th>
+          <th scope="col">Format</th>
+        </tr>
+      </thead>
       <tbody>
         <tr
           v-for="(item, rowIndex) in items"
