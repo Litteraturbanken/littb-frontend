@@ -622,14 +622,21 @@ watch(options, candidate => {
     yearTo: candidate.yearTo
   }
 }, { flush: "sync" })
+const advancedChronologyBounds = computed(() => {
+  const yearFrom = options.value?.yearFrom
+    ?? lastAcceptedAdvancedChronologyBounds.value.yearFrom
+  const yearTo = options.value?.yearTo
+    ?? lastAcceptedAdvancedChronologyBounds.value.yearTo
+  return [Math.min(yearFrom, yearTo), Math.max(yearFrom, yearTo)] as const
+})
 const baseChronologyFloor = computed(() => (
   state.value.advanced
-    ? options.value?.yearFrom ?? lastAcceptedAdvancedChronologyBounds.value.yearFrom
+    ? advancedChronologyBounds.value[0]
     : chronologyData.value?.bounds?.yearFrom ?? 1800
 ))
 const baseChronologyCeiling = computed(() => (
   state.value.advanced
-    ? options.value?.yearTo ?? lastAcceptedAdvancedChronologyBounds.value.yearTo
+    ? advancedChronologyBounds.value[1]
     : chronologyData.value?.bounds?.yearTo ?? 1950
 ))
 const chronologyFloor = computed(() => Math.min(
@@ -653,10 +660,14 @@ function syncChronologyDraft() {
   chronologyToDraft.value = String(to)
 }
 
-watch([routeIdentity, chronologyFloor, chronologyCeiling], syncChronologyDraft, {
+watch(routeIdentity, () => {
+  chronologyDraftDirty.value = false
+  syncChronologyDraft()
+}, {
   immediate: true,
   flush: "sync"
 })
+watch([chronologyFloor, chronologyCeiling], syncChronologyDraft, { flush: "sync" })
 
 function setChronologyDraft(endpoint: "from" | "to", value: string) {
   chronologyDraftDirty.value = true

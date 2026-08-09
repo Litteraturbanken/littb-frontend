@@ -501,6 +501,56 @@ test("direct advanced chronology wholly outside catalog bounds keeps both select
   await expect(page.getByLabel("Till år", { exact: true })).toHaveValue("2000")
 })
 
+for (const { description, query, yearFrom, yearTo, minimum, maximum } of [
+  {
+    description: "lower-only inverted",
+    query: "lower-only",
+    yearFrom: 2000,
+    yearTo: null,
+    minimum: "1950",
+    maximum: "2000"
+  },
+  {
+    description: "upper-only inverted",
+    query: "upper-only",
+    yearFrom: null,
+    yearTo: 1700,
+    minimum: "1700",
+    maximum: "1800"
+  },
+  {
+    description: "upper-only global edge",
+    query: "upper-edge",
+    yearFrom: null,
+    yearTo: 2200,
+    minimum: "1800",
+    maximum: "2200"
+  }
+]) {
+  test(`partial option chronology endpoints produce ordered bounds: ${description}`, async ({
+    page
+  }) => {
+    await page.route("**/api/v2/text-search/options", async route => {
+      const response = await route.fetch()
+      const body = await response.json() as Record<string, unknown>
+      await route.fulfill({ response, json: { ...body, year_from: yearFrom, year_to: yearTo } })
+    })
+    await openSearch(page, `/s%C3%B6k?fras=${query}`)
+    const response = page.waitForResponse(candidate => (
+      new URL(candidate.url()).pathname === "/api/v2/text-search/options"
+      && candidate.request().postDataJSON().query === query
+    ))
+    await page.locator("[data-search-advanced]").click()
+    await response
+
+    const ranges = page.locator(".chronology_ranges input[type='range']")
+    await expect(ranges.nth(0)).toHaveAttribute("min", minimum)
+    await expect(ranges.nth(0)).toHaveAttribute("max", maximum)
+    await expect(page.getByLabel("Från år", { exact: true })).toHaveValue(minimum)
+    await expect(page.getByLabel("Till år", { exact: true })).toHaveValue(maximum)
+  })
+}
+
 test("simple chronology bounds survive an advanced mode round trip", async ({
   page,
   request
@@ -727,6 +777,31 @@ test("chronology capture loss resets its draft and prevents a stale pointer comm
   await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
     .toBe("1300,1900")
   expect(new URL(page.url()).searchParams.get("keep")).toBe("capture")
+})
+
+test("chronology history navigation discards a dirty draft and restores each route", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1&intervall=1800,1900")
+  await pushRoute(page, "/s%C3%B6k?fras=frihet&avancerad=1&intervall=1850,1900")
+
+  const from = page.getByLabel("Från år", { exact: true })
+  const to = page.getByLabel("Till år", { exact: true })
+  await expect(from).toHaveValue("1850")
+  await from.fill("1860")
+  await expect(from).toHaveValue("1860")
+
+  await page.goBack()
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1800,1900")
+  await expect(from).toHaveValue("1800")
+  await expect(to).toHaveValue("1900")
+
+  await page.goForward()
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1850,1900")
+  await expect(from).toHaveValue("1850")
+  await expect(to).toHaveValue("1900")
 })
 
 test("late option bounds do not overwrite a chronology edit in progress", async ({
