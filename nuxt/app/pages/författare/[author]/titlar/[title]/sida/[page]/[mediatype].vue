@@ -639,7 +639,7 @@ const currentReader = computed(() => {
 })
 const retainedReader = shallowRef<ReaderPage | null>(currentReader.value)
 watch(data, current => {
-  if (current?.status === "success") {
+  if (current?.status === "success" && current.identity === readerRequestIdentity.value) {
     retainedReader.value = current.reader
   } else if (current?.status === "error" && current.identity === readerRequestIdentity.value) {
     retainedReader.value = null

@@ -3421,6 +3421,42 @@ test("a delayed primary Reader request keeps the reader shell mounted until the 
   expect(problems).toEqual([])
 })
 
+test("an obsolete successful Reader request cannot replace the newest page", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  const start = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext"
+  const delayed = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
+  const newest = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
+  await page.goto(start, { waitUntil: "networkidle" })
+
+  let releaseDelayedRequest!: () => void
+  const release = new Promise<void>(resolve => { releaseDelayedRequest = resolve })
+  let markDelayedRequestStarted!: () => void
+  const delayedRequestStarted = new Promise<void>(resolve => {
+    markDelayedRequestStarted = resolve
+  })
+  await page.route("**/api/reader/**/-2/etext", async route => {
+    markDelayedRequestStarted()
+    await release
+    await route.continue()
+  })
+
+  await navigateClient(page, delayed)
+  await delayedRequestStarted
+  await navigateClient(page, newest)
+  await expect(page).toHaveURL(newest)
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
+  await expect(page.locator(".reader_main .etext.txt")).toContainText("NÄSTA SIDA")
+
+  const delayedResponse = page.waitForResponse(response =>
+    new URL(response.url()).pathname.endsWith("/api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext")
+  )
+  releaseDelayedRequest()
+  await delayedResponse
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
+  await expect(page.locator(".reader_main .etext.txt")).toContainText("NÄSTA SIDA")
+  expect(problems).toEqual([])
+})
+
 test("a remounted Reader never exposes a retained page under a different page URL", async ({
   page
 }) => {
