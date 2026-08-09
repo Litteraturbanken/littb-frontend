@@ -420,6 +420,7 @@ test("download sidebar scrolling does not clip the body-level format popover", a
   await expect(button).toHaveAttribute("aria-controls", "library-format-popover")
   await expect(button).toHaveAttribute("aria-expanded", "true")
   await expect(popover).toHaveRole("dialog", { name: "Välj format" })
+  await expect(page.locator("[data-library-source-format]:not(:disabled)").first()).toBeFocused()
 
   await page.keyboard.press("Escape")
   await expect(popover).toHaveCount(0)
@@ -452,7 +453,6 @@ test("sticky download format chooser keeps controls reachable without clipping i
     .toBe(true)
 
   const format = page.locator('[data-library-source-format="etext:txt"]')
-  await format.focus()
   await expect(format).toBeFocused()
   await expect(format).toBeInViewport()
   await page.keyboard.press("Space")

@@ -1435,6 +1435,12 @@ async function toggleFormatPopover() {
     formatPopoverOpen.value = true
     await nextTick()
     positionFormatPopover()
+    await nextTick()
+    const popover = formatPopoverElement.value
+    const focusTarget = popover?.querySelector<HTMLElement>(
+        "[data-library-source-format]:not(:disabled)"
+    ) ?? popover?.querySelector<HTMLElement>("[data-library-download-submit]:not(:disabled)") ?? popover
+    focusTarget?.focus()
 }
 
 function handleFormatPopoverKeydown(event: KeyboardEvent) {
@@ -3478,6 +3484,7 @@ onUnmounted(() => {
                                     class="popover block bg-white border border-gray-700"
                                     :class="formatPopoverPlacement"
                                     role="dialog"
+                                    tabindex="-1"
                                     aria-label="Välj format"
                                     :style="formatPopoverStyle"
                                 >
