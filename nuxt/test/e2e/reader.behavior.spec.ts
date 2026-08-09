@@ -1979,6 +1979,51 @@ test("Läsfokus Escape yields to editable fields and Reader dialogs", async ({ p
   expect(problems).toEqual([])
 })
 
+test("Läsfokus exposes a keyboard-operable toolbar visibility control", async ({ page }) => {
+  await page.goto(`${readerPath}?fokus`, { waitUntil: "networkidle" })
+  const toolbar = page.getByRole("toolbar", { name: "Läsfokus" })
+  const hide = page.getByRole("button", { name: "Dölj verktygsfält" })
+  await expect(toolbar).toBeVisible()
+  await hide.focus()
+  await hide.press("Enter")
+  await expect(toolbar).toBeHidden()
+
+  const show = page.getByRole("button", { name: "Visa verktygsfält" })
+  await expect(show).toBeVisible()
+  await show.focus()
+  await show.press(" ")
+  await expect(toolbar).toBeVisible()
+  await expect(page).toHaveURL(`${readerPath}?fokus`)
+})
+
+test("adjacent Reader links preserve modified and non-primary browser clicks", async ({ page }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  const initialUrl = page.url()
+  const next = page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" })
+  const intercepted = await next.evaluate(element => [
+    { ctrlKey: true },
+    { metaKey: true },
+    { shiftKey: true },
+    { altKey: true },
+    { button: 1 }
+  ].map(init => {
+    let defaultPrevented = false
+    element.addEventListener("click", event => {
+      defaultPrevented = event.defaultPrevented
+      event.preventDefault()
+    }, { once: true })
+    element.dispatchEvent(new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      ...init
+    }))
+    return defaultPrevented
+  }))
+
+  expect(intercepted).toEqual([false, false, false, false, false])
+  await expect(page).toHaveURL(initialUrl)
+})
+
 test("Reader sidebar reveals one delayed text-only tooltip only for a distinct full title", async ({
   page
 }) => {

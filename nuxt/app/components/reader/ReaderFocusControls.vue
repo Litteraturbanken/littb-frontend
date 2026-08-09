@@ -21,6 +21,7 @@ const emit = defineEmits<{
   close: []
   navigate: [href: string]
   selectSize: [delta: -1 | 1]
+  toggleBar: []
   toggleNight: []
 }>()
 
@@ -35,6 +36,15 @@ watch(() => props.mediaType, () => {
 <template>
   <Teleport to="body">
     <div class="reader-focus-layer" @click.stop>
+      <button
+        type="button"
+        class="focus-bar-toggle"
+        :class="{ 'bar-visible': barVisible }"
+        :aria-controls="'reader-focus-toolbar'"
+        :aria-expanded="barVisible"
+        :aria-label="barVisible ? 'Dölj verktygsfält' : 'Visa verktygsfält'"
+        @click="emit('toggleBar')"
+      ><i class="fa" :class="barVisible ? 'fa-angle-down' : 'fa-angle-up'" aria-hidden="true" /></button>
       <a
         v-if="previousHref"
         class="leftCover"
@@ -50,7 +60,7 @@ watch(() => props.mediaType, () => {
         @click.prevent="emit('navigate', nextHref)"
       />
 
-      <div v-show="barVisible" class="bottomBar" role="toolbar" aria-label="Läsfokus">
+      <div v-show="barVisible" id="reader-focus-toolbar" class="bottomBar" role="toolbar" aria-label="Läsfokus">
         <span class="focus-control-menu focus-settings-menu">
           <button
             type="button"

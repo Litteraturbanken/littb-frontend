@@ -1711,6 +1711,13 @@ function toggleFocusBar(): void {
   if (focusMode.value) focusBarVisible.value = !focusBarVisible.value
 }
 
+function queueReaderLink(event: MouseEvent, pageName: string): void {
+  if (event.defaultPrevented || event.button !== 0
+    || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  event.preventDefault()
+  queueReaderPage(pageName)
+}
+
 function adjustFocusText(delta: number): void {
   focusTextScale.value = Math.min(2.5, Math.max(0.5, focusTextScale.value + delta))
 }
@@ -2036,6 +2043,7 @@ watch(readerRequestIdentity, () => {
           @close="closeFocus"
           @navigate="queueReaderHref"
           @select-size="selectFocusFacsimileSize"
+          @toggle-bar="toggleFocusBar"
           @toggle-night="focusNightMode = !focusNightMode"
         />
       </ClientOnly>
@@ -2171,7 +2179,7 @@ watch(readerRequestIdentity, () => {
                 rel="prev"
                 :href="pageHref(draftPreviousPageName)"
                 aria-label="Föregående sida"
-                @click.prevent="queueReaderPage(draftPreviousPageName)"
+                @click="queueReaderLink($event, draftPreviousPageName)"
               ><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span>{{ " " }}</a>
               <a
                 v-else
@@ -2185,7 +2193,7 @@ watch(readerRequestIdentity, () => {
                 rel="next"
                 :href="pageHref(draftNextPageName)"
                 aria-label="Nästa sida"
-                @click.prevent="queueReaderPage(draftNextPageName)"
+                @click="queueReaderLink($event, draftNextPageName)"
               ><span class="submit btn navicon navicon-visual right" aria-hidden="true"><i class="fa fa-angle-right right" /></span>{{ " " }}</a>
 
               <span class="expl small" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
