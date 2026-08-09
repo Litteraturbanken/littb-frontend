@@ -16,6 +16,7 @@ import type {
   ManagedStylesheetHref,
   SanitizedHtml
 } from "../../shared/types/renderable-html"
+import type { ReaderEtextPage } from "../../shared/types/reader"
 
 type Equal<Left, Right> =
   (<Value>() => Value extends Left ? 1 : 2) extends
@@ -95,4 +96,12 @@ export type ReaderEtextSearchMarkerInputContract = Assert<Equal<
 export type ReaderEtextSearchMarkerReturnContract = Assert<Equal<
   ReturnType<typeof markReaderSearchEtextHtml>,
   ManagedAssetHtml<"reader-etext">
+>>
+export type ReaderSharedStyleContract = Assert<Equal<
+  ReaderEtextPage["sharedStylesheetCss"],
+  ManagedStyleText<"reader-etext"> | null
+>>
+export type ReaderWorkStyleContract = Assert<Equal<
+  ReaderEtextPage["workStylesheetCss"],
+  ManagedStyleText<"reader-etext"> | null
 >>

@@ -6,6 +6,7 @@ import type {
   ReaderFacsimileSource,
   ReaderMediaType
 } from "../../shared/types/reader"
+import type { ManagedStyleText } from "../../shared/types/renderable-html"
 import type {
   ReaderManifestResponse,
   WorkManifestContributor,
@@ -14,6 +15,7 @@ import type {
   WorkManifestPart
 } from "../../shared/types/work-manifest"
 import { fetchManagedText } from "../../shared/utils/managed-text"
+import { issueManagedReaderStyle } from "../../shared/utils/renderable-html"
 import { fetchReaderManifest } from "./work-manifest-client"
 
 export const maximumReaderEtextBytes = 2 * 1024 * 1024
@@ -391,7 +393,7 @@ export async function fetchReaderPageHtml(
 export async function fetchReaderWorkStylesheet(
   base: string,
   workId: string
-): Promise<string | null> {
+): Promise<ManagedStyleText<"reader-etext"> | null> {
   const url = `${base}/txt/css/${encodeURIComponent(workId)}-etext.css`
   try {
     const stylesheet = await fetchManagedText(url, {
@@ -400,16 +402,18 @@ export async function fetchReaderWorkStylesheet(
       allowedContentTypes: ["text/css"],
       maximumBytes: maximumReaderStylesheetBytes
     })
-    return rebaseRelativeStylesheetReferences(
+    return issueManagedReaderStyle(rebaseRelativeStylesheetReferences(
       stylesheet,
       `/txt/css/${encodeURIComponent(workId)}-etext.css`
-    )
+    ))
   } catch {
     return null
   }
 }
 
-export async function fetchReaderSharedStylesheet(base: string): Promise<string | null> {
+export async function fetchReaderSharedStylesheet(
+  base: string
+): Promise<ManagedStyleText<"reader-etext"> | null> {
   const url = `${base}/red/css/etext.css`
   try {
     const stylesheet = await fetchManagedText(url, {
@@ -418,7 +422,9 @@ export async function fetchReaderSharedStylesheet(base: string): Promise<string 
       allowedContentTypes: ["text/css"],
       maximumBytes: maximumReaderStylesheetBytes
     })
-    return rebaseRelativeStylesheetReferences(stylesheet, "/red/css/etext.css")
+    return issueManagedReaderStyle(
+      rebaseRelativeStylesheetReferences(stylesheet, "/red/css/etext.css")
+    )
   } catch {
     return null
   }

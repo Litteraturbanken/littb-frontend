@@ -5,7 +5,7 @@ import type {
   WorkManifestPart,
   WorkManifestPartAuthor
 } from "./work-manifest"
-import type { ManagedAssetHtml, SanitizedHtml } from "./renderable-html"
+import type { ManagedAssetHtml, ManagedStyleText, SanitizedHtml } from "./renderable-html"
 
 export type ReaderMediaType = "etext" | "faksimil"
 
@@ -67,9 +67,9 @@ export interface ReaderPageBase {
 export interface ReaderEtextPage extends ReaderPageBase {
   html: ManagedAssetHtml<"reader-etext">
   mediaType: "etext"
-  sharedStylesheetCss: string | null
+  sharedStylesheetCss: ManagedStyleText<"reader-etext"> | null
   sharedStylesheetUrl: string
-  workStylesheetCss: string | null
+  workStylesheetCss: ManagedStyleText<"reader-etext"> | null
   workStylesheetUrl: string
 }
 

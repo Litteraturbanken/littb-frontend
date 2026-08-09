@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from "vue-router"
-
 import type {
   ReaderFacsimileSize,
   ReaderPage
 } from "#shared/types/reader"
-import type { ManagedAssetHtml } from "#shared/types/renderable-html"
+import type { ManagedAssetHtml, ManagedStyleText } from "#shared/types/renderable-html"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 import {
   emptyRenderableHtml
@@ -1616,7 +1614,7 @@ function readerHeadLinks(currentReader: ReaderPage | null): Array<{
 
 function readerHeadStyles(currentReader: ReaderPage | null): Array<{
   key: string
-  textContent: string
+  textContent: ManagedStyleText<"reader-etext">
   "data-reader-shared-styles"?: string
   "data-reader-work-styles"?: string
 }> {
@@ -1658,10 +1656,6 @@ useHead(() => ({
   link: readerHeadLinks(reader.value),
   style: readerHeadStyles(reader.value)
 }))
-
-function readerTarget(pageName: string): RouteLocationRaw {
-  return readerPageFullPath(rawFullPath.value, pageName)
-}
 
 function pageHref(pageName: string): string {
   return readerPageFullPath(rawFullPath.value, pageName)
@@ -1918,6 +1912,10 @@ async function handleProductionShortcutKeydown(event: KeyboardEvent): Promise<vo
 function handleSourceInfoKeydown(event: KeyboardEvent): void {
   if (
     (event.key !== "o" && event.key !== "F18")
+    || event.defaultPrevented
+    || event.isComposing
+    || event.altKey
+    || event.shiftKey
     || event.ctrlKey
     || event.metaKey
     || isEditableTarget(event.target)
@@ -2103,7 +2101,7 @@ watch(readerRequestIdentity, () => {
                 v-if="reader.previousPartPageName"
                 v-slot="{ navigate }"
                 custom
-                :to="readerTarget(reader.previousPartPageName)"
+                :to="pageHref(reader.previousPartPageName)"
               ><a
                 class="prev_part"
                 :href="pageHref(reader.previousPartPageName)"
@@ -2120,7 +2118,7 @@ watch(readerRequestIdentity, () => {
                 v-if="reader.nextPartPageName"
                 v-slot="{ navigate }"
                 custom
-                :to="readerTarget(reader.nextPartPageName)"
+                :to="pageHref(reader.nextPartPageName)"
               ><a
                 class="next_part"
                 :href="pageHref(reader.nextPartPageName)"
@@ -2137,7 +2135,7 @@ watch(readerRequestIdentity, () => {
                 v-if="reader.startPageName && reader.pageName !== reader.startPageName"
                 v-slot="{ navigate }"
                 custom
-                :to="readerTarget(reader.startPageName)"
+                :to="pageHref(reader.startPageName)"
               ><a
                 :href="pageHref(reader.startPageName)"
                 @click="navigate"
@@ -2153,7 +2151,7 @@ watch(readerRequestIdentity, () => {
                 v-if="reader.endPageName && reader.pageName !== reader.endPageName"
                 v-slot="{ navigate }"
                 custom
-                :to="readerTarget(reader.endPageName)"
+                :to="pageHref(reader.endPageName)"
               ><a
                 :href="pageHref(reader.endPageName)"
                 @click="navigate"

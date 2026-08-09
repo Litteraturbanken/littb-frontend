@@ -212,6 +212,7 @@ function reviewedCapabilityModule(): string {
     `export function issueReaderSourceInfoHtml(value: string): ${sanitizedHtmlType}<"reader-source-info"> { return capability<${sanitizedHtmlType}<"reader-source-info">>(value) }`,
     `export function issueEditorEtextHtml(value: string): ${sanitizedHtmlType}<"editor-etext"> { return capability<${sanitizedHtmlType}<"editor-etext">>(value) }`,
     `export function issueManagedReaderHtml(value: string): ${managedAssetHtmlType}<"reader-etext"> { return capability<${managedAssetHtmlType}<"reader-etext">>(value) }`,
+    `export function issueManagedReaderStyle(value: string): ${managedStyleTextType}<"reader-etext"> { return capability<${managedStyleTextType}<"reader-etext">>(value) }`,
     `export function issueManagedHomeHtml(value: string): ${managedAssetHtmlType}<"home-editorial"> { return capability<${managedAssetHtmlType}<"home-editorial">>(value) }`,
     `export function issueManagedAboutHtml(value: string): ${managedAssetHtmlType}<"about-editorial"> { return capability<${managedAssetHtmlType}<"about-editorial">>(value) }`,
     `export function issueManagedPresentationHtml(value: string): ${managedAssetHtmlType}<"presentation-editorial"> { return capability<${managedAssetHtmlType}<"presentation-editorial">>(value) }`,

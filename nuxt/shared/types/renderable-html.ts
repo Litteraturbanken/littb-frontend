@@ -41,7 +41,7 @@ export type RenderableHtml =
 
 export type RenderableCapability =
   | RenderableHtml
-  | ManagedStyleText<"presentation-editorial">
+  | ManagedStyleText<"presentation-editorial" | "reader-etext">
   | ManagedStylesheetHref<"presentation-editorial">
 
 export type RenderableHtmlTag = "div" | "section" | "figcaption" | "td"

@@ -30,6 +30,7 @@ import {
   issueManagedPresentationStyle,
   issueManagedPresentationStylesheetHref,
   issueManagedReaderHtml,
+  issueManagedReaderStyle,
   issueReaderOcrHtml,
   issueReaderSourceInfoHtml,
   issueSlaArticleHtml,
@@ -50,6 +51,8 @@ const readerSourceInfo: SanitizedHtml<"reader-source-info">
 const editorEtext: SanitizedHtml<"editor-etext"> = issueEditorEtextHtml("<span>Editor</span>")
 
 const managedReader: ManagedAssetHtml<"reader-etext"> = issueManagedReaderHtml("<p>Reader</p>")
+const managedReaderStyle: ManagedStyleText<"reader-etext">
+  = issueManagedReaderStyle(".etext { color: black; }")
 const managedHome: ManagedAssetHtml<"home-editorial"> = issueManagedHomeHtml("<p>Home</p>")
 const managedAbout: ManagedAssetHtml<"about-editorial"> = issueManagedAboutHtml("<p>About</p>")
 const managedPresentation: ManagedAssetHtml<"presentation-editorial">
@@ -102,6 +105,7 @@ const renderableHtml: RenderableHtml[] = [
 ]
 const capabilities: RenderableCapability[] = [
   ...renderableHtml,
+  managedReaderStyle,
   managedPresentationStyle,
   managedPresentationStylesheetHref
 ]
@@ -123,6 +127,9 @@ const wrongPolicy: SanitizedHtml<"reader-ocr"> = authorProfile
 
 const readerOverlay: ReaderOcrOverlay["html"] = readerOcr
 const readerPageHtml: ReaderEtextPage["html"] = managedReader
+const readerSharedStyle: ReaderEtextPage["sharedStylesheetCss"] = managedReaderStyle
+// @ts-expect-error Plain CSS has not passed the managed Reader style authority.
+const plainReaderSharedStyle: ReaderEtextPage["sharedStylesheetCss"] = ".etext { color: red; }"
 const editorPageHtml: NonNullable<EditorReaderPage["html"]> = editorEtext
 const editorOverlayHtml: NonNullable<EditorReaderPage["overlayHtml"]> = readerOcr
 const authorDocumentBody: AuthorSupplementalPage["bodyHtml"] = authorDocument
@@ -180,6 +187,8 @@ void unsupportedTagProps
 void wrongPolicy
 void readerOverlay
 void readerPageHtml
+void readerSharedStyle
+void plainReaderSharedStyle
 void editorPageHtml
 void editorOverlayHtml
 void authorDocumentBody

@@ -823,6 +823,35 @@ test("source-information shortcuts yield while the contents dialog owns focus", 
   expect(problems).toEqual([])
 })
 
+test("source-information shortcuts yield to guarded keyboard events", async ({ page, request }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await resetReader(request)
+  await page.evaluate(() => {
+    const variants: Array<KeyboardEventInit & { prevent?: boolean }> = [
+      { altKey: true },
+      { shiftKey: true },
+      { ctrlKey: true },
+      { metaKey: true },
+      { isComposing: true },
+      { prevent: true }
+    ]
+    for (const { prevent, ...init } of variants) {
+      const event = new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        key: "o",
+        ...init
+      })
+      if (prevent) event.preventDefault()
+      document.dispatchEvent(event)
+    }
+  })
+
+  await expect(page).toHaveURL(readerPath)
+  await expect(page.getByRole("dialog", { name: "Om boken" })).toHaveCount(0)
+  expect(await sourceInfoRequests(request)).toEqual([])
+})
+
 test("source information shows only its own loading state", async ({ page, request }) => {
   const problems = captureBrowserProblems(page)
   await request.put(`${fixture}/_source_info_delays`, {

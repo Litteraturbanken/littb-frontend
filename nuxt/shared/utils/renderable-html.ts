@@ -47,6 +47,10 @@ export function issueManagedReaderHtml(value: string): ManagedAssetHtml<"reader-
   return capability<ManagedAssetHtml<"reader-etext">>(value)
 }
 
+export function issueManagedReaderStyle(value: string): ManagedStyleText<"reader-etext"> {
+  return capability<ManagedStyleText<"reader-etext">>(value)
+}
+
 export function issueManagedHomeHtml(value: string): ManagedAssetHtml<"home-editorial"> {
   return capability<ManagedAssetHtml<"home-editorial">>(value)
 }
