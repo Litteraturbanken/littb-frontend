@@ -170,6 +170,27 @@ function reviewerConcurrency() {
   return Number(raw)
 }
 
+function evidenceValidationMessage(error, evidence, packet) {
+  const message = error instanceof Error ? error.message : String(error)
+  const match = /^Finding (.+) line is outside unit range$/u.exec(message)
+  if (!match || !Array.isArray(evidence?.findings)) return message
+  const finding = evidence.findings.find(candidate => candidate?.id === match[1])
+  const unit = packet.units.find(candidate => candidate.id === finding?.unitId)
+  if (!finding || !unit || !Array.isArray(unit.lines)) return message
+  const citedLine = Number(finding.line)
+  const distance = ([start, end]) => citedLine < start
+    ? start - citedLine
+    : citedLine > end ? citedLine - end : 0
+  const nearest = unit.lines
+    .toSorted((left, right) => distance(left) - distance(right))
+    .slice(0, 8)
+    .toSorted((left, right) => left[0] - right[0])
+    .map(([start, end]) => start === end ? String(start) : `${start}-${end}`)
+    .join(", ")
+  return `${message}; ${finding.id} cited ${finding.path}:${citedLine} for ${finding.unitId}; `
+    + `owned physical lines nearest cited line: ${nearest}`
+}
+
 function reviewPrompt({ packetPath, author, reviewer, validationError = null }) {
   const prompt = [
     "Perform an independent semantic code review of exactly one generated packet.",
@@ -268,8 +289,9 @@ async function invokeReviewer({ packetEntry, author, reviewer }) {
     if (!existsSync(outputPath)) throw new Error("Independent reviewer did not produce evidence")
     const text = readFileSync(outputPath, "utf8")
     rmSync(outputPath, { force: true })
+    let evidence = null
     try {
-      const evidence = JSON.parse(text)
+      evidence = JSON.parse(text)
       if (evidence.author !== author || evidence.reviewer !== reviewer) {
         throw new Error("Independent reviewer identities do not match the requested review")
       }
@@ -280,7 +302,7 @@ async function invokeReviewer({ packetEntry, author, reviewer }) {
         ? new Error("Independent reviewer output is not valid JSON")
         : error
       if (attempt === 1) throw normalized
-      validationError = normalized instanceof Error ? normalized.message : String(normalized)
+      validationError = evidenceValidationMessage(normalized, evidence, packetEntry.packet)
     }
   }
   throw new Error("Independent reviewer exhausted its validation attempts")

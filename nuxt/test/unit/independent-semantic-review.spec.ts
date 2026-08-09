@@ -171,6 +171,7 @@ describe("independent semantic review runner", () => {
     const invocations = readFileSync(log, "utf8").trim().split("\n").map(line => JSON.parse(line))
     expect(invocations).toHaveLength(2)
     expect(invocations[1].prompt).toContain("Finding finding-1 line is outside unit range")
+    expect(invocations[1].prompt).toContain("owned physical lines nearest cited line:")
     expect(JSON.parse(readFileSync(resolve(root, "quality/semantic-review-ledger.json"), "utf8")))
       .toMatchObject({ records: [{ state: "approved" }] })
   })
