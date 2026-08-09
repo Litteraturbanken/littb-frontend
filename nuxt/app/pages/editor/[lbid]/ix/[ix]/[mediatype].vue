@@ -989,6 +989,7 @@ function closeWorkSearchHits(): void {
   void navigateRawFullPath(searchNeutralHref(rawFullPath.value))
 }
 
+const searchCloseHref = computed(() => searchNeutralHref(rawFullPath.value))
 const searchReturnHref = computed(() => {
   const value = route.query.s_return
   return parseTextSearchReturnHref({
@@ -1112,6 +1113,7 @@ useHead(() => ({
       <Teleport v-if="searchState" to="#toolkit">
         <EditorSearchNavigation
           :active-hit="activeHit"
+          :close-href="searchCloseHref"
           :current-page-name="page?.pageName ?? null"
           :failed="hitFetch.data.value?.status === 'error'"
           :loading="hitFetch.status.value === 'pending'"
@@ -1129,8 +1131,10 @@ useHead(() => ({
         <EditorSearchNavigation
           v-if="searchState"
           :active-hit="activeHit"
+          :close-href="searchCloseHref"
           :current-page-name="page?.pageName ?? null"
           :failed="hitFetch.data.value?.status === 'error'"
+          :interactive="false"
           :loading="hitFetch.status.value === 'pending'"
           :next-href="nextHitHref"
           :next-hit="nextHit"

@@ -353,9 +353,16 @@ test("SSR restores a serialized Editor search hit and marquee", async ({ request
   )
   expect(response.status()).toBe(200)
   const { document } = parseHTML(await response.text())
-  expect(document.querySelector("#search_nav")?.textContent).toContain("Träff 1, sida 5")
+  const navigation = document.querySelector("#search_nav")
+  expect(navigation?.textContent).toContain("Träff 1, sida 5")
   expect(document.querySelector("#w5_1.markee")).not.toBeNull()
   expect(document.querySelector("#w5_2.markee.flip")).not.toBeNull()
+  expect([...navigation?.querySelectorAll("a") ?? []].some(link => (
+    link.getAttribute("href") === ""
+  ))).toBe(false)
+  expect(navigation?.querySelector('a[href="/editor/lb8345227/ix/4/f"]')?.textContent)
+    .toBe("Stäng träffvisningen")
+  expect(navigation?.textContent).not.toContain("Gå direkt till träff")
   expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
     "/v2/works/lb8345227/editor-manifest?media_type=faksimil"
   ])

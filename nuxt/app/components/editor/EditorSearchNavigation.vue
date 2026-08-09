@@ -3,10 +3,12 @@ import type { components } from "~/lib/api/generated/lbapi"
 
 type WorkSearchHit = components["schemas"]["WorkSearchHit"]
 
-defineProps<{
+const props = withDefaults(defineProps<{
   activeHit: WorkSearchHit | null
+  closeHref: string
   currentPageName: string | null
   failed: boolean
+  interactive?: boolean
   loading: boolean
   nextHref: string | null
   nextHit: WorkSearchHit | null
@@ -14,7 +16,7 @@ defineProps<{
   previousHit: WorkSearchHit | null
   returnHref: string | null
   totalHits: number | null
-}>()
+}>(), { interactive: true })
 
 const emit = defineEmits<{
   close: []
@@ -46,6 +48,12 @@ function navigateCached(event: MouseEvent, index: number): void {
   event.preventDefault()
   emit("navigate", index)
 }
+
+function closeNavigation(event: MouseEvent): void {
+  if (!props.interactive) return
+  event.preventDefault()
+  emit("close")
+}
 </script>
 
 <template>
@@ -76,16 +84,16 @@ function navigateCached(event: MouseEvent, index: number): void {
           ><span class="submit btn navicon navicon-visual" aria-hidden="true"><i class="fa fa-angle-right" /></span></a>
           <button v-else class="submit btn navicon" disabled aria-hidden="true" tabindex="-1"><i class="fa fa-angle-right" /></button>
         </li>
-        <li><a href="" @click.prevent="emit('navigate', 0)">Gå till första träffen</a></li>
-        <li><a href="" @click.prevent="emit('navigate', Math.max((totalHits ?? 1) - 1, 0))">Gå till sista träffen</a></li>
-        <li :class="{ open: gotoOpen }">
+        <li v-if="interactive"><a href="" @click.prevent="emit('navigate', 0)">Gå till första träffen</a></li>
+        <li v-if="interactive"><a href="" @click.prevent="emit('navigate', Math.max((totalHits ?? 1) - 1, 0))">Gå till sista träffen</a></li>
+        <li v-if="interactive" :class="{ open: gotoOpen }">
           <a href="" @click.prevent="toggleGoto">Gå direkt till träff . . .</a>
           <form v-show="gotoOpen" @submit.prevent="submitGoto">
             <input ref="gotoInput" v-model="gotoOrdinal" class="border border-gray-300" type="text" aria-label="Träffnummer">
             <i class="fa fa-angle-double-right" aria-hidden="true" />
           </form>
         </li>
-        <li><a href="" @click.prevent="emit('close')">Stäng träffvisningen</a></li>
+        <li><a :href="closeHref" @click="closeNavigation">Stäng träffvisningen</a></li>
         <li v-if="returnHref"><NuxtLink :to="returnHref">Tillbaka till sökningen</NuxtLink></li>
       </ul>
     </nav>
