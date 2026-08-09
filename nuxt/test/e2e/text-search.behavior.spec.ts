@@ -663,7 +663,7 @@ test("selecting all authors clears the gender filter while preserving the visibl
   page,
   request
 }) => {
-  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1&k%C3%B6n=male")
   const gender = page.locator(".gender_select")
   await gender.getByRole("button").click()
   await gender.getByRole("option", { name: "Kvinnliga författare" }).click()
@@ -676,9 +676,11 @@ test("selecting all authors clears the gender filter while preserving the visibl
   await expect.poll(() => new URL(page.url()).searchParams.has("kön")).toBe(false)
   await expect(gender).toHaveAttribute("data-gender-value", "all")
   await expect(gender.getByRole("button")).toHaveText("Alla författare")
-  expect((await requests(request, "results")).some(
-    recorded => !Object.hasOwn(recorded.body, "gender")
-  )).toBe(true)
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(3)
+  const recorded = await requests(request, "results")
+  expect(recorded.at(-2)?.body).toMatchObject({ query: "frihet", gender: "female" })
+  expect(recorded.at(-1)?.body).toMatchObject({ query: "frihet" })
+  expect(recorded.at(-1)?.body).not.toHaveProperty("gender")
 })
 
 test("chronology bare-track pointers move the nearest handle once and preserve route state", async ({
