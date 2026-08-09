@@ -3,6 +3,9 @@ import { expect, test } from "@playwright/test"
 const editorFaksimil = "/editor/lb-editor-doktor/ix/1/f"
 const editorEtext = "/editor/lb-editor-doktor-glas/ix/1/e"
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
+const editorSearchHit = "/editor/lb8345227/ix/4/f?show_search_work&s_query=brev" +
+  "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
+  "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2"
 
 test("editor Reader resolves compact media aliases with legacy asset URLs and raw-index navigation", async ({ page }) => {
   await page.goto(editorFaksimil, { waitUntil: "networkidle" })
@@ -174,6 +177,8 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
   await hitNavigation.getByRole("link", { name: "Nästa sökträff" }).click()
   await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/5\/f.*hit_index=1/u)
   await expect(page.locator("#w6_1.markee")).toHaveCount(1)
+  await expect(trigger).toHaveAttribute("aria-expanded", "true")
+  await expect(page.getByRole("searchbox", { name: "Sök i verket" })).toBeVisible()
   await page.goBack()
   await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/4\/f.*hit_index=0/u)
   await expect(page.locator("#w5_1.markee")).toHaveCount(1)
@@ -210,6 +215,70 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
     .toBe("/editor/lb8345227/ix/5/f?keep=%2f&keep=%2F")
   await expect(page.locator(".editor-reader .markee")).toHaveCount(0)
   await expect(hitNavigation).toHaveCount(0)
+})
+
+test("editor Reader does not push history for the already-active search hit", async ({ page }) => {
+  await page.goto(editorSearchHit, { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    const state = window as typeof window & { __editorHitPushes?: number }
+    const push = history.pushState.bind(history)
+    state.__editorHitPushes = 0
+    history.pushState = (...args) => {
+      state.__editorHitPushes! += 1
+      return push(...args)
+    }
+  })
+
+  await page.getByRole("navigation", { name: "Sökträffsnavigering" })
+    .getByRole("link", { name: "Gå till första träffen", exact: true }).click()
+  await page.evaluate(() => new Promise<void>(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  }))
+
+  expect(await page.evaluate(() => (
+    window as typeof window & { __editorHitPushes?: number }
+  ).__editorHitPushes)).toBe(0)
+  await expect(page).toHaveURL(editorSearchHit)
+})
+
+test("editor Reader aborts a superseded direct-hit lookup", async ({ page, request }) => {
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  const slowKey = "lb8345227|brev|235|3|false|true|false|false"
+  await request.put(`${fixture}/_reader_hit_delays`, { data: { [slowKey]: 600 } })
+  try {
+    await page.goto(editorSearchHit, { waitUntil: "networkidle" })
+    await request.delete(`${fixture}/_reader_hit_requests`)
+    await page.evaluate(() => {
+      const scope = window as typeof window & { __editorDirectHitAbortSeen?: boolean }
+      scope.__editorDirectHitAbortSeen = false
+      const originalFetch = window.fetch.bind(window)
+      window.fetch = (input, init) => {
+        const request = input instanceof Request ? input : null
+        const url = request?.url ?? String(input)
+        const signal = request?.signal ?? init?.signal
+        if (url.includes("/search-hits") && url.includes("offset=235")) {
+          signal?.addEventListener("abort", () => {
+            scope.__editorDirectHitAbortSeen = true
+          }, { once: true })
+        }
+        return originalFetch(input, init)
+      }
+    })
+    const navigation = page.getByRole("navigation", { name: "Sökträffsnavigering" })
+    await navigation.getByRole("link", { name: "Gå till sista träffen", exact: true }).click()
+    await expect.poll(async () => (
+      await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    ).requests.some((hit: { query: string }) => hit.query.includes("offset=235&limit=3")))
+      .toBe(true)
+
+    await navigation.getByRole("link", { name: "Gå till första träffen", exact: true }).click()
+    await expect.poll(() => page.evaluate(() => (
+      window as typeof window & { __editorDirectHitAbortSeen?: boolean }
+    ).__editorDirectHitAbortSeen)).toBe(true)
+    await expect(page).toHaveURL(editorSearchHit)
+  } finally {
+    await request.delete(`${fixture}/_reader_hit_delays`)
+  }
 })
 
 test("editor Reader keeps direct hit lookup inside the maximum API offset", async ({

@@ -924,10 +924,17 @@ watch(searchState, state => {
 }, { immediate: true })
 
 let hitNavigationGeneration = 0
-watch(rawFullPath, () => {
+let hitNavigationController: AbortController | null = null
+function cancelPendingHitNavigation(): void {
   hitNavigationGeneration += 1
+  hitNavigationController?.abort()
+  hitNavigationController = null
+}
+watch(rawFullPath, () => {
+  cancelPendingHitNavigation()
   cancelPendingWorkSearch()
 }, { flush: "sync" })
+onBeforeUnmount(cancelPendingHitNavigation)
 
 type EditorHitLookupContext = {
   state: EditorSearchState
@@ -947,13 +954,15 @@ function editorHitLookupContext(index: number): EditorHitLookupContext | null {
 
 async function fetchEditorHitAtIndex(
   context: EditorHitLookupContext,
-  index: number
+  index: number,
+  signal: AbortSignal
 ): Promise<WorkSearchHit | null> {
   const { state, current, response, sourceIdentity } = context
   const offset = Math.max(index - 1, 0)
   const limit = 3
   const client = createLbApiClient(config.public.apiBase)
   const result = await client.GET("/works/{work_id}/search-hits", {
+    signal,
     params: {
       path: { work_id: current.workId },
       query: {
@@ -981,26 +990,33 @@ async function fetchEditorHitAtIndex(
   return workSearchHitAt(result.data.items, index)
 }
 
-async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
+async function hitAtIndex(index: number, signal: AbortSignal): Promise<WorkSearchHit | null> {
   const context = editorHitLookupContext(index)
   if (!context) return null
   const { response } = context
   const cached = workSearchHitAt(response.items, index)
   if (cached) return cached
   try {
-    return await fetchEditorHitAtIndex(context, index)
+    return await fetchEditorHitAtIndex(context, index, signal)
   } catch {
     return null
   }
 }
 
 async function navigateToHit(index: number): Promise<void> {
-  const generation = ++hitNavigationGeneration
+  cancelPendingHitNavigation()
+  const generation = hitNavigationGeneration
   const state = searchState.value
-  if (!state) return
-  const hit = await hitAtIndex(index)
-  if (!hit || generation !== hitNavigationGeneration) return
-  await navigateRawFullPath(workSearchHitHref(hit, state))
+  if (!state || state.hit === index) return
+  const controller = new AbortController()
+  hitNavigationController = controller
+  try {
+    const hit = await hitAtIndex(index, controller.signal)
+    if (!hit || generation !== hitNavigationGeneration) return
+    await navigateRawFullPath(workSearchHitHref(hit, state))
+  } finally {
+    if (hitNavigationController === controller) hitNavigationController = null
+  }
 }
 
 function closeWorkSearchHits(): void {
