@@ -65,6 +65,11 @@ test("empty ID route renders exact authority shell without a lookup", async ({
     "titel",
     "flera titlar separarade med nyrad"
   ])
+  expect(controls.map(control => control.getAttribute("aria-label"))).toEqual([
+    "LB-ID",
+    "Titel",
+    "Flera titlar, en per rad"
+  ])
   expect(controls[0]?.hasAttribute("autofocus")).toBe(true)
   expect(document.querySelector(".preloader")?.textContent?.trim()).toContain("Hämtar")
   expect(document.querySelector(".preloader .dots_blink")).not.toBeNull()

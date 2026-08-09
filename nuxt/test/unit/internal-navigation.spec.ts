@@ -2,7 +2,8 @@ import { describe, expect, test } from "vitest"
 
 import {
   canonicalNuxtHref,
-  isNuxtInternalHref
+  isNuxtInternalHref,
+  safeNativeHref
 } from "../../app/lib/internal-navigation"
 
 const slaArticleIds = [
@@ -138,5 +139,25 @@ describe("canonical Nuxt navigation hrefs", () => {
     ["mailto:test@example.test", false]
   ])("classifies %s as internal=%s", (value, expected) => {
     expect(isNuxtInternalHref(value)).toBe(expected)
+  })
+})
+
+describe("safe native navigation hrefs", () => {
+  test.each([
+    ["/verk/legacy-only", "/verk/legacy-only"],
+    ["/export/faksimil/Test.pdf?download=1#page=2", "/export/faksimil/Test.pdf?download=1#page=2"],
+    ["https://example.test/book", "https://example.test/book"],
+    ["http://example.test/book", "http://example.test/book"],
+    ["javascript:alert(1)", null],
+    ["data:text/html,unsafe", null],
+    ["//evil.example/unsafe", null],
+    ["/\\evil.example/unsafe", null],
+    ["/%5Cevil.example/unsafe", null],
+    [" https://example.test/book", null],
+    ["https://user:secret@example.test/book", null],
+    ["mailto:test@example.test", null],
+    ["", null]
+  ])("bounds %s to %s", (value, expected) => {
+    expect(safeNativeHref(value)).toBe(expected)
   })
 })

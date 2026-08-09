@@ -197,6 +197,27 @@ test("legacy work results use a native document handoff", async ({ page }) => {
   expect(problems).toEqual([])
 })
 
+test("untrusted lookup URLs never become executable links", async ({ page }) => {
+  await page.route("**/api/v2/works/lookup", route => route.fulfill({
+    json: {
+      items: [{
+        work_id: "lb-hostile",
+        author: { label: "Farlig författarlänk", url: "javascript:alert(1)" },
+        title: { label: "Farlig titellänk", url: "data:text/html,unsafe" },
+        media: [{ label: "etext", url: "//evil.example/unsafe" }]
+      }]
+    }
+  }))
+  await openIdPage(page)
+  await page.getByLabel("LB-ID", { exact: true }).fill("lb-hostile")
+
+  const row = page.locator(".table-striped tr")
+  await expect(row).toContainText("Farlig författarlänk")
+  await expect(row).toContainText("Farlig titellänk")
+  await expect(row).toContainText("etext")
+  await expect(row.locator("a")).toHaveCount(0)
+})
+
 test("manual ID is immediate and keeps raw display while clearing only title state", async ({
   page,
   request

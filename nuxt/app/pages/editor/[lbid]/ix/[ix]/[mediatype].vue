@@ -1104,6 +1104,7 @@ useHead(() => ({
         @close="closeFocus"
         @navigate="navigateRawFullPath"
         @select-size="delta => selectFacsimileSource(delta < 0 ? smallerFacsimileSource : largerFacsimileSource)"
+        @toggle-bar="toggleFocusBar"
         @toggle-night="focusNightMode = !focusNightMode"
       />
     </ClientOnly>

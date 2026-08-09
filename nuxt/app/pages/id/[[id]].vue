@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { createLbApiClient } from "../../lib/api/client"
 import type { components } from "../../lib/api/generated/lbapi"
-import { canonicalNuxtHref, isNuxtInternalHref } from "../../lib/internal-navigation"
 
 type LookupBody =
-  | { work_id: string, titles: [] }
-  | { work_id: null, titles: string[] }
+  | components["schemas"]["WorkLookupByIdRequest"]
+  | components["schemas"]["WorkLookupByTitlesRequest"]
 type LookupItem = components["schemas"]["WorkLookupItem"]
 type LookupResponse = components["schemas"]["WorkLookupResponse"]
 
@@ -212,17 +211,20 @@ onUnmounted(clearLookup)
     <input
       :value="workId"
       placeholder="lbid"
+      aria-label="LB-ID"
       autofocus
       @input="onWorkIdInput"
     >
     <input
       :value="titles[0] ?? ''"
       placeholder="titel"
+      aria-label="Titel"
       @input="onTitleInput"
     >
     <textarea
       :value="textarea"
       placeholder="flera titlar separarade med nyrad"
+      aria-label="Flera titlar, en per rad"
       @input="onTextareaInput"
     />
     <div class="preloader">Hämtar <span class="dots_blink" /></div>
@@ -234,25 +236,20 @@ onUnmounted(clearLookup)
         >
           <td>{{ item.work_id }}</td>
           <td>
-            <NuxtLink v-if="isNuxtInternalHref(item.author.url)" :to="canonicalNuxtHref(item.author.url)">
-              {{ item.author.label }}
-            </NuxtLink>
-            <a v-else :href="item.author.url">{{ item.author.label }}</a>
+            <IdWorkLookupResultLink :label="item.author.label" :url="item.author.url" />
           </td>
           <td>
-            <NuxtLink v-if="isNuxtInternalHref(item.title.url)" :to="canonicalNuxtHref(item.title.url)">
-              {{ item.title.label }}
-            </NuxtLink>
-            <a v-else :href="item.title.url">{{ item.title.label }}</a>
+            <IdWorkLookupResultLink :label="item.title.label" :url="item.title.url" />
           </td>
           <td>
             <template
               v-for="(media, index) in item.media"
               :key="`${media.url}:${index}`"
             >
-              <span v-if="index">:::</span><NuxtLink v-if="isNuxtInternalHref(media.url)" :to="canonicalNuxtHref(media.url)">
-                {{ media.label }}
-              </NuxtLink><a v-else :href="media.url">{{ media.label }}</a>
+              <span v-if="index">:::</span><IdWorkLookupResultLink
+                :label="media.label"
+                :url="media.url"
+              />
             </template>
           </td>
         </tr>

@@ -97,6 +97,32 @@ export function canonicalNuxtHref(value: string): string {
     ?? value
 }
 
+function decodedSafeHref(value: string): string | null {
+  try {
+    const decoded = decodeURIComponent(value)
+    return hasC0OrC1Control(decoded) || hasLoneSurrogate(decoded) || decoded.includes("\\")
+      ? null
+      : decoded
+  } catch {
+    return null
+  }
+}
+
+export function safeNativeHref(value: string): string | null {
+  if (!value || value !== value.trim() || decodedSafeHref(value) === null) return null
+  if (value.startsWith("/")) return value.startsWith("//") ? null : value
+
+  try {
+    const url = new URL(value)
+    return (url.protocol === "http:" || url.protocol === "https:") &&
+      !url.username && !url.password
+      ? value
+      : null
+  } catch {
+    return null
+  }
+}
+
 function decodedNuxtPath(value: string): { decoded: string; segments: string[] } | null {
   if (!value.startsWith("/") || value.startsWith("//")) return null
   const rawPathname = value.split(/[?#]/u, 1)[0] ?? ""
