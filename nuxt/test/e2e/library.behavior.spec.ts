@@ -389,6 +389,33 @@ test("Library reset and sort links update supported query state", async ({ page 
   await expect(page.locator('[data-library-sort="titlar"]')).toHaveClass(/active/)
 })
 
+test("Library reset clears the latest hide-1800 filter without changing retained query state", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?visa=latest&sort=nytillkommet&hide1800&keep=ja", {
+    waitUntil: "networkidle"
+  })
+  await expect(page.locator("[data-library-reset]")).toBeVisible()
+
+  await reset(request)
+  await page.locator("[data-library-reset]").click()
+  await expect(page).not.toHaveURL(/(?:\?|&)hide1800(?:=|&|$)/)
+
+  const url = new URL(page.url())
+  expect(url.searchParams.get("visa")).toBe("latest")
+  expect(url.searchParams.get("sort")).toBe("nytillkommet")
+  expect(url.searchParams.get("keep")).toBe("ja")
+
+  const ledger = publicEpubRequests(await epubRequests(request))
+  expect(ledger).toHaveLength(1)
+  expect(ledger[0]?.body).toMatchObject({
+    mode: "latest",
+    filters: libraryFilters(),
+    hide_1800: false
+  })
+})
+
 test("Nytt owns its canonical query state and restores through browser history", async ({
   page,
   request
