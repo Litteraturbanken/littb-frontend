@@ -863,8 +863,20 @@ describe("text search route state", () => {
     expect(acceptTextSearchOptionsResponse(aboutAuthors, request, identity)).toBeNull()
   })
 
+  test("accepts options responses with optional chronology bounds omitted", () => {
+    const request = buildTextSearchOptionsRequest(parseTextSearchRouteQuery({ fras: "frihet" }))
+    const response = optionsResponse()
+    delete response.year_from
+    delete response.year_to
+
+    expect(acceptTextSearchOptionsResponse(
+      response,
+      request,
+      textSearchOptionsRequestIdentity(request)
+    )).toEqual(response)
+  })
+
   test.each([
-    { name: "missing year key", mutate: (copy: JsonRecord) => { delete copy.year_to } },
     {
       name: "extra title key",
       mutate: (copy: JsonRecord) => {

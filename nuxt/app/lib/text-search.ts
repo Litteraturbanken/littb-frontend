@@ -481,6 +481,15 @@ function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): 
   return actual.length === expected.length && actual.every((key, index) => key === expected[index])
 }
 
+function hasRequiredAndOptionalKeys(
+  value: Record<string, unknown>,
+  required: readonly string[],
+  optional: readonly string[]
+): boolean {
+  return required.every(key => Object.hasOwn(value, key)) &&
+    Object.keys(value).every(key => required.includes(key) || optional.includes(key))
+}
+
 function isBoundedString(value: unknown, minimum: number, maximum: number): value is string {
   return typeof value === "string" && value.length >= minimum && value.length <= maximum &&
     (minimum === 0 || value.trim().length > 0)
@@ -647,15 +656,21 @@ function isAuthorOption(value: unknown): value is TextSearchAuthorOption {
     (value.death_year === null || isBoundedString(value.death_year, 1, 100))
 }
 
+function isOptionalYear(value: unknown): value is number | null | undefined {
+  return value === undefined || value === null || isSafeInteger(value, 1000, 2200)
+}
+
 function isYearPair(from: unknown, to: unknown): boolean {
-  if (from === null && to === null) return true
-  return isSafeInteger(from, 1000, 2200) && isSafeInteger(to, 1000, 2200) && from <= to
+  return isOptionalYear(from) && isOptionalYear(to) &&
+    (typeof from !== "number" || typeof to !== "number" || from <= to)
 }
 
 function isTextSearchOptionsResponse(value: unknown): value is TextSearchOptionsResponse {
-  if (!isRecord(value) || !hasExactKeys(value, [
+  if (!isRecord(value) || !hasRequiredAndOptionalKeys(value, [
     "title_options", "title_total", "title_author_facets", "authors",
-    "about_authors", "year_from", "year_to"
+    "about_authors"
+  ], [
+    "year_from", "year_to"
   ]) || !isBoundedArray(value.title_options, 550, isTitleOption) ||
     !isSafeInteger(value.title_total) ||
     !isBoundedArray(value.title_author_facets, 10_000, isAuthorFacet) ||

@@ -647,14 +647,14 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
   titleLoading.value = true
   titleOptionsFailed.value = false
   failedTitleOptionsRequest = null
-  const body = buildTextSearchOptionsRequest(requestedState, {
-    titleFilter,
-    selectedWorkIds: requestedState.workIds,
-    titleLimit,
-    includeStaticOptions: false
-  })
-  const requestIdentity = textSearchOptionsRequestIdentity(body)
   try {
+    const body = buildTextSearchOptionsRequest(requestedState, {
+      titleFilter,
+      selectedWorkIds: requestedState.workIds,
+      titleLimit,
+      includeStaticOptions: false
+    })
+    const requestIdentity = textSearchOptionsRequestIdentity(body)
     const result = await client.POST("/text-search/options", {
       body,
       signal: request.signal

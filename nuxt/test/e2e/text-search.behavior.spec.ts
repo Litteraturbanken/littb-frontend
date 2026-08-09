@@ -82,6 +82,19 @@ test("vue-multiselect title search selects and removes a route-owned title", asy
   await expect.poll(() => new URL(page.url()).searchParams.has("titlar")).toBe(false)
 })
 
+test("an overlong title filter clears loading and reports a recoverable error", async ({ page }) => {
+  const problems = browserProblems(page)
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+
+  const title = page.locator(".title_select")
+  await title.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
+  await title.locator("input.select2-search__field").fill("x".repeat(201))
+
+  await expect(page.locator(".title_options_error")).toBeVisible()
+  await expect(title.getByLabel("Laddar alternativ")).toHaveCount(0)
+  expect(problems).toEqual([])
+})
+
 test("vue-multiselect names each real keyboard control without a searchbox suffix", async ({
   page
 }) => {
