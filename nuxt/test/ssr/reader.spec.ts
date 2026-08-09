@@ -559,6 +559,31 @@ test("search-hit SSR exposes native close and validated return routes", async ({
   expect(await readerHitRequests(request)).toHaveLength(1)
 })
 
+test("unsearchable Reader SSR retains search-origin close and return routes", async ({ request }) => {
+  const origin = "/s%C3%B6k?fras=glas&traffsida=2"
+  const path = "/författare/SöderbergH/titlar/UnsearchableEtextReader/sida/-2/etext"
+  const response = await request.get(
+    `${path}?q=glas&hit=0&s_return=${encodeURIComponent(origin)}`
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const navigation = document.querySelector(
+    '.reader-context-ssr [aria-label="Sökträffsnavigering"]'
+  )
+  const links = [...navigation?.querySelectorAll("a") ?? []]
+  const close = links.find(link => link.textContent?.trim() === "Stäng träffvisningen")
+  const searchReturn = links.find(link => link.textContent?.trim() === "Tillbaka till sökningen")
+
+  expect(close?.getAttribute("href")).toBe(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/UnsearchableEtextReader/sida/-2/etext" +
+      `?s_return=${encodeURIComponent(origin)}`
+  )
+  expect(searchReturn?.getAttribute("href")).toBe(origin)
+  expect(links.map(link => link.textContent?.trim())).not.toContain("Föregående sökträff")
+  expect(links.map(link => link.textContent?.trim())).not.toContain("Nästa sökträff")
+  expect(await readerHitRequests(request)).toEqual([])
+})
+
 test("canonical API returns the exact searchable faksimil arm with selectable OCR", async ({
   request
 }) => {

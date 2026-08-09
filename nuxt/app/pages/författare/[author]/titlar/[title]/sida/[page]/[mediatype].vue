@@ -2515,7 +2515,7 @@ watch(readerRequestIdentity, () => {
               href="https://litteraturbanken.se/diktensmuseum/nya-vagar-inledning/"
             ><img :src="nyaVagarLogo" alt="Logotyp för Nya vägar"></a>
             <nav
-              v-if="searchState"
+              v-if="searchState || hasActiveSearchOrigin"
               class="reader-hit-navigation"
               aria-label="Sökträffsnavigering"
             >
