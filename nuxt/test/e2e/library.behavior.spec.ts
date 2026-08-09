@@ -1688,6 +1688,37 @@ test("standalone EPUB and PDF tabs retain their shell during SPA switching", asy
   expect(publicOnlyEpubRequests(ledger)).toHaveLength(1)
 })
 
+test("SPA navigation between Library and its EPUB alias updates the complete shell", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  await reset(request)
+  await page.evaluate(() => {
+    ;(window as typeof window & { __librarySpa?: string }).__librarySpa = "alive"
+  })
+  await page.locator("[data-library-mounted]").evaluate(element => {
+    element.setAttribute("data-library-instance-probe", "library")
+  })
+
+  await page.locator(".mainnav").getByRole("link", { name: "Hämta e-böcker" }).click()
+  await expect(page).toHaveURL("/epub?visa=epub&sort=popularitet")
+  await expect(page.locator("[data-library-instance-probe]")).toHaveCount(0)
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hämta e-böcker")
+  await expect(page.locator("body")).toHaveClass(/page-epub/u)
+  await expect(page.locator("[data-library-epub-row]")).toHaveCount(3)
+
+  await page.locator(".mainnav").getByRole("link", { name: "Biblioteket", exact: true }).click()
+  await expect(page).toHaveURL("/bibliotek")
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Botanisera i biblioteket")
+  await expect(page.locator("body")).toHaveClass(/page-library/u)
+  expect(await page.evaluate(() =>
+    (window as typeof window & { __librarySpa?: string }).__librarySpa
+  )).toBe("alive")
+
+  expect(publicOnlyEpubRequests(await epubRequests(request))).toHaveLength(1)
+})
+
 test("PDF debounce, immediate submit, and reset own one request per committed state", async ({
   page,
   request
