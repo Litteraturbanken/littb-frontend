@@ -2812,6 +2812,27 @@ test("canonical search options reject a mismatched legacy marker", async ({ page
   await expect(page.locator(".reader_main .markee")).toHaveCount(2)
 })
 
+test("canonical hit data overrides matching legacy state with forged word ids", async ({ page }) => {
+  const legacyMarker = [
+    "traff=w2_2",
+    "traffslut=w2_2",
+    "s_query=doktor%20glas",
+    "s_lbworkid=lb-reader-doktor-glas",
+    "s_mediatype=etext",
+    "s_word_form_only=true",
+    "s_include_modernized=true",
+    "hit_index=1"
+  ].join("&")
+  await page.goto(
+    `${readerPath}?q=doktor%20glas&hit=1&${legacyMarker}`,
+    { waitUntil: "networkidle" }
+  )
+
+  await expect(page.locator("#w2_1.markee")).toHaveCount(1)
+  await expect(page.locator("#w2_2.markee.flip")).toHaveCount(1)
+  await expect(page.locator(".reader_main .markee")).toHaveCount(2)
+})
+
 test("closing mixed search state removes legacy markers but preserves its return owner", async ({
   page
 }) => {

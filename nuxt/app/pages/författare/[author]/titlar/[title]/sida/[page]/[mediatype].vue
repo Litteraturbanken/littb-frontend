@@ -1098,30 +1098,6 @@ function selectedHitIndex(rawHitIndex: unknown): number | null {
   return Number.isSafeInteger(index) && index <= maximumNavigableHit ? index : null
 }
 
-function legacySearchBoolean(value: unknown, fallback: boolean): boolean | null {
-  if (value === undefined) return fallback
-  if (value === "true") return true
-  if (value === "false") return false
-  return null
-}
-
-function selectedHitMatchesCanonicalState(rawQuery: string, hitIndex: number): boolean {
-  const hasCanonicalState = route.query.q !== undefined || route.query.hit !== undefined
-  if (!hasCanonicalState) return true
-  const canonicalState = parseCanonicalSearchState()
-  if (canonicalState?.query !== rawQuery || canonicalState.hit !== hitIndex) return false
-
-  const wordFormOnly = legacySearchBoolean(route.query.s_word_form_only, true)
-  const includeModernized = legacySearchBoolean(route.query.s_include_modernized, true)
-  const prefix = legacySearchBoolean(route.query.s_prefix, false)
-  const suffix = legacySearchBoolean(route.query.s_suffix, false)
-  return wordFormOnly !== null && includeModernized !== null &&
-    prefix !== null && suffix !== null &&
-    wordFormOnly === !canonicalState.wordForms &&
-    includeModernized === canonicalState.includeOlderSpellings &&
-    prefix === canonicalState.prefix && suffix === canonicalState.suffix
-}
-
 function selectedHitRouteMatchesReader(currentReader: ReaderPage): boolean {
   if (route.query.s_lbworkid !== currentReader.workId) return false
   return route.query.s_mediatype === undefined
@@ -1131,6 +1107,7 @@ function selectedHitRouteMatchesReader(currentReader: ReaderPage): boolean {
 const selectedSearchHit = computed<WorkSearchHit | null>(() => {
   const currentReader = reader.value
   if (!currentReader?.searchable) return null
+  if (route.query.q !== undefined || route.query.hit !== undefined) return null
 
   const rawQuery = route.query.s_query
   const fromWordId = route.query.traff
@@ -1142,8 +1119,6 @@ const selectedSearchHit = computed<WorkSearchHit | null>(() => {
     !selectedHitRouteMatchesReader(currentReader) ||
     typeof fromWordId !== "string" || typeof toWordId !== "string"
   ) return null
-  if (!selectedHitMatchesCanonicalState(rawQuery, hitIndex)) return null
-
   const hit: WorkSearchHit = {
     index: hitIndex,
     page_name: currentReader.pageName,
