@@ -622,15 +622,23 @@ watch(options, candidate => {
     yearTo: candidate.yearTo
   }
 }, { flush: "sync" })
-const chronologyFloor = computed(() => (
+const baseChronologyFloor = computed(() => (
   state.value.advanced
     ? options.value?.yearFrom ?? lastAcceptedAdvancedChronologyBounds.value.yearFrom
     : chronologyData.value?.bounds?.yearFrom ?? 1800
 ))
-const chronologyCeiling = computed(() => (
+const baseChronologyCeiling = computed(() => (
   state.value.advanced
     ? options.value?.yearTo ?? lastAcceptedAdvancedChronologyBounds.value.yearTo
     : chronologyData.value?.bounds?.yearTo ?? 1950
+))
+const chronologyFloor = computed(() => Math.min(
+  baseChronologyFloor.value,
+  state.value.yearRange?.[0] ?? baseChronologyFloor.value
+))
+const chronologyCeiling = computed(() => Math.max(
+  baseChronologyCeiling.value,
+  state.value.yearRange?.[1] ?? baseChronologyCeiling.value
 ))
 const chronologyFromDraft = ref("")
 const chronologyToDraft = ref("")
@@ -638,15 +646,9 @@ const chronologyDraftDirty = ref(false)
 
 function syncChronologyDraft() {
   if (chronologyDraftDirty.value) return
-  const floor = chronologyFloor.value
-  const ceiling = chronologyCeiling.value
   const selected = state.value.yearRange
-  const from = selected && selected[0] >= floor && selected[1] <= ceiling
-    ? selected[0]
-    : floor
-  const to = selected && selected[0] >= floor && selected[1] <= ceiling
-    ? selected[1]
-    : ceiling
+  const from = selected?.[0] ?? chronologyFloor.value
+  const to = selected?.[1] ?? chronologyCeiling.value
   chronologyFromDraft.value = String(from)
   chronologyToDraft.value = String(to)
 }

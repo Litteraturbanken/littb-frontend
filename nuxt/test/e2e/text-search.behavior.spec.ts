@@ -461,6 +461,46 @@ test("direct advanced routes use option bounds without requesting chronology", a
   expect(await requests(request, "options")).toHaveLength(1)
 })
 
+test("direct advanced chronology outside catalog bounds preserves its selected interval", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1&intervall=1800,1900")
+
+  const ranges = page.locator(".chronology_ranges input[type='range']")
+  await expect(ranges.nth(0)).toHaveAttribute("min", "1800")
+  await expect(ranges.nth(0)).toHaveAttribute("max", "1940")
+  await expect(page.getByLabel("Från år", { exact: true })).toHaveValue("1800")
+  await expect(page.getByLabel("Till år", { exact: true })).toHaveValue("1900")
+
+  await expect.poll(async () => (await requests(request, "results")).at(-1)?.body)
+    .toMatchObject({ year_from: 1800, year_to: 1900 })
+  expect((await requests(request, "options")).at(-1)?.body).toMatchObject({
+    year_from: 1800,
+    year_to: 1900
+  })
+
+  await page.getByLabel("Från år", { exact: true }).fill("1850")
+  await page.getByLabel("Från år", { exact: true }).blur()
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1850,1900")
+  await expect(ranges.nth(0)).toHaveAttribute("min", "1849")
+  await expect(page.getByLabel("Från år", { exact: true })).toHaveValue("1850")
+  await expect(page.getByLabel("Till år", { exact: true })).toHaveValue("1900")
+})
+
+test("direct advanced chronology wholly outside catalog bounds keeps both selected endpoints", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1&intervall=1800,2000")
+
+  const ranges = page.locator(".chronology_ranges input[type='range']")
+  await expect(ranges.nth(0)).toHaveAttribute("min", "1800")
+  await expect(ranges.nth(0)).toHaveAttribute("max", "2000")
+  await expect(page.getByLabel("Från år", { exact: true })).toHaveValue("1800")
+  await expect(page.getByLabel("Till år", { exact: true })).toHaveValue("2000")
+})
+
 test("simple chronology bounds survive an advanced mode round trip", async ({
   page,
   request

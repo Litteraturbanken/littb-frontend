@@ -226,6 +226,28 @@ test("advanced SSR resolves every selected label through its independent options
   }])
 })
 
+test("advanced SSR preserves chronology endpoints outside option bounds", async ({ request }) => {
+  const response = await request.get(
+    "/s%C3%B6k?fras=frihet&avancerad=1&intervall=1800,1900"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  const ranges = [...document.querySelectorAll<HTMLInputElement>(
+    ".chronology_ranges input[type=range]"
+  )]
+  expect(ranges.map(input => [input.getAttribute("min"), input.getAttribute("max"), input.value])).toEqual([
+    ["1800", "1940", "1800"],
+    ["1800", "1940", "1900"]
+  ])
+  expect([...document.querySelectorAll<HTMLInputElement>(".chronology_inputs input")]
+    .map(input => input.value)).toEqual(["1800", "1900"])
+  expect((await requests(request, "options")).at(-1)?.body).toMatchObject({
+    year_from: 1800,
+    year_to: 1900
+  })
+})
+
 test("a slow count never gates the hydrated primary result", async ({ page, request }) => {
   await request.put(`${fixture}/_text_search/delays`, {
     data: { operation: "count", selector: "frihet", delay: 3000 }
