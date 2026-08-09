@@ -1124,10 +1124,9 @@ watch(routeIdentity, () => {
 const genderSelection = computed(() => {
   const rawGender = rawQuery.value["kön"]
   const firstGender = typeof rawGender === "string" ? rawGender : rawGender?.[0]
-  return firstGender === "all" ? "all" : (state.value.gender ?? "")
+  return firstGender === "all" ? "all" : (state.value.gender ?? "all")
 })
 const genderChoices = [
-  { value: "", label: "Filtrera: kvinnliga / manliga / alla" },
   { value: "all", label: "Alla författare" },
   { value: "female", label: "Kvinnliga författare" },
   { value: "male", label: "Manliga författare" }
@@ -1446,10 +1445,7 @@ v-for="item in [
               >
                 <ListboxButton class="select2-selection select2-selection--single">
                   <span class="select2-selection__rendered">
-                    <span
-                      class="gender_selection_label"
-                      :class="{ 'select2-selection__placeholder': !genderSelection }"
-                    >{{ genderLabel }}</span>
+                    <span class="gender_selection_label">{{ genderLabel }}</span>
                   </span>
                   <span class="select2-selection__arrow" aria-hidden="true"><b /></span>
                 </ListboxButton>
@@ -1726,10 +1722,6 @@ v-for="item in [
   line-height: 28px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.gender_select .select2-selection__placeholder {
-  color: #999;
 }
 
 .gender_select .select2-selection__arrow {

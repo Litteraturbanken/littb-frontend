@@ -742,7 +742,7 @@ test("pager page input opens and navigates only within inclusive bounds", async 
   await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
 })
 
-test("absent and explicit all gender stay visibly distinct without a backend filter", async ({
+test("absent and explicit all gender both show all authors without a backend filter", async ({
   page,
   request
 }) => {
@@ -758,7 +758,7 @@ test("absent and explicit all gender stay visibly distinct without a backend fil
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
   const absentDocument = parseHTML(await page.content()).document
   expect(absentDocument.querySelector(".gender_select")?.getAttribute("data-gender-value"))
-    .toBe("")
+    .toBe("all")
   expect((await requests(request, "results"))[0]?.body).not.toHaveProperty("gender")
 
   await reset(request)
@@ -768,7 +768,7 @@ test("absent and explicit all gender stay visibly distinct without a backend fil
   await gender.getByRole("button").click()
   await gender.getByRole("option", { name: "Alla författare" }).click()
   await expect.poll(() => new URL(page.url()).searchParams.has("kön")).toBe(false)
-  await expect(page.locator(".gender_select")).toHaveAttribute("data-gender-value", "")
+  await expect(page.locator(".gender_select")).toHaveAttribute("data-gender-value", "all")
 })
 
 test("result and overflow rows keep flattened Angular parity and media classes", async ({
