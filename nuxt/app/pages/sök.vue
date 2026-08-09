@@ -968,6 +968,26 @@ function goToPage(page: number) {
   void navigate(textSearchPageQuery(rawQuery.value, page))
 }
 
+const paginationShortcutRoles = new Set([
+  "application", "button", "checkbox", "combobox", "grid", "gridcell", "link", "listbox",
+  "menu", "menubar", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "radio",
+  "radiogroup", "scrollbar", "searchbox", "slider", "spinbutton", "switch", "tab", "tablist",
+  "textbox", "toolbar", "tree", "treegrid", "treeitem"
+])
+
+function paginationShortcutTargetGuarded(target: HTMLElement | null): boolean {
+  for (let element = target; element; element = element.parentElement) {
+    if (element.matches(
+      "a[href], button, summary, input, select, textarea, audio[controls], video[controls], " +
+      "[contenteditable]:not([contenteditable='false'])"
+    )) return true
+    const roles = element.getAttribute("role")?.trim().split(/\s+/u) ?? []
+    if (roles.some(role => paginationShortcutRoles.has(role))) return true
+    if (element.hasAttribute("tabindex") && element.tabIndex >= 0) return true
+  }
+  return false
+}
+
 function paginationShortcutGuarded(event: KeyboardEvent): boolean {
   if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
     return true
@@ -975,11 +995,7 @@ function paginationShortcutGuarded(event: KeyboardEvent): boolean {
   const target = event.target instanceof HTMLElement
     ? event.target
     : document.activeElement as HTMLElement | null
-  return Boolean(target?.closest(
-    "a[href], button, summary, input, select, textarea, " +
-    "[contenteditable]:not([contenteditable='false']), [role], " +
-    "[tabindex]:not([tabindex^='-'])"
-  ))
+  return paginationShortcutTargetGuarded(target)
 }
 
 function atHorizontalEnd(root: HTMLElement): boolean {

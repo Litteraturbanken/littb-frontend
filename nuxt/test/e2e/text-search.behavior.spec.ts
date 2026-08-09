@@ -788,23 +788,88 @@ test("keyboard pagination does not intercept arrows inside form controls", async
     bubbles: true,
     cancelable: true
   })))
-  await page.waitForTimeout(50)
-  expect(new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+  await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
 })
 
 test("keyboard pagination yields to every focused interactive Search control", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?fras=overflow&traffsida=2&avancerad=1")
   await expect(page.locator("#results")).not.toHaveClass(/searching/)
+  await page.evaluate(() => {
+    const fixtures = document.createElement("div")
+    fixtures.innerHTML = `
+      <div role="listbox"><span data-shortcut-case="role-child">Alternativ</span></div>
+      <div tabindex="-0" data-shortcut-case="parsed-zero">Fokuserbar</div>
+      <audio controls data-shortcut-case="audio"></audio>
+      <video controls data-shortcut-case="video"></video>
+    `
+    document.body.append(fixtures)
+  })
 
-  for (const control of [
-    page.getByRole("button", { name: "Rensa sökningen" }),
-    page.locator("#results .match a").first(),
-    page.locator(".gender_select").getByRole("button")
-  ]) {
-    await control.focus()
-    await page.keyboard.press("ArrowRight")
-    await page.waitForTimeout(100)
-    expect(new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+  for (const [name, control, focus] of [
+    ["reset button", page.getByRole("button", { name: "Rensa sökningen" }), true],
+    ["result link", page.locator("#results .match a").first(), true],
+    ["gender Listbox button", page.locator(".gender_select").getByRole("button"), true],
+    ["interactive role ancestor", page.locator("[data-shortcut-case='role-child']"), false],
+    ["parsed tabindex -0", page.locator("[data-shortcut-case='parsed-zero']"), true],
+    ["audio controls", page.locator("[data-shortcut-case='audio']"), true],
+    ["video controls", page.locator("[data-shortcut-case='video']"), true]
+  ] as const) {
+    await test.step(name, async () => {
+      if (focus) {
+        await control.focus()
+        await expect(control).toBeFocused()
+      }
+      const notPrevented = await control.evaluate(element => element.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "ArrowRight",
+          bubbles: true,
+          cancelable: true
+        })
+      ))
+      expect(notPrevented).toBe(true)
+      await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+    })
+  }
+})
+
+test("keyboard pagination keeps noninteractive and negative-tabindex backgrounds active", async ({
+  page
+}) => {
+  for (const [name, markup, selector, focus] of [
+    [
+      "parsed whitespace-prefixed negative tabindex",
+      '<div tabindex=" -1" data-shortcut-case="negative-tabindex">Bakgrund</div>',
+      "[data-shortcut-case='negative-tabindex']",
+      true
+    ],
+    [
+      "noninteractive role ancestor",
+      '<main role="main"><span data-shortcut-case="role-main-child">Bakgrund</span></main>',
+      "[data-shortcut-case='role-main-child']",
+      false
+    ],
+    ["page background", "", "h1", false]
+  ] as const) {
+    await test.step(name, async () => {
+      await openSearch(page, "/s%C3%B6k?fras=overflow&traffsida=2")
+      if (markup) {
+        await page.evaluate(value => document.body.insertAdjacentHTML("beforeend", value), markup)
+      }
+      const target = page.locator(selector)
+      if (focus) {
+        await target.focus()
+        await expect(target).toBeFocused()
+      }
+      const notPrevented = await target.evaluate(element => element.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "ArrowRight",
+          bubbles: true,
+          cancelable: true
+        })
+      ))
+      expect(notPrevented).toBe(false)
+      await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("3")
+    })
   }
 })
 
