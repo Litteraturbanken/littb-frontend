@@ -7,6 +7,21 @@ const editorSearchHit = "/editor/lb8345227/ix/4/f?show_search_work&s_query=brev"
   "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
   "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2"
 
+async function navigateClient(page: import("@playwright/test").Page, path: string): Promise<void> {
+  await page.evaluate(async target => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: { push: (value: string) => Promise<void> } } } }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    try {
+      await router.push(target)
+    } catch {
+      // Route validation reports the expected 404 by rejecting this navigation.
+    }
+  }, path)
+}
+
 test("editor Reader resolves compact media aliases with legacy asset URLs and raw-index navigation", async ({ page }) => {
   await page.goto(editorFaksimil, { waitUntil: "networkidle" })
   await expect(page.locator(".editor-reader")).toBeVisible()
@@ -717,6 +732,18 @@ test("contextual editor e-text route renders the exact Editor representation", a
 test("editor Reader rejects unknown aliases and negative raw indexes", async ({ page }) => {
   expect((await page.goto("/editor/lb-editor-doktor/ix/1/etext"))?.status()).toBe(404)
   expect((await page.goto("/editor/lb-editor-doktor/ix/-1/f"))?.status()).toBe(404)
+})
+
+test("editor Reader client navigation rejects malformed route identities as 404s", async ({ page }) => {
+  for (const path of [
+    "/editor/%20/ix/1/f",
+    "/editor/lb-editor-doktor/ix/10000000/f"
+  ]) {
+    await page.goto(editorFaksimil, { waitUntil: "networkidle" })
+    await navigateClient(page, path)
+    await expect(page).toHaveTitle("Sidan kan inte hittas | Litteraturbanken")
+    await expect(page.locator(".editor-reader")).toHaveCount(0)
+  }
 })
 
 test("editor Reader navigates only actual indices from sparse metadata", async ({ page }) => {

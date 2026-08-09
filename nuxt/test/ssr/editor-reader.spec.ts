@@ -29,6 +29,20 @@ test.afterEach(async ({ request }) => {
   ))).toBe(false)
 })
 
+test("SSR and the Editor API reject the same malformed route identities", async ({ request }) => {
+  for (const path of [
+    "/editor/%20/ix/1/f",
+    `/editor/${"a".repeat(101)}/ix/1/f`,
+    "/editor/lb-editor-doktor/ix/10000000/f",
+    "/editor/lb-editor-doktor/ix/01/f"
+  ]) {
+    expect((await request.get(path)).status()).toBe(404)
+    expect((await request.get(path.replace("/editor/", "/api/editor/").replace("/ix", ""))).status())
+      .toBe(404)
+  }
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([])
+})
+
 for (const [partition, path] of [
   ["path", "/v2/works/%20/editor-manifest?media_type=faksimil"],
   ["query", "/v2/works/lb-editor-fallback/editor-manifest?media_type=pdf"]

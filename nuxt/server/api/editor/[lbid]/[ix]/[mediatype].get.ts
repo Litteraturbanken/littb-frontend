@@ -1,4 +1,5 @@
 import type { EditorFacsimileSource, EditorReaderPage } from "#shared/types/editor-reader"
+import { isEditorRouteIdentity } from "#shared/utils/editor-route-identity"
 import type {
   EditorPageBounds,
   EditorManifestResponse,
@@ -17,8 +18,6 @@ import {
   fetchEditorManifest
 } from "#server/utils/work-manifest-client"
 
-const workIdPattern = /^[A-Za-z0-9_-]{1,100}$/
-const indexPattern = /^(?:0|[1-9]\d{0,6})$/
 type EditorEvent = Parameters<typeof getRouterParam>[0]
 type EditorMediaType = EditorReaderPage["mediaType"]
 type CompleteEditorManifest = Extract<EditorManifestResponse, { status: "complete" }>
@@ -140,8 +139,7 @@ function readEditorRequest(event: EditorEvent): EditorRequest {
   const workId = requiredParam(event, "lbid")
   const rawIndex = requiredParam(event, "ix")
   const alias = requiredParam(event, "mediatype")
-  if (!workIdPattern.test(workId) || !indexPattern.test(rawIndex)
-    || (alias !== "e" && alias !== "f")) pageNotFound()
+  if (!isEditorRouteIdentity(workId, rawIndex, alias)) pageNotFound()
   return {
     mediaType: alias === "e" ? "etext" : "faksimil",
     pageIndex: Number(rawIndex),

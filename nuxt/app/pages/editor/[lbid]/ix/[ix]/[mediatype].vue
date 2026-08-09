@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EditorReaderPage } from "#shared/types/editor-reader"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
+import { isEditorRouteIdentity } from "#shared/utils/editor-route-identity"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import type { components } from "~/lib/api/generated/lbapi"
@@ -37,9 +38,11 @@ import {
 
 definePageMeta({
   layout: "reader",
-  validate: route => typeof route.params.lbid === "string" &&
-    /^(?:0|[1-9]\d*)$/.test(String(route.params.ix)) &&
-    (route.params.mediatype === "e" || route.params.mediatype === "f")
+  validate: route => isEditorRouteIdentity(
+    route.params.lbid,
+    route.params.ix,
+    route.params.mediatype
+  )
 })
 const route = useRoute()
 const router = useRouter()
