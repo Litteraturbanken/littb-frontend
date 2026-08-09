@@ -177,6 +177,17 @@ test("SSR reports an unavailable editor when both metadata and page count fail",
   ])
 })
 
+test("SSR contains an empty 200 Editor manifest as the existing source 502", async ({
+  request
+}) => {
+  const response = await request.get("/api/editor/lb-editor-empty-manifest/0/f")
+
+  expect(response.status()).toBe(502)
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
+    "/v2/works/lb-editor-empty-manifest/editor-manifest?media_type=faksimil"
+  ])
+})
+
 test("SSR sanitizes bounded editor e-text before it enters the DTO", async ({ request }) => {
   const response = await request.get("/api/editor/lb-editor-doktor-glas/1/e")
   expect(response.status()).toBe(200)

@@ -7,6 +7,10 @@ import type {
   ReaderManifestResponse
 } from "../../shared/types/work-manifest"
 import type { ReaderMediaType } from "../../shared/types/reader"
+import {
+  isEditorManifestResponse,
+  isReaderManifestResponse
+} from "./work-manifest-validation"
 
 function readerPageNotFound(): never {
   throw createError({ statusCode: 404, statusMessage: "Reader page not found" })
@@ -89,7 +93,13 @@ export async function fetchReaderManifest(
     unavailableReaderSource()
   }
 
-  if (result.data !== undefined) return result.data
+  if (result.data !== undefined) {
+    const data: unknown = result.data
+    if (!isReaderManifestResponse(data, authorId, titlePath, mediaType)) {
+      invalidReaderSource()
+    }
+    return data
+  }
   if (result.response.status === 404 || result.response.status === 422) {
     readerPageNotFound()
   }
@@ -119,7 +129,11 @@ export async function fetchEditorManifest(
     unavailableEditorSource()
   }
 
-  if (result.data !== undefined) return result.data
+  if (result.data !== undefined) {
+    const data: unknown = result.data
+    if (!isEditorManifestResponse(data, workId, mediaType)) invalidEditorSource()
+    return data
+  }
   if (result.response.status === 404 || result.response.status === 422) {
     editorPageNotFound()
   }

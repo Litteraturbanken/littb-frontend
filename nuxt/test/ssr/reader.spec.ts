@@ -1494,3 +1494,19 @@ test("a malformed Reader source stays a generic 502", async ({ request }) => {
     expectedReaderManifest("SöderbergH", "MalformedReader")
   ])
 })
+
+test("an empty 200 Reader manifest stays inside the generic 502 boundary", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/författare/SöderbergH/titlar/EmptyManifestReader/sida/1/etext"
+  )
+
+  expect(response.status()).toBe(502)
+  const html = await response.text()
+  expect(html).toContain("<title>Ett fel inträffade | Litteraturbanken</title>")
+  expect(html).toContain("Ett fel inträffade. Vänligen försök igen senare.")
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("SöderbergH", "EmptyManifestReader")
+  ])
+})

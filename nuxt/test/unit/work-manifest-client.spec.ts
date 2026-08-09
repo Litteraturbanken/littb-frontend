@@ -6,7 +6,60 @@ import {
   fetchEditorManifest,
   fetchReaderManifest
 } from "../../server/utils/work-manifest-client"
-import type { EditorManifestResponse } from "../../shared/types/work-manifest"
+import type {
+  EditorManifestResponse,
+  ReaderManifestResponse
+} from "../../shared/types/work-manifest"
+
+const readerManifest = {
+  alternate_media: {
+    media_type: "faksimil",
+    pages: [{ page_index: 0, page_name: "1" }]
+  },
+  author_id: "SöderbergH",
+  contributors: [{
+    author_id: "SöderbergH",
+    full_name: "Hjalmar Söderberg",
+    author_type: null,
+    role: null
+  }],
+  declared_page_count: 2,
+  display_title: "Doktor Glas",
+  editor_work_id: "lb-editor-doktor-glas",
+  end_page_name: "2",
+  full_title: "Doktor Glas. Roman",
+  has_dramawebben: false,
+  has_nya_vagar: false,
+  imprint_year: "1905",
+  is_drama: false,
+  media_type: "etext",
+  page_step: 1,
+  pages: [
+    { page_index: 0, page_name: "1" },
+    { page_index: 1, page_name: "2" }
+  ],
+  parts: [],
+  searchable: true,
+  start_page_name: "1",
+  title_path: "DoktorGlas",
+  urn: "urn:nbn:se:lb-lb-reader-doktor-glas",
+  work_id: "lb-reader-doktor-glas"
+} satisfies ReaderManifestResponse
+
+const facsimileReaderManifest = {
+  ...readerManifest,
+  alternate_media: {
+    media_type: "etext",
+    pages: readerManifest.pages
+  },
+  media_type: "faksimil",
+  pages: [
+    { image_number: 1, page_index: 0, page_name: "1" },
+    { image_number: 2, page_index: 1, page_name: "2" }
+  ],
+  preferred_size: 3,
+  sizes: [{ size: 3, width: 625 }]
+} satisfies ReaderManifestResponse
 
 const completeManifest = {
   status: "complete",
@@ -84,6 +137,77 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+describe("generated Reader manifest client", () => {
+  test("preserves a valid Reader manifest", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json(readerManifest)))
+    stubConfig()
+
+    const manifest = await fetchReaderManifest(
+      {} as H3Event,
+      "SöderbergH",
+      "DoktorGlas",
+      "etext"
+    )
+
+    expect(manifest).toEqual(readerManifest)
+  })
+
+  test.each([
+    ["an empty object", {}],
+    ["an unknown media discriminant", { ...readerManifest, media_type: "pdf" }],
+    ["the wrong requested media", facsimileReaderManifest],
+    ["a mismatched requested author", {
+      ...readerManifest,
+      author_id: "BoyeK",
+      contributors: [{ ...readerManifest.contributors[0], author_id: "BoyeK" }]
+    }],
+    ["a mismatched requested title", { ...readerManifest, title_path: "Främlingarna" }],
+    ["an invalid contributor", { ...readerManifest, contributors: [{}] }],
+    ["an invalid page", {
+      ...readerManifest,
+      pages: [{ page_index: -1, page_name: "1" }]
+    }],
+    ["an invalid alternate-media page", {
+      ...readerManifest,
+      alternate_media: {
+        media_type: "faksimil",
+        pages: [{ page_index: 0, page_name: "" }]
+      }
+    }],
+    ["an invalid part", {
+      ...readerManifest,
+      parts: [{
+        authors: [],
+        end_page_index: 0,
+        end_page_name: "1",
+        nav_title: null,
+        short_title: null,
+        source_index: 1,
+        start_page_index: 0,
+        start_page_name: "1",
+        title: "Del",
+        title_id: null
+      }]
+    }]
+  ])("maps a 200 Reader manifest containing %s to invalid source", async (
+    _case,
+    body
+  ) => {
+    vi.stubGlobal("fetch", vi.fn(async () => json(body)))
+    stubConfig()
+
+    await expect(fetchReaderManifest(
+      {} as H3Event,
+      "SöderbergH",
+      "DoktorGlas",
+      "etext"
+    )).rejects.toMatchObject({
+      statusCode: 502,
+      statusMessage: "Invalid reader source"
+    })
+  })
+})
+
 describe("generated Editor manifest client", () => {
   test.each([
     [
@@ -153,6 +277,47 @@ describe("generated Editor manifest client", () => {
     if (manifest.status !== "complete") throw new Error("Expected complete Editor manifest")
     expect(manifest.contributors).toEqual(completeManifest.contributors)
     expect(manifest.parts).toEqual(completeManifest.parts)
+  })
+
+  test.each([
+    ["an empty object", {}],
+    ["an unknown status discriminant", { ...completeManifest, status: "partial" }],
+    ["the wrong requested media", { ...completeManifest, media_type: "etext" }],
+    ["a mismatched requested work id", { ...completeManifest, work_id: "lb-editor-other" }],
+    ["an invalid complete contributor", { ...completeManifest, contributors: [{}] }],
+    ["an invalid complete page", {
+      ...completeManifest,
+      pages: [{ page_index: -1, page_name: "1" }]
+    }],
+    ["an invalid public Reader target", {
+      ...completeManifest,
+      public_reader_target: { author_id: "BoyeK" }
+    }],
+    ["zero dense page bounds", {
+      ...boundsOnlyManifest,
+      work_id: "lb-editor-boye",
+      bounds: { kind: "dense", page_count: 0 }
+    }],
+    ["unsorted sparse page bounds", {
+      ...boundsOnlyManifest,
+      work_id: "lb-editor-boye",
+      bounds: { kind: "sparse", page_indexes: [2, 1] }
+    }]
+  ])("maps a 200 Editor manifest containing %s to invalid source", async (
+    _case,
+    body
+  ) => {
+    vi.stubGlobal("fetch", vi.fn(async () => json(body)))
+    stubConfig()
+
+    await expect(fetchEditorManifest(
+      {} as H3Event,
+      "lb-editor-boye",
+      "faksimil"
+    )).rejects.toMatchObject({
+      statusCode: 502,
+      statusMessage: "Invalid Editor source"
+    })
   })
 
   test.each([404, 422])("maps Editor manifest %s to the public Editor 404", async status => {

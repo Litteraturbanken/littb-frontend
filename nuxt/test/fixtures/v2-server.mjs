@@ -3171,6 +3171,9 @@ const server = createServer(async (request, response) => {
       const titlePath = decodeSegment(readerManifestMatch[2])
       if (authorId === null || titlePath === null) return validationError(response)
       await waitForReaderManifestDelay(titlePath)
+      if (titlePath === "EmptyManifestReader") {
+        return sendJson(response, 200, {})
+      }
       if (titlePath === "UnavailableReader") {
         return sendJson(response, 503, {
           error: {
@@ -3211,6 +3214,9 @@ const server = createServer(async (request, response) => {
 
     const workId = decodeSegment(editorManifestMatch[1])
     if (workId === null) return validationError(response)
+    if (workId === "lb-editor-empty-manifest") {
+      return sendJson(response, 200, {})
+    }
     if (workId === "lb-editor-unavailable"
       || (editorMetadataFailure && workId === "lb-editor-doktor")) {
       return sendJson(response, 503, {
