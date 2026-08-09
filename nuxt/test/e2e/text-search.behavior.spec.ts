@@ -1660,6 +1660,64 @@ test("options and more cancellation clear loading and reject stale identity data
   await expect(page.locator("#results .overflow .more").last()).toBeEnabled()
 })
 
+test("page-only navigation reuses the request-equivalent advanced options", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow&avancerad=1")
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+  await request.delete(`${fixture}/_text_search/requests/options`)
+
+  await pushRoute(page, "/s%C3%B6k?fras=overflow&avancerad=1&traffsida=2")
+  await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+  await expect(page.locator("#results .overflow")).toHaveCount(2)
+  await page.getByRole("button", { name: "Visa alternativ för Författarskap" }).click()
+  await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(1)
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(300)
+
+  expect(await requests(request, "options")).toEqual([])
+})
+
+test("page-only navigation retains an equivalent in-flight options request", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow")
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "options", selector: "", delay: 900 }
+  })
+
+  await page.locator("[data-search-advanced]").click()
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+  await pushRoute(page, "/s%C3%B6k?fras=overflow&avancerad=1&traffsida=2")
+  await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+  await expect(page.locator("#results .overflow")).toHaveCount(2)
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+  await page.getByRole("button", { name: "Visa alternativ för Författarskap" }).click()
+  await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(1)
+})
+
+test("page-only navigation retains an equivalent in-flight title-options request", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow&avancerad=1")
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+  await request.delete(`${fixture}/_text_search/requests/options`)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "options", selector: "lag", delay: 900 }
+  })
+
+  await page.locator(".title_select input.select2-search__field").fill("lag")
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+  await pushRoute(page, "/s%C3%B6k?fras=overflow&avancerad=1&traffsida=2")
+  await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+  await expect(page.locator("#results .overflow")).toHaveCount(2)
+  await expect(page.getByRole("option", { name: "Gösta Berlings saga" })).toHaveCount(1)
+  expect(await requests(request, "options")).toHaveLength(1)
+})
+
 test("delayed route owners expose only current selected fallbacks", async ({
   page,
   request

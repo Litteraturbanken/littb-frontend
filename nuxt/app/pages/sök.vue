@@ -580,24 +580,26 @@ const optionsCache = useState<Record<string, OptionsView>>(
 )
 const optionsInFlight = new Map<string, TextSearchOwnedRequest>()
 const optionsRequestOwner = createTextSearchRequestOwner()
+const optionsIdentity = computed(() => textSearchOptionsRequestIdentity(
+  buildTextSearchOptionsRequest(state.value)
+))
 
 async function loadOptions() {
   const requestedState = state.value
-  const identity = textSearchRouteIdentity(requestedState)
+  const body = buildTextSearchOptionsRequest(requestedState)
+  const identity = textSearchOptionsRequestIdentity(body)
   if (optionsCache.value[identity]?.staticComplete || optionsInFlight.has(identity)) return
   const request = optionsRequestOwner.start(identity)
   optionsInFlight.set(identity, request)
-  const body = buildTextSearchOptionsRequest(requestedState)
-  const requestIdentity = textSearchOptionsRequestIdentity(body)
   try {
     const result = await client.POST("/text-search/options", {
       body,
       signal: request.signal
     })
     const accepted = result.response.status === 200
-      ? acceptTextSearchOptionsResponse(result.data, body, requestIdentity)
+      ? acceptTextSearchOptionsResponse(result.data, body, identity)
       : null
-    if (optionsRequestOwner.isCurrent(request, routeIdentity.value) && accepted) {
+    if (optionsRequestOwner.isCurrent(request, optionsIdentity.value) && accepted) {
       optionsCache.value[identity] = optionsView(accepted)
     }
   } catch {
@@ -610,7 +612,7 @@ async function loadOptions() {
 
 const initialOptions = state.value.advanced ? loadOptions() : Promise.resolve()
 await initialOptions
-const options = computed(() => optionsCache.value[routeIdentity.value] ?? null)
+const options = computed(() => optionsCache.value[optionsIdentity.value] ?? null)
 const lastAcceptedAdvancedChronologyBounds = shallowRef({
   yearFrom: options.value?.yearFrom ?? 1800,
   yearTo: options.value?.yearTo ?? 1950
@@ -715,14 +717,14 @@ let failedTitleOptionsRequest: Readonly<{
   titleFilter: string
   titleLimit: 30 | 500
 }> | null = null
-watch(routeIdentity, () => {
+watch(optionsIdentity, () => {
   titleOptionsExpanded.value = false
   titleOptionsFailed.value = false
   failedTitleOptionsRequest = null
 })
 async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) {
   const requestedState = state.value
-  const identity = textSearchRouteIdentity(requestedState)
+  const identity = textSearchOptionsRequestIdentity(buildTextSearchOptionsRequest(requestedState))
   const request = titleRequestOwner.start(identity)
   titleLoading.value = true
   titleOptionsFailed.value = false
@@ -742,7 +744,7 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
     const accepted = result.response.status === 200
       ? acceptTextSearchOptionsResponse(result.data, body, requestIdentity)
       : null
-    if (titleRequestOwner.isCurrent(request, routeIdentity.value) && accepted) {
+    if (titleRequestOwner.isCurrent(request, optionsIdentity.value) && accepted) {
       const current = optionsCache.value[identity]
       optionsCache.value[identity] = {
         ...(current ?? optionsView(accepted, false)),
@@ -751,13 +753,13 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
       }
       titleOptionsExpanded.value = titleLimit === 500
       failedTitleOptionsRequest = null
-    } else if (titleRequestOwner.isCurrent(request, routeIdentity.value)) {
+    } else if (titleRequestOwner.isCurrent(request, optionsIdentity.value)) {
       titleOptionsFailed.value = true
       failedTitleOptionsRequest = { titleFilter, titleLimit }
     }
   } catch (error) {
     if (!(error instanceof DOMException && error.name === "AbortError")) {
-      if (titleRequestOwner.isCurrent(request, routeIdentity.value)) {
+      if (titleRequestOwner.isCurrent(request, optionsIdentity.value)) {
         titleOptionsFailed.value = true
         failedTitleOptionsRequest = { titleFilter, titleLimit }
       }
@@ -959,15 +961,23 @@ function selectedMode(mode: string): boolean {
   return state.value.infix
 }
 
-watch(routeIdentity, cancelTitleOptions, { flush: "sync" })
+watch(
+  [optionsIdentity, () => state.value.advanced],
+  ([identity, advanced], [previousIdentity]) => {
+    if (identity !== previousIdentity || !advanced) cancelTitleOptions()
+  },
+  { flush: "sync" }
+)
 watch(countIdentity, () => {
   countRequestOwner.cancel()
   countInFlight.clear()
 }, { flush: "sync" })
-watch(routeIdentity, () => {
-  optionsRequestOwner.cancel()
-  optionsInFlight.clear()
-  if (state.value.advanced) void loadOptions()
+watch([optionsIdentity, () => state.value.advanced], ([identity, advanced], [previousIdentity]) => {
+  if (identity !== previousIdentity || !advanced) {
+    optionsRequestOwner.cancel()
+    optionsInFlight.clear()
+  }
+  if (advanced) void loadOptions()
 }, { flush: "post" })
 
 const moreHits = shallowRef<Record<string, readonly SearchHitView[]>>({})
