@@ -356,6 +356,18 @@ test("SSR rejects a structurally valid catalog with an unsafe media URL", async 
   await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
 })
 
+test("SSR accepts catalog works with omitted optional range metadata", async ({ request }) => {
+  await setCatalogFailure(request, "omitted-range-field-200")
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const rows = [...document.querySelectorAll("table.contenttable:not(.authors) tr")]
+  expect(rows.map(row => normalizedText(row.textContent))).toEqual(
+    dramawebbenCatalogExpected.plays
+  )
+})
+
 test("SSR keeps #dw on a PDF-primary title while its media action downloads", async ({
   request
 }) => {

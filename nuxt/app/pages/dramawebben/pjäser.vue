@@ -23,6 +23,7 @@ import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import { authorProfilePath } from "~/lib/author-profile"
 import { queryWithoutKey } from "~/lib/dramawebben-query"
+import { catalogSourceInfoKey } from "~/lib/dramawebben-source-info"
 import { canonicalNuxtHref } from "~/lib/internal-navigation"
 import { readerSourceInfoIsOpen } from "~/lib/reader-routes"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
@@ -163,7 +164,7 @@ function isCatalogWork(value: unknown): value is CatalogWork {
   ]
   return hasCatalogWorkIdentity(value)
     && hasCatalogWorkCollections(value)
-    && rangeFields.every(field => isMetric(value[field.key]))
+    && rangeFields.every(field => value[field.key] === undefined || isMetric(value[field.key]))
     && Object.keys(value).every(key => keys.includes(key))
 }
 
@@ -239,7 +240,6 @@ function sourceInfoIdentityFromMedia(media: CatalogMedia) {
 
 const route = useRoute()
 const router = useRouter()
-const nuxtApp = useNuxtApp()
 const config = useRuntimeConfig()
 const requestFetch = useRequestFetch()
 const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
@@ -257,32 +257,48 @@ const sourceInfoIdentity = computed(() => {
     : null
 })
 const sourceInfoRequestIdentity = computed(() => sourceInfoIdentity.value
-  ? `${sourceInfoIdentity.value.authorId}|${sourceInfoIdentity.value.titlePath}`
+  ? catalogSourceInfoKey(sourceInfoIdentity.value)
   : "")
 const initialSourceInfoRequested = sourceInfoIdentity.value !== null
 type CatalogSourceInfoResult =
   | { status: "success", identity: string, sourceInfo: ReaderSourceInfo }
   | { status: "error", identity: string }
 
+let sourceInfoController: AbortController | null = null
+const retainedSourceInfo = shallowRef<CatalogSourceInfoResult | null>(null)
 const sourceInfoFetch = await useAsyncData<CatalogSourceInfoResult>(
-  "dramawebben-source-info",
-  async () => {
+  computed(() => `dramawebben-source-info:${sourceInfoRequestIdentity.value}`),
+  async (_nuxtApp, { signal }) => {
+    sourceInfoController?.abort()
     const identity = sourceInfoIdentity.value
     const requestIdentity = sourceInfoRequestIdentity.value
     if (!identity) return { status: "error" as const, identity: requestIdentity }
+    const retained = retainedSourceInfo.value
+    if (retained?.status === "success" && retained.identity === requestIdentity) {
+      return retained
+    }
+    const controller = new AbortController()
+    sourceInfoController = controller
     try {
       const sourceInfo = await requestFetch<ReaderSourceInfo>(
         "/api/reader/source-info/"
         + [identity.authorId, identity.titlePath].map(encodeURIComponent).join("/"),
-        { retry: 0 }
+        { retry: 0, signal: AbortSignal.any([signal, controller.signal]) }
       )
-      return { status: "success" as const, identity: requestIdentity, sourceInfo }
+      const result = { status: "success" as const, identity: requestIdentity, sourceInfo }
+      retainedSourceInfo.value = result
+      return result
     } catch {
       return { status: "error" as const, identity: requestIdentity }
+    } finally {
+      if (sourceInfoController === controller) sourceInfoController = null
     }
   },
   { immediate: initialSourceInfoRequested }
 )
+if (sourceInfoFetch.data.value?.status === "success") {
+  retainedSourceInfo.value = sourceInfoFetch.data.value
+}
 
 const sourceInfo = computed(() => {
   const current = sourceInfoFetch.data.value
@@ -302,20 +318,13 @@ const sourceInfoLoading = computed(() => sourceInfoIdentity.value !== null
 const sourceInfoOpen = computed(() => sourceInfoIdentity.value !== null)
 
 watch(sourceInfoRequestIdentity, identity => {
-  if (!identity || (import.meta.client && nuxtApp.isHydrating)) return
-  const current = sourceInfoFetch.data.value
-  if (!current || current.identity !== identity || current.status === "error") {
+  if (!identity) {
+    sourceInfoController?.abort()
+  } else if (!initialSourceInfoRequested) {
     void sourceInfoFetch.execute()
   }
-})
-
-onMounted(() => {
-  const identity = sourceInfoRequestIdentity.value
-  const current = sourceInfoFetch.data.value
-  if (identity && (!current || current.identity !== identity)) {
-    void sourceInfoFetch.execute()
-  }
-})
+}, { flush: "sync" })
+onBeforeUnmount(() => sourceInfoController?.abort())
 
 let sourceInfoTrigger: HTMLElement | null = null
 

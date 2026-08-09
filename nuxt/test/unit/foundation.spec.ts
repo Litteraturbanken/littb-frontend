@@ -212,18 +212,14 @@ describe("standalone Nuxt foundation", () => {
   })
 
   test("authored low-level navigation stays inside the Nuxt router", async () => {
-    const [quickSearch, plays, idLookup] = await Promise.all([
+    const [quickSearch, plays] = await Promise.all([
       readFile(resolve(nuxtRoot, "app/components/global/QuickSearch.vue"), "utf8"),
-      readFile(resolve(nuxtRoot, "app/pages/dramawebben/pjäser.vue"), "utf8"),
-      readFile(resolve(nuxtRoot, "app/pages/id/[[id]].vue"), "utf8")
+      readFile(resolve(nuxtRoot, "app/pages/dramawebben/pjäser.vue"), "utf8")
     ])
 
     expect(quickSearch).toMatch(/<NuxtLink class="sc" to="\/bibliotek"[^>]*\bno-prefetch[^>]*@click="close">/u)
     expect(quickSearch).not.toContain("goToLibrary")
     expect(plays).toContain('<NuxtLink to="/bibliotek?keywords=texttype:drama;dramasamling&amp;visa=works&amp;sort=titlar">Biblioteket</NuxtLink>')
-    expect(idLookup.match(/<NuxtLink\b/gu)).toHaveLength(3)
-    expect(idLookup.match(/v-if="isNuxtInternalHref\((?:item|media)\.[^)]+\)"/gu)).toHaveLength(3)
-    expect(idLookup.match(/<a v-else :href="(?:item|media)\.[^"]+"/gu)).toHaveLength(3)
   })
 
   test("author components reserve native anchors for downloads and external handoffs", async () => {

@@ -3439,6 +3439,7 @@ const server = createServer(async (request, response) => {
       "status-503",
       "malformed-200",
       "unsafe-media-url-200",
+      "omitted-range-field-200",
       "pdf-primary-200",
       "long-mixed-media-author-200"
     ])
@@ -4558,6 +4559,11 @@ const server = createServer(async (request, response) => {
     if (dramawebbenCatalogFailure === "unsafe-media-url-200") {
       const catalog = dramawebbenCatalogFixture()
       catalog.works[0].media[0].url = "javascript:alert('unsafe-media-url-probe')"
+      return sendJson(response, 200, catalog)
+    }
+    if (dramawebbenCatalogFailure === "omitted-range-field-200") {
+      const catalog = dramawebbenCatalogFixture()
+      delete catalog.works[0].number_of_pages
       return sendJson(response, 200, catalog)
     }
     if (dramawebbenCatalogFailure === "pdf-primary-200") {

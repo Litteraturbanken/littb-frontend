@@ -499,6 +499,36 @@ test("direct source-information query survives hydration, Escape, Back, and Forw
   expect(problems).toEqual([])
 })
 
+test("changing source-information identity aborts the obsolete request", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_source_info_delays`, {
+    data: { "AlmlöfN|Affarer": 2_000 }
+  })
+  const aborted: string[] = []
+  page.on("requestfailed", outgoing => {
+    if (new URL(outgoing.url()).pathname.includes("/api/reader/source-info/Alml%C3%B6fN/Affarer")) {
+      aborted.push(outgoing.failure()?.errorText ?? "unknown")
+    }
+  })
+  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+
+  void routerPush(
+    page,
+    "/dramawebben/pj%C3%A4ser?om-boken&authorid=Alml%C3%B6fN&titlepath=Affarer"
+  )
+  await expect.poll(async () => (await sourceInfoRequests(request)).length).toBe(1)
+  await routerPush(
+    page,
+    "/dramawebben/pj%C3%A4ser?om-boken&authorid=WahlenbergA&titlepath=Cendrillon"
+  )
+
+  await expect(page.getByRole("dialog", { name: "Om boken", exact: true }))
+    .toContainText("Cendrillon")
+  await expect.poll(() => aborted).not.toEqual([])
+})
+
 test("Cendrillon infopost renders its linked provenance, attribution, and live fact order", async ({
   page
 }) => {
