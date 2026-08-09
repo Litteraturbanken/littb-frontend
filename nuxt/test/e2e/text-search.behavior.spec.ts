@@ -938,6 +938,46 @@ test("author facets and Visa alla own only sok_filter", async ({ page, request }
   await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
 })
 
+test("a direct author-filtered load keeps the unfiltered navigator and pager basis", async ({
+  page,
+  request
+}) => {
+  await openSearch(
+    page,
+    "/s%C3%B6k?fras=frihet&sok_filter=StrindbergA"
+  )
+
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true }))
+    .toHaveCount(0)
+
+  const navigator = page.locator(".navigator")
+  await expect(navigator.getByRole("button")).toHaveText([
+    "Visa alla",
+    "Strindberg, August",
+    "Lagerlöf, Selma"
+  ])
+  await expect(navigator.getByRole("button", { name: "Strindberg, August" }))
+    .toHaveClass(/selected/)
+
+  const pager = page.locator("#toolkit .littb_pager")
+  await expect(pager.locator(".hits")).toHaveText("3")
+  await expect(pager).toContainText("Visar verk 1-2 av 2, sida 1 av 1.")
+
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
+  const resultBodies = (await requests(request, "results")).map(entry => entry.body)
+  expect(resultBodies).toContainEqual(expect.objectContaining({
+    query: "frihet",
+    page: 1,
+    facet_author_id: "StrindbergA"
+  }))
+  expect(resultBodies).toContainEqual(expect.objectContaining({
+    query: "frihet",
+    page: 1
+  }))
+  expect(resultBodies.filter(body => !Object.hasOwn(body, "facet_author_id"))).toHaveLength(1)
+})
+
 test("author filtering keeps the main search pager totals", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet")
   const pager = page.locator("#toolkit .littb_pager")

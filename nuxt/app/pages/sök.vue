@@ -387,6 +387,63 @@ const navigatorSnapshot = shallowRef<Readonly<{
   facets: readonly SearchFacetView[]
   totalWorks: number
 }> | null>(null)
+const navigatorSnapshotInFlight = new Map<string, TextSearchOwnedRequest>()
+const navigatorSnapshotRequestOwner = createTextSearchRequestOwner()
+watch(navigatorIdentity, navigatorSnapshotRequestOwner.cancel, { flush: "sync" })
+
+async function loadNavigatorSnapshot() {
+  const requestedState = {
+    ...state.value,
+    page: 1,
+    facetAuthorId: null
+  }
+  if (!requestedState.phrase || state.value.facetAuthorId === null) return
+  const identity = navigatorIdentity.value
+  if (
+    navigatorSnapshot.value?.identity === identity
+    || navigatorSnapshotInFlight.has(identity)
+  ) return
+  const request = navigatorSnapshotRequestOwner.start(identity)
+  navigatorSnapshotInFlight.set(identity, request)
+  const body = buildTextSearchResultsRequest(requestedState)
+  const requestIdentity = textSearchResultsRequestIdentity(body)
+  try {
+    const result = await client.POST("/text-search/results", { body, signal: request.signal })
+    const accepted = result.response.status === 200
+      ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
+      : null
+    if (
+      navigatorSnapshotRequestOwner.isCurrent(request, navigatorIdentity.value)
+      && accepted
+    ) {
+      const view = resultsView(accepted, requestedState)
+      navigatorSnapshot.value = {
+        identity,
+        facets: view.facets,
+        totalWorks: view.totalWorks
+      }
+    }
+  } catch {
+    // Failed and aborted requests remain retryable after route re-entry.
+  } finally {
+    if (navigatorSnapshotInFlight.get(identity) === request) {
+      navigatorSnapshotInFlight.delete(identity)
+    }
+    navigatorSnapshotRequestOwner.finish(request)
+  }
+}
+
+watch(
+  [navigatorIdentity, () => state.value.facetAuthorId],
+  ([identity, facetAuthorId]) => {
+    if (
+      import.meta.client
+      && facetAuthorId !== null
+      && navigatorSnapshot.value?.identity !== identity
+    ) void loadNavigatorSnapshot()
+  },
+  { immediate: true, flush: "post" }
+)
 watch(
   [displayPrimary, primaryIdentity, navigatorIdentity, () => state.value.facetAuthorId],
   ([candidate, identity, stableIdentity, facetAuthorId]) => {
