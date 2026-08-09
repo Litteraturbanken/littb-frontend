@@ -5259,6 +5259,20 @@ const server = createServer(async (request, response) => {
         items: []
       })
     }
+    if (query.query === "malformed-highlight-ids") {
+      const malformed = readerSearchHitResponse(
+        readerHitWork.workId,
+        "brev",
+        query.offset,
+        query.limit,
+        query.mediaType,
+        query
+      )
+      malformed.query = query.query
+      malformed.items[0].highlight.from_word_id = ["w5_1"]
+      malformed.items[0].highlight.to_word_id = ["w5_2"]
+      return sendJson(response, 200, malformed)
+    }
     return sendJson(response, 200, readerSearchHitResponse(
       readerHitWork.workId,
       query.query,

@@ -586,6 +586,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value)
 }
 
+function isSafeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value)
+}
+
+function isBoundedString(value: unknown, minimum: number): value is string {
+  return typeof value === "string" && value.length >= minimum && value.length <= 100
+}
+
 function wordPosition(value: string, currentWorkId: string): {
   ordinal: number
   page: number | null
@@ -610,23 +618,22 @@ function wordPosition(value: string, currentWorkId: string): {
 
 function isWorkSearchHitShape(value: unknown): value is WorkSearchHit {
   if (!isRecord(value) || !isRecord(value.highlight)) return false
-  return typeof value.index === "number"
-    && Number.isSafeInteger(value.index)
-    && typeof value.page_name === "string"
-    && value.page_name.length >= 1
-    && typeof value.page_index === "number"
-    && Number.isSafeInteger(value.page_index)
+  return isSafeInteger(value.index)
+    && isBoundedString(value.page_name, 1)
+    && isSafeInteger(value.page_index)
+    && isBoundedString(value.highlight.from_word_id, 0)
+    && isBoundedString(value.highlight.to_word_id, 0)
 }
 
 function hitRangeIsValid(hit: WorkSearchHit, currentWorkId: string): boolean {
-  const from = wordPosition(String(hit.highlight.from_word_id ?? ""), currentWorkId)
-  const to = wordPosition(String(hit.highlight.to_word_id ?? ""), currentWorkId)
+  const from = wordPosition(hit.highlight.from_word_id, currentWorkId)
+  const to = wordPosition(hit.highlight.to_word_id, currentWorkId)
   return Boolean(from && to && from.scope === to.scope && from.ordinal <= to.ordinal)
 }
 
 function hitMatchesEditorPageRange(hit: WorkSearchHit, current: EditorReaderPage): boolean {
   if (hit.page_index < 0 || hit.page_index >= (current.pageCount ?? 0)) return false
-  const from = wordPosition(String(hit.highlight.from_word_id ?? ""), current.workId)
+  const from = wordPosition(hit.highlight.from_word_id, current.workId)
   if (!from) return false
   if (from.page === null) return true
   return current.mediaType === "etext"
@@ -719,7 +726,10 @@ const hitFetch = await useAsyncData(
         return { status: "error" as const, identity }
       }
       return { status: "success" as const, identity, response: result.data }
-    } catch {
+    } catch (error) {
+      if (isAbortError(error) || identity !== searchRequestIdentity.value) {
+        return { status: "inactive" as const, identity }
+      }
       return { status: "error" as const, identity }
     } finally {
       if (hitFetchController === controller) hitFetchController = null
@@ -733,6 +743,10 @@ const hitResponse = computed(() => {
   return current?.status === "success" && current.identity === searchRequestIdentity.value
     ? current.response
     : null
+})
+const hitRequestFailed = computed(() => {
+  const current = hitFetch.data.value
+  return current?.status === "error" && current.identity === searchRequestIdentity.value
 })
 const activeHit = computed(() => {
   const state = searchState.value
@@ -1140,7 +1154,7 @@ useHead(() => ({
           :active-hit="activeHit"
           :close-href="searchCloseHref"
           :current-page-name="page?.pageName ?? null"
-          :failed="hitFetch.data.value?.status === 'error'"
+          :failed="hitRequestFailed"
           :loading="hitFetch.status.value === 'pending'"
           :next-href="nextHitHref"
           :next-hit="nextHit"
@@ -1158,7 +1172,7 @@ useHead(() => ({
           :active-hit="activeHit"
           :close-href="searchCloseHref"
           :current-page-name="page?.pageName ?? null"
-          :failed="hitFetch.data.value?.status === 'error'"
+          :failed="hitRequestFailed"
           :interactive="false"
           :loading="hitFetch.status.value === 'pending'"
           :next-href="nextHitHref"

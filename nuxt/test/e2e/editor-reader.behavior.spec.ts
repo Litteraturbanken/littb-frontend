@@ -388,6 +388,86 @@ test("editor Reader search state fails closed on mismatched identity and backend
   }
 })
 
+test("editor Reader rejects non-string highlight identifiers", async ({ page }) => {
+  await page.goto(
+    "/editor/lb8345227/ix/4/f?s_query=malformed-highlight-ids" +
+    "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
+    "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2",
+    { waitUntil: "networkidle" }
+  )
+
+  const navigation = page.getByRole("navigation", { name: "Sökträffsnavigering" })
+  await expect(navigation).toContainText("Sökträffen kunde inte hämtas.")
+  await expect(page.locator(".editor-reader .markee")).toHaveCount(0)
+})
+
+test("superseded Editor hit requests cannot surface as current failures", async ({
+  page,
+  request
+}) => {
+  await page.goto("/editor/lb8345227/ix/4/f", { waitUntil: "networkidle" })
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await request.put(`${fixture}/_reader_hit_delays`, { data: {
+    "lb8345227|brev|0|3|false|true|false|false": 700,
+    "lb8345227|brev|0|3|false|true|true|false": 500
+  } })
+  const hitUrl = (prefix: boolean) => (
+    "/editor/lb8345227/ix/4/f?s_query=brev" +
+    "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
+    "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2" +
+    (prefix ? "&s_prefix=true" : "")
+  )
+  try {
+    await page.evaluate(url => {
+      const nuxt = (window as typeof window & { useNuxtApp?: () => {
+        $router: { push: (target: string) => Promise<unknown> }
+      } }).useNuxtApp?.()
+      void nuxt?.$router.push(url)
+    }, hitUrl(false))
+    await expect.poll(async () => (
+      await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    ).requests.length).toBe(1)
+
+    await page.evaluate(() => {
+      const state = window as typeof window & { __editorHitFailureSeen?: boolean }
+      state.__editorHitFailureSeen = false
+      const navigation = document.querySelector('[aria-label="Sökträffsnavigering"]')
+      if (!navigation) throw new Error("Editor hit navigation was not rendered")
+      const recordFailure = () => {
+        if (navigation.textContent?.includes("Sökträffen kunde inte hämtas.")) {
+          state.__editorHitFailureSeen = true
+        }
+      }
+      new MutationObserver(recordFailure).observe(navigation, {
+        childList: true,
+        characterData: true,
+        subtree: true
+      })
+    })
+
+    await page.evaluate(url => {
+      const nuxt = (window as typeof window & { useNuxtApp?: () => {
+        $router: { push: (target: string) => Promise<unknown> }
+      } }).useNuxtApp?.()
+      void nuxt?.$router.push(url)
+    }, hitUrl(true))
+    await expect.poll(async () => (
+      await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    ).requests.length).toBe(2)
+    await page.waitForTimeout(100)
+    expect(await page.evaluate(() => (
+      (window as typeof window & { __editorHitFailureSeen?: boolean }).__editorHitFailureSeen
+    ))).toBe(false)
+
+    const navigation = page.getByRole("navigation", { name: "Sökträffsnavigering" })
+    await expect(navigation).not.toContainText("Sökträffen kunde inte hämtas.")
+    await expect(navigation).toContainText("357 sökträffar")
+    await expect(page.locator("#w5_1.markee")).toHaveCount(1)
+  } finally {
+    await request.delete(`${fixture}/_reader_hit_delays`)
+  }
+})
+
 for (const action of ["change options", "close the panel"] as const) {
   test(`editor Reader cancels a pending work search when users ${action}`, async ({
     page,
