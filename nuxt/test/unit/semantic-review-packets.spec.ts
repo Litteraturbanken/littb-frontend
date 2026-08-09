@@ -29,7 +29,7 @@ function packetFor(sources: ReturnType<typeof source>[]) {
 }
 
 describe("semantic review packets", () => {
-  test("keeps a named unit fingerprint stable across unrelated line movement", () => {
+  test("invalidates a named unit fingerprint when physical evidence locations move", () => {
     const originalSources = [source("app/lib/books.ts", [
       "export function loadBooks() {",
       "  return ['Doktor Glas']",
@@ -44,7 +44,7 @@ describe("semantic review packets", () => {
     ].join("\n"))]
 
     expect(fingerprintPacket(packetFor(originalSources), originalSources))
-      .toBe(fingerprintPacket(packetFor(movedSources), movedSources))
+      .not.toBe(fingerprintPacket(packetFor(movedSources), movedSources))
   })
 
   test("invalidates the fingerprint on implementation, ownership, contract, or neighbor changes", () => {

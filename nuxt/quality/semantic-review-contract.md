@@ -18,4 +18,6 @@ For the packet, answer:
 
 Every finding must identify the packet, repository-relative path, owned unit ID, current line, severity, category, concrete consequence, evidence, and a specific safer or simpler alternative. Use `critical`, `important`, `minor`, or `question` severity. A metric, style preference, or speculative redesign is not evidence.
 
+Packet fingerprints include owned physical line ranges as well as canonical source. Moving a reviewed unit therefore invalidates its evidence so every cited current line remains independently verifiable.
+
 Return `approved` only when there are no unresolved Critical or Important findings. Distinguish confirmed defects, questions requiring product authority, and deterministic-tool false positives. The reviewer identity must differ from the implementation author recorded in the evidence.

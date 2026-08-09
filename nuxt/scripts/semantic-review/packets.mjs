@@ -30,6 +30,7 @@ function ownedManifest(packet, sources) {
     return {
       id,
       exported: entry.unit.exported === true,
+      lines: lineRanges(entry.unit),
       source: canonicalUnitSource(entry.source.source, entry.unit)
     }
   })
@@ -60,7 +61,7 @@ function lineRanges(unit) {
 export function fingerprintPacket(packet, sources) {
   const manifest = ownedManifest(packet, sources)
   const canonical = {
-    contractVersion: 2,
+    contractVersion: 3,
     id: packet.id,
     roots: sorted(packet.rootUnitIds),
     owned: manifest.owned,
