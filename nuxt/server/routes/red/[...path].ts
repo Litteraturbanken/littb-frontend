@@ -13,10 +13,25 @@ import { assertProxyMethod } from "../../utils/backend-proxy"
 const contentRequestHeaderNames = [
   "accept",
   "cache-control",
+  "if-match",
   "if-modified-since",
   "if-none-match",
   "if-range",
+  "if-unmodified-since",
+  "pragma",
   "range"
+] as const
+
+const hopByHopResponseHeaderNames = [
+  "connection",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "proxy-connection",
+  "te",
+  "trailer",
+  "transfer-encoding",
+  "upgrade"
 ] as const
 
 function contentRequestHeaders(event: H3Event): Headers {
@@ -26,6 +41,20 @@ function contentRequestHeaders(event: H3Event): Headers {
     if (value !== undefined) headers.set(name, value)
   }
   return headers
+}
+
+function stripUnsafeResponseHeaders(event: H3Event, response: Response): void {
+  const connectionHeaderNames = response.headers.get("connection")
+    ?.split(",")
+    .map(name => name.trim())
+    .filter(Boolean) ?? []
+  for (const name of [
+    "set-cookie",
+    ...hopByHopResponseHeaderNames,
+    ...connectionHeaderNames
+  ]) {
+    removeResponseHeader(event, name)
+  }
 }
 
 function safeProxyPath(value: string | undefined): string {
@@ -50,7 +79,7 @@ export default defineEventHandler((event) => {
   const target = `${contentBase}/red/${path}${getRequestURL(event).search}`
   return sendProxy(event, target, {
     headers: contentRequestHeaders(event),
-    fetchOptions: { method: event.method },
-    onResponse: event => removeResponseHeader(event, "set-cookie")
+    fetchOptions: { method: event.method, redirect: "manual" },
+    onResponse: stripUnsafeResponseHeaders
   })
 })

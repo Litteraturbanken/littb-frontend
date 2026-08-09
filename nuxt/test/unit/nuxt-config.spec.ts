@@ -85,6 +85,16 @@ describe("external reader source proxy", () => {
   })
 })
 
+describe("red content proxy boundary", () => {
+  test("leaves red requests to the hardened Nitro route in development", async () => {
+    vi.stubEnv("LITTB_CONTENT_PROXY_TARGET", "https://content.example.test")
+
+    const config = await loadConfig()
+
+    expect(Object.keys(config.vite.server.proxy)).not.toContain("^/red(?:/|$)")
+  })
+})
+
 describe("Reader source-information auto-import boundary", () => {
   test("scans the public facade without registering its direct-import modules twice", async () => {
     const config = await loadConfig()

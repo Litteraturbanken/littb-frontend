@@ -60,7 +60,7 @@ export default defineConfig({
         + `NUXT_CONTENT_BASE=${fixtureOrigin} `
         + `NUXT_READER_SOURCE_BASE=${fixtureOrigin} `
         + `READER_SOURCE_PROXY_TARGET=${fixtureOrigin} `
-        + `LITTB_CONTENT_PROXY_TARGET=${fixtureOrigin} yarn dev --port ${nuxtPort}`,
+        + `yarn dev --port ${nuxtPort}`,
       url: `${nuxtOrigin}/_nuxt/@vite/client`,
       reuseExistingServer: false,
       timeout: 120_000

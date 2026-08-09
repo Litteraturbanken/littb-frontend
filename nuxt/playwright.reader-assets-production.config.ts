@@ -27,8 +27,7 @@ export default defineConfig({
     },
     {
       command:
-        `LITTB_CONTENT_PROXY_TARGET=${fixtureOrigin} `
-        + `READER_SOURCE_PROXY_TARGET=${fixtureOrigin} `
+        `READER_SOURCE_PROXY_TARGET=${fixtureOrigin} `
         + `LITTERATURKARTAN_PROXY_TARGET=${fixtureOrigin} `
         + "yarn build && "
         + `PORT=${nuxtPort} `

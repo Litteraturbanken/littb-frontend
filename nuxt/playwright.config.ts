@@ -82,7 +82,6 @@ export default defineConfig({
         `NUXT_DEPLOYMENT_ENVIRONMENT=staging ` +
         `NUXT_DEPLOYMENT_GIT_SHA=${"a".repeat(40)} ` +
         `READER_SOURCE_PROXY_TARGET=${fixtureOrigin} ` +
-        `LITTB_CONTENT_PROXY_TARGET=${fixtureOrigin} ` +
         `NUXT_IGNORE_LOCK=1 yarn dev --port ${nuxtPort}`,
       url: `${nuxtOrigin}/_nuxt/@vite/client`,
       reuseExistingServer: false,

@@ -1,7 +1,6 @@
 import { resolve } from "node:path"
 
 const apiProxyTarget = process.env.LBAPI_PROXY_TARGET || "http://127.0.0.1:8000"
-const contentProxyTarget = process.env.LITTB_CONTENT_PROXY_TARGET || "https://red.litteraturbanken.se"
 const litteraturkartanProxyTarget = process.env.LITTERATURKARTAN_PROXY_TARGET || "https://litteraturbanken.se"
 const readerSourceProxyTarget = process.env.READER_SOURCE_PROXY_TARGET || "https://litteraturbanken.se"
 const forwardedHostHeaders = (target: string): Record<string, string> => ({
@@ -140,10 +139,6 @@ export default defineNuxtConfig({
           ...(legacyApiProxyOverride
             ? {}
             : { rewrite: path => path.replace(/^\/api(?=\/|$)/, "") })
-        },
-        "^/red(?:/|$)": {
-          target: contentProxyTarget,
-          changeOrigin: true
         },
         "^/(?:txt|bilder)(?:/|$)": {
           target: readerSourceProxyTarget,
