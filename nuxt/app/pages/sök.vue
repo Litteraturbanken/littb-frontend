@@ -1038,11 +1038,32 @@ const resultRows = computed<readonly ResultRowView[]>(() => {
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(mainSearchTotalWorks.value / 30)))
-const displayedTotalPages = computed(() => Math.ceil(mainSearchTotalWorks.value / 30))
-const firstVisibleWork = computed(() => (state.value.page - 1) * 30 + 1)
-const lastVisibleWork = computed(() => mainSearchTotalWorks.value
-  ? Math.min(state.value.page * 30, mainSearchTotalWorks.value)
-  : "")
+const displayedPage = computed(() => Math.min(state.value.page, totalPages.value))
+const visibleWorkCount = computed(() => state.value.facetAuthorId === null
+  ? results.value?.works.length ?? 0
+  : Math.min(30, Math.max(0, mainSearchTotalWorks.value - (displayedPage.value - 1) * 30)))
+const firstVisibleWork = computed(() => visibleWorkCount.value > 0
+  ? (displayedPage.value - 1) * 30 + 1
+  : 0)
+const lastVisibleWork = computed(() => visibleWorkCount.value > 0
+  ? firstVisibleWork.value + visibleWorkCount.value - 1
+  : 0)
+
+function replacePage(page: number) {
+  const query = textSearchPageQuery(rawQuery.value, page)
+  const mutableQuery: LocationQueryRaw = {}
+  for (const [key, value] of Object.entries(query)) {
+    mutableQuery[key] = typeof value === "string" || value == null ? value : [...value]
+  }
+  void router.replace({ name: route.name as string, query: mutableQuery })
+}
+
+watch([displayPrimary, primaryIdentity, totalPages], ([candidate, identity, pageCount]) => {
+  if (import.meta.client && candidate?.identity === identity && candidate.status === 200
+    && state.value.page > pageCount) {
+    replacePage(pageCount)
+  }
+}, { flush: "post" })
 
 function goToPage(page: number) {
   void navigate(textSearchPageQuery(rawQuery.value, page))
@@ -1577,8 +1598,8 @@ v-for="item in [
           </div>
 
           Visar verk {{ firstVisibleWork }}-{{ lastVisibleWork }} av
-          {{ count?.documents ?? results?.totalWorks ?? 0 }}, sida {{ state.page }} av
-          {{ displayedTotalPages }}.
+          {{ count?.documents ?? results?.totalWorks ?? 0 }}, sida {{ displayedPage }} av
+          {{ totalPages }}.
 
           <ul v-if="mainSearchTotalWorks > 1" class="ctrl">
             <li class="arrows">
@@ -1587,7 +1608,7 @@ v-for="item in [
                 rel="next"
                 class="submit btn navicon left"
                 aria-label="Föregående träffsida"
-                :disabled="state.page === 1"
+                :disabled="state.page <= 1"
                 @click="goToPage(state.page - 1)"
               >
                 <i class="fa fa-angle-left" />
@@ -1597,7 +1618,7 @@ v-for="item in [
                 rel="prev"
                 class="submit btn navicon"
                 aria-label="Nästa träffsida"
-                :disabled="state.page === totalPages"
+                :disabled="state.page >= totalPages"
                 @click="goToPage(state.page + 1)"
               >
                 <i class="fa fa-angle-right" />

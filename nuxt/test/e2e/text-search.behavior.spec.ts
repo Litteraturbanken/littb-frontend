@@ -931,6 +931,57 @@ test("left and right keyboard pagination updates the canonical page and restores
   await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
 })
 
+test("zero-result pager uses guarded one-page bounds", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?fras=inga")
+
+  await expect(page.locator("#toolkit .littb_pager"))
+    .toContainText("Visar verk 0-0 av 0, sida 1 av 1.")
+})
+
+test("an accepted out-of-range page replace-canonicalizes without a pager or history loop", async ({
+  page,
+  request
+}) => {
+  await openSearch(page)
+  const historyLength = await page.evaluate(() => history.length)
+  await page.evaluate(() => {
+    const record = window as typeof window & { __pagerSamples?: string[] }
+    record.__pagerSamples = []
+    const toolkit = document.querySelector("#toolkit")
+    if (!toolkit) throw new Error("Missing Search toolkit")
+    const capture = () => {
+      const text = toolkit.querySelector(".littb_pager")?.textContent?.replace(/\s+/gu, " ").trim()
+      if (text) record.__pagerSamples!.push(text)
+    }
+    new MutationObserver(capture).observe(toolkit, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    })
+  })
+
+  await pushRoute(page, "/s%C3%B6k?fras=frihet&traffsida=2")
+
+  await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
+  const pager = page.locator("#toolkit .littb_pager")
+  await expect(pager).toContainText("Visar verk 1-2 av 2, sida 1 av 1.")
+  await expect(pager.getByRole("button", { name: "Nästa träffsida" })).toBeDisabled()
+  await expect.poll(() => page.evaluate(() => history.length)).toBe(historyLength + 1)
+  await expect.poll(async () => (await requests(request, "results")).map(entry => entry.body.page))
+    .toEqual([2, 1])
+  await page.waitForTimeout(200)
+  expect((await requests(request, "results")).map(entry => entry.body.page)).toEqual([2, 1])
+  const samples = await page.evaluate(() => (
+    window as typeof window & { __pagerSamples?: string[] }
+  ).__pagerSamples ?? [])
+  expect(samples.some(text => /Visar verk \d+-\d+ av \d+, sida 2 av 1\./u.test(text)))
+    .toBe(false)
+  expect(samples.some(text => {
+    const range = /Visar verk (\d+)-(\d+)/u.exec(text)
+    return range !== null && Number(range[1]) > Number(range[2])
+  })).toBe(false)
+})
+
 test("keyboard pagination does not intercept arrows inside form controls", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?fras=overflow&traffsida=2")
   await expect(page.locator("#results")).not.toHaveClass(/searching/)
@@ -1638,7 +1689,7 @@ test("SSR hydration is single-fetch and Reader hit destination is navigable", as
 })
 
 test("Search result return restores the exact origin and Reader hit", async ({ page }) => {
-  const origin = "/s%C3%B6k?fras=frihet&traffsida=2&avancerad=1&forfattare=StrindbergA&utm=a+b&repeat=%2f&repeat=%2F"
+  const origin = "/s%C3%B6k?fras=frihet&avancerad=1&forfattare=StrindbergA&utm=a+b&repeat=%2f&repeat=%2F"
   await openSearch(page, origin)
   const readerHref = await page.locator("#results .match a").first().getAttribute("href")
   expect(readerHref).not.toBeNull()

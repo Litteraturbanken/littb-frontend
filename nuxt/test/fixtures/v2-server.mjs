@@ -2227,6 +2227,13 @@ function textSearchResultsResponse(body) {
     }
   }
   const rich = richTextSearchResponse(body)
+  if (body.query === "frihet" && body.page > 1 && hasExactFields(body, [
+    "query", "page", "page_size", "highlight_limit", "prefix", "suffix",
+    "word_form_only", "include_modernized"
+  ])) {
+    rich.works = []
+    return rich
+  }
   if (body.query === "overflow") {
     rich.total_work_hits = 64
     rich.works[0].has_more_highlights = true

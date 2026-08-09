@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 import { parseHTML } from "linkedom"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 
 type TextSearchOperation = "results" | "count" | "options"
 type RecordedRequest = {
@@ -164,7 +164,26 @@ test("hydration preserves the no-hit copy and toolkit", async ({ page }) => {
   expect(document.querySelector("#results table.results")).not.toBeNull()
   expect(document.querySelectorAll("#results table.results tr")).toHaveLength(0)
   expect(document.querySelector(".littb_pager")).not.toBeNull()
+  expect(compactText(document.querySelector(".littb_pager")?.textContent))
+    .toContain("Visar verk 0-0 av 0, sida 1 av 1.")
   expect(document.querySelector(".navigator")).toBeNull()
+})
+
+test("hydration replace-canonicalizes an accepted empty out-of-range result", async ({
+  page,
+  request
+}) => {
+  const response = await page.goto("/s%C3%B6k?fras=frihet&traffsida=2")
+  expect(response?.status()).toBe(200)
+
+  await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
+  const pager = page.locator("#toolkit .littb_pager")
+  await expect(pager).toContainText("Visar verk 1-2 av 2, sida 1 av 1.")
+  await expect(pager.getByRole("button", { name: "Nästa träffsida" })).toBeDisabled()
+  await expect.poll(async () => (await requests(request, "results")).map(entry => entry.body.page))
+    .toEqual([2, 1])
+  await page.waitForTimeout(200)
+  expect((await requests(request, "results")).map(entry => entry.body.page)).toEqual([2, 1])
 })
 
 test("advanced SSR resolves every selected label through its independent options request", async ({
@@ -297,7 +316,7 @@ test("Reader hit indices restart for every work and every hydrated result page",
 }) => {
   for (const route of [
     "/s%C3%B6k?fras=frihet",
-    "/s%C3%B6k?fras=frihet&traffsida=2"
+    "/s%C3%B6k?fras=overflow&traffsida=2"
   ]) {
     const response = await page.goto(route)
     expect(response?.status()).toBe(200)
