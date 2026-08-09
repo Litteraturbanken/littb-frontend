@@ -58,6 +58,7 @@ test("hydrates once and preserves the legacy one-hit, next, previous, and all co
     }
   })
   await page.goto("/författare/StrindbergA/biblinfo", { waitUntil: "networkidle" })
+  await expect(page.getByRole("combobox", { name: "Verk" })).toBeDisabled()
 
   await expect(page.locator(".num_hits")).toHaveText("3 träffar")
   await expect(page.locator(".results > div")).toHaveCount(1)
@@ -148,7 +149,7 @@ test("shows empty and failure states and keeps internal author navigation client
 
   await request.put(`${fixture}/_bibliography_failure`)
   await page.locator("form.search").getByRole("button", { name: "Sök" }).click()
-  await expect(page.locator(".error")).toContainText(
+  await expect(page.getByRole("alert")).toContainText(
     "Den bibliografiska databasen kan inte visas just nu."
   )
 

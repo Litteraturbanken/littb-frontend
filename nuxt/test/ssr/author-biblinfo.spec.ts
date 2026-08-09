@@ -32,6 +32,8 @@ test("SSR renders the author bibliographic database from typed private requests"
     .toEqual(["Introduktion", "Verk", "Dramawebben", "Sök i texterna"])
   expect(document.querySelector('form.search input[placeholder="Fritextsökning i hela databasen"]')
     ?.getAttribute("maxlength")).toBe("200")
+  expect(document.querySelector('form.search select[aria-label="Verk"]')
+    ?.hasAttribute("disabled")).toBe(true)
   expect([...document.querySelectorAll(".page_content input[type=checkbox]")]).toHaveLength(4)
   expect([...document.querySelectorAll(".results > div")]).toHaveLength(1)
   expect(document.querySelector(".results")?.textContent).toContain("Gösta Berlings saga")

@@ -2830,6 +2830,11 @@ body > .header {
     }
 }
 
+.biblinfo_work_filter:disabled {
+    color: inherit;
+    opacity: 1;
+}
+
 .page-id {
     td {
         padding : 3px 5px;

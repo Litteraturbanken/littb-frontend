@@ -309,7 +309,7 @@ useHead({
               maxlength="200"
               placeholder="Fritextsökning i hela databasen"
             ><button type="submit">Sök</button>{{ " " }}
-            <select aria-label="Verk">
+            <select class="biblinfo_work_filter" aria-label="Verk" disabled>
               <option value="">Alla verk</option>
             </select>
           </form>
@@ -328,7 +328,7 @@ useHead({
           <div v-if="searchValidationError" class="error" role="alert">
             {{ searchValidationError }}
           </div>
-          <div v-if="entriesStatus === 'unavailable'" class="error">
+          <div v-if="entriesStatus === 'unavailable'" class="error" role="alert">
             Den bibliografiska databasen kan inte visas just nu.
           </div>
           <div v-else class="results">
