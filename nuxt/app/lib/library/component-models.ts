@@ -1,5 +1,62 @@
 import type { RouteLocationRaw } from "vue-router"
+import type { LibraryFilters } from "./index"
+import type { LibraryCategory, LibraryLanguage, LibraryMedia } from "./filter-options"
 import type { LibraryMode } from "./navigation"
+
+export type LibraryAdvancedControlOption<Value extends string> = Readonly<{
+    value: Value
+    label: string
+    disabled?: boolean
+}>
+
+export type LibraryAdvancedControlGroup<Value extends string> = Readonly<{
+    label: string
+    options: readonly LibraryAdvancedControlOption<Value>[]
+}>
+
+export type LibraryAboutAuthorOption = Readonly<{
+    id: string
+    label: string
+}>
+
+export type LibraryChronologyControlsModel = Readonly<{
+    min: number
+    max: number
+    from: string
+    to: string
+}>
+
+export type LibraryAdvancedControlsModel = Readonly<{
+    advancedOpen: boolean
+    gender: NonNullable<LibraryFilters["gender"]> | ""
+    keywords: readonly LibraryCategory[]
+    narrowingKeywords: readonly LibraryCategory[]
+    aboutAuthorIds: readonly string[]
+    media: readonly LibraryMedia[]
+    languages: readonly LibraryLanguage[]
+    collectionSelectOptions: readonly LibraryAdvancedControlOption<LibraryCategory>[]
+    collectionSelectGroups: readonly LibraryAdvancedControlGroup<LibraryCategory>[]
+    aboutAuthorOptions: readonly LibraryAboutAuthorOption[]
+    mediaSelectOptions: readonly LibraryAdvancedControlOption<LibraryMedia>[]
+    languageSelectOptions: readonly LibraryAdvancedControlOption<LibraryLanguage>[]
+    chronology: LibraryChronologyControlsModel | null
+    standalone: boolean
+    downloadMode: boolean
+    allVisibleSourceWorksSelected: boolean
+}>
+
+export type LibraryAdvancedChange =
+    | Readonly<{
+        field: "gender"
+        value: NonNullable<LibraryFilters["gender"]> | ""
+    }>
+    | Readonly<{ field: "keywords"; value: readonly LibraryCategory[] }>
+    | Readonly<{ field: "narrowingKeywords"; value: readonly LibraryCategory[] }>
+    | Readonly<{ field: "aboutAuthorIds"; value: readonly string[] }>
+    | Readonly<{ field: "media"; value: readonly LibraryMedia[] }>
+    | Readonly<{ field: "languages"; value: readonly LibraryLanguage[] }>
+    | Readonly<{ field: "chronologyDraft"; from: string; to: string }>
+    | Readonly<{ field: "chronologyRange"; value: readonly [number, number] }>
 
 export type LibraryModeTab = Readonly<{
     mode: LibraryMode

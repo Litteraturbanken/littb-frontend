@@ -3,6 +3,9 @@ import type { LocationQuery, RouteLocationRaw } from "vue-router"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import { legacyPaginationItems, type LegacyPaginationItem } from "~/lib/legacy-pagination"
 import type {
+    LibraryAboutAuthorOption,
+    LibraryAdvancedChange,
+    LibraryAdvancedControlsModel,
     LibraryImprintYearTarget,
     LibraryBrowseMode,
     LibraryModeTab,
@@ -59,7 +62,7 @@ import { toLibrarySearchView, type BrowseResult } from "~/lib/library/view-model
 
 definePageMeta({ alias: ["/epub"] })
 
-type LibraryGender = "" | "female" | "male"
+type LibraryGender = LibraryAdvancedControlsModel["gender"]
 
 type LibraryAdvancedFilters = {
     gender: LibraryGender
@@ -72,7 +75,6 @@ type LibraryAdvancedFilters = {
 }
 
 type ImprintBounds = { from: number; to: number }
-type AboutAuthorOption = { id: string; label: string }
 
 type LibraryRouteState = ParsedLibraryRouteState<LibraryAdvancedFilters>
 
@@ -427,9 +429,7 @@ const chronologyBounds = computed<ImprintBounds | null>(() => {
 const aboutAuthorOptionsAvailable = computed(
     () => Array.isArray(libraryOptionsData.value?.about_authors)
 )
-const chronologyFloor = computed(() => chronologyBounds.value?.from ?? 0)
-const chronologyCeiling = computed(() => chronologyBounds.value?.to ?? 0)
-const aboutAuthorOptions = computed<AboutAuthorOption[]>(() =>
+const aboutAuthorOptions = computed<LibraryAboutAuthorOption[]>(() =>
     (libraryOptionsData.value?.about_authors ?? [])
         .map(author => ({ id: author.author_id, label: author.label }))
         .sort((left, right) => left.label.localeCompare(right.label, "sv"))
@@ -536,15 +536,6 @@ const selectedNarrowingKeywords = ref<LibraryCategory[]>([
 const selectedAboutAuthorIds = ref<string[]>([...initialState.advancedFilters.aboutAuthorIds])
 const selectedMedia = ref<LibraryMedia[]>([...initialState.advancedFilters.media])
 const selectedLanguages = ref<LibraryLanguage[]>([...initialState.advancedFilters.languages])
-const narrowingSelectGroups = computed(() =>
-    collectionSelectGroups.map(group => ({
-        ...group,
-        options: group.options.map(option => ({
-            ...option,
-            disabled: selectedKeywords.value.includes(option.value)
-        }))
-    }))
-)
 const chronologyFromDraft = ref(
     String(initialState.advancedFilters.yearRange?.[0] ?? chronologyBounds.value?.from ?? "")
 )
@@ -566,6 +557,31 @@ const hasActiveFilters = computed(() =>
         queryYearRange(`${chronologyFromDraft.value},${chronologyToDraft.value}`)
     )
 )
+const advancedControls = computed<LibraryAdvancedControlsModel>(() => ({
+    advancedOpen: advancedOpen.value,
+    gender: selectedGender.value,
+    keywords: selectedKeywords.value,
+    narrowingKeywords: selectedNarrowingKeywords.value,
+    aboutAuthorIds: selectedAboutAuthorIds.value,
+    media: selectedMedia.value,
+    languages: selectedLanguages.value,
+    collectionSelectOptions,
+    collectionSelectGroups,
+    aboutAuthorOptions: aboutAuthorOptions.value,
+    mediaSelectOptions,
+    languageSelectOptions,
+    chronology: chronologyBounds.value
+        ? {
+            min: chronologyBounds.value.from,
+            max: chronologyBounds.value.to,
+            from: chronologyFromDraft.value,
+            to: chronologyToDraft.value
+        }
+        : null,
+    standalone,
+    downloadMode: downloadMode.value,
+    allVisibleSourceWorksSelected: allVisibleSourceWorksSelected.value
+}))
 const results = ref(
     initialPageData.mode === "all" ? initialPageData.response : emptyLibraryResponse()
 )
@@ -1129,6 +1145,11 @@ function scheduleSearch() {
     beginIntent({ ...currentState(), filter: filter.value, page: 1 }, 300)
 }
 
+function updateFilter(value: string) {
+    filter.value = value
+    scheduleSearch()
+}
+
 function submitSearch() {
     beginIntent({ ...currentState(), filter: filter.value, page: 1 })
 }
@@ -1279,29 +1300,27 @@ async function toggleAdvanced() {
     await router.push({ path: route.path, query })
 }
 
-function commitGender(event: Event) {
-    const value = (event.target as HTMLSelectElement).value
-    if (value !== "" && value !== "female" && value !== "male") return
+function commitGender(value: LibraryGender) {
     selectedGender.value = value
     void pushAdvancedQuery("kön", value)
 }
 
-function commitMedia(values: string[]) {
+function commitMedia(values: readonly string[]) {
     selectedMedia.value = orderedLibraryValues(values, mediaSelectOptions)
     void pushAdvancedQuery("mediatypes", selectedMedia.value.join(","))
 }
 
-function commitKeywords(values: string[]) {
+function commitKeywords(values: readonly string[]) {
     selectedKeywords.value = orderedLibraryValues(values, collectionSelectOptions)
     void pushAdvancedQuery("keywords", selectedKeywords.value.join(","))
 }
 
-function commitNarrowingKeywords(values: string[]) {
+function commitNarrowingKeywords(values: readonly string[]) {
     selectedNarrowingKeywords.value = orderedLibraryValues(values, collectionSelectOptions)
     void pushAdvancedQuery("keywords_aux", selectedNarrowingKeywords.value.join(","))
 }
 
-function commitAboutAuthors(values: string[]) {
+function commitAboutAuthors(values: readonly string[]) {
     selectedAboutAuthorIds.value = orderedLibraryValues(
         values,
         aboutAuthorOptions.value.map(option => ({ value: option.id }))
@@ -1309,21 +1328,15 @@ function commitAboutAuthors(values: string[]) {
     void pushAdvancedQuery("about_authors", selectedAboutAuthorIds.value.join(","))
 }
 
-function commitLanguages(values: string[]) {
+function commitLanguages(values: readonly string[]) {
     selectedLanguages.value = orderedLibraryValues(values, languageSelectOptions)
     void pushAdvancedQuery("languages", selectedLanguages.value.join(","))
 }
 
-function setChronologyDraft(endpoint: "from" | "to", value: string) {
+function setChronologyDraft(from: string, to: string) {
     chronologyDraftDirty.value = true
-    const numeric = Number(value)
-    if (endpoint === "from") {
-        const to = Number(chronologyToDraft.value)
-        chronologyFromDraft.value = String(Number.isFinite(to) ? Math.min(numeric, to) : numeric)
-    } else {
-        const from = Number(chronologyFromDraft.value)
-        chronologyToDraft.value = String(Number.isFinite(from) ? Math.max(numeric, from) : numeric)
-    }
+    chronologyFromDraft.value = from
+    chronologyToDraft.value = to
 }
 
 function resetChronologyDraft() {
@@ -1342,8 +1355,8 @@ function chronologyDraftRange(bounds: ImprintBounds): [number, number] | null {
     return from >= bounds.from && to <= bounds.to && from <= to ? [from, to] : null
 }
 
-async function commitChronologyDraft(endpoint: "from" | "to", value: string) {
-    setChronologyDraft(endpoint, value)
+async function commitChronologyRange(value: readonly [number, number]) {
+    setChronologyDraft(String(value[0]), String(value[1]))
     const bounds = chronologyBounds.value
     if (!bounds) {
         resetChronologyDraft()
@@ -1363,6 +1376,35 @@ async function commitChronologyDraft(endpoint: "from" | "to", value: string) {
     const valueToPersist = from === bounds.from && to === bounds.to ? "" : `${from},${to}`
     await pushAdvancedQuery("intervall", valueToPersist)
     chronologyDraftDirty.value = false
+}
+
+function commitAdvancedChange(change: LibraryAdvancedChange) {
+    switch (change.field) {
+        case "gender":
+            commitGender(change.value)
+            return
+        case "keywords":
+            commitKeywords(change.value)
+            return
+        case "narrowingKeywords":
+            commitNarrowingKeywords(change.value)
+            return
+        case "aboutAuthorIds":
+            commitAboutAuthors(change.value)
+            return
+        case "media":
+            commitMedia(change.value)
+            return
+        case "languages":
+            commitLanguages(change.value)
+            return
+        case "chronologyDraft":
+            setChronologyDraft(change.from, change.to)
+            return
+        case "chronologyRange":
+            void commitChronologyRange(change.value)
+            return
+    }
 }
 
 watch(
@@ -1893,362 +1935,27 @@ onUnmounted(() => {
         </h1>
         <div class="lg:ml-12" :class="{ searching: loading, dl_mode: downloadMode }">
             <div id="controls">
-                <form
-                    class="lg:p-5 p-2 lg:border border-gray-900 w-full lg:max-w-5xl"
-                    @submit.prevent="submitSearch"
+                <LibrarySearchControls
+                    :filter="filter"
+                    :has-active-filters="hasActiveFilters"
+                    :advanced-open="advancedOpen"
+                    @update-filter="updateFilter"
+                    @submit="submitSearch"
+                    @reset="resetSearch"
+                    @toggle-advanced="toggleAdvanced"
                 >
-                    <div class="main_input flex flex-wrap -ml-6 relative mb-8 items-center">
-                        <svg
-                            class="w-6 h-6 relative left-10 top-0 -mt-px"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#7A1400"
-                            stroke-width="1.5"
-                            aria-hidden="true"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                            />
-                        </svg>
-                        <input
-                            v-model="filter"
-                            data-library-filter
-                            class="filter_input border border-gray-500 mr-4 flex-grow py-3 pl-12 pr-4 text-base"
-                            autofocus
-                            placeholder="Skriv författarnamn eller titel"
-                            autocomplete="off"
-                            autocorrect="off"
-                            autocapitalize="none"
-                            spellcheck="false"
-                            @input="scheduleSearch"
-                        >
-                        <button type="submit" class="sr-only" tabindex="-1">Sök</button>
-                        <button
-                            v-show="hasActiveFilters"
-                            type="button"
-                            data-library-reset
-                            class="reset text-gray-700 transition duration-200 w-6 h-6 relative -left-14 top-0 -mr-8 cursor-pointer bg-transparent border-0 p-0"
-                            aria-label="Rensa sökning"
-                            @click="resetSearch"
-                        >
-                            <svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="1.5"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M6 18 18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </button>
-                        <button
-                            type="button"
-                            data-library-advanced
-                            :title="advancedOpen ? 'Enkel sökning' : 'Utökad sökning'"
-                            :aria-expanded="advancedOpen"
-                            aria-controls="library-advanced-panel"
-                            class="bg-white border border-gray-500 self-stretch px-4 focus:ring-1 focus:ring-inset focus:ring-primary"
-                            @click="toggleAdvanced"
-                        >
-                            <span class="uppercase text-xs"
-                                >{{ advancedOpen ? "Dölj" : "Visa" }} utökad sökning</span
-                            >{{ " " }}
-                            <svg
-                                v-if="!advancedOpen"
-                                data-library-filter-icon
-                                class="filter w-6 h-6 relative top-1 inline-block text-gray-700"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke-width="1.5"
-                                stroke="currentColor"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25"
-                                />
-                            </svg>
-                            <svg
-                                v-else
-                                data-library-filter-icon
-                                class="filter w-6 h-6 relative top-1 inline-block text-gray-700"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke-width="1.5"
-                                stroke="currentColor"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12"
-                                />
-                            </svg>
-                        </button>
-                    </div>
-                    <div
-                        v-if="advancedOpen"
-                        id="library-advanced-panel"
-                        data-library-advanced-panel
-                        class="more_container show_more mt-2 mb-4"
-                    >
-                        <div class="title_select_container">
-                            <label
-                                class="library-gender-control select2-container select2-container--default"
-                            >
-                                <span class="sr-only">Författarkön</span>
-                                <select
-                                    :value="selectedGender"
-                                    data-library-gender
-                                    class="gender_select"
-                                    :class="{ 'library-select-placeholder': !selectedGender }"
-                                    aria-label="Författarkön"
-                                    @change="commitGender"
-                                >
-                                    <option value="" :selected="selectedGender === ''">
-                                        Filtrera: kvinnliga / manliga / alla
-                                    </option>
-                                    <option value="female" :selected="selectedGender === 'female'">
-                                        Kvinnliga författare
-                                    </option>
-                                    <option value="male" :selected="selectedGender === 'male'">
-                                        Manliga författare
-                                    </option>
-                                </select>
-                                <span class="selection" aria-hidden="true">
-                                    <span
-                                        data-library-gender-visual
-                                        class="select2-selection select2-selection--single"
-                                    >
-                                        <span
-                                            class="select2-selection__rendered"
-                                            :title="
-                                                selectedGender === ''
-                                                    ? 'Alla författare'
-                                                    : undefined
-                                            "
-                                            >{{
-                                                selectedGender === "female"
-                                                    ? "Kvinnliga författare"
-                                                    : selectedGender === "male"
-                                                      ? "Manliga författare"
-                                                      : "Filtrera: kvinnliga / manliga / alla"
-                                            }}</span
-                                        >
-                                        <span class="select2-selection__arrow"><b /></span>
-                                    </span>
-                                </span>
-                            </label>
-                        </div>
-                        <div class="title_select_container">
-                            <label>
-                                <span class="sr-only">Kategorier och utgivare</span>
-                                <SearchMultiSelect
-                                    data-library-keywords
-                                    class="keyword_select"
-                                    persistent-input-row
-                                    accessible-name="Filtrera: Kategorier / Utgivare"
-                                    :model-value="selectedKeywords"
-                                    :options="collectionSelectOptions"
-                                    :option-groups="collectionSelectGroups"
-                                    :space-after-remove="false"
-                                    placeholder="Filtrera: Kategorier / Utgivare"
-                                    @update:model-value="commitKeywords"
-                                />
-                            </label>
-                        </div>
-                        <div
-                            v-if="!standalone && aboutAuthorOptions.length"
-                            class="title_select_container about_container"
-                        >
-                            <label>
-                                <span class="sr-only">Om ett författarskap</span>
-                                <SearchMultiSelect
-                                    data-library-about-authors
-                                    class="about_select"
-                                    accessible-name="Om ett författarskap"
-                                    :model-value="selectedAboutAuthorIds"
-                                    :options="
-                                        aboutAuthorOptions.map(author => ({
-                                            value: author.id,
-                                            label: author.label
-                                        }))
-                                    "
-                                    placeholder="Om ett författarskap"
-                                    searchable
-                                    internal-search
-                                    persistent-input-row
-                                    @update:model-value="commitAboutAuthors"
-                                />
-                            </label>
-                        </div>
-                        <div v-if="!standalone">
-                            <div class="text-sm mb-4 max-w-sm">
-                                Får du för många träffar? Välj ytterligare samlingar (en eller
-                                flera) i menyn
-                                <span class="sc">AVGRÄNSA SÖKNINGEN</span> här nedanför. Ju fler
-                                samlingar du väljer, desto färre sökträffar får du.
-                            </div>
-                            <label>
-                                <span class="sr-only">Avgränsa sökningen</span>
-                                <SearchMultiSelect
-                                    data-library-narrowing
-                                    class="keyword_select block"
-                                    persistent-input-row
-                                    accessible-name="Avgränsa sökningen"
-                                    :model-value="selectedNarrowingKeywords"
-                                    :options="collectionSelectOptions"
-                                    :option-groups="narrowingSelectGroups"
-                                    :space-after-remove="false"
-                                    placeholder="Avgränsa sökningen"
-                                    @update:model-value="commitNarrowingKeywords"
-                                />
-                            </label>
-                        </div>
-                        <div class="title_select_container">
-                            <label>
-                                <span class="sr-only">Utgivningsformat</span>
-                                <SearchMultiSelect
-                                    data-library-media
-                                    class="keyword_select"
-                                    persistent-input-row
-                                    accessible-name="Utgivningsformat"
-                                    :model-value="selectedMedia"
-                                    :options="mediaSelectOptions"
-                                    :space-after-remove="false"
-                                    placeholder="Utgivningsformat"
-                                    @update:model-value="commitMedia"
-                                />
-                            </label>
-                        </div>
-                        <div class="title_select_container">
-                            <label>
-                                <span class="sr-only">Språk och status</span>
-                                <SearchMultiSelect
-                                    data-library-languages
-                                    class="keyword_select"
-                                    persistent-input-row
-                                    accessible-name="Språk …"
-                                    :model-value="selectedLanguages"
-                                    :options="languageSelectOptions"
-                                    :space-after-remove="false"
-                                    placeholder="Språk …"
-                                    @update:model-value="commitLanguages"
-                                />
-                            </label>
-                        </div>
-                        <div
-                            v-if="!standalone"
-                            class="more ml-[2px] relative"
-                            :class="{ show_more: downloadMode }"
-                        >
-                            <a
-                                data-library-download-mode
-                                role="button"
-                                tabindex="0"
-                                @click.prevent="toggleDownloadMode"
-                                @keydown.enter.prevent="toggleDownloadMode"
-                                @keydown.space.prevent="toggleDownloadMode"
-                            >
-                                <i class="fa fa-download color-black mr-1 text-xs" />{{ " "
-                                }}<span>{{
-                                    downloadMode ? "Stäng källmaterial" : "Ladda ner källmaterial"
-                                }}</span>
-                            </a>
-                        </div>
-                        <div v-if="downloadMode" class="more_container h-8 relative mb-4 show_more">
-                            <button
-                                v-if="!allVisibleSourceWorksSelected"
-                                type="button"
-                                data-library-select-visible
-                                class="sc btn btn-small absolute left"
-                                @click="selectVisibleSourceWorks"
-                            >
-                                Välj alla verk i listan
-                            </button>
-                            <button
-                                v-else
-                                type="button"
-                                data-library-deselect-visible
-                                class="sc btn btn-small absolute left"
-                                @click="deselectVisibleSourceWorks"
-                            >
-                                Avmarkera alla verk i listan
-                            </button>
-                        </div>
-                    </div>
-                    <div class="chronology primarycolor ml-px pl-px">
-                        <i class="fa fa-clock-o mr-1 ml-px" />{{ " " }}
-                        <span class="sc mt-8">Tidslinje: kronologisk sökning</span>
-                    </div>
-                    <div v-if="chronologyBounds" data-library-chronology-range class="flex">
-                        <ChronologyRangeSlider
-                            class="mt-3 slider-large chronology_ranges"
-                            :min="chronologyFloor"
-                            :max="chronologyCeiling"
-                            :from="chronologyFromDraft"
-                            :to="chronologyToDraft"
-                            from-label="Från tryckår reglage"
-                            to-label="Till tryckår reglage"
-                            @draft="setChronologyDraft"
-                            @commit="commitChronologyDraft"
-                            @cancel="resetChronologyDraft"
-                        />
-                        <div class="whitespace-nowrap self-center chronology_inputs">
-                            <span class="text-sm sc">Tryckår: </span>
-                            <input
-                                class="text-sm text-center py-1"
-                                type="text"
-                                :value="chronologyFromDraft"
-                                aria-label="Från tryckår"
-                                @input="
-                                    setChronologyDraft(
-                                        'from',
-                                        ($event.target as HTMLInputElement).value
-                                    )
-                                "
-                                @change="
-                                    commitChronologyDraft(
-                                        'from',
-                                        ($event.target as HTMLInputElement).value
-                                    )
-                                "
-                            >{{ " " }}
-                            <span class="text-sm sc">till </span>
-                            <input
-                                class="text-sm text-center py-1"
-                                type="text"
-                                :value="chronologyToDraft"
-                                aria-label="Till tryckår"
-                                @input="
-                                    setChronologyDraft(
-                                        'to',
-                                        ($event.target as HTMLInputElement).value
-                                    )
-                                "
-                                @change="
-                                    commitChronologyDraft(
-                                        'to',
-                                        ($event.target as HTMLInputElement).value
-                                    )
-                                "
-                            >
-                        </div>
-                    </div>
-                    <div v-else data-library-chronology-unavailable class="text-sm py-1">
-                        Tidslinjen kunde inte hämtas.
-                    </div>
+                    <LibraryAdvancedFilters
+                        :model="advancedControls"
+                        @change="commitAdvancedChange"
+                        @reset-chronology="resetChronologyDraft"
+                        @toggle-download-mode="toggleDownloadMode"
+                        @select-visible-source-works="selectVisibleSourceWorks"
+                        @deselect-visible-source-works="deselectVisibleSourceWorks"
+                    />
                     <div class="btn-group p-0 mt-4 lg:mt-6">
                         <LibraryModeTabs :tabs="libraryModeTabs" />
                     </div>
-                </form>
+                </LibrarySearchControls>
             </div>
             <div class="flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
                 <LibrarySourceDownloadWorkspace
@@ -2329,128 +2036,3 @@ onUnmounted(() => {
         </div>
     </div>
 </template>
-
-<style scoped>
-[data-library-advanced-panel] select {
-    display: block;
-    width: 350px;
-    max-width: 100%;
-    height: 31px;
-    padding: 3px 28px 3px 10px;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    font-family: "Requiem Text SC A", "Requiem Text SC B";
-    font-size: 0.8em;
-    line-height: 1.2;
-    text-transform: lowercase;
-    color: #444;
-    background: white;
-    border: 1px solid #999;
-}
-
-.library-gender-control {
-    position: relative;
-    display: block;
-    width: 350px;
-    max-width: 100%;
-    height: 31px;
-    margin: 5px 0;
-}
-
-[data-library-advanced-panel] .library-gender-control select[data-library-gender] {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    width: 100%;
-    height: 31px;
-    padding: 0;
-    margin: 0;
-    cursor: pointer;
-    opacity: 0;
-}
-
-.library-gender-control .selection {
-    display: block;
-    height: 31px;
-}
-
-.library-gender-control [data-library-gender-visual] {
-    box-sizing: border-box;
-    display: block;
-    width: 100%;
-    height: 31px;
-}
-
-.library-gender-control .select2-selection__rendered {
-    display: inline-flex;
-    align-items: center;
-    height: 28px;
-    padding: 0;
-    overflow: visible;
-    line-height: 28px;
-}
-
-.library-gender-control .select2-selection__arrow {
-    position: absolute;
-    top: 1px;
-    right: 1px;
-    display: block;
-    width: 20px;
-    height: 26px;
-}
-
-.library-gender-control .select2-selection__arrow b {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    margin-top: -2px;
-    margin-left: -4px;
-    border-color: #888 transparent transparent;
-    border-style: solid;
-    border-width: 5px 4px 0;
-}
-
-[data-library-advanced-panel] select.library-select-placeholder {
-    color: #999 !important;
-    opacity: 1;
-}
-
-[data-library-advanced-panel] :deep(.multiselect__input::placeholder),
-[data-library-advanced-panel] :deep(.search-multiselect__input-row) {
-    color: #9e9e9e !important;
-    opacity: 1;
-}
-
-[data-library-advanced-panel] .keyword_select.filter_select {
-    margin-top: 0 !important;
-}
-
-[data-library-advanced-panel] :deep(.select2-selection__arrow.multiselect__select::before) {
-    display: none;
-}
-
-[data-library-advanced-panel] option[data-library-placeholder] {
-    color: #666;
-}
-
-[data-library-chronology-range] .rzslider {
-    position: relative;
-    flex: 1 1 auto;
-    width: 100%;
-    min-width: 0;
-    height: 20px;
-    margin: 8px 1.85rem 3px 0 !important;
-    background: linear-gradient(
-        to right,
-        rgba(122, 20, 0, 0.15) 0 var(--chronology-from),
-        #7a1400 var(--chronology-from) var(--chronology-to),
-        rgba(122, 20, 0, 0.15) var(--chronology-to) 100%
-    );
-    background-position: 10px calc(50% - 2px);
-    background-size: calc(100% - 20px) 8px;
-    background-repeat: no-repeat;
-}
-
-</style>
