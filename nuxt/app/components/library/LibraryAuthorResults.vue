@@ -1,0 +1,94 @@
+<script setup lang="ts">
+import { canonicalNuxtHref } from "../../lib/internal-navigation"
+import type { LibrarySortOption } from "~/lib/library/component-models"
+import type { AuthorSortKey } from "~/lib/library/navigation"
+import type { AuthorBrowseResponse } from "~/lib/library/page-results"
+
+defineProps<{
+    response: AuthorBrowseResponse
+    sortOptions: readonly LibrarySortOption<AuthorSortKey>[]
+    sortReversed: boolean
+    loading: boolean
+    showAll: boolean
+}>()
+const emit = defineEmits<{
+    selectSort: [sort: AuthorSortKey]
+    showAll: []
+}>()
+</script>
+
+<template>
+    <div class="result author pl-0 flex-column min-h-500">
+        <div class="text-base">
+            <div class="inline-block sc mr-2">Sortera:</div>
+            <ul class="part_header top_header mb-4 inline-block">
+                <li v-for="item in sortOptions" :key="item.key" class="inline-block sc">
+                    <NuxtLink
+                        v-slot="{ href }"
+                        custom
+                        :to="item.to"
+                    ><a
+                        :href="href || ''"
+                        class="sort_item"
+                        :class="{ active: item.active }"
+                        :data-library-sort="item.key"
+                        @click.prevent="emit('selectSort', item.key)"
+                        >{{ item.label }}</a
+                    ></NuxtLink>
+                    <template v-if="item.active"
+                        >{{ " "
+                        }}<i class="fa" :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'" />
+                    </template>
+                </li>
+            </ul>
+        </div>
+        <div
+            v-if="loading"
+            data-library-loading
+            class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0"
+        >
+            <i class="spinner fa fa-spinner fa-pulse" />
+        </div>
+        <div v-if="response.failed" data-library-error>Ett fel uppstod.</div>
+        <div v-else-if="!response.data.length" data-library-empty class="pb-4">
+            Inga träffar.
+        </div>
+        <table v-else class="table flex-grow w-full">
+            <tbody>
+                <tr
+                    v-for="(item, index) in response.data"
+                    :key="`${item.primaryHref}:${index}`"
+                    data-library-author-row
+                    class="hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
+                >
+                    <td class="author_row">
+                        <NuxtLink
+                            :to="canonicalNuxtHref(item.primaryHref)"
+                            data-library-author-name
+                        >
+                            <span class="surname uppercase">{{ item.authorSurname }}</span
+                            ><span v-if="item.authorGivenNames">,</span>
+                            {{ item.authorGivenNames }}
+                        </NuxtLink>
+                    </td>
+                    <td>{{ item.yearLabel }}</td>
+                </tr>
+                <tr v-if="showAll">
+                    <td>
+                        <button
+                            type="button"
+                            data-library-authors-show-all
+                            class="btn btn-sm show_all"
+                            :disabled="loading"
+                            @click="emit('showAll')"
+                        >
+                            Visa alla
+                            <span class="num">{{ response.hits }}</span>
+                            träffar
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</template>

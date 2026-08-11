@@ -1827,6 +1827,16 @@ const latestSortOptions = computed<readonly LibrarySortOption<LatestSortKey>[]>(
 ])
 const allSortReversed = computed(() => isSortReversed("all", selectedSort.value))
 const latestSortReversed = computed(() => isSortReversed("latest", "nytillkommet"))
+const authorSortOptions = computed<readonly LibrarySortOption<AuthorSortKey>[]>(() =>
+    authorSorts.map(item => ({
+        ...item,
+        to: browseSortHref(item.key),
+        active: selectedBrowseSort.value === item.key
+    }))
+)
+const authorSortReversed = computed(() =>
+    isSortReversed("authors", selectedBrowseSort.value)
+)
 
 const allImprintYearTargets = computed<readonly LibraryImprintYearTarget[]>(() =>
     results.value.data.flatMap(item =>
@@ -1866,11 +1876,27 @@ const activeBrowseSorts = computed(() =>
           : epubSorts
 )
 
-const downloadResults = computed(() =>
-    currentMode.value === "pdf" ? pdfResults.value.data : epubResults.value.data
+const authorShowAll = computed(() => authorResults.value.data.length < authorResults.value.hits)
+const downloadResultMode = computed<"epub" | "pdf">(() =>
+    currentMode.value === "pdf" ? "pdf" : "epub"
 )
-const downloadFailed = computed(() =>
-    currentMode.value === "pdf" ? pdfResults.value.failed : epubResults.value.failed
+const downloadResponse = computed<EpubResponse>(() =>
+    downloadResultMode.value === "pdf" ? pdfResults.value : epubResults.value
+)
+const downloadSortOptions = computed<readonly LibrarySortOption<EpubSortKey>[]>(() =>
+    epubSorts.map(item => ({
+        ...item,
+        to: epubSortHref(item.key),
+        active: selectedEpubSort.value === item.key
+    }))
+)
+const downloadSortReversed = computed(() =>
+    isSortReversed(downloadResultMode.value, selectedEpubSort.value)
+)
+const downloadImprintYearTargets = computed<readonly LibraryImprintYearTarget[]>(() =>
+    downloadResponse.value.data.flatMap(item =>
+        isImprintYear(item.year) ? [{ year: item.year, to: imprintYearTo(item.year) }] : []
+    )
 )
 const downloadDistinctHits = computed(() =>
     currentMode.value === "pdf" ? pdfResults.value.distinctHits : epubResults.value.distinctHits
@@ -2413,89 +2439,16 @@ onUnmounted(() => {
                         @toggle-hide-1800="toggle1800"
                         @select-page="selectPage"
                     />
-                    <div
+                    <LibraryAuthorResults
                         v-else-if="currentMode === 'authors'"
-                        class="result author pl-0 flex-column min-h-500"
-                    >
-                        <div class="text-base">
-                            <div class="inline-block sc mr-2">Sortera:</div>
-                            <ul class="part_header top_header mb-4 inline-block">
-                                <li
-                                    v-for="item in activeBrowseSorts"
-                                    :key="item.key"
-                                    class="inline-block sc"
-                                >
-                                    <a
-                                        :href="browseSortHref(item.key)"
-                                        class="sort_item"
-                                        :class="{ active: selectedBrowseSort === item.key }"
-                                        :data-library-sort="item.key"
-                                        @click.prevent="selectSort(item.key)"
-                                        >{{ item.label }}</a
-                                    ><template v-if="selectedBrowseSort === item.key"
-                                        >{{ " "
-                                        }}<i
-                                            class="fa"
-                                            :class="
-                                                isSortReversed(currentMode, item.key)
-                                                    ? 'fa-caret-up'
-                                                    : 'fa-caret-down'
-                                            "
-                                    /></template>
-                                </li>
-                            </ul>
-                        </div>
-                        <div
-                            v-if="loading"
-                            data-library-loading
-                            class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0"
-                        >
-                            <i class="spinner fa fa-spinner fa-pulse" />
-                        </div>
-                        <div v-if="authorResults.failed" data-library-error>Ett fel uppstod.</div>
-                        <div v-else-if="!authorResults.data.length" data-library-empty class="pb-4">
-                            Inga träffar.
-                        </div>
-                        <table v-else class="table flex-grow w-full">
-                            <tbody>
-                                <tr
-                                    v-for="(item, index) in authorResults.data"
-                                    :key="`${item.primaryHref}:${index}`"
-                                    data-library-author-row
-                                    class="hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
-                                >
-                                    <td class="author_row">
-                                        <NuxtLink
-                                            :to="canonicalNuxtHref(item.primaryHref)"
-                                            data-library-author-name
-                                        >
-                                            <span class="surname uppercase">{{
-                                                item.authorSurname
-                                            }}</span
-                                            ><span v-if="item.authorGivenNames">,</span>
-                                            {{ item.authorGivenNames }}
-                                        </NuxtLink>
-                                    </td>
-                                    <td>{{ item.yearLabel }}</td>
-                                </tr>
-                                <tr v-if="authorResults.data.length < authorResults.hits">
-                                    <td>
-                                        <button
-                                            type="button"
-                                            data-library-authors-show-all
-                                            class="btn btn-sm show_all"
-                                            :disabled="loading"
-                                            @click="loadAllAuthors"
-                                        >
-                                            Visa alla
-                                            <span class="num">{{ authorResults.hits }}</span>
-                                            träffar
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                        :response="authorResults"
+                        :sort-options="authorSortOptions"
+                        :sort-reversed="authorSortReversed"
+                        :loading="loading"
+                        :show-all="authorShowAll"
+                        @select-sort="selectSort"
+                        @show-all="loadAllAuthors"
+                    />
                     <div
                         v-else-if="currentMode === 'works' || currentMode === 'parts'"
                         class="result title pl-0 flex-column min-h-500"
@@ -2720,170 +2673,18 @@ onUnmounted(() => {
                             @select-page="selectPage"
                         />
                     </div>
-                    <div
+                    <LibraryDownloadResults
                         v-else-if="currentMode === 'epub' || currentMode === 'pdf'"
-                        class="result title pl-0 flex-column min-h-500"
-                    >
-                        <div class="flex items-baseline">
-                            <div class="text-base">
-                                <div class="inline-block sc mr-2">Sortera:</div>
-                                {{ " " }}
-                                <ul class="part_header top_header mb-4 inline-block">
-                                    <li
-                                        v-for="item in epubSorts"
-                                        :key="item.key"
-                                        class="inline-block sc"
-                                    >
-                                        <a
-                                            :href="epubSortHref(item.key)"
-                                            class="sort_item"
-                                            :class="{ active: selectedEpubSort === item.key }"
-                                            :data-library-sort="item.key"
-                                            @click.prevent="selectSort(item.key)"
-                                            >{{ item.label }}</a
-                                        ><template v-if="selectedEpubSort === item.key"
-                                            >{{ " "
-                                            }}<i
-                                                class="fa"
-                                                :class="
-                                                    isSortReversed(currentMode, item.key)
-                                                        ? 'fa-caret-up'
-                                                        : 'fa-caret-down'
-                                                "
-                                        /></template>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div
-                            v-if="loading"
-                            data-library-loading
-                            class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0"
-                        >
-                            <i class="spinner fa fa-spinner fa-pulse" />
-                        </div>
-                        <div v-if="downloadFailed" data-library-error>Ett fel uppstod.</div>
-                        <div v-else-if="!downloadResults.length" data-library-empty class="pb-4">
-                            Inga träffar.
-                        </div>
-                        <table v-else id="table" class="table w-full flex-grow -ml-2">
-                            <tbody class="block">
-                                <tr
-                                    v-for="item in downloadResults"
-                                    :key="`${item.downloadHref}:${item.titleHref}`"
-                                    :data-library-epub-row="currentMode === 'epub' || undefined"
-                                    :data-library-pdf-row="currentMode === 'pdf' || undefined"
-                                    class="work_link grid w-full items-baseline transition-colors duration-150 hover:bg-gray-300 hover:bg-opacity-50 grid-cols-[minmax(0,1fr)_11rem_5rem] sm:grid-cols-[minmax(0,1fr)_7rem_11rem_5rem]"
-                                >
-                                    <td class="block min-w-0">
-                                        <div
-                                            class="text-ellipsis whitespace-nowrap overflow-hidden min-w-0 items-center gap-2"
-                                        >
-                                            <div
-                                                class="header_container min-w-0 flex-1 align-middle"
-                                            >
-                                                <div
-                                                    class="header block overflow-hidden text-ellipsis whitespace-nowrap text-lg leading-tight"
-                                                >
-                                                    <span class="title_inner">
-                                                        <NuxtLink
-                                                            v-slot="{ navigate }"
-                                                            :to="item.titleTo"
-                                                            custom
-                                                        >
-                                                            <a
-                                                                v-library-tooltip="
-                                                                    item.titleTooltip
-                                                                "
-                                                                :data-library-epub-title="
-                                                                    currentMode === 'epub' ||
-                                                                    undefined
-                                                                "
-                                                                :data-library-pdf-title="
-                                                                    currentMode === 'pdf' ||
-                                                                    undefined
-                                                                "
-                                                                data-library-tooltip-kind="title"
-                                                                :href="
-                                                                    canonicalNuxtHref(
-                                                                        item.titleHref
-                                                                    )
-                                                                "
-                                                                @click="navigate"
-                                                                >{{ item.title }}</a
-                                                            >
-                                                        </NuxtLink>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="text-left hidden sm:block w-28 text-base">
-                                        <span
-                                            :data-library-epub-year="
-                                                currentMode === 'epub' || undefined
-                                            "
-                                            :data-library-pdf-year="
-                                                currentMode === 'pdf' || undefined
-                                            "
-                                            ><NuxtLink
-                                                v-if="isImprintYear(item.year)"
-                                                data-library-imprint-year
-                                                class="text-current"
-                                                :to="imprintYearTo(item.year)"
-                                                >{{ item.year }}</NuxtLink
-                                            ><template v-else>{{ item.year }}</template></span
-                                        >
-                                    </td>
-                                    <td class="block w-44 text-left">
-                                        <div
-                                            class="text-ellipsis whitespace-nowrap overflow-hidden"
-                                        >
-                                            <span class="author uppercase text-sm">
-                                                <NuxtLink
-                                                    v-library-tooltip="item.authorTooltip"
-                                                    :data-library-epub-author="
-                                                        currentMode === 'epub' || undefined
-                                                    "
-                                                    :data-library-pdf-author="
-                                                        currentMode === 'pdf' || undefined
-                                                    "
-                                                    data-library-tooltip-kind="author"
-                                                    :to="canonicalNuxtHref(item.authorHref)"
-                                                    >{{ item.surname }}</NuxtLink
-                                                ><template v-if="item.roleSuffix"
-                                                    >{{ " "
-                                                    }}<span class="text-gray-700 sc">{{
-                                                        item.roleSuffix.trim()
-                                                    }}</span></template
-                                                >
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="block whitespace-nowrap w-20 text-right">
-                                        <a
-                                            :data-library-epub-download="
-                                                currentMode === 'epub' || undefined
-                                            "
-                                            :data-library-pdf-download="
-                                                currentMode === 'pdf' || undefined
-                                            "
-                                            class="sc block"
-                                            :href="item.downloadHref"
-                                            :download="item.downloadFilename"
-                                            target="_self"
-                                            >Hämta</a
-                                        >
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <LibraryPagination
-                            v-if="pageCount > 1"
-                            :model="epubPagination"
-                            @select-page="selectPage"
-                        />
-                    </div>
+                        :mode="downloadResultMode"
+                        :response="downloadResponse"
+                        :sort-options="downloadSortOptions"
+                        :sort-reversed="downloadSortReversed"
+                        :imprint-year-targets="downloadImprintYearTargets"
+                        :loading="loading"
+                        :pagination="epubPagination"
+                        @select-sort="selectSort"
+                        @select-page="selectPage"
+                    />
                 </div>
                 <div v-if="downloadMode">
                     <div class="dl ml-4 p-4 sticky flex flex-col overflow-auto">

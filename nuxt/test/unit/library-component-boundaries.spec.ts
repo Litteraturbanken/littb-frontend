@@ -510,4 +510,210 @@ describe("Library component ownership", () => {
     app.unmount()
     target.remove()
   })
+
+  test("the page delegates author and download rows to dedicated components", async () => {
+    const page = await source("app/pages/bibliotek.vue")
+    expect(page).toContain("<LibraryAuthorResults")
+    expect(page).toContain("<LibraryDownloadResults")
+    expect(page).not.toContain("data-library-author-row")
+    expect(page).not.toContain("data-library-epub-row")
+    expect(page).not.toContain("data-library-pdf-row")
+  })
+
+  test("renders author rows, disclosure, and result states", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, ref }, { default: LibraryAuthorResults }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibraryAuthorResults.vue")
+    ])
+    const response = ref({
+      data: [{
+        index: "author",
+        sourceLabel: "Författare",
+        primaryLabel: "",
+        primaryHref: "/författare/august-strindberg",
+        download: false,
+        yearLabel: "1849–1912",
+        secondaryAuthor: "",
+        authorHref: "",
+        authorSurname: "Strindberg",
+        authorGivenNames: "August",
+        mobileYearLabel: "",
+        authorId: "august-strindberg",
+        authorPopularity: 1,
+        authorBirth: 1849,
+        fullTitle: "",
+        authorContribution: "",
+        highlights: []
+      }],
+      hits: 4,
+      workCount: 0,
+      partCount: 0,
+      workAuthorIds: {},
+      partAuthorIds: {},
+      suggest: [],
+      failed: false
+    })
+    const loading = ref(false)
+    const selectedSorts: string[] = []
+    let showAllCount = 0
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true }, custom: Boolean },
+      setup(props: { to: string; custom: boolean }, { slots }: { slots: { default?: (slotProps?: { href: string }) => unknown[] } }) {
+        return () => props.custom
+          ? slots.default?.({ href: props.to })
+          : h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const app = createApp({
+      setup: () => () => h(LibraryAuthorResults, {
+        response: response.value,
+        sortOptions: [
+          { key: "popularitet", label: "Popularitet", to: "/bibliotek?visa=authors", active: true },
+          { key: "namn", label: "Namn", to: "/bibliotek?visa=authors&sort=namn", active: false }
+        ],
+        sortReversed: false,
+        loading: loading.value,
+        showAll: true,
+        onSelectSort: (sort: string) => selectedSorts.push(sort),
+        onShowAll: () => { showAllCount += 1 }
+      })
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    expect(target.querySelectorAll("[data-library-author-row]")).toHaveLength(1)
+    expect(target.querySelector("[data-library-author-name]")?.getAttribute("href"))
+      .toBe("/författare/august-strindberg")
+    expect(target.querySelector("[data-library-author-name]")?.textContent?.trim())
+      .toBe("Strindberg, August")
+    expect(target.querySelector("[data-library-authors-show-all]")?.textContent?.trim())
+      .toBe("Visa alla 4 träffar")
+    target.querySelector<HTMLAnchorElement>('[data-library-sort="namn"]')?.click()
+    target.querySelector<HTMLButtonElement>("[data-library-authors-show-all]")?.click()
+    await nextTick()
+    expect(selectedSorts).toEqual(["namn"])
+    expect(showAllCount).toBe(1)
+
+    loading.value = true
+    await nextTick()
+    expect(target.querySelector("[data-library-loading]")).not.toBeNull()
+    response.value = { ...response.value, data: [], hits: 0 }
+    await nextTick()
+    expect(target.querySelector("[data-library-empty]")?.textContent?.trim()).toBe("Inga träffar.")
+    response.value = { ...response.value, failed: true }
+    await nextTick()
+    expect(target.querySelector("[data-library-error]")?.textContent).toBe("Ett fel uppstod.")
+    app.unmount()
+    target.remove()
+  })
+
+  test("renders EPUB and PDF download rows, navigation targets, and result states", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, ref }, { default: LibraryDownloadResults }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibraryDownloadResults.vue")
+    ])
+    const response = ref({
+      data: [{
+        title: "Röda rummet",
+        titleTooltip: "Röda rummet: skildringar ur artist- och författarlivet",
+        year: "1879",
+        surname: "Strindberg",
+        authorTooltip: "Strindberg, August",
+        roleSuffix: " (red.)",
+        titleHref: "/författare/august-strindberg/titlar/roda-rummet",
+        titleTo: "/författare/august-strindberg/titlar/roda-rummet",
+        authorHref: "/författare/august-strindberg",
+        downloadHref: "/download/roda-rummet.epub",
+        downloadFilename: "roda-rummet.epub"
+      }],
+      hits: 101,
+      distinctHits: 101,
+      suggest: [],
+      failed: false
+    })
+    const mode = ref<"epub" | "pdf">("epub")
+    const loading = ref(false)
+    const selectedSorts: string[] = []
+    const selectedPages: number[] = []
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true }, custom: Boolean },
+      setup(props: { to: string; custom: boolean }, { slots }: { slots: { default?: (slotProps?: { href: string; navigate: () => void }) => unknown[] } }) {
+        return () => props.custom
+          ? slots.default?.({ href: props.to, navigate: () => undefined })
+          : h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const app = createApp({
+      setup: () => () => h(LibraryDownloadResults, {
+        mode: mode.value,
+        response: response.value,
+        sortOptions: [
+          { key: "titlar", label: "Titel", to: "/bibliotek?visa=epub", active: true },
+          { key: "år", label: "År", to: "/bibliotek?visa=epub&sort=år", active: false }
+        ],
+        sortReversed: true,
+        imprintYearTargets: [{ year: "1879", to: "/bibliotek?intervall=1879%2C1879" }],
+        loading: loading.value,
+        pagination: {
+          currentPage: 1,
+          pageCount: 2,
+          previous: null,
+          next: "/bibliotek?visa=epub&sida=2",
+          entries: [
+            { key: "page-1", page: 1, label: "1", to: "/bibliotek?visa=epub", ellipsis: false },
+            { key: "page-2", page: 2, label: "2", to: "/bibliotek?visa=epub&sida=2", ellipsis: false }
+          ]
+        },
+        onSelectSort: (sort: string) => selectedSorts.push(sort),
+        onSelectPage: (page: number) => selectedPages.push(page)
+      })
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    expect(target.querySelectorAll("[data-library-epub-row]")).toHaveLength(1)
+    expect(target.querySelector("[data-library-epub-title]")?.getAttribute("href"))
+      .toBe("/författare/august-strindberg/titlar/roda-rummet")
+    expect(target.querySelector("[data-library-epub-year]")?.textContent).toBe("1879")
+    expect(target.querySelector("[data-library-imprint-year]")?.getAttribute("href"))
+      .toBe("/bibliotek?intervall=1879%2C1879")
+    expect(target.querySelector("[data-library-epub-author]")?.getAttribute("href"))
+      .toBe("/författare/august-strindberg")
+    expect(target.querySelector('[data-library-tooltip-kind="title"]')?.textContent).toBe("Röda rummet")
+    expect(target.querySelector('[data-library-tooltip-kind="author"]')?.textContent).toBe("Strindberg")
+    expect(target.querySelector(".text-gray-700.sc")?.textContent).toBe("(red.)")
+    expect(target.querySelector("[data-library-epub-download]")?.getAttribute("href"))
+      .toBe("/download/roda-rummet.epub")
+    expect(target.querySelector("[data-library-epub-download]")?.getAttribute("download"))
+      .toBe("roda-rummet.epub")
+    expect(target.querySelector(".fa")?.classList.contains("fa-caret-up")).toBe(true)
+    target.querySelector<HTMLAnchorElement>('[data-library-sort="år"]')?.click()
+    target.querySelector<HTMLAnchorElement>('[data-library-page="2"]')?.click()
+    await nextTick()
+    expect(selectedSorts).toEqual(["år"])
+    expect(selectedPages).toEqual([2])
+
+    mode.value = "pdf"
+    await nextTick()
+    expect(target.querySelectorAll("[data-library-pdf-row]")).toHaveLength(1)
+    expect(target.querySelector("[data-library-pdf-download]")?.getAttribute("href"))
+      .toBe("/download/roda-rummet.epub")
+    loading.value = true
+    await nextTick()
+    expect(target.querySelector("[data-library-loading]")).not.toBeNull()
+    response.value = { ...response.value, data: [], hits: 0, distinctHits: 0 }
+    await nextTick()
+    expect(target.querySelector("[data-library-empty]")?.textContent?.trim()).toBe("Inga träffar.")
+    response.value = { ...response.value, failed: true }
+    await nextTick()
+    expect(target.querySelector("[data-library-error]")?.textContent).toBe("Ett fel uppstod.")
+    app.unmount()
+    target.remove()
+  })
 })

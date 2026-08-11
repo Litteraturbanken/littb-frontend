@@ -40,7 +40,7 @@ export type LibraryResult = {
   highlights: LibraryHighlightFragment[]
 }
 
-type DownloadResult = {
+export type DownloadResult = {
   title: string
   titleTooltip: string
   year: string

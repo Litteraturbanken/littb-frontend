@@ -19,6 +19,8 @@ export type LibrarySortOption<Key extends string> = Readonly<{
     active: boolean
 }>
 
+export type LibraryDownloadMode = "epub" | "pdf"
+
 export type LibraryImprintYearTarget = Readonly<{
     year: string
     to: RouteLocationRaw
