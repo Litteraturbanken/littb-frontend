@@ -285,6 +285,66 @@ test("editor Reader search navigation exposes native local controls", async ({ p
   await expect(navigation).toContainText("Träff 2, sida 6")
 })
 
+for (const state of ["loading", "failed"] as const) {
+  test(`editor Reader hides local search commands while the current hit is ${state}`, async ({
+    page,
+    request
+  }) => {
+    if (state === "loading") {
+      await request.put(`${fixture}/_reader_hit_delays`, { data: {
+        "lb8345227|brev|0|3|false|true|false|false": 2_000
+      } })
+      await page.goto("/editor/lb8345227/ix/4/f", { waitUntil: "networkidle" })
+      try {
+        await page.evaluate(target => {
+          const root = document.querySelector("#__nuxt") as HTMLElement & {
+            __vue_app__?: { config: { globalProperties: {
+              $router: { push: (value: string) => Promise<void> }
+            } } }
+          }
+          void root.__vue_app__?.config.globalProperties.$router.push(target)
+        }, editorSearchHit)
+        const navigation = page.getByRole("navigation", { name: "Sökträffsnavigering" })
+        await expect(page.locator(".spinner_search")).toHaveClass(/\bsearching\b/u)
+        await expect(navigation.getByRole("button", {
+          name: "Gå till första träffen"
+        })).toHaveCount(0)
+        await expect(navigation.getByRole("button", {
+          name: "Gå till sista träffen"
+        })).toHaveCount(0)
+        await expect(navigation.getByRole("button", {
+          name: "Gå direkt till träff . . ."
+        })).toHaveCount(0)
+        await expect(navigation.getByRole("link", { name: "Stäng träffvisningen" }))
+          .toHaveAttribute("href", "/editor/lb8345227/ix/4/f")
+      } finally {
+        await request.delete(`${fixture}/_reader_hit_delays`)
+      }
+      return
+    }
+
+    await request.put(`${fixture}/_reader_hit_failure`)
+    try {
+      await page.goto(editorSearchHit, { waitUntil: "networkidle" })
+      const navigation = page.getByRole("navigation", { name: "Sökträffsnavigering" })
+      await expect(navigation).toContainText("Sökträffen kunde inte hämtas.")
+      await expect(navigation.getByRole("button", {
+        name: "Gå till första träffen"
+      })).toHaveCount(0)
+      await expect(navigation.getByRole("button", {
+        name: "Gå till sista träffen"
+      })).toHaveCount(0)
+      await expect(navigation.getByRole("button", {
+        name: "Gå direkt till träff . . ."
+      })).toHaveCount(0)
+      await expect(navigation.getByRole("link", { name: "Stäng träffvisningen" }))
+        .toHaveAttribute("href", "/editor/lb8345227/ix/4/f")
+    } finally {
+      await request.delete(`${fixture}/_reader_hit_failure`)
+    }
+  })
+}
+
 test("editor Reader keeps a serialized work-search panel open while its page changes", async ({
   page
 }) => {

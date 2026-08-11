@@ -26,6 +26,10 @@ const emit = defineEmits<{
 const gotoOpen = ref(false)
 const gotoOrdinal = ref("")
 const gotoInput = ref<HTMLInputElement | null>(null)
+const canNavigate = computed(() => (
+  props.interactive && !props.loading && !props.failed &&
+  props.activeHit !== null && props.totalHits !== null
+))
 
 function toggleGoto(): void {
   gotoOpen.value = !gotoOpen.value
@@ -84,13 +88,13 @@ function closeNavigation(event: MouseEvent): void {
           ><span class="submit btn navicon navicon-visual" aria-hidden="true"><i class="fa fa-angle-right" /></span></a>
           <button v-else class="submit btn navicon" disabled aria-hidden="true" tabindex="-1"><i class="fa fa-angle-right" /></button>
         </li>
-        <li v-if="interactive"><button type="button" class="reader-action-button" @click="emit('navigate', 0)">Gå till första träffen</button></li>
-        <li v-if="interactive"><button
+        <li v-if="canNavigate"><button type="button" class="reader-action-button" @click="emit('navigate', 0)">Gå till första träffen</button></li>
+        <li v-if="canNavigate"><button
           type="button"
           class="reader-action-button"
           @click="emit('navigate', Math.max((totalHits ?? 1) - 1, 0))"
         >Gå till sista träffen</button></li>
-        <li v-if="interactive" :class="{ open: gotoOpen }">
+        <li v-if="canNavigate" :class="{ open: gotoOpen }">
           <button type="button" class="reader-action-button" @click="toggleGoto">Gå direkt till träff . . .</button>
           <form v-show="gotoOpen" @submit.prevent="submitGoto">
             <input
