@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderMediaType, ReaderRouteResolution } from "#shared/types/reader"
+import { encodeRfc3986Segment } from "~/lib/internal-navigation"
 
 const props = defineProps<{ mediaType?: ReaderMediaType }>()
 
@@ -31,13 +32,6 @@ function scalarParam(name: "author" | "title"): string {
     throw createError({ statusCode: 404, statusMessage: "Reader page not found" })
   }
   return value
-}
-
-function encodeRfc3986Segment(value: string): string {
-  return encodeURIComponent(value).replace(
-    /[!'()*]/gu,
-    character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
-  )
 }
 
 function isRecord(value: unknown): value is UnknownRecord {

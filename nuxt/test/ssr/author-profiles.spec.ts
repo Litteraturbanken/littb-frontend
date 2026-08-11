@@ -127,6 +127,18 @@ test("SSR omits an unsafe backend author search URL", async ({ request }) => {
   expect(await profileRequests(request)).toEqual(["/private-v2/authors/UnsafeSearch"])
 })
 
+test("SSR drops an unsafe backend portrait and its dependent caption", async ({ request }) => {
+  const response = await request.get("/författare/UnsafePortrait")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+
+  expect(document.querySelector('img[src*="evil.invalid"]')).toBeNull()
+  expect(html).not.toContain("evil.invalid")
+  expect(document.querySelector("figcaption")).toBeNull()
+  expect(await profileRequests(request)).toEqual(["/private-v2/authors/UnsafePortrait"])
+})
+
 for (const [variant, path, intended] of [
   [
     "ordinary",

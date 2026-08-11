@@ -43,6 +43,14 @@ export function validRouteSegment(value: string, maximumLength: number): boolean
     && !hasLoneSurrogate(value)
 }
 
+export function encodeRfc3986Segment(value: string): string {
+  const scalar = hasLoneSurrogate(value) ? value.toWellFormed() : value
+  return encodeURIComponent(scalar).replace(
+    /[!'()*]/g,
+    character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+  )
+}
+
 function isAuthorTitleRoute(segments: string[]): boolean {
   const title = segments[3]
   if (!title || !validRouteSegment(title, 200)) return false

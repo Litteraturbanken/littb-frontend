@@ -312,6 +312,39 @@ describe("safe author profile view model", () => {
   })
 
   test.each([
+    ["/red/forfattare/StrindbergA/StrindbergA_large.jpeg", true],
+    ["/red/forfattare/StrindbergA/StrindbergA_dw_large.jpeg", true],
+    ["/red/forfattare/StrindbergA/StrindbergA_small.jpeg", true],
+    ["/red/forfattare/StrindbergA/StrindbergA_large.jpg", true],
+    ["https://evil.invalid/portrait.jpeg", false],
+    ["data:image/jpeg;base64,evil", false],
+    ["blob:https://litteraturbanken.se/portrait", false],
+    ["//evil.invalid/portrait.jpeg", false],
+    ["/red/forfattare/StrindbergA/portrait.jpeg\\evil", false],
+    ["/red/forfattare/StrindbergA/portrait.jpeg\u0000", false],
+    ["/red/forfattare/StrindbergA/portrait%255c.jpeg", false],
+    ["/red/forfattare/StrindbergA/portrait%2500.jpeg", false],
+    ["/red/forfattare/StrindbergA/portrait%ZZ.jpeg", false],
+    ["/red/forfattare/StrindbergA/portrait.jpeg?download=1", false],
+    ["/red/forfattare/StrindbergA/portrait.jpeg#caption", false],
+    ["/red/forfattare/../portrait.jpeg", false],
+    ["/red/forfattare/StrindbergA/portrait.svg", false],
+    ["/red/other/StrindbergA/portrait.jpeg", false]
+  ])("keeps only a same-origin author portrait asset: %s", (url, expectedPortrait) => {
+    const profile = maliciousProfile()
+    if (!profile.portrait) throw new Error("Rich fixture must have an ordinary portrait")
+    profile.portrait.url = url
+    profile.portrait.caption_html = "Caption belongs to the accepted image."
+
+    expect(createAuthorProfileView(profile, "ordinary").portrait).toEqual(expectedPortrait
+      ? {
+          url,
+          captionHtml: "Caption belongs to the accepted image."
+        }
+      : null)
+  })
+
+  test.each([
     ["/sok?forfattare=StrindbergA&avancerad", "/s%C3%B6k?forfattare=StrindbergA&avancerad"],
     ["https://evil.invalid/sok?forfattare=StrindbergA", ""],
     ["/sok?forfattare=%E0%A4%A", ""],

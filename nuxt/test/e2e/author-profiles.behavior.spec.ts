@@ -119,6 +119,20 @@ test("does not render an unsafe backend author search URL", async ({ page, reque
   expect(problems).toEqual([])
 })
 
+test("does not render an unsafe backend portrait or leave its caption behind", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/UnsafePortrait", { waitUntil: "networkidle" })
+
+  await expect(page.locator('img[src*="evil.invalid"]')).toHaveCount(0)
+  await expect(page.locator("figcaption")).toHaveCount(0)
+  expect(await page.content()).not.toContain("evil.invalid")
+  expect(await profileRequests(request)).toEqual(["/private-v2/authors/UnsafePortrait"])
+  expect(problems).toEqual([])
+})
+
 test("managed HTML hydrates without retaining raw provider markers", async ({ page }) => {
   const problems = collectProblems(page)
   for (const [path, intended] of [

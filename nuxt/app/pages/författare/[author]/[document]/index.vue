@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import ordinaryBackground from "~/assets/img/forf2_bkg.jpg"
-import { canonicalNuxtHref } from "~/lib/internal-navigation"
+import { canonicalNuxtHref, encodeRfc3986Segment } from "~/lib/internal-navigation"
 import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 import type {
   AuthorDocumentErrorCode,
@@ -37,13 +37,6 @@ function isDocumentKind(value: unknown): value is AuthorDocumentKind {
     || value === "bibliografi"
     || value === "semer"
     || value === "omtexterna"
-}
-
-function encodeRfc3986Segment(value: string): string {
-  return encodeURIComponent(value).replace(
-    /[!'()*]/gu,
-    character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
-  )
 }
 
 function isAuthorSummary(value: UnknownRecord): boolean {

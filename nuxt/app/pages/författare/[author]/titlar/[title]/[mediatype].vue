@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ReaderRouteResolution } from "#shared/types/reader"
 import { isNavigationFailure } from "vue-router"
+import { encodeRfc3986Segment } from "~/lib/internal-navigation"
 
 definePageMeta({
   key: route => route.fullPath,
@@ -52,13 +53,6 @@ function scalarParam(name: "author" | "title" | "mediatype"): string {
     throw createError({ statusCode: 404, statusMessage: "Reader page not found" })
   }
   return value
-}
-
-function encodeRfc3986Segment(value: string): string {
-  return encodeURIComponent(value).replace(
-    /[!'()*]/g,
-    character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
-  )
 }
 
 function isRecord(value: unknown): value is UnknownRecord {

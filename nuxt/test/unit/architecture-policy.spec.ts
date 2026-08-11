@@ -25,6 +25,12 @@ const managedStylesheetHrefType = ["Managed", "Stylesheet", "Href"].join("")
 const renderableCapabilityType = ["Renderable", "Capability"].join("")
 const renderableHtmlType = ["Renderable", "Html"].join("")
 const temporaryTrees: string[] = []
+const rfc3986RouteEncoderConsumers = [
+  "app/pages/författare/[author]/titlar/[title]/[mediatype].vue",
+  "app/pages/författare/[author]/titlar/[title]/index.vue",
+  "app/pages/författare/[author]/[document]/[article].vue",
+  "app/pages/författare/[author]/[document]/index.vue"
+]
 
 const expectedIgnores = [
   ".nuxt/**",
@@ -320,6 +326,21 @@ afterEach(() => {
 })
 
 describe("architecture policy verifier", () => {
+  test("author title and document routes share the lone-surrogate-safe RFC3986 encoder", () => {
+    const canonicalEncoder = readFileSync(
+      resolve(import.meta.dirname, "../../app/lib/internal-navigation.ts"),
+      "utf8"
+    )
+    expect(canonicalEncoder).toContain("export function encodeRfc3986Segment")
+    expect(canonicalEncoder).toContain("toWellFormed")
+
+    for (const path of rfc3986RouteEncoderConsumers) {
+      const source = readFileSync(resolve(import.meta.dirname, "../../", path), "utf8")
+      expect(source, path).toMatch(/import\s*\{[^}]*encodeRfc3986Segment[^}]*\}/u)
+      expect(source, path).not.toMatch(/function\s+encodeRfc3986Segment\s*\(/u)
+    }
+  })
+
   test("requires the exact semantic review package commands", () => {
     const manifest = JSON.parse(
       readFileSync(resolve(import.meta.dirname, "../../package.json"), "utf8")

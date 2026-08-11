@@ -1,4 +1,4 @@
-import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
+import { hasC0OrC1Control } from "#shared/utils/text-safety"
 import type { SanitizedHtml } from "#shared/types/renderable-html"
 import {
   emptyRenderableHtml,
@@ -7,6 +7,7 @@ import {
 import { parseHtmlDocument } from "./html-document"
 import {
   canonicalNuxtHref,
+  encodeRfc3986Segment,
   isNuxtInternalHref,
   safeNativeHref
 } from "./internal-navigation"
@@ -99,13 +100,7 @@ const allowedAnchorAttributes = new Set(["href", "rel", "target"])
 const allowedUrlProtocols = new Set(["http:", "https:", "mailto:", "tel:"])
 const absoluteScheme = /^[a-z][a-z\d+.-]*:/iu
 
-export function encodeRfc3986Segment(value: string): string {
-  const scalar = hasLoneSurrogate(value) ? value.toWellFormed() : value
-  return encodeURIComponent(scalar).replace(
-    /[!'()*]/g,
-    character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
-  )
-}
+export { encodeRfc3986Segment }
 
 export function authorProfilePath(authorId: string, ...segments: string[]): string {
   return `/f%C3%B6rfattare/${[authorId, ...segments].map(encodeRfc3986Segment).join("/")}`
@@ -278,6 +273,32 @@ function safeAuthorSearchHref(value: string | null | undefined): string {
   return pathname === "/s%C3%B6k" && isNuxtInternalHref(canonical) ? canonical : ""
 }
 
+function isAuthorPortraitAssetSegment(value: string | undefined): value is string {
+  return typeof value === "string" && value.length > 0
+    && value === value.trim() && value !== "." && value !== ".."
+}
+
+function isAuthorPortraitAssetPath(value: string): boolean {
+  const segments = value.split("/")
+  const authorDirectory = segments[3]
+  const filename = segments[4]
+  return segments.length === 5
+    && isAuthorPortraitAssetSegment(authorDirectory)
+    && isAuthorPortraitAssetSegment(filename)
+    && /\.(?:jpe?g)$/iu.test(filename)
+}
+
+function safeAuthorPortraitAssetUrl(value: string): string | null {
+  const href = safeNativeHref(value)
+  if (href === null || !href.startsWith("/red/forfattare/")) return null
+
+  const decoded = repeatedlyDecode(href)
+  if (decoded === null || hasC0OrC1Control(decoded) || decoded.includes("\\")) return null
+  if (!isAuthorPortraitAssetPath(decoded)) return null
+
+  return href
+}
+
 export function createAuthorProfileView(
   profile: AuthorProfile,
   variant: AuthorProfileVariant
@@ -297,6 +318,7 @@ export function createAuthorProfileView(
   const selectedPortrait = variant === "dramawebben"
     ? dramawebben?.portrait ?? null
     : profile.portrait
+  const portraitUrl = selectedPortrait ? safeAuthorPortraitAssetUrl(selectedPortrait.url) : null
 
   return {
     authorId: profile.author_id,
@@ -307,9 +329,9 @@ export function createAuthorProfileView(
     sourceHtml: sources.map(source => sanitizeAuthorHtml(source)),
     pseudonymNames: profile.pseudonyms.map(pseudonym => pseudonym.full_name),
     otherNames: [...profile.other_names],
-    portrait: selectedPortrait
+    portrait: selectedPortrait && portraitUrl
       ? {
-          url: selectedPortrait.url,
+          url: portraitUrl,
           captionHtml: sanitizeAuthorHtml(selectedPortrait.caption_html)
         }
       : null,

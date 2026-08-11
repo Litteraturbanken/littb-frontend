@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import ordinaryBackground from "~/assets/img/forf2_bkg.jpg"
-import { canonicalNuxtHref } from "~/lib/internal-navigation"
+import { canonicalNuxtHref, encodeRfc3986Segment } from "~/lib/internal-navigation"
 import {
   SLA_ARTICLE_REGISTRY_BY_ID,
   isSlaArticleId,
@@ -24,13 +24,6 @@ function isRecord(value: unknown): value is UnknownRecord {
 function routeParam(value: unknown): string {
   const candidate = Array.isArray(value) ? value[0] : value
   return typeof candidate === "string" ? candidate : ""
-}
-
-function encodeRfc3986Segment(value: string): string {
-  return encodeURIComponent(value).replace(
-    /[!'()*]/gu,
-    character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
-  )
 }
 
 function canonicalRoutePath(author: string, document: string, article: string): string {

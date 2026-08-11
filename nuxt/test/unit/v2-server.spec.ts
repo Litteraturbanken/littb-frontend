@@ -27,7 +27,9 @@ import {
   noIntroAuthorProfile,
   rfc3986AuthorProfile,
   soderbergAuthorProfile,
-  strindbergAuthorProfile
+  strindbergAuthorProfile,
+  unsafeSearchAuthorProfile,
+  unsafePortraitAuthorProfile
 } from "../fixtures/author-profile-data.mjs"
 import {
   authorWorksById,
@@ -1862,7 +1864,9 @@ describe("v2 fixture server operations", () => {
       dramaOnlyAuthorProfile,
       noIntroAuthorProfile,
       rfc3986AuthorProfile,
-      managedHtmlProbeAuthorProfile
+      managedHtmlProbeAuthorProfile,
+      unsafeSearchAuthorProfile,
+      unsafePortraitAuthorProfile
     ])
 
     const expectedRequests: string[] = []

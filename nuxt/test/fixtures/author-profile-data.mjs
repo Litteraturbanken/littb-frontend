@@ -270,6 +270,19 @@ export const unsafeSearchAuthorProfile = {
   search_url: "https://evil.invalid/sok?forfattare=UnsafeSearch"
 }
 
+/** @satisfies {AuthorProfile} */
+export const unsafePortraitAuthorProfile = {
+  ...strindbergAuthorProfile,
+  author_id: "UnsafePortrait",
+  full_name: "Osäker porträttprofil",
+  surname: "Porträttprofil",
+  canonical_path: "/författare/UnsafePortrait",
+  portrait: {
+    url: "https://evil.invalid/portrait.jpeg",
+    caption_html: "This caption must not outlive its rejected image."
+  }
+}
+
 /** @type {ReadonlyMap<string, AuthorProfile>} */
 export const authorProfiles = new Map([
   [strindbergAuthorProfile.author_id, strindbergAuthorProfile],
@@ -279,5 +292,6 @@ export const authorProfiles = new Map([
   [noIntroAuthorProfile.author_id, noIntroAuthorProfile],
   [rfc3986AuthorProfile.author_id, rfc3986AuthorProfile],
   [managedHtmlProbeAuthorProfile.author_id, managedHtmlProbeAuthorProfile],
-  [unsafeSearchAuthorProfile.author_id, unsafeSearchAuthorProfile]
+  [unsafeSearchAuthorProfile.author_id, unsafeSearchAuthorProfile],
+  [unsafePortraitAuthorProfile.author_id, unsafePortraitAuthorProfile]
 ])
