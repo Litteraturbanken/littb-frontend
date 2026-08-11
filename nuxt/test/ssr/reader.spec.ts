@@ -8,6 +8,7 @@ const workScopedReaderPath = "/författare/SöderbergH/titlar/WorkScopedIdsReade
 const facsimilePath = "/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/3/faksimil"
 const dramaFacsimilePath = "/författare/AlmlöfN/titlar/Affarer/sida/-2/faksimil"
 const longErrataPath = "/författare/LongErrataA/titlar/LongErrata/sida/-2/etext"
+const hugeErrataPath = "/författare/HugeErrataA/titlar/HugeErrata/sida/-2/etext"
 const boyeFacsimilePath = "/författare/BoyeK/titlar/EttVerkligtJordiskt/sida/3/faksimil"
 const facsimileImagePath = "/txt/lb-reader-gosta-berlings-saga/" +
   "lb-reader-gosta-berlings-saga_3/" +
@@ -251,7 +252,7 @@ test("legacy main-author contribution is present in the Reader SSR fallback", as
 test("Reader source-information SSR renders inline errata markup in every visible cell", async ({
   request
 }) => {
-  const response = await request.get(`${longErrataPath}?om-boken`)
+  const response = await request.get(`${hugeErrataPath}?om-boken`)
   expect(response.status()).toBe(200)
   const { document } = parseHTML(await response.text())
   const cells = [...document.querySelectorAll(".modal.about .errata_table tbody tr:first-child td")]

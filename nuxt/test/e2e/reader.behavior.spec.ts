@@ -21,6 +21,7 @@ const countedSliderReaderPath = "/författare/SöderbergH/titlar/CountedSliderRe
 const onePageSliderReaderPath = "/författare/SöderbergH/titlar/OnePageSliderReader/sida/0/etext"
 const invalidCountSliderReaderPath = "/författare/SöderbergH/titlar/InvalidCountSliderReader/sida/57/etext"
 const longErrataReaderPath = "/författare/LongErrataA/titlar/LongErrata/sida/-2/etext"
+const hugeErrataReaderPath = "/författare/HugeErrataA/titlar/HugeErrata/sida/-2/etext"
 const emptyErrataReaderPath = "/författare/EmptyErrataA/titlar/EmptyErrata/sida/-2/etext"
 const storedReaderPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
 const storedNextReaderPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
@@ -1160,7 +1161,7 @@ test("sparse source information omits unavailable optional sections", async ({ p
   expect(problems).toEqual([])
 })
 
-test("long errata toggles between the first eight and all rows with exact role copy", async ({
+test("long errata preserves the ten-row visual fixture and exact role copy", async ({
   page
 }) => {
   const problems = captureBrowserProblems(page)
@@ -1182,11 +1183,28 @@ test("long errata toggles between the first eight and all rows with exact role c
   await expect(dialog.locator(".header .author > .authortype")).toHaveCount(0)
   const rows = dialog.locator(".errata_table tbody tr")
   await expect(rows).toHaveCount(8)
+  await expect(rows.first().locator("td")).toHaveText(["sid. 1", "rättning 1"])
+  await expect(rows.last().locator("td")).toHaveText(["sid. 8", "rättning 8"])
+  await dialog.getByRole("button", { name: "Visa fler" }).click()
+  await expect(rows).toHaveCount(10)
+  await expect(rows.last().locator("td")).toHaveText(["sid. 10", "rättning 10"])
+  await dialog.getByRole("button", { name: "Visa färre" }).click()
+  await expect(rows).toHaveCount(8)
+  expect(problems).toEqual([])
+})
+
+test("huge errata expands every validated row and retains rendered cell markup", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${hugeErrataReaderPath}?om-boken`, { waitUntil: "networkidle" })
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  const rows = dialog.locator(".errata_table tbody tr")
+  await expect(rows).toHaveCount(8)
   await expect(rows.first().locator("td")).toHaveText([
     "sid. 1", "rättning 1", "notering 1"
   ])
   expect(await rows.first().locator("td").first().innerHTML()).toBe("sid. <em>1</em>")
-  await expect(rows.last().locator("td")).toHaveText(["sid. 8", "rättning 8"])
   await dialog.getByRole("button", { name: "Visa fler" }).click()
   await expect(rows).toHaveCount(1_001)
   await expect(rows.nth(999).locator("td")).toHaveText(["sid. 1000", "rättning 1000"])

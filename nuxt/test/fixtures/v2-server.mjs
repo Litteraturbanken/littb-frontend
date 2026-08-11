@@ -95,6 +95,7 @@ const sourceInfoCoverIds = [
   "lb31230",
   "lbSparse1",
   "lbLongErrata1",
+  "lbHugeErrata1",
   "lbEmptyErrata1",
   "lb-dramat-002"
 ]
@@ -992,6 +993,20 @@ function readerMetadataResponse(titlePath) {
           }],
           shorttitle: "Lång errata",
           title: "Lång errata"
+        })]
+      }
+    case "HugeErrata":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          authors: [{
+            authorid: "HugeErrataA",
+            full_name: "Hugo Granskare",
+            surname: "Granskare",
+            type: "editor"
+          }],
+          shorttitle: "Omfattande errata",
+          title: "Omfattande errata"
         })]
       }
     case "EmptyErrata":

@@ -360,6 +360,44 @@ export const longErrataSourceInfo = {
     filename: "LongErrataA_LongErrata.epub",
     size_bytes: 530557
   }],
+  errata: Array.from({ length: 10 }, (_, index) => ({
+    cells_html: [`sid. ${index + 1}`, `rättning <em>${index + 1}</em>`]
+  }))
+}
+
+/** @satisfies {WorkSourceInfoResponse} */
+export const hugeErrataSourceInfo = {
+  ...longErrataSourceInfo,
+  work_id: "lbHugeErrata1",
+  author_id: "HugeErrataA",
+  title_path: "HugeErrata",
+  title: "Omfattande errata",
+  short_title: "Omfattande errata",
+  authors: [{
+    author_id: "HugeErrataA",
+    full_name: "Hugo Granskare",
+    surname: "Granskare",
+    role: "redaktör",
+    author_type: null,
+    url: "/författare/HugeErrataA"
+  }],
+  urn: "urn:nbn:se:lb-lbHugeErrata1-etext",
+  cover: {
+    small_url: "/txt/lbHugeErrata1/lbHugeErrata1_small.jpeg",
+    large_url: "/txt/lbHugeErrata1/lbHugeErrata1_large.jpeg"
+  },
+  read_actions: [{
+    media_type: "etext",
+    label: "etext",
+    url: "/författare/HugeErrataA/titlar/HugeErrata/sida/-2/etext"
+  }],
+  download_actions: [{
+    media_type: "epub",
+    label: "epub",
+    url: "/txt/epub/HugeErrataA_HugeErrata.epub",
+    filename: "HugeErrataA_HugeErrata.epub",
+    size_bytes: 530557
+  }],
   errata: Array.from({ length: 1_001 }, (_, index) => ({
     cells_html: index === 1_000
       ? []
@@ -412,6 +450,7 @@ export const sourceInfoByIdentity = new Map([
   ["WahlenbergA|Cendrillon", cendrillonInfopostSourceInfo],
   ["SparseA|SparseTitle", sparseSourceInfo],
   ["LongErrataA|LongErrata", longErrataSourceInfo],
+  ["HugeErrataA|HugeErrata", hugeErrataSourceInfo],
   ["EmptyErrataA|EmptyErrata", emptyErrataSourceInfo],
   ["MalformedA|MalformedTitle", malformedSourceInfo],
   ["OversizedA|OversizedTitle", oversizedSourceInfo]
