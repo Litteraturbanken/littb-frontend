@@ -8,6 +8,7 @@ export type LibraryModeTab = Readonly<{
     to: RouteLocationRaw
     active: boolean
     disabledLook: boolean
+    disabled: boolean
     separatorBefore: boolean
 }>
 

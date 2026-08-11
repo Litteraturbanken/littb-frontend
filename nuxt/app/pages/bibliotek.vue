@@ -1698,6 +1698,7 @@ const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
                 to: epubHref,
                 active: currentMode.value === "epub",
                 disabledLook: false,
+                disabled: false,
                 separatorBefore: false
             },
             {
@@ -1707,6 +1708,7 @@ const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
                 to: pdfHref,
                 active: currentMode.value === "pdf",
                 disabledLook: currentMode.value !== "pdf" && !pdfTabCount.value,
+                disabled: false,
                 separatorBefore
             }
         ]
@@ -1720,6 +1722,7 @@ const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
             to: stateHref({ mode: "all", filter: filter.value, sort: "relevans" }),
             active: currentMode.value === "all",
             disabledLook: false,
+            disabled: false,
             separatorBefore: false
         },
         {
@@ -1729,6 +1732,7 @@ const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
             to: stateHref({ mode: "latest", filter: filter.value, sort: "nytillkommet" }),
             active: currentMode.value === "latest",
             disabledLook: false,
+            disabled: false,
             separatorBefore
         },
         {
@@ -1738,6 +1742,7 @@ const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
             to: stateHref({ mode: "authors", filter: filter.value, sort: "popularitet" }),
             active: currentMode.value === "authors",
             disabledLook: downloadMode.value || librarySummary.value.authors === 0,
+            disabled: downloadMode.value,
             separatorBefore
         },
         {
@@ -1747,6 +1752,7 @@ const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
             to: stateHref({ mode: "works", filter: filter.value, sort: "popularitet" }),
             active: currentMode.value === "works",
             disabledLook: false,
+            disabled: false,
             separatorBefore
         }
     ]
@@ -1760,6 +1766,7 @@ const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
                 to: stateHref({ mode: "parts", filter: filter.value, sort: "titlar" }),
                 active: currentMode.value === "parts",
                 disabledLook: librarySummary.value.parts === 0,
+                disabled: false,
                 separatorBefore
             },
             {
@@ -1769,6 +1776,7 @@ const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
                 to: epubHref,
                 active: currentMode.value === "epub",
                 disabledLook: currentMode.value === "all" && !epubTabCount.value,
+                disabled: false,
                 separatorBefore
             },
             {
@@ -1778,6 +1786,7 @@ const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
                 to: pdfHref,
                 active: currentMode.value === "pdf",
                 disabledLook: currentMode.value !== "pdf" && !pdfTabCount.value,
+                disabled: false,
                 separatorBefore
             }
         )

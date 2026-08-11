@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
 import { describe, expect, test } from "vitest"
+import { createMemoryHistory, createRouter, RouterLink } from "vue-router"
 
 const nuxtRoot = resolve(import.meta.dirname, "../..")
 const source = (path: string) => readFile(resolve(nuxtRoot, path), "utf8")
@@ -20,18 +21,20 @@ describe("Library component ownership", () => {
       import("../../app/components/library/LibraryModeTabs.vue")
     ])
     const tabs = [
-      { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: false, disabledLook: false, separatorBefore: false },
-      { mode: "latest", label: "Nytt", count: null, to: "/bibliotek?visa=latest&filter=berg", active: false, disabledLook: false, separatorBefore: true },
-      { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: true, disabledLook: true, separatorBefore: true },
-      { mode: "works", label: "Verk", count: 34, to: "/bibliotek?visa=works&filter=berg", active: false, disabledLook: false, separatorBefore: true },
-      { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, separatorBefore: true },
-      { mode: "epub", label: "Epub", count: 56, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: false, separatorBefore: true },
-      { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, separatorBefore: true }
+      { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: false },
+      { mode: "latest", label: "Nytt", count: null, to: "/bibliotek?visa=latest&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
+      { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: true, disabledLook: true, disabled: false, separatorBefore: true },
+      { mode: "works", label: "Verk", count: 34, to: "/bibliotek?visa=works&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
+      { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, disabled: false, separatorBefore: true },
+      { mode: "epub", label: "Epub", count: 56, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
+      { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, disabled: false, separatorBefore: true }
     ] as const
     const NuxtLink = {
-      props: { to: { type: [String, Object], required: true } },
-      setup(props: { to: string }, { slots }: { slots: { default?: () => unknown[] } }) {
-        return () => h("a", { href: props.to }, slots.default?.())
+      props: { to: { type: [String, Object], required: true }, custom: Boolean, replace: Boolean },
+      setup(props: { to: string; custom: boolean }, { slots }: { slots: { default?: (slotProps?: { href: string; navigate: () => void }) => unknown[] } }) {
+        return () => props.custom
+          ? slots.default?.({ href: props.to, navigate: () => undefined })
+          : h("a", { href: props.to }, slots.default?.())
       }
     }
     const app = createApp({ setup: () => () => h(LibraryModeTabs, { tabs }) })
@@ -70,13 +73,15 @@ describe("Library component ownership", () => {
       import("../../app/components/library/LibraryModeTabs.vue")
     ])
     const tabs = [
-      { mode: "epub", label: "Epub", count: 9, to: "/epub", active: true, disabledLook: false, separatorBefore: false },
-      { mode: "pdf", label: "PDF", count: null, to: "/epub?visa=pdf", active: false, disabledLook: true, separatorBefore: true }
+      { mode: "epub", label: "Epub", count: 9, to: "/epub", active: true, disabledLook: false, disabled: false, separatorBefore: false },
+      { mode: "pdf", label: "PDF", count: null, to: "/epub?visa=pdf", active: false, disabledLook: true, disabled: false, separatorBefore: true }
     ] as const
     const NuxtLink = {
-      props: { to: { type: [String, Object], required: true } },
-      setup(props: { to: string }, { slots }: { slots: { default?: () => unknown[] } }) {
-        return () => h("a", { href: props.to }, slots.default?.())
+      props: { to: { type: [String, Object], required: true }, custom: Boolean, replace: Boolean },
+      setup(props: { to: string; custom: boolean }, { slots }: { slots: { default?: (slotProps?: { href: string; navigate: () => void }) => unknown[] } }) {
+        return () => props.custom
+          ? slots.default?.({ href: props.to, navigate: () => undefined })
+          : h("a", { href: props.to }, slots.default?.())
       }
     }
     const app = createApp({ setup: () => () => h(LibraryModeTabs, { tabs }) })
@@ -91,6 +96,85 @@ describe("Library component ownership", () => {
     expect(links[1]?.classList.contains("relevance-unavailable")).toBe(true)
     expect(links[0]?.getAttribute("aria-current")).toBe("page")
     expect(links[1]?.hasAttribute("aria-current")).toBe(false)
+    app.unmount()
+    target.remove()
+  })
+
+  test("uses custom replacing links while preserving disabled tab semantics", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, ref }, { default: LibraryModeTabs }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibraryModeTabs.vue")
+    ])
+    Object.defineProperty(globalThis, "history", {
+      configurable: true,
+      value: {
+        state: null,
+        pushState(state: unknown) { this.state = state },
+        replaceState(state: unknown) { this.state = state }
+      }
+    })
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/", component: { render: () => h("div") } },
+        { path: "/bibliotek", component: { render: () => h("div") } }
+      ]
+    })
+    await router.push("/")
+    await router.push("/bibliotek?filter=berg")
+    await router.isReady()
+    const tabs = ref([
+      { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: true, disabledLook: false, separatorBefore: false, disabled: false },
+      { mode: "authors", label: "Författare", count: 0, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false },
+      { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false },
+      { mode: "epub", label: "Epub", count: null, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false },
+      { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false }
+    ])
+    const app = createApp({ setup: () => () => h(LibraryModeTabs, { tabs: tabs.value }) })
+    app.use(router)
+    app.component("NuxtLink", RouterLink)
+    app.mount(target)
+    await nextTick()
+
+    const ordinaryLinks = [...target.querySelectorAll<HTMLAnchorElement>("a")]
+    const author = ordinaryLinks[1]
+    expect(author?.classList.contains("router-link-active")).toBe(false)
+    expect(author?.classList.contains("router-link-exact-active")).toBe(false)
+    expect(ordinaryLinks.slice(1).map(link => link.getAttribute("aria-disabled"))).toEqual([
+      null, null, null, null
+    ])
+
+    const navigated = new Promise<void>(resolve => {
+      const remove = router.afterEach(() => {
+        remove()
+        resolve()
+      })
+    })
+    author?.click()
+    await navigated
+    expect(router.currentRoute.value.fullPath).toBe("/bibliotek?visa=authors&filter=berg")
+
+    const backed = new Promise<void>(resolve => {
+      const remove = router.afterEach(() => {
+        remove()
+        resolve()
+      })
+    })
+    router.back()
+    await backed
+    expect(router.currentRoute.value.fullPath).toBe("/")
+
+    tabs.value = [
+      { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, separatorBefore: false, disabled: true }
+    ]
+    await nextTick()
+    const disabledAuthor = target.querySelector<HTMLAnchorElement>("a")
+    expect(disabledAuthor?.getAttribute("aria-disabled")).toBe("true")
+    disabledAuthor?.click()
+    await nextTick()
+    expect(router.currentRoute.value.fullPath).toBe("/")
     app.unmount()
     target.remove()
   })
