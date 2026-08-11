@@ -9,9 +9,10 @@ const root = resolve(process.argv[2] ?? process.cwd())
 const sourceExtensions = new Set([".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx", ".vue"])
 const capabilityPath = "shared/utils/renderable-html.ts"
 const rendererPath = "app/components/global/RenderableHtmlContent.vue"
-const chronologyRangeConsumerPaths = new Set([
-  "app/pages/bibliotek.vue",
-  "app/pages/sök.vue"
+const chronologyRangeOwnerByConsumerPath = new Map([
+  ["app/pages/bibliotek.vue", "LibraryAdvancedFilters"],
+  ["app/components/library/LibraryAdvancedFilters.vue", "ChronologyRangeSlider"],
+  ["app/pages/sök.vue", "ChronologyRangeSlider"]
 ])
 const htmlDocumentPath = "app/lib/html-document.ts"
 const lbApiClientModulePath = "app/lib/api/client"
@@ -1836,7 +1837,8 @@ function auditVueTemplate(record) {
 }
 
 function auditChronologyRangeOwnership(record) {
-  if (!chronologyRangeConsumerPaths.has(record.relativePath) || !record.template) return
+  const owner = chronologyRangeOwnerByConsumerPath.get(record.relativePath)
+  if (!owner || !record.template) return
   const { ast, start } = record.template
   let sharedComponentFound = false
   let rawTrackLine = null
@@ -1849,7 +1851,7 @@ function auditChronologyRangeOwnership(record) {
   ])
   const visit = node => {
     if (node.type === NodeTypes.ELEMENT) {
-      if (node.tagType === ElementTypes.COMPONENT && node.tag === "ChronologyRangeSlider") {
+      if (node.tagType === ElementTypes.COMPONENT && node.tag === owner) {
         sharedComponentFound = true
       }
       for (const property of node.props) {

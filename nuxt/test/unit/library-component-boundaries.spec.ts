@@ -82,6 +82,66 @@ function sourceResponse(
 }
 
 describe("Library component ownership", () => {
+  test("keeps component ownership bounded and capability-free", async () => {
+    const componentPaths = [
+      "app/components/library/LibrarySearchControls.vue",
+      "app/components/library/LibraryAdvancedFilters.vue",
+      "app/components/library/LibraryModeTabs.vue",
+      "app/components/library/LibraryPagination.vue",
+      "app/components/library/LibraryAllResults.vue",
+      "app/components/library/LibraryLatestResults.vue",
+      "app/components/library/LibraryAuthorResults.vue",
+      "app/components/library/LibraryBrowseResults.vue",
+      "app/components/library/LibraryDownloadResults.vue",
+      "app/components/library/LibrarySourceDownloadWorkspace.vue"
+    ] as const
+    const [page, ...componentSources] = await Promise.all([
+      source("app/pages/bibliotek.vue"),
+      ...componentPaths.map(source)
+    ])
+    const pageTemplate = page.slice(page.indexOf("<template>"))
+
+    expect(page.split("\n").length).toBeLessThanOrEqual(2100)
+    for (const component of componentSources) {
+      expect(component.split("\n").length).toBeLessThanOrEqual(600)
+      expect(component).not.toMatch(
+        /\b(useRoute|useRouter|useAsyncData|useFetch|\$fetch|createLbApiClient|useLbApiClient)\s*\(/
+      )
+    }
+
+    for (const component of [
+      "LibrarySearchControls",
+      "LibraryAdvancedFilters",
+      "LibraryModeTabs",
+      "LibrarySourceDownloadWorkspace",
+      "LibraryAllResults",
+      "LibraryLatestResults",
+      "LibraryAuthorResults",
+      "LibraryBrowseResults",
+      "LibraryDownloadResults"
+    ]) {
+      expect(pageTemplate.match(new RegExp(`<${component}\\b`, "g"))).toHaveLength(1)
+    }
+    for (const ownedDataHook of [
+      "data-library-filter",
+      "data-library-advanced-panel",
+      "data-library-tab",
+      "data-library-pagination-previous",
+      "data-library-pagination-next",
+      "data-library-result",
+      "data-library-latest-row",
+      "data-library-author-row",
+      "data-library-part-row",
+      "data-library-epub-row",
+      "data-library-pdf-row",
+      "data-library-source-checkbox",
+      "data-library-format-popover",
+      "data-library-download-submit"
+    ]) {
+      expect(pageTemplate).not.toContain(ownedDataHook)
+    }
+  })
+
   test("delegates controlled search and advanced filter intents without routing dependencies", async () => {
     const page = await source("app/pages/bibliotek.vue")
     expect(page).toContain("<LibrarySearchControls")

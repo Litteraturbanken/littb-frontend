@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue"
-import type { CSSProperties } from "vue"
+import { computed, nextTick, onMounted, onUnmounted, ref, type CSSProperties, watch } from "vue"
 import type { RouteLocationRaw } from "vue-router"
 import { libraryTooltipDirective } from "../../directives/library-tooltip"
 import { canonicalNuxtHref } from "../../lib/internal-navigation"
@@ -15,7 +14,6 @@ import type { BrowseSortKey } from "~/lib/library/navigation"
 import type { BrowseResponse } from "~/lib/library/page-results"
 import type { BrowseResult } from "~/lib/library/view-model"
 import LibraryPagination from "./LibraryPagination.vue"
-
 const props = defineProps<{
     response: BrowseResponse
     loading: boolean
@@ -28,7 +26,6 @@ const emit = defineEmits<{
     selectSort: [sort: BrowseSortKey]
     selectPage: [page: number]
 }>()
-
 const vLibraryTooltip = libraryTooltipDirective
 const selectedSourceWorks = ref<Map<string, BrowseResult>>(new Map())
 const selectedSourceFormats = ref<Set<LibrarySourceFormatKey>>(new Set())
@@ -64,7 +61,6 @@ const sourceFormatGroups: readonly LibrarySourceFormatGroup[] = [
         ]
     }
 ]
-
 const imprintYearTargetsByYear = computed(
     () => new Map(props.imprintYearTargets.map(target => [target.year, target.to]))
 )
@@ -107,7 +103,6 @@ const downloadSizeLabel = computed(() => {
         ? `${Math.round(size / 1024)} KB`
         : `${(size / (1024 * 1024)).toFixed(2)}MB`
 })
-
 watch(
     () => props.response.data,
     results => {
@@ -138,7 +133,6 @@ watch(
         }
     }
 )
-
 function sourceFormatKey(
     mediatype: BrowseResult["sourceExports"][number]["mediatype"],
     type: BrowseResult["sourceExports"][number]["type"]
@@ -156,7 +150,6 @@ function sourceFormatKey(
     if (type === "pdf") return "faksimil:pdf"
     return null
 }
-
 function hasImprintYearTarget(year: string): boolean {
     return imprintYearTargetsByYear.value.has(year)
 }

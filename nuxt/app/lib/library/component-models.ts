@@ -3,13 +3,13 @@ import type { LibraryFilters } from "./index"
 import type { LibraryCategory, LibraryLanguage, LibraryMedia } from "./filter-options"
 import type { LibraryMode } from "./navigation"
 
-export type LibraryAdvancedControlOption<Value extends string> = Readonly<{
+type LibraryAdvancedControlOption<Value extends string> = Readonly<{
     value: Value
     label: string
     disabled?: boolean
 }>
 
-export type LibraryAdvancedControlGroup<Value extends string> = Readonly<{
+type LibraryAdvancedControlGroup<Value extends string> = Readonly<{
     label: string
     options: readonly LibraryAdvancedControlOption<Value>[]
 }>
@@ -19,7 +19,7 @@ export type LibraryAboutAuthorOption = Readonly<{
     label: string
 }>
 
-export type LibraryChronologyControlsModel = Readonly<{
+type LibraryChronologyControlsModel = Readonly<{
     min: number
     max: number
     from: string

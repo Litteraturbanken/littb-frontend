@@ -1544,6 +1544,106 @@ function imprintYearTo(year: string): RouteLocationRaw {
     return { path: route.path, query }
 }
 
+function libraryModeTab(
+    mode: LibraryMode,
+    label: string,
+    count: number | null,
+    to: RouteLocationRaw,
+    disabledLook: boolean,
+    disabled: boolean,
+    separatorBefore: boolean
+): LibraryModeTab {
+    return {
+        mode,
+        label,
+        count,
+        to,
+        active: currentMode.value === mode,
+        disabledLook,
+        disabled,
+        separatorBefore
+    }
+}
+
+function ordinaryLibraryModeTabs(
+    separatorBefore: boolean,
+    epubHref: RouteLocationRaw,
+    pdfHref: RouteLocationRaw
+): LibraryModeTab[] {
+    const tabs: LibraryModeTab[] = [
+        libraryModeTab(
+            "all",
+            "Alla träffar",
+            null,
+            stateHref({ mode: "all", filter: filter.value, sort: "relevans" }),
+            false,
+            false,
+            false
+        ),
+        libraryModeTab(
+            "latest",
+            "Nytt",
+            null,
+            stateHref({ mode: "latest", filter: filter.value, sort: "nytillkommet" }),
+            false,
+            false,
+            separatorBefore
+        ),
+        libraryModeTab(
+            "authors",
+            "Författare",
+            librarySummary.value.authors,
+            stateHref({ mode: "authors", filter: filter.value, sort: "popularitet" }),
+            downloadMode.value || librarySummary.value.authors === 0,
+            downloadMode.value,
+            separatorBefore
+        ),
+        libraryModeTab(
+            "works",
+            "Verk",
+            librarySummary.value.works,
+            stateHref({ mode: "works", filter: filter.value, sort: "popularitet" }),
+            false,
+            false,
+            separatorBefore
+        )
+    ]
+
+    if (!downloadMode.value) {
+        tabs.push(
+            libraryModeTab(
+                "parts",
+                "Dikt, novell, etc.",
+                librarySummary.value.parts,
+                stateHref({ mode: "parts", filter: filter.value, sort: "titlar" }),
+                librarySummary.value.parts === 0,
+                false,
+                separatorBefore
+            ),
+            libraryModeTab(
+                "epub",
+                "Epub",
+                epubTabCount.value,
+                epubHref,
+                currentMode.value === "all" && !epubTabCount.value,
+                false,
+                separatorBefore
+            ),
+            libraryModeTab(
+                "pdf",
+                "PDF",
+                pdfTabCount.value,
+                pdfHref,
+                currentMode.value !== "pdf" && !pdfTabCount.value,
+                false,
+                separatorBefore
+            )
+        )
+    }
+
+    return tabs
+}
+
 const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
     const separatorBefore = currentMode.value !== "all"
     const epubHref = stateHref({
@@ -1559,108 +1659,20 @@ const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
 
     if (standalone) {
         return [
-            {
-                mode: "epub",
-                label: "Epub",
-                count: epubTabCount.value || null,
-                to: epubHref,
-                active: currentMode.value === "epub",
-                disabledLook: false,
-                disabled: false,
-                separatorBefore: false
-            },
-            {
-                mode: "pdf",
-                label: "PDF",
-                count: pdfTabCount.value || null,
-                to: pdfHref,
-                active: currentMode.value === "pdf",
-                disabledLook: currentMode.value !== "pdf" && !pdfTabCount.value,
-                disabled: false,
+            libraryModeTab("epub", "Epub", epubTabCount.value || null, epubHref, false, false, false),
+            libraryModeTab(
+                "pdf",
+                "PDF",
+                pdfTabCount.value || null,
+                pdfHref,
+                currentMode.value !== "pdf" && !pdfTabCount.value,
+                false,
                 separatorBefore
-            }
+            )
         ]
     }
 
-    const tabs: LibraryModeTab[] = [
-        {
-            mode: "all",
-            label: "Alla träffar",
-            count: null,
-            to: stateHref({ mode: "all", filter: filter.value, sort: "relevans" }),
-            active: currentMode.value === "all",
-            disabledLook: false,
-            disabled: false,
-            separatorBefore: false
-        },
-        {
-            mode: "latest",
-            label: "Nytt",
-            count: null,
-            to: stateHref({ mode: "latest", filter: filter.value, sort: "nytillkommet" }),
-            active: currentMode.value === "latest",
-            disabledLook: false,
-            disabled: false,
-            separatorBefore
-        },
-        {
-            mode: "authors",
-            label: "Författare",
-            count: librarySummary.value.authors,
-            to: stateHref({ mode: "authors", filter: filter.value, sort: "popularitet" }),
-            active: currentMode.value === "authors",
-            disabledLook: downloadMode.value || librarySummary.value.authors === 0,
-            disabled: downloadMode.value,
-            separatorBefore
-        },
-        {
-            mode: "works",
-            label: "Verk",
-            count: librarySummary.value.works,
-            to: stateHref({ mode: "works", filter: filter.value, sort: "popularitet" }),
-            active: currentMode.value === "works",
-            disabledLook: false,
-            disabled: false,
-            separatorBefore
-        }
-    ]
-
-    if (!downloadMode.value) {
-        tabs.push(
-            {
-                mode: "parts",
-                label: "Dikt, novell, etc.",
-                count: librarySummary.value.parts,
-                to: stateHref({ mode: "parts", filter: filter.value, sort: "titlar" }),
-                active: currentMode.value === "parts",
-                disabledLook: librarySummary.value.parts === 0,
-                disabled: false,
-                separatorBefore
-            },
-            {
-                mode: "epub",
-                label: "Epub",
-                count: epubTabCount.value,
-                to: epubHref,
-                active: currentMode.value === "epub",
-                disabledLook: currentMode.value === "all" && !epubTabCount.value,
-                disabled: false,
-                separatorBefore
-            },
-            {
-                mode: "pdf",
-                label: "PDF",
-                count: pdfTabCount.value,
-                to: pdfHref,
-                active: currentMode.value === "pdf",
-                disabledLook: currentMode.value !== "pdf" && !pdfTabCount.value,
-                disabled: false,
-                separatorBefore
-            }
-        )
-    }
-
-    return tabs
+    return ordinaryLibraryModeTabs(separatorBefore, epubHref, pdfHref)
 })
 
 function relevanceSortHref(sort: RelevanceSortKey): string {

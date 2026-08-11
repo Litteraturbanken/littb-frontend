@@ -284,9 +284,13 @@ function createTree(): string {
   for (const [path, source] of Object.entries(reviewedDomSources)) {
     writeSource(root, path, source)
   }
-  for (const path of ["app/pages/bibliotek.vue", "app/pages/sök.vue"]) {
-    writeSource(root, path, "<template><ChronologyRangeSlider /></template>\n")
-  }
+  writeSource(root, "app/pages/bibliotek.vue", "<template><LibraryAdvancedFilters /></template>\n")
+  writeSource(
+    root,
+    "app/components/library/LibraryAdvancedFilters.vue",
+    "<template><ChronologyRangeSlider /></template>\n"
+  )
+  writeSource(root, "app/pages/sök.vue", "<template><ChronologyRangeSlider /></template>\n")
   for (const contract of [
     "author-works-contract.ts",
     "reader-source-info-contract.ts",
@@ -396,6 +400,41 @@ describe("architecture policy verifier", () => {
     expect(result.status).toBe(0)
     expect(result.stderr).toBe("")
     expect(result.stdout).toMatch(/^Architecture policy passed: audited \d+ files\.\n$/u)
+  })
+
+  test("allows Library chronology to delegate through advanced filters to the shared slider", () => {
+    const root = createTree()
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("requires the delegated Library control to use the shared chronology slider", () => {
+    const root = createTree()
+    const path = "app/components/library/LibraryAdvancedFilters.vue"
+    writeSource(root, path, "<template><div /></template>\n")
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      `${path}:1: Chronology range interaction must be owned by ChronologyRangeSlider`
+    )
+  })
+
+  test("rejects bypassing the delegated Library chronology owner in the page", () => {
+    const root = createTree()
+    const path = "app/pages/bibliotek.vue"
+    writeSource(root, path, "<template><ChronologyRangeSlider /></template>\n")
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      `${path}:1: Chronology range interaction must be owned by ChronologyRangeSlider`
+    )
   })
 
   test.each(["app/pages/bibliotek.vue", "app/pages/sök.vue"])(
