@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import type { CSSProperties } from "vue"
 import type { LocationQuery, RouteLocationRaw } from "vue-router"
-import { libraryTooltipDirective } from "~/directives/library-tooltip"
 import { useLbApiClient } from "~/composables/useLbApiClient"
-import { canonicalNuxtHref } from "~/lib/internal-navigation"
 import { legacyPaginationItems, type LegacyPaginationItem } from "~/lib/legacy-pagination"
 import type {
     LibraryImprintYearTarget,
@@ -57,10 +54,7 @@ import {
     type LibraryResponse,
     type PdfResponse
 } from "~/lib/library/page-results"
-import {
-    toLibrarySearchView,
-    type BrowseResult
-} from "~/lib/library/view-model"
+import { toLibrarySearchView, type BrowseResult } from "~/lib/library/view-model"
 
 definePageMeta({ alias: ["/epub"] })
 
@@ -104,8 +98,6 @@ type LibraryInitialData = {
     page: LibraryPageState
     summary: LibrarySummary | null
 }
-
-const vLibraryTooltip = libraryTooltipDirective
 
 function emptyLibraryResponse(failed = false): LibraryResponse {
     return { data: [], hits: 0, suggest: [], failed }
@@ -548,40 +540,6 @@ const chronologyToDraft = ref(
 )
 const chronologyDraftDirty = ref(false)
 const mounted = ref(false)
-const selectedSourceWorks = ref<Map<string, BrowseResult>>(new Map())
-const selectedSourceFormats = ref<Set<string>>(new Set())
-const formatPopoverOpen = ref(false)
-const formatButtonElement = ref<HTMLButtonElement | null>(null)
-const formatPopoverElement = ref<HTMLDivElement | null>(null)
-const formatPopoverScrollportElement = ref<HTMLDivElement | null>(null)
-const formatPopoverPlacement = ref<"top" | "bottom">("top")
-const formatPopoverStyle = ref<CSSProperties>({
-    top: "0px",
-    left: "0px",
-    visibility: "hidden"
-})
-const formatPopoverScrollportStyle = ref<CSSProperties>({})
-const sourceFormatGroups = [
-    {
-        mediatype: "etext" as const,
-        label: "Etext",
-        formats: [
-            { type: "txt" as const, label: "ren text" },
-            { type: "xml" as const, label: "xml" },
-            { type: "workdb" as const, label: "Metadata" }
-        ]
-    },
-    {
-        mediatype: "faksimil" as const,
-        label: "Faksimil",
-        formats: [
-            { type: "txt" as const, label: "ren text" },
-            { type: "xml" as const, label: "xml" },
-            { type: "workdb" as const, label: "Metadata" },
-            { type: "pdf" as const, label: "PDF" }
-        ]
-    }
-]
 const hasActiveFilters = computed(() =>
     Boolean(
         filter.value ||
@@ -696,43 +654,6 @@ const expandedWorkKey = ref(
               ?.key ?? "")
         : ""
 )
-const visibleSourceWorks = computed(() =>
-    workResults.value.data.filter(item => item.sourceExports.length > 0)
-)
-const selectedSourceWorkList = computed(() => [...selectedSourceWorks.value.values()])
-const allVisibleSourceWorksSelected = computed(
-    () =>
-        visibleSourceWorks.value.length > 0 &&
-        visibleSourceWorks.value.every(item => selectedSourceWorks.value.has(item.key))
-)
-const selectedSourceExports = computed(() =>
-    selectedSourceWorkList.value.flatMap(item => item.sourceExports)
-)
-const sourceFormatAvailability = computed(() => {
-    const counts = new Map<string, number>()
-    for (const item of selectedSourceExports.value) {
-        const key = `${item.mediatype}:${item.type}`
-        counts.set(key, (counts.get(key) ?? 0) + 1)
-    }
-    return counts
-})
-const selectedDownloadExports = computed(() =>
-    selectedSourceExports.value.filter(item =>
-        selectedSourceFormats.value.has(`${item.mediatype}:${item.type}`)
-    )
-)
-const selectedDownloadFiles = computed(() =>
-    selectedDownloadExports.value
-        .map(item => `${item.lbworkid}-${item.mediatype}-${item.type}`)
-        .filter((token, index, all) => all.indexOf(token) === index)
-)
-const downloadSizeLabel = computed(() => {
-    const size = selectedDownloadExports.value.reduce((sum, item) => sum + item.size, 0)
-    if (!size) return ""
-    return size < 1_050_000
-        ? `${Math.round(size / 1024)} KB`
-        : `${(size / (1024 * 1024)).toFixed(2)}MB`
-})
 const loading = ref(false)
 let timer: ReturnType<typeof setTimeout> | null = null
 let controller: AbortController | null = null
@@ -1260,116 +1181,6 @@ function toggle1800() {
     beginIntent({ ...currentState(), hide1800: !hide1800.value, page: 1 })
 }
 
-function clearSourceSelection() {
-    selectedSourceWorks.value = new Map()
-    selectedSourceFormats.value = new Set()
-    formatPopoverOpen.value = false
-}
-
-function positionFormatPopover() {
-    if (!formatPopoverOpen.value) return
-    const button = formatButtonElement.value
-    const popover = formatPopoverElement.value
-    const scrollport = formatPopoverScrollportElement.value
-    if (!button || !popover || !scrollport) return
-    const buttonBox = button.getBoundingClientRect()
-    const popoverBox = popover.getBoundingClientRect()
-    const viewportPadding = 8
-    const triggerGap = 10
-    const popoverChromeHeight = popoverBox.height - scrollport.clientHeight
-    const naturalHeight = scrollport.scrollHeight + popoverChromeHeight
-    const availableAbove = Math.max(0, buttonBox.top - triggerGap - viewportPadding)
-    const availableBelow = Math.max(
-        0,
-        window.innerHeight - buttonBox.bottom - triggerGap - viewportPadding
-    )
-    const placement = naturalHeight <= availableAbove || availableAbove >= availableBelow
-        ? "top"
-        : "bottom"
-    const availableHeight = placement === "top" ? availableAbove : availableBelow
-    const boundedScrollportHeight = Math.max(0, availableHeight - popoverChromeHeight)
-    const renderedHeight = Math.min(naturalHeight, availableHeight)
-    const viewportTop = placement === "top"
-        ? buttonBox.top - triggerGap - renderedHeight
-        : buttonBox.bottom + triggerGap
-    const buttonWidth = Math.round(buttonBox.width)
-    const centeredLeft = buttonBox.left + buttonWidth / 2 - popoverBox.width / 2
-    const maximumLeft = Math.max(
-        viewportPadding,
-        window.innerWidth - popoverBox.width - viewportPadding
-    )
-    const viewportLeft = Math.min(Math.max(centeredLeft, viewportPadding), maximumLeft)
-    formatPopoverPlacement.value = placement
-    formatPopoverStyle.value = {
-        top: `${Math.round(window.scrollY + viewportTop)}px`,
-        left: `${Math.round(window.scrollX + viewportLeft)}px`,
-        visibility: "visible",
-        marginTop: "0px"
-    }
-    formatPopoverScrollportStyle.value = {
-        maxHeight: `${Math.floor(boundedScrollportHeight)}px`,
-        overflowY: naturalHeight > availableHeight ? "auto" : "visible"
-    }
-}
-
-async function toggleFormatPopover() {
-    if (formatPopoverOpen.value) {
-        formatPopoverOpen.value = false
-        return
-    }
-    formatPopoverStyle.value = {
-        top: "0px",
-        left: "0px",
-        visibility: "hidden",
-        marginTop: "0px"
-    }
-    formatPopoverScrollportStyle.value = {}
-    formatPopoverOpen.value = true
-    await nextTick()
-    positionFormatPopover()
-    await nextTick()
-    const popover = formatPopoverElement.value
-    const focusTarget = popover?.querySelector<HTMLElement>(
-        "[data-library-source-format]:not(:disabled)"
-    ) ?? popover?.querySelector<HTMLElement>("[data-library-download-submit]:not(:disabled)") ?? popover
-    focusTarget?.focus()
-}
-
-function handleFormatPopoverKeydown(event: KeyboardEvent) {
-    if (event.key !== "Escape" || !formatPopoverOpen.value) return
-    event.preventDefault()
-    formatPopoverOpen.value = false
-    void nextTick(() => formatButtonElement.value?.focus())
-}
-
-function toggleSourceWork(item: BrowseResult) {
-    if (!downloadMode.value || item.sourceExports.length === 0) return
-    const selected = new Map(selectedSourceWorks.value)
-    if (selected.has(item.key)) selected.delete(item.key)
-    else selected.set(item.key, item)
-    selectedSourceWorks.value = selected
-}
-
-function selectVisibleSourceWorks() {
-    const selected = new Map(selectedSourceWorks.value)
-    for (const item of visibleSourceWorks.value) selected.set(item.key, item)
-    selectedSourceWorks.value = selected
-}
-
-function deselectVisibleSourceWorks() {
-    const selected = new Map(selectedSourceWorks.value)
-    for (const item of visibleSourceWorks.value) selected.delete(item.key)
-    selectedSourceWorks.value = selected
-}
-
-function toggleSourceFormat(key: string) {
-    if (!sourceFormatAvailability.value.get(key)) return
-    const selected = new Set(selectedSourceFormats.value)
-    if (selected.has(key)) selected.delete(key)
-    else selected.add(key)
-    selectedSourceFormats.value = selected
-}
-
 async function toggleDownloadMode() {
     invalidateIntent()
     const query: LocationQuery = { ...route.query }
@@ -1561,9 +1372,7 @@ watch(
         filter.value = state.filter
         currentPage.value = state.page
         hide1800.value = state.hide1800
-        const sourceModeChanged = downloadMode.value !== state.downloadMode
         downloadMode.value = state.downloadMode
-        if (sourceModeChanged) clearSourceSelection()
         if (state.mode === "epub" || state.mode === "pdf") {
             selectedEpubSort.value = state.sort as EpubSortKey
         } else if (state.mode === "all") selectedSort.value = state.sort as RelevanceSortKey
@@ -2006,10 +1815,6 @@ const latestPagination = computed(() => paginationModel(latestPageHref))
 const browsePagination = computed(() => paginationModel(browsePageHref))
 const epubPagination = computed(() => paginationModel(epubPageHref))
 
-function workActionsId(item: BrowseResult): string {
-    return `library-work-actions-${encodeURIComponent(item.key)}`
-}
-
 function toggleWorkActions(item: BrowseResult) {
     const opening = expandedWorkKey.value !== item.key
     expandedWorkKey.value = opening ? item.key : ""
@@ -2052,9 +1857,6 @@ useHead({
 
 onMounted(() => {
     mounted.value = true
-    document.addEventListener("keydown", handleFormatPopoverKeydown)
-    window.addEventListener("resize", positionFormatPopover)
-    window.addEventListener("scroll", positionFormatPopover, true)
     if (currentMode.value === "authors" && route.query.sida !== undefined) {
         void router.replace({ path: route.path, query: queryFor(currentState()) })
     }
@@ -2068,9 +1870,6 @@ onMounted(() => {
 })
 onUnmounted(() => {
     disposeLibraryRequest()
-    document.removeEventListener("keydown", handleFormatPopoverKeydown)
-    window.removeEventListener("resize", positionFormatPopover)
-    window.removeEventListener("scroll", positionFormatPopover, true)
 })
 </script>
 
@@ -2351,26 +2150,6 @@ onUnmounted(() => {
                                 }}</span>
                             </a>
                         </div>
-                        <div v-if="downloadMode" class="more_container h-8 relative mb-4 show_more">
-                            <button
-                                v-if="!allVisibleSourceWorksSelected"
-                                type="button"
-                                data-library-select-visible
-                                class="sc btn btn-small absolute left"
-                                @click="selectVisibleSourceWorks"
-                            >
-                                Välj alla verk i listan
-                            </button>
-                            <button
-                                v-else
-                                type="button"
-                                data-library-deselect-visible
-                                class="sc btn btn-small absolute left"
-                                @click="deselectVisibleSourceWorks"
-                            >
-                                Avmarkera alla verk i listan
-                            </button>
-                        </div>
                     </div>
                     <div class="chronology primarycolor ml-px pl-px">
                         <i class="fa fa-clock-o mr-1 ml-px" />{{ " " }}
@@ -2439,7 +2218,18 @@ onUnmounted(() => {
                 </form>
             </div>
             <div class="flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
-                <div class="bg-white/65 lg:p-6 p-2 lg:border border-gray-900 flex-grow">
+                <LibrarySourceDownloadWorkspace
+                    v-if="currentMode === 'works' && downloadMode"
+                    :response="workResults"
+                    :loading="loading"
+                    :sort-options="browseSortOptions"
+                    :sort-reversed="browseSortReversed"
+                    :pagination="browsePagination"
+                    :imprint-year-targets="browseImprintYearTargets"
+                    @select-sort="selectSort"
+                    @select-page="selectPage"
+                />
+                <div v-else class="bg-white/65 lg:p-6 p-2 lg:border border-gray-900 flex-grow">
                     <LibraryAllResults
                         v-if="currentMode === 'all'"
                         :response="results"
@@ -2488,187 +2278,6 @@ onUnmounted(() => {
                         @select-page="selectPage"
                         @toggle-work="toggleBrowseWork"
                     />
-                    <div
-                        v-else-if="currentMode === 'works'"
-                        class="result title pl-0 flex-column min-h-500"
-                    >
-                        <div class="text-base">
-                            <div class="inline-block sc mr-2">Sortera:</div>
-                            <ul class="part_header top_header mb-4 inline-block">
-                                <li
-                                    v-for="item in activeBrowseSorts"
-                                    :key="item.key"
-                                    class="inline-block sc"
-                                >
-                                    <a
-                                        :href="browseSortHref(item.key)"
-                                        class="sort_item"
-                                        :class="{ active: selectedBrowseSort === item.key }"
-                                        :data-library-sort="item.key"
-                                        @click.prevent="selectSort(item.key)"
-                                        >{{ item.label }}</a
-                                    ><template v-if="selectedBrowseSort === item.key"
-                                        >{{ " "
-                                        }}<i
-                                            class="fa"
-                                            :class="
-                                                isSortReversed(currentMode, item.key)
-                                                    ? 'fa-caret-up'
-                                                    : 'fa-caret-down'
-                                            "
-                                    /></template>
-                                </li>
-                            </ul>
-                        </div>
-                        <div
-                            v-if="loading"
-                            data-library-loading
-                            class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0"
-                        >
-                            <i class="spinner fa fa-spinner fa-pulse" />
-                        </div>
-                        <div v-if="browseResults.failed" data-library-error>Ett fel uppstod.</div>
-                        <div v-else-if="!browseResults.data.length" data-library-empty class="pb-4">
-                            Inga träffar.
-                        </div>
-                        <table
-                            v-else-if="currentMode === 'works'"
-                            id="table"
-                            class="table w-full flex-grow -ml-2"
-                        >
-                            <tbody class="block">
-                                <tr
-                                    v-for="item in browseResults.data"
-                                    :key="item.key"
-                                    data-library-work-row
-                                    class="work_link grid w-full items-baseline transition-colors duration-150 hover:bg-gray-300 hover:bg-opacity-50 grid-cols-[minmax(0,1fr)_11rem] sm:grid-cols-[minmax(0,1fr)_7rem_11rem]"
-                                    @click="downloadMode && toggleSourceWork(item)"
-                                >
-                                    <td class="block min-w-0">
-                                        <div
-                                            class="min-w-0 items-center gap-2"
-                                            :class="{ flex: downloadMode }"
-                                        >
-                                            <input
-                                                v-if="downloadMode"
-                                                data-library-source-checkbox
-                                                class="align-middle shrink-0 relative z-10"
-                                                type="checkbox"
-                                                :checked="selectedSourceWorks.has(item.key)"
-                                                :disabled="item.sourceExports.length === 0"
-                                                :aria-label="`Välj ${item.title}`"
-                                                @click.stop
-                                                @change="toggleSourceWork(item)"
-                                            >
-                                            <div
-                                                class="header block text-lg leading-tight"
-                                                :class="{ 'min-w-0 flex-1': downloadMode }"
-                                            >
-                                                <span class="title_inner">
-                                                    <button
-                                                        v-library-tooltip="item.titleTooltip"
-                                                        type="button"
-                                                        data-library-work-toggle
-                                                        data-library-tooltip-kind="title"
-                                                        class="library-work-toggle"
-                                                        :aria-controls="
-                                                            !downloadMode
-                                                                ? workActionsId(item)
-                                                                : undefined
-                                                        "
-                                                        :aria-expanded="
-                                                            !downloadMode
-                                                                ? expandedWorkKey === item.key
-                                                                : undefined
-                                                        "
-                                                        :aria-pressed="
-                                                            downloadMode
-                                                                ? selectedSourceWorks.has(item.key)
-                                                                : undefined
-                                                        "
-                                                        :disabled="
-                                                            downloadMode &&
-                                                            item.sourceExports.length === 0
-                                                        "
-                                                        @click.stop="
-                                                            downloadMode
-                                                                ? toggleSourceWork(item)
-                                                                : toggleWorkActions(item)
-                                                        "
-                                                    >
-                                                        {{ item.title }}
-                                                    </button>
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div
-                                            v-show="!downloadMode && expandedWorkKey === item.key"
-                                            :id="workActionsId(item)"
-                                            data-library-work-actions
-                                            class="collapse-content"
-                                        >
-                                            <ul class="links">
-                                                <li
-                                                    v-for="action in item.actions"
-                                                    :key="`${action.kind}:${action.href}`"
-                                                >
-                                                    <a
-                                                        v-if="action.kind === 'download'"
-                                                        :href="action.href"
-                                                        target="_self"
-                                                        :download="action.downloadFilename"
-                                                        >{{ action.label }}</a
-                                                    >
-                                                    <NuxtLink
-                                                        v-else
-                                                        :to="canonicalNuxtHref(action.href)"
-                                                        >{{ action.label }}</NuxtLink
-                                                    >
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                    <td class="text-left hidden sm:block w-28 text-base">
-                                        <NuxtLink
-                                            v-if="isImprintYear(item.year)"
-                                            data-library-imprint-year
-                                            class="text-current"
-                                            :to="imprintYearTo(item.year)"
-                                            >{{ item.year }}</NuxtLink
-                                        ><template v-else>{{ item.year }}</template>
-                                    </td>
-                                    <td class="block w-44 text-right">
-                                        <div
-                                            class="min-w-0 whitespace-nowrap"
-                                        >
-                                            <span
-                                                class="author uppercase text-sm flex min-w-0 justify-end"
-                                            >
-                                                <NuxtLink
-                                                    v-library-tooltip="item.authorTooltip"
-                                                    data-library-tooltip-kind="author"
-                                                    class="min-w-0 shrink overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
-                                                    :to="canonicalNuxtHref(item.authorHref)"
-                                                    >{{ item.surname }}</NuxtLink
-                                                ><template v-if="item.roleSuffix"
-                                                    ><span
-                                                        class="shrink-0 text-gray-700 sc"
-                                                    >&nbsp;{{
-                                                        item.roleSuffix.trim()
-                                                    }}</span></template
-                                                >
-                                            </span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <LibraryPagination
-                            v-if="pageCount > 1"
-                            :model="browsePagination"
-                            @select-page="selectPage"
-                        />
-                    </div>
                     <LibraryDownloadResults
                         v-else-if="currentMode === 'epub' || currentMode === 'pdf'"
                         :mode="downloadResultMode"
@@ -2682,206 +2291,12 @@ onUnmounted(() => {
                         @select-page="selectPage"
                     />
                 </div>
-                <div v-if="downloadMode">
-                    <div class="dl ml-4 p-4 sticky flex flex-col overflow-auto">
-                        <h3 class="uppercase text-xl mt-2 mb-2">Valda verk</h3>
-                        <div class="footer">
-                            <button
-                                type="button"
-                                data-library-clear-downloads
-                                class="btn text-sm mb-4"
-                                :disabled="selectedSourceWorkList.length === 0"
-                                @click="clearSourceSelection"
-                            >
-                                Rensa
-                            </button>
-                            {{ " " }}
-                            <button
-                                ref="formatButtonElement"
-                                type="button"
-                                data-library-format-button
-                                class="btn text-sm mb-4"
-                                :disabled="selectedSourceWorkList.length === 0"
-                                aria-haspopup="dialog"
-                                aria-controls="library-format-popover"
-                                :aria-expanded="formatPopoverOpen"
-                                @click="toggleFormatPopover"
-                            >
-                                Välj format <i class="fa fa-download ml-2" />
-                            </button>
-
-                            <Teleport to="body">
-                                <div
-                                    v-if="formatPopoverOpen"
-                                    id="library-format-popover"
-                                    ref="formatPopoverElement"
-                                    data-library-format-popover
-                                    class="popover block bg-white border border-gray-700"
-                                    :class="formatPopoverPlacement"
-                                    role="dialog"
-                                    tabindex="-1"
-                                    aria-label="Välj format"
-                                    :style="formatPopoverStyle"
-                                >
-                                    <div class="arrow" aria-hidden="true" />
-                                    <div
-                                        ref="formatPopoverScrollportElement"
-                                        data-library-format-scrollport
-                                        :style="formatPopoverScrollportStyle"
-                                    >
-                                        <div class="text-sm italic">
-                                            {{ sourceFormatAvailability.get("etext:workdb") ?? 0 }}
-                                            etext<span
-                                                v-if="
-                                                    (sourceFormatAvailability.get('etext:workdb') ??
-                                                        0) !== 1
-                                                "
-                                                >er</span
-                                            >
-                                            vald<span
-                                                v-if="
-                                                    (sourceFormatAvailability.get('etext:workdb') ??
-                                                        0) !== 1
-                                                "
-                                                >a</span
-                                            >,
-                                            {{ sourceFormatAvailability.get("faksimil:workdb") ?? 0 }}
-                                            faksimil<span
-                                                v-if="
-                                                    (sourceFormatAvailability.get('faksimil:workdb') ??
-                                                        0) !== 1
-                                                "
-                                                >er</span
-                                            >
-                                            vald<span
-                                                v-if="
-                                                    (sourceFormatAvailability.get('faksimil:workdb') ??
-                                                        0) !== 1
-                                                "
-                                                >a</span
-                                            >
-                                        </div>
-                                        <div class="flex justify-between w-64">
-                                            <div
-                                                v-for="group in sourceFormatGroups"
-                                                :key="group.mediatype"
-                                                :class="group.mediatype === 'etext' ? 'mr-4' : 'mx-2'"
-                                            >
-                                                <h3 class="uppercase text-base">{{ group.label }}</h3>
-                                                <ul class="checks">
-                                                    <li
-                                                        v-for="format in group.formats"
-                                                        :key="format.type"
-                                                        class="whitespace-nowrap"
-                                                    >
-                                                        <input
-                                                            :id="`source-${group.mediatype}-${format.type}`"
-                                                            :data-library-source-format="`${group.mediatype}:${format.type}`"
-                                                            type="checkbox"
-                                                            class="mb-1 mr-1"
-                                                            :checked="
-                                                                selectedSourceFormats.has(
-                                                                    `${group.mediatype}:${format.type}`
-                                                                )
-                                                            "
-                                                            :disabled="
-                                                                !(
-                                                                    sourceFormatAvailability.get(
-                                                                        `${group.mediatype}:${format.type}`
-                                                                    ) ?? 0
-                                                                )
-                                                            "
-                                                            @change="
-                                                                toggleSourceFormat(
-                                                                    `${group.mediatype}:${format.type}`
-                                                                )
-                                                            "
-                                                        >
-                                                        <label
-                                                            class="capitalize"
-                                                            :class="{
-                                                                'text-gray-500': !(
-                                                                    sourceFormatAvailability.get(
-                                                                        `${group.mediatype}:${format.type}`
-                                                                    ) ?? 0
-                                                                )
-                                                            }"
-                                                            :for="`source-${group.mediatype}-${format.type}`"
-                                                            >{{ format.label }}</label
-                                                        >
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                        <form
-                                            action="/api/download"
-                                            method="POST"
-                                            class="mt-8 mb-4 flex justify-between"
-                                        >
-                                            <input
-                                                type="hidden"
-                                                name="files"
-                                                :value="selectedDownloadFiles.join(',')"
-                                            >
-                                            <span
-                                                data-library-download-size
-                                                class="text-sm self-center"
-                                                >{{ downloadSizeLabel }}</span
-                                            >
-                                            <button
-                                                type="submit"
-                                                data-library-download-submit
-                                                class="btn text-xs pull-right"
-                                                :disabled="selectedDownloadFiles.length === 0"
-                                            >
-                                                Hämta <i class="fa fa-download ml-2" />
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </Teleport>
-
-                            <ul class="mt-2 mb-2 flex-grow">
-                                <li v-for="item in selectedSourceWorkList" :key="item.key">
-                                    <button
-                                        type="button"
-                                        data-library-selected-work
-                                        class="download_item hover:line-through bg-transparent border-0 p-0 text-left"
-                                        @click="toggleSourceWork(item)"
-                                    >
-                                        <span class="sc">{{ item.surname }}</span> {{ item.title }}
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 </template>
 
 <style scoped>
-.library-work-toggle {
-    display: inline-block;
-    max-width: 100%;
-    overflow: hidden;
-    padding: 0;
-    color: #333;
-    text-align: left;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: bottom;
-    cursor: pointer;
-    background: transparent;
-    border: 0;
-}
-
-.library-work-toggle:hover,
-.library-work-toggle:focus-visible {
-    color: #7a1400;
-}
-
 [data-library-advanced-panel] select {
     display: block;
     width: 350px;
@@ -2980,11 +2395,6 @@ onUnmounted(() => {
 
 [data-library-advanced-panel] :deep(.select2-selection__arrow.multiselect__select::before) {
     display: none;
-}
-
-[data-library-format-popover] {
-    width: 288px;
-    padding: 14px;
 }
 
 [data-library-advanced-panel] option[data-library-placeholder] {

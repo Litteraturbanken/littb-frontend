@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
 import { describe, expect, test, vi } from "vitest"
 import { createMemoryHistory, createRouter, RouterLink } from "vue-router"
+import type { BrowseResponse } from "../../app/lib/library/page-results"
 
 vi.mock("../../app/lib/internal-navigation", () => ({
   canonicalNuxtHref(value: string) {
@@ -16,6 +17,37 @@ vi.mock("../../app/lib/internal-navigation", () => ({
 
 const nuxtRoot = resolve(import.meta.dirname, "../..")
 const source = (path: string) => readFile(resolve(nuxtRoot, path), "utf8")
+
+function sourceResponse(
+  items: readonly { key: string; title: string; sourceExports?: BrowseResponse["data"][number]["sourceExports"] }[]
+): BrowseResponse {
+  return {
+    data: items.map(item => ({
+      key: item.key,
+      titlePath: item.key,
+      title: item.title,
+      titleTooltip: item.title,
+      year: "1879",
+      surname: "Strindberg",
+      authorTooltip: "Strindberg, August",
+      roleSuffix: "",
+      titleHref: `/författare/august-strindberg/titlar/${item.key}`,
+      authorHref: "/författare/august-strindberg",
+      actions: [],
+      sourceExports: item.sourceExports ?? [{
+        lbworkid: `lb-${item.key}`,
+        mediatype: "etext",
+        type: "txt",
+        size: 1_024
+      }]
+    })),
+    hits: items.length,
+    distinctHits: items.length,
+    authorIds: [],
+    suggest: [],
+    failed: false
+  }
+}
 
 describe("Library component ownership", () => {
   test("the page delegates mode tabs to one shared component", async () => {
@@ -197,8 +229,12 @@ describe("Library component ownership", () => {
   })
 
   test("the page delegates pagination markup to one shared component", async () => {
-    const page = await source("app/pages/bibliotek.vue")
-    expect(page).toContain("<LibraryPagination")
+    const [page, sourceWorkspace] = await Promise.all([
+      source("app/pages/bibliotek.vue"),
+      source("app/components/library/LibrarySourceDownloadWorkspace.vue")
+    ])
+    expect(page).not.toContain("<LibraryPagination")
+    expect(sourceWorkspace).toContain("<LibraryPagination")
     expect(page).not.toContain("data-library-pagination-previous")
     expect(page).not.toContain("data-library-pagination-next")
   })
@@ -520,13 +556,192 @@ describe("Library component ownership", () => {
     expect(page).not.toContain("data-library-pdf-row")
   })
 
-  test("the page delegates ordinary Works and Parts rows to one result component", async () => {
+  test("the page delegates source download Works and ordinary results to dedicated components", async () => {
     const page = await source("app/pages/bibliotek.vue")
     expect(page).toContain("<LibraryBrowseResults")
-    expect(page.match(/data-library-work-row/g)).toHaveLength(1)
+    expect(page.match(/<LibrarySourceDownloadWorkspace/g)).toHaveLength(1)
     expect(page).not.toContain("data-library-part-row")
-    expect(page).toContain("data-library-source-checkbox")
-    expect(page).toContain("v-else-if=\"currentMode === 'works'\"")
+    expect(page).not.toContain("data-library-source-checkbox")
+    expect(page).not.toContain("data-library-format-popover")
+    expect(page).not.toContain("data-library-download-submit")
+  })
+
+  test("keeps source selections local to each mounted download workspace", async () => {
+    const firstTarget = document.createElement("div")
+    const secondTarget = document.createElement("div")
+    document.body.append(firstTarget, secondTarget)
+    const [{ createApp, h, nextTick }, { default: LibrarySourceDownloadWorkspace }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibrarySourceDownloadWorkspace.vue")
+    ])
+    const response = sourceResponse([{ key: "roda-rummet", title: "Röda rummet" }])
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true } },
+      setup(props: { to: string }, { slots }: { slots: { default?: () => unknown[] } }) {
+        return () => h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const mount = (target: HTMLElement) => {
+      const app = createApp({
+        setup: () => () => h(LibrarySourceDownloadWorkspace, {
+          response,
+          loading: false,
+          sortOptions: [{ key: "popularitet", label: "Popularitet", to: "/bibliotek?visa=works", active: true }],
+          sortReversed: false,
+          pagination: { currentPage: 1, pageCount: 1, previous: null, next: null, entries: [] },
+          imprintYearTargets: [{ year: "1879", to: "/bibliotek?intervall=1879%2C1879" }]
+        })
+      })
+      app.component("NuxtLink", NuxtLink)
+      app.mount(target)
+      return app
+    }
+    const first = mount(firstTarget)
+    const second = mount(secondTarget)
+    await nextTick()
+
+    firstTarget.querySelector<HTMLButtonElement>("[data-library-work-toggle]")?.click()
+    await nextTick()
+    expect(firstTarget.querySelectorAll("[data-library-selected-work]")).toHaveLength(1)
+    expect(secondTarget.querySelectorAll("[data-library-selected-work]")).toHaveLength(0)
+
+    first.unmount()
+    second.unmount()
+    firstTarget.remove()
+    secondTarget.remove()
+  })
+
+  test("reconciles source selections to refreshed result identities", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, ref }, { default: LibrarySourceDownloadWorkspace }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibrarySourceDownloadWorkspace.vue")
+    ])
+    const response = ref(sourceResponse([
+      { key: "keep", title: "Behåll mig" },
+      { key: "remove", title: "Ta bort mig" }
+    ]))
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true } },
+      setup(props: { to: string }, { slots }: { slots: { default?: () => unknown[] } }) {
+        return () => h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const app = createApp({
+      setup: () => () => h(LibrarySourceDownloadWorkspace, {
+        response: response.value,
+        loading: false,
+        sortOptions: [{ key: "popularitet", label: "Popularitet", to: "/bibliotek?visa=works", active: true }],
+        sortReversed: false,
+        pagination: { currentPage: 1, pageCount: 1, previous: null, next: null, entries: [] },
+        imprintYearTargets: [{ year: "1879", to: "/bibliotek?intervall=1879%2C1879" }]
+      })
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    for (const button of target.querySelectorAll<HTMLButtonElement>("[data-library-work-toggle]")) {
+      button.click()
+    }
+    await nextTick()
+    target.querySelector<HTMLButtonElement>("[data-library-format-button]")?.click()
+    await nextTick()
+    await nextTick()
+    const format = document.body.querySelector<HTMLInputElement>(
+      ":scope > [data-library-format-popover] [data-library-source-format='etext:txt']"
+    )
+    format?.dispatchEvent(new document.defaultView!.Event("change"))
+    await nextTick()
+    expect(document.body.querySelector<HTMLInputElement>(
+      ":scope > [data-library-format-popover] input[name='files']"
+    )?.value).toBe("lb-keep-etext-txt,lb-remove-etext-txt")
+
+    response.value = sourceResponse([{ key: "keep", title: "Behåll mig uppdaterad" }])
+    await nextTick()
+
+    expect(target.querySelectorAll("[data-library-selected-work]")).toHaveLength(1)
+    expect(target.querySelector("[data-library-selected-work]")?.textContent)
+      .toContain("Behåll mig uppdaterad")
+    expect(document.body.querySelector<HTMLInputElement>(
+      ":scope > [data-library-format-popover] input[name='files']"
+    )?.value).toBe("lb-keep-etext-txt")
+
+    app.unmount()
+    target.remove()
+  })
+
+  test("closes the body-level format popover and removes global listeners on unmount", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const documentAdd = vi.spyOn(document, "addEventListener")
+    const documentRemove = vi.spyOn(document, "removeEventListener")
+    const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window")
+    const windowAdd = vi.fn()
+    const windowRemove = vi.fn()
+    try {
+      const [{ createApp, h, nextTick }, { default: LibrarySourceDownloadWorkspace }] = await Promise.all([
+        import("vue"),
+        import("../../app/components/library/LibrarySourceDownloadWorkspace.vue")
+      ])
+      Object.defineProperty(globalThis, "window", {
+        configurable: true,
+        value: {
+          innerHeight: 768,
+          innerWidth: 1_024,
+          scrollX: 0,
+          scrollY: 0,
+          addEventListener: windowAdd,
+          removeEventListener: windowRemove
+        }
+      })
+      const NuxtLink = {
+        props: { to: { type: [String, Object], required: true } },
+        setup(props: { to: string }, { slots }: { slots: { default?: () => unknown[] } }) {
+          return () => h("a", { href: props.to }, slots.default?.())
+        }
+      }
+      const app = createApp({
+        setup: () => () => h(LibrarySourceDownloadWorkspace, {
+          response: sourceResponse([{ key: "roda-rummet", title: "Röda rummet" }]),
+          loading: false,
+          sortOptions: [{ key: "popularitet", label: "Popularitet", to: "/bibliotek?visa=works", active: true }],
+          sortReversed: false,
+          pagination: { currentPage: 1, pageCount: 1, previous: null, next: null, entries: [] },
+          imprintYearTargets: [{ year: "1879", to: "/bibliotek?intervall=1879%2C1879" }]
+        })
+      })
+      app.component("NuxtLink", NuxtLink)
+      app.mount(target)
+      await nextTick()
+      target.querySelector<HTMLButtonElement>("[data-library-work-toggle]")?.click()
+      target.querySelector<HTMLButtonElement>("[data-library-format-button]")?.click()
+      await nextTick()
+      await nextTick()
+
+      const keydownListener = documentAdd.mock.calls.find(([event]) => event === "keydown")?.[1]
+      const resizeListener = windowAdd.mock.calls.find(([event]) => event === "resize")?.[1]
+      const scrollListener = windowAdd.mock.calls.find(([event]) => event === "scroll")?.[1]
+      expect(keydownListener).toBeTypeOf("function")
+      expect(resizeListener).toBeTypeOf("function")
+      expect(scrollListener).toBeTypeOf("function")
+      expect(document.body.querySelector(":scope > [data-library-format-popover]")).not.toBeNull()
+
+      app.unmount()
+      await nextTick()
+
+      expect(document.body.querySelector(":scope > [data-library-format-popover]")).toBeNull()
+      expect(documentRemove.mock.calls).toContainEqual(["keydown", keydownListener])
+      expect(windowRemove.mock.calls).toContainEqual(["resize", resizeListener])
+      expect(windowRemove.mock.calls).toContainEqual(["scroll", scrollListener, true])
+    } finally {
+      documentAdd.mockRestore()
+      documentRemove.mockRestore()
+      if (windowDescriptor) Object.defineProperty(globalThis, "window", windowDescriptor)
+      else Reflect.deleteProperty(globalThis, "window")
+      target.remove()
+    }
   })
 
   test("renders ordinary Work rows and emits their disclosure key", async () => {

@@ -29,6 +29,24 @@ export type LibraryNativeSortOption<Key extends string> = Readonly<{
 export type LibraryDownloadMode = "epub" | "pdf"
 export type LibraryBrowseMode = "works" | "parts"
 
+export type LibrarySourceFormatKey =
+    | "etext:txt"
+    | "etext:xml"
+    | "etext:workdb"
+    | "faksimil:txt"
+    | "faksimil:xml"
+    | "faksimil:workdb"
+    | "faksimil:pdf"
+
+export type LibrarySourceFormatGroup = Readonly<{
+    mediatype: "etext" | "faksimil"
+    label: string
+    formats: readonly Readonly<{
+        type: "txt" | "xml" | "workdb" | "pdf"
+        label: string
+    }>[]
+}>
+
 export type LibraryImprintYearTarget = Readonly<{
     year: string
     to: RouteLocationRaw
