@@ -243,10 +243,13 @@ function handleFormatPopoverKeydown(event: KeyboardEvent) {
 }
 
 function toggleSourceWork(item: BrowseResult) {
-    if (item.sourceExports.length === 0) return
     const selected = new Map(selectedSourceWorks.value)
-    if (selected.has(item.key)) selected.delete(item.key)
-    else selected.set(item.key, item)
+    if (selected.delete(item.key)) {
+        selectedSourceWorks.value = selected
+        return
+    }
+    if (item.sourceExports.length === 0) return
+    selected.set(item.key, item)
     selectedSourceWorks.value = selected
 }
 

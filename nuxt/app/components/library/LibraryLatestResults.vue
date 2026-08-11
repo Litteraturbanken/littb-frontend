@@ -121,7 +121,6 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                         <span class="title_inner">
                                             <NuxtLink
                                                 v-library-tooltip="item.titleTooltip"
-                                                no-prefetch
                                                 :data-library-latest-title="item.titleId"
                                                 data-library-tooltip-kind="title"
                                                 :to="canonicalNuxtHref(item.titleHref)"
@@ -135,7 +134,6 @@ function imprintYearTo(year: string): RouteLocationRaw {
                         <td class="text-left hidden sm:block w-28 text-base">
                             <NuxtLink
                                 v-if="hasImprintYearTarget(item.year)"
-                                no-prefetch
                                 data-library-imprint-year
                                 class="text-current"
                                 :to="imprintYearTo(item.year)"
@@ -147,7 +145,6 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                 <span class="author uppercase text-sm">
                                     <NuxtLink
                                         v-library-tooltip="item.authorTooltip"
-                                        no-prefetch
                                         data-library-tooltip-kind="author"
                                         :to="canonicalNuxtHref(item.authorHref)"
                                         >{{ item.surname }}</NuxtLink

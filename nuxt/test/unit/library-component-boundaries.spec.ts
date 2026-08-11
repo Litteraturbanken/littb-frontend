@@ -354,13 +354,13 @@ describe("Library component ownership", () => {
       import("../../app/components/library/LibraryModeTabs.vue")
     ])
     const tabs = [
-      { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: false, disabledLook: false, disabled: false, replace: true, separatorBefore: false },
-      { mode: "latest", label: "Nytt", count: null, to: "/bibliotek?visa=latest&filter=berg", active: false, disabledLook: false, disabled: false, replace: true, separatorBefore: true },
-      { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: true, disabledLook: true, disabled: false, replace: true, separatorBefore: true },
-      { mode: "works", label: "Verk", count: 34, to: "/bibliotek?visa=works&filter=berg", active: false, disabledLook: false, disabled: false, replace: true, separatorBefore: true },
-      { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, disabled: false, replace: true, separatorBefore: true },
-      { mode: "epub", label: "Epub", count: 56, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: false, disabled: false, replace: true, separatorBefore: true },
-      { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, disabled: false, replace: true, separatorBefore: true }
+      { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: false },
+      { mode: "latest", label: "Nytt", count: null, to: "/bibliotek?visa=latest&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
+      { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: true, disabledLook: true, disabled: false, separatorBefore: true },
+      { mode: "works", label: "Verk", count: 34, to: "/bibliotek?visa=works&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
+      { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, disabled: false, separatorBefore: true },
+      { mode: "epub", label: "Epub", count: 56, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
+      { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, disabled: false, separatorBefore: true }
     ] as const
     const NuxtLink = {
       props: { to: { type: [String, Object], required: true }, custom: Boolean, replace: Boolean },
@@ -406,8 +406,8 @@ describe("Library component ownership", () => {
       import("../../app/components/library/LibraryModeTabs.vue")
     ])
     const tabs = [
-      { mode: "epub", label: "Epub", count: 9, to: "/epub", active: true, disabledLook: false, disabled: false, replace: true, separatorBefore: false },
-      { mode: "pdf", label: "PDF", count: null, to: "/epub?visa=pdf", active: false, disabledLook: true, disabled: false, replace: true, separatorBefore: true }
+      { mode: "epub", label: "Epub", count: 9, to: "/epub", active: true, disabledLook: false, disabled: false, separatorBefore: false },
+      { mode: "pdf", label: "PDF", count: null, to: "/epub?visa=pdf", active: false, disabledLook: true, disabled: false, separatorBefore: true }
     ] as const
     const NuxtLink = {
       props: { to: { type: [String, Object], required: true }, custom: Boolean, replace: Boolean },
@@ -461,11 +461,11 @@ describe("Library component ownership", () => {
       await router.push("/bibliotek?filter=berg")
       await router.isReady()
       const tabs = ref([
-      { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: true, disabledLook: false, replace: true, separatorBefore: false, disabled: false },
-      { mode: "authors", label: "Författare", count: 0, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, replace: true, separatorBefore: true, disabled: false },
-      { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, replace: true, separatorBefore: true, disabled: false },
-      { mode: "epub", label: "Epub", count: null, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: true, replace: true, separatorBefore: true, disabled: false },
-      { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, replace: true, separatorBefore: true, disabled: false }
+      { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: true, disabledLook: false, separatorBefore: false, disabled: false },
+      { mode: "authors", label: "Författare", count: 0, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false },
+      { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false },
+      { mode: "epub", label: "Epub", count: null, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false },
+      { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false }
       ])
       const app = createApp({ setup: () => () => h(LibraryModeTabs, { tabs: tabs.value }) })
       app.use(router)
@@ -502,7 +502,7 @@ describe("Library component ownership", () => {
       expect(router.currentRoute.value.fullPath).toBe("/")
 
       tabs.value = [
-        { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, replace: true, separatorBefore: false, disabled: true }
+        { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, separatorBefore: false, disabled: true }
       ]
       await nextTick()
       const disabledAuthor = target.querySelector<HTMLAnchorElement>("a")
@@ -1000,6 +1000,78 @@ describe("Library component ownership", () => {
     expect(document.body.querySelector<HTMLInputElement>(
       ":scope > [data-library-format-popover] input[name='files']"
     )?.value).toBe("lb-remove-etext-txt")
+
+    app.unmount()
+    target.remove()
+  })
+
+  test("removes a selected work after refresh leaves it with zero exports", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, ref }, { default: LibrarySourceDownloadWorkspace }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibrarySourceDownloadWorkspace.vue")
+    ])
+    const response = ref(sourceResponse([{ key: "keep", title: "Behåll mig" }]))
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true } },
+      setup(props: { to: string }, { slots }: { slots: { default?: () => unknown[] } }) {
+        return () => h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const app = createApp({
+      setup: () => () => h(LibrarySourceDownloadWorkspace, {
+        response: response.value,
+        loading: false,
+        sortOptions: [{ key: "popularitet", label: "Popularitet", to: "/bibliotek?visa=works", active: true }],
+        sortReversed: false,
+        pagination: { currentPage: 1, pageCount: 1, previous: null, next: null, entries: [] },
+        imprintYearTargets: [{ year: "1879", to: "/bibliotek?intervall=1879%2C1879" }]
+      })
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    target.querySelector<HTMLButtonElement>("[data-library-work-toggle]")?.click()
+    await nextTick()
+    target.querySelector<HTMLButtonElement>("[data-library-format-button]")?.click()
+    await nextTick()
+    await nextTick()
+    document.body.querySelector<HTMLInputElement>(
+      ":scope > [data-library-format-popover] [data-library-source-format='etext:txt']"
+    )?.dispatchEvent(new document.defaultView!.Event("change"))
+    await nextTick()
+    expect(document.body.querySelector<HTMLInputElement>(
+      ":scope > [data-library-format-popover] input[name='files']"
+    )?.value).toBe("lb-keep-etext-txt")
+
+    response.value = sourceResponse([
+      { key: "keep", title: "Behåll mig utan export", sourceExports: [] },
+      { key: "never-add", title: "Kan inte läggas till", sourceExports: [] }
+    ])
+    await nextTick()
+    await nextTick()
+
+    const refreshedCheckbox = target.querySelector("[data-library-source-checkbox]")
+    expect(refreshedCheckbox?.getAttribute("checked")).toBe("true")
+    expect(refreshedCheckbox?.hasAttribute("disabled")).toBe(true)
+    expect(target.querySelectorAll("[data-library-selected-work]")).toHaveLength(1)
+    expect(document.body.querySelector<HTMLInputElement>(
+      ":scope > [data-library-format-popover] input[name='files']"
+    )?.value).toBe("")
+
+    target.querySelector<HTMLButtonElement>("[data-library-selected-work]")?.click()
+    await nextTick()
+    expect(target.querySelectorAll("[data-library-selected-work]")).toHaveLength(0)
+    expect(refreshedCheckbox?.getAttribute("checked")).toBe("false")
+    expect(document.body.querySelector<HTMLInputElement>(
+      ":scope > [data-library-format-popover] input[name='files']"
+    )?.value).toBe("")
+
+    target.querySelectorAll<HTMLTableRowElement>("[data-library-work-row]")[1]?.click()
+    await nextTick()
+    expect(target.querySelectorAll("[data-library-selected-work]")).toHaveLength(0)
 
     app.unmount()
     target.remove()
@@ -1506,7 +1578,7 @@ describe("Library component ownership", () => {
     target.remove()
   })
 
-  test("disables Nuxt visibility prefetch for every extracted anchor control", async () => {
+  test("disables prefetch only for extracted anchor controls", async () => {
     const target = document.createElement("div")
     document.body.append(target)
     const [
@@ -1558,8 +1630,8 @@ describe("Library component ownership", () => {
         h(LibraryPagination, { model: pagination }),
         h(LibraryModeTabs, {
           tabs: [
-            { mode: "works", label: "Verk", count: 1, to: "/tab-active", active: true, disabledLook: false, disabled: false, replace: false, separatorBefore: false },
-            { mode: "authors", label: "Författare", count: 0, to: "/tab-disabled", active: false, disabledLook: true, disabled: true, replace: true, separatorBefore: true }
+            { mode: "works", label: "Verk", count: 1, to: "/tab-active", active: true, disabledLook: false, disabled: false, separatorBefore: false },
+            { mode: "authors", label: "Författare", count: 0, to: "/tab-disabled", active: false, disabledLook: true, disabled: true, separatorBefore: true }
           ]
         }),
         h(LibraryAllResults, {
@@ -1645,7 +1717,14 @@ describe("Library component ownership", () => {
       "/latest-year",
       "/f%C3%B6rfattare/latest-author"
     ])
-    expect(scheduledPrefetches).toEqual([])
+    expect(scheduledPrefetches).toEqual([
+      "/f%C3%B6rfattare/all-work",
+      "/all-year",
+      "/f%C3%B6rfattare/all-author",
+      "/f%C3%B6rfattare/latest-work",
+      "/latest-year",
+      "/f%C3%B6rfattare/latest-author"
+    ])
     app.unmount()
     target.remove()
   })

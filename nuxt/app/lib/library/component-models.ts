@@ -66,7 +66,6 @@ export type LibraryModeTab = Readonly<{
     active: boolean
     disabledLook: boolean
     disabled: boolean
-    replace: boolean
     separatorBefore: boolean
 }>
 

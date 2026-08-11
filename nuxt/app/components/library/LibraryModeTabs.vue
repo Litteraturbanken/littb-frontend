@@ -13,7 +13,7 @@ defineProps<{
             v-slot="{ href, navigate }"
             custom
             no-prefetch
-            :replace="tab.replace"
+            replace
             :to="tab.to"
             ><a
                 :data-library-tab="tab.mode"

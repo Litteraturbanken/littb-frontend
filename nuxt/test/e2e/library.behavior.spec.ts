@@ -1175,11 +1175,13 @@ test("source selections survive pagination and an empty refresh", async ({ page 
   await expect(page.locator("[data-library-selected-work]")).toHaveCount(2)
 })
 
-test("the active Works tab exits source mode with preserved state and push history", async ({
+test("the active Works tab exits source mode with preserved state and replace history", async ({
   page
 }) => {
   const sourcePath = "/bibliotek?avancerat=1&visa=works&sort=titlar&nedladdning=1&sida=2&hide1800&title=DoktorGlas&filter=source-pagination&k%C3%B6n=female&keep=first&keep=second"
-  await page.goto(sourcePath, { waitUntil: "networkidle" })
+  await page.goto("/presentationer", { waitUntil: "networkidle" })
+  await pushRoute(page, sourcePath)
+  await expect(page).toHaveURL(sourcePath)
 
   await page.locator("[data-library-source-checkbox]:not(:disabled)").first().check()
   await expect(page.locator("[data-library-selected-work]")).toHaveCount(1)
@@ -1199,15 +1201,16 @@ test("the active Works tab exits source mode with preserved state and push histo
   expect(target.searchParams.get("kön")).toBe("female")
   expect(target.searchParams.getAll("keep")).toEqual(["first", "second"])
 
+  const sourceHistoryLength = await page.evaluate(() => history.length)
   await worksTab.click()
   await expect(page).not.toHaveURL(/(?:\?|&)nedladdning=1(?:&|$)/)
   await expect(page.locator("[data-library-source-checkbox]")).toHaveCount(0)
   await expect(page.locator("[data-library-work-actions]").first()).toBeHidden()
+  expect(await page.evaluate(() => history.length)).toBe(sourceHistoryLength)
 
   await page.goBack()
-  await expect(page).toHaveURL(sourcePath)
-  await expect(page.locator("[data-library-source-checkbox]")).not.toHaveCount(0)
-  await expect(page.locator("[data-library-selected-work]")).toHaveCount(0)
+  await expect(page).toHaveURL(/\/presentationer\/?$/)
+  await expect(page).not.toHaveURL(/(?:\?|&)nedladdning=1(?:&|$)/)
 })
 
 test("nedladdning rejects delimiter-bearing source tokens before native submission", async ({

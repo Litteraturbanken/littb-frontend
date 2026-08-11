@@ -453,7 +453,7 @@ test("category, publisher, about-author, and narrowing collections restore throu
   await expect.poll(() => new URL(page.url()).searchParams.get("about_authors"))
     .toBe("LagerlofS")
 
-  await chooseMultiOptions(page, page.locator("[data-library-narrowing]"), ["Humoristiska verk", "Brev"])
+  await chooseMultiOptions(page, page.locator("[data-library-narrowing]"), ["Brev", "Humoristiska verk"])
   await expect.poll(() => new URL(page.url()).searchParams.get("keywords_aux"))
     .toBe("texttype:brev;brevsamling,keyword:Humor")
   await expect.poll(async () => (await relevanceQueries(request)).length).toBe(5)

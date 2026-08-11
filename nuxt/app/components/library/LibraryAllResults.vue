@@ -121,7 +121,6 @@ function imprintYearTo(year: string): RouteLocationRaw {
                             </a>
                             <NuxtLink
                                 v-else
-                                no-prefetch
                                 :to="canonicalNuxtHref(item.primaryHref)"
                                 :data-library-author-name="item.index === 'author' || undefined"
                                 :data-library-result-title="item.fullTitle ? '' : undefined"
@@ -178,7 +177,6 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                     item.index !== 'author' &&
                                     hasImprintYearTarget(item.yearLabel)
                                 "
-                                no-prefetch
                                 data-library-imprint-year
                                 class="text-current"
                                 :to="imprintYearTo(item.yearLabel)"
@@ -190,7 +188,6 @@ function imprintYearTo(year: string): RouteLocationRaw {
                         >
                             <NuxtLink
                                 v-if="item.authorHref"
-                                no-prefetch
                                 :to="canonicalNuxtHref(item.authorHref)"
                                 >{{ item.secondaryAuthor }}</NuxtLink
                             >

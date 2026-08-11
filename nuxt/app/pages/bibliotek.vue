@@ -1554,8 +1554,7 @@ function libraryModeTab(
     to: RouteLocationRaw,
     disabledLook: boolean,
     disabled: boolean,
-    separatorBefore: boolean,
-    replace = true
+    separatorBefore: boolean
 ): LibraryModeTab {
     return {
         mode,
@@ -1565,7 +1564,6 @@ function libraryModeTab(
         active: currentMode.value === mode,
         disabledLook,
         disabled,
-        replace,
         separatorBefore
     }
 }
@@ -1619,8 +1617,7 @@ function ordinaryLibraryModeTabs(
             ordinaryWorksTabHref(),
             false,
             false,
-            separatorBefore,
-            !downloadMode.value
+            separatorBefore
         )
     ]
 
