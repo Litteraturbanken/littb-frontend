@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
-import { describe, expect, test, vi } from "vitest"
+import { describe, expect, onTestFinished, test, vi } from "vitest"
 import { createMemoryHistory, createRouter, RouterLink } from "vue-router"
 import type { BrowseResponse } from "../../app/lib/library/page-results"
 
@@ -144,6 +144,9 @@ describe("Library component ownership", () => {
     document.body.append(advancedTarget)
     const selectPrototype = Object.getPrototypeOf(document.createElement("select"))
     const selectValue = Object.getOwnPropertyDescriptor(selectPrototype, "value")!
+    onTestFinished(() => {
+      Object.defineProperty(selectPrototype, "value", selectValue)
+    })
     Object.defineProperty(selectPrototype, "value", {
       configurable: true,
       get: selectValue.get,
@@ -275,7 +278,6 @@ describe("Library component ownership", () => {
     expect(advancedTarget.querySelector("[data-library-select-visible]")).toBeNull()
     advancedApp.unmount()
     advancedTarget.remove()
-    Object.defineProperty(selectPrototype, "value", selectValue)
   })
 
   test("the page delegates mode tabs to one shared component", async () => {
