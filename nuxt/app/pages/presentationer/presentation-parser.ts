@@ -83,6 +83,16 @@ function normalizedUrl(value: string): string | null {
   }
 }
 
+function normalizedBackgroundImagePath(value: string): string | null {
+  const normalized = normalizedUrl(value)
+  if (normalized === null || normalized.includes("'")) return null
+  if ([...normalized].some(character => {
+    const codePoint = character.codePointAt(0) ?? 0
+    return codePoint <= 0x1f || codePoint === 0x7f
+  })) return null
+  return normalized
+}
+
 function managedStylesheetHref(
   value: string
 ): ManagedStylesheetHref<"presentation-editorial"> | null {
@@ -167,7 +177,7 @@ export function parseBackgroundRules(source: string): BackgroundRule[] {
       const rawStyleText = node.querySelector("style")?.textContent?.trim() || null
       return {
         target,
-        imagePath: rawImagePath === null ? null : normalizedUrl(rawImagePath),
+        imagePath: rawImagePath === null ? null : normalizedBackgroundImagePath(rawImagePath),
         className: node.getAttribute("class"),
         styleText: rawStyleText === null
           ? null

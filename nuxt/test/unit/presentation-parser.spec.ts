@@ -209,6 +209,23 @@ describe("Presentation background parser", () => {
       </backgrounds>
     `)).toEqual([])
   })
+
+  test.each([
+    "/red/background.jpg');color:red;/*",
+    "/red/background.jpg\n);color:red;/*"
+  ])("rejects background URLs that can escape the CSS url token: %s", imagePath => {
+    const encodedImagePath = imagePath
+      .replaceAll("&", "&amp;")
+      .replaceAll("'", "&apos;")
+      .replaceAll("\n", "&#10;")
+    const [rule] = parseBackgroundRules(`
+      <backgrounds>
+        <background target="/presentationer/specialomraden/*" url="${encodedImagePath}" />
+      </backgrounds>
+    `)
+
+    expect(rule?.imagePath).toBeNull()
+  })
 })
 
 describe("Presentation canonical route validation", () => {
