@@ -1458,6 +1458,30 @@ test("author navigator remains available in the narrow desktop search layout", a
   await expect(navigator.getByRole("button", { name: "Strindberg, August" })).toBeVisible()
 })
 
+test("author navigator exposes selection and keyboard escape in the mobile layout", async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+  const navigator = page.locator(".navigator")
+  const showAll = navigator.getByRole("button", { name: "Visa alla" })
+  const strindberg = navigator.getByRole("button", { name: "Strindberg, August" })
+
+  await expect(navigator).toBeVisible()
+  await expect(showAll).toHaveAttribute("aria-pressed", "true")
+  await strindberg.focus()
+  await page.keyboard.press("Enter")
+  await expect.poll(() => new URL(page.url()).searchParams.get("sok_filter"))
+    .toBe("StrindbergA")
+  await expect(strindberg).toHaveAttribute("aria-pressed", "true")
+  await expect(showAll).toHaveAttribute("aria-pressed", "false")
+
+  await showAll.focus()
+  await page.keyboard.press("Space")
+  await expect.poll(() => new URL(page.url()).searchParams.has("sok_filter")).toBe(false)
+  await expect(showAll).toHaveAttribute("aria-pressed", "true")
+})
+
 test("Visa fler is scoped to its work and keeps original Reader route ownership", async ({
   page,
   request

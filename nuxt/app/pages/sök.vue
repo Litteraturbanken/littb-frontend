@@ -1646,12 +1646,13 @@ v-for="item in [
           </ul>
         </div>
       </div>
-      <ul v-if="navigatorFacets.length || state.facetAuthorId" class="hidden sm:block navigator">
+      <ul v-if="navigatorFacets.length || state.facetAuthorId" class="navigator">
         <li>
           <a
             role="button"
             tabindex="0"
             :class="{ selected: !state.facetAuthorId }"
+            :aria-pressed="!state.facetAuthorId"
             @click="setFacet(null)"
             @keydown.enter.prevent="setFacet(null)"
             @keydown.space.prevent="setFacet(null)"
@@ -1662,6 +1663,7 @@ v-for="item in [
             role="button"
             tabindex="0"
             :class="{ selected: state.facetAuthorId === facet.key }"
+            :aria-pressed="state.facetAuthorId === facet.key"
             @click="setFacet(facet.key)"
             @keydown.enter.prevent="setFacet(facet.key)"
             @keydown.space.prevent="setFacet(facet.key)"
