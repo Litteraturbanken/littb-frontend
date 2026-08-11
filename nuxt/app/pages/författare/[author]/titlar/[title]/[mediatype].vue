@@ -24,10 +24,9 @@ const requestedFullPath = route.fullPath
 const requestedAuthor = scalarParam("author")
 const requestedTitle = scalarParam("title")
 const requestedMediaType = scalarParam("mediatype")
-const queryIndex = requestedFullPath.indexOf("?")
-const rawQuerySuffix = import.meta.server
+const rawSuffix = import.meta.server
   ? requestUrl.search
-  : queryIndex >= 0 ? requestedFullPath.slice(queryIndex) : ""
+  : rawRouteSuffix(requestedFullPath)
 const expectedCanonicalPath = [
   "/författare",
   encodeRfc3986Segment(requestedAuthor),
@@ -37,6 +36,15 @@ const expectedCanonicalPath = [
 ].join("/")
 const activeIdentity = { current: true }
 const failedStatus = shallowRef<404 | 502 | null>(null)
+
+function rawRouteSuffix(fullPath: string): string {
+  const queryIndex = fullPath.indexOf("?")
+  const fragmentIndex = fullPath.indexOf("#")
+  if (queryIndex >= 0 && (fragmentIndex < 0 || queryIndex < fragmentIndex)) {
+    return fullPath.slice(queryIndex)
+  }
+  return fragmentIndex < 0 ? "" : fullPath.slice(fragmentIndex)
+}
 
 function scalarParam(name: "author" | "title" | "mediatype"): string {
   const value = route.params[name]
@@ -135,7 +143,7 @@ async function resolveReaderShorthand(): Promise<void> {
       throw createError({ statusCode: 502, statusMessage: "Reader page unavailable" })
     }
     if (!isCurrentIdentity()) return
-    const publicTarget = `${resolution.canonicalPath}${rawQuerySuffix}`
+    const publicTarget = `${resolution.canonicalPath}${rawSuffix}`
     const destination = navigationDestination(publicTarget)
     const navigationResult = await nuxtApp.runWithContext(() => navigateTo(
       destination.target,

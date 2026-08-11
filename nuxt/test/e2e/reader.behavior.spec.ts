@@ -1675,6 +1675,26 @@ test("client shorthand navigation preserves the raw route fullPath query", async
   expect(problems).toEqual([])
 })
 
+test("client shorthand navigation keeps question marks inside fragments", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  const fragment = "#note?om-boken"
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+
+  await navigateClient(page, `${readerShorthandRouterPath}${fragment}`)
+  await expect(page).toHaveURL(`${readerShorthandPath}${fragment}`)
+  await expect(page.locator(".searching > .preloader")).toBeVisible()
+  await expect(page).toHaveURL(`${readerPath}${fragment}`)
+  await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
+  await expect(page.locator("[role='dialog']")).toHaveCount(0)
+  expect(await page.evaluate(() => ({
+    hash: window.location.hash,
+    search: window.location.search
+  }))).toEqual({ hash: "#note?om-boken", search: "" })
+  expect(problems).toEqual([])
+})
+
 test("a late shorthand resolver cannot leave the route that replaced it", async ({
   page,
   request
