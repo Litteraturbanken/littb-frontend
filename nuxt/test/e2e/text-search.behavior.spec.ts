@@ -856,6 +856,44 @@ test("late option bounds do not overwrite a chronology edit in progress", async 
     .toBe("1879,1940")
 })
 
+test("a completed chronology navigation does not overwrite a newer draft", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1&intervall=1800,1900")
+  await page.evaluate(() => {
+    const scope = window as typeof window & {
+      __chronologyPushPending?: boolean
+      __releaseChronologyPush?: () => void
+      useNuxtApp?: () => {
+        $router: { push: (target: unknown) => Promise<unknown> }
+      }
+    }
+    const router = scope.useNuxtApp?.().$router
+    if (!router) throw new Error("Nuxt router is unavailable")
+    const push = router.push.bind(router)
+    router.push = async target => {
+      scope.__chronologyPushPending = true
+      await new Promise<void>(resolve => { scope.__releaseChronologyPush = resolve })
+      return push(target)
+    }
+  })
+
+  const from = page.getByLabel("Från år", { exact: true })
+  await from.fill("1850")
+  await from.dispatchEvent("change")
+  await expect.poll(() => page.evaluate(() => (
+    window as typeof window & { __chronologyPushPending?: boolean }
+  ).__chronologyPushPending)).toBe(true)
+
+  await from.fill("1860")
+  await page.evaluate(() => (
+    window as typeof window & { __releaseChronologyPush?: () => void }
+  ).__releaseChronologyPush?.())
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1850,1900")
+  await expect(from).toHaveValue("1860")
+})
+
 test("title-only recovery cannot suppress a later static-options retry", async ({
   page,
   request

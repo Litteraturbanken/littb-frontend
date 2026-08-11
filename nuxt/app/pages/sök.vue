@@ -596,6 +596,8 @@ const chronologyCeiling = computed(() => Math.max(
 const chronologyFromDraft = ref("")
 const chronologyToDraft = ref("")
 const chronologyDraftDirty = ref(false)
+let chronologyDraftRevision = 0
+const pendingChronologyNavigations = new Map<number, readonly [number, number]>()
 
 function syncChronologyDraft() {
   if (chronologyDraftDirty.value) return
@@ -607,6 +609,12 @@ function syncChronologyDraft() {
 }
 
 watch(routeIdentity, () => {
+  const selected = state.value.yearRange
+  const matchingNavigation = selected && [...pendingChronologyNavigations].findLast(
+    ([, range]) => range[0] === selected[0] && range[1] === selected[1]
+  )
+  if (matchingNavigation && chronologyDraftRevision > matchingNavigation[0]) return
+  chronologyDraftRevision += 1
   chronologyDraftDirty.value = false
   syncChronologyDraft()
 }, {
@@ -616,12 +624,14 @@ watch(routeIdentity, () => {
 watch([chronologyFloor, chronologyCeiling], syncChronologyDraft, { flush: "sync" })
 
 function setChronologyDraft(endpoint: "from" | "to", value: string) {
+  chronologyDraftRevision += 1
   chronologyDraftDirty.value = true
   if (endpoint === "from") chronologyFromDraft.value = value
   else chronologyToDraft.value = value
 }
 
 function cancelChronologyDraft() {
+  chronologyDraftRevision += 1
   chronologyDraftDirty.value = false
   syncChronologyDraft()
 }
@@ -646,7 +656,15 @@ async function commitChronologyDraft(endpoint: "from" | "to", value: string) {
     chronologyDraftDirty.value = false
     return
   }
-  await navigate(textSearchFilterQuery(rawQuery.value, { yearRange: [from, to] }))
+  const revision = chronologyDraftRevision
+  const yearRange = [from, to] as const
+  pendingChronologyNavigations.set(revision, yearRange)
+  try {
+    await navigate(textSearchFilterQuery(rawQuery.value, { yearRange }))
+  } finally {
+    pendingChronologyNavigations.delete(revision)
+  }
+  if (chronologyDraftRevision !== revision) return
   chronologyDraftDirty.value = false
   syncChronologyDraft()
 }
