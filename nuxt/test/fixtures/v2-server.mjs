@@ -749,7 +749,15 @@ function readerMetadataResponse(titlePath) {
     case "CountedSliderReader":
       return {
         hits: 1,
-        data: [readerRepresentation(titlePath, { page_count: 4 })]
+        data: [readerRepresentation(titlePath, {
+          page_count: 4,
+          pages: [
+            { pagename: "0", pageindex: 0 },
+            { pagename: "-3", pageindex: 1 },
+            { pagename: "-2", pageindex: 2 },
+            { pagename: "-1", pageindex: 3 }
+          ]
+        })]
       }
     case "InvalidCountSliderReader":
       return {

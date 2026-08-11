@@ -4177,43 +4177,10 @@ test("author-scoped search link selects the current Reader author", async ({ pag
   await expect(page.locator(".author_select")).toContainText("SöderbergH")
 })
 
-test("page-position slider preserves raw index holes and commits keyboard targets on key-up", async ({
-  page,
-  request
-}) => {
-  const rawQuery = "?bare&repeat=%2f&repeat=%2F&Mixed=%2a#slider"
-  await page.goto(`${sparseSliderReaderPath}${rawQuery}`, { waitUntil: "networkidle" })
-  const slider = page.getByRole("slider", { name: "Gå till sida" })
-  await expect(slider).toHaveAttribute("min", "0")
-  await expect(slider).toHaveAttribute("max", "57")
-  await expect(slider).toHaveValue("2")
-  const initialBrowserPath = await page.evaluate(
-    () => location.pathname + location.search + location.hash
-  )
+test("a sparse page map with a declared count does not advertise a slider", async ({ page }) => {
+  await page.goto(sparseSliderReaderPath, { waitUntil: "networkidle" })
 
-  await request.delete(`${fixture}/_reader_requests`)
-  await startHistoryMutationCounter(page)
-  await slider.focus()
-  await page.keyboard.down("ArrowRight")
-  await expect(slider).toHaveValue("3")
-  await expect(page).toHaveURL(initialBrowserPath)
-  await page.keyboard.up("ArrowRight")
-  await expect(slider).toHaveValue("2")
-  await expect(page).toHaveURL(initialBrowserPath)
-  expect(await historyMutationCounts(page)).toEqual({ pushState: 0, replaceState: 0 })
-  expect(await readerRequests(request)).toEqual([])
-
-  await page.keyboard.down("End")
-  await expect(slider).toHaveValue("57")
-  await expect(page).toHaveURL(initialBrowserPath)
-  await page.keyboard.up("End")
-  const rawTarget = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/57/etext" + rawQuery
-  await expect(page).toHaveURL(rawTarget)
-  expect(await page.evaluate(() => window.history.state.current)).toBe(rawTarget)
-  expect(await historyMutationCounts(page)).toEqual({ pushState: 1, replaceState: 1 })
-
-  await page.goBack({ waitUntil: "networkidle" })
-  await expect(page).toHaveURL(initialBrowserPath)
+  await expect(page.getByRole("slider", { name: "Gå till sida" })).toHaveCount(0)
 })
 
 test("page-position slider previews pointer input and commits exactly once on release", async ({
@@ -4221,7 +4188,7 @@ test("page-position slider previews pointer input and commits exactly once on re
   request
 }) => {
   const rawQuery = "?bare&empty=&repeat=%2f&repeat=%2F&Mixed=%2a#slider"
-  await page.goto(`${sparseSliderReaderPath}${rawQuery}`, { waitUntil: "networkidle" })
+  await page.goto(`${countedSliderReaderPath}${rawQuery}`, { waitUntil: "networkidle" })
   const slider = page.getByRole("slider", { name: "Gå till sida" })
   const initialBrowserPath = await page.evaluate(
     () => location.pathname + location.search + location.hash
@@ -4231,16 +4198,16 @@ test("page-position slider previews pointer input and commits exactly once on re
 
   await slider.evaluate(input => {
     const range = input as HTMLInputElement
-    range.value = "12"
+    range.value = "3"
     range.dispatchEvent(new Event("input", { bubbles: true }))
-    range.value = "57"
+    range.value = "0"
     range.dispatchEvent(new Event("input", { bubbles: true }))
-    range.value = "12"
+    range.value = "3"
     range.dispatchEvent(new Event("input", { bubbles: true }))
   })
-  await expect(slider).toHaveValue("12")
+  await expect(slider).toHaveValue("3")
   const bubble = page.locator(".reader-context .rz-bubble.rz-model-value")
-  await expect(bubble).toHaveText("12")
+  await expect(bubble).toHaveText("-1")
   await expect(bubble).toHaveCSS("opacity", "1")
   await expect(bubble).toHaveCSS("font-size", "12px")
   const [bubbleBox, sliderBox] = await Promise.all([bubble.boundingBox(), slider.boundingBox()])
@@ -4257,7 +4224,7 @@ test("page-position slider previews pointer input and commits exactly once on re
   expect(await readerRequests(request)).toEqual([])
 
   await slider.evaluate(input => input.dispatchEvent(new Event("change", { bubbles: true })))
-  const rawTarget = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/12/etext" + rawQuery
+  const rawTarget = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/CountedSliderReader/sida/-1/etext" + rawQuery
   await expect(page).toHaveURL(rawTarget)
   expect(await page.evaluate(() => window.history.state.current)).toBe(rawTarget)
   expect(await historyMutationCounts(page)).toEqual({ pushState: 1, replaceState: 1 })
@@ -4513,7 +4480,7 @@ test("a bare page-position track click previews its integer and commits once", a
   page,
   request
 }) => {
-  await page.goto(sparseSliderReaderPath, { waitUntil: "networkidle" })
+  await page.goto(countedSliderReaderPath, { waitUntil: "networkidle" })
   const slider = page.getByRole("slider", { name: "Gå till sida" })
   await slider.scrollIntoViewIfNeeded()
   const box = await slider.boundingBox()
@@ -4521,12 +4488,12 @@ test("a bare page-position track click previews its integer and commits once", a
   await request.delete(`${fixture}/_reader_requests`)
   await startHistoryMutationCounter(page)
 
-  const targetIndex = 12
-  const targetX = box!.x + 10 + (box!.width - 20) * targetIndex / 57
+  const targetIndex = 3
+  const targetX = box!.x + 10 + (box!.width - 20) * targetIndex / 3
   await page.mouse.click(targetX, box!.y + box!.height / 2)
 
   await expect(page).toHaveURL(
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/12/etext"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/CountedSliderReader/sida/-1/etext"
   )
   expect(await historyMutationCounts(page)).toEqual({ pushState: 1, replaceState: 1 })
 })
@@ -4565,52 +4532,30 @@ test("page-position slider clears a keyboard preview on blur and supports pointe
   page,
   request
 }) => {
-  await page.goto(sparseSliderReaderPath, { waitUntil: "networkidle" })
+  await page.goto(countedSliderReaderPath, { waitUntil: "networkidle" })
   const slider = page.getByRole("slider", { name: "Gå till sida" })
   await slider.focus()
   await page.keyboard.down("End")
-  await expect(slider).toHaveValue("57")
+  await expect(slider).toHaveValue("3")
   await slider.blur()
   await page.keyboard.up("End")
-  await expect(page).toHaveURL(sparseSliderReaderPath)
+  await expect(page).toHaveURL(countedSliderReaderPath)
   await expect(slider).toHaveValue("2")
 
   await request.delete(`${fixture}/_reader_requests`)
   await startHistoryMutationCounter(page)
   const box = await slider.boundingBox()
   expect(box).not.toBeNull()
-  const startX = box!.x + 10 + (box!.width - 20) * 2 / 57
-  const minimumX = box!.x + 10
-  const targetX = box!.x + 10 + (box!.width - 20) * 12 / 57
+  const startX = box!.x + 10 + (box!.width - 20) * 2 / 3
   const maximumX = box!.x + box!.width - 10
   const y = box!.y + box!.height / 2
-
-  await page.mouse.move(startX, y)
-  await page.mouse.down()
-  await page.mouse.move(minimumX, y, { steps: 2 })
-  await page.mouse.up()
-  await expect(page).toHaveURL(sparseSliderReaderPath)
-  await expect(slider).toHaveValue("2")
 
   await page.mouse.move(startX, y)
   await page.mouse.down()
   await page.mouse.move(maximumX, y, { steps: 2 })
   await page.mouse.up()
   await expect(page).toHaveURL(
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/57/etext"
-  )
-  await page.goBack({ waitUntil: "networkidle" })
-  await expect(page).toHaveURL(sparseSliderReaderPath)
-
-  await startHistoryMutationCounter(page)
-  await page.mouse.move(startX, y)
-  await page.mouse.down()
-  await page.mouse.move(targetX, y, { steps: 4 })
-  await expect(slider).toHaveValue("12")
-  await expect(page).toHaveURL(sparseSliderReaderPath)
-  await page.mouse.up()
-  await expect(page).toHaveURL(
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/12/etext"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/CountedSliderReader/sida/-1/etext"
   )
   expect(await historyMutationCounts(page)).toEqual({ pushState: 1, replaceState: 1 })
 })
@@ -4619,19 +4564,19 @@ test("page-position slider clears committed drafts across A-B-A and aligns the h
   page,
   request
 }) => {
-  await page.goto(sparseSliderReaderPath, { waitUntil: "networkidle" })
+  await page.goto(countedSliderReaderPath, { waitUntil: "networkidle" })
   await request.put(`${fixture}/_reader_manifest_delays`, {
-    data: { SparseKeyboardReader: 350 }
+    data: { CountedSliderReader: 350 }
   })
   const slider = page.getByRole("slider", { name: "Gå till sida" })
   await slider.focus()
   await page.keyboard.down("End")
   await page.keyboard.up("End")
   await expect(page).toHaveURL(
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/57/etext"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/CountedSliderReader/sida/-1/etext"
   )
   await page.goBack()
-  await expect(page).toHaveURL(sparseSliderReaderPath)
+  await expect(page).toHaveURL(countedSliderReaderPath)
   await expect(slider).toHaveValue("2")
   await expect(page.locator(".reader-context .rz-bubble.rz-model-value")).toHaveCount(0)
 

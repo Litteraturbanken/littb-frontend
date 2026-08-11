@@ -32,7 +32,8 @@ function readerSliderMaximum(
 ): number | null {
   if (declaredPageCount === null || declaredPageCount === undefined) return null
   const maximum = declaredPageCount - 1
-  return pages.every(page => page.page_index >= 0 && page.page_index <= maximum)
+  return pages.length === declaredPageCount
+    && pages.every((page, index) => page.page_index === index)
     ? maximum
     : null
 }
