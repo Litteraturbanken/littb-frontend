@@ -66,6 +66,8 @@ type PrimaryEnvelope = Readonly<{
 }>
 type CountView = Readonly<{ documents: number, hits: number }>
 type ChronologyBounds = Readonly<{ yearFrom: number, yearTo: number }>
+const DEFAULT_CHRONOLOGY_FLOOR = 1800
+const DEFAULT_CHRONOLOGY_CEILING = 1950
 type ChronologyEnvelope = Readonly<{ bounds: ChronologyBounds | null }>
 type AuthorChoice = Readonly<{ value: string, label: string, selectionLabel: string }>
 type OptionsView = Readonly<{
@@ -173,16 +175,27 @@ const primaryIdentity = computed(() => state.value.phrase
   : "empty")
 const primaryKey = computed(() => `text-search-primary:${primaryIdentity.value}`)
 
+function isChronologyEndpoint(value: unknown): value is number | null {
+  return value === null || (Number.isSafeInteger(value) && (value as number) >= 1000
+    && (value as number) <= 2200)
+}
+
+function isChronologyRecord(value: unknown): value is Record<"year_from" | "year_to", unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    && Object.keys(value).sort().join(",") === "year_from,year_to"
+}
+
 function chronologyBounds(value: unknown): ChronologyBounds | null {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) return null
-  const record = value as Record<string, unknown>
-  if (Object.keys(record).sort().join(",") !== "year_from,year_to") return null
-  if (record.year_from === null && record.year_to === null) return null
-  if (!Number.isSafeInteger(record.year_from) || !Number.isSafeInteger(record.year_to)) return null
-  const yearFrom = record.year_from as number
-  const yearTo = record.year_to as number
-  if (yearFrom < 1000 || yearTo > 2200 || yearFrom > yearTo) return null
-  return { yearFrom, yearTo }
+  if (!isChronologyRecord(value)) return null
+  const { year_from: yearFrom, year_to: yearTo } = value
+  if (!isChronologyEndpoint(yearFrom) || !isChronologyEndpoint(yearTo)
+    || (yearFrom === null && yearTo === null)) return null
+  return {
+    yearFrom: Math.min(yearFrom ?? DEFAULT_CHRONOLOGY_FLOOR,
+      yearTo ?? DEFAULT_CHRONOLOGY_CEILING),
+    yearTo: Math.max(yearFrom ?? DEFAULT_CHRONOLOGY_FLOOR,
+      yearTo ?? DEFAULT_CHRONOLOGY_CEILING)
+  }
 }
 
 const chronologyAsyncData = useAsyncData<ChronologyEnvelope>(
@@ -558,8 +571,8 @@ const initialOptions = state.value.advanced ? loadOptions() : Promise.resolve()
 await initialOptions
 const options = computed(() => optionsCache.value[optionsIdentity.value] ?? null)
 const lastAcceptedAdvancedChronologyBounds = shallowRef({
-  yearFrom: options.value?.yearFrom ?? 1800,
-  yearTo: options.value?.yearTo ?? 1950
+  yearFrom: options.value?.yearFrom ?? DEFAULT_CHRONOLOGY_FLOOR,
+  yearTo: options.value?.yearTo ?? DEFAULT_CHRONOLOGY_CEILING
 })
 watch(options, candidate => {
   if (candidate?.yearFrom == null || candidate.yearTo == null) return
@@ -578,12 +591,12 @@ const advancedChronologyBounds = computed(() => {
 const baseChronologyFloor = computed(() => (
   state.value.advanced
     ? advancedChronologyBounds.value[0]
-    : chronologyData.value?.bounds?.yearFrom ?? 1800
+    : chronologyData.value?.bounds?.yearFrom ?? DEFAULT_CHRONOLOGY_FLOOR
 ))
 const baseChronologyCeiling = computed(() => (
   state.value.advanced
     ? advancedChronologyBounds.value[1]
-    : chronologyData.value?.bounds?.yearTo ?? 1950
+    : chronologyData.value?.bounds?.yearTo ?? DEFAULT_CHRONOLOGY_CEILING
 ))
 const chronologyFloor = computed(() => Math.min(
   baseChronologyFloor.value,

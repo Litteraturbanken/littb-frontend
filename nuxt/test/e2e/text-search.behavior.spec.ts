@@ -351,6 +351,49 @@ test("simple search loads chronology bounds without loading full options", async
   expect(await requests(request, "options")).toEqual([])
 })
 
+for (const { description, yearFrom, yearTo, minimum, maximum } of [
+  {
+    description: "lower-only inverted",
+    yearFrom: 2000,
+    yearTo: null,
+    minimum: "1950",
+    maximum: "2000"
+  },
+  {
+    description: "upper-only inverted",
+    yearFrom: null,
+    yearTo: 1700,
+    minimum: "1700",
+    maximum: "1800"
+  },
+  {
+    description: "upper-only global edge",
+    yearFrom: null,
+    yearTo: 2200,
+    minimum: "1800",
+    maximum: "2200"
+  }
+]) {
+  test(`partial simple chronology endpoints produce ordered bounds: ${description}`, async ({
+    page
+  }) => {
+    await page.route("**/api/v2/text-search/chronology", route => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      json: { year_from: yearFrom, year_to: yearTo }
+    }))
+    await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
+    await page.locator("[data-search-advanced]").click()
+    await expect.poll(() => new URL(page.url()).searchParams.has("avancerad")).toBe(false)
+
+    const ranges = page.locator(".chronology_ranges input[type='range']")
+    await expect(ranges.nth(0)).toHaveAttribute("min", minimum)
+    await expect(ranges.nth(0)).toHaveAttribute("max", maximum)
+    await expect(page.getByLabel("Från år", { exact: true })).toHaveValue(minimum)
+    await expect(page.getByLabel("Till år", { exact: true })).toHaveValue(maximum)
+  })
+}
+
 test("direct search hydrates its loading shell before rendering one client result", async ({
   page,
   request
