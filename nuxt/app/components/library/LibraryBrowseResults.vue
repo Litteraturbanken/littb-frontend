@@ -99,7 +99,6 @@ function workActionsId(key: string): string {
                                         :aria-controls="workActionsId(item.key)"
                                         :aria-expanded="expandedKey === item.key"
                                         @click="emit('toggleWork', item.key)"
-                                        @keydown.enter.prevent="emit('toggleWork', item.key)"
                                     >
                                         {{ item.title }}
                                     </button>

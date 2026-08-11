@@ -648,6 +648,30 @@ test("Library tooltip keeps independent hover and keyboard focus state", async (
   await expect(tooltip).toHaveCount(0)
 })
 
+test("Works and Dikt title and author tooltips render into the document body", async ({ page }) => {
+  for (const mode of ["works", "parts"] as const) {
+    await page.goto(`/bibliotek?visa=${mode}`, { waitUntil: "networkidle" })
+    const row = page.locator(`[data-library-${mode === "works" ? "work" : "part"}-row]`).first()
+    const title = row.locator("[data-library-tooltip-kind=title]")
+    const author = row.locator("[data-library-tooltip-kind=author]")
+    const tooltip = page.getByRole("tooltip")
+    const titleTooltip = await title.getAttribute("data-library-tooltip-content")
+    const authorTooltip = await author.getAttribute("data-library-tooltip-content")
+
+    expect(titleTooltip).toBeTruthy()
+    expect(authorTooltip).toBeTruthy()
+    await title.hover()
+    await expect(tooltip).toHaveText(titleTooltip!)
+    await page.mouse.move(0, 0)
+    await expect(tooltip).toHaveCount(0)
+
+    await author.focus()
+    await expect(tooltip).toHaveText(authorTooltip!)
+    await author.blur()
+    await expect(tooltip).toHaveCount(0)
+  }
+})
+
 test("delayed Works and Dikt transitions never relabel rows owned by the other mode", async ({
   page,
   request
@@ -881,6 +905,14 @@ test("Works titles are black keyboard disclosures linked to their representation
   expect(controls).toBeTruthy()
   if (!controls) throw new Error("work disclosure is missing aria-controls")
   await expect(actions).toHaveAttribute("id", controls)
+
+  await page.keyboard.press("Enter")
+  await expect(toggle).toHaveAttribute("aria-expanded", "true")
+  await expect(actions).toBeVisible()
+
+  await page.keyboard.press("Enter")
+  await expect(toggle).toHaveAttribute("aria-expanded", "false")
+  await expect(actions).toBeHidden()
 
   await page.keyboard.press("Enter")
   await expect(toggle).toHaveAttribute("aria-expanded", "true")

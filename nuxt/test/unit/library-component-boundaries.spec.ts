@@ -523,8 +523,10 @@ describe("Library component ownership", () => {
   test("the page delegates ordinary Works and Parts rows to one result component", async () => {
     const page = await source("app/pages/bibliotek.vue")
     expect(page).toContain("<LibraryBrowseResults")
-    expect(page).not.toContain("data-library-work-row")
+    expect(page.match(/data-library-work-row/g)).toHaveLength(1)
     expect(page).not.toContain("data-library-part-row")
+    expect(page).toContain("data-library-source-checkbox")
+    expect(page).toContain("v-else-if=\"currentMode === 'works'\"")
   })
 
   test("renders ordinary Work rows and emits their disclosure key", async () => {
@@ -601,17 +603,11 @@ describe("Library component ownership", () => {
     expect(target.querySelector("[data-library-work-actions]")?.id).toBe("library-work-actions-roda-rummet")
     expect(target.querySelector("[data-library-work-actions] a")?.getAttribute("download")).toBe("roda-rummet.epub")
     const toggle = target.querySelector<HTMLButtonElement>("[data-library-work-toggle]")
-    const enter = new target.ownerDocument.defaultView!.Event("keydown", {
-      bubbles: true,
-      cancelable: true
-    })
-    Object.defineProperty(enter, "key", { value: "Enter" })
-    toggle?.dispatchEvent(enter)
     toggle?.click()
     target.querySelector<HTMLAnchorElement>('[data-library-sort="titlar"]')?.click()
     target.querySelector<HTMLAnchorElement>('[data-library-page="2"]')?.click()
     await nextTick()
-    expect(toggled).toEqual(["roda-rummet", "roda-rummet"])
+    expect(toggled).toEqual(["roda-rummet"])
     expect(selectedSorts).toEqual(["titlar"])
     expect(selectedPages).toEqual([2])
     app.unmount()

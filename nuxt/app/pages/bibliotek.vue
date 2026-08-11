@@ -2540,7 +2540,7 @@ onUnmounted(() => {
                                 <tr
                                     v-for="item in browseResults.data"
                                     :key="item.key"
-                                    v-bind="{ ['data-library-' + 'work-row']: '' }"
+                                    data-library-work-row
                                     class="work_link grid w-full items-baseline transition-colors duration-150 hover:bg-gray-300 hover:bg-opacity-50 grid-cols-[minmax(0,1fr)_11rem] sm:grid-cols-[minmax(0,1fr)_7rem_11rem]"
                                     @click="downloadMode && toggleSourceWork(item)"
                                 >
