@@ -218,11 +218,11 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
   await page.reload({ waitUntil: "networkidle" })
   await expect(hitNavigation).toContainText("Träff 1, sida 5")
   await expect(page.locator("#w5_1.markee")).toHaveCount(1)
-  await hitNavigation.getByRole("link", { name: "Gå till sista träffen" }).click()
+  await hitNavigation.getByRole("button", { name: "Gå till sista träffen" }).click()
   await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/6\/f.*hit_index=236/u)
   await expect(page.locator("#w7_1.markee")).toHaveCount(1)
 
-  await hitNavigation.getByRole("link", { name: "Gå direkt till träff" }).click()
+  await hitNavigation.getByRole("button", { name: "Gå direkt till träff" }).click()
   const gotoHit = hitNavigation.getByRole("textbox", { name: "Träffnummer" })
   await gotoHit.fill("2")
   await gotoHit.press("Enter")
@@ -242,6 +242,47 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
     .toBe("/editor/lb8345227/ix/5/f?keep=%2f&keep=%2F")
   await expect(page.locator(".editor-reader .markee")).toHaveCount(0)
   await expect(hitNavigation).toHaveCount(0)
+})
+
+test("editor Reader search navigation exposes native local controls", async ({ page }) => {
+  const initial = `${editorSearchHit}&keep=%2f&keep=%2F`
+  await page.goto(initial, { waitUntil: "networkidle" })
+
+  const navigation = page.getByRole("navigation", { name: "Sökträffsnavigering" })
+  const first = navigation.getByRole("button", { name: "Gå till första träffen" })
+  const last = navigation.getByRole("button", { name: "Gå till sista träffen" })
+  const direct = navigation.getByRole("button", { name: "Gå direkt till träff" })
+  await expect(first).toBeVisible()
+  await expect(last).toBeVisible()
+  await expect(direct).toBeVisible()
+  await expect(navigation.getByRole("link", { name: "Gå till sista träffen" })).toHaveCount(0)
+
+  await last.focus()
+  await page.keyboard.press("Space")
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/6\/f.*hit_index=236/u)
+  let search = new URL(page.url()).searchParams
+  expect(search.get("s_query")).toBe("brev")
+  expect(search.getAll("keep")).toEqual(["/", "/"])
+
+  await direct.click()
+  let gotoHit = navigation.getByRole("textbox", { name: "Träffnummer" })
+  await expect(gotoHit).toBeFocused()
+  await gotoHit.fill("2")
+  await gotoHit.press("Enter")
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/5\/f.*hit_index=1/u)
+
+  await direct.click()
+  gotoHit = navigation.getByRole("textbox", { name: "Träffnummer" })
+  await gotoHit.fill("1")
+  await navigation.getByRole("button", { name: "Gå till träff", exact: true }).click()
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/4\/f.*hit_index=0/u)
+  search = new URL(page.url()).searchParams
+  expect(search.get("s_query")).toBe("brev")
+  expect(search.getAll("keep")).toEqual(["/", "/"])
+
+  await page.goBack()
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/5\/f.*hit_index=1/u)
+  await expect(navigation).toContainText("Träff 2, sida 6")
 })
 
 test("editor Reader keeps a serialized work-search panel open while its page changes", async ({
@@ -289,7 +330,7 @@ test("editor Reader does not push history for the already-active search hit", as
   })
 
   await page.getByRole("navigation", { name: "Sökträffsnavigering" })
-    .getByRole("link", { name: "Gå till första träffen", exact: true }).click()
+    .getByRole("button", { name: "Gå till första träffen", exact: true }).click()
   await page.evaluate(() => new Promise<void>(resolve => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
   }))
@@ -324,13 +365,13 @@ test("editor Reader aborts a superseded direct-hit lookup", async ({ page, reque
       }
     })
     const navigation = page.getByRole("navigation", { name: "Sökträffsnavigering" })
-    await navigation.getByRole("link", { name: "Gå till sista träffen", exact: true }).click()
+    await navigation.getByRole("button", { name: "Gå till sista träffen", exact: true }).click()
     await expect.poll(async () => (
       await (await request.get(`${fixture}/_reader_hit_requests`)).json()
     ).requests.some((hit: { query: string }) => hit.query.includes("offset=235&limit=3")))
       .toBe(true)
 
-    await navigation.getByRole("link", { name: "Gå till första träffen", exact: true }).click()
+    await navigation.getByRole("button", { name: "Gå till första träffen", exact: true }).click()
     await expect.poll(() => page.evaluate(() => (
       window as typeof window & { __editorDirectHitAbortSeen?: boolean }
     ).__editorDirectHitAbortSeen)).toBe(true)
@@ -340,7 +381,7 @@ test("editor Reader aborts a superseded direct-hit lookup", async ({ page, reque
       ;(window as typeof window & { __editorDirectHitAbortSeen?: boolean })
         .__editorDirectHitAbortSeen = false
     })
-    await navigation.getByRole("link", { name: "Gå till sista träffen", exact: true }).click()
+    await navigation.getByRole("button", { name: "Gå till sista träffen", exact: true }).click()
     await expect.poll(async () => (
       await (await request.get(`${fixture}/_reader_hit_requests`)).json()
     ).requests.filter((hit: { query: string }) => hit.query.includes("offset=235&limit=3"))
@@ -384,7 +425,7 @@ test("editor Reader keeps direct hit lookup inside the maximum API offset", asyn
   await expect(navigation).toContainText("Träff 1000000, sida 5")
   await request.delete(`${fixture}/_reader_hit_requests`)
 
-  await navigation.getByRole("link", { name: "Gå direkt till träff" }).click()
+  await navigation.getByRole("button", { name: "Gå direkt till träff" }).click()
   const input = navigation.getByRole("textbox", { name: "Träffnummer" })
   await input.fill("1000002")
   await input.press("Enter")

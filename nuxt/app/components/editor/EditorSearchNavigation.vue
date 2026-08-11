@@ -84,13 +84,23 @@ function closeNavigation(event: MouseEvent): void {
           ><span class="submit btn navicon navicon-visual" aria-hidden="true"><i class="fa fa-angle-right" /></span></a>
           <button v-else class="submit btn navicon" disabled aria-hidden="true" tabindex="-1"><i class="fa fa-angle-right" /></button>
         </li>
-        <li v-if="interactive"><a href="" @click.prevent="emit('navigate', 0)">Gå till första träffen</a></li>
-        <li v-if="interactive"><a href="" @click.prevent="emit('navigate', Math.max((totalHits ?? 1) - 1, 0))">Gå till sista träffen</a></li>
+        <li v-if="interactive"><button type="button" class="reader-action-button" @click="emit('navigate', 0)">Gå till första träffen</button></li>
+        <li v-if="interactive"><button
+          type="button"
+          class="reader-action-button"
+          @click="emit('navigate', Math.max((totalHits ?? 1) - 1, 0))"
+        >Gå till sista träffen</button></li>
         <li v-if="interactive" :class="{ open: gotoOpen }">
-          <a href="" @click.prevent="toggleGoto">Gå direkt till träff . . .</a>
+          <button type="button" class="reader-action-button" @click="toggleGoto">Gå direkt till träff . . .</button>
           <form v-show="gotoOpen" @submit.prevent="submitGoto">
-            <input ref="gotoInput" v-model="gotoOrdinal" class="border border-gray-300" type="text" aria-label="Träffnummer">
-            <i class="fa fa-angle-double-right" aria-hidden="true" />
+            <input
+              ref="gotoInput"
+              v-model="gotoOrdinal"
+              class="border border-gray-300"
+              type="text"
+              aria-label="Träffnummer"
+            >
+            <button type="submit" class="direct-hit-submit" aria-label="Gå till träff"><i class="fa fa-angle-double-right" aria-hidden="true" /></button>
           </form>
         </li>
         <li><a :href="closeHref" @click="closeNavigation">Stäng träffvisningen</a></li>
