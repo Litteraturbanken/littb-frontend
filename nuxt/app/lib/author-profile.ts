@@ -5,6 +5,7 @@ import {
   issueAuthorProfileHtml
 } from "#shared/utils/renderable-html"
 import { parseHtmlDocument } from "./html-document"
+import { safeNativeHref } from "./internal-navigation"
 import type { components } from "./api/generated/lbapi"
 
 type AuthorProfile = components["schemas"]["AuthorProfile"]
@@ -257,7 +258,10 @@ export function sanitizeAuthorHtml(
 }
 
 function profileLinks(links: AuthorProfile["related_links"]): Array<{ label: string, url: string }> {
-  return links.map(link => ({ label: link.label, url: link.url }))
+  return links.flatMap(link => {
+    const url = safeNativeHref(link.url)
+    return url === null ? [] : [{ label: link.label, url }]
+  })
 }
 
 export function createAuthorProfileView(

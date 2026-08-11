@@ -314,6 +314,31 @@ describe("safe author profile view model", () => {
     expect(view.encyclopediaLinks).not.toBe(profile.encyclopedia_links)
   })
 
+  test("keeps only safe native destinations in both profile link groups", () => {
+    const profile = maliciousProfile()
+    const safeLinks = [
+      { label: "Relativ", url: "/verk/legacy-only?tab=1#utgava" },
+      { label: "Intern", url: "/författare/StrindbergA/presentation" },
+      { label: "HTTP", url: "http://example.test/author" },
+      { label: "HTTPS", url: "https://example.test/author" }
+    ]
+    const unsafeLinks = [
+      { label: "JavaScript", url: "javascript:alert(1)" },
+      { label: "Data", url: "data:text/html,unsafe" },
+      { label: "Protokollrelativ", url: "//evil.example/author" },
+      { label: "Kontrolltecken", url: "https://example.test/\u0000author" },
+      { label: "Kodat kontrolltecken", url: "https://example.test/%00author" },
+      { label: "Felaktig URL", url: "https://[::1" }
+    ]
+    profile.related_links = [...safeLinks, ...unsafeLinks]
+    profile.encyclopedia_links = [...safeLinks, ...unsafeLinks]
+
+    const view = createAuthorProfileView(profile, "ordinary")
+
+    expect(view.relatedLinks).toEqual(safeLinks)
+    expect(view.encyclopediaLinks).toEqual(safeLinks)
+  })
+
   test("maps the strict more-content flag without coercing malformed provider values", () => {
     const withContent = structuredClone(strindbergAuthorProfile) as AuthorProfile
     const withoutContent = structuredClone(strindbergAuthorProfile) as AuthorProfile
