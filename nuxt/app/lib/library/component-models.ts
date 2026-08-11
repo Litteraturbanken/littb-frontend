@@ -1,4 +1,15 @@
 import type { RouteLocationRaw } from "vue-router"
+import type { LibraryMode } from "./navigation"
+
+export type LibraryModeTab = Readonly<{
+    mode: LibraryMode
+    label: string
+    count: number | null
+    to: RouteLocationRaw
+    active: boolean
+    disabledLook: boolean
+    separatorBefore: boolean
+}>
 
 export type LibraryPaginationEntry = Readonly<{
     key: string

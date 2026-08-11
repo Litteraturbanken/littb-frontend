@@ -6,6 +6,95 @@ const nuxtRoot = resolve(import.meta.dirname, "../..")
 const source = (path: string) => readFile(resolve(nuxtRoot, path), "utf8")
 
 describe("Library component ownership", () => {
+  test("the page delegates mode tabs to one shared component", async () => {
+    const page = await source("app/pages/bibliotek.vue")
+    expect(page).toContain("<LibraryModeTabs")
+    expect(page).not.toContain("data-library-tab")
+  })
+
+  test("renders ordinary mode tabs from page-owned targets and presentation", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick }, { default: LibraryModeTabs }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibraryModeTabs.vue")
+    ])
+    const tabs = [
+      { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: false, disabledLook: false, separatorBefore: false },
+      { mode: "latest", label: "Nytt", count: null, to: "/bibliotek?visa=latest&filter=berg", active: false, disabledLook: false, separatorBefore: true },
+      { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: true, disabledLook: true, separatorBefore: true },
+      { mode: "works", label: "Verk", count: 34, to: "/bibliotek?visa=works&filter=berg", active: false, disabledLook: false, separatorBefore: true },
+      { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, separatorBefore: true },
+      { mode: "epub", label: "Epub", count: 56, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: false, separatorBefore: true },
+      { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, separatorBefore: true }
+    ] as const
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true } },
+      setup(props: { to: string }, { slots }: { slots: { default?: () => unknown[] } }) {
+        return () => h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const app = createApp({ setup: () => () => h(LibraryModeTabs, { tabs }) })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    const links = [...target.querySelectorAll<HTMLAnchorElement>("a")]
+    expect(links.map(link => link.textContent)).toEqual([
+      "Alla träffar", "Nytt", "Författare: 12", "Verk: 34", "Dikt, novell, etc.: 0", "Epub: 56", "PDF"
+    ])
+    expect(links.map(link => link.getAttribute("href"))).toEqual([
+      "/bibliotek?filter=berg",
+      "/bibliotek?visa=latest&filter=berg",
+      "/bibliotek?visa=authors&filter=berg",
+      "/bibliotek?visa=works&filter=berg",
+      "/bibliotek?visa=parts&filter=berg",
+      "/bibliotek?visa=epub&filter=berg",
+      "/bibliotek?visa=pdf&filter=berg"
+    ])
+    expect(links[2]?.classList.contains("active")).toBe(true)
+    expect(links[2]?.classList.contains("library-tab-disabled-look")).toBe(true)
+    expect(links[4]?.classList.contains("library-tab-disabled-look")).toBe(true)
+    expect(links[6]?.classList.contains("relevance-unavailable")).toBe(true)
+    expect(links[2]?.getAttribute("aria-current")).toBe("page")
+    expect(links[0]?.hasAttribute("aria-current")).toBe(false)
+    app.unmount()
+    target.remove()
+  })
+
+  test("renders standalone EPUB and PDF tabs from page-owned targets", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick }, { default: LibraryModeTabs }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibraryModeTabs.vue")
+    ])
+    const tabs = [
+      { mode: "epub", label: "Epub", count: 9, to: "/epub", active: true, disabledLook: false, separatorBefore: false },
+      { mode: "pdf", label: "PDF", count: null, to: "/epub?visa=pdf", active: false, disabledLook: true, separatorBefore: true }
+    ] as const
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true } },
+      setup(props: { to: string }, { slots }: { slots: { default?: () => unknown[] } }) {
+        return () => h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const app = createApp({ setup: () => () => h(LibraryModeTabs, { tabs }) })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    const links = [...target.querySelectorAll<HTMLAnchorElement>("a")]
+    expect(links.map(link => link.textContent)).toEqual(["Epub: 9", "PDF"])
+    expect(links.map(link => link.getAttribute("href"))).toEqual(["/epub", "/epub?visa=pdf"])
+    expect(links[0]?.classList.contains("active")).toBe(true)
+    expect(links[1]?.classList.contains("relevance-unavailable")).toBe(true)
+    expect(links[0]?.getAttribute("aria-current")).toBe("page")
+    expect(links[1]?.hasAttribute("aria-current")).toBe(false)
+    app.unmount()
+    target.remove()
+  })
+
   test("the page delegates pagination markup to one shared component", async () => {
     const page = await source("app/pages/bibliotek.vue")
     expect(page).toContain("<LibraryPagination")

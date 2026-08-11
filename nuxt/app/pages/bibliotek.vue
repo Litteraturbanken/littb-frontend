@@ -6,6 +6,7 @@ import { useLbApiClient } from "~/composables/useLbApiClient"
 import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
 import { legacyPaginationItems, type LegacyPaginationItem } from "~/lib/legacy-pagination"
 import type {
+    LibraryModeTab,
     LibraryPaginationEntry,
     LibraryPaginationModel
 } from "~/lib/library/component-models"
@@ -1214,26 +1215,6 @@ function resetSearch() {
     void router.push({ path: route.path, query })
 }
 
-function defaultSortForMode(nextMode: LibraryMode): QueryState["sort"] {
-    if (nextMode === "all") return "relevans"
-    if (nextMode === "latest") return "nytillkommet"
-    if (nextMode === "parts") return "titlar"
-    return "popularitet"
-}
-
-function selectMode(nextMode: LibraryMode) {
-    beginIntent({
-        standalone: route.path === "/epub",
-        mode: nextMode,
-        filter: filter.value,
-        sort: defaultSortForMode(nextMode),
-        page: 1,
-        hide1800: false,
-        downloadMode: false,
-        advancedFilters: currentState().advancedFilters
-    })
-}
-
 function selectSort(key: QueryState["sort"]) {
     const state = currentState()
     if (state.sort === key) toggleSortDirection(state.mode, key)
@@ -1695,55 +1676,115 @@ function imprintYearTo(year: string): RouteLocationRaw {
     return { path: route.path, query }
 }
 
-const allTabHref = computed(() =>
-    stateHref({
-        mode: "all",
-        filter: filter.value,
-        sort: "relevans"
-    })
-)
-const latestTabHref = computed(() =>
-    stateHref({
-        mode: "latest",
-        filter: filter.value,
-        sort: "nytillkommet"
-    })
-)
-const authorsTabHref = computed(() =>
-    stateHref({
-        mode: "authors",
-        filter: filter.value,
-        sort: "popularitet"
-    })
-)
-const worksTabHref = computed(() =>
-    stateHref({
-        mode: "works",
-        filter: filter.value,
-        sort: "popularitet"
-    })
-)
-const partsTabHref = computed(() =>
-    stateHref({
-        mode: "parts",
-        filter: filter.value,
-        sort: "titlar"
-    })
-)
-const epubTabHref = computed(() =>
-    stateHref({
+const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
+    const separatorBefore = currentMode.value !== "all"
+    const epubHref = stateHref({
         mode: "epub",
         filter: filter.value,
         sort: "popularitet"
     })
-)
-const pdfTabHref = computed(() =>
-    stateHref({
+    const pdfHref = stateHref({
         mode: "pdf",
         filter: filter.value,
         sort: "popularitet"
     })
-)
+
+    if (standalone) {
+        return [
+            {
+                mode: "epub",
+                label: "Epub",
+                count: epubTabCount.value || null,
+                to: epubHref,
+                active: currentMode.value === "epub",
+                disabledLook: false,
+                separatorBefore: false
+            },
+            {
+                mode: "pdf",
+                label: "PDF",
+                count: pdfTabCount.value || null,
+                to: pdfHref,
+                active: currentMode.value === "pdf",
+                disabledLook: currentMode.value !== "pdf" && !pdfTabCount.value,
+                separatorBefore
+            }
+        ]
+    }
+
+    const tabs: LibraryModeTab[] = [
+        {
+            mode: "all",
+            label: "Alla träffar",
+            count: null,
+            to: stateHref({ mode: "all", filter: filter.value, sort: "relevans" }),
+            active: currentMode.value === "all",
+            disabledLook: false,
+            separatorBefore: false
+        },
+        {
+            mode: "latest",
+            label: "Nytt",
+            count: null,
+            to: stateHref({ mode: "latest", filter: filter.value, sort: "nytillkommet" }),
+            active: currentMode.value === "latest",
+            disabledLook: false,
+            separatorBefore
+        },
+        {
+            mode: "authors",
+            label: "Författare",
+            count: librarySummary.value.authors,
+            to: stateHref({ mode: "authors", filter: filter.value, sort: "popularitet" }),
+            active: currentMode.value === "authors",
+            disabledLook: downloadMode.value || librarySummary.value.authors === 0,
+            separatorBefore
+        },
+        {
+            mode: "works",
+            label: "Verk",
+            count: librarySummary.value.works,
+            to: stateHref({ mode: "works", filter: filter.value, sort: "popularitet" }),
+            active: currentMode.value === "works",
+            disabledLook: false,
+            separatorBefore
+        }
+    ]
+
+    if (!downloadMode.value) {
+        tabs.push(
+            {
+                mode: "parts",
+                label: "Dikt, novell, etc.",
+                count: librarySummary.value.parts,
+                to: stateHref({ mode: "parts", filter: filter.value, sort: "titlar" }),
+                active: currentMode.value === "parts",
+                disabledLook: librarySummary.value.parts === 0,
+                separatorBefore
+            },
+            {
+                mode: "epub",
+                label: "Epub",
+                count: epubTabCount.value,
+                to: epubHref,
+                active: currentMode.value === "epub",
+                disabledLook: currentMode.value === "all" && !epubTabCount.value,
+                separatorBefore
+            },
+            {
+                mode: "pdf",
+                label: "PDF",
+                count: pdfTabCount.value,
+                to: pdfHref,
+                active: currentMode.value === "pdf",
+                disabledLook: currentMode.value !== "pdf" && !pdfTabCount.value,
+                separatorBefore
+            }
+        )
+    }
+
+    return tabs
+})
 
 function relevanceSortHref(sort: RelevanceSortKey): string {
     return stateHref({ mode: "all", filter: filter.value, sort })
@@ -2296,140 +2337,7 @@ onUnmounted(() => {
                         Tidslinjen kunde inte hämtas.
                     </div>
                     <div class="btn-group p-0 mt-4 lg:mt-6">
-                        <template v-if="standalone">
-                            <a
-                                data-library-tab="epub"
-                                :href="epubTabHref"
-                                :aria-current="currentMode === 'epub' ? 'page' : undefined"
-                                class="sc btn btn-small text-base"
-                                :class="{ active: currentMode === 'epub' }"
-                                @click.prevent="selectMode('epub')"
-                                >Epub<span v-if="epubTabCount" class="num_hits"
-                                    >: {{ epubTabCount }}</span
-                                ></a
-                            >
-                            <template v-if="currentMode !== 'all'">{{ " " }}</template>
-                            <a
-                                data-library-tab="pdf"
-                                :href="pdfTabHref"
-                                :aria-current="currentMode === 'pdf' ? 'page' : undefined"
-                                class="sc btn btn-small text-base"
-                                :class="{
-                                    active: currentMode === 'pdf',
-                                    'relevance-unavailable': currentMode !== 'pdf' && !pdfTabCount
-                                }"
-                                @click.prevent="selectMode('pdf')"
-                                >PDF<span v-if="pdfTabCount" class="num_hits"
-                                    >: {{ pdfTabCount }}</span
-                                ></a
-                            >
-                        </template>
-                        <template v-else>
-                            <a
-                                data-library-tab="all"
-                                :href="allTabHref"
-                                :aria-current="currentMode === 'all' ? 'page' : undefined"
-                                class="sc btn btn-small text-base"
-                                :class="{ active: currentMode === 'all' }"
-                                @click.prevent="selectMode('all')"
-                                >Alla träffar</a
-                            >
-                            <template v-if="currentMode !== 'all'">{{ " " }}</template>
-                            <a
-                                data-library-tab="latest"
-                                :href="latestTabHref"
-                                :aria-current="currentMode === 'latest' ? 'page' : undefined"
-                                class="sc btn btn-small text-base"
-                                :class="{ active: currentMode === 'latest' }"
-                                @click.prevent="selectMode('latest')"
-                                >Nytt</a
-                            >
-                            <template v-if="currentMode !== 'all'">{{ " " }}</template>
-                            <a
-                                data-library-tab="authors"
-                                :href="authorsTabHref"
-                                :aria-current="currentMode === 'authors' ? 'page' : undefined"
-                                class="sc btn btn-small text-base"
-                                :class="{
-                                    active: currentMode === 'authors',
-                                    'library-tab-disabled-look':
-                                        downloadMode || librarySummary.authors === 0
-                                }"
-                                :aria-disabled="downloadMode || undefined"
-                                @click.prevent="!downloadMode && selectMode('authors')"
-                                >Författare<span
-                                    v-if="librarySummary.authors !== null"
-                                    class="num_hits"
-                                    >: {{ librarySummary.authors }}</span
-                                ></a
-                            >
-                            <template v-if="currentMode !== 'all'">{{ " " }}</template>
-                            <a
-                                data-library-tab="works"
-                                :href="worksTabHref"
-                                :aria-current="currentMode === 'works' ? 'page' : undefined"
-                                class="sc btn btn-small text-base"
-                                :class="{ active: currentMode === 'works' }"
-                                @click.prevent="selectMode('works')"
-                                >Verk<span v-if="librarySummary.works !== null" class="num_hits"
-                                    >: {{ librarySummary.works }}</span
-                                ></a
-                            >
-                            <template v-if="currentMode !== 'all'">{{ " " }}</template>
-                            <a
-                                v-if="!downloadMode"
-                                data-library-tab="parts"
-                                :href="partsTabHref"
-                                :aria-current="currentMode === 'parts' ? 'page' : undefined"
-                                class="sc btn btn-small text-base"
-                                :class="{
-                                    active: currentMode === 'parts',
-                                    'library-tab-disabled-look': librarySummary.parts === 0
-                                }"
-                                @click.prevent="selectMode('parts')"
-                                >Dikt, novell, etc.<span
-                                    v-if="librarySummary.parts !== null"
-                                    class="parts num_hits"
-                                    >: {{ librarySummary.parts }}</span
-                                ></a
-                            >
-                            <template v-if="!downloadMode && currentMode !== 'all'">{{
-                                " "
-                            }}</template>
-                            <a
-                                v-if="!downloadMode"
-                                data-library-tab="epub"
-                                :href="epubTabHref"
-                                :aria-current="currentMode === 'epub' ? 'page' : undefined"
-                                class="sc btn btn-small text-base"
-                                :class="{
-                                    active: currentMode === 'epub',
-                                    'relevance-unavailable': currentMode === 'all' && !epubTabCount
-                                }"
-                                @click.prevent="selectMode('epub')"
-                                >Epub<span v-if="epubTabCount !== null" class="num_hits"
-                                    >: {{ epubTabCount }}</span
-                                ></a
-                            >
-                            <template v-if="!downloadMode && currentMode !== 'all'">{{
-                                " "
-                            }}</template>
-                            <a
-                                v-if="!downloadMode"
-                                data-library-tab="pdf"
-                                :href="pdfTabHref"
-                                :aria-current="currentMode === 'pdf' ? 'page' : undefined"
-                                class="sc btn btn-small text-base"
-                                :class="{
-                                    active: currentMode === 'pdf',
-                                    'relevance-unavailable': currentMode !== 'pdf' && !pdfTabCount
-                                }"
-                                @click.prevent="selectMode('pdf')"
-                                >PDF<span v-if="pdfTabCount !== null" class="num_hits"
-                                    >: {{ pdfTabCount }}</span
-                                ></a
-                            >
-                        </template>
+                        <LibraryModeTabs :tabs="libraryModeTabs" />
                     </div>
                 </form>
             </div>
@@ -3436,16 +3344,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.relevance-unavailable {
-    color: #333;
-    opacity: 0.65;
-}
-
-.library-tab-disabled-look {
-    opacity: 0.65;
-    box-shadow: none;
-}
-
 .library-work-toggle {
     display: inline-block;
     max-width: 100%;
@@ -3569,10 +3467,6 @@ onUnmounted(() => {
 [data-library-format-popover] {
     width: 288px;
     padding: 14px;
-}
-
-[data-library-tab] {
-    margin-right: calc(0.2em + 4px);
 }
 
 [data-library-advanced-panel] option[data-library-placeholder] {
