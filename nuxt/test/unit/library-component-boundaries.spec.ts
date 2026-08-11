@@ -107,76 +107,82 @@ describe("Library component ownership", () => {
       import("vue"),
       import("../../app/components/library/LibraryModeTabs.vue")
     ])
-    Object.defineProperty(globalThis, "history", {
-      configurable: true,
-      value: {
-        state: null,
-        pushState(state: unknown) { this.state = state },
-        replaceState(state: unknown) { this.state = state }
-      }
-    })
-    const router = createRouter({
+    const historyDescriptor = Object.getOwnPropertyDescriptor(globalThis, "history")
+    try {
+      Object.defineProperty(globalThis, "history", {
+        configurable: true,
+        value: {
+          state: null,
+          pushState(state: unknown) { this.state = state },
+          replaceState(state: unknown) { this.state = state }
+        }
+      })
+      const router = createRouter({
       history: createMemoryHistory(),
       routes: [
         { path: "/", component: { render: () => h("div") } },
         { path: "/bibliotek", component: { render: () => h("div") } }
       ]
-    })
-    await router.push("/")
-    await router.push("/bibliotek?filter=berg")
-    await router.isReady()
-    const tabs = ref([
+      })
+      await router.push("/")
+      await router.push("/bibliotek?filter=berg")
+      await router.isReady()
+      const tabs = ref([
       { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: true, disabledLook: false, separatorBefore: false, disabled: false },
       { mode: "authors", label: "Författare", count: 0, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false },
       { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false },
       { mode: "epub", label: "Epub", count: null, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false },
       { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false }
-    ])
-    const app = createApp({ setup: () => () => h(LibraryModeTabs, { tabs: tabs.value }) })
-    app.use(router)
-    app.component("NuxtLink", RouterLink)
-    app.mount(target)
-    await nextTick()
+      ])
+      const app = createApp({ setup: () => () => h(LibraryModeTabs, { tabs: tabs.value }) })
+      app.use(router)
+      app.component("NuxtLink", RouterLink)
+      app.mount(target)
+      await nextTick()
 
-    const ordinaryLinks = [...target.querySelectorAll<HTMLAnchorElement>("a")]
-    const author = ordinaryLinks[1]
-    expect(author?.classList.contains("router-link-active")).toBe(false)
-    expect(author?.classList.contains("router-link-exact-active")).toBe(false)
-    expect(ordinaryLinks.slice(1).map(link => link.getAttribute("aria-disabled"))).toEqual([
-      null, null, null, null
-    ])
+      const ordinaryLinks = [...target.querySelectorAll<HTMLAnchorElement>("a")]
+      const author = ordinaryLinks[1]
+      expect(author?.classList.contains("router-link-active")).toBe(false)
+      expect(author?.classList.contains("router-link-exact-active")).toBe(false)
+      expect(ordinaryLinks.slice(1).map(link => link.getAttribute("aria-disabled"))).toEqual([
+        null, null, null, null
+      ])
 
-    const navigated = new Promise<void>(resolve => {
-      const remove = router.afterEach(() => {
-        remove()
-        resolve()
+      const navigated = new Promise<void>(resolve => {
+        const remove = router.afterEach(() => {
+          remove()
+          resolve()
+        })
       })
-    })
-    author?.click()
-    await navigated
-    expect(router.currentRoute.value.fullPath).toBe("/bibliotek?visa=authors&filter=berg")
+      author?.click()
+      await navigated
+      expect(router.currentRoute.value.fullPath).toBe("/bibliotek?visa=authors&filter=berg")
 
-    const backed = new Promise<void>(resolve => {
-      const remove = router.afterEach(() => {
-        remove()
-        resolve()
+      const backed = new Promise<void>(resolve => {
+        const remove = router.afterEach(() => {
+          remove()
+          resolve()
+        })
       })
-    })
-    router.back()
-    await backed
-    expect(router.currentRoute.value.fullPath).toBe("/")
+      router.back()
+      await backed
+      expect(router.currentRoute.value.fullPath).toBe("/")
 
-    tabs.value = [
-      { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, separatorBefore: false, disabled: true }
-    ]
-    await nextTick()
-    const disabledAuthor = target.querySelector<HTMLAnchorElement>("a")
-    expect(disabledAuthor?.getAttribute("aria-disabled")).toBe("true")
-    disabledAuthor?.click()
-    await nextTick()
-    expect(router.currentRoute.value.fullPath).toBe("/")
-    app.unmount()
-    target.remove()
+      tabs.value = [
+        { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, separatorBefore: false, disabled: true }
+      ]
+      await nextTick()
+      const disabledAuthor = target.querySelector<HTMLAnchorElement>("a")
+      expect(disabledAuthor?.getAttribute("aria-disabled")).toBe("true")
+      disabledAuthor?.click()
+      await nextTick()
+      expect(router.currentRoute.value.fullPath).toBe("/")
+      app.unmount()
+      target.remove()
+    } finally {
+      if (historyDescriptor) Object.defineProperty(globalThis, "history", historyDescriptor)
+      else Reflect.deleteProperty(globalThis, "history")
+    }
   })
 
   test("the page delegates pagination markup to one shared component", async () => {
