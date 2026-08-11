@@ -1,4 +1,4 @@
-import { hasC0OrC1Control } from "#shared/utils/text-safety"
+import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 import type { SanitizedHtml } from "#shared/types/renderable-html"
 import {
   emptyRenderableHtml,
@@ -134,6 +134,7 @@ export function validateAuthorRouteParam(value: unknown): boolean {
   return decoded === value
     && !value.includes("\\")
     && !hasC0OrC1Control(value)
+    && !hasLoneSurrogate(value)
     && !value.includes("%")
     && value !== "."
     && value !== ".."
@@ -165,6 +166,8 @@ function parsedSafeHref(value: string): URL | null {
     const parsed = new URL(value, sanitizerBase)
     if (!allowedUrlProtocols.has(parsed.protocol.toLowerCase())) return null
     if (absoluteScheme.test(value) && !/^(?:https?|mailto|tel):/iu.test(value)) return null
+    if ((parsed.protocol === "http:" || parsed.protocol === "https:")
+      && (parsed.username || parsed.password)) return null
     return parsed
   } catch {
     return null
@@ -191,8 +194,9 @@ function safeHttpUrl(value: string | null | undefined): string {
   return href && /^https?:\/\//iu.test(href) ? href : ""
 }
 
-function hardenBlankTarget(element: Element): void {
-  if (element.getAttribute("target")?.toLowerCase() !== "_blank") return
+function hardenNavigatingTarget(element: Element): void {
+  const target = element.getAttribute("target")
+  if (!target || ["_self", "_parent", "_top"].includes(target.toLowerCase())) return
 
   const tokens = (element.getAttribute("rel") ?? "")
     .split(/\s+/u)
@@ -220,7 +224,7 @@ function sanitizeAttributes(element: Element): void {
       else element.setAttribute(attribute.name, href)
     }
   }
-  if (isAnchor) hardenBlankTarget(element)
+  if (isAnchor) hardenNavigatingTarget(element)
 }
 
 function sanitizeNode(node: Node): void {

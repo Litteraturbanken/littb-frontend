@@ -139,6 +139,25 @@ test("SSR drops an unsafe backend portrait and its dependent caption", async ({ 
   expect(await profileRequests(request)).toEqual(["/private-v2/authors/UnsafePortrait"])
 })
 
+test("SSR removes credential links and hardens named author-profile targets", async ({ request }) => {
+  const response = await request.get("/författare/ManagedHtmlProbe")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+  const links = new Map(
+    [...document.querySelectorAll(".introtext a")].map(link => [link.textContent, link])
+  )
+
+  expect(links.get("Credential profile link")?.getAttribute("href")).toBeNull()
+  expect(html).not.toContain("reader:secret@evil.invalid")
+  expect(links.get("Named profile link")?.getAttribute("rel"))
+    .toBe("editorial noopener noreferrer")
+  expect(links.get("Named profile link")?.getAttribute("target")).toBe("author_profile")
+  expect(links.get("Self profile link")?.getAttribute("rel")).toBe("author")
+  expect(links.get("Self profile link")?.getAttribute("target")).toBe("_self")
+  expect(await profileRequests(request)).toEqual(["/private-v2/authors/ManagedHtmlProbe"])
+})
+
 for (const [variant, path, intended] of [
   [
     "ordinary",

@@ -234,7 +234,7 @@ export const managedHtmlProbeAuthorProfile = {
   birth_year: null,
   death_year: null,
   canonical_path: "/författare/ManagedHtmlProbe",
-  introduction_html: '<p onclick="ordinary-intro-attribute()">Ordinary intended intro</p><script>ordinary-intro-raw-marker</script>',
+  introduction_html: '<p onclick="ordinary-intro-attribute()">Ordinary intended intro <a href="https://reader:secret@evil.invalid/profile">Credential profile link</a> <a href="https://example.test/profile" target="author_profile" rel="editorial">Named profile link</a> <a href="https://example.test/self" target="_self" rel="author">Self profile link</a></p><script>ordinary-intro-raw-marker</script>',
   introduction_by: null,
   source_html: ['<i style="ordinary-source-attribute">Ordinary intended source</i><svg>ordinary-source-raw-marker</svg>'],
   pseudonyms: [],

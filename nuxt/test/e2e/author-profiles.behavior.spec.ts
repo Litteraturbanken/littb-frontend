@@ -133,6 +133,22 @@ test("does not render an unsafe backend portrait or leave its caption behind", a
   expect(problems).toEqual([])
 })
 
+test("hydrates credential-free author links with hardened named targets", async ({ page }) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/ManagedHtmlProbe", { waitUntil: "networkidle" })
+  const intro = page.locator(".introtext")
+
+  expect(await intro.getByText("Credential profile link").getAttribute("href")).toBeNull()
+  await expect(intro.getByRole("link", { name: "Named profile link" }))
+    .toHaveAttribute("rel", "editorial noopener noreferrer")
+  await expect(intro.getByRole("link", { name: "Named profile link" }))
+    .toHaveAttribute("target", "author_profile")
+  await expect(intro.getByRole("link", { name: "Self profile link" }))
+    .toHaveAttribute("rel", "author")
+  expect(await page.content()).not.toContain("reader:secret@evil.invalid")
+  expect(problems).toEqual([])
+})
+
 test("managed HTML hydrates without retaining raw provider markers", async ({ page }) => {
   const problems = collectProblems(page)
   for (const [path, intended] of [

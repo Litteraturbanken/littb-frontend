@@ -38,6 +38,8 @@ describe("author route validation", () => {
     "Strindberg\u0085A",
     "Strindberg/A",
     "Strindberg\\A",
+    "Strindberg\ud800A",
+    "Strindberg\udfffA",
     "%",
     "%ZZ",
     "%25",
@@ -94,6 +96,11 @@ describe("managed author HTML sanitization", () => {
     '<mark>Okänd formatering <i>bevaras</i></mark>',
     '<a href="#fragment">Fragment</a>',
     '<a href="https://example.test/path?q=1#part" target="_blank" rel="external">HTTPS</a>',
+    '<a href="https://reader:secret@example.test/path">Credentials</a>',
+    '<a href="https://example.test/named" target="author_profile" rel="editorial">Named</a>',
+    '<a href="https://example.test/self" target="_self" rel="author">Self</a>',
+    '<a href="https://example.test/parent" target="_parent" rel="author">Parent</a>',
+    '<a href="https://example.test/top" target="_top" rel="author">Top</a>',
     '<a href="http://example.test/path">HTTP</a>',
     '<a href="mailto:editor@example.test">E-post</a>',
     '<a href="tel:+461234567">Telefon</a>',
@@ -163,6 +170,26 @@ describe("managed author HTML sanitization", () => {
       rel: "external noopener noreferrer",
       target: "_blank"
     })
+    expect(links.get("Named")).toEqual({
+      href: "https://example.test/named",
+      rel: "editorial noopener noreferrer",
+      target: "author_profile"
+    })
+    expect(links.get("Self")).toEqual({
+      href: "https://example.test/self",
+      rel: "author",
+      target: "_self"
+    })
+    expect(links.get("Parent")).toEqual({
+      href: "https://example.test/parent",
+      rel: "author",
+      target: "_parent"
+    })
+    expect(links.get("Top")).toEqual({
+      href: "https://example.test/top",
+      rel: "author",
+      target: "_top"
+    })
     expect(links.get("HTTP")?.href).toBe("http://example.test/path")
     expect(links.get("E-post")?.href).toBe("mailto:editor@example.test")
     expect(links.get("Telefon")?.href).toBe("tel:+461234567")
@@ -175,6 +202,7 @@ describe("managed author HTML sanitization", () => {
       "Data",
       "Fil",
       "Anpassad",
+      "Credentials",
       "Protokollrelativ",
       "Bakstreck",
       "Traversal",
@@ -412,12 +440,20 @@ describe("safe author profile view model", () => {
   test.each([
     "javascript:alert(1)",
     "data:text/html,unsafe",
-    "//evil.example/audio"
+    "//evil.example/audio",
+    "https://reader:secret@evil.example/audio"
   ])("drops an unsafe audio URL: %s", audioUrl => {
     const profile = maliciousProfile()
     profile.audio_url = audioUrl
 
     expect(createAuthorProfileView(profile, "ordinary").audioUrl).toBe("")
+  })
+
+  test("drops a credential-bearing author map URL", () => {
+    const profile = maliciousProfile()
+    profile.map_url = "https://reader:secret@evil.example/map"
+
+    expect(createAuthorProfileView(profile, "ordinary").mapUrl).toBe("")
   })
 
   test("keeps a safe HTTP audio handoff", () => {
