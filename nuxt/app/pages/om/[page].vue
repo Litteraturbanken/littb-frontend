@@ -12,6 +12,11 @@ function emptyAboutContent(): AboutContent {
   return emptyRenderableHtml<AboutContent>()
 }
 
+interface AboutContentPayload {
+  page: AboutPageKey
+  html: AboutContent
+}
+
 definePageMeta({
   validate: route => {
     const page = Array.isArray(route.params.page) ? route.params.page[0] : route.params.page
@@ -39,6 +44,15 @@ const pageKey = computed(() => {
 const selectedPage = computed(() => aboutPages[pageKey.value])
 const asyncKey = computed(() => `about-content:${pageKey.value}`)
 const requestFetch = useRequestFetch()
+const pendingPageKey = shallowRef<AboutPageKey | null>(null)
+onBeforeRouteUpdate(to => {
+  const value = Array.isArray(to.params.page) ? to.params.page[0] : to.params.page
+  pendingPageKey.value = isAboutPageKey(value) ? value : null
+})
+watch(pageKey, value => {
+  if (pendingPageKey.value === value) pendingPageKey.value = null
+}, { flush: "sync" })
+const displayedPageKey = computed(() => pendingPageKey.value ?? pageKey.value)
 
 function humanizeHelpLabel(value: string): string {
   const words = value
@@ -61,16 +75,24 @@ function extractHelpSubmenu(html: string): Array<{ id: string; label: string }> 
   }))
 }
 
-const { data: content } = await useAsyncData<AboutContent>(asyncKey, async () => {
+const { data: contentPayload } = await useAsyncData<AboutContentPayload>(asyncKey, async () => {
+  const requestedPage = pageKey.value
   try {
-    return await requestFetch<AboutContent>(`/api/about/${encodeURIComponent(pageKey.value)}`)
+    return {
+      page: requestedPage,
+      html: await requestFetch<AboutContent>(`/api/about/${encodeURIComponent(requestedPage)}`)
+    }
   } catch (error) {
-    if (import.meta.dev) console.error(`About content request failed for ${pageKey.value}`, error)
-    return emptyAboutContent()
+    if (import.meta.dev) console.error(`About content request failed for ${requestedPage}`, error)
+    return { page: requestedPage, html: emptyAboutContent() }
   }
 })
 
-const aboutContent = computed(() => content.value ?? emptyAboutContent())
+const aboutContent = computed(() =>
+  contentPayload.value?.page === displayedPageKey.value
+    ? contentPayload.value.html
+    : emptyAboutContent()
+)
 const helpSubmenu = computed(() => pageKey.value === "hjalp" ? extractHelpSubmenu(aboutContent.value) : [])
 const navigateManagedHtml = useManagedHtmlNavigation()
 

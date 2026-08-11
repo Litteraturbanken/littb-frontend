@@ -4,6 +4,7 @@ import { runSequentialCleanup } from "../helpers/sequential-cleanup"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 const contentPath = "/red/om/hjalp/hjalp.html"
+const managedContentPath = "/api/about/hjalp"
 const submenu = [
   ["SökaEfterVerk", "Söka efter verk"],
   ["SökaIVerk", "Söka i verk"],
@@ -175,15 +176,15 @@ test("Help submenu click updates ankare and scrolls to the legacy 40px offset wi
   await expect(page).toHaveURL("/om/hjalp?ankare=missing")
   expect(await page.evaluate(() => window.scrollY)).toBe(retainedScroll)
 
-  await page.unroute(`**${contentPath}`)
+  await page.unroute(`**${managedContentPath}`)
   let refreshRequests = 0
-  await page.route(`**${contentPath}`, async route => {
+  await page.route(`**${managedContentPath}`, async route => {
     refreshRequests += 1
     const response = await route.fetch()
     const body = await response.text()
     await route.fulfill({
       response,
-      body: body.replace("</body>", '<span id="refresh-marker"></span></body>')
+      body: `${body}<span id="refresh-marker"></span>`
     })
   })
   await page.evaluate(async key => {
@@ -220,7 +221,7 @@ test("client navigation retries help anchor scrolling after delayed content rend
   const contentStarted = new Promise<void>(resolve => { markContentStarted = resolve })
   let markHandlerSettled!: () => void
   const handlerSettled = new Promise<void>(resolve => { markHandlerSettled = resolve })
-  await page.route(`**${contentPath}`, async route => {
+  await page.route(`**${managedContentPath}`, async route => {
     markContentStarted()
     try {
       await contentReleased

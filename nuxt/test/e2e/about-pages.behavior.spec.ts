@@ -143,7 +143,7 @@ for (const staticPage of staticPages) {
     await page.getByRole("link", { name: staticPage.navName, exact: true }).click()
     await expect(page).toHaveURL(`/om/${staticPage.slug}`)
     await expect(page.getByRole("heading", { name: staticPage.heading, exact: true })).toBeVisible()
-    expect(await loggedRedRequests(request)).toEqual(staticPage.redRequests)
+    await expect.poll(() => loggedRedRequests(request)).toEqual(staticPage.redRequests)
     expect((await loggedRedRequests(request)).filter(path => path === staticPage.contentPath)).toHaveLength(1)
 
     await page.goBack({ waitUntil: "networkidle" })
@@ -165,6 +165,36 @@ test("the browser /red proxy reaches the configured content origin", async ({ pa
   expect(body.text).toContain("Organisation")
   const log = await (await request.get(`${fixture}/_requests`)).json()
   expect(log.requests).toEqual(["/red/om/ide/organisation.html"])
+})
+
+test("client navigation clears the prior About body while the next body is pending", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  await openSuccessfulPage(page, "/om/ide")
+  await expect(page.getByRole("heading", { name: "Introduktion", exact: true })).toBeVisible()
+
+  let markRequestStarted!: () => void
+  const requestStarted = new Promise<void>(resolve => { markRequestStarted = resolve })
+  let releaseResponse!: () => void
+  const responseReleased = new Promise<void>(resolve => { releaseResponse = resolve })
+  await page.route("**/api/about/organisation", async route => {
+    markRequestStarted()
+    await responseReleased
+    await route.fulfill({ response: await route.fetch() })
+  })
+
+  const navigation = page.getByRole("link", { name: "Organisation", exact: true }).click()
+  await requestStarted
+  try {
+    await expect(page).toHaveURL("/om/organisation")
+    await expect(page.getByRole("heading", { name: "Introduktion", exact: true })).toHaveCount(0)
+    await expect(page.locator("#mainview section")).toBeEmpty()
+  } finally {
+    releaseResponse()
+    await navigation
+  }
+
+  await expect(page.getByRole("heading", { name: "Organisation", exact: true })).toBeVisible()
+  expect(problems).toEqual([])
 })
 
 test("legacy statistics alias preserves browser query and fragment", async ({ page }) => {
