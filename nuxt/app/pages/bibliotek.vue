@@ -8,6 +8,7 @@ import { legacyPaginationItems, type LegacyPaginationItem } from "~/lib/legacy-p
 import type {
     LibraryImprintYearTarget,
     LibraryModeTab,
+    LibraryNativeSortOption,
     LibraryPaginationEntry,
     LibraryPaginationModel,
     LibrarySortOption
@@ -1827,7 +1828,7 @@ const latestSortOptions = computed<readonly LibrarySortOption<LatestSortKey>[]>(
 ])
 const allSortReversed = computed(() => isSortReversed("all", selectedSort.value))
 const latestSortReversed = computed(() => isSortReversed("latest", "nytillkommet"))
-const authorSortOptions = computed<readonly LibrarySortOption<AuthorSortKey>[]>(() =>
+const authorSortOptions = computed<readonly LibraryNativeSortOption<AuthorSortKey>[]>(() =>
     authorSorts.map(item => ({
         ...item,
         to: browseSortHref(item.key),
@@ -1883,7 +1884,7 @@ const downloadResultMode = computed<"epub" | "pdf">(() =>
 const downloadResponse = computed<EpubResponse>(() =>
     downloadResultMode.value === "pdf" ? pdfResults.value : epubResults.value
 )
-const downloadSortOptions = computed<readonly LibrarySortOption<EpubSortKey>[]>(() =>
+const downloadSortOptions = computed<readonly LibraryNativeSortOption<EpubSortKey>[]>(() =>
     epubSorts.map(item => ({
         ...item,
         to: epubSortHref(item.key),

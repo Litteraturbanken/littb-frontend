@@ -610,6 +610,55 @@ describe("Library component ownership", () => {
     target.remove()
   })
 
+  test("keeps author and download sort controls native to avoid prefetch work", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, onMounted }, { default: LibraryAuthorResults }, { default: LibraryDownloadResults }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibraryAuthorResults.vue"),
+      import("../../app/components/library/LibraryDownloadResults.vue")
+    ])
+    let scheduledPrefetches = 0
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true }, custom: Boolean },
+      setup(props: { to: string }, { slots }: { slots: { default?: (slotProps?: { href: string, navigate: () => void }) => unknown[] } }) {
+        onMounted(() => { scheduledPrefetches += 1 })
+        return () => slots.default?.({ href: props.to, navigate: () => undefined })
+      }
+    }
+    const app = createApp({
+      setup: () => () => h("div", [
+        h(LibraryAuthorResults, {
+          response: { data: [], hits: 0, workCount: 0, partCount: 0, workAuthorIds: {}, partAuthorIds: {}, suggest: [], failed: false },
+          sortOptions: [{ key: "namn", label: "Namn", to: "/bibliotek?visa=authors&sort=namn", active: true }],
+          sortReversed: false,
+          loading: false,
+          showAll: false
+        }),
+        h(LibraryDownloadResults, {
+          mode: "pdf",
+          response: { data: [], hits: 0, distinctHits: 0, suggest: [], failed: false },
+          sortOptions: [{ key: "titlar", label: "Titel", to: "/bibliotek?visa=pdf&sort=titlar", active: true }],
+          sortReversed: false,
+          imprintYearTargets: [],
+          loading: false,
+          pagination: { currentPage: 1, pageCount: 1, previous: null, next: null, entries: [] }
+        })
+      ])
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    expect(target.querySelector<HTMLAnchorElement>('[data-library-sort="namn"]')?.getAttribute("href"))
+      .toBe("/bibliotek?visa=authors&sort=namn")
+    expect(target.querySelector<HTMLAnchorElement>('[data-library-sort="titlar"]')?.getAttribute("href"))
+      .toBe("/bibliotek?visa=pdf&sort=titlar")
+    expect(scheduledPrefetches).toBe(0)
+    app.unmount()
+    target.remove()
+  })
+
   test("renders EPUB and PDF download rows, navigation targets, and result states", async () => {
     const target = document.createElement("div")
     document.body.append(target)
@@ -700,10 +749,37 @@ describe("Library component ownership", () => {
     expect(selectedPages).toEqual([2])
 
     mode.value = "pdf"
+    response.value = {
+      data: [{
+        title: "Ett drömspel",
+        titleTooltip: "Ett drömspel: skådespel",
+        year: "1902",
+        surname: "Strindberg",
+        authorTooltip: "Strindberg, August",
+        roleSuffix: " (ill.)",
+        titleHref: "/författare/august-strindberg/titlar/ett-dromspel",
+        titleTo: "/författare/august-strindberg/titlar/ett-dromspel",
+        authorHref: "/författare/august-strindberg",
+        downloadHref: "/download/ett-dromspel.pdf",
+        downloadFilename: "ett-dromspel.pdf"
+      }],
+      hits: 1,
+      distinctHits: 1,
+      suggest: [],
+      failed: false
+    }
     await nextTick()
     expect(target.querySelectorAll("[data-library-pdf-row]")).toHaveLength(1)
+    expect(target.querySelector("[data-library-pdf-title]")?.getAttribute("href"))
+      .toBe("/författare/august-strindberg/titlar/ett-dromspel")
+    expect(target.querySelector("[data-library-pdf-year]")?.textContent).toBe("1902")
+    expect(target.querySelector("[data-library-pdf-author]")?.getAttribute("href"))
+      .toBe("/författare/august-strindberg")
+    expect(target.querySelector(".text-gray-700.sc")?.textContent).toBe("(ill.)")
     expect(target.querySelector("[data-library-pdf-download]")?.getAttribute("href"))
-      .toBe("/download/roda-rummet.epub")
+      .toBe("/download/ett-dromspel.pdf")
+    expect(target.querySelector("[data-library-pdf-download]")?.getAttribute("download"))
+      .toBe("ett-dromspel.pdf")
     loading.value = true
     await nextTick()
     expect(target.querySelector("[data-library-loading]")).not.toBeNull()

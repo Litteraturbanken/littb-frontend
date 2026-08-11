@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { canonicalNuxtHref } from "../../lib/internal-navigation"
-import type { LibrarySortOption } from "~/lib/library/component-models"
+import type { LibraryNativeSortOption } from "~/lib/library/component-models"
 import type { AuthorSortKey } from "~/lib/library/navigation"
 import type { AuthorBrowseResponse } from "~/lib/library/page-results"
 
 defineProps<{
     response: AuthorBrowseResponse
-    sortOptions: readonly LibrarySortOption<AuthorSortKey>[]
+    sortOptions: readonly LibraryNativeSortOption<AuthorSortKey>[]
     sortReversed: boolean
     loading: boolean
     showAll: boolean
@@ -23,18 +23,13 @@ const emit = defineEmits<{
             <div class="inline-block sc mr-2">Sortera:</div>
             <ul class="part_header top_header mb-4 inline-block">
                 <li v-for="item in sortOptions" :key="item.key" class="inline-block sc">
-                    <NuxtLink
-                        v-slot="{ href }"
-                        custom
-                        :to="item.to"
-                    ><a
-                        :href="href || ''"
+                    <a
+                        :href="item.to"
                         class="sort_item"
                         :class="{ active: item.active }"
                         :data-library-sort="item.key"
                         @click.prevent="emit('selectSort', item.key)"
-                        >{{ item.label }}</a
-                    ></NuxtLink>
+                        >{{ item.label }}</a>
                     <template v-if="item.active"
                         >{{ " "
                         }}<i class="fa" :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'" />

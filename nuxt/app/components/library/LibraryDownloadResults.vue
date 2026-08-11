@@ -6,8 +6,8 @@ import { canonicalNuxtHref } from "../../lib/internal-navigation"
 import type {
     LibraryDownloadMode,
     LibraryImprintYearTarget,
+    LibraryNativeSortOption,
     LibraryPaginationModel,
-    LibrarySortOption
 } from "~/lib/library/component-models"
 import type { EpubSortKey } from "~/lib/library/navigation"
 import type { EpubResponse } from "~/lib/library/page-results"
@@ -16,7 +16,7 @@ import LibraryPagination from "./LibraryPagination.vue"
 const props = defineProps<{
     mode: LibraryDownloadMode
     response: EpubResponse
-    sortOptions: readonly LibrarySortOption<EpubSortKey>[]
+    sortOptions: readonly LibraryNativeSortOption<EpubSortKey>[]
     sortReversed: boolean
     imprintYearTargets: readonly LibraryImprintYearTarget[]
     loading: boolean
@@ -49,18 +49,14 @@ function imprintYearTo(year: string): RouteLocationRaw {
                 {{ " " }}
                 <ul class="part_header top_header mb-4 inline-block">
                     <li v-for="item in sortOptions" :key="item.key" class="inline-block sc">
-                        <NuxtLink
-                            v-slot="{ href }"
-                            custom
-                            :to="item.to"
-                        ><a
-                            :href="href || ''"
+                        <a
+                            :href="item.to"
                             class="sort_item"
                             :class="{ active: item.active }"
                             :data-library-sort="item.key"
                             @click.prevent="emit('selectSort', item.key)"
-                            >{{ item.label }}</a
-                        ></NuxtLink><template v-if="item.active"
+                            >{{ item.label }}</a>
+                        <template v-if="item.active"
                             >{{ " "
                             }}<i class="fa" :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'" />
                         </template>
