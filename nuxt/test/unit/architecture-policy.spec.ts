@@ -338,6 +338,7 @@ describe("architecture policy verifier", () => {
       const source = readFileSync(resolve(import.meta.dirname, "../../", path), "utf8")
       expect(source, path).toMatch(/import\s*\{[^}]*encodeRfc3986Segment[^}]*\}/u)
       expect(source, path).not.toMatch(/function\s+encodeRfc3986Segment\s*\(/u)
+      expect(source, path).not.toMatch(/\bencodeURIComponent\s*\(/u)
     }
   })
 

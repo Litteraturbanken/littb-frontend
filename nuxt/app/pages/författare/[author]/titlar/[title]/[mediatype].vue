@@ -84,9 +84,9 @@ function requestStatus(error: unknown): 404 | 502 {
 function resolverPath(): string {
   return [
     "/api/reader/resolve",
-    encodeURIComponent(requestedAuthor),
-    encodeURIComponent(requestedTitle),
-    encodeURIComponent(requestedMediaType)
+    encodeRfc3986Segment(requestedAuthor),
+    encodeRfc3986Segment(requestedTitle),
+    encodeRfc3986Segment(requestedMediaType)
   ].join("/")
 }
 

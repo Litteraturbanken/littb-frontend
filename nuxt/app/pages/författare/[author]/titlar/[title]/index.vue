@@ -22,8 +22,8 @@ const requestedTitle = scalarParam("title")
 const activeIdentity = { current: true }
 const resolverPath = [
   "/api/reader/resolve",
-  encodeURIComponent(requestedAuthor),
-  encodeURIComponent(requestedTitle)
+  encodeRfc3986Segment(requestedAuthor),
+  encodeRfc3986Segment(requestedTitle)
 ].join("/")
 
 function scalarParam(name: "author" | "title"): string {
