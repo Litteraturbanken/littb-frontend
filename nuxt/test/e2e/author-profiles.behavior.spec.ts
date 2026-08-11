@@ -108,6 +108,17 @@ test("hydrates the rich profile without warnings or duplicate browser requests",
   expect(problems).toEqual([])
 })
 
+test("does not render an unsafe backend author search URL", async ({ page, request }) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/UnsafeSearch", { waitUntil: "networkidle" })
+  const navigation = page.getByRole("navigation", { name: "Författarsidor" })
+
+  await expect(navigation.getByRole("link", { name: "Sök i texterna" })).toHaveCount(0)
+  await expect(page.locator('a[href*="evil.invalid"]')).toHaveCount(0)
+  expect(await profileRequests(request)).toEqual(["/private-v2/authors/UnsafeSearch"])
+  expect(problems).toEqual([])
+})
+
 test("managed HTML hydrates without retaining raw provider markers", async ({ page }) => {
   const problems = collectProblems(page)
   for (const [path, intended] of [

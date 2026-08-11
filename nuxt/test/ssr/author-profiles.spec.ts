@@ -115,6 +115,18 @@ test("SSR renders the complete ordinary author profile from one private request"
   expect(await profileRequests(request)).toEqual(["/private-v2/authors/StrindbergA"])
 })
 
+test("SSR omits an unsafe backend author search URL", async ({ request }) => {
+  const response = await request.get("/författare/UnsafeSearch")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const navigation = document.querySelector('nav[aria-label="Författarsidor"]')
+
+  expect(navigation?.querySelector('a[href*="evil.invalid"]')).toBeNull()
+  expect([...navigation?.querySelectorAll("a") ?? []].map(link => link.textContent?.trim()))
+    .not.toContain("Sök i texterna")
+  expect(await profileRequests(request)).toEqual(["/private-v2/authors/UnsafeSearch"])
+})
+
 for (const [variant, path, intended] of [
   [
     "ordinary",

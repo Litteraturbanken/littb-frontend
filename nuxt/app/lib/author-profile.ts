@@ -1,11 +1,15 @@
-import { hasC0OrC1Control } from "#shared/utils/text-safety"
+import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 import type { SanitizedHtml } from "#shared/types/renderable-html"
 import {
   emptyRenderableHtml,
   issueAuthorProfileHtml
 } from "#shared/utils/renderable-html"
 import { parseHtmlDocument } from "./html-document"
-import { safeNativeHref } from "./internal-navigation"
+import {
+  canonicalNuxtHref,
+  isNuxtInternalHref,
+  safeNativeHref
+} from "./internal-navigation"
 import type { components } from "./api/generated/lbapi"
 
 type AuthorProfile = components["schemas"]["AuthorProfile"]
@@ -96,7 +100,8 @@ const allowedUrlProtocols = new Set(["http:", "https:", "mailto:", "tel:"])
 const absoluteScheme = /^[a-z][a-z\d+.-]*:/iu
 
 export function encodeRfc3986Segment(value: string): string {
-  return encodeURIComponent(value).replace(
+  const scalar = hasLoneSurrogate(value) ? value.toWellFormed() : value
+  return encodeURIComponent(scalar).replace(
     /[!'()*]/g,
     character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
   )
@@ -264,6 +269,15 @@ function profileLinks(links: AuthorProfile["related_links"]): Array<{ label: str
   })
 }
 
+function safeAuthorSearchHref(value: string | null | undefined): string {
+  if (!value) return ""
+  const href = safeNativeHref(value)
+  if (href === null) return ""
+  const canonical = canonicalNuxtHref(href)
+  const pathname = canonical.split(/[?#]/u, 1)[0]
+  return pathname === "/s%C3%B6k" && isNuxtInternalHref(canonical) ? canonical : ""
+}
+
 export function createAuthorProfileView(
   profile: AuthorProfile,
   variant: AuthorProfileVariant
@@ -299,7 +313,7 @@ export function createAuthorProfileView(
           captionHtml: sanitizeAuthorHtml(selectedPortrait.caption_html)
         }
       : null,
-    searchUrl: profile.search_url ?? "",
+    searchUrl: safeAuthorSearchHref(profile.search_url),
     audioUrl: safeHttpUrl(profile.audio_url),
     mapUrl: safeHttpUrl(profile.map_url),
     hasMore: profile.has_more === true,

@@ -5,6 +5,7 @@ import type { components } from "../../app/lib/api/generated/lbapi"
 import {
   authorProfilePath,
   createAuthorProfileView,
+  encodeRfc3986Segment,
   formatAuthorYears,
   sanitizeAuthorHtml,
   validateAuthorRouteParam
@@ -59,6 +60,12 @@ describe("author profile paths", () => {
   test("encodes author and child segments into one canonical client path", () => {
     expect(authorProfilePath("O'Neil(A", "titlar", "Del!Ett"))
       .toBe("/f%C3%B6rfattare/O%27Neil%28A/titlar/Del%21Ett")
+  })
+
+  test("replaces lone surrogate code units in author and child route segments", () => {
+    expect(encodeRfc3986Segment("A\ud800B")).toBe("A%EF%BF%BDB")
+    expect(authorProfilePath("\udfff", "titlar", "\ud800"))
+      .toBe("/f%C3%B6rfattare/%EF%BF%BD/titlar/%EF%BF%BD")
   })
 })
 
@@ -235,7 +242,7 @@ describe("safe author profile view model", () => {
         url: "/red/forfattare/StrindbergA/StrindbergA_large.jpeg",
         captionHtml: "<span>Ordinary caption</span>"
       },
-      searchUrl: "/sok?forfattare=StrindbergA&avancerad",
+      searchUrl: "/s%C3%B6k?forfattare=StrindbergA&avancerad",
       audioUrl: "",
       mapUrl: profile.map_url,
       hasMore: true,
@@ -302,6 +309,19 @@ describe("safe author profile view model", () => {
     expect(view.searchUrl).toBe("")
     expect(view.relatedLinks).toEqual([])
     expect(view.encyclopediaLinks).toEqual([])
+  })
+
+  test.each([
+    ["/sok?forfattare=StrindbergA&avancerad", "/s%C3%B6k?forfattare=StrindbergA&avancerad"],
+    ["https://evil.invalid/sok?forfattare=StrindbergA", ""],
+    ["/sok?forfattare=%E0%A4%A", ""],
+    ["/sok?forfattare=Strindberg\ud800A", ""],
+    ["/bibliotek?forfattare=StrindbergA", ""]
+  ])("keeps only a safe internal search URL: %s", (searchUrl, expected) => {
+    const profile = maliciousProfile()
+    profile.search_url = searchUrl
+
+    expect(createAuthorProfileView(profile, "ordinary").searchUrl).toBe(expected)
   })
 
   test("copies validated profile links without rewriting their destinations", () => {
