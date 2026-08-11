@@ -151,6 +151,18 @@ test("SSR keeps native footnote fragments paired without popup markup", async ({
     .toBeNull()
 })
 
+test("SSR omits the audio navigation item when an article author has no audio URL", async ({
+  request
+}) => {
+  const response = await request.get(`${routeRoot}/OmSelmaLagerlofArkivet.html`)
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  expect([...document.querySelectorAll("ul.links a")].map(link => link.textContent?.trim()))
+    .toEqual(["Introduktion", "Verk", "Dramawebben", "Sök i texterna"])
+  expect(document.querySelector("ul.links a:not([href])")).toBeNull()
+})
+
 test("SSR owns every registered article without legacy fan-out", async ({ request }) => {
   for (const article of slaArticleFixtures) {
     await reset(request)

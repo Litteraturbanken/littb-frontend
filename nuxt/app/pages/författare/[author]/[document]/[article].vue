@@ -210,9 +210,9 @@ useHead({
             <li>
               <NuxtLink :to="canonicalNuxtHref(titlesHref)">Verk</NuxtLink>
             </li>{{ " " }}
-            <li>
+            <li v-if="page.author.audioUrl">
               <a
-                :href="page.author.audioUrl!"
+                :href="page.author.audioUrl"
                 target="_blank"
                 rel="noopener noreferrer"
               >Ljud</a>
