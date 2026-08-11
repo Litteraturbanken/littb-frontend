@@ -27,6 +27,7 @@ export type LibraryNativeSortOption<Key extends string> = Readonly<{
 }>
 
 export type LibraryDownloadMode = "epub" | "pdf"
+export type LibraryBrowseMode = "works" | "parts"
 
 export type LibraryImprintYearTarget = Readonly<{
     year: string

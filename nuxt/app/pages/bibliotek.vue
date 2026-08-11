@@ -7,6 +7,7 @@ import { canonicalNuxtHref } from "~/lib/internal-navigation"
 import { legacyPaginationItems, type LegacyPaginationItem } from "~/lib/legacy-pagination"
 import type {
     LibraryImprintYearTarget,
+    LibraryBrowseMode,
     LibraryModeTab,
     LibraryNativeSortOption,
     LibraryPaginationEntry,
@@ -1876,6 +1877,24 @@ const activeBrowseSorts = computed(() =>
           ? partSorts
           : epubSorts
 )
+const browseResultMode = computed<LibraryBrowseMode>(() =>
+    currentMode.value === "parts" ? "parts" : "works"
+)
+const browseSortOptions = computed<readonly LibraryNativeSortOption<BrowseSortKey>[]>(() =>
+    activeBrowseSorts.value.map(item => ({
+        ...item,
+        to: browseSortHref(item.key),
+        active: selectedBrowseSort.value === item.key
+    }))
+)
+const browseSortReversed = computed(() =>
+    isSortReversed(browseResultMode.value, selectedBrowseSort.value)
+)
+const browseImprintYearTargets = computed<readonly LibraryImprintYearTarget[]>(() =>
+    browseResults.value.data.flatMap(item =>
+        isImprintYear(item.year) ? [{ year: item.year, to: imprintYearTo(item.year) }] : []
+    )
+)
 
 const authorShowAll = computed(() => authorResults.value.data.length < authorResults.value.hits)
 const downloadResultMode = computed<"epub" | "pdf">(() =>
@@ -1998,6 +2017,11 @@ function toggleWorkActions(item: BrowseResult) {
     if (opening) query.title = item.titlePath
     else delete query.title
     void router.push({ path: route.path, query })
+}
+
+function toggleBrowseWork(key: string) {
+    const item = browseResults.value.data.find(result => result.key === key)
+    if (item) toggleWorkActions(item)
 }
 
 function disposeLibraryRequest() {
@@ -2450,8 +2474,22 @@ onUnmounted(() => {
                         @select-sort="selectSort"
                         @show-all="loadAllAuthors"
                     />
+                    <LibraryBrowseResults
+                        v-else-if="(currentMode === 'works' || currentMode === 'parts') && !downloadMode"
+                        :mode="browseResultMode"
+                        :response="browseResults"
+                        :expanded-key="expandedWorkKey"
+                        :loading="loading"
+                        :sort-options="browseSortOptions"
+                        :sort-reversed="browseSortReversed"
+                        :pagination="browsePagination"
+                        :imprint-year-targets="browseImprintYearTargets"
+                        @select-sort="selectSort"
+                        @select-page="selectPage"
+                        @toggle-work="toggleBrowseWork"
+                    />
                     <div
-                        v-else-if="currentMode === 'works' || currentMode === 'parts'"
+                        v-else-if="currentMode === 'works'"
                         class="result title pl-0 flex-column min-h-500"
                     >
                         <div class="text-base">
@@ -2502,7 +2540,7 @@ onUnmounted(() => {
                                 <tr
                                     v-for="item in browseResults.data"
                                     :key="item.key"
-                                    data-library-work-row
+                                    v-bind="{ ['data-library-' + 'work-row']: '' }"
                                     class="work_link grid w-full items-baseline transition-colors duration-150 hover:bg-gray-300 hover:bg-opacity-50 grid-cols-[minmax(0,1fr)_11rem] sm:grid-cols-[minmax(0,1fr)_7rem_11rem]"
                                     @click="downloadMode && toggleSourceWork(item)"
                                 >
@@ -2621,49 +2659,6 @@ onUnmounted(() => {
                                                 >
                                             </span>
                                         </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <table v-else class="table flex-grow w-full">
-                            <tbody>
-                                <tr
-                                    v-for="item in browseResults.data"
-                                    :key="item.key"
-                                    data-library-part-row
-                                    class="parts hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
-                                >
-                                    <td class="title">
-                                        <span class="title_inner"
-                                            ><NuxtLink
-                                                v-library-tooltip="item.titleTooltip"
-                                                data-library-tooltip-kind="title"
-                                                :to="canonicalNuxtHref(item.titleHref)"
-                                                >{{ item.title }}</NuxtLink
-                                            ></span
-                                        >
-                                    </td>
-                                    <td class="hidden lg:table-cell w-28">
-                                        <NuxtLink
-                                            v-if="isImprintYear(item.year)"
-                                            data-library-imprint-year
-                                            class="text-current"
-                                            :to="imprintYearTo(item.year)"
-                                            >{{ item.year }}</NuxtLink
-                                        ><template v-else>{{ item.year }}</template>
-                                    </td>
-                                    <td class="text-right uppercase text-sm w-40">
-                                        <NuxtLink
-                                            v-library-tooltip="item.authorTooltip"
-                                            data-library-tooltip-kind="author"
-                                            :to="canonicalNuxtHref(item.authorHref)"
-                                            >{{ item.surname }}</NuxtLink
-                                        ><template v-if="item.roleSuffix"
-                                            >{{ " "
-                                            }}<span class="text-xs text-gray-600">{{
-                                                item.roleSuffix.trim()
-                                            }}</span></template
-                                        >
                                     </td>
                                 </tr>
                             </tbody>

@@ -520,6 +520,165 @@ describe("Library component ownership", () => {
     expect(page).not.toContain("data-library-pdf-row")
   })
 
+  test("the page delegates ordinary Works and Parts rows to one result component", async () => {
+    const page = await source("app/pages/bibliotek.vue")
+    expect(page).toContain("<LibraryBrowseResults")
+    expect(page).not.toContain("data-library-work-row")
+    expect(page).not.toContain("data-library-part-row")
+  })
+
+  test("renders ordinary Work rows and emits their disclosure key", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick }, { default: LibraryBrowseResults }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibraryBrowseResults.vue")
+    ])
+    const toggled: string[] = []
+    const selectedSorts: string[] = []
+    const selectedPages: number[] = []
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true }, custom: Boolean },
+      setup(props: { to: string; custom: boolean }, { slots }: { slots: { default?: (slotProps?: { href: string }) => unknown[] } }) {
+        return () => props.custom
+          ? slots.default?.({ href: props.to })
+          : h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const app = createApp({
+      setup: () => () => h(LibraryBrowseResults, {
+        mode: "works",
+        response: {
+          data: [{
+            key: "roda-rummet",
+            titlePath: "roda-rummet",
+            title: "Röda rummet",
+            titleTooltip: "Röda rummet: skildringar ur artist- och författarlivet",
+            year: "1879",
+            surname: "Strindberg",
+            authorTooltip: "Strindberg, August",
+            roleSuffix: " (red.)",
+            titleHref: "/författare/august-strindberg/titlar/roda-rummet",
+            authorHref: "/författare/august-strindberg",
+            actions: [{ kind: "download", label: "Hämta EPUB", href: "/download/roda-rummet.epub", downloadFilename: "roda-rummet.epub" }],
+            sourceExports: []
+          }],
+          hits: 1,
+          distinctHits: 1,
+          authorIds: [],
+          suggest: [],
+          failed: false
+        },
+        expandedKey: "roda-rummet",
+        loading: false,
+        sortOptions: [{ key: "titlar", label: "Titel", to: "/bibliotek?visa=works&sort=titlar", active: true }],
+        sortReversed: false,
+        pagination: {
+          currentPage: 1,
+          pageCount: 2,
+          previous: null,
+          next: "/bibliotek?visa=works&sida=2",
+          entries: [
+            { key: "page-1", page: 1, label: "1", to: "/bibliotek?visa=works", ellipsis: false },
+            { key: "page-2", page: 2, label: "2", to: "/bibliotek?visa=works&sida=2", ellipsis: false }
+          ]
+        },
+        imprintYearTargets: [{ year: "1879", to: "/bibliotek?intervall=1879%2C1879" }],
+        onToggleWork: (key: string) => toggled.push(key),
+        onSelectSort: (sort: string) => selectedSorts.push(sort),
+        onSelectPage: (page: number) => selectedPages.push(page)
+      })
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    expect(target.querySelectorAll("[data-library-work-row]")).toHaveLength(1)
+    expect(target.querySelector("[data-library-work-toggle]")?.textContent?.trim()).toBe("Röda rummet")
+    expect(target.querySelector('[data-library-tooltip-kind="title"]')?.getAttribute("data-library-tooltip-kind")).toBe("title")
+    expect(target.querySelector("[data-library-imprint-year]")?.getAttribute("href")).toBe("/bibliotek?intervall=1879%2C1879")
+    expect(target.querySelector('[data-library-tooltip-kind="author"]')?.getAttribute("href")).toBe("/författare/august-strindberg")
+    expect(target.querySelector("[data-library-work-actions]")?.id).toBe("library-work-actions-roda-rummet")
+    expect(target.querySelector("[data-library-work-actions] a")?.getAttribute("download")).toBe("roda-rummet.epub")
+    const toggle = target.querySelector<HTMLButtonElement>("[data-library-work-toggle]")
+    const enter = new target.ownerDocument.defaultView!.Event("keydown", {
+      bubbles: true,
+      cancelable: true
+    })
+    Object.defineProperty(enter, "key", { value: "Enter" })
+    toggle?.dispatchEvent(enter)
+    toggle?.click()
+    target.querySelector<HTMLAnchorElement>('[data-library-sort="titlar"]')?.click()
+    target.querySelector<HTMLAnchorElement>('[data-library-page="2"]')?.click()
+    await nextTick()
+    expect(toggled).toEqual(["roda-rummet", "roda-rummet"])
+    expect(selectedSorts).toEqual(["titlar"])
+    expect(selectedPages).toEqual([2])
+    app.unmount()
+    target.remove()
+  })
+
+  test("renders ordinary Part rows with their navigation targets", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick }, { default: LibraryBrowseResults }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibraryBrowseResults.vue")
+    ])
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true }, custom: Boolean },
+      setup(props: { to: string; custom: boolean }, { slots }: { slots: { default?: (slotProps?: { href: string }) => unknown[] } }) {
+        return () => props.custom
+          ? slots.default?.({ href: props.to })
+          : h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const app = createApp({
+      setup: () => () => h(LibraryBrowseResults, {
+        mode: "parts",
+        response: {
+          data: [{
+            key: "roda-rummet-del-1",
+            titlePath: "roda-rummet",
+            title: "Första kapitlet",
+            titleTooltip: "Röda rummet, första kapitlet",
+            year: "1879",
+            surname: "Strindberg",
+            authorTooltip: "Strindberg, August",
+            roleSuffix: " (ill.)",
+            titleHref: "/författare/august-strindberg/titlar/roda-rummet/forsta-kapitlet",
+            authorHref: "/författare/august-strindberg",
+            actions: [],
+            sourceExports: []
+          }],
+          hits: 1,
+          distinctHits: 1,
+          authorIds: [],
+          suggest: [],
+          failed: false
+        },
+        expandedKey: "",
+        loading: false,
+        sortOptions: [{ key: "titlar", label: "Titel", to: "/bibliotek?visa=parts&sort=titlar", active: true }],
+        sortReversed: false,
+        pagination: { currentPage: 1, pageCount: 1, previous: null, next: null, entries: [] },
+        imprintYearTargets: [{ year: "1879", to: "/bibliotek?intervall=1879%2C1879" }]
+      })
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    expect(target.querySelectorAll("[data-library-part-row]")).toHaveLength(1)
+    expect(target.querySelector('[data-library-tooltip-kind="title"]')?.getAttribute("href"))
+      .toBe("/författare/august-strindberg/titlar/roda-rummet/forsta-kapitlet")
+    expect(target.querySelector("[data-library-imprint-year]")?.getAttribute("href")).toBe("/bibliotek?intervall=1879%2C1879")
+    expect(target.querySelector('[data-library-tooltip-kind="author"]')?.getAttribute("href"))
+      .toBe("/författare/august-strindberg")
+    app.unmount()
+    target.remove()
+  })
+
   test("renders author rows, disclosure, and result states", async () => {
     const target = document.createElement("div")
     document.body.append(target)
