@@ -8,7 +8,8 @@ export default defineProject({
     environment: "./test/helpers/linkedom-vitest-environment.ts",
     include: [
       "test/unit/renderable-html.spec.ts",
-      "test/unit/search-multi-select.spec.ts"
+      "test/unit/search-multi-select.spec.ts",
+      "test/unit/library-component-boundaries.spec.ts"
     ]
   }
 })

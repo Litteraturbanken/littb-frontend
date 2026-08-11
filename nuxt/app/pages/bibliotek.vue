@@ -4,7 +4,11 @@ import type { LocationQuery, RouteLocationRaw } from "vue-router"
 import { libraryTooltipDirective } from "~/directives/library-tooltip"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
-import { legacyPaginationItems } from "~/lib/legacy-pagination"
+import { legacyPaginationItems, type LegacyPaginationItem } from "~/lib/legacy-pagination"
+import type {
+    LibraryPaginationEntry,
+    LibraryPaginationModel
+} from "~/lib/library/component-models"
 import {
     buildLibraryCountRequest,
     buildLibrarySearchRequest,
@@ -1808,6 +1812,25 @@ const pageCount = computed(() =>
 )
 const pages = computed(() => legacyPaginationItems(pageCount.value, currentPage.value))
 
+function paginationModel(
+    pageHref: (page: number) => RouteLocationRaw
+): LibraryPaginationModel {
+    const entries = pages.value.map(
+        (item: LegacyPaginationItem): LibraryPaginationEntry => ({
+            ...item,
+            to: pageHref(item.page),
+            ellipsis: item.label === "..."
+        })
+    )
+    return {
+        currentPage: currentPage.value,
+        pageCount: pageCount.value,
+        previous: currentPage.value <= 1 ? null : pageHref(currentPage.value - 1),
+        next: currentPage.value >= pageCount.value ? null : pageHref(currentPage.value + 1),
+        entries
+    }
+}
+
 function allPageHref(page: number): string {
     return stateHref({
         mode: "all",
@@ -1844,6 +1867,11 @@ function browsePageHref(page: number): string {
         page
     })
 }
+
+const allPagination = computed(() => paginationModel(allPageHref))
+const latestPagination = computed(() => paginationModel(latestPageHref))
+const browsePagination = computed(() => paginationModel(browsePageHref))
+const epubPagination = computed(() => paginationModel(epubPageHref))
 
 function workActionsId(item: BrowseResult): string {
     return `library-work-actions-${encodeURIComponent(item.key)}`
@@ -2603,60 +2631,11 @@ onUnmounted(() => {
                                 </tbody>
                             </table>
                         </div>
-                        <nav v-if="pageCount > 1" aria-label="Sidnavigation">
-                            <ul class="pagination pagination-sm sc">
-                                <li :class="{ disabled: currentPage <= 1 }">
-                                    <span
-                                        v-if="currentPage <= 1"
-                                        data-library-pagination-previous
-                                        aria-disabled="true"
-                                        >Föregående</span
-                                    >
-                                    <a
-                                        v-else
-                                        data-library-pagination-previous
-                                        :href="allPageHref(currentPage - 1)"
-                                        @click.prevent="selectPage(currentPage - 1)"
-                                        >Föregående</a
-                                    >
-                                </li>
-                                <li
-                                    v-for="item in pages"
-                                    :key="item.key"
-                                    :class="{ active: item.page === currentPage }"
-                                >
-                                    <a
-                                        :data-library-page="
-                                            item.label === '...' ? undefined : item.page
-                                        "
-                                        :data-library-pagination-ellipsis="
-                                            item.label === '...' || undefined
-                                        "
-                                        :href="allPageHref(item.page)"
-                                        :aria-current="
-                                            item.page === currentPage ? 'page' : undefined
-                                        "
-                                        @click.prevent="selectPage(item.page)"
-                                        >{{ item.label }}</a
-                                    >
-                                </li>
-                                <li :class="{ disabled: currentPage >= pageCount }">
-                                    <span
-                                        v-if="currentPage >= pageCount"
-                                        data-library-pagination-next
-                                        aria-disabled="true"
-                                        >Nästa</span
-                                    >
-                                    <a
-                                        v-else
-                                        data-library-pagination-next
-                                        :href="allPageHref(currentPage + 1)"
-                                        @click.prevent="selectPage(currentPage + 1)"
-                                        >Nästa</a
-                                    >
-                                </li>
-                            </ul>
-                        </nav>
+                        <LibraryPagination
+                            v-if="pageCount > 1"
+                            :model="allPagination"
+                            @select-page="selectPage"
+                        />
                     </div>
                     <div
                         v-else-if="currentMode === 'latest'"
@@ -2799,60 +2778,11 @@ onUnmounted(() => {
                                 </template>
                             </tbody>
                         </table>
-                        <nav v-if="pageCount > 1" aria-label="Sidnavigation">
-                            <ul class="pagination pagination-sm sc">
-                                <li :class="{ disabled: currentPage <= 1 }">
-                                    <span
-                                        v-if="currentPage <= 1"
-                                        data-library-pagination-previous
-                                        aria-disabled="true"
-                                        >Föregående</span
-                                    >
-                                    <a
-                                        v-else
-                                        data-library-pagination-previous
-                                        :href="latestPageHref(currentPage - 1)"
-                                        @click.prevent="selectPage(currentPage - 1)"
-                                        >Föregående</a
-                                    >
-                                </li>
-                                <li
-                                    v-for="item in pages"
-                                    :key="item.key"
-                                    :class="{ active: item.page === currentPage }"
-                                >
-                                    <a
-                                        :data-library-page="
-                                            item.label === '...' ? undefined : item.page
-                                        "
-                                        :data-library-pagination-ellipsis="
-                                            item.label === '...' || undefined
-                                        "
-                                        :href="latestPageHref(item.page)"
-                                        :aria-current="
-                                            item.page === currentPage ? 'page' : undefined
-                                        "
-                                        @click.prevent="selectPage(item.page)"
-                                        >{{ item.label }}</a
-                                    >
-                                </li>
-                                <li :class="{ disabled: currentPage >= pageCount }">
-                                    <span
-                                        v-if="currentPage >= pageCount"
-                                        data-library-pagination-next
-                                        aria-disabled="true"
-                                        >Nästa</span
-                                    >
-                                    <a
-                                        v-else
-                                        data-library-pagination-next
-                                        :href="latestPageHref(currentPage + 1)"
-                                        @click.prevent="selectPage(currentPage + 1)"
-                                        >Nästa</a
-                                    >
-                                </li>
-                            </ul>
-                        </nav>
+                        <LibraryPagination
+                            v-if="pageCount > 1"
+                            :model="latestPagination"
+                            @select-page="selectPage"
+                        />
                     </div>
                     <div
                         v-else-if="currentMode === 'authors'"
@@ -3155,60 +3085,11 @@ onUnmounted(() => {
                                 </tr>
                             </tbody>
                         </table>
-                        <nav v-if="pageCount > 1" aria-label="Sidnavigation">
-                            <ul class="pagination pagination-sm sc">
-                                <li :class="{ disabled: currentPage <= 1 }">
-                                    <span
-                                        v-if="currentPage <= 1"
-                                        data-library-pagination-previous
-                                        aria-disabled="true"
-                                        >Föregående</span
-                                    >
-                                    <a
-                                        v-else
-                                        data-library-pagination-previous
-                                        :href="browsePageHref(currentPage - 1)"
-                                        @click.prevent="selectPage(currentPage - 1)"
-                                        >Föregående</a
-                                    >
-                                </li>
-                                <li
-                                    v-for="item in pages"
-                                    :key="item.key"
-                                    :class="{ active: item.page === currentPage }"
-                                >
-                                    <a
-                                        :data-library-page="
-                                            item.label === '...' ? undefined : item.page
-                                        "
-                                        :data-library-pagination-ellipsis="
-                                            item.label === '...' || undefined
-                                        "
-                                        :href="browsePageHref(item.page)"
-                                        :aria-current="
-                                            item.page === currentPage ? 'page' : undefined
-                                        "
-                                        @click.prevent="selectPage(item.page)"
-                                        >{{ item.label }}</a
-                                    >
-                                </li>
-                                <li :class="{ disabled: currentPage >= pageCount }">
-                                    <span
-                                        v-if="currentPage >= pageCount"
-                                        data-library-pagination-next
-                                        aria-disabled="true"
-                                        >Nästa</span
-                                    >
-                                    <a
-                                        v-else
-                                        data-library-pagination-next
-                                        :href="browsePageHref(currentPage + 1)"
-                                        @click.prevent="selectPage(currentPage + 1)"
-                                        >Nästa</a
-                                    >
-                                </li>
-                            </ul>
-                        </nav>
+                        <LibraryPagination
+                            v-if="pageCount > 1"
+                            :model="browsePagination"
+                            @select-page="selectPage"
+                        />
                     </div>
                     <div
                         v-else-if="currentMode === 'epub' || currentMode === 'pdf'"
@@ -3368,60 +3249,11 @@ onUnmounted(() => {
                                 </tr>
                             </tbody>
                         </table>
-                        <nav v-if="pageCount > 1" aria-label="Sidnavigation">
-                            <ul class="pagination pagination-sm sc">
-                                <li :class="{ disabled: currentPage <= 1 }">
-                                    <span
-                                        v-if="currentPage <= 1"
-                                        data-library-pagination-previous
-                                        aria-disabled="true"
-                                        >Föregående</span
-                                    >
-                                    <a
-                                        v-else
-                                        data-library-pagination-previous
-                                        :href="epubPageHref(currentPage - 1)"
-                                        @click.prevent="selectPage(currentPage - 1)"
-                                        >Föregående</a
-                                    >
-                                </li>
-                                <li
-                                    v-for="item in pages"
-                                    :key="item.key"
-                                    :class="{ active: item.page === currentPage }"
-                                >
-                                    <a
-                                        :data-library-page="
-                                            item.label === '...' ? undefined : item.page
-                                        "
-                                        :data-library-pagination-ellipsis="
-                                            item.label === '...' || undefined
-                                        "
-                                        :href="epubPageHref(item.page)"
-                                        :aria-current="
-                                            item.page === currentPage ? 'page' : undefined
-                                        "
-                                        @click.prevent="selectPage(item.page)"
-                                        >{{ item.label }}</a
-                                    >
-                                </li>
-                                <li :class="{ disabled: currentPage >= pageCount }">
-                                    <span
-                                        v-if="currentPage >= pageCount"
-                                        data-library-pagination-next
-                                        aria-disabled="true"
-                                        >Nästa</span
-                                    >
-                                    <a
-                                        v-else
-                                        data-library-pagination-next
-                                        :href="epubPageHref(currentPage + 1)"
-                                        @click.prevent="selectPage(currentPage + 1)"
-                                        >Nästa</a
-                                    >
-                                </li>
-                            </ul>
-                        </nav>
+                        <LibraryPagination
+                            v-if="pageCount > 1"
+                            :model="epubPagination"
+                            @select-page="selectPage"
+                        />
                     </div>
                 </div>
                 <div v-if="downloadMode">
