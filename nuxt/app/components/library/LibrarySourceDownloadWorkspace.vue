@@ -48,19 +48,19 @@ const sourceFormatGroups: readonly LibrarySourceFormatGroup[] = [
         mediatype: "etext",
         label: "Etext",
         formats: [
-            { type: "txt", label: "ren text" },
-            { type: "xml", label: "xml" },
-            { type: "workdb", label: "Metadata" }
+            { key: "etext:txt", type: "txt", label: "ren text" },
+            { key: "etext:xml", type: "xml", label: "xml" },
+            { key: "etext:workdb", type: "workdb", label: "Metadata" }
         ]
     },
     {
         mediatype: "faksimil",
         label: "Faksimil",
         formats: [
-            { type: "txt", label: "ren text" },
-            { type: "xml", label: "xml" },
-            { type: "workdb", label: "Metadata" },
-            { type: "pdf", label: "PDF" }
+            { key: "faksimil:txt", type: "txt", label: "ren text" },
+            { key: "faksimil:xml", type: "xml", label: "xml" },
+            { key: "faksimil:workdb", type: "workdb", label: "Metadata" },
+            { key: "faksimil:pdf", type: "pdf", label: "PDF" }
         ]
     }
 ]
@@ -84,14 +84,16 @@ const sourceFormatAvailability = computed(() => {
     const counts = new Map<LibrarySourceFormatKey, number>()
     for (const item of selectedSourceExports.value) {
         const key = sourceFormatKey(item.mediatype, item.type)
+        if (!key) continue
         counts.set(key, (counts.get(key) ?? 0) + 1)
     }
     return counts
 })
 const selectedDownloadExports = computed(() =>
-    selectedSourceExports.value.filter(item =>
-        selectedSourceFormats.value.has(sourceFormatKey(item.mediatype, item.type))
-    )
+    selectedSourceExports.value.filter(item => {
+        const key = sourceFormatKey(item.mediatype, item.type)
+        return key !== null && selectedSourceFormats.value.has(key)
+    })
 )
 const selectedDownloadFiles = computed(() =>
     selectedDownloadExports.value
@@ -120,11 +122,38 @@ watch(
             if (refreshed) reconciled.set(key, refreshed)
         }
         selectedSourceWorks.value = reconciled
+
+        const availableFormats = new Set<LibrarySourceFormatKey>()
+        for (const work of reconciled.values()) {
+            for (const item of work.sourceExports) {
+                const key = sourceFormatKey(item.mediatype, item.type)
+                if (key) availableFormats.add(key)
+            }
+        }
+        const reconciledFormats = new Set(
+            [...selectedSourceFormats.value].filter(key => availableFormats.has(key))
+        )
+        if (reconciledFormats.size !== selectedSourceFormats.value.size) {
+            selectedSourceFormats.value = reconciledFormats
+        }
     }
 )
 
-function sourceFormatKey(mediatype: string, type: string): LibrarySourceFormatKey {
-    return `${mediatype}:${type}` as LibrarySourceFormatKey
+function sourceFormatKey(
+    mediatype: BrowseResult["sourceExports"][number]["mediatype"],
+    type: BrowseResult["sourceExports"][number]["type"]
+): LibrarySourceFormatKey | null {
+    if (mediatype === "etext") {
+        if (type === "txt") return "etext:txt"
+        if (type === "xml") return "etext:xml"
+        if (type === "workdb") return "etext:workdb"
+        return null
+    }
+    if (type === "txt") return "faksimil:txt"
+    if (type === "xml") return "faksimil:xml"
+    if (type === "workdb") return "faksimil:workdb"
+    if (type === "pdf") return "faksimil:pdf"
+    return null
 }
 
 function hasImprintYearTarget(year: string): boolean {
@@ -241,6 +270,12 @@ function deselectVisibleSourceWorks() {
     selectedSourceWorks.value = selected
 }
 
+defineExpose({
+    allVisibleSourceWorksSelected,
+    selectVisibleSourceWorks,
+    deselectVisibleSourceWorks
+})
+
 function toggleSourceFormat(key: LibrarySourceFormatKey) {
     if (!sourceFormatAvailability.value.get(key)) return
     const selected = new Set(selectedSourceFormats.value)
@@ -264,26 +299,6 @@ onUnmounted(() => {
 
 <template>
     <div class="bg-white/65 lg:p-6 p-2 lg:border border-gray-900 flex-grow">
-        <div class="more_container h-8 relative mb-4 show_more">
-            <button
-                v-if="!allVisibleSourceWorksSelected"
-                type="button"
-                data-library-select-visible
-                class="sc btn btn-small absolute left"
-                @click="selectVisibleSourceWorks"
-            >
-                Välj alla verk i listan
-            </button>
-            <button
-                v-else
-                type="button"
-                data-library-deselect-visible
-                class="sc btn btn-small absolute left"
-                @click="deselectVisibleSourceWorks"
-            >
-                Avmarkera alla verk i listan
-            </button>
-        </div>
         <div class="result title pl-0 flex-column min-h-500">
             <div class="text-base">
                 <div class="inline-block sc mr-2">Sortera:</div>
@@ -413,7 +428,7 @@ onUnmounted(() => {
             />
         </div>
     </div>
-    <div class="mt-12">
+    <div>
         <div class="dl ml-4 p-4 sticky flex flex-col overflow-auto">
             <h3 class="uppercase text-xl mt-2 mb-2">Valda verk</h3>
             <div class="footer">
@@ -495,20 +510,18 @@ onUnmounted(() => {
                                     >
                                         <input
                                             :id="`source-${group.mediatype}-${format.type}`"
-                                            :data-library-source-format="`${group.mediatype}:${format.type}`"
+                                            :data-library-source-format="format.key"
                                             type="checkbox"
                                             class="mb-1 mr-1"
-                                            :checked="selectedSourceFormats.has(sourceFormatKey(group.mediatype, format.type))"
-                                            :disabled="!(sourceFormatAvailability.get(sourceFormatKey(group.mediatype, format.type)) ?? 0)"
-                                            @change="toggleSourceFormat(sourceFormatKey(group.mediatype, format.type))"
+                                            :checked="selectedSourceFormats.has(format.key)"
+                                            :disabled="!(sourceFormatAvailability.get(format.key) ?? 0)"
+                                            @change="toggleSourceFormat(format.key)"
                                         >
                                         <label
                                             class="capitalize"
                                             :class="{
                                                 'text-gray-500': !(
-                                                    sourceFormatAvailability.get(
-                                                        sourceFormatKey(group.mediatype, format.type)
-                                                    ) ?? 0
+                                                    sourceFormatAvailability.get(format.key) ?? 0
                                                 )
                                             }"
                                             :for="`source-${group.mediatype}-${format.type}`"

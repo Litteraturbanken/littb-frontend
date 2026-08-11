@@ -556,14 +556,32 @@ describe("Library component ownership", () => {
     expect(page).not.toContain("data-library-pdf-row")
   })
 
-  test("the page delegates source download Works and ordinary results to dedicated components", async () => {
-    const page = await source("app/pages/bibliotek.vue")
+  test("the page delegates source rows while keeping selection controls in the original search form", async () => {
+    const [page, sourceWorkspace] = await Promise.all([
+      source("app/pages/bibliotek.vue"),
+      source("app/components/library/LibrarySourceDownloadWorkspace.vue")
+    ])
     expect(page).toContain("<LibraryBrowseResults")
-    expect(page.match(/<LibrarySourceDownloadWorkspace/g)).toHaveLength(1)
+    expect(page.match(/<LibrarySourceDownloadWorkspace\s/g)).toHaveLength(1)
     expect(page).not.toContain("data-library-part-row")
     expect(page).not.toContain("data-library-source-checkbox")
     expect(page).not.toContain("data-library-format-popover")
     expect(page).not.toContain("data-library-download-submit")
+    const [searchForm] = page.match(/<form[\s\S]*?<\/form>/gu) ?? []
+    expect(searchForm).toBeDefined()
+    expect(searchForm).toContain(
+      '<div v-if="downloadMode" class="more_container h-8 relative mb-4 show_more">'
+    )
+    expect(searchForm).toContain("data-library-select-visible")
+    expect(searchForm).toContain("data-library-deselect-visible")
+    expect(searchForm!.indexOf("data-library-download-mode"))
+      .toBeLessThan(searchForm!.indexOf("data-library-select-visible"))
+    expect(searchForm!.indexOf("data-library-deselect-visible"))
+      .toBeLessThan(searchForm!.indexOf('class="chronology primarycolor ml-px pl-px"'))
+    expect(page).toContain('ref="sourceDownloadWorkspace"')
+    expect(sourceWorkspace).not.toContain("data-library-select-visible")
+    expect(sourceWorkspace).not.toContain("data-library-deselect-visible")
+    expect(sourceWorkspace).not.toContain('class="mt-12"')
   })
 
   test("keeps source selections local to each mounted download workspace", async () => {
@@ -667,6 +685,90 @@ describe("Library component ownership", () => {
     expect(document.body.querySelector<HTMLInputElement>(
       ":scope > [data-library-format-popover] input[name='files']"
     )?.value).toBe("lb-keep-etext-txt")
+
+    app.unmount()
+    target.remove()
+  })
+
+  test("drops unavailable selected formats without resurrecting them on later refreshes", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, ref }, { default: LibrarySourceDownloadWorkspace }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibrarySourceDownloadWorkspace.vue")
+    ])
+    const etextExport = {
+      lbworkid: "lb-keep",
+      mediatype: "etext" as const,
+      type: "txt" as const,
+      size: 1_024
+    }
+    const response = ref(sourceResponse([
+      { key: "keep", title: "Behåll mig", sourceExports: [etextExport] }
+    ]))
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true } },
+      setup(props: { to: string }, { slots }: { slots: { default?: () => unknown[] } }) {
+        return () => h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const app = createApp({
+      setup: () => () => h(LibrarySourceDownloadWorkspace, {
+        response: response.value,
+        loading: false,
+        sortOptions: [{ key: "popularitet", label: "Popularitet", to: "/bibliotek?visa=works", active: true }],
+        sortReversed: false,
+        pagination: { currentPage: 1, pageCount: 1, previous: null, next: null, entries: [] },
+        imprintYearTargets: [{ year: "1879", to: "/bibliotek?intervall=1879%2C1879" }]
+      })
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    target.querySelector<HTMLButtonElement>("[data-library-work-toggle]")?.click()
+    await nextTick()
+    expect(target.querySelectorAll("[data-library-selected-work]")).toHaveLength(1)
+    const formatButton = target.querySelector<HTMLButtonElement>("[data-library-format-button]")
+    expect(formatButton?.disabled).toBe(false)
+    formatButton?.click()
+    await nextTick()
+    await nextTick()
+    await nextTick()
+    await nextTick()
+    const popover = document.body.querySelector<HTMLElement>("[data-library-format-popover]")
+    expect(popover).not.toBeNull()
+    const etextFormat = () => popover?.querySelector<HTMLInputElement>("[data-library-source-format]")
+    const files = () => popover?.querySelector<HTMLInputElement>("input[name='files']")
+    etextFormat()?.dispatchEvent(new document.defaultView!.Event("change"))
+    await nextTick()
+    expect(etextFormat()?.getAttribute("checked")).toBe("true")
+    expect(files()?.value).toBe("lb-keep-etext-txt")
+
+    response.value = sourceResponse([{
+      key: "keep",
+      title: "Behåll mig",
+      sourceExports: [{
+        lbworkid: "lb-keep",
+        mediatype: "faksimil",
+        type: "pdf",
+        size: 2_048
+      }]
+    }])
+    await nextTick()
+    expect(etextFormat()?.hasAttribute("disabled")).toBe(true)
+    expect(etextFormat()?.getAttribute("checked")).toBe("false")
+    expect(files()?.value).toBe("")
+
+    response.value = sourceResponse([{
+      key: "keep",
+      title: "Behåll mig",
+      sourceExports: [etextExport]
+    }])
+    await nextTick()
+    expect(etextFormat()?.hasAttribute("disabled")).toBe(false)
+    expect(etextFormat()?.getAttribute("checked")).toBe("false")
+    expect(files()?.value).toBe("")
 
     app.unmount()
     target.remove()

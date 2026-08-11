@@ -29,22 +29,37 @@ export type LibraryNativeSortOption<Key extends string> = Readonly<{
 export type LibraryDownloadMode = "epub" | "pdf"
 export type LibraryBrowseMode = "works" | "parts"
 
-export type LibrarySourceFormatKey =
-    | "etext:txt"
-    | "etext:xml"
-    | "etext:workdb"
-    | "faksimil:txt"
-    | "faksimil:xml"
-    | "faksimil:workdb"
-    | "faksimil:pdf"
+type LibraryEtextSourceFormat =
+    | Readonly<{ key: "etext:txt"; type: "txt"; label: string }>
+    | Readonly<{ key: "etext:xml"; type: "xml"; label: string }>
+    | Readonly<{ key: "etext:workdb"; type: "workdb"; label: string }>
 
-export type LibrarySourceFormatGroup = Readonly<{
-    mediatype: "etext" | "faksimil"
-    label: string
-    formats: readonly Readonly<{
-        type: "txt" | "xml" | "workdb" | "pdf"
+type LibraryFacsimileSourceFormat =
+    | Readonly<{ key: "faksimil:txt"; type: "txt"; label: string }>
+    | Readonly<{ key: "faksimil:xml"; type: "xml"; label: string }>
+    | Readonly<{ key: "faksimil:workdb"; type: "workdb"; label: string }>
+    | Readonly<{ key: "faksimil:pdf"; type: "pdf"; label: string }>
+
+export type LibrarySourceFormatKey =
+    | LibraryEtextSourceFormat["key"]
+    | LibraryFacsimileSourceFormat["key"]
+
+export type LibrarySourceFormatGroup =
+    | Readonly<{
+        mediatype: "etext"
         label: string
-    }>[]
+        formats: readonly LibraryEtextSourceFormat[]
+    }>
+    | Readonly<{
+        mediatype: "faksimil"
+        label: string
+        formats: readonly LibraryFacsimileSourceFormat[]
+    }>
+
+export type LibrarySourceDownloadWorkspaceApi = Readonly<{
+    allVisibleSourceWorksSelected: boolean
+    selectVisibleSourceWorks: () => void
+    deselectVisibleSourceWorks: () => void
 }>
 
 export type LibraryImprintYearTarget = Readonly<{

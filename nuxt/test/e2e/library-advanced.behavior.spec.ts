@@ -546,6 +546,30 @@ test("download sidebar scrolling does not clip the body-level format popover", a
   await expect(button).toBeFocused()
 })
 
+test("leaving source mode retires format chooser lifecycle behavior", async ({ page }) => {
+  await page.goto("/bibliotek?avancerat=1&nedladdning=1", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  await page.locator("[data-library-source-checkbox]").first().check({ force: true })
+  await page.locator("[data-library-format-button]").click()
+
+  const popover = page.locator("body > [data-library-format-popover]")
+  await expect(popover).toBeVisible()
+  await page.locator("[data-library-download-mode]").click()
+  await expect(page).not.toHaveURL(/(?:\?|&)nedladdning=1(?:&|$)/u)
+  await expect(popover).toHaveCount(0)
+
+  const modeToggle = page.locator("[data-library-download-mode]")
+  await modeToggle.focus()
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event("resize"))
+    document.dispatchEvent(new Event("scroll"))
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))
+  })
+  await expect(popover).toHaveCount(0)
+  await expect(modeToggle).toBeFocused()
+  await expect(modeToggle).toContainText("Ladda ner källmaterial")
+})
+
 test("sticky download format chooser keeps controls reachable without clipping its arrow", async ({
   page
 }) => {

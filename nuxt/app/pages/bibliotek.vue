@@ -9,7 +9,8 @@ import type {
     LibraryNativeSortOption,
     LibraryPaginationEntry,
     LibraryPaginationModel,
-    LibrarySortOption
+    LibrarySortOption,
+    LibrarySourceDownloadWorkspaceApi
 } from "~/lib/library/component-models"
 import {
     buildLibraryCountRequest,
@@ -514,6 +515,18 @@ const currentMode = ref(initialState.mode)
 const currentPage = ref(initialState.page)
 const hide1800 = ref(initialState.hide1800)
 const downloadMode = ref(initialState.downloadMode)
+const sourceDownloadWorkspace = ref<LibrarySourceDownloadWorkspaceApi | null>(null)
+const allVisibleSourceWorksSelected = computed(
+    () => sourceDownloadWorkspace.value?.allVisibleSourceWorksSelected ?? false
+)
+
+function selectVisibleSourceWorks() {
+    sourceDownloadWorkspace.value?.selectVisibleSourceWorks()
+}
+
+function deselectVisibleSourceWorks() {
+    sourceDownloadWorkspace.value?.deselectVisibleSourceWorks()
+}
 const advancedOpen = ref(initialState.advanced)
 const selectedGender = ref<LibraryGender>(initialState.advancedFilters.gender)
 const selectedKeywords = ref<LibraryCategory[]>([...initialState.advancedFilters.keywords])
@@ -2150,6 +2163,26 @@ onUnmounted(() => {
                                 }}</span>
                             </a>
                         </div>
+                        <div v-if="downloadMode" class="more_container h-8 relative mb-4 show_more">
+                            <button
+                                v-if="!allVisibleSourceWorksSelected"
+                                type="button"
+                                data-library-select-visible
+                                class="sc btn btn-small absolute left"
+                                @click="selectVisibleSourceWorks"
+                            >
+                                Välj alla verk i listan
+                            </button>
+                            <button
+                                v-else
+                                type="button"
+                                data-library-deselect-visible
+                                class="sc btn btn-small absolute left"
+                                @click="deselectVisibleSourceWorks"
+                            >
+                                Avmarkera alla verk i listan
+                            </button>
+                        </div>
                     </div>
                     <div class="chronology primarycolor ml-px pl-px">
                         <i class="fa fa-clock-o mr-1 ml-px" />{{ " " }}
@@ -2220,6 +2253,7 @@ onUnmounted(() => {
             <div class="flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
                 <LibrarySourceDownloadWorkspace
                     v-if="currentMode === 'works' && downloadMode"
+                    ref="sourceDownloadWorkspace"
                     :response="workResults"
                     :loading="loading"
                     :sort-options="browseSortOptions"
