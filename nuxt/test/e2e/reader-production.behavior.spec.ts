@@ -16,6 +16,14 @@ async function fixtureRequests(request: APIRequestContext, ledger: string): Prom
   return (await (await request.get(`${fixture}/${ledger}`)).json()).requests
 }
 
+function dictionaryArticle(word: string, definition = `Artikel för ${word}`) {
+  return {
+    word,
+    base_form: word,
+    article_html: `<lemma><grundform>${word}</grundform><lexem><def>${definition}</def></lexem></lemma>`
+  }
+}
+
 test.beforeEach(async ({ page, request }) => {
   await resetReader(request)
   await page.addInitScript(() => {
@@ -125,6 +133,143 @@ test("manual one-word selection retains delayed mouseup inspection", async ({
 
   await expect(page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" }))
     .toBeVisible()
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    readerManifest
+  ])
+})
+
+test("a keyboard-created Reader selection exposes the dictionary action", async ({
+  page,
+  request
+}) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().evaluate(word => {
+    const range = document.createRange()
+    range.selectNodeContents(word)
+    const selection = window.getSelection()!
+    selection.removeAllRanges()
+    selection.addRange(range)
+    document.dispatchEvent(new KeyboardEvent("keyup", {
+      bubbles: true,
+      key: "ArrowRight",
+      shiftKey: true
+    }))
+  })
+
+  const indicator = page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" })
+  await expect(indicator).toBeVisible()
+  await indicator.focus()
+  await expect(indicator).toBeFocused()
+  await page.keyboard.press("Enter")
+  await expect(page.locator("._so_article")).toContainText("En deterministisk ordboksartikel.")
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    readerManifest
+  ])
+})
+
+test("dictionary responses may add fields without hiding a valid article", async ({
+  page,
+  request
+}) => {
+  await page.route("**/api/v2/dictionary/articles?word=DOKTOR", async route => {
+    await route.fulfill({
+      body: JSON.stringify({ ...dictionaryArticle("DOKTOR"), future_field: "compatible" }),
+      contentType: "application/json",
+      status: 200
+    })
+  })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().dblclick()
+  await page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" }).click()
+
+  await expect(page.locator("._so_article")).toContainText("Artikel för DOKTOR")
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    readerManifest
+  ])
+})
+
+test("a newer dictionary lookup cannot be overwritten by an older response", async ({
+  page,
+  request
+}) => {
+  let markFirstStarted!: () => void
+  let markFirstSettled!: () => void
+  let releaseFirst!: () => void
+  const firstStarted = new Promise<void>(resolve => { markFirstStarted = resolve })
+  const firstSettled = new Promise<void>(resolve => { markFirstSettled = resolve })
+  const firstRelease = new Promise<void>(resolve => { releaseFirst = resolve })
+  await page.route("**/api/v2/dictionary/articles?word=*", async route => {
+    const word = new URL(route.request().url()).searchParams.get("word")!
+    if (word === "DOKTOR") {
+      markFirstStarted()
+      await firstRelease
+    }
+    try {
+      await route.fulfill({
+        body: JSON.stringify(dictionaryArticle(word)),
+        contentType: "application/json",
+        status: 200
+      }).catch(() => undefined)
+    } finally {
+      if (word === "DOKTOR") markFirstSettled()
+    }
+  })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+
+  await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().dblclick()
+  await page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" }).click()
+  await firstStarted
+  await page.locator(".reader_main .w").filter({ hasText: "GLAS" }).first().dblclick()
+  await page.getByRole("button", { name: "Slå upp GLAS i Svensk ordbok" }).click()
+  await expect(page.locator("._so_article")).toContainText("Artikel för GLAS")
+
+  releaseFirst()
+  await firstSettled
+  await page.evaluate(() => new Promise<void>(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  }))
+  await expect(page.locator("._so_article")).toContainText("Artikel för GLAS")
+  await expect(page.locator("._so_article")).not.toContainText("Artikel för DOKTOR")
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
+    readerManifest
+  ])
+})
+
+test("route changes invalidate a pending dictionary lookup", async ({ page, request }) => {
+  let markLookupStarted!: () => void
+  let markLookupSettled!: () => void
+  let releaseLookup!: () => void
+  const lookupStarted = new Promise<void>(resolve => { markLookupStarted = resolve })
+  const lookupSettled = new Promise<void>(resolve => { markLookupSettled = resolve })
+  const lookupRelease = new Promise<void>(resolve => { releaseLookup = resolve })
+  await page.route("**/api/v2/dictionary/articles?word=DOKTOR", async route => {
+    markLookupStarted()
+    await lookupRelease
+    try {
+      await route.fulfill({
+        body: JSON.stringify(dictionaryArticle("DOKTOR")),
+        contentType: "application/json",
+        status: 200
+      }).catch(() => undefined)
+    } finally {
+      markLookupSettled()
+    }
+  })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+
+  await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().dblclick()
+  await page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" }).click()
+  await lookupStarted
+  await page.keyboard.press("o")
+  await expect(page).toHaveURL(`${readerPath}?om-boken`)
+  releaseLookup()
+  await lookupSettled
+  await page.evaluate(() => new Promise<void>(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  }))
+
+  await expect(page.locator("._so_article")).toHaveCount(0)
+  await expect(page.locator(".alert_popup")).toHaveCount(0)
   expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
     readerManifest
   ])

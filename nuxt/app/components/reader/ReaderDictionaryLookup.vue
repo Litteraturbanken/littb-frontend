@@ -19,6 +19,8 @@ const articleHtml = ref<SanitizedHtml<"dictionary-article">>(emptyRenderableHtml
 const message = ref("")
 let selectionTimer: ReturnType<typeof setTimeout> | null = null
 let messageTimer: ReturnType<typeof setTimeout> | null = null
+let lookupGeneration = 0
+let lookupController: AbortController | null = null
 
 const modalOpen = computed(() => article.value !== null && articleHtml.value.length > 0)
 
@@ -68,6 +70,12 @@ function handleMouseup(): void {
   }, 500)
 }
 
+function handleSelectionKeyup(event: KeyboardEvent): void {
+  if (!event.shiftKey) return
+  clearSelectionTimer()
+  inspectSelection()
+}
+
 function handleDoubleClick(event: MouseEvent): void {
   clearSelectionTimer()
   indicator.value = null
@@ -89,8 +97,7 @@ function handleDocumentClick(event: MouseEvent): void {
 function validArticle(value: unknown, word: string): value is DictionaryArticle {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false
   const item = value as Record<string, unknown>
-  return Object.keys(item).length === 3
-    && item.word === word
+  return item.word === word
     && typeof item.base_form === "string"
     && item.base_form.length > 0
     && item.base_form.length <= 200
@@ -99,16 +106,40 @@ function validArticle(value: unknown, word: string): value is DictionaryArticle 
     && item.article_html.length <= 200_000
 }
 
+function cancelLookup(): void {
+  lookupGeneration += 1
+  lookupController?.abort()
+  lookupController = null
+}
+
+function lookupIsCurrent(
+  generation: number,
+  controller: AbortController,
+  routeFullPath: string
+): boolean {
+  return generation === lookupGeneration
+    && lookupController === controller
+    && !controller.signal.aborted
+    && route.fullPath === routeFullPath
+}
+
 async function lookup(): Promise<void> {
   const selected = indicator.value
   indicator.value = null
   clearSelectionTimer()
   window.getSelection()?.removeAllRanges()
   if (!selected) return
+  cancelLookup()
+  const generation = lookupGeneration
+  const controller = new AbortController()
+  const routeFullPath = route.fullPath
+  lookupController = controller
   try {
     const result = await client.GET("/dictionary/articles", {
-      params: { query: { word: selected.word } }
+      params: { query: { word: selected.word } },
+      signal: controller.signal
     })
+    if (!lookupIsCurrent(generation, controller, routeFullPath)) return
     if (result.error || !validArticle(result.data, selected.word)) {
       showMessage("Hittade inget uppslag")
       return
@@ -118,11 +149,16 @@ async function lookup(): Promise<void> {
       showMessage("Hittade inget uppslag")
       return
     }
-    articleHtml.value = sanitized
     await new Promise<void>(resolve => setTimeout(resolve, 0))
+    if (!lookupIsCurrent(generation, controller, routeFullPath)) return
+    articleHtml.value = sanitized
     article.value = result.data
   } catch {
-    showMessage("Hittade inget uppslag")
+    if (lookupIsCurrent(generation, controller, routeFullPath)) {
+      showMessage("Hittade inget uppslag")
+    }
+  } finally {
+    if (lookupController === controller) lookupController = null
   }
 }
 
@@ -132,6 +168,7 @@ function close(): void {
 }
 
 watch(() => route.fullPath, () => {
+  cancelLookup()
   clearSelectionTimer()
   indicator.value = null
   close()
@@ -141,11 +178,14 @@ onBeforeMount(() => {
   document.addEventListener("mouseup", handleMouseup)
   document.addEventListener("dblclick", handleDoubleClick)
   document.addEventListener("click", handleDocumentClick)
+  document.addEventListener("keyup", handleSelectionKeyup)
 })
 onBeforeUnmount(() => {
+  cancelLookup()
   document.removeEventListener("mouseup", handleMouseup)
   document.removeEventListener("dblclick", handleDoubleClick)
   document.removeEventListener("click", handleDocumentClick)
+  document.removeEventListener("keyup", handleSelectionKeyup)
   clearSelectionTimer()
   if (messageTimer) clearTimeout(messageTimer)
 })
