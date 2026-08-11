@@ -141,13 +141,21 @@ const aboutContent = computed(() => content.value ?? emptyAboutContent())
 const helpSubmenu = computed(() => pageKey.value === "hjalp" ? extractHelpSubmenu(aboutContent.value) : [])
 const navigateManagedHtml = useManagedHtmlNavigation()
 
-async function scrollToHelpAnchor(value: unknown) {
-  if (!import.meta.client || typeof value !== "string" || !value) return
+async function scrollToHelpAnchor(value: unknown): Promise<boolean> {
+  if (
+    !import.meta.client
+    || pageKey.value !== "hjalp"
+    || typeof value !== "string"
+    || !value
+  ) return false
+  const requestedAnchor = value
   await nextTick()
   await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
-  const anchor = document.getElementById(value)
-  if (!anchor) return
+  if (pageKey.value !== "hjalp" || route.query.ankare !== requestedAnchor) return false
+  const anchor = document.getElementById(requestedAnchor)
+  if (!anchor) return false
   window.scrollTo({ top: window.scrollY + anchor.getBoundingClientRect().top - 40 })
+  return true
 }
 
 async function selectHelpAnchor(id: string) {
@@ -162,6 +170,17 @@ watch(
   value => { void scrollToHelpAnchor(value) },
   { immediate: true, flush: "post" }
 )
+
+watch(
+  aboutContent,
+  () => { void scrollToHelpAnchor(route.query.ankare) },
+  { flush: "post" }
+)
+
+const removePageLoadingHook = useNuxtApp().hook("page:loading:end", () => {
+  void scrollToHelpAnchor(route.query.ankare)
+})
+onBeforeUnmount(() => removePageLoadingHook())
 </script>
 
 <template>

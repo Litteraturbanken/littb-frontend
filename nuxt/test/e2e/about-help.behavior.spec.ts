@@ -51,6 +51,19 @@ async function expectAnchorOffset(page: Page, id: string) {
   }).toBeLessThanOrEqual(1)
 }
 
+async function navigateClient(page: Page, path: string) {
+  await page.evaluate(async target => {
+    type Router = { push: (path: string) => Promise<unknown> }
+    type VueRoot = HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router?: Router } } }
+    }
+    const router = (document.querySelector("#__nuxt") as VueRoot | null)
+      ?.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt router is unavailable")
+    await router.push(target)
+  }, path)
+}
+
 test.beforeAll(async ({ baseURL, browser, request }) => {
   await reset(request)
   const context = await browser.newContext()
@@ -155,7 +168,95 @@ test("Help submenu click updates ankare and scrolls to the legacy 40px offset wi
   await expect(page).toHaveURL("/om/hjalp?ankare=Epub")
   await expectAnchorOffset(page, "Epub")
   expect(await loggedContentRequests(request)).toEqual([contentPath])
+
+  const retainedScroll = await page.evaluate(() => window.scrollY)
+  expect(retainedScroll).toBeGreaterThan(0)
+  await navigateClient(page, "/om/hjalp?ankare=missing")
+  await expect(page).toHaveURL("/om/hjalp?ankare=missing")
+  expect(await page.evaluate(() => window.scrollY)).toBe(retainedScroll)
+
+  await page.unroute(`**${contentPath}`)
+  let refreshRequests = 0
+  await page.route(`**${contentPath}`, async route => {
+    refreshRequests += 1
+    const response = await route.fetch()
+    const body = await response.text()
+    await route.fulfill({
+      response,
+      body: body.replace("</body>", '<span id="refresh-marker"></span></body>')
+    })
+  })
+  await page.evaluate(async key => {
+    type AsyncDataEntry = { execute: (options: { cause: string }) => Promise<unknown> }
+    type NuxtApp = { _asyncData: Record<string, AsyncDataEntry | undefined> }
+    type VueRoot = HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $nuxt?: NuxtApp } } }
+    }
+    const nuxt = (document.querySelector("#__nuxt") as VueRoot | null)
+      ?.__vue_app__?.config.globalProperties.$nuxt
+    const entry = nuxt?._asyncData[key]
+    if (!entry) throw new Error(`Nuxt async-data entry is unavailable: ${key}`)
+    await entry.execute({ cause: "refresh:manual" })
+  }, "about-content:hjalp")
+  expect(refreshRequests).toBe(1)
+  await expect(page.locator("#refresh-marker")).toHaveCount(1)
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => {
+    requestAnimationFrame(() => resolve())
+  })))
+  expect(await page.evaluate(() => window.scrollY)).toBe(retainedScroll)
   expect(problems).toEqual([])
+})
+
+test("client navigation retries help anchor scrolling after delayed content renders", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+
+  let releaseContent!: () => void
+  const contentReleased = new Promise<void>(resolve => { releaseContent = resolve })
+  let markContentStarted!: () => void
+  const contentStarted = new Promise<void>(resolve => { markContentStarted = resolve })
+  let markHandlerSettled!: () => void
+  const handlerSettled = new Promise<void>(resolve => { markHandlerSettled = resolve })
+  await page.route(`**${contentPath}`, async route => {
+    markContentStarted()
+    try {
+      await contentReleased
+      const response = await route.fetch()
+      await route.fulfill({ response })
+    } finally {
+      markHandlerSettled()
+    }
+  })
+
+  const navigation = navigateClient(page, "/om/hjalp?ankare=Epub")
+  await contentStarted
+  releaseContent()
+  await navigation
+  await handlerSettled
+
+  await expect(page).toHaveURL("/om/hjalp?ankare=Epub")
+  await expectAnchorOffset(page, "Epub")
+  expect(await loggedContentRequests(request)).toEqual([contentPath])
+  expect(problems).toEqual([])
+})
+
+test("client navigation to a missing help anchor keeps the cross-page top reset", async ({
+  page
+}) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await page.evaluate(() => window.scrollTo({ top: 400 }))
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+
+  await navigateClient(page, "/om/hjalp?ankare=missing")
+  await expect(page).toHaveURL("/om/hjalp?ankare=missing")
+  await expect(page.locator(".help_content.content.unbox.page-help")).toBeVisible()
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => {
+    requestAnimationFrame(() => resolve())
+  })))
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
 })
 
 test("Help direct query and browser history resynchronize scrolling without refetch", async ({ page, request }) => {
