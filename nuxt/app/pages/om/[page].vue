@@ -1,84 +1,21 @@
-<script lang="ts">
+<script setup lang="ts">
 import AboutPageShell from "../../components/about/AboutPageShell.vue"
-
-import type { ManagedAssetHtml } from "#shared/types/renderable-html"
 import {
-  fetchManagedText,
-  managedAboutTextRules
-} from "#shared/utils/managed-text"
-import {
-  emptyRenderableHtml,
-  issueManagedAboutHtml
-} from "#shared/utils/renderable-html"
+  aboutPages,
+  isAboutPageKey,
+  type AboutContent,
+  type AboutPageKey
+} from "#shared/about-pages"
+import { emptyRenderableHtml } from "#shared/utils/renderable-html"
 
-export type AboutContent = ManagedAssetHtml<"about-editorial">
-
-export function extractAboutBody(html: string): AboutContent {
-  const body = html.match(/<body(?:\s[^>]*)?>([\s\S]*?)<\/body>/i)
-  return issueManagedAboutHtml(body?.[1] ?? html)
-}
-
-export function emptyAboutContent(): AboutContent {
+function emptyAboutContent(): AboutContent {
   return emptyRenderableHtml<AboutContent>()
 }
-</script>
-
-<script setup lang="ts">
-const pages = {
-  ide: {
-    activePage: "ide",
-    contentPath: "/red/om/ide/omlitteraturbanken.html"
-  },
-  organisation: {
-    activePage: null,
-    contentPath: "/red/om/ide/organisation.html"
-  },
-  rattigheter: {
-    activePage: "rattigheter",
-    contentPath: "/red/om/rattigheter/rattigheter.html"
-  },
-  tack: {
-    activePage: "tack",
-    contentPath: "/red/om/tack.html"
-  },
-  hjalp: {
-    activePage: "hjalp",
-    contentPath: "/red/om/hjalp/hjalp.html"
-  },
-  "mål": {
-    activePage: null,
-    contentPath: "/red/om/visioner/visioner.html"
-  },
-  "english.html": {
-    activePage: null,
-    contentPath: "/red/om/ide/english.html"
-  },
-  "deutsch.html": {
-    activePage: null,
-    contentPath: "/red/om/ide/deutsch.html"
-  },
-  "francais.html": {
-    activePage: null,
-    contentPath: "/red/om/ide/francais.html"
-  }
-} as const
-
-type PageKey = keyof typeof pages
 
 definePageMeta({
   validate: route => {
     const page = Array.isArray(route.params.page) ? route.params.page[0] : route.params.page
-    return typeof page === "string" && [
-      "ide",
-      "organisation",
-      "rattigheter",
-      "tack",
-      "hjalp",
-      "mål",
-      "english.html",
-      "deutsch.html",
-      "francais.html"
-    ].includes(page)
+    return isAboutPageKey(page)
   }
 })
 
@@ -97,11 +34,11 @@ useHead({
 const route = useRoute()
 const pageKey = computed(() => {
   const value = Array.isArray(route.params.page) ? route.params.page[0] : route.params.page
-  return value as PageKey
+  return value as AboutPageKey
 })
-const selectedPage = computed(() => pages[pageKey.value])
+const selectedPage = computed(() => aboutPages[pageKey.value])
 const asyncKey = computed(() => `about-content:${pageKey.value}`)
-const config = useRuntimeConfig()
+const requestFetch = useRequestFetch()
 
 function humanizeHelpLabel(value: string): string {
   const words = value
@@ -125,12 +62,8 @@ function extractHelpSubmenu(html: string): Array<{ id: string; label: string }> 
 }
 
 const { data: content } = await useAsyncData<AboutContent>(asyncKey, async () => {
-  const base = import.meta.server ? config.contentBase : config.public.contentBase
-  const url = `${base.replace(/\/$/, "")}${selectedPage.value.contentPath}`
   try {
-    const authorityOrigin = base || window.location.origin
-    const html = await fetchManagedText(url, managedAboutTextRules(authorityOrigin))
-    return extractAboutBody(html)
+    return await requestFetch<AboutContent>(`/api/about/${encodeURIComponent(pageKey.value)}`)
   } catch (error) {
     if (import.meta.dev) console.error(`About content request failed for ${pageKey.value}`, error)
     return emptyAboutContent()

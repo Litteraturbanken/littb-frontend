@@ -1,6 +1,5 @@
 import type { AuthorProfileView } from "../../app/lib/author-profile"
 import type { HomeContent } from "../../app/lib/home-content"
-import type { AboutContent } from "../../app/pages/om/[page].vue"
 import type {
   parseBackgroundRules,
   parsePresentationDocument
@@ -17,6 +16,7 @@ import type {
   SanitizedHtml
 } from "../../shared/types/renderable-html"
 import type { ReaderEtextPage } from "../../shared/types/reader"
+import type { AboutContent } from "../../shared/about-pages"
 
 type Equal<Left, Right> =
   (<Value>() => Value extends Left ? 1 : 2) extends

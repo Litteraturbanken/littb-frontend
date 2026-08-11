@@ -133,7 +133,7 @@ export default defineNuxtConfig({
           changeOrigin: true,
           rewrite: path => path.replace(/^\/api\/v2(?=\/|$)/, "/v2")
         },
-        "^/api/(?!v2(?:/|$)|reader(?:/|$)|editor(?:/|$)|dev(?:/|$)|author-documents(?:/|$)|dramawebben(?:/|$)|observability(?:/|$))": {
+        "^/api/(?!v2(?:/|$)|reader(?:/|$)|editor(?:/|$)|dev(?:/|$)|about(?:/|$)|author-documents(?:/|$)|dramawebben(?:/|$)|observability(?:/|$))": {
           target: legacyApiProxyTarget,
           changeOrigin: true,
           ...(legacyApiProxyOverride

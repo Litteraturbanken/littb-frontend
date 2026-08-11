@@ -15,6 +15,7 @@ const chronologyRangeOwnerByConsumerPath = new Map([
   ["app/pages/sök.vue", "ChronologyRangeSlider"]
 ])
 const htmlDocumentPath = "app/lib/html-document.ts"
+const serverOnlyHtmlParserModules = new Set(["htmlparser2"])
 const lbApiClientModulePath = "app/lib/api/client"
 const lbApiClientOwnerPath = "app/composables/useLbApiClient.ts"
 const restrictedLbApiClientExports = new Set([
@@ -180,6 +181,75 @@ function isProductionPath(relativePath) {
   return relativePath.startsWith("app/")
     || relativePath.startsWith("server/")
     || relativePath.startsWith("shared/")
+}
+
+function serverOnlyHtmlParserModule(moduleSpecifier) {
+  return [...serverOnlyHtmlParserModules].find(moduleName => (
+    moduleSpecifier === moduleName || moduleSpecifier.startsWith(`${moduleName}/`)
+  )) ?? null
+}
+
+function importDeclarationHasRuntimeValue(declaration) {
+  const clause = declaration.importClause
+  if (!clause) return true
+  if (clause.isTypeOnly) return false
+  if (clause.name || clause.namedBindings && ts.isNamespaceImport(clause.namedBindings)) {
+    return true
+  }
+  return clause.namedBindings?.elements.some(specifier => !specifier.isTypeOnly) ?? false
+}
+
+function exportDeclarationHasRuntimeValue(declaration) {
+  if (declaration.isTypeOnly) return false
+  if (!declaration.exportClause || !ts.isNamedExports(declaration.exportClause)) {
+    return true
+  }
+  return declaration.exportClause.elements.some(specifier => !specifier.isTypeOnly)
+}
+
+function auditServerOnlyHtmlParserImports(record) {
+  if (!record.relativePath.startsWith("app/")
+    && !record.relativePath.startsWith("shared/")) return
+  for (const unit of record.units) {
+    const semantic = buildSemantic(unit)
+    visitAst(unit.sourceFile, node => {
+      let moduleSpecifier = null
+      if (ts.isImportDeclaration(node)
+        && importDeclarationHasRuntimeValue(node)
+        && ts.isStringLiteralLike(node.moduleSpecifier)) {
+        moduleSpecifier = node.moduleSpecifier.text
+      } else if (ts.isExportDeclaration(node)
+        && exportDeclarationHasRuntimeValue(node)
+        && node.moduleSpecifier
+        && ts.isStringLiteralLike(node.moduleSpecifier)) {
+        moduleSpecifier = node.moduleSpecifier.text
+      } else if (ts.isImportEqualsDeclaration(node)
+        && !node.isTypeOnly
+        && ts.isExternalModuleReference(node.moduleReference)
+        && node.moduleReference.expression
+        && ts.isStringLiteralLike(node.moduleReference.expression)) {
+        moduleSpecifier = node.moduleReference.expression.text
+      } else if (ts.isCallExpression(node)) {
+        const dynamicImport = node.expression.kind === ts.SyntaxKind.ImportKeyword
+        const unshadowedRequire = ts.isIdentifier(node.expression)
+          && node.expression.text === "require"
+          && !resolveDeclaration("require", node, semantic)
+        const supportedImportCall = dynamicImport && node.arguments.length >= 1
+        const supportedRequireCall = unshadowedRequire && node.arguments.length === 1
+        if (supportedImportCall || supportedRequireCall) {
+          moduleSpecifier = constantString(node.arguments[0], unit, semantic, node)
+        }
+      }
+      if (moduleSpecifier === null) return
+      const parserModule = serverOnlyHtmlParserModule(moduleSpecifier)
+      if (!parserModule) return
+      addViolation(
+        record.relativePath,
+        lineNumberAt(record.source, unit.sourceOffset + node.getStart(unit.sourceFile)),
+        `${parserModule} imports must stay in server or test code`
+      )
+    })
+  }
 }
 
 function addViolation(path, line, message) {
@@ -3427,6 +3497,7 @@ const capabilityRegistry = buildCapabilityRegistry(sourceRecords)
 for (const record of sourceRecords) {
   auditComments(record)
   auditLegacyReaderEditorMetadata(record)
+  auditServerOnlyHtmlParserImports(record)
   auditLbApiClientCapability(record)
   auditVueTemplate(record)
   auditChronologyRangeOwnership(record)

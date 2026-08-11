@@ -40,6 +40,7 @@
     "@headlessui/vue": "1.7.23",
     "font-awesome": "4.4.0",
     "h3": "1.15.11",
+    "htmlparser2": "10.1.0",
     "linkedom": "0.18.13",
     "nuxt": "4.4.8",
     "openapi-fetch": "0.17.0",

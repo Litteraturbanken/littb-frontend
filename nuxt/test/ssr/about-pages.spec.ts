@@ -148,6 +148,27 @@ test("unknown About page is a real 404 and cannot select a remote path", async (
   expect(log.requests).toEqual([])
 })
 
+test("managed About API returns only the reviewed editorial body", async ({ request }) => {
+  await reset(request)
+  const response = await request.get("/api/about/ide")
+  expect(response.status()).toBe(200)
+  expect(response.headers()["content-type"]).toBe("text/plain; charset=utf-8")
+  expect(response.headers()["x-content-type-options"]).toBe("nosniff")
+  const html = await response.text()
+  expect(html).toContain("<h2>Introduktion</h2>")
+  expect(html).not.toContain("<!DOCTYPE")
+  expect(html).not.toContain("<head")
+  const log = await (await request.get(`${fixture}/_requests`)).json()
+  expect(log.requests).toEqual(["/red/om/ide/omlitteraturbanken.html"])
+})
+
+test("managed About API rejects unknown pages before fetching content", async ({ request }) => {
+  await reset(request)
+  expect((await request.get("/api/about/not-allowed")).status()).toBe(404)
+  const log = await (await request.get(`${fixture}/_requests`)).json()
+  expect(log.requests).toEqual([])
+})
+
 test("Contact renders exact metadata, copy, and active state without submitting during SSR", async ({ request }) => {
   await reset(request)
   await request.delete(`${fixture}/_contact_submissions`)

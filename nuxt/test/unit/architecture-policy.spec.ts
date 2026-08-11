@@ -597,6 +597,63 @@ input[type="range"]::-moz-range-thumb { pointer-events: auto; }
     expect(result.stderr).toBe("")
   })
 
+  test.each([
+    ["app/lib/unsafe-parser.ts", "htmlparser2", 'import { Parser } from "htmlparser2"\nvoid Parser'],
+    ["shared/unsafe-parser.ts", "htmlparser2", 'import { Parser } from "htmlparser2"\nvoid Parser'],
+    [
+      "app/components/unsafe-parser.vue",
+      "htmlparser2",
+      '<script setup lang="ts">\nconst parserModule = "html" + "parser2"\nawait import(parserModule)\n</script>'
+    ],
+    [
+      "app/components/unsafe-parser-attributes.vue",
+      "htmlparser2",
+      '<script setup lang="ts">\nawait import("htmlparser2", { with: {} })\n</script>'
+    ],
+    [
+      "shared/unsafe-require.ts",
+      "htmlparser2",
+      'const parserModule = "html" + "parser2"\nrequire(parserModule)'
+    ]
+  ])("rejects the server HTML parser %s from browser-capable source", (path, parser, source) => {
+    const root = createTree()
+    writeSource(root, path, source)
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(`${path}:`)
+    expect(result.stderr).toContain(`${parser} imports must stay in server or test code`)
+  })
+
+  test("accepts a type-only HTML parser import in browser-capable source", () => {
+    const root = createTree()
+    writeSource(
+      root,
+      "shared/parser-types.ts",
+      'import type { ParserOptions } from "htmlparser2"\nexport type Options = ParserOptions'
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
+  test("accepts a type-only HTML parser re-export in browser-capable source", () => {
+    const root = createTree()
+    writeSource(
+      root,
+      "shared/parser-types.ts",
+      'export { type ParserOptions } from "htmlparser2"'
+    )
+
+    const result = runVerifier(root)
+
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe("")
+  })
+
   test("accepts reordered capability issuer declarations", () => {
     const root = createTree()
     const [importLine, ...bodyLines] = reviewedCapabilityModule().split("\n")

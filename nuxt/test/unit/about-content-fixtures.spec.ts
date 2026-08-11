@@ -4,6 +4,7 @@ import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, test, vi } from "vitest"
 
+import { extractAboutBody } from "../../server/utils/about-content"
 import {
   fetchManagedText,
   managedAboutTextRules
@@ -78,12 +79,35 @@ const htmlFixtures = {
 } as const
 
 describe("About content authority fixtures", () => {
+  test("body extraction ignores body-shaped text in the document head", () => {
+    const source = [
+      "<!doctype html><html><head>",
+      '<script>const decoy = "<body>Wrong script body</body>"</script>',
+      "<!-- <body>Wrong comment body</body> -->",
+      '<meta data-decoy="<body>Wrong attribute body</body>">',
+      '</head><body data-label="x > y"><main>Right editorial body</main></body></html>'
+    ].join("")
+
+    expect(extractAboutBody(source)).toBe("<main>Right editorial body</main>")
+  })
+
+  test("body extraction preserves a body-less editorial fragment byte for byte", () => {
+    const source = "\n<section data-label=\"a > b\">Editorial &amp; exact</section>\n"
+
+    expect(extractAboutBody(source)).toBe(source)
+  })
+
+  test("body extraction accepts the parser's implied close for an unclosed body", () => {
+    expect(extractAboutBody("<html><head><title>Wrong</title></head><body>Editorial"))
+      .toBe("Editorial")
+  })
+
   for (const [filename, expected] of Object.entries(htmlFixtures)) {
     test(`${filename} is the reviewed authority response`, async () => {
       const content = await readFile(resolve(root, filename), "utf8")
       expect(createHash("sha256").update(content).digest("hex")).toBe(expected.sha256)
       expect(Buffer.byteLength(content)).toBe(expected.bytes)
-      const bodyHtml = content.match(/<body(?:\s[^>]*)?>([\s\S]*?)<\/body>/i)?.[1] ?? content
+      const bodyHtml = extractAboutBody(content)
       expect(Buffer.byteLength(bodyHtml)).toBe(expected.bodyBytes)
       expect(createHash("sha256").update(bodyHtml).digest("hex")).toBe(expected.bodySha256)
       for (const marker of expected.markers) expect(content).toContain(marker)
