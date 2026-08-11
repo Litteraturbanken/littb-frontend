@@ -360,8 +360,14 @@ export const longErrataSourceInfo = {
     filename: "LongErrataA_LongErrata.epub",
     size_bytes: 530557
   }],
-  errata: Array.from({ length: 10 }, (_, index) => ({
-    cells_html: [`sid. ${index + 1}`, `rättning <em>${index + 1}</em>`]
+  errata: Array.from({ length: 1_001 }, (_, index) => ({
+    cells_html: index === 1_000
+      ? []
+      : [
+          `sid. <em>${index + 1}</em>`,
+          `rättning <em>${index + 1}</em>`,
+          ...(index === 0 ? ["notering <strong>1</strong>"] : [])
+        ]
   }))
 }
 

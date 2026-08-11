@@ -32,6 +32,11 @@ const headlessReady = ref(false)
 const modalRoot = ref<HTMLElement | null>(null)
 const errataOpen = ref(false)
 const defaultErrataLimit = 8
+const emptyErrataCell = emptyRenderableHtml<SanitizedHtml<"reader-source-info">>()
+const visibleErrata = computed(() => {
+  const errata = props.sourceInfo?.errata ?? []
+  return errataOpen.value ? errata : errata.slice(0, defaultErrataLimit)
+})
 
 const dramaLabels: Record<ReaderSourceInfoDramaFact["key"], string> = {
   first_staged: "Urpremiär",
@@ -62,8 +67,18 @@ function joinedRolesHtml(
   return joinReaderSourceRows(values)
 }
 
-function errataCellHtml(row: ReaderSourceInfoErrataRow): SanitizedHtml<"reader-source-info"> {
-  return row.cellsHtml[1] ?? emptyRenderableHtml()
+function errataCellsHtml(
+  row: ReaderSourceInfoErrataRow
+): SanitizedHtml<"reader-source-info">[] {
+  return row.cellsHtml.length >= 2
+    ? row.cellsHtml
+    : [
+        ...row.cellsHtml,
+        ...Array.from(
+          { length: 2 - row.cellsHtml.length },
+          () => emptyErrataCell
+        )
+      ]
 }
 
 function authorRole(authorType: string | null, role: string | null): string | null {
@@ -316,16 +331,14 @@ onMounted(() => {
               <table class="errata_table">
                 <tbody>
                   <tr
-                    v-for="(row, rowIndex) in sourceInfo.errata.slice(
-                      0,
-                      errataOpen ? 1000 : defaultErrataLimit
-                    )"
+                    v-for="(row, rowIndex) in visibleErrata"
                     :key="rowIndex"
                   >
-                    <td>{{ row.cellsHtml[0] ?? "" }}</td>
                     <RenderableHtmlContent
+                      v-for="(cell, cellIndex) in errataCellsHtml(row)"
+                      :key="cellIndex"
                       as="td"
-                      :html="errataCellHtml(row)"
+                      :html="cell"
                     />
                   </tr>
                 </tbody>

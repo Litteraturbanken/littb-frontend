@@ -248,6 +248,20 @@ test("legacy main-author contribution is present in the Reader SSR fallback", as
   ])
 })
 
+test("Reader source-information SSR renders inline errata markup in every visible cell", async ({
+  request
+}) => {
+  const response = await request.get(`${longErrataPath}?om-boken`)
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const cells = [...document.querySelectorAll(".modal.about .errata_table tbody tr:first-child td")]
+  expect(cells.map(cell => cell.innerHTML)).toEqual([
+    "sid. <em>1</em>",
+    "rättning <em>1</em>",
+    "notering <strong>1</strong>"
+  ])
+})
+
 test("Boye Reader API and SSR retain ordered work contributors", async ({ request }) => {
   const api = await request.get(
     "/api/reader/BoyeK/EttVerkligtJordiskt/3/faksimil"
