@@ -1,7 +1,18 @@
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 import { createMemoryHistory, createRouter, RouterLink } from "vue-router"
+
+vi.mock("../../app/lib/internal-navigation", () => ({
+  canonicalNuxtHref(value: string) {
+    return value
+      .replace(/^\/författare(?=\/|$|[?#])/, "/f%C3%B6rfattare")
+      .replace(/^\/forfattare(?=\/|$|[?#])/, "/f%C3%B6rfattare")
+  },
+  isNuxtInternalHref(value: string) {
+    return /^\/(?:f%C3%B6rfattare|författare|forfattare)(?:\/|$|[?#])/.test(value)
+  }
+}))
 
 const nuxtRoot = resolve(import.meta.dirname, "../..")
 const source = (path: string) => readFile(resolve(nuxtRoot, path), "utf8")
@@ -279,6 +290,223 @@ describe("Library component ownership", () => {
     expect(disabledPrevious?.localName).toBe("span")
     expect(disabledPrevious?.getAttribute("aria-disabled")).toBe("true")
     expect(disabledPrevious?.parentElement?.classList.contains("disabled")).toBe(true)
+    app.unmount()
+    target.remove()
+  })
+
+  test("the page delegates All and Latest result markup to dedicated components", async () => {
+    const page = await source("app/pages/bibliotek.vue")
+    expect(page).toContain("<LibraryAllResults")
+    expect(page).toContain("<LibraryLatestResults")
+    expect(page).not.toContain("data-library-result")
+    expect(page).not.toContain("data-library-latest-row")
+  })
+
+  test("renders All failure, empty, and highlighted mixed-result states", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, ref }, { default: LibraryAllResults }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibraryAllResults.vue")
+    ])
+    const response = ref({ data: [], hits: 0, suggest: [], failed: true })
+    const loading = ref(false)
+    const selectedSorts: string[] = []
+    const selectedPages: number[] = []
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true }, custom: Boolean },
+      setup(
+        props: { to: string; custom: boolean },
+        { slots }: { slots: { default?: (slotProps?: { href: string }) => unknown[] } }
+      ) {
+        return () => props.custom
+          ? slots.default?.({ href: props.to })
+          : h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const app = createApp({
+      setup: () => () => h(LibraryAllResults, {
+        response: response.value,
+        sortOptions: [
+          { key: "relevans", label: "Relevans", to: "/bibliotek", active: true },
+          { key: "titlar", label: "Titel", to: "/bibliotek?sort=titlar", active: false }
+        ],
+        sortReversed: false,
+        imprintYearTargets: [{ year: "1888", to: "/bibliotek?intervall=1888%2C1888" }],
+        loading: loading.value,
+        pagination: {
+          currentPage: 1,
+          pageCount: 1,
+          previous: null,
+          next: null,
+          entries: [{ key: "page-1", page: 1, label: "1", to: "/bibliotek", ellipsis: false }]
+        },
+        onSelectSort: (sort: string) => selectedSorts.push(sort),
+        onSelectPage: (page: number) => selectedPages.push(page)
+      })
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    expect(target.querySelector("[data-library-error]")?.textContent).toBe("Ett fel uppstod.")
+
+    response.value = { data: [], hits: 0, suggest: [], failed: false }
+    await nextTick()
+    expect(target.querySelector("[data-library-empty]")?.textContent?.trim()).toBe("Inga träffar.")
+
+    response.value = {
+      data: [{
+        index: "etext",
+        sourceLabel: "Etext",
+        primaryLabel: "Ett drömspel",
+        primaryHref: "/författare/august-strindberg/titlar/ett-drömspel",
+        download: false,
+        yearLabel: "1888",
+        secondaryAuthor: "August Strindberg",
+        authorHref: "/författare/august-strindberg",
+        authorSurname: "",
+        authorGivenNames: "",
+        mobileYearLabel: "",
+        authorId: "",
+        authorPopularity: 0,
+        authorBirth: 0,
+        fullTitle: "Ett drömspel: skådespel",
+        authorContribution: "(red.)",
+        highlights: [{
+          segments: [
+            { text: "före ", hit: false },
+            { text: "dröm", hit: true },
+            { text: " efter", hit: false }
+          ]
+        }]
+      }],
+      hits: 1,
+      suggest: [],
+      failed: false
+    }
+    await nextTick()
+
+    expect(target.querySelectorAll("[data-library-result]")).toHaveLength(1)
+    expect(target.querySelector("[data-library-result-title]")?.getAttribute("href"))
+      .toBe("/författare/august-strindberg/titlar/ett-drömspel")
+    expect(target.querySelector("[data-library-highlight]")?.textContent)
+      .toContain("före dröm efter")
+    const highlightHit = target.querySelector("[data-library-highlight-hit]")
+    expect(highlightHit?.localName).toBe("em")
+    expect(highlightHit?.classList.contains("hit")).toBe(true)
+    expect(highlightHit?.textContent).toBe("dröm")
+    expect(target.querySelector("[data-library-imprint-year]")?.getAttribute("href"))
+      .toBe("/bibliotek?intervall=1888%2C1888")
+    expect(target.querySelector("[data-library-author-contribution]")?.textContent)
+      .toBe("(red.)")
+
+    target.querySelector<HTMLAnchorElement>('[data-library-sort="titlar"]')?.click()
+    await nextTick()
+    expect(selectedSorts).toEqual(["titlar"])
+
+    loading.value = true
+    await nextTick()
+    expect(target.querySelector("[data-library-result]")).toBeNull()
+    expect(target.querySelector(".spinner.fa-spinner")).not.toBeNull()
+    expect(selectedPages).toEqual([])
+    app.unmount()
+    target.remove()
+  })
+
+  test("renders Latest loading with a committed date group and emits controls", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick }, { default: LibraryLatestResults }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibraryLatestResults.vue")
+    ])
+    const selectedSorts: string[] = []
+    const selectedPages: number[] = []
+    let hideToggles = 0
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true }, custom: Boolean },
+      setup(
+        props: { to: string; custom: boolean },
+        { slots }: { slots: { default?: (slotProps?: { href: string }) => unknown[] } }
+      ) {
+        return () => props.custom
+          ? slots.default?.({ href: props.to })
+          : h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const app = createApp({
+      setup: () => () => h(LibraryLatestResults, {
+        response: {
+          groups: [{
+            imported: "2026-08-11",
+            label: "11 augusti 2026 (1 verk)",
+            results: [{
+              title: "Röda rummet",
+              titleTooltip: "Röda rummet: skildringar ur artist- och författarlivet",
+              titleId: "roda-rummet",
+              year: "1879",
+              surname: "Strindberg",
+              authorTooltip: "Strindberg, August",
+              roleSuffix: " (ill.)",
+              titleHref: "/författare/august-strindberg/titlar/roda-rummet",
+              authorHref: "/författare/august-strindberg",
+              imported: "2026-08-11"
+            }]
+          }],
+          hits: 1,
+          distinctHits: 1,
+          suggest: [],
+          failed: false
+        },
+        sortOptions: [{
+          key: "nytillkommet",
+          label: "Nytt",
+          to: "/bibliotek?visa=latest&sort=nytillkommet",
+          active: true
+        }],
+        sortReversed: true,
+        hide1800: false,
+        imprintYearTargets: [{ year: "1879", to: "/bibliotek?intervall=1879%2C1879" }],
+        loading: true,
+        pagination: {
+          currentPage: 1,
+          pageCount: 2,
+          previous: null,
+          next: "/bibliotek?visa=latest&sida=2",
+          entries: [
+            { key: "page-1", page: 1, label: "1", to: "/bibliotek?visa=latest", ellipsis: false },
+            { key: "page-2", page: 2, label: "2", to: "/bibliotek?visa=latest&sida=2", ellipsis: false }
+          ]
+        },
+        onSelectSort: (sort: string) => selectedSorts.push(sort),
+        onToggleHide1800: () => { hideToggles += 1 },
+        onSelectPage: (page: number) => selectedPages.push(page)
+      })
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    expect(target.querySelector("[data-library-loading]")).not.toBeNull()
+    expect(target.querySelector("[data-library-latest-header]")?.textContent?.trim())
+      .toBe("11 augusti 2026 (1 verk)")
+    expect(target.querySelectorAll("[data-library-latest-row]")).toHaveLength(1)
+    expect(target.querySelector("[data-library-latest-title]")?.getAttribute("href"))
+      .toBe("/författare/august-strindberg/titlar/roda-rummet")
+    expect(target.querySelector("[data-library-imprint-year]")?.getAttribute("href"))
+      .toBe("/bibliotek?intervall=1879%2C1879")
+    expect(target.querySelector('[data-library-tooltip-kind="author"]')?.textContent)
+      .toBe("Strindberg")
+    expect(target.querySelector(".fa")?.classList.contains("fa-caret-up")).toBe(true)
+
+    target.querySelector<HTMLAnchorElement>('[data-library-sort="nytillkommet"]')?.click()
+    target.querySelector<HTMLButtonElement>("[data-library-hide-1800]")?.click()
+    target.querySelector<HTMLAnchorElement>('[data-library-page="2"]')?.click()
+    await nextTick()
+    expect(selectedSorts).toEqual(["nytillkommet"])
+    expect(hideToggles).toBe(1)
+    expect(selectedPages).toEqual([2])
     app.unmount()
     target.remove()
   })

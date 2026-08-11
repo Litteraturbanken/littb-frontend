@@ -3,12 +3,14 @@ import type { CSSProperties } from "vue"
 import type { LocationQuery, RouteLocationRaw } from "vue-router"
 import { libraryTooltipDirective } from "~/directives/library-tooltip"
 import { useLbApiClient } from "~/composables/useLbApiClient"
-import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
+import { canonicalNuxtHref } from "~/lib/internal-navigation"
 import { legacyPaginationItems, type LegacyPaginationItem } from "~/lib/legacy-pagination"
 import type {
+    LibraryImprintYearTarget,
     LibraryModeTab,
     LibraryPaginationEntry,
-    LibraryPaginationModel
+    LibraryPaginationModel,
+    LibrarySortOption
 } from "~/lib/library/component-models"
 import {
     buildLibraryCountRequest,
@@ -1808,6 +1810,41 @@ const latestSortHref = computed(() =>
     })
 )
 
+const allSortOptions = computed<readonly LibrarySortOption<RelevanceSortKey>[]>(() =>
+    sorts.map(item => ({
+        ...item,
+        to: relevanceSortHref(item.key),
+        active: selectedSort.value === item.key
+    }))
+)
+const latestSortOptions = computed<readonly LibrarySortOption<LatestSortKey>[]>(() => [
+    {
+        key: "nytillkommet",
+        label: "Nytt",
+        to: latestSortHref.value,
+        active: true
+    }
+])
+const allSortReversed = computed(() => isSortReversed("all", selectedSort.value))
+const latestSortReversed = computed(() => isSortReversed("latest", "nytillkommet"))
+
+const allImprintYearTargets = computed<readonly LibraryImprintYearTarget[]>(() =>
+    results.value.data.flatMap(item =>
+        item.index !== "author" && isImprintYear(item.yearLabel)
+            ? [{ year: item.yearLabel, to: imprintYearTo(item.yearLabel) }]
+            : []
+    )
+)
+const latestImprintYearTargets = computed<readonly LibraryImprintYearTarget[]>(() =>
+    latestResults.value.groups.flatMap(group =>
+        group.results.flatMap(item =>
+            isImprintYear(item.year)
+                ? [{ year: item.year, to: imprintYearTo(item.year) }]
+                : []
+        )
+    )
+)
+
 function epubSortHref(sort: EpubSortKey): string {
     return stateHref({
         mode: currentMode.value === "pdf" ? "pdf" : "epub",
@@ -2352,355 +2389,30 @@ onUnmounted(() => {
             </div>
             <div class="flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
                 <div class="bg-white/65 lg:p-6 p-2 lg:border border-gray-900 flex-grow">
-                    <div
+                    <LibraryAllResults
                         v-if="currentMode === 'all'"
-                        class="result relevance pl-0 lg:ml-3 w-full lg:w-auto"
-                    >
-                        <div class="text-base">
-                            <div class="inline-block sc mr-2">Sortera:</div>
-                            <ul class="part_header top_header mb-4 inline-block">
-                                <li v-for="item in sorts" :key="item.key" class="inline-block sc">
-                                    <a
-                                        :href="relevanceSortHref(item.key)"
-                                        class="sort_item"
-                                        :class="{ active: selectedSort === item.key }"
-                                        :data-library-sort="item.key"
-                                        @click.prevent="selectSort(item.key)"
-                                        >{{ item.label }}</a
-                                    >
-                                    <i
-                                        v-if="selectedSort === item.key"
-                                        class="fa"
-                                        :class="
-                                            isSortReversed(currentMode, item.key)
-                                                ? 'fa-caret-up'
-                                                : 'fa-caret-down'
-                                        "
-                                    />
-                                </li>
-                            </ul>
-                        </div>
-                        <div
-                            v-if="loading"
-                            class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0"
-                        >
-                            <i class="spinner fa fa-spinner fa-pulse" />
-                        </div>
-                        <div v-else>
-                            <div v-if="results.failed" data-library-error>Ett fel uppstod.</div>
-                            <div v-else-if="!results.data.length" data-library-empty class="pb-4">
-                                Inga träffar.
-                            </div>
-                            <table v-else class="w-full -ml-4">
-                                <tbody>
-                                    <tr
-                                        v-for="(item, index) in results.data"
-                                        :key="`${item.index}:${item.primaryHref}:${index}`"
-                                        data-library-result
-                                        class="lg:table-row flex flex-col justify-between pb-2 lg:pb-0 -ml-2 hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
-                                    >
-                                        <td class="lg:text-right lg:table-cell w-44">
-                                            <span
-                                                class="sc primarycolor whitespace-nowrap text-base"
-                                                >{{ item.sourceLabel }}</span
-                                            >
-                                        </td>
-                                        <td class="order-2 min-w-0">
-                                            <a
-                                                v-if="
-                                                    item.download ||
-                                                    !isNuxtInternalHref(item.primaryHref)
-                                                "
-                                                :href="item.primaryHref"
-                                                :download="item.download || undefined"
-                                                :data-library-author-name="
-                                                    item.index === 'author' || undefined
-                                                "
-                                                :data-library-result-title="
-                                                    item.fullTitle ? '' : undefined
-                                                "
-                                                :title="
-                                                    item.fullTitle &&
-                                                    item.fullTitle !== item.primaryLabel
-                                                        ? item.fullTitle
-                                                        : undefined
-                                                "
-                                                :class="
-                                                    item.fullTitle
-                                                        ? 'block max-w-[calc(100vw-2rem)] lg:max-w-[32rem] whitespace-nowrap overflow-hidden text-ellipsis'
-                                                        : undefined
-                                                "
-                                            >
-                                                <template v-if="item.index === 'author'">
-                                                    <span class="surname">{{
-                                                        item.authorSurname
-                                                    }}</span
-                                                    ><span v-if="item.authorGivenNames">,</span>
-                                                    {{ item.authorGivenNames }}
-                                                    <span
-                                                        v-if="item.mobileYearLabel"
-                                                        data-library-author-mobile-years
-                                                        class="lg:hidden"
-                                                        >{{ item.mobileYearLabel }}</span
-                                                    >
-                                                </template>
-                                                <template v-else>{{ item.primaryLabel }}</template>
-                                            </a>
-                                            <NuxtLink
-                                                v-else
-                                                :to="canonicalNuxtHref(item.primaryHref)"
-                                                :data-library-author-name="
-                                                    item.index === 'author' || undefined
-                                                "
-                                                :data-library-result-title="
-                                                    item.fullTitle ? '' : undefined
-                                                "
-                                                :title="
-                                                    item.fullTitle &&
-                                                    item.fullTitle !== item.primaryLabel
-                                                        ? item.fullTitle
-                                                        : undefined
-                                                "
-                                                :class="
-                                                    item.fullTitle
-                                                        ? 'block max-w-[calc(100vw-2rem)] lg:max-w-[32rem] whitespace-nowrap overflow-hidden text-ellipsis'
-                                                        : undefined
-                                                "
-                                            >
-                                                <template v-if="item.index === 'author'">
-                                                    <span class="surname">{{
-                                                        item.authorSurname
-                                                    }}</span
-                                                    ><span v-if="item.authorGivenNames">,</span>
-                                                    {{ item.authorGivenNames }}
-                                                    <span
-                                                        v-if="item.mobileYearLabel"
-                                                        data-library-author-mobile-years
-                                                        class="lg:hidden"
-                                                        >{{ item.mobileYearLabel }}</span
-                                                    >
-                                                </template>
-                                                <template v-else>{{ item.primaryLabel }}</template>
-                                            </NuxtLink>
-                                            <ul
-                                                v-if="item.highlights.length"
-                                                class="highlight list-none p-0 m-0"
-                                            >
-                                                <li
-                                                    v-for="(
-                                                        fragment, fragmentIndex
-                                                    ) in item.highlights"
-                                                    :key="fragmentIndex"
-                                                    data-library-highlight
-                                                    class="text-xs relative z-10"
-                                                >
-                                                    {{ "”… "
-                                                    }}<template
-                                                        v-for="(
-                                                            segment, segmentIndex
-                                                        ) in fragment.segments"
-                                                        :key="segmentIndex"
-                                                        ><em
-                                                            v-if="segment.hit"
-                                                            data-library-highlight-hit
-                                                            class="hit"
-                                                            >{{ segment.text }}</em
-                                                        ><template v-else>{{
-                                                            segment.text
-                                                        }}</template></template
-                                                    >{{ " …”" }}
-                                                </li>
-                                            </ul>
-                                        </td>
-                                        <td
-                                            class="lg:text-right hidden lg:table-cell text-base w-28 whitespace-nowrap"
-                                        >
-                                            <NuxtLink
-                                                v-if="
-                                                    item.index !== 'author' &&
-                                                    isImprintYear(item.yearLabel)
-                                                "
-                                                data-library-imprint-year
-                                                class="text-current"
-                                                :to="imprintYearTo(item.yearLabel)"
-                                                >{{ item.yearLabel }}</NuxtLink
-                                            ><template v-else>{{ item.yearLabel }}</template>
-                                        </td>
-                                        <td
-                                            class="lg:text-right lg:uppercase lg:text-sm lg:pl-4 order-1 lg:max-w-40"
-                                        >
-                                            <NuxtLink
-                                                v-if="item.authorHref"
-                                                :to="canonicalNuxtHref(item.authorHref)"
-                                                >{{ item.secondaryAuthor }}</NuxtLink
-                                            >
-                                            <span v-else class="text-gray-800">{{
-                                                item.secondaryAuthor
-                                            }}</span>
-                                            <span
-                                                v-if="item.authorContribution"
-                                                data-library-author-contribution
-                                                class="text-gray-600 text-xs"
-                                                >{{ item.authorContribution }}</span
-                                            >
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <LibraryPagination
-                            v-if="pageCount > 1"
-                            :model="allPagination"
-                            @select-page="selectPage"
-                        />
-                    </div>
-                    <div
+                        :response="results"
+                        :sort-options="allSortOptions"
+                        :sort-reversed="allSortReversed"
+                        :imprint-year-targets="allImprintYearTargets"
+                        :loading="loading"
+                        :pagination="allPagination"
+                        @select-sort="selectSort"
+                        @select-page="selectPage"
+                    />
+                    <LibraryLatestResults
                         v-else-if="currentMode === 'latest'"
-                        class="result title pl-0 flex-column min-h-500"
-                    >
-                        <div class="flex items-baseline">
-                            <div class="text-base">
-                                <div class="inline-block sc mr-2">Sortera:</div>
-                                {{ " " }}
-                                <ul class="part_header top_header mb-4 inline-block">
-                                    <li class="inline-block sc">
-                                        <a
-                                            data-library-sort="nytillkommet"
-                                            class="sort_item active"
-                                            :href="latestSortHref"
-                                            @click.prevent="selectSort('nytillkommet')"
-                                            >Nytt</a
-                                        >{{ " "
-                                        }}<i
-                                            class="fa"
-                                            :class="
-                                                isSortReversed(currentMode, 'nytillkommet')
-                                                    ? 'fa-caret-up'
-                                                    : 'fa-caret-down'
-                                            "
-                                        />
-                                    </li>
-                                </ul>
-                            </div>
-                            <span class="sc ml-4">
-                                <span>{{ hide1800 ? "Visa även från:" : "Dölj verk:" }}</span
-                                >{{ " " }}
-                                <button
-                                    type="button"
-                                    data-library-hide-1800
-                                    class="text-primary sc ml-2 hover:text-gray-900 cursor-pointer bg-transparent border-0 p-0"
-                                    @click="toggle1800"
-                                >
-                                    Nya vägar till det förflutna
-                                </button>
-                            </span>
-                        </div>
-                        <div
-                            v-if="loading"
-                            data-library-loading
-                            class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0"
-                        >
-                            <i class="spinner fa fa-spinner fa-pulse" />
-                        </div>
-                        <div v-if="latestResults.failed" data-library-error>Ett fel uppstod.</div>
-                        <div
-                            v-else-if="!latestResults.groups.length"
-                            data-library-empty
-                            class="pb-4"
-                        >
-                            Inga träffar.
-                        </div>
-                        <table v-else id="table" class="table w-full flex-grow -ml-2">
-                            <tbody class="block">
-                                <template
-                                    v-for="group in latestResults.groups"
-                                    :key="group.imported"
-                                >
-                                    <tr class="header grid grid-cols-1 w-full items-baseline">
-                                        <td class="type_header block">
-                                            <h3
-                                                data-library-latest-header
-                                                class="row_title part_header"
-                                            >
-                                                {{ group.label }}
-                                            </h3>
-                                        </td>
-                                    </tr>
-                                    <tr
-                                        v-for="item in group.results"
-                                        :key="`${group.imported}:${item.titleId}:${item.titleHref}`"
-                                        data-library-latest-row
-                                        class="work_link grid w-full items-baseline transition-colors duration-150 hover:bg-gray-300 hover:bg-opacity-50 grid-cols-[minmax(0,1fr)_11rem] sm:grid-cols-[minmax(0,1fr)_7rem_11rem]"
-                                    >
-                                        <td class="block min-w-0">
-                                            <div
-                                                class="text-ellipsis whitespace-nowrap overflow-hidden min-w-0 items-center gap-2"
-                                            >
-                                                <div
-                                                    class="header_container min-w-0 flex-1 align-middle"
-                                                >
-                                                    <div
-                                                        class="header block overflow-hidden text-ellipsis whitespace-nowrap text-lg leading-tight"
-                                                    >
-                                                        <span class="title_inner">
-                                                            <NuxtLink
-                                                                v-library-tooltip="
-                                                                    item.titleTooltip
-                                                                "
-                                                                :data-library-latest-title="
-                                                                    item.titleId
-                                                                "
-                                                                data-library-tooltip-kind="title"
-                                                                :to="
-                                                                    canonicalNuxtHref(
-                                                                        item.titleHref
-                                                                    )
-                                                                "
-                                                                >{{ item.title }}</NuxtLink
-                                                            >
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="text-left hidden sm:block w-28 text-base">
-                                            <NuxtLink
-                                                v-if="isImprintYear(item.year)"
-                                                data-library-imprint-year
-                                                class="text-current"
-                                                :to="imprintYearTo(item.year)"
-                                                >{{ item.year }}</NuxtLink
-                                            ><template v-else>{{ item.year }}</template>
-                                        </td>
-                                        <td class="block w-44 text-right">
-                                            <div
-                                                class="text-ellipsis whitespace-nowrap overflow-hidden"
-                                            >
-                                                <span class="author uppercase text-sm">
-                                                    <NuxtLink
-                                                        v-library-tooltip="item.authorTooltip"
-                                                        data-library-tooltip-kind="author"
-                                                        :to="canonicalNuxtHref(item.authorHref)"
-                                                        >{{ item.surname }}</NuxtLink
-                                                    ><template v-if="item.roleSuffix"
-                                                        >{{ " "
-                                                        }}<span class="text-gray-700 sc">{{
-                                                            item.roleSuffix.trim()
-                                                        }}</span></template
-                                                    >
-                                                </span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                        <LibraryPagination
-                            v-if="pageCount > 1"
-                            :model="latestPagination"
-                            @select-page="selectPage"
-                        />
-                    </div>
+                        :response="latestResults"
+                        :sort-options="latestSortOptions"
+                        :sort-reversed="latestSortReversed"
+                        :hide1800="hide1800"
+                        :imprint-year-targets="latestImprintYearTargets"
+                        :loading="loading"
+                        :pagination="latestPagination"
+                        @select-sort="selectSort"
+                        @toggle-hide-1800="toggle1800"
+                        @select-page="selectPage"
+                    />
                     <div
                         v-else-if="currentMode === 'authors'"
                         class="result author pl-0 flex-column min-h-500"

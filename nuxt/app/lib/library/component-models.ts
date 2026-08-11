@@ -12,6 +12,18 @@ export type LibraryModeTab = Readonly<{
     separatorBefore: boolean
 }>
 
+export type LibrarySortOption<Key extends string> = Readonly<{
+    key: Key
+    label: string
+    to: RouteLocationRaw
+    active: boolean
+}>
+
+export type LibraryImprintYearTarget = Readonly<{
+    year: string
+    to: RouteLocationRaw
+}>
+
 export type LibraryPaginationEntry = Readonly<{
     key: string
     page: number

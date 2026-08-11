@@ -20,7 +20,7 @@ type LibraryAuthorIds = NonNullable<
 >
 type LibraryHighlightFragment = components["schemas"]["LibraryHighlightFragment"]
 
-type LibraryResult = {
+export type LibraryResult = {
   index: "etext" | "faksimil" | "pdf" | "etext-part" | "faksimil-part" | "author" | "presentations" | "sol" | "litteraturkartan" | "wordpress"
   sourceLabel: string
   primaryLabel: string
@@ -83,7 +83,7 @@ export type BrowseResult = {
   sourceExports: SourceExport[]
 }
 
-type LatestResult = {
+export type LatestResult = {
   title: string
   titleTooltip: string
   titleId: string
