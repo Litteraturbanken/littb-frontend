@@ -546,7 +546,90 @@ test("download sidebar scrolling does not clip the body-level format popover", a
   await expect(button).toBeFocused()
 })
 
-test("leaving source mode retires format chooser lifecycle behavior", async ({ page }) => {
+test("leaving source mode removes the workspace's exact global listeners", async ({ page }) => {
+  await page.addInitScript(() => {
+    type ListenerRegistration = {
+      target: "document" | "window"
+      type: string
+      capture: boolean
+      listener: EventListenerOrEventListenerObject
+      listenerId: number
+      active: boolean
+    }
+    const registrations: ListenerRegistration[] = []
+    const listenerIds = new WeakMap<object, number>()
+    let nextListenerId = 1
+    const capture = (
+      options?: boolean | AddEventListenerOptions | EventListenerOptions
+    ) => typeof options === "boolean" ? options : Boolean(options?.capture)
+    const listenerId = (listener: EventListenerOrEventListenerObject) => {
+      const current = listenerIds.get(listener)
+      if (current) return current
+      const id = nextListenerId++
+      listenerIds.set(listener, id)
+      return id
+    }
+    const targetName = (target: EventTarget) => target === window
+      ? "window" as const
+      : target === document
+        ? "document" as const
+        : null
+    const originalAdd = EventTarget.prototype.addEventListener
+    const originalRemove = EventTarget.prototype.removeEventListener
+
+    EventTarget.prototype.addEventListener = function (type, listener, options) {
+      const target = targetName(this)
+      if (target && listener) {
+        const useCapture = capture(options)
+        const duplicate = registrations.some(item =>
+          item.active
+          && item.target === target
+          && item.type === type
+          && item.capture === useCapture
+          && item.listener === listener
+        )
+        if (!duplicate) {
+          registrations.push({
+            target,
+            type,
+            capture: useCapture,
+            listener,
+            listenerId: listenerId(listener),
+            active: true
+          })
+        }
+      }
+      originalAdd.call(this, type, listener, options)
+    }
+    EventTarget.prototype.removeEventListener = function (type, listener, options) {
+      const target = targetName(this)
+      if (target && listener) {
+        const useCapture = capture(options)
+        const registration = registrations.find(item =>
+          item.active
+          && item.target === target
+          && item.type === type
+          && item.capture === useCapture
+          && item.listener === listener
+        )
+        if (registration) registration.active = false
+      }
+      originalRemove.call(this, type, listener, options)
+    }
+
+    Object.defineProperty(window, "__libraryListenerLedger", {
+      value: {
+        active: () => registrations
+          .filter(item => item.active)
+          .map(({ target, type, capture: useCapture, listenerId: id }) => ({
+            target,
+            type,
+            capture: useCapture,
+            listenerId: id
+          }))
+      }
+    })
+  })
   await page.goto("/bibliotek?avancerat=1&nedladdning=1", { waitUntil: "networkidle" })
   await waitForHydration(page)
   await page.locator("[data-library-source-checkbox]").first().check({ force: true })
@@ -554,20 +637,58 @@ test("leaving source mode retires format chooser lifecycle behavior", async ({ p
 
   const popover = page.locator("body > [data-library-format-popover]")
   await expect(popover).toBeVisible()
+  type ListenerEntry = {
+    target: "document" | "window"
+    type: string
+    capture: boolean
+    listenerId: number
+  }
+  const activeListeners = () => page.evaluate(() => (
+    window as typeof window & {
+      __libraryListenerLedger: { active: () => ListenerEntry[] }
+    }
+  ).__libraryListenerLedger.active())
+  const before = await activeListeners()
+  const resize = before.filter(item => item.target === "window" && item.type === "resize")
+  const captureScroll = before.filter(item =>
+    item.target === "window" && item.type === "scroll" && item.capture
+  )
+  const positionListener = resize.find(item =>
+    captureScroll.some(scroll => scroll.listenerId === item.listenerId)
+  )
+  expect(positionListener).toBeDefined()
+  const workspaceScroll = captureScroll.find(item =>
+    item.listenerId === positionListener?.listenerId
+  )
+  expect(workspaceScroll).toBeDefined()
+
   await page.locator("[data-library-download-mode]").click()
   await expect(page).not.toHaveURL(/(?:\?|&)nedladdning=1(?:&|$)/u)
   await expect(popover).toHaveCount(0)
 
-  const modeToggle = page.locator("[data-library-download-mode]")
-  await modeToggle.focus()
-  await page.evaluate(() => {
-    window.dispatchEvent(new Event("resize"))
-    document.dispatchEvent(new Event("scroll"))
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))
-  })
-  await expect(popover).toHaveCount(0)
-  await expect(modeToggle).toBeFocused()
-  await expect(modeToggle).toContainText("Ladda ner källmaterial")
+  const after = await activeListeners()
+  const afterIds = new Set(after.map(item =>
+    `${item.target}:${item.type}:${item.capture}:${item.listenerId}`
+  ))
+  const removed = before.filter(item => !afterIds.has(
+    `${item.target}:${item.type}:${item.capture}:${item.listenerId}`
+  ))
+  const removedWorkspaceListeners = removed.filter(item =>
+    (item.target === "document" && item.type === "keydown" && !item.capture)
+    || (item.target === "window" && item.type === "resize" && !item.capture)
+    || (item.target === "window" && item.type === "scroll" && item.capture)
+  )
+  expect(removedWorkspaceListeners.map(item =>
+    `${item.target}:${item.type}:${item.capture}`
+  ).sort()).toEqual([
+    "document:keydown:false",
+    "window:resize:false",
+    "window:scroll:true"
+  ])
+  const removedResize = removedWorkspaceListeners.find(item => item.type === "resize")
+  const removedScroll = removedWorkspaceListeners.find(item => item.type === "scroll")
+  expect(removedResize?.listenerId).toBe(positionListener?.listenerId)
+  expect(removedScroll?.listenerId).toBe(positionListener?.listenerId)
 })
 
 test("sticky download format chooser keeps controls reachable without clipping its arrow", async ({

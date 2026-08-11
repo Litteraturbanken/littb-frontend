@@ -774,6 +774,66 @@ describe("Library component ownership", () => {
     target.remove()
   })
 
+  test("rejects malformed source media without aliasing it to a selectable format", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick }, { default: LibrarySourceDownloadWorkspace }] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibrarySourceDownloadWorkspace.vue")
+    ])
+    const hostileExport = {
+      lbworkid: "lb-hostile",
+      mediatype: "faksimil,lb-injected",
+      type: "txt",
+      size: 1_024
+    } as unknown as BrowseResponse["data"][number]["sourceExports"][number]
+    const response = sourceResponse([{
+      key: "hostile",
+      title: "Felaktigt källformat",
+      sourceExports: [hostileExport]
+    }])
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true } },
+      setup(props: { to: string }, { slots }: { slots: { default?: () => unknown[] } }) {
+        return () => h("a", { href: props.to }, slots.default?.())
+      }
+    }
+    const app = createApp({
+      setup: () => () => h(LibrarySourceDownloadWorkspace, {
+        response,
+        loading: false,
+        sortOptions: [{ key: "popularitet", label: "Popularitet", to: "/bibliotek?visa=works", active: true }],
+        sortReversed: false,
+        pagination: { currentPage: 1, pageCount: 1, previous: null, next: null, entries: [] },
+        imprintYearTargets: [{ year: "1879", to: "/bibliotek?intervall=1879%2C1879" }]
+      })
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    target.querySelector<HTMLButtonElement>("[data-library-work-toggle]")?.click()
+    await nextTick()
+    target.querySelector<HTMLButtonElement>("[data-library-format-button]")?.click()
+    await nextTick()
+    await nextTick()
+    const popover = document.body.querySelector<HTMLElement>("[data-library-format-popover]")
+    expect(popover).not.toBeNull()
+    const facsimileText = popover?.querySelector<HTMLInputElement>(
+      '[data-library-source-format="faksimil:txt"]'
+    )
+    expect(facsimileText?.hasAttribute("disabled")).toBe(true)
+    facsimileText?.dispatchEvent(new document.defaultView!.Event("change"))
+    await nextTick()
+    expect(facsimileText?.getAttribute("checked")).toBe("false")
+    expect(popover?.querySelector<HTMLInputElement>('input[name="files"]')?.value).toBe("")
+    expect(popover?.querySelector<HTMLButtonElement>("[data-library-download-submit]")?.disabled)
+      .toBe(true)
+
+    app.unmount()
+    target.remove()
+  })
+
   test("closes the body-level format popover and removes global listeners on unmount", async () => {
     const target = document.createElement("div")
     document.body.append(target)

@@ -149,6 +149,7 @@ function sourceFormatKey(
         if (type === "workdb") return "etext:workdb"
         return null
     }
+    if (mediatype !== "faksimil") return null
     if (type === "txt") return "faksimil:txt"
     if (type === "xml") return "faksimil:xml"
     if (type === "workdb") return "faksimil:workdb"
