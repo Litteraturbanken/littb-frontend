@@ -1269,6 +1269,26 @@ test("a direct author-filtered load keeps the unfiltered navigator and pager bas
   expect(resultBodies.filter(body => !Object.hasOwn(body, "facet_author_id"))).toHaveLength(1)
 })
 
+test("a zero-work author facet keeps the unfiltered navigator and Visa alla escape", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&sok_filter=UnknownAuthor")
+
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true }))
+    .toHaveCount(0)
+  const navigator = page.locator(".navigator")
+  await expect(navigator.getByRole("button")).toHaveText([
+    "Visa alla",
+    "Strindberg, August",
+    "Lagerlöf, Selma"
+  ])
+
+  await navigator.getByRole("button", { name: "Visa alla" }).click()
+  await expect.poll(() => new URL(page.url()).searchParams.has("sok_filter")).toBe(false)
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+})
+
 test("author-filtered reconciliation waits for the unfiltered pager basis", async ({
   page,
   request

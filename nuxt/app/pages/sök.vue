@@ -1646,7 +1646,7 @@ v-for="item in [
           </ul>
         </div>
       </div>
-      <ul v-if="results?.works.length" class="hidden sm:block navigator">
+      <ul v-if="navigatorFacets.length || state.facetAuthorId" class="hidden sm:block navigator">
         <li>
           <a
             role="button"
