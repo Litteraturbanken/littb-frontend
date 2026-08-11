@@ -1620,8 +1620,24 @@ function libraryAuthorsResponse(query, limit) {
   return { mode: "authors", total_authors: total, total_works: 3, total_parts: 201, items }
 }
 
-function libraryWorksResponse(query) {
+function libraryWorksResponse(query, page) {
   if (query === "inga") return { mode: "works", total_hits: 0, total_works: 0, items: [] }
+  if (query === "source-pagination") {
+    return {
+      mode: "works",
+      total_hits: 201,
+      total_works: 201,
+      items: page === 2
+        ? [{
+            ...gostaWork,
+            source_exports: [{
+              format: "txt", media_type: "etext", size: 4096,
+              work_id: "lb-GostaBerlingsSaga"
+            }]
+          }]
+        : [doktorGlasWork, folkvisorWork, bauerWork]
+    }
+  }
   if (query === "download-title-width") {
     return { mode: "works", total_hits: 1, total_works: 1, items: [
       libraryBrowseItem({
@@ -1738,7 +1754,7 @@ function librarySearchResponse(body) {
   const query = body.filters.query
   if (body.mode === "all") return libraryAllResponse(query, body.page)
   if (body.mode === "authors") return libraryAuthorsResponse(query, body.limit)
-  if (body.mode === "works") return libraryWorksResponse(query)
+  if (body.mode === "works") return libraryWorksResponse(query, body.page)
   if (body.mode === "parts") {
     if (query.toLowerCase() === "strindberg") {
       return { mode: "parts", total_parts: 1039, items: [] }

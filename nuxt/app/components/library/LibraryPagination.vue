@@ -21,6 +21,7 @@ const emit = defineEmits<{ selectPage: [page: number] }>()
                     v-else
                     v-slot="{ href }"
                     custom
+                    no-prefetch
                     :to="model.previous"
                 ><a
                     data-library-pagination-previous
@@ -37,6 +38,7 @@ const emit = defineEmits<{ selectPage: [page: number] }>()
                 <NuxtLink
                     v-slot="{ href }"
                     custom
+                    no-prefetch
                     :to="item.to"
                 ><a
                     :data-library-page="item.ellipsis ? undefined : item.page"
@@ -58,6 +60,7 @@ const emit = defineEmits<{ selectPage: [page: number] }>()
                     v-else
                     v-slot="{ href }"
                     custom
+                    no-prefetch
                     :to="model.next"
                 ><a
                     data-library-pagination-next

@@ -107,11 +107,9 @@ watch(
     () => props.response.data,
     results => {
         const refreshedWorks = new Map(
-            results
-                .filter(item => item.sourceExports.length > 0)
-                .map(item => [item.key, item] as const)
+            results.map(item => [item.key, item] as const)
         )
-        const reconciled = new Map<string, BrowseResult>()
+        const reconciled = new Map(selectedSourceWorks.value)
         for (const key of selectedSourceWorks.value.keys()) {
             const refreshed = refreshedWorks.get(key)
             if (refreshed) reconciled.set(key, refreshed)

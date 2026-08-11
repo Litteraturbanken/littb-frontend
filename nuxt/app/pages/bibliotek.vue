@@ -1505,6 +1505,7 @@ type LibraryHrefState = {
     sort: RelevanceSortKey | BrowseSortKey | LatestSortKey
     page?: number
     hide1800?: boolean
+    downloadMode?: boolean
 }
 
 function applyStateModeParams(params: URLSearchParams, state: LibraryHrefState): void {
@@ -1521,7 +1522,9 @@ function applyStatePagingParams(params: URLSearchParams, state: LibraryHrefState
         params.set("sida", String(state.page))
     }
     if (state.mode === "latest" && state.hide1800) params.set("hide1800", "")
-    if (downloadMode.value && state.mode === "works") params.set("nedladdning", "1")
+    if ((state.downloadMode ?? downloadMode.value) && state.mode === "works") {
+        params.set("nedladdning", "1")
+    }
 }
 
 function stateHref(state: LibraryHrefState): string {
@@ -1551,7 +1554,8 @@ function libraryModeTab(
     to: RouteLocationRaw,
     disabledLook: boolean,
     disabled: boolean,
-    separatorBefore: boolean
+    separatorBefore: boolean,
+    replace = true
 ): LibraryModeTab {
     return {
         mode,
@@ -1561,8 +1565,18 @@ function libraryModeTab(
         active: currentMode.value === mode,
         disabledLook,
         disabled,
+        replace,
         separatorBefore
     }
+}
+
+function ordinaryWorksTabHref(): string {
+    return stateHref({
+        mode: "works",
+        filter: filter.value,
+        sort: "popularitet",
+        downloadMode: false
+    })
 }
 
 function ordinaryLibraryModeTabs(
@@ -1602,10 +1616,11 @@ function ordinaryLibraryModeTabs(
             "works",
             "Verk",
             librarySummary.value.works,
-            stateHref({ mode: "works", filter: filter.value, sort: "popularitet" }),
+            ordinaryWorksTabHref(),
             false,
             false,
-            separatorBefore
+            separatorBefore,
+            !downloadMode.value
         )
     ]
 

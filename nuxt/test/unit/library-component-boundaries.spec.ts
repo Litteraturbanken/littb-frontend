@@ -354,13 +354,13 @@ describe("Library component ownership", () => {
       import("../../app/components/library/LibraryModeTabs.vue")
     ])
     const tabs = [
-      { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: false },
-      { mode: "latest", label: "Nytt", count: null, to: "/bibliotek?visa=latest&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
-      { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: true, disabledLook: true, disabled: false, separatorBefore: true },
-      { mode: "works", label: "Verk", count: 34, to: "/bibliotek?visa=works&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
-      { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, disabled: false, separatorBefore: true },
-      { mode: "epub", label: "Epub", count: 56, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
-      { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, disabled: false, separatorBefore: true }
+      { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: false, disabledLook: false, disabled: false, replace: true, separatorBefore: false },
+      { mode: "latest", label: "Nytt", count: null, to: "/bibliotek?visa=latest&filter=berg", active: false, disabledLook: false, disabled: false, replace: true, separatorBefore: true },
+      { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: true, disabledLook: true, disabled: false, replace: true, separatorBefore: true },
+      { mode: "works", label: "Verk", count: 34, to: "/bibliotek?visa=works&filter=berg", active: false, disabledLook: false, disabled: false, replace: true, separatorBefore: true },
+      { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, disabled: false, replace: true, separatorBefore: true },
+      { mode: "epub", label: "Epub", count: 56, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: false, disabled: false, replace: true, separatorBefore: true },
+      { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, disabled: false, replace: true, separatorBefore: true }
     ] as const
     const NuxtLink = {
       props: { to: { type: [String, Object], required: true }, custom: Boolean, replace: Boolean },
@@ -406,8 +406,8 @@ describe("Library component ownership", () => {
       import("../../app/components/library/LibraryModeTabs.vue")
     ])
     const tabs = [
-      { mode: "epub", label: "Epub", count: 9, to: "/epub", active: true, disabledLook: false, disabled: false, separatorBefore: false },
-      { mode: "pdf", label: "PDF", count: null, to: "/epub?visa=pdf", active: false, disabledLook: true, disabled: false, separatorBefore: true }
+      { mode: "epub", label: "Epub", count: 9, to: "/epub", active: true, disabledLook: false, disabled: false, replace: true, separatorBefore: false },
+      { mode: "pdf", label: "PDF", count: null, to: "/epub?visa=pdf", active: false, disabledLook: true, disabled: false, replace: true, separatorBefore: true }
     ] as const
     const NuxtLink = {
       props: { to: { type: [String, Object], required: true }, custom: Boolean, replace: Boolean },
@@ -461,11 +461,11 @@ describe("Library component ownership", () => {
       await router.push("/bibliotek?filter=berg")
       await router.isReady()
       const tabs = ref([
-      { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: true, disabledLook: false, separatorBefore: false, disabled: false },
-      { mode: "authors", label: "Författare", count: 0, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false },
-      { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false },
-      { mode: "epub", label: "Epub", count: null, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false },
-      { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, separatorBefore: true, disabled: false }
+      { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: true, disabledLook: false, replace: true, separatorBefore: false, disabled: false },
+      { mode: "authors", label: "Författare", count: 0, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, replace: true, separatorBefore: true, disabled: false },
+      { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, replace: true, separatorBefore: true, disabled: false },
+      { mode: "epub", label: "Epub", count: null, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: true, replace: true, separatorBefore: true, disabled: false },
+      { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, replace: true, separatorBefore: true, disabled: false }
       ])
       const app = createApp({ setup: () => () => h(LibraryModeTabs, { tabs: tabs.value }) })
       app.use(router)
@@ -502,7 +502,7 @@ describe("Library component ownership", () => {
       expect(router.currentRoute.value.fullPath).toBe("/")
 
       tabs.value = [
-        { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, separatorBefore: false, disabled: true }
+        { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: false, disabledLook: true, replace: true, separatorBefore: false, disabled: true }
       ]
       await nextTick()
       const disabledAuthor = target.querySelector<HTMLAnchorElement>("a")
@@ -919,7 +919,7 @@ describe("Library component ownership", () => {
     secondTarget.remove()
   })
 
-  test("reconciles source selections to refreshed result identities", async () => {
+  test("retains off-page source selections and refreshes identities that reappear", async () => {
     const target = document.createElement("div")
     document.body.append(target)
     const [{ createApp, h, nextTick, ref }, { default: LibrarySourceDownloadWorkspace }] = await Promise.all([
@@ -966,15 +966,40 @@ describe("Library component ownership", () => {
       ":scope > [data-library-format-popover] input[name='files']"
     )?.value).toBe("lb-keep-etext-txt,lb-remove-etext-txt")
 
-    response.value = sourceResponse([{ key: "keep", title: "Behåll mig uppdaterad" }])
+    response.value = sourceResponse([{
+      key: "keep",
+      title: "Behåll mig uppdaterad",
+      sourceExports: [{
+        lbworkid: "lb-keep",
+        mediatype: "faksimil",
+        type: "pdf",
+        size: 2_048
+      }]
+    }])
     await nextTick()
 
-    expect(target.querySelectorAll("[data-library-selected-work]")).toHaveLength(1)
-    expect(target.querySelector("[data-library-selected-work]")?.textContent)
+    expect(target.querySelectorAll("[data-library-selected-work]")).toHaveLength(2)
+    expect(target.querySelectorAll("[data-library-selected-work]")[0]?.textContent)
       .toContain("Behåll mig uppdaterad")
+    expect(target.querySelectorAll("[data-library-selected-work]")[1]?.textContent)
+      .toContain("Ta bort mig")
     expect(document.body.querySelector<HTMLInputElement>(
       ":scope > [data-library-format-popover] input[name='files']"
-    )?.value).toBe("lb-keep-etext-txt")
+    )?.value).toBe("lb-remove-etext-txt")
+    expect(document.body.querySelector<HTMLInputElement>(
+      ":scope > [data-library-format-popover] [data-library-source-format='etext:txt']"
+    )?.getAttribute("checked")).toBe("true")
+
+    response.value = {
+      ...sourceResponse([]),
+      failed: true
+    }
+    await nextTick()
+
+    expect(target.querySelectorAll("[data-library-selected-work]")).toHaveLength(2)
+    expect(document.body.querySelector<HTMLInputElement>(
+      ":scope > [data-library-format-popover] input[name='files']"
+    )?.value).toBe("lb-remove-etext-txt")
 
     app.unmount()
     target.remove()
@@ -1477,6 +1502,150 @@ describe("Library component ownership", () => {
     expect(target.querySelector<HTMLAnchorElement>('[data-library-sort="titlar"]')?.getAttribute("href"))
       .toBe("/bibliotek?visa=pdf&sort=titlar")
     expect(scheduledPrefetches).toBe(0)
+    app.unmount()
+    target.remove()
+  })
+
+  test("disables Nuxt visibility prefetch for every extracted anchor control", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [
+      { createApp, defineComponent, h, nextTick, onMounted },
+      { default: LibraryPagination },
+      { default: LibraryModeTabs },
+      { default: LibraryAllResults },
+      { default: LibraryLatestResults }
+    ] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibraryPagination.vue"),
+      import("../../app/components/library/LibraryModeTabs.vue"),
+      import("../../app/components/library/LibraryAllResults.vue"),
+      import("../../app/components/library/LibraryLatestResults.vue")
+    ])
+    const registeredLinks: string[] = []
+    const scheduledPrefetches: string[] = []
+    const NuxtLink = defineComponent({
+      inheritAttrs: false,
+      props: {
+        to: { type: [String, Object], required: true },
+        custom: Boolean,
+        replace: Boolean,
+        noPrefetch: Boolean
+      },
+      setup(props, { attrs, slots }) {
+        const href = String(props.to)
+        registeredLinks.push(href)
+        onMounted(() => {
+          if (!props.noPrefetch) scheduledPrefetches.push(href)
+        })
+        return () => props.custom
+          ? slots.default?.({ href, navigate: () => undefined })
+          : h("a", { ...attrs, href }, slots.default?.())
+      }
+    })
+    const pagination = {
+      currentPage: 1,
+      pageCount: 2,
+      previous: "/pagination-previous",
+      next: "/pagination-next",
+      entries: [
+        { key: "page-1", page: 1, label: "1", to: "/pagination-current", ellipsis: false },
+        { key: "page-2", page: 2, label: "2", to: "/pagination-numeric", ellipsis: false }
+      ]
+    }
+    const app = createApp({
+      setup: () => () => h("div", [
+        h(LibraryPagination, { model: pagination }),
+        h(LibraryModeTabs, {
+          tabs: [
+            { mode: "works", label: "Verk", count: 1, to: "/tab-active", active: true, disabledLook: false, disabled: false, replace: false, separatorBefore: false },
+            { mode: "authors", label: "Författare", count: 0, to: "/tab-disabled", active: false, disabledLook: true, disabled: true, replace: true, separatorBefore: true }
+          ]
+        }),
+        h(LibraryAllResults, {
+          response: {
+            data: [{
+              index: "etext",
+              sourceLabel: "Etext",
+              primaryLabel: "Ett drömspel",
+              primaryHref: "/författare/all-work",
+              download: false,
+              yearLabel: "1888",
+              secondaryAuthor: "August Strindberg",
+              authorHref: "/författare/all-author",
+              authorSurname: "",
+              authorGivenNames: "",
+              mobileYearLabel: "",
+              authorId: "",
+              authorPopularity: 0,
+              authorBirth: 0,
+              fullTitle: "",
+              authorContribution: "",
+              highlights: []
+            }],
+            hits: 1,
+            suggest: [],
+            failed: false
+          },
+          sortOptions: [{ key: "relevans", label: "Relevans", to: "/all-sort", active: true }],
+          sortReversed: false,
+          imprintYearTargets: [{ year: "1888", to: "/all-year" }],
+          loading: false,
+          pagination: { ...pagination, pageCount: 1 }
+        }),
+        h(LibraryLatestResults, {
+          response: {
+            groups: [{
+              imported: "2026-08-11",
+              label: "11 augusti 2026 (1 verk)",
+              results: [{
+                title: "Röda rummet",
+                titleTooltip: "Röda rummet",
+                titleId: "roda-rummet",
+                year: "1879",
+                surname: "Strindberg",
+                authorTooltip: "Strindberg, August",
+                roleSuffix: "",
+                titleHref: "/författare/latest-work",
+                authorHref: "/författare/latest-author",
+                imported: "2026-08-11"
+              }]
+            }],
+            hits: 1,
+            distinctHits: 1,
+            suggest: [],
+            failed: false
+          },
+          sortOptions: [{ key: "nytillkommet", label: "Nytt", to: "/latest-sort", active: true }],
+          sortReversed: false,
+          hide1800: false,
+          imprintYearTargets: [{ year: "1879", to: "/latest-year" }],
+          loading: false,
+          pagination: { ...pagination, pageCount: 1 }
+        })
+      ])
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    expect(registeredLinks).toEqual([
+      "/pagination-previous",
+      "/pagination-current",
+      "/pagination-numeric",
+      "/pagination-next",
+      "/tab-active",
+      "/tab-disabled",
+      "/all-sort",
+      "/f%C3%B6rfattare/all-work",
+      "/all-year",
+      "/f%C3%B6rfattare/all-author",
+      "/latest-sort",
+      "/f%C3%B6rfattare/latest-work",
+      "/latest-year",
+      "/f%C3%B6rfattare/latest-author"
+    ])
+    expect(scheduledPrefetches).toEqual([])
     app.unmount()
     target.remove()
   })

@@ -12,7 +12,8 @@ defineProps<{
         <NuxtLink
             v-slot="{ href, navigate }"
             custom
-            replace
+            no-prefetch
+            :replace="tab.replace"
             :to="tab.to"
             ><a
                 :data-library-tab="tab.mode"

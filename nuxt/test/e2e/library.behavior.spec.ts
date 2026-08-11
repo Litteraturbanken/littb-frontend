@@ -1145,6 +1145,71 @@ test("nedladdning selects visible source works and posts the exact chosen export
   })
 })
 
+test("source selections survive pagination and an empty refresh", async ({ page }) => {
+  await page.goto(
+    "/bibliotek?avancerat=1&visa=works&nedladdning=1&filter=source-pagination",
+    { waitUntil: "networkidle" }
+  )
+
+  await page.getByRole("checkbox", { name: "Välj Doktor Glas", exact: true }).check()
+  await expect(page.locator("[data-library-selected-work]")).toHaveCount(1)
+
+  await page.locator("[data-library-pagination-next]").click()
+  await expect(page).toHaveURL(/(?:\?|&)sida=2(?:&|$)/)
+  await expect(page.getByRole("checkbox", {
+    name: "Välj Gösta Berlings saga",
+    exact: true
+  })).toBeVisible()
+  await expect(page.locator("[data-library-selected-work]")).toHaveCount(1)
+  await expect(page.locator("[data-library-selected-work]")).toContainText("Doktor Glas")
+
+  await page.getByRole("checkbox", {
+    name: "Välj Gösta Berlings saga",
+    exact: true
+  }).check()
+  await expect(page.locator("[data-library-selected-work]")).toHaveCount(2)
+
+  await page.locator("[data-library-filter]").fill("inga")
+  await expect(page).toHaveURL(/(?:\?|&)filter=inga(?:&|$)/)
+  await expect(page.locator("[data-library-empty]")).toHaveText("Inga träffar.")
+  await expect(page.locator("[data-library-selected-work]")).toHaveCount(2)
+})
+
+test("the active Works tab exits source mode with preserved state and push history", async ({
+  page
+}) => {
+  const sourcePath = "/bibliotek?avancerat=1&visa=works&sort=titlar&nedladdning=1&sida=2&hide1800&title=DoktorGlas&filter=source-pagination&k%C3%B6n=female&keep=first&keep=second"
+  await page.goto(sourcePath, { waitUntil: "networkidle" })
+
+  await page.locator("[data-library-source-checkbox]:not(:disabled)").first().check()
+  await expect(page.locator("[data-library-selected-work]")).toHaveCount(1)
+
+  const worksTab = page.locator('[data-library-tab="works"]')
+  await expect(worksTab).toHaveAttribute("aria-current", "page")
+  const target = new URL(await worksTab.getAttribute("href") ?? "", "http://localhost")
+  expect(target.pathname).toBe("/bibliotek")
+  expect(target.searchParams.get("visa")).toBe("works")
+  expect(target.searchParams.get("sort")).toBe("popularitet")
+  expect(target.searchParams.get("nedladdning")).toBeNull()
+  expect(target.searchParams.get("sida")).toBeNull()
+  expect(target.searchParams.get("hide1800")).toBeNull()
+  expect(target.searchParams.get("title")).toBeNull()
+  expect(target.searchParams.get("avancerat")).toBe("1")
+  expect(target.searchParams.get("filter")).toBe("source-pagination")
+  expect(target.searchParams.get("kön")).toBe("female")
+  expect(target.searchParams.getAll("keep")).toEqual(["first", "second"])
+
+  await worksTab.click()
+  await expect(page).not.toHaveURL(/(?:\?|&)nedladdning=1(?:&|$)/)
+  await expect(page.locator("[data-library-source-checkbox]")).toHaveCount(0)
+  await expect(page.locator("[data-library-work-actions]").first()).toBeHidden()
+
+  await page.goBack()
+  await expect(page).toHaveURL(sourcePath)
+  await expect(page.locator("[data-library-source-checkbox]")).not.toHaveCount(0)
+  await expect(page.locator("[data-library-selected-work]")).toHaveCount(0)
+})
+
 test("nedladdning rejects delimiter-bearing source tokens before native submission", async ({
   page,
   request
