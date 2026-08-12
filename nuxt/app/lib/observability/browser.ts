@@ -224,6 +224,13 @@ function byteLength(value: string): number {
   return new TextEncoder().encode(value).byteLength
 }
 
+function remainingPageExitBytes(...inflightBodyBytes: number[]): number {
+  return Math.max(
+    0,
+    MAX_PAGE_EXIT_BYTES - inflightBodyBytes.reduce((total, bytes) => total + bytes, 0)
+  )
+}
+
 function eventIdentity(
   eventName: BrowserEventName,
   type: string,
@@ -377,10 +384,12 @@ export class BrowserObservabilityReporter {
     const activeFlush = this.#flushing
     const activeBatchBytes = activeFlush ? this.#activeBatchBytes : 0
     const exitDelivery = await this.#deliverOnExit(
-      MAX_PAGE_EXIT_BYTES - activeBatchBytes
+      remainingPageExitBytes(activeBatchBytes)
     )
     if (activeFlush) {
       await activeFlush
+      // The keepalive quota covers bodies still in flight. The awaited active
+      // request is done here, so only exit-drain bodies remain reserved.
       if (this.#activeBatchFailed && this.#activeBatch) {
         const activeBatch = this.#activeBatch
         this.#activeBatch = undefined
@@ -388,7 +397,7 @@ export class BrowserObservabilityReporter {
         this.#activeBatchFailed = false
         const activeDelivery = await this.#deliverExitBatch(
           activeBatch,
-          MAX_PAGE_EXIT_BYTES - activeBatchBytes - exitDelivery.sentBytes
+          remainingPageExitBytes(exitDelivery.sentBytes)
         )
         if (!activeDelivery.delivered) {
           this.#requeueFront(activeBatch)
@@ -396,15 +405,12 @@ export class BrowserObservabilityReporter {
         }
         else if (!exitDelivery.blocked) {
           await this.#deliverOnExit(
-            MAX_PAGE_EXIT_BYTES
-            - activeBatchBytes
-            - exitDelivery.sentBytes
-            - activeDelivery.bytes
+            remainingPageExitBytes(exitDelivery.sentBytes, activeDelivery.bytes)
           )
         }
       } else if (!exitDelivery.blocked) {
         await this.#deliverOnExit(
-          MAX_PAGE_EXIT_BYTES - activeBatchBytes - exitDelivery.sentBytes
+          remainingPageExitBytes(exitDelivery.sentBytes)
         )
       }
     }
