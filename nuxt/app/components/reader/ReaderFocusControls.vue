@@ -31,6 +31,20 @@ const partsOpen = ref(false)
 watch(() => props.mediaType, () => {
   settingsOpen.value = false
 })
+
+function navigatePage(event: MouseEvent, href: string): void {
+  if (
+    event.defaultPrevented
+    || event.button !== 0
+    || event.altKey
+    || event.ctrlKey
+    || event.metaKey
+    || event.shiftKey
+  ) return
+  event.preventDefault()
+  event.stopPropagation()
+  emit("navigate", href)
+}
 </script>
 
 <template>
@@ -50,14 +64,14 @@ watch(() => props.mediaType, () => {
         class="leftCover"
         :href="previousHref"
         aria-label="Föregående sida"
-        @click.prevent="emit('navigate', previousHref)"
+        @click="navigatePage($event, previousHref)"
       />
       <a
         v-if="nextHref"
         class="rightCover"
         :href="nextHref"
         aria-label="Nästa sida"
-        @click.prevent="emit('navigate', nextHref)"
+        @click="navigatePage($event, nextHref)"
       />
 
       <div v-show="barVisible" id="reader-focus-toolbar" class="bottomBar" role="toolbar" aria-label="Läsfokus">
@@ -78,7 +92,8 @@ watch(() => props.mediaType, () => {
               <button
                 type="button"
                 class="night_switch"
-                :aria-label="nightMode ? 'Ljust läge' : 'Nattläge'"
+                aria-label="Nattläge"
+                :aria-pressed="nightMode"
                 @click="emit('toggleNight')"
               ><span class="icon" :class="nightMode ? 'off' : 'on'" aria-hidden="true" /><span class="label">{{ nightMode ? "Ljust läge" : "Nattläge" }}</span></button>
             </template>
@@ -99,10 +114,10 @@ watch(() => props.mediaType, () => {
           </span>
         </span>
 
-        <a v-if="previousHref" class="nav left" :href="previousHref" aria-label="Föregående sida" @click.prevent="emit('navigate', previousHref)"><i class="fa fa-angle-left" aria-hidden="true" /></a>
+        <a v-if="previousHref" class="nav left" :href="previousHref" aria-label="Föregående sida" @click="navigatePage($event, previousHref)"><i class="fa fa-angle-left" aria-hidden="true" /></a>
         <span v-else class="nav left disabled" aria-hidden="true"><i class="fa fa-angle-left" /></span>{{ " " }}
 
-        <a v-if="nextHref" class="nav right" :href="nextHref" aria-label="Nästa sida" @click.prevent="emit('navigate', nextHref)"><i class="fa fa-angle-right" aria-hidden="true" /></a>
+        <a v-if="nextHref" class="nav right" :href="nextHref" aria-label="Nästa sida" @click="navigatePage($event, nextHref)"><i class="fa fa-angle-right" aria-hidden="true" /></a>
         <span v-else class="nav right disabled" aria-hidden="true"><i class="fa fa-angle-right" /></span>{{ " " }}
 
         <span class="focus-control-menu focus-parts-menu">

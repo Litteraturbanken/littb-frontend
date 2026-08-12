@@ -215,6 +215,61 @@ test("editor Reader restores focus mode through raw-preserving router history", 
     .toBe(initial)
 })
 
+test("editor Läsfokus page anchors preserve modified clicks and normal history", async ({
+  page
+}) => {
+  const rawQuery = "?bare&repeat=%2f&repeat=%2F&fokus#focus"
+  const initial = `/editor/lb-editor-doktor/ix/1/f${rawQuery}`
+  await page.goto(initial, { waitUntil: "networkidle" })
+  const previousHref = `/editor/lb-editor-doktor/ix/0/f${rawQuery}`
+  const nextHref = `/editor/lb-editor-doktor/ix/2/f${rawQuery}`
+  const anchors = [
+    page.locator(".reader-focus-layer > .leftCover"),
+    page.locator(".reader-focus-layer > .rightCover"),
+    page.locator(".reader-focus-layer .bottomBar > .nav.left"),
+    page.locator(".reader-focus-layer .bottomBar > .nav.right")
+  ]
+  for (const [index, anchor] of anchors.entries()) {
+    await expect(anchor).toHaveAttribute("href", index % 2 === 0 ? previousHref : nextHref)
+  }
+  const initialUrl = page.url()
+  const historyLength = await page.evaluate(() => history.length)
+
+  for (const anchor of anchors) {
+    for (const init of [
+      { ctrlKey: true },
+      { metaKey: true },
+      { shiftKey: true },
+      { button: 1 }
+    ]) {
+      const nativeAllowed = await anchor.evaluate((link, eventInit) => {
+        let preventedByComponent: boolean | null = null
+        link.addEventListener("click", event => {
+          preventedByComponent = event.defaultPrevented
+          event.preventDefault()
+        }, { once: true })
+        link.dispatchEvent(new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          ...eventInit
+        }))
+        return preventedByComponent === false
+      }, init)
+      expect(nativeAllowed).toBe(true)
+      expect(page.url()).toBe(initialUrl)
+    }
+  }
+  expect(await page.evaluate(() => history.length)).toBe(historyLength)
+
+  await anchors[3]!.click()
+  await expect(page).toHaveURL(nextHref)
+  expect(await page.evaluate(() => history.length)).toBe(historyLength + 1)
+  await page.locator(".reader-focus-layer > .leftCover").click()
+  await expect(page).toHaveURL(initial)
+  expect(await page.evaluate(() => history.length)).toBe(historyLength + 2)
+})
+
 test("editor Reader work search restores reloadable hit state, marquee, and history", async ({
   page,
   request

@@ -2130,6 +2130,69 @@ test("Läsfokus exposes a keyboard-operable toolbar visibility control", async (
   await expect(page).toHaveURL(`${readerPath}?fokus`)
 })
 
+test("Läsfokus page anchors preserve native modified clicks and normal history", async ({
+  page
+}) => {
+  const rawQuery = "?bare&repeat=%2f&repeat=%2F&fokus#focus"
+  await page.goto(`${readerPath}${rawQuery}`, { waitUntil: "networkidle" })
+  const previousHref = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/" +
+    `sida/-3/etext${rawQuery}`
+  const nextHref = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/" +
+    `sida/-1/etext${rawQuery}`
+  const anchors = [
+    page.locator(".reader-focus-layer > .leftCover"),
+    page.locator(".reader-focus-layer > .rightCover"),
+    page.locator(".reader-focus-layer .bottomBar > .nav.left"),
+    page.locator(".reader-focus-layer .bottomBar > .nav.right")
+  ]
+  for (const [index, anchor] of anchors.entries()) {
+    await expect(anchor).toHaveAttribute("href", index % 2 === 0 ? previousHref : nextHref)
+  }
+  const initialUrl = page.url()
+  const historyLength = await page.evaluate(() => history.length)
+
+  for (const anchor of anchors) {
+    for (const init of [
+      { ctrlKey: true },
+      { metaKey: true },
+      { shiftKey: true },
+      { button: 1 }
+    ]) {
+      const nativeAllowed = await anchor.evaluate((link, eventInit) => {
+        let preventedByComponent: boolean | null = null
+        link.addEventListener("click", event => {
+          preventedByComponent = event.defaultPrevented
+          event.preventDefault()
+        }, { once: true })
+        link.dispatchEvent(new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          ...eventInit
+        }))
+        return preventedByComponent === false
+      }, init)
+      expect(nativeAllowed).toBe(true)
+      expect(page.url()).toBe(initialUrl)
+    }
+  }
+  expect(await page.evaluate(() => history.length)).toBe(historyLength)
+
+  await page.getByRole("button", { name: "Textinställningar" }).click()
+  const night = page.getByRole("button", { name: "Nattläge" })
+  await expect(night).toHaveAttribute("aria-pressed", "false")
+  await night.click()
+  await expect(night).toHaveAttribute("aria-pressed", "true")
+  await expect(night).toContainText("Ljust läge")
+
+  await anchors[3]!.click()
+  await expect(page).toHaveURL(nextHref)
+  expect(await page.evaluate(() => history.length)).toBe(historyLength + 1)
+  await page.locator(".reader-focus-layer > .leftCover").click()
+  await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
+  expect(await page.evaluate(() => history.length)).toBe(historyLength + 2)
+})
+
 test("adjacent Reader links preserve modified and non-primary browser clicks", async ({ page }) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
   const initialUrl = page.url()
