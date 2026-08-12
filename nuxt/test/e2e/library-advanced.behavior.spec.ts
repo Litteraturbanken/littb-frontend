@@ -137,6 +137,24 @@ test("advanced disclosure and controls use push history and restore from the URL
   }
 })
 
+test("keyboard focus on the transparent gender select is visible on its proxy", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+
+  await page.locator("[data-library-advanced]").focus()
+  await page.keyboard.press("Tab")
+
+  const gender = page.locator("[data-library-gender]")
+  await expect(gender).toBeFocused()
+  const visual = page.locator("[data-library-gender-visual]")
+  await expect(visual).toHaveCSS("outline-style", "solid")
+  await expect(visual).toHaveCSS("outline-width", "2px")
+  await expect(visual).toHaveCSS("outline-offset", "2px")
+  await expect(visual).toHaveCSS("box-shadow", "rgb(51, 51, 51) 0px 0px 0px 4px")
+})
+
 test("multi facets and chronology compose exact safe predicates and commit once per change", async ({
   page,
   request
@@ -432,6 +450,26 @@ test("an invalid chronology draft cannot erase the committed range through anoth
       keep: params.get("keep")
     }
   }).toEqual({ gender: "female", interval: "1900,1910", keep: "ja" })
+})
+
+test("chronology text inputs preserve empty and partial drafts until commit", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?avancerat=1&intervall=1900,1910", {
+    waitUntil: "networkidle"
+  })
+  await waitForHydration(page)
+
+  const from = page.getByLabel("Från tryckår", { exact: true })
+  await from.fill("")
+  await expect(from).toHaveValue("")
+  await from.pressSequentially("19")
+  await expect(from).toHaveValue("19")
+  expect(new URL(page.url()).searchParams.get("intervall")).toBe("1900,1910")
+
+  await from.blur()
+  await expect(from).toHaveValue("1900")
+  expect(new URL(page.url()).searchParams.get("intervall")).toBe("1900,1910")
 })
 
 test("category, publisher, about-author, and narrowing collections restore through history", async ({

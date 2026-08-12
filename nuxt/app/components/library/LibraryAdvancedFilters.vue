@@ -67,6 +67,14 @@ function emitLanguages(value: readonly string[]): void {
 function draftValues(endpoint: ChronologyEndpoint, value: string): readonly [string, string] | null {
     const chronology = props.model.chronology
     if (!chronology) return null
+    return endpoint === "from"
+        ? [value, chronology.to]
+        : [chronology.from, value]
+}
+
+function rangeValues(endpoint: ChronologyEndpoint, value: string): readonly [string, string] | null {
+    const chronology = props.model.chronology
+    if (!chronology) return null
     const numeric = Number(value)
     if (endpoint === "from") {
         const to = Number(chronology.to)
@@ -83,11 +91,11 @@ function emitChronologyDraft(endpoint: ChronologyEndpoint, value: string): void 
 }
 
 function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void {
-    const draft = draftValues(endpoint, value)
-    if (!draft) return
+    const range = rangeValues(endpoint, value)
+    if (!range) return
     emit("change", {
         field: "chronologyRange",
-        value: [Number(draft[0]), Number(draft[1])]
+        value: [Number(range[0]), Number(range[1])]
     })
 }
 </script>
@@ -355,6 +363,27 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
     margin: 0;
     cursor: pointer;
     opacity: 0;
+}
+
+[data-library-advanced-panel]
+    .library-gender-control
+    select[data-library-gender]:focus-visible
+    + .selection
+    [data-library-gender-visual] {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px #333;
+}
+
+@media (forced-colors: active) {
+    [data-library-advanced-panel]
+        .library-gender-control
+        select[data-library-gender]:focus-visible
+        + .selection
+        [data-library-gender-visual] {
+        outline-color: Highlight;
+        box-shadow: none;
+    }
 }
 
 .library-gender-control .selection {

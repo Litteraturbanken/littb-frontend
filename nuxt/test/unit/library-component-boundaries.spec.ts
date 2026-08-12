@@ -303,6 +303,33 @@ describe("Library component ownership", () => {
     expect(changes).toContainEqual({ field: "media", value: ["mediatype:etext"] })
     expect(changes).toContainEqual({ field: "languages", value: ["language:swe"] })
 
+    const chronologyFrom = advancedTarget.querySelector<HTMLInputElement>(
+      '[aria-label="Från tryckår"]'
+    )!
+    for (const value of ["", "19", "inte ett år"]) {
+      chronologyFrom.value = value
+      chronologyFrom.dispatchEvent(new window.Event("input"))
+      await nextTick()
+      expect(changes.at(-1)).toEqual({
+        field: "chronologyDraft",
+        from: value,
+        to: "2001"
+      })
+    }
+    const chronologyTo = advancedTarget.querySelector<HTMLInputElement>(
+      '[aria-label="Till tryckår"]'
+    )!
+    for (const value of ["", "20", "okänt år"]) {
+      chronologyTo.value = value
+      chronologyTo.dispatchEvent(new window.Event("input"))
+      await nextTick()
+      expect(changes.at(-1)).toEqual({
+        field: "chronologyDraft",
+        from: "not-a-year",
+        to: value
+      })
+    }
+
     const disabledNarrowing = [...advancedTarget.querySelectorAll<HTMLElement>(
       "[data-library-narrowing] .multiselect__option"
     )].find(option => option.textContent?.trim() === "Romaner")
