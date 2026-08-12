@@ -172,13 +172,44 @@ test("SSR falls back from sanitized-empty Drama prose while retaining its varian
     .toBe("Ordinary fallback editor")
   expect(compactText(intro?.querySelector(".source_content")?.textContent))
     .toBe("Ordinary fallback source")
+  expect(intro?.querySelectorAll(".source_content")).toHaveLength(1)
   expect(intro?.querySelector('.drama_subtitle a[href="/dramawebben"]')).not.toBeNull()
   expect(document.querySelector(".portrait_container img")?.getAttribute("src"))
     .toBe("/red/forfattare/StrindbergA/StrindbergA_dw_large.jpeg")
   expect(compactText(document.querySelector("figcaption")?.textContent))
     .toBe("Drama portrait remains variant-owned.")
   expect(html).not.toMatch(/Drama removed (?:introduction|editor|source)/u)
+  expect(html).not.toMatch(/Unsafe fallback|Removed ordinary source/u)
   expect(await profileRequests(request)).toEqual(["/private-v2/authors/SanitizedFallback"])
+})
+
+test("SSR omits strict unsafe profile links while preserving a safe sibling", async ({
+  request
+}) => {
+  const response = await request.get("/författare/SanitizedFallback")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+
+  expect(document.querySelector('a[href="/safe?tab=1#part"]')?.textContent)
+    .toBe("Safe fallback link")
+  expect(html).not.toMatch(/Unsafe fallback/u)
+  expect(await profileRequests(request)).toEqual(["/private-v2/authors/SanitizedFallback"])
+})
+
+test("SSR hides ordinary navigation for a sanitized-empty introduction", async ({ request }) => {
+  const response = await request.get("/författare/SanitizedNavigation/dramawebben")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+  const navigation = document.querySelector('nav[aria-label="Författarsidor"]')
+
+  expect(document.querySelector(".introtext")?.textContent)
+    .toContain("Meaningful Drama introduction.")
+  expect([...navigation?.querySelectorAll("a") ?? []].map(link => link.textContent?.trim()))
+    .not.toContain("Introduktion")
+  expect(html).not.toContain("Removed ordinary navigation")
+  expect(await profileRequests(request)).toEqual(["/private-v2/authors/SanitizedNavigation"])
 })
 
 for (const [variant, path, intended] of [

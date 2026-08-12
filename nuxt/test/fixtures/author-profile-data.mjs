@@ -274,7 +274,11 @@ export const sanitizedFallbackAuthorProfile = {
     full_name: "Ordinary fallback editor",
     surname: "Editor"
   },
-  source_html: ["<i>Ordinary fallback source</i>"],
+  source_html: [
+    "<script>Removed ordinary source</script>",
+    "<i>Ordinary fallback source</i>",
+    "<div><br></div>"
+  ],
   pseudonyms: [],
   other_names: [],
   portrait: null,
@@ -282,8 +286,16 @@ export const sanitizedFallbackAuthorProfile = {
   audio_url: null,
   map_url: null,
   has_more: false,
-  related_links: [],
-  encyclopedia_links: [],
+  related_links: [
+    { label: "Safe fallback link", url: "/safe?tab=1#part" },
+    { label: "Unsafe fallback link", url: "/safe/%3F/%2e%2e/private" }
+  ],
+  encyclopedia_links: [
+    {
+      label: "Unsafe fallback encyclopedia",
+      url: "https://example.test/safe/%2523/%252e%252e/private"
+    }
+  ],
   dramawebben: {
     introduction_html: "<script>Drama removed introduction</script>",
     introduction_by: {
@@ -296,6 +308,26 @@ export const sanitizedFallbackAuthorProfile = {
       url: "/red/forfattare/StrindbergA/StrindbergA_dw_large.jpeg",
       caption_html: "Drama portrait remains variant-owned."
     }
+  }
+}
+
+/** @satisfies {AuthorProfile} */
+export const sanitizedNavigationAuthorProfile = {
+  ...sanitizedFallbackAuthorProfile,
+  author_id: "SanitizedNavigation",
+  full_name: "Sanerad Navigation",
+  surname: "Navigation",
+  canonical_path: "/författare/SanitizedNavigation",
+  introduction_html: "<script>Removed ordinary navigation</script>",
+  introduction_by: null,
+  source_html: [],
+  related_links: [],
+  encyclopedia_links: [],
+  dramawebben: {
+    introduction_html: "<p>Meaningful Drama introduction.</p>",
+    introduction_by: null,
+    source_html: [],
+    portrait: null
   }
 }
 
@@ -332,6 +364,7 @@ export const authorProfiles = new Map([
   [rfc3986AuthorProfile.author_id, rfc3986AuthorProfile],
   [managedHtmlProbeAuthorProfile.author_id, managedHtmlProbeAuthorProfile],
   [sanitizedFallbackAuthorProfile.author_id, sanitizedFallbackAuthorProfile],
+  [sanitizedNavigationAuthorProfile.author_id, sanitizedNavigationAuthorProfile],
   [unsafeSearchAuthorProfile.author_id, unsafeSearchAuthorProfile],
   [unsafePortraitAuthorProfile.author_id, unsafePortraitAuthorProfile]
 ])

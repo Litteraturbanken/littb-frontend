@@ -182,6 +182,7 @@ test("sanitized-empty Drama prose hydrates as one ordinary fallback bundle", asy
   await expect(intro).toContainText("Ordinary fallback introduction.")
   await expect(intro.locator(".introauthor em")).toHaveText("Ordinary fallback editor")
   await expect(intro.locator(".source_content")).toHaveText("Ordinary fallback source")
+  await expect(intro.locator(".source_content")).toHaveCount(1)
   await expect(intro.getByRole("link", { name: "Dramawebben" })).toHaveAttribute(
     "href",
     "/dramawebben"
@@ -190,7 +191,31 @@ test("sanitized-empty Drama prose hydrates as one ordinary fallback bundle", asy
     .toHaveAttribute("src", "/red/forfattare/StrindbergA/StrindbergA_dw_large.jpeg")
   await expect(page.locator("figcaption")).toHaveText("Drama portrait remains variant-owned.")
   expect(await page.locator("body").innerText()).not.toMatch(/Drama removed (?:editor|source)/u)
+  expect(await page.locator("body").innerText()).not.toMatch(/Unsafe fallback|Removed ordinary source/u)
   expect(await profileRequests(request)).toEqual(["/private-v2/authors/SanitizedFallback"])
+  expect(problems).toEqual([])
+})
+
+test("strict profile links hydrate with only their safe sibling", async ({ page }) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/SanitizedFallback", { waitUntil: "networkidle" })
+
+  await expect(page.getByRole("link", { name: "Safe fallback link" }))
+    .toHaveAttribute("href", "/safe?tab=1#part")
+  await expect(page.getByText("Unsafe fallback", { exact: false })).toHaveCount(0)
+  expect(problems).toEqual([])
+})
+
+test("sanitized-empty ordinary introduction hides its navigation after hydration", async ({
+  page
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/SanitizedNavigation/dramawebben", { waitUntil: "networkidle" })
+
+  await expect(page.locator(".introtext")).toContainText("Meaningful Drama introduction.")
+  await expect(page.getByRole("navigation", { name: "Författarsidor" })
+    .getByRole("link", { name: "Introduktion" })).toHaveCount(0)
+  expect(await page.locator("body").innerText()).not.toContain("Removed ordinary navigation")
   expect(problems).toEqual([])
 })
 

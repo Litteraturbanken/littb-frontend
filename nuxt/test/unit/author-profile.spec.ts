@@ -378,6 +378,44 @@ describe("safe author profile view model", () => {
     expect(view.sourceHtml).toEqual(["<cite>Drama source</cite>"])
   })
 
+  test.each([
+    ["removed script", "<script>Ordinary script</script>", false],
+    ["removed iframe", "<iframe>Ordinary frame</iframe>", false],
+    ["comment", "<!-- Ordinary comment -->", false],
+    ["empty wrapper", "<div><span></span><br></div>", false],
+    ["ASCII whitespace", "<p> \t\n\r </p>", false],
+    ["removed image", '<img src="/red/forfattare/StrindbergA/portrait.jpeg">', false],
+    ["safe text", "<p>Ordinary text</p>", true],
+    ["escaped entity text", "<p>&amp;</p>", true],
+    ["non-breaking-space text", "<p>&nbsp;</p>", true]
+  ])("derives ordinary navigation from sanitized meaningful %s", (
+    _label,
+    introductionHtml,
+    expected
+  ) => {
+    const profile = maliciousProfile()
+    profile.introduction_html = introductionHtml
+
+    expect(createAuthorProfileView(profile, "ordinary").hasOrdinaryIntroduction).toBe(expected)
+  })
+
+  test("omits sanitized-empty sources while preserving meaningful order", () => {
+    const profile = maliciousProfile()
+    profile.source_html = [
+      "<script>Removed source</script>",
+      "<i>First source</i>",
+      "<div><br></div>",
+      "<p>&nbsp;</p>",
+      "<cite>Last source</cite>"
+    ]
+
+    expect(createAuthorProfileView(profile, "ordinary").sourceHtml).toEqual([
+      "<i>First source</i>",
+      "<p>&#160;</p>",
+      "<cite>Last source</cite>"
+    ])
+  })
+
   test("does not borrow the ordinary byline when a Dramawebben introduction has none", () => {
     const profile = maliciousProfile()
     if (!profile.dramawebben) throw new Error("Rich fixture must have a Dramawebben profile")
@@ -465,9 +503,11 @@ describe("safe author profile view model", () => {
     const profile = maliciousProfile()
     const safeLinks = [
       { label: "Relativ", url: "/verk/legacy-only?tab=1#utgava" },
+      { label: "Relativ suffix", url: "/verk/safe?next=../chapter#part/../note" },
+      { label: "Kodade avgränsare", url: "/verk/%3Fdel/%23avsnitt?tab=1#utgava" },
       { label: "Intern", url: "/författare/StrindbergA/presentation" },
       { label: "HTTP", url: "http://example.test/author" },
-      { label: "HTTPS", url: "https://example.test/author" }
+      { label: "HTTPS", url: "https://example.test/author?tab=1#part" }
     ]
     const unsafeLinks = [
       { label: "JavaScript", url: "javascript:alert(1)" },
@@ -475,6 +515,17 @@ describe("safe author profile view model", () => {
       { label: "Protokollrelativ", url: "//evil.example/author" },
       { label: "Kontrolltecken", url: "https://example.test/\u0000author" },
       { label: "Kodat kontrolltecken", url: "https://example.test/%00author" },
+      { label: "Kodat query-kontrolltecken", url: "/safe?next=%250Aevil" },
+      { label: "Kodat fragment-bakstreck", url: "/safe#part%255cevil" },
+      { label: "Kodad traversal", url: "/safe/%2e%2e/author" },
+      { label: "Dubbelkodad traversal", url: "/safe/%252e%252e/author" },
+      { label: "Kodad protokollrelativ", url: "/%2f%2fevil.example/author" },
+      { label: "Dubbelkodad protokollrelativ", url: "/%252f%252fevil.example/author" },
+      { label: "Traversal efter frågetecken", url: "/safe/%3F/%2e%2e/author" },
+      {
+        label: "Dubbelkodad traversal efter fragment",
+        url: "https://example.test/safe/%2523/%252e%252e/author"
+      },
       { label: "Felaktig URL", url: "https://[::1" }
     ]
     profile.related_links = [...safeLinks, ...unsafeLinks]

@@ -282,7 +282,16 @@ function hasRenderableAuthorContent(value: SanitizedHtml<"author-profile">): boo
 function profileLinks(links: AuthorProfile["related_links"]): Array<{ label: string, url: string }> {
   return links.flatMap(link => {
     const url = safeNativeHref(link.url)
-    return url === null ? [] : [{ label: link.label, url }]
+    if (url === null) return []
+    const { rawPath, rawQuery, rawFragment } = rawUrlParts(url)
+    const decodedPath = repeatedlyDecode(rawPath)
+    const decodedQuery = repeatedlyDecode(rawQuery)
+    const decodedFragment = repeatedlyDecode(rawFragment)
+    if (decodedPath === null || decodedQuery === null || decodedFragment === null) return []
+    if ([decodedPath, decodedQuery, decodedFragment].some(hasUnsafeHrefCodeUnits)) return []
+    return decodedPath.startsWith("//") || hasTraversal(decodedPath)
+      ? []
+      : [{ label: link.label, url }]
   })
 }
 
@@ -339,6 +348,9 @@ export function createAuthorProfileView(
   const sources = useDramaIntroduction
     ? dramawebben?.source_html ?? []
     : profile.source_html
+  const sourceHtml = sources
+    .map(source => sanitizeAuthorHtml(source))
+    .filter(hasRenderableAuthorContent)
   const selectedPortrait = variant === "dramawebben"
     ? dramawebben?.portrait ?? null
     : profile.portrait
@@ -350,7 +362,7 @@ export function createAuthorProfileView(
     lifespan: formatAuthorYears(profile.birth_year, profile.death_year),
     introductionHtml,
     introductionBy: introductionBy?.full_name ?? "",
-    sourceHtml: sources.map(source => sanitizeAuthorHtml(source)),
+    sourceHtml,
     pseudonymNames: profile.pseudonyms.map(pseudonym => pseudonym.full_name),
     otherNames: [...profile.other_names],
     portrait: selectedPortrait && portraitUrl
@@ -365,7 +377,7 @@ export function createAuthorProfileView(
     hasMore: profile.has_more === true,
     relatedLinks: profileLinks(profile.related_links),
     encyclopediaLinks: profileLinks(profile.encyclopedia_links),
-    hasOrdinaryIntroduction: Boolean(profile.introduction_html),
+    hasOrdinaryIntroduction: hasRenderableAuthorContent(ordinaryIntroductionHtml),
     hasDramawebben: Boolean(dramawebben)
   }
 }
