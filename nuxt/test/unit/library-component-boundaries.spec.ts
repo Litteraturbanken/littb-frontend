@@ -578,6 +578,28 @@ describe("Library component ownership", () => {
     }
   })
 
+  test("all result loading branches expose one named status with a decorative spinner", async () => {
+    const componentSources = await Promise.all([
+      source("app/components/library/LibraryAllResults.vue"),
+      source("app/components/library/LibraryLatestResults.vue"),
+      source("app/components/library/LibraryAuthorResults.vue"),
+      source("app/components/library/LibraryBrowseResults.vue"),
+      source("app/components/library/LibraryDownloadResults.vue"),
+      source("app/components/library/LibrarySourceDownloadWorkspace.vue")
+    ])
+
+    for (const componentSource of componentSources) {
+      const loadingBranch = componentSource.match(
+        /<div\s+v-if="loading"[\s\S]*?<\/div>/
+      )?.[0]
+      expect(loadingBranch).toContain("data-library-loading")
+      expect(loadingBranch).toContain('role="status"')
+      expect(loadingBranch).toContain('<span class="sr-only">Laddar resultat</span>')
+      expect(loadingBranch).toContain('aria-hidden="true"')
+      expect(loadingBranch).toContain("fa-spinner")
+    }
+  })
+
   test("all result sort owners expose their active direction", async () => {
     const owners = [
       ["all", await source("app/components/library/LibraryAllResults.vue")],
@@ -807,7 +829,11 @@ describe("Library component ownership", () => {
     loading.value = true
     await nextTick()
     expect(target.querySelector("[data-library-result]")).toBeNull()
-    expect(target.querySelector(".spinner.fa-spinner")).not.toBeNull()
+    expect(target.querySelector("[data-library-loading]")?.getAttribute("role")).toBe("status")
+    expect(target.querySelector("[data-library-loading] .sr-only")?.textContent)
+      .toBe("Laddar resultat")
+    expect(target.querySelector("[data-library-loading] .spinner")?.getAttribute("aria-hidden"))
+      .toBe("true")
     expect(selectedPages).toEqual([])
     app.unmount()
     target.remove()
@@ -887,7 +913,11 @@ describe("Library component ownership", () => {
     app.mount(target)
     await nextTick()
 
-    expect(target.querySelector("[data-library-loading]")).not.toBeNull()
+    expect(target.querySelector("[data-library-loading]")?.getAttribute("role")).toBe("status")
+    expect(target.querySelector("[data-library-loading] .sr-only")?.textContent)
+      .toBe("Laddar resultat")
+    expect(target.querySelector("[data-library-loading] .spinner")?.getAttribute("aria-hidden"))
+      .toBe("true")
     expect(target.querySelector("[data-library-latest-header]")?.textContent?.trim())
       .toBe("11 augusti 2026 (1 verk)")
     expect(target.querySelectorAll("[data-library-latest-row]")).toHaveLength(1)
@@ -1625,7 +1655,11 @@ describe("Library component ownership", () => {
 
     loading.value = true
     await nextTick()
-    expect(target.querySelector("[data-library-loading]")).not.toBeNull()
+    expect(target.querySelector("[data-library-loading]")?.getAttribute("role")).toBe("status")
+    expect(target.querySelector("[data-library-loading] .sr-only")?.textContent)
+      .toBe("Laddar resultat")
+    expect(target.querySelector("[data-library-loading] .spinner")?.getAttribute("aria-hidden"))
+      .toBe("true")
     response.value = { ...response.value, data: [], hits: 0 }
     await nextTick()
     expect(target.querySelector("[data-library-empty]")?.textContent?.trim()).toBe("Inga träffar.")

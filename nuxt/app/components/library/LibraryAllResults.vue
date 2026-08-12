@@ -75,9 +75,12 @@ function imprintYearTo(year: string): RouteLocationRaw {
         </div>
         <div
             v-if="loading"
+            data-library-loading
+            role="status"
             class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0"
         >
-            <i class="spinner fa fa-spinner fa-pulse" />
+            <span class="sr-only">Laddar resultat</span>
+            <i aria-hidden="true" class="spinner fa fa-spinner fa-pulse" />
         </div>
         <div v-else>
             <div v-if="response.failed" data-library-error role="alert">Ett fel uppstod.</div>
