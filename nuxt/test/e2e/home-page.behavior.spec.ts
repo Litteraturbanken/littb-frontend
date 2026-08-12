@@ -72,6 +72,58 @@ test("hydrates the SSR Home payload without refetching its editorial fragment", 
   expect(problems).toEqual([])
 })
 
+test("announces client route titles once without affecting page layout", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto("/", { waitUntil: "networkidle" })
+
+  const announcer = page.locator(".nuxt-route-announcer")
+  const liveRegion = announcer.locator('[role="status"][aria-live="polite"]')
+  await expect(announcer).toHaveCount(1)
+  await expect(liveRegion).toHaveCount(1)
+  await expect(page.locator('[role="status"][aria-live="polite"]')).toHaveCount(1)
+  await expect(liveRegion).toHaveAttribute("aria-atomic", "false")
+  await expect(liveRegion).toHaveText("Litteraturbanken | Svenska klassiker som e-bok och epub")
+  expect(await announcer.evaluate(element => {
+    const bounds = element.getBoundingClientRect()
+    return {
+      height: bounds.height,
+      position: getComputedStyle(element).position,
+      width: bounds.width
+    }
+  })).toEqual({ height: 0, position: "absolute", width: 0 })
+  expect(await liveRegion.evaluate(element => {
+    const style = getComputedStyle(element)
+    return {
+      clipPath: style.clipPath,
+      height: style.height,
+      overflow: style.overflow,
+      position: style.position,
+      width: style.width
+    }
+  })).toEqual({
+    clipPath: "inset(50%)",
+    height: "1px",
+    overflow: "hidden",
+    position: "absolute",
+    width: "1px"
+  })
+
+  await page.locator('.home-editorial a[href="/om/ide"]').click()
+  await expect(page).toHaveURL("/om/ide")
+  await expect(page).toHaveTitle("Om LB | Litteraturbanken")
+  await expect(liveRegion).toHaveText("Om LB | Litteraturbanken")
+  await expect(page.locator(".nuxt-route-announcer")).toHaveCount(1)
+  await expect(page.locator('[role="status"][aria-live="polite"]')).toHaveCount(1)
+
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL("/")
+  await expect(page).toHaveTitle("Litteraturbanken | Svenska klassiker som e-bok och epub")
+  await expect(liveRegion).toHaveText("Litteraturbanken | Svenska klassiker som e-bok och epub")
+  await expect(page.locator(".nuxt-route-announcer")).toHaveCount(1)
+  await expect(page.locator('[role="status"][aria-live="polite"]')).toHaveCount(1)
+  expect(problems).toEqual([])
+})
+
 test("a public /red failure during client navigation leaves the normal empty Home shell", async ({ page, request }) => {
   const problems = captureBrowserProblems(page)
   const missing = await page.goto("/definitely-not-a-route", { waitUntil: "networkidle" })

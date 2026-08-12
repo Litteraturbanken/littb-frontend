@@ -25,6 +25,7 @@ test("Home renders the exact legacy shell and parsed editorial content during SS
   expect(html).toContain(`name="description" content="${description}"`)
   expect(html).toMatch(/<body[^>]*class="focus page-start ready"/)
   expect(html).toContain("<h1>Litteraturbanken</h1>")
+  expect(html).not.toContain("nuxt-route-announcer")
   expect(html).toContain('<h2 class="caps">Nytt <i class="no-caps">&amp;</i> anmärkningsvärt</h2>')
   for (const marker of [
     "Månadens tema",
