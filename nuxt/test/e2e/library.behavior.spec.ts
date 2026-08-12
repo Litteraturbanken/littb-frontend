@@ -2382,6 +2382,8 @@ test("PDF empty and failed states stay generic without hydration or console erro
   await input.fill("failed")
   await input.press("Enter")
   await expect(page.locator("[data-library-error]")).toHaveText("Ett fel uppstod.")
+  await expect(page.getByRole("alert")).toHaveCount(1)
+  await expect(page.getByRole("alert")).toHaveText("Ett fel uppstod.")
   await expect(page.locator("body")).not.toContainText("Unable to load Library PDFs")
   await page.waitForTimeout(400)
   expect(failedResponses).toEqual([{ status: 503, url: expectedFailureUrl.href }])

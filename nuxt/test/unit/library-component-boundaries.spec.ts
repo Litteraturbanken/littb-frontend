@@ -556,6 +556,23 @@ describe("Library component ownership", () => {
     expect(page).not.toContain("data-library-pagination-next")
   })
 
+  test("all dynamic result failures are announced as alerts", async () => {
+    const componentSources = await Promise.all([
+      source("app/components/library/LibraryAllResults.vue"),
+      source("app/components/library/LibraryLatestResults.vue"),
+      source("app/components/library/LibraryAuthorResults.vue"),
+      source("app/components/library/LibraryBrowseResults.vue"),
+      source("app/components/library/LibraryDownloadResults.vue"),
+      source("app/components/library/LibrarySourceDownloadWorkspace.vue")
+    ])
+
+    for (const componentSource of componentSources) {
+      expect(componentSource).toContain(
+        '<div v-if="response.failed" data-library-error role="alert">Ett fel uppstod.</div>'
+      )
+    }
+  })
+
   test("renders the pagination contract and emits selected pages", async () => {
     const target = document.createElement("div")
     document.body.append(target)
@@ -703,6 +720,7 @@ describe("Library component ownership", () => {
     await nextTick()
 
     expect(target.querySelector("[data-library-error]")?.textContent).toBe("Ett fel uppstod.")
+    expect(target.querySelector("[data-library-error]")?.getAttribute("role")).toBe("alert")
 
     response.value = { data: [], hits: 0, suggest: [], failed: false }
     await nextTick()
@@ -1565,6 +1583,7 @@ describe("Library component ownership", () => {
     response.value = { ...response.value, failed: true }
     await nextTick()
     expect(target.querySelector("[data-library-error]")?.textContent).toBe("Ett fel uppstod.")
+    expect(target.querySelector("[data-library-error]")?.getAttribute("role")).toBe("alert")
     app.unmount()
     target.remove()
   })
@@ -1908,6 +1927,7 @@ describe("Library component ownership", () => {
     response.value = { ...response.value, failed: true }
     await nextTick()
     expect(target.querySelector("[data-library-error]")?.textContent).toBe("Ett fel uppstod.")
+    expect(target.querySelector("[data-library-error]")?.getAttribute("role")).toBe("alert")
     app.unmount()
     target.remove()
   })

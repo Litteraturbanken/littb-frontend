@@ -90,7 +90,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
         >
             <i class="spinner fa fa-spinner fa-pulse" />
         </div>
-        <div v-if="response.failed" data-library-error>Ett fel uppstod.</div>
+        <div v-if="response.failed" data-library-error role="alert">Ett fel uppstod.</div>
         <div v-else-if="!response.groups.length" data-library-empty class="pb-4">
             Inga träffar.
         </div>

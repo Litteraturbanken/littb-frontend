@@ -348,6 +348,7 @@ test("SSR distinguishes a typed empty success from a typed primary failure", asy
   const failed = parseHTML(await (await request.get("/bibliotek?filter=failed")).text()).document
   expect(failed.querySelector("[data-library-error]")?.textContent?.trim())
     .toBe("Ett fel uppstod.")
+  expect(failed.querySelector("[data-library-error]")?.getAttribute("role")).toBe("alert")
   expect(failed.querySelector("[data-library-empty]")).toBeNull()
   expect(failed.querySelectorAll("[data-library-result]")).toHaveLength(0)
   expect((await libraryV2Requests(request)).search.map(entry => entry.body)).toEqual([{
