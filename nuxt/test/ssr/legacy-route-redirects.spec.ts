@@ -23,13 +23,20 @@ for (const [source, location] of redirects) {
 }
 
 for (const source of ["/om/aktuellt", "/nytt"] as const) {
-  test(`${source} preserves permanent redirect method semantics`, async ({ request }) => {
-    for (const method of ["HEAD", "POST"] as const) {
+  test(`${source} redirects only safe methods`, async ({ request }) => {
+    const head = await request.fetch(`${source}?source=legacy`, {
+      method: "HEAD",
+      maxRedirects: 0
+    })
+    expect(head.status()).toBe(308)
+    expect(head.headers().location).toBe(
+      "/bibliotek?visa=latest&sort=nytillkommet"
+    )
+
+    for (const method of ["POST", "PUT", "DELETE"] as const) {
       const response = await request.fetch(source, { method, maxRedirects: 0 })
-      expect(response.status(), method).toBe(308)
-      expect(response.headers().location, method).toBe(
-        "/bibliotek?visa=latest&sort=nytillkommet"
-      )
+      expect(response.status(), method).toBe(404)
+      expect(response.headers().location, method).toBeUndefined()
     }
   })
 }

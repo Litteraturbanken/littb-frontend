@@ -250,6 +250,27 @@ test("Presentation aliases preserve the exact query in their 308 destination", a
   expect(await presentationRequests(request)).toEqual([])
 })
 
+test("Presentation aliases redirect only safe methods", async ({ request }) => {
+  const head = await request.fetch(
+    "/p/s/Censur.html?from=legacy&sort=a%2Fb&empty=",
+    { method: "HEAD", maxRedirects: 0 }
+  )
+  expect(head.status()).toBe(308)
+  expect(head.headers().location).toBe(
+    "/presentationer/specialomraden/Censur.html?from=legacy&sort=a%2Fb&empty="
+  )
+
+  for (const method of ["POST", "PUT", "DELETE"] as const) {
+    const response = await request.fetch("/p/s/Censur.html?from=legacy", {
+      method,
+      maxRedirects: 0
+    })
+    expect(response.status(), method).toBe(404)
+    expect(response.headers().location, method).toBeUndefined()
+  }
+  expect(await presentationRequests(request)).toEqual([])
+})
+
 for (const alias of [
   "/p/x/Document.html",
   "/p/s/Document.txt",

@@ -6,6 +6,8 @@ const folders = {
 } as const
 
 export default defineEventHandler((event) => {
+  if (event.method !== "GET" && event.method !== "HEAD") return
+
   const url = getRequestURL(event)
   const match = /^\/p\/(s|v)\/([^/]+)$/.exec(url.pathname)
   if (!match) return
