@@ -3,12 +3,13 @@ import { computed } from "vue"
 import type { RouteLocationRaw } from "vue-router"
 import { libraryTooltipDirective } from "../../directives/library-tooltip"
 import { canonicalNuxtHref } from "../../lib/internal-navigation"
-import type {
-    LibraryBrowseMode,
-    LibraryImprintYearTarget,
-    LibraryNativeSortOption,
-    LibraryPaginationModel
-} from "~/lib/library/component-models"
+import {
+    librarySortDirection,
+    type LibraryBrowseMode,
+    type LibraryImprintYearTarget,
+    type LibraryNativeSortOption,
+    type LibraryPaginationModel
+} from "../../lib/library/component-models"
 import type { BrowseSortKey } from "~/lib/library/navigation"
 import type { BrowseResponse } from "~/lib/library/page-results"
 import LibraryPagination from "./LibraryPagination.vue"
@@ -58,11 +59,17 @@ function workActionsId(key: string): string {
                         class="sort_item"
                         :class="{ active: item.active }"
                         :data-library-sort="item.key"
+                        :aria-current="item.active ? 'true' : undefined"
+                        :aria-describedby="
+                            item.active ? `library-browse-sort-direction-${item.key}` : undefined
+                        "
                         @click.prevent="emit('selectSort', item.key)"
                         >{{ item.label }}</a
                     ><template v-if="item.active"
+                        ><span :id="`library-browse-sort-direction-${item.key}`" class="sr-only"
+                            >Aktiv sortering, {{ librarySortDirection(item.key, sortReversed) }}</span
                         >{{ " "
-                        }}<i class="fa" :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'" />
+                        }}<i aria-hidden="true" class="fa" :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'" />
                     </template>
                 </li>
             </ul>
@@ -70,9 +77,11 @@ function workActionsId(key: string): string {
         <div
             v-if="loading"
             data-library-loading
+            role="status"
             class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0"
         >
-            <i class="spinner fa fa-spinner fa-pulse" />
+            <span class="sr-only">Laddar resultat</span>
+            <i aria-hidden="true" class="spinner fa fa-spinner fa-pulse" />
         </div>
         <div v-if="response.failed" data-library-error>Ett fel uppstod.</div>
         <div v-else-if="!response.data.length" data-library-empty class="pb-4">
@@ -113,19 +122,20 @@ function workActionsId(key: string): string {
                         >
                             <ul class="links">
                                 <li
-                                    v-for="action in item.actions"
-                                    :key="`${action.kind}:${action.href}`"
+                                    v-for="(action, actionIndex) in item.actions"
+                                    :key="`${action.kind}:${action.href}:${action.label}:${actionIndex}`"
                                 >
                                     <a
-                                        v-if="action.kind === 'download'"
+                                        v-if="action.href && action.kind === 'download'"
                                         :href="action.href"
                                         target="_self"
                                         :download="action.downloadFilename"
                                         >{{ action.label }}</a
                                     >
-                                    <NuxtLink v-else :to="canonicalNuxtHref(action.href)">
+                                    <NuxtLink v-else-if="action.href" :to="canonicalNuxtHref(action.href)">
                                         {{ action.label }}
                                     </NuxtLink>
+                                    <span v-else>{{ action.label }}</span>
                                 </li>
                             </ul>
                         </div>

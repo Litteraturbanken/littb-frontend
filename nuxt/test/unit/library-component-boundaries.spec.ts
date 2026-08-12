@@ -1323,13 +1323,14 @@ describe("Library component ownership", () => {
   test("renders ordinary Work rows and emits their disclosure key", async () => {
     const target = document.createElement("div")
     document.body.append(target)
-    const [{ createApp, h, nextTick }, { default: LibraryBrowseResults }] = await Promise.all([
+    const [{ createApp, h, nextTick, ref }, { default: LibraryBrowseResults }] = await Promise.all([
       import("vue"),
       import("../../app/components/library/LibraryBrowseResults.vue")
     ])
     const toggled: string[] = []
     const selectedSorts: string[] = []
     const selectedPages: number[] = []
+    const loading = ref(false)
     const NuxtLink = {
       props: { to: { type: [String, Object], required: true }, custom: Boolean },
       setup(props: { to: string; custom: boolean }, { slots }: { slots: { default?: (slotProps?: { href: string }) => unknown[] } }) {
@@ -1363,7 +1364,7 @@ describe("Library component ownership", () => {
           failed: false
         },
         expandedKey: "roda-rummet",
-        loading: false,
+        loading: loading.value,
         sortOptions: [{ key: "titlar", label: "Titel", to: "/bibliotek?visa=works&sort=titlar", active: true }],
         sortReversed: false,
         pagination: {
@@ -1393,6 +1394,11 @@ describe("Library component ownership", () => {
     expect(target.querySelector('[data-library-tooltip-kind="author"]')?.getAttribute("href")).toBe("/författare/august-strindberg")
     expect(target.querySelector("[data-library-work-actions]")?.id).toBe("library-work-actions-roda-rummet")
     expect(target.querySelector("[data-library-work-actions] a")?.getAttribute("download")).toBe("roda-rummet.epub")
+    expect(target.querySelector('[data-library-sort="titlar"]')?.getAttribute("aria-current"))
+      .toBe("true")
+    expect(target.querySelector("#library-browse-sort-direction-titlar")?.textContent)
+      .toContain("Aktiv sortering, stigande")
+    expect(target.querySelector(".fa-caret-down")?.getAttribute("aria-hidden")).toBe("true")
     const toggle = target.querySelector<HTMLButtonElement>("[data-library-work-toggle]")
     toggle?.click()
     target.querySelector<HTMLAnchorElement>('[data-library-sort="titlar"]')?.click()
@@ -1401,6 +1407,13 @@ describe("Library component ownership", () => {
     expect(toggled).toEqual(["roda-rummet"])
     expect(selectedSorts).toEqual(["titlar"])
     expect(selectedPages).toEqual([2])
+    loading.value = true
+    await nextTick()
+    expect(target.querySelector("[data-library-loading]")?.getAttribute("role")).toBe("status")
+    expect(target.querySelector("[data-library-loading] .sr-only")?.textContent)
+      .toBe("Laddar resultat")
+    expect(target.querySelector("[data-library-loading] .spinner")?.getAttribute("aria-hidden"))
+      .toBe("true")
     app.unmount()
     target.remove()
   })
@@ -1838,6 +1851,11 @@ describe("Library component ownership", () => {
       .toBe("/download/roda-rummet.epub")
     expect(target.querySelector("[data-library-epub-download]")?.getAttribute("download"))
       .toBe("roda-rummet.epub")
+    expect(target.querySelector('[data-library-sort="titlar"]')?.getAttribute("aria-current"))
+      .toBe("true")
+    expect(target.querySelector("#library-download-sort-direction-titlar")?.textContent)
+      .toContain("Aktiv sortering, fallande")
+    expect(target.querySelector(".fa-caret-up")?.getAttribute("aria-hidden")).toBe("true")
     expect(target.querySelector(".fa")?.classList.contains("fa-caret-up")).toBe(true)
     target.querySelector<HTMLAnchorElement>('[data-library-sort="år"]')?.click()
     target.querySelector<HTMLAnchorElement>('[data-library-page="2"]')?.click()
@@ -1879,7 +1897,11 @@ describe("Library component ownership", () => {
       .toBe("ett-dromspel.pdf")
     loading.value = true
     await nextTick()
-    expect(target.querySelector("[data-library-loading]")).not.toBeNull()
+    expect(target.querySelector("[data-library-loading]")?.getAttribute("role")).toBe("status")
+    expect(target.querySelector("[data-library-loading] .sr-only")?.textContent)
+      .toBe("Laddar resultat")
+    expect(target.querySelector("[data-library-loading] .spinner")?.getAttribute("aria-hidden"))
+      .toBe("true")
     response.value = { ...response.value, data: [], hits: 0, distinctHits: 0 }
     await nextTick()
     expect(target.querySelector("[data-library-empty]")?.textContent?.trim()).toBe("Inga träffar.")

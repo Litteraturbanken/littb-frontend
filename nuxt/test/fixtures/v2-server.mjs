@@ -1717,6 +1717,19 @@ function libraryWorksResponse(query, page) {
     })
     return { mode: "works", total_hits: 2, total_works: 2, items: [safe, unsafe] }
   }
+  if (query === "unsafe-work-actions") {
+    return { mode: "works", total_hits: 1, total_works: 1, items: [libraryBrowseItem({
+      title: "Säkerhetsgranskat verk", fullTitle: "Säkerhetsgranskat verk", year: "1905",
+      author: libraryAuthors.soderberg, titleId: "SafeActions",
+      actions: [
+        libraryReadAction("SöderbergH", "SafeActions"),
+        { kind: "read", label: "Osäker läsning", url: "javascript:globalThis.__libraryUnsafeAction = true", download_filename: null },
+        { kind: "search", label: "Föråldrad externmarkör", url: "/#external-link", download_filename: null },
+        { kind: "download", label: "Osäker hämtning", url: "https://evil.test/book.epub", download_filename: "book.epub" },
+        { kind: "download", label: "Säker PDF", url: "/txt/lb-SafeActions/lb-SafeActions.pdf", download_filename: "SafeActions.pdf" }
+      ]
+    })] }
+  }
   return { mode: "works", total_hits: 4, total_works: 3, items: [doktorGlasWork, folkvisorWork, bauerWork] }
 }
 
@@ -1724,6 +1737,13 @@ function libraryDownloadResponse(body) {
   const query = body.filters.query
   if (query === "inga") return { mode: body.mode, total_hits: 0, total_works: 0, items: [] }
   if (body.mode === "epub") {
+    if (query === "unsafe-download-href") {
+      return { mode: "epub", total_hits: 1, total_works: 1, items: [{
+        ...doktorEpub,
+        title: "Osäker EPUB-hämtning",
+        download_url: "javascript:globalThis.__libraryUnsafeDownload = true"
+      }] }
+    }
     if (query.toLowerCase() === "strindberg") {
       return {
         mode: "epub", total_hits: 136, total_works: 136,
@@ -1749,6 +1769,13 @@ function libraryDownloadResponse(body) {
         "RodaRummet", "StrindbergA_RodaRummet.pdf", "/export/faksimil/lb-RodaRummet.pdf"
       )]
     }
+  }
+  if (query === "unsafe-download-href") {
+    return { mode: "pdf", total_hits: 1, total_works: 1, items: [{
+      ...defaultPdfItems[0],
+      title: "Osäker PDF-hämtning",
+      download_url: "https://evil.test/book.pdf"
+    }] }
   }
   if (query === "tuple-collision") return { mode: "pdf", total_hits: 10, total_works: 8, items: tuplePdfItems }
   let items = defaultPdfItems

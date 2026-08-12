@@ -83,6 +83,14 @@ export type LibraryNativeSortOption<Key extends string> = Readonly<{
     active: boolean
 }>
 
+export function librarySortDirection(
+    key: string,
+    reversed: boolean
+): "stigande" | "fallande" {
+    const descendingByDefault = key === "popularitet" || key === "kronologi"
+    return descendingByDefault !== reversed ? "fallande" : "stigande"
+}
+
 export type LibraryDownloadMode = "epub" | "pdf"
 export type LibraryBrowseMode = "works" | "parts"
 

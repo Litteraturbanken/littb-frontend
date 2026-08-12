@@ -3,12 +3,13 @@ import { computed } from "vue"
 import type { RouteLocationRaw } from "vue-router"
 import { libraryTooltipDirective } from "../../directives/library-tooltip"
 import { canonicalNuxtHref } from "../../lib/internal-navigation"
-import type {
-    LibraryDownloadMode,
-    LibraryImprintYearTarget,
-    LibraryNativeSortOption,
-    LibraryPaginationModel,
-} from "~/lib/library/component-models"
+import {
+    librarySortDirection,
+    type LibraryDownloadMode,
+    type LibraryImprintYearTarget,
+    type LibraryNativeSortOption,
+    type LibraryPaginationModel
+} from "../../lib/library/component-models"
 import type { EpubSortKey } from "~/lib/library/navigation"
 import type { EpubResponse } from "~/lib/library/page-results"
 import LibraryPagination from "./LibraryPagination.vue"
@@ -54,11 +55,19 @@ function imprintYearTo(year: string): RouteLocationRaw {
                             class="sort_item"
                             :class="{ active: item.active }"
                             :data-library-sort="item.key"
+                            :aria-current="item.active ? 'true' : undefined"
+                            :aria-describedby="
+                                item.active
+                                    ? `library-download-sort-direction-${item.key}`
+                                    : undefined
+                            "
                             @click.prevent="emit('selectSort', item.key)"
                             >{{ item.label }}</a>
                         <template v-if="item.active"
+                            ><span :id="`library-download-sort-direction-${item.key}`" class="sr-only"
+                                >Aktiv sortering, {{ librarySortDirection(item.key, sortReversed) }}</span
                             >{{ " "
-                            }}<i class="fa" :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'" />
+                            }}<i aria-hidden="true" class="fa" :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'" />
                         </template>
                     </li>
                 </ul>
@@ -67,9 +76,11 @@ function imprintYearTo(year: string): RouteLocationRaw {
         <div
             v-if="loading"
             data-library-loading
+            role="status"
             class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0"
         >
-            <i class="spinner fa fa-spinner fa-pulse" />
+            <span class="sr-only">Laddar resultat</span>
+            <i aria-hidden="true" class="spinner fa fa-spinner fa-pulse" />
         </div>
         <div v-if="response.failed" data-library-error>Ett fel uppstod.</div>
         <div v-else-if="!response.data.length" data-library-empty class="pb-4">
@@ -137,6 +148,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                     </td>
                     <td class="block whitespace-nowrap w-20 text-right">
                         <a
+                            v-if="item.downloadHref"
                             :data-library-epub-download="mode === 'epub' || undefined"
                             :data-library-pdf-download="mode === 'pdf' || undefined"
                             class="sc block"
@@ -144,6 +156,13 @@ function imprintYearTo(year: string): RouteLocationRaw {
                             :download="item.downloadFilename"
                             target="_self"
                             >Hämta</a
+                        >
+                        <span
+                            v-else
+                            :data-library-epub-download="mode === 'epub' || undefined"
+                            :data-library-pdf-download="mode === 'pdf' || undefined"
+                            class="sc block"
+                            >Hämta</span
                         >
                     </td>
                 </tr>

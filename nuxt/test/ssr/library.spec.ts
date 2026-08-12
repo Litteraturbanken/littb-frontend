@@ -498,6 +498,31 @@ test("download mode forces typed Works source-only search without changing its s
   })
 })
 
+test("SSR keeps unsafe Work actions and download rows visible without clickable hrefs", async ({
+  request
+}) => {
+  const workDocument = parseHTML(await (await request.get(
+    "/bibliotek?visa=works&filter=unsafe-work-actions"
+  )).text()).document
+  const work = workDocument.querySelector("[data-library-work-row]")
+  expect(work?.textContent).toContain("Osäker läsning")
+  expect(work?.textContent).toContain("Föråldrad externmarkör")
+  expect(work?.textContent).toContain("Osäker hämtning")
+  expect(work?.querySelector('a[href^="javascript:"]')).toBeNull()
+  expect(work?.querySelector('a[href="/#external-link"]')).toBeNull()
+  expect(work?.querySelector('a[href^="https://evil.test"]')).toBeNull()
+  expect(work?.querySelector('a[href="/txt/lb-SafeActions/lb-SafeActions.pdf"]')
+    ?.getAttribute("download")).toBe("SafeActions.pdf")
+
+  const epubDocument = parseHTML(await (await request.get(
+    "/bibliotek?visa=epub&filter=unsafe-download-href"
+  )).text()).document
+  const epubRow = epubDocument.querySelector("[data-library-epub-row]")
+  expect(epubRow?.textContent).toContain("Osäker EPUB-hämtning")
+  expect(epubRow?.querySelector("[data-library-epub-download]")?.localName).toBe("span")
+  expect(epubRow?.querySelector("[data-library-epub-download]")?.hasAttribute("href")).toBe(false)
+})
+
 test("SSR renders EPUB immediately with a null inactive PDF count", async ({ request }) => {
   const document = parseHTML(await (await request.get(
     "/bibliotek?visa=epub&sort=popularitet&filter=Selma"

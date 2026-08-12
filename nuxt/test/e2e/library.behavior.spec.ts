@@ -1091,6 +1091,28 @@ test("Works groups representations and expands the legacy read, download, search
   expect(await epubRequests(request)).toHaveLength(requestsBeforeDisclosure)
 })
 
+test("unsafe Work actions and download results hydrate as inert visible text", async ({ page }) => {
+  await page.goto("/bibliotek?visa=works&filter=unsafe-work-actions", {
+    waitUntil: "networkidle"
+  })
+  const work = page.locator("[data-library-work-row]")
+  await work.locator("[data-library-work-toggle]").click()
+  for (const label of ["Osäker läsning", "Föråldrad externmarkör", "Osäker hämtning"]) {
+    await expect(work.getByText(label, { exact: true })).toBeVisible()
+    await expect(work.getByRole("link", { name: label, exact: true })).toHaveCount(0)
+  }
+  await expect(work.getByRole("link", { name: "Säker PDF", exact: true }))
+    .toHaveAttribute("href", "/txt/lb-SafeActions/lb-SafeActions.pdf")
+
+  await page.goto("/bibliotek?visa=epub&filter=unsafe-download-href", {
+    waitUntil: "networkidle"
+  })
+  const row = page.locator("[data-library-epub-row]")
+  await expect(row).toContainText("Osäker EPUB-hämtning")
+  await expect(row.getByText("Hämta", { exact: true })).toBeVisible()
+  await expect(row.getByRole("link", { name: "Hämta", exact: true })).toHaveCount(0)
+})
+
 test("an encoded Library Reader link navigates through Nuxt without reloading the document", async ({
   page
 }) => {
@@ -1470,7 +1492,10 @@ test("EPUB keeps committed rows visible under its loading indicator", async ({ p
 
   await page.locator("[data-library-filter]").fill("Selma")
   await expect.poll(async () => publicEpubRequests(await epubRequests(request)).length).toBe(1)
+  await expect(page.locator('[data-library-loading][role="status"] .sr-only'))
+    .toHaveText("Laddar resultat")
   await expect(page.locator("[data-library-loading] .spinner")).toBeVisible()
+  await expect(page.locator("[data-library-loading] .spinner")).toHaveAttribute("aria-hidden", "true")
   await expect(page.getByRole("link", { name: "Doktor Glas" })).toBeVisible()
 
   await expect(page.getByRole("link", { name: "Gösta Berlings saga" })).toBeVisible()
@@ -1544,7 +1569,10 @@ test("clicking the active EPUB sort reverses its primary field without changing 
   const sort = page.locator('[data-library-sort="titlar"]')
   const item = sort.locator("xpath=..")
   const initialHistoryLength = await page.evaluate(() => history.length)
+  await expect(sort).toHaveAttribute("aria-current", "true")
+  await expect(item.locator(".sr-only")).toHaveText("Aktiv sortering, stigande")
   await expect(item.locator(".fa-caret-down")).toBeVisible()
+  await expect(item.locator(".fa-caret-down")).toHaveAttribute("aria-hidden", "true")
 
   await sort.click()
   await expect.poll(async () => publicEpubRequests(await epubRequests(request)).length).toBe(1)
@@ -1552,6 +1580,7 @@ test("clicking the active EPUB sort reverses its primary field without changing 
   expect(new URL(page.url()).searchParams.get("keep")).toBe("ja")
   expect(await page.evaluate(() => history.length)).toBe(initialHistoryLength)
   await expect(item.locator(".fa-caret-up")).toBeVisible()
+  await expect(item.locator(".sr-only")).toHaveText("Aktiv sortering, fallande")
   await expect(item.locator(".fa-caret-down")).toHaveCount(0)
   expect((await publicEpubRequests(await epubRequests(request))).at(-1)?.body)
     .toMatchObject({ mode: "epub", sort: "title", reverse: true })

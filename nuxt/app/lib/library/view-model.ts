@@ -4,7 +4,12 @@ import {
   libraryAuthorTooltipText,
   usefulLibraryTooltipText
 } from "../library-tooltip"
-import { safeNativeHref } from "../internal-navigation"
+import {
+  canonicalNuxtHref,
+  isNuxtInternalHref,
+  safeNativeHref
+} from "../internal-navigation"
+import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 import {
   assertNever,
   type LibraryAuthor,
@@ -235,7 +240,88 @@ function mapAllItem(item: AllItem): LibraryResult {
   }
 }
 
-function mapDownloadItem(item: DownloadItem): DownloadResult {
+type DownloadMode = "epub" | "pdf"
+
+type SafeLibraryRootHref = {
+  decodedPath: string
+  decodedQuery: string
+  href: string
+}
+
+function fullyDecodedHref(value: string): string | null {
+  let decoded = value
+  for (let depth = 0; depth < 5; depth += 1) {
+    let next: string
+    try {
+      next = decodeURIComponent(decoded)
+    } catch {
+      return null
+    }
+    if (hasC0OrC1Control(next) || hasLoneSurrogate(next) || next.includes("\\")) return null
+    if (next === decoded) return decoded
+    decoded = next
+  }
+  return null
+}
+
+function safeLibraryRootHref(value: string): SafeLibraryRootHref | null {
+  if (value.length > 2_000 || safeNativeHref(value) !== value || !value.startsWith("/")) return null
+  const decoded = fullyDecodedHref(value)
+  if (decoded === null || decoded === "/#external" || decoded === "/#external-link") return null
+  const withoutFragment = decoded.split("#", 1)[0] ?? ""
+  const queryIndex = withoutFragment.indexOf("?")
+  const decodedPath = queryIndex === -1 ? withoutFragment : withoutFragment.slice(0, queryIndex)
+  const decodedQuery = queryIndex === -1 ? "" : withoutFragment.slice(queryIndex)
+  if (decodedPath.split("/").some(segment => segment === "." || segment === "..")) return null
+  return { decodedPath, decodedQuery, href: value }
+}
+
+function safeLibraryDownloadHref(value: string, mode: DownloadMode): string | null {
+  const safe = safeLibraryRootHref(value)
+  if (!safe || safe.decodedQuery) return null
+  const pathMatches = mode === "epub"
+    ? /^\/txt\/epub\/[^/]+\.epub$/u.test(safe.decodedPath)
+    : /^\/export\/faksimil\/[^/]+\.pdf$/u.test(safe.decodedPath)
+      || (!safe.decodedPath.startsWith("/txt/epub/")
+        && /^\/txt\/[^/]+\/[^/]+\.pdf$/u.test(safe.decodedPath))
+  return pathMatches ? safe.href : null
+}
+
+function safeBrowseDownloadHref(value: string): string | null {
+  return safeLibraryDownloadHref(value, "epub") ?? safeLibraryDownloadHref(value, "pdf")
+}
+
+function safeBrowseSearchHref(value: string): string | null {
+  const safe = safeLibraryRootHref(value)
+  if (!safe || !isNuxtInternalHref(canonicalNuxtHref(safe.href))) return null
+  return (safe.decodedPath === "/sok" || safe.decodedPath === "/sök") && safe.decodedQuery
+    ? safe.href
+    : null
+}
+
+function safeBrowseReaderHref(value: string, about: boolean): string | null {
+  const safe = safeLibraryRootHref(value)
+  if (!safe || !isNuxtInternalHref(canonicalNuxtHref(safe.href))) return null
+  const readerPath = /^\/författare\/[^/]+\/titlar\/[^/]+\/sida\/[^/]+\/(?:etext|faksimil)$/u
+  if (!readerPath.test(safe.decodedPath)) return null
+  return safe.decodedQuery === (about ? "?om-boken" : "") ? safe.href : null
+}
+
+const browseActionHrefValidators: Record<
+  BrowseItem["actions"][number]["kind"],
+  (value: string) => string | null
+> = {
+  read: value => safeBrowseReaderHref(value, false),
+  download: safeBrowseDownloadHref,
+  search: safeBrowseSearchHref,
+  about: value => safeBrowseReaderHref(value, true)
+}
+
+function safeBrowseActionHref(action: BrowseItem["actions"][number]): string | null {
+  return browseActionHrefValidators[action.kind](action.url)
+}
+
+function mapDownloadItem(item: DownloadItem, mode: DownloadMode): DownloadResult {
   const surname = item.author.surname ?? item.author.full_name ?? ""
   return {
     title: item.title,
@@ -255,7 +341,7 @@ function mapDownloadItem(item: DownloadItem): DownloadResult {
       query: { "om-boken": null }
     },
     authorHref: item.author_url,
-    downloadHref: item.download_url,
+    downloadHref: safeLibraryDownloadHref(item.download_url, mode) ?? "",
     downloadFilename: item.download_filename
   }
 }
@@ -276,7 +362,7 @@ function mapBrowseItem(item: BrowseItem): BrowseResult {
     actions: item.actions.map(action => ({
       kind: action.kind,
       label: action.label,
-      href: action.url,
+      href: safeBrowseActionHref(action) ?? "",
       downloadFilename: action.download_filename ?? ""
     })),
     sourceExports: item.source_exports.map(source => ({
@@ -363,7 +449,7 @@ export function toLibrarySearchView(response: LibrarySearchResponse): LibraryPag
       }
     case "epub":
     case "pdf":
-      return { mode: response.mode, response: { data: response.items.map(mapDownloadItem), hits: response.total_hits, distinctHits: response.total_works, suggest: [], failed: false } }
+      return { mode: response.mode, response: { data: response.items.map(item => mapDownloadItem(item, response.mode)), hits: response.total_hits, distinctHits: response.total_works, suggest: [], failed: false } }
     default:
       return assertNever(response)
   }

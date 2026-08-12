@@ -197,7 +197,7 @@ describe("typed Library boundary", () => {
         author,
         author_url: "/författare/LagerlofS/",
         download_filename: "gosta.epub",
-        download_url: "/epub/gosta.epub",
+        download_url: "/txt/epub/LagerlofS_GostaBerlingsSaga.epub",
         full_title: "Gösta Berlings saga: en berättelse",
         route_author_id: "LagerlofS",
         route_media_type: "etext",
@@ -213,7 +213,7 @@ describe("typed Library boundary", () => {
     expect(view.response.data[0]).toMatchObject({
       titleHref: "/författare/LagerlofS/titlar/GostaBerlingsSaga/",
       authorHref: "/författare/LagerlofS/",
-      downloadHref: "/epub/gosta.epub",
+      downloadHref: "/txt/epub/LagerlofS_GostaBerlingsSaga.epub",
       roleSuffix: " (red.)",
       titleTo: {
         name: "författare-author-titlar-title-mediatype",
@@ -261,6 +261,86 @@ describe("typed Library boundary", () => {
     expect(formatLibrarySourceExportSize(0)).toBe("")
     expect(formatLibrarySourceExportSize(1024)).toBe("1 KB")
     expect(formatLibrarySourceExportSize(2_097_152)).toBe("2.00MB")
+  })
+
+  test.each([
+    ["read", "/f%C3%B6rfattare/LagerlofS/titlar/Titel/sida/-2/etext", "/f%C3%B6rfattare/LagerlofS/titlar/Titel/sida/-2/etext"],
+    ["about", "/f%C3%B6rfattare/LagerlofS/titlar/Titel/sida/-2/etext?om-boken#info", "/f%C3%B6rfattare/LagerlofS/titlar/Titel/sida/-2/etext?om-boken#info"],
+    ["search", "/sok?forfattare=LagerlofS&titlar=lb1&avancerad#träffar", "/sok?forfattare=LagerlofS&titlar=lb1&avancerad#träffar"],
+    ["search", "/sok?forfattare=LagerlofS#external-link", "/sok?forfattare=LagerlofS#external-link"],
+    ["download", "/txt/epub/LagerlofS_Titel.epub", "/txt/epub/LagerlofS_Titel.epub"],
+    ["download", "/txt/lb1/lb1.pdf", "/txt/lb1/lb1.pdf"],
+    ["download", "/export/faksimil/lb1.pdf", "/export/faksimil/lb1.pdf"],
+    ["read", "javascript:alert(1)", ""],
+    ["read", "https://evil.test/reader", ""],
+    ["search", "/#external", ""],
+    ["search", "/#external-link", ""],
+    ["search", "/#external%2dlink", ""],
+    ["download", "//evil.test/book.epub", ""],
+    ["download", "/txt/epub/../evil.epub", ""],
+    ["download", "/txt/epub/%E0%A4%A.epub", ""],
+    ["download", "/txt/epub/%5Cevil.epub", ""],
+    ["download", "/txt/epub/book.epub?redirect=https://evil.test", ""]
+  ] as const)("bounds %s Browse action %s", (kind, url, expectedHref) => {
+    const response = {
+      mode: "works",
+      total_hits: 1,
+      total_works: 1,
+      items: [{
+        actions: [{ kind, label: "Åtgärd", url, download_filename: kind === "download" ? "Titel.epub" : null }],
+        author,
+        author_url: "/författare/LagerlofS/",
+        full_title: "Full titel",
+        key: "work-1",
+        route_author_id: "LagerlofS",
+        route_media_type: "etext",
+        route_title_id: "Titel",
+        source_exports: [],
+        title: "Titel",
+        title_path: "LagerlofS/Titel",
+        title_url: "/författare/LagerlofS/titlar/Titel/",
+        year: "1900"
+      }]
+    } satisfies LibrarySearchResponse
+
+    const view = toLibrarySearchView(response)
+    if (view.mode !== "works") throw new Error("expected works view")
+    expect(view.response.data[0].actions[0]?.href).toBe(expectedHref)
+  })
+
+  test.each([
+    ["epub", "/txt/epub/LagerlofS_Titel.epub", "/txt/epub/LagerlofS_Titel.epub"],
+    ["epub", "/export/faksimil/lb1.pdf", ""],
+    ["pdf", "/txt/lb1/lb1.pdf", "/txt/lb1/lb1.pdf"],
+    ["pdf", "/export/faksimil/lb1.pdf", "/export/faksimil/lb1.pdf"],
+    ["pdf", "/txt/epub/disguised.pdf", ""],
+    ["pdf", "https://evil.test/book.pdf", ""],
+    ["pdf", "/txt/%2e%2e/evil.pdf", ""],
+    ["pdf", "/txt/%00evil.pdf", ""],
+    ["pdf", "/txt/lb1/lb1.pdf?download=1", ""]
+  ] as const)("bounds %s result download %s", (mode, downloadUrl, expectedHref) => {
+    const response = {
+      mode,
+      total_hits: 1,
+      total_works: 1,
+      items: [{
+        author,
+        author_url: "/författare/LagerlofS/",
+        download_filename: `Titel.${mode}`,
+        download_url: downloadUrl,
+        full_title: "Full titel",
+        route_author_id: "LagerlofS",
+        route_media_type: "etext",
+        route_title_id: "Titel",
+        title: "Titel",
+        title_url: "/författare/LagerlofS/titlar/Titel/",
+        year: "1900"
+      }]
+    } satisfies LibrarySearchResponse
+
+    const view = toLibrarySearchView(response)
+    if (view.mode !== mode) throw new Error(`expected ${mode} view`)
+    expect(view.response.data[0].downloadHref).toBe(expectedHref)
   })
 
   test("formats latest groups with Swedish dates and source counts", () => {
