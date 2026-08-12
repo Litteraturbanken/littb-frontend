@@ -6,6 +6,7 @@ const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 async function resetEditorRequests(request: APIRequestContext): Promise<void> {
   await Promise.all([
     request.delete(`${fixture}/_editor_manifest_requests`),
+    request.delete(`${fixture}/_editor_facsimile_requests`),
     request.delete(`${fixture}/_reader_manifest_requests`),
     request.delete(`${fixture}/_reader_metadata_requests`),
     request.delete(`${fixture}/_reader_requests`)
@@ -18,6 +19,15 @@ async function requestLedger(
 ): Promise<string[]> {
   const response = await request.get(`${fixture}${path}`)
   return (await response.json() as { requests: string[] }).requests
+}
+
+async function editorFacsimileRequests(
+  request: APIRequestContext
+): Promise<Array<{ method: string, path: string }>> {
+  const response = await request.get(`${fixture}/_editor_facsimile_requests`)
+  return (await response.json() as {
+    requests: Array<{ method: string, path: string }>
+  }).requests
 }
 
 test.beforeEach(async ({ request }) => resetEditorRequests(request))
@@ -63,6 +73,30 @@ test("SSR renders editor metadata, OCR, and generated page bounds", async ({ req
   expect(apiResponse.headers()["cache-control"]).toBe("no-store")
   expect(await apiResponse.json()).toMatchObject({
     endPageName: "-1",
+    facsimileSources: [
+      {
+        size: 2,
+        url: "/txt/lb-editor-doktor/lb-editor-doktor_2/lb-editor-doktor_2_0002.jpeg",
+        width: 450
+      },
+      {
+        size: 3,
+        url: "/txt/lb-editor-doktor/lb-editor-doktor_3/lb-editor-doktor_3_0002.jpeg",
+        width: 625
+      },
+      {
+        size: 4,
+        url: "/txt/lb-editor-doktor/lb-editor-doktor_4/lb-editor-doktor_4_0002.jpeg",
+        width: 900
+      },
+      {
+        size: 5,
+        url: "/txt/lb-editor-doktor/lb-editor-doktor_5/lb-editor-doktor_5_0002.jpeg",
+        width: 1250
+      }
+    ],
+    imageUrl: "/txt/lb-editor-doktor/lb-editor-doktor_3/lb-editor-doktor_3_0002.jpeg",
+    imageWidth: 625,
     imprintYear: "1905",
     metadataAvailable: true,
     pageName: "-2"
@@ -122,6 +156,15 @@ test("SSR renders typed bounds-only navigation without metadata controls", async
   expect(apiResponse.headers()["cache-control"]).toBe("no-store")
   expect(await apiResponse.json()).toMatchObject({
     endPageName: null,
+    facsimileSources: [{
+      size: 3,
+      url: "/txt/lb-editor-fallback/lb-editor-fallback_3/" +
+        "lb-editor-fallback_3_0002.jpeg",
+      width: null
+    }],
+    imageUrl: "/txt/lb-editor-fallback/lb-editor-fallback_3/" +
+      "lb-editor-fallback_3_0002.jpeg",
+    imageWidth: null,
     imprintYear: null,
     metadataAvailable: false,
     pageCount: 3,
@@ -225,6 +268,41 @@ test("SSR fails clearly when the selected editor facsimile asset is missing", as
   ))
 })
 
+test("complete Editor manifests use an available size when size 3 is absent", async ({
+  request
+}) => {
+  const imageUrl = "/txt/lb-editor-size-four/lb-editor-size-four_4/" +
+    "lb-editor-size-four_4_0002.jpeg"
+  const apiResponse = await request.get("/api/editor/lb-editor-size-four/1/f")
+
+  expect(apiResponse.status()).toBe(200)
+  expect(await apiResponse.json()).toMatchObject({
+    facsimileSources: [{ size: 4, url: imageUrl, width: 900 }],
+    imageUrl,
+    imageWidth: 900
+  })
+  expect(await editorFacsimileRequests(request)).toEqual([{
+    method: "HEAD",
+    path: imageUrl
+  }])
+
+  await resetEditorRequests(request)
+
+  const response = await request.get("/editor/lb-editor-size-four/ix/1/f")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector(".editor-reader .faksimil")?.getAttribute("src"))
+    .toBe(imageUrl)
+  expect(document.querySelector(".editor-reader .faksimil")?.getAttribute("srcset"))
+    .toBeNull()
+  expect(document.querySelector(".editor-reader .img_area")?.getAttribute("style"))
+    .toContain("width:900px")
+  expect(await editorFacsimileRequests(request)).toEqual([{
+    method: "HEAD",
+    path: imageUrl
+  }])
+})
+
 test("SSR uses generated dense bounds for the exact e-text representation", async ({ request }) => {
   const apiResponse = await request.get("/api/editor/lb-editor-doktor-glas/2/e")
   expect(apiResponse.status()).toBe(200)
@@ -272,7 +350,7 @@ test("SSR selects the requested representation and uses its typed close target",
   const { document } = parseHTML(await response.text())
 
   expect(document.querySelector(".editor-reader .faksimil")?.getAttribute("src")).toBe(
-    "/txt/lb-editor-mixed/lb-editor-mixed_3/lb-editor-mixed_3_0005.jpeg"
+    "/txt/lb-editor-mixed/lb-editor-mixed_4/lb-editor-mixed_4_0005.jpeg"
   )
   expect(document.querySelector('input[aria-label="Gå till sida"]')?.getAttribute("max"))
     .toBe("4")

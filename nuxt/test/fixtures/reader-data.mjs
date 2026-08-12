@@ -1119,6 +1119,18 @@ function editorRawRepresentations(workId) {
       width: { size_2: 450, size_3: 625, size_4: 900 }
     }]
   }
+  if (workId === "lb-editor-size-four") {
+    return [{
+      ...structuredClone(readerWorkInfoResponse.data[0]),
+      faksimil_sizes: [3],
+      lbworkid: workId,
+      mediatype: "faksimil",
+      page_count: 3,
+      pages: editorDoktorPages(),
+      parts: [],
+      width: { size_4: 900 }
+    }]
+  }
   if (workId === "lb-editor-doktor") {
     return [{
       ...structuredClone(readerWorkInfoResponse.data[0]),

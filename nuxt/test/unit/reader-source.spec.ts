@@ -8,7 +8,6 @@ import {
   isReaderMediaType,
   loadReaderMetadata,
   maximumReaderEtextBytes,
-  preferredFacsimileSize,
   rebaseRelativeStylesheetReferences,
   readerFacsimileMetadata,
   resolveReaderPartNavigation
@@ -21,6 +20,7 @@ import type {
 } from "../../shared/types/work-manifest"
 import type { ManagedAssetHtml } from "../../shared/types/renderable-html"
 import type { ReaderEtextPage } from "../../shared/types/reader"
+import { preferredFacsimileSize } from "../../shared/utils/facsimile-source"
 import type { transformManagedReaderHtml } from "../../shared/utils/renderable-html"
 
 const readerManifest = {
@@ -478,15 +478,23 @@ describe("managed Reader e-text boundary", () => {
 })
 
 describe("faksimil assets", () => {
-  test("accepts only exact Reader media and preserves preferred-size policy", () => {
+  test("accepts only exact Reader media", () => {
     expect(isReaderMediaType("etext")).toBe(true)
     expect(isReaderMediaType("faksimil")).toBe(true)
     expect(isReaderMediaType("pdf")).toBe(false)
-    expect(preferredFacsimileSize([
-      { size: 1, width: 100 },
-      { size: 2, width: 200 },
-      { size: 5, width: 500 }
-    ])).toBe(2)
+  })
+
+  test.each([
+    ["size 3 when listed", [{ size: 5 }, { size: 3 }, { size: 1 }], 3],
+    ["largest listed size below 3", [{ size: 1 }, { size: 2 }], 2],
+    ["smallest listed size above 3", [{ size: 5 }, { size: 4 }], 4],
+    ["largest lower size in a sparse list", [{ size: 5 }, { size: 1 }, { size: 2 }], 2]
+  ] as const)("selects %s", (_name, sources, expected) => {
+    expect(preferredFacsimileSize(sources)).toBe(expected)
+  })
+
+  test("requires an authoritative source for preferred-size selection", () => {
+    expect(() => preferredFacsimileSize([])).toThrow(RangeError)
   })
 
   test("RFC3986-encodes work IDs and keeps JPEG image number separate", () => {

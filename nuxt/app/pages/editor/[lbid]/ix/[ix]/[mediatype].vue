@@ -2,6 +2,7 @@
 import type { EditorReaderPage } from "#shared/types/editor-reader"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 import { isEditorRouteIdentity } from "#shared/utils/editor-route-identity"
+import { preferredFacsimileSize } from "#shared/utils/facsimile-source"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import type { components } from "~/lib/api/generated/lbapi"
@@ -249,9 +250,14 @@ function editorHistoryNumber(key: "editorFacsimileSize" | "editorRotation"): num
 }
 const facsimileSize = ref(editorHistoryNumber("editorFacsimileSize") ?? 3)
 const rotation = ref(editorHistoryNumber("editorRotation") ?? 0)
-const selectedFacsimileSource = computed(() => page.value?.facsimileSources.find(
-  source => source.size === facsimileSize.value
-) ?? page.value?.facsimileSources.find(source => source.size === 3) ?? null)
+const selectedFacsimileSource = computed(() => {
+  const sources = page.value?.facsimileSources ?? []
+  if (sources.length === 0) return null
+  const preferredSize = preferredFacsimileSize(sources)
+  return sources.find(source => source.size === facsimileSize.value)
+    ?? sources.find(source => source.size === preferredSize)
+    ?? null
+})
 const selectedFacsimileSrcset = computed(() => {
   const selected = selectedFacsimileSource.value
   if (!selected || selected.size >= 4) return undefined
@@ -259,9 +265,9 @@ const selectedFacsimileSrcset = computed(() => {
   return retina ? `${selected.url} 1x, ${retina.url} 2x` : undefined
 })
 const smallerFacsimileSource = computed(() => [...(page.value?.facsimileSources ?? [])]
-  .reverse().find(source => source.size < facsimileSize.value) ?? null)
+  .reverse().find(source => source.size < (selectedFacsimileSource.value?.size ?? 3)) ?? null)
 const largerFacsimileSource = computed(() => page.value?.facsimileSources.find(
-  source => source.size > facsimileSize.value
+  source => source.size > (selectedFacsimileSource.value?.size ?? 3)
 ) ?? null)
 const imageWidth = ref(selectedFacsimileSource.value?.width ?? 0)
 function updateImageWidth(): void {

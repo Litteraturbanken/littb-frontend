@@ -1,8 +1,12 @@
 import type { SanitizedHtml } from "./renderable-html"
-import type { WorkManifestContributor, WorkManifestPart } from "./work-manifest"
+import type {
+  FacsimileSize,
+  WorkManifestContributor,
+  WorkManifestPart
+} from "./work-manifest"
 
 export interface EditorFacsimileSource {
-  size: number
+  size: FacsimileSize["size"]
   url: string
   width: number | null
 }

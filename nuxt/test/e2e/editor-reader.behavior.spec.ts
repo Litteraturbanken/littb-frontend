@@ -912,6 +912,30 @@ test("editor facsimile size and rotation controls are real accessible controls",
   }
 })
 
+test("editor renders the sole manifest facsimile size without fabricating controls", async ({
+  page,
+  request
+}) => {
+  const imageUrl = "/txt/lb-editor-size-four/lb-editor-size-four_4/" +
+    "lb-editor-size-four_4_0002.jpeg"
+  await request.delete(`${fixture}/_editor_facsimile_requests`)
+
+  await page.goto("/editor/lb-editor-size-four/ix/1/f", { waitUntil: "networkidle" })
+
+  const image = page.locator(".editor-reader .faksimil")
+  await expect(image).toHaveAttribute("src", imageUrl)
+  await expect(image).toHaveCSS("width", "900px")
+  await expect(page.getByRole("button", { name: "Mindre" })).toBeDisabled()
+  await expect(page.getByRole("button", { name: "Större" })).toBeDisabled()
+  const ledgerResponse = await request.get(`${fixture}/_editor_facsimile_requests`)
+  expect(await ledgerResponse.json()).toEqual({
+    requests: [
+      { method: "HEAD", path: imageUrl },
+      { method: "GET", path: imageUrl }
+    ]
+  })
+})
+
 test("editor metadata fallback exposes only honest raw paging controls", async ({ page }) => {
   await page.goto("/editor/lb-editor-fallback/ix/1/f", { waitUntil: "networkidle" })
 
@@ -1030,7 +1054,7 @@ test("editor n/f and d/m shortcuts push bounded raw-page history", async ({ page
   await expect(page).toHaveURL(/\/editor\/lb-editor-long\/ix\/2\/f$/u)
   await page.goBack()
   await expect(page.locator(".editor-reader .faksimil")).toHaveAttribute(
-    "src", "/txt/lb-editor-long/lb-editor-long_3/lb-editor-long_3_0013.jpeg"
+    "src", "/txt/lb-editor-long/lb-editor-long_4/lb-editor-long_4_0013.jpeg"
   )
   await page.locator("body").press("m")
   await expect(page).toHaveURL(/\/editor\/lb-editor-long\/ix\/22\/f$/u)

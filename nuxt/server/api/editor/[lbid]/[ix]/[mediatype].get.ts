@@ -6,6 +6,7 @@ import type {
   FacsimileSize,
   WorkManifestPart
 } from "#shared/types/work-manifest"
+import { preferredFacsimileSize } from "#shared/utils/facsimile-source"
 import { fetchReaderOcrOverlay } from "#server/utils/reader-ocr"
 import {
   fetchBoundedEditorText,
@@ -117,7 +118,7 @@ function editorFacsimileSources(
   workId: string,
   pageIndex: number
 ): EditorFacsimileSource[] {
-  const widths = new Map<number, number>()
+  const widths = new Map<FacsimileSize["size"], number>()
   for (const source of manifestSizes) {
     if (Number.isFinite(source.width) && source.width > 0 && !widths.has(source.size)) {
       widths.set(source.size, source.width)
@@ -129,8 +130,8 @@ function editorFacsimileSources(
     url: editorFacsimileUrl(workId, size, pageIndex),
     width
   }))
-  if (!widths.has(3)) {
-    sources.push({ size: 3, url: editorFacsimileUrl(workId, 3, pageIndex), width: null })
+  if (sources.length === 0) {
+    return [{ size: 3, url: editorFacsimileUrl(workId, 3, pageIndex), width: null }]
   }
   return sources.sort((left, right) => left.size - right.size)
 }
@@ -223,7 +224,8 @@ async function fetchEditorAssets(
     }
   }
   const facsimileSources = editorFacsimileSources(sizes, request.workId, request.pageIndex)
-  const initialSource = facsimileSources.find(source => source.size === 3) ?? null
+  const preferredSize = preferredFacsimileSize(facsimileSources)
+  const initialSource = facsimileSources.find(source => source.size === preferredSize) ?? null
   if (initialSource) {
     try {
       await fetchTimedEditorHead(`${base}${initialSource.url}`)

@@ -324,6 +324,7 @@ let readerMetadataDelays = {}
 let readerManifestDelays = {}
 let readerManifestRequests = []
 let editorManifestRequests = []
+let editorFacsimileRequests = []
 let editorMetadataFailure = false
 let readerHitRequests = []
 let readerHitFailure = false
@@ -3186,6 +3187,7 @@ const server = createServer(async (request, response) => {
   for (const [controlPath, ledger] of [
     ["/_reader_manifest_requests", readerManifestRequests],
     ["/_editor_manifest_requests", editorManifestRequests],
+    ["/_editor_facsimile_requests", editorFacsimileRequests],
     ["/_reader_metadata_requests", readerMetadataRequests],
     ["/_reader_html_requests", readerHtmlRequests],
     ["/_reader_ocr_requests", readerOcrRequests],
@@ -4215,6 +4217,14 @@ const server = createServer(async (request, response) => {
       "text/html; charset=utf-8",
       '<body><div data-size="625x900" id="toolkit-right" class="absolute parent" style="width:999999999999px;left:10px"><span id="mainview" class="w pointer-events-auto" onclick="alert(1)" style="top:12px">SAFE OCR</span><script>alert(1)</script></div></body>'
     )
+  }
+
+  if (
+    ["GET", "HEAD"].includes(request.method) &&
+    /^\/txt\/lb-editor-size-four\/lb-editor-size-four_4\/lb-editor-size-four_4_\d{4}\.jpeg$/.test(url.pathname)
+  ) {
+    editorFacsimileRequests.push({ method: request.method, path: url.pathname })
+    return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
   }
 
   if (
