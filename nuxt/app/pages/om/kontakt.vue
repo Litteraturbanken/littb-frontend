@@ -33,7 +33,8 @@ const newsletterDirty = ref(false)
 const showContact = ref(false)
 const showNewsletter = ref(false)
 const showError = ref(false)
-const isLoading = ref(false)
+const contactPending = ref(false)
+const newsletterPending = ref(false)
 let submissionGeneration = 0
 let feedbackTimer: number | undefined
 
@@ -73,7 +74,6 @@ function showFailure(generation: number) {
   showError.value = true
   showContact.value = false
   showNewsletter.value = false
-  isLoading.value = false
   feedbackTimer = window.setTimeout(() => {
     if (generation !== submissionGeneration) return
     feedbackTimer = undefined
@@ -82,8 +82,10 @@ function showFailure(generation: number) {
 }
 
 async function submitContactForm() {
+  if (contactPending.value) return
+
   const generation = startSubmission()
-  isLoading.value = true
+  contactPending.value = true
   try {
     const { error: requestError } = await client.POST("/contact", {
       body: {
@@ -95,20 +97,24 @@ async function submitContactForm() {
       signal: AbortSignal.timeout(30_000)
     })
     if (requestError) return showFailure(generation)
+
+    if (generation !== submissionGeneration) return
+    showNewsletter.value = false
+    showError.value = false
+    showContact.value = true
+    hideFeedbackAfterDelay(generation)
   } catch {
     return showFailure(generation)
+  } finally {
+    contactPending.value = false
   }
-
-  if (generation !== submissionGeneration) return
-  isLoading.value = false
-  showNewsletter.value = false
-  showError.value = false
-  showContact.value = true
-  hideFeedbackAfterDelay(generation)
 }
 
 async function subscribe() {
+  if (newsletterPending.value) return
+
   const generation = startSubmission()
+  newsletterPending.value = true
   try {
     const { error: requestError } = await client.POST("/contact", {
       body: {
@@ -120,16 +126,17 @@ async function subscribe() {
       signal: AbortSignal.timeout(30_000)
     })
     if (requestError) return showFailure(generation)
+
+    if (generation !== submissionGeneration) return
+    showContact.value = false
+    showError.value = false
+    showNewsletter.value = true
+    hideFeedbackAfterDelay(generation)
   } catch {
     return showFailure(generation)
+  } finally {
+    newsletterPending.value = false
   }
-
-  if (generation !== submissionGeneration) return
-  isLoading.value = false
-  showContact.value = false
-  showError.value = false
-  showNewsletter.value = true
-  hideFeedbackAfterDelay(generation)
 }
 </script>
 
@@ -138,7 +145,7 @@ async function subscribe() {
     <div class="page-contactForm">
       <div v-show="showForms">
         <div class="header">Vill du skicka ett meddelande till oss? Då kan du använda formuläret här nedan.</div>
-        <form name="form" class="contactform" novalidate @submit.prevent="submitContactForm">
+        <form name="form" class="contactform" novalidate :aria-busy="contactPending" @submit.prevent="submitContactForm">
           <div class="form_head">
             <div>
               <label for="nameInput">Namn</label>{{ " " }}
@@ -181,8 +188,8 @@ async function subscribe() {
             />
             <div id="contact-message-error" class="error_msg">Meddelandet är tomt.</div>
             <div class="submit_container flex justify-end">
-              <div v-show="isLoading" class="pt-1 pr-2 ng-fade"><i class="spinner fa fa-spinner fa-pulse" /></div>
-              <button class="btn submit" :disabled="!contactDirty || !contactValid">Skicka</button>
+              <div v-show="contactPending" class="pt-1 pr-2 ng-fade"><i class="spinner fa fa-spinner fa-pulse" /></div>
+              <button class="btn submit" :disabled="contactPending || !contactDirty || !contactValid">Skicka</button>
               <div style="clear:both;" />
             </div>
           </div>
@@ -191,7 +198,7 @@ async function subscribe() {
           <p>
             Vill du få Litteraturbankens utskick? Skriv in din epostadress här.
           </p>
-          <form name="subscribeform" class="subscribeform flex pr-2" novalidate @submit.prevent="subscribe">
+          <form name="subscribeform" class="subscribeform flex pr-2" novalidate :aria-busy="newsletterPending" @submit.prevent="subscribe">
             <label class="pt-1" for="newsletterEmail">Epost</label>{{ " " }}
             <input
               id="newsletterEmail"
@@ -205,7 +212,7 @@ async function subscribe() {
               @input="newsletterDirty = true"
             >
             <span id="newsletter-email-error" class="error_msg">Skriv din epostadress</span>
-            <button class="btn submit" :disabled="!newsletterDirty || !newsletterValid">Skicka</button>
+            <button class="btn submit" :disabled="newsletterPending || !newsletterDirty || !newsletterValid">Skicka</button>
           </form>
         </div>
       </div>

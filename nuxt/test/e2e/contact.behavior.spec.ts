@@ -229,15 +229,17 @@ test("keyboard-submits trimmed Contact data, exposes one polite status, and clea
   await expect(page.locator(".contactform textarea")).toHaveValue("")
 })
 
-test("keeps Contact submission available while pending and sends each duplicate attempt", async ({ page, request }) => {
+test("prevents duplicate pending Contact submits from double-click, Enter, and requestSubmit", async ({ page, request }) => {
   await openContact(page)
   await request.put(`${fixture}/_contact_defer`)
   await fillContact(page)
 
   const submit = page.locator("form.contactform button.submit")
-  await submit.click()
-  await expect(submit).toBeEnabled()
-  await submit.click()
+  const form = page.locator("form.contactform")
+  await submit.dblclick()
+  await expect(submit).toBeDisabled()
+  await submit.press("Enter")
+  await form.evaluate(element => (element as HTMLFormElement).requestSubmit())
 
   const payload = {
     sender_name: "Anna Andersson",
@@ -245,12 +247,14 @@ test("keeps Contact submission available while pending and sends each duplicate 
     message: "Hej!",
     audience: "litteraturbanken"
   }
-  expect(await waitForSubmissions(request, 2)).toEqual([payload, payload])
-  await expect(submit).toBeEnabled()
+  expect(await waitForSubmissions(request)).toEqual([payload])
+  await expect(form).toHaveAttribute("aria-busy", "true")
   await expect(page.locator(".page-contactForm > div").first()).toBeVisible()
 
   await request.delete(`${fixture}/_contact_defer`)
   await expect(page.getByText("Tack för ditt meddelande, vi svarar så fort vi kan.", { exact: true })).toBeVisible()
+  await expect(submit).toBeEnabled()
+  await expect(form).toHaveAttribute("aria-busy", "false")
 })
 
 test("a failed Contact submission alerts before restoring the mounted form after four seconds", async ({ page, request }) => {
@@ -395,6 +399,8 @@ test("only the latest delayed submission may publish feedback or own its timeout
   await oldResponse
   await waitForFeedbackRender(page)
   await expect(page.getByRole("status")).toHaveCount(0)
+  await expect(page.locator("form.contactform button.submit")).toBeEnabled()
+  await expect(page.locator("form.subscribeform button.submit")).toBeDisabled()
   await page.clock.fastForward(1_000)
   const newResponse = waitForContactResponse(page)
   await request.post(`${fixture}/_contact_release`, { data: { sender_name: "Utskickslista" } })
@@ -433,15 +439,16 @@ test("an older delayed failure cannot replace newer success feedback", async ({ 
   await expect(page.getByRole("alert")).toHaveCount(0)
 })
 
-test("keeps newsletter submission available while pending and sends each duplicate attempt", async ({ page, request }) => {
+test("prevents duplicate pending newsletter submits from keyboard and requestSubmit", async ({ page, request }) => {
   await openContact(page)
   await request.put(`${fixture}/_contact_defer`)
   await page.locator("#newsletterEmail").fill("utskick@example.test")
 
   const submit = page.locator("form.subscribeform button.submit")
-  await submit.click()
-  await expect(submit).toBeEnabled()
-  await submit.click()
+  const form = page.locator("form.subscribeform")
+  await submit.press("Enter")
+  await expect(submit).toBeDisabled()
+  await form.evaluate(element => (element as HTMLFormElement).requestSubmit())
 
   const payload = {
     sender_name: "Utskickslista",
@@ -449,13 +456,15 @@ test("keeps newsletter submission available while pending and sends each duplica
     message: "utskick@example.test vill bli tillagd på utskickslistan.",
     audience: "litteraturbanken"
   }
-  expect(await waitForSubmissions(request, 2)).toEqual([payload, payload])
-  await expect(submit).toBeEnabled()
+  expect(await waitForSubmissions(request)).toEqual([payload])
+  await expect(form).toHaveAttribute("aria-busy", "true")
   await expect(page.locator(".page-contactForm > div").first()).toBeVisible()
   await expect(page.locator(".page-contactForm .spinner")).toBeHidden()
 
   await request.delete(`${fixture}/_contact_defer`)
   await expect(page.getByText("Tack för din anmälan.", { exact: true })).toBeVisible()
+  await expect(submit).toBeEnabled()
+  await expect(form).toHaveAttribute("aria-busy", "false")
 })
 
 test("legacy Contact alias preserves query and fragment in the browser", async ({ page }) => {
