@@ -11,11 +11,21 @@ export default defineEventHandler(async event => {
   }
 
   const base = useRuntimeConfig(event).contentBase.replace(/\/$/u, "")
-  const source = await fetchManagedText(
-    `${base}${aboutPages[page].contentPath}`,
-    managedAboutTextRules(base)
-  )
-  setResponseHeader(event, "content-type", "text/plain; charset=utf-8")
-  setResponseHeader(event, "x-content-type-options", "nosniff")
-  return extractAboutBody(source)
+  try {
+    const source = await fetchManagedText(
+      `${base}${aboutPages[page].contentPath}`,
+      managedAboutTextRules(base)
+    )
+    const body = extractAboutBody(source)
+    setResponseHeader(event, "content-type", "text/plain; charset=utf-8")
+    setResponseHeader(event, "x-content-type-options", "nosniff")
+    return body
+  } catch {
+    setResponseHeader(event, "cache-control", "no-store")
+    throw createError({
+      statusCode: 502,
+      statusMessage: "Bad Gateway",
+      data: { code: "about_content_unavailable" }
+    })
+  }
 })

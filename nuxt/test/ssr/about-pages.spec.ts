@@ -162,6 +162,28 @@ test("managed About API returns only the reviewed editorial body", async ({ requ
   expect(log.requests).toEqual(["/red/om/ide/omlitteraturbanken.html"])
 })
 
+test("managed About API translates content failure to a controlled non-leaking 502", async ({
+  request
+}) => {
+  await reset(request)
+  await request.put(`${fixture}/_failure`, { data: { resource: "content" } })
+
+  const response = await request.get("/api/about/ide")
+  expect(response.status()).toBe(502)
+  expect(response.headers()["cache-control"]).toBe("no-store")
+  const body = await response.text()
+  expect(JSON.parse(body)).toMatchObject({
+    statusCode: 502,
+    statusMessage: "Bad Gateway",
+    data: { code: "about_content_unavailable" }
+  })
+  expect(body).not.toMatch(
+    /(?:Managed text|content unavailable|127\.0\.0\.1:4100|\/red\/om\/ide\/omlitteraturbanken\.html)/u
+  )
+  const log = await (await request.get(`${fixture}/_requests`)).json()
+  expect(log.requests).toEqual(["/red/om/ide/omlitteraturbanken.html"])
+})
+
 test("managed About API rejects unknown pages before fetching content", async ({ request }) => {
   await reset(request)
   expect((await request.get("/api/about/not-allowed")).status()).toBe(404)
