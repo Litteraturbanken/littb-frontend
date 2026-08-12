@@ -1184,6 +1184,125 @@ describe("browser event delivery", () => {
     }
   })
 
+  test("times out a hung normal delivery and recovers its head before later events", async () => {
+    vi.useFakeTimers()
+    try {
+      let hungSignal: AbortSignal | undefined
+      let rejectHung: ((reason?: unknown) => void) | undefined
+      const fetchMock = vi.fn()
+        .mockImplementationOnce((_url: string, init: RequestInit) => {
+          hungSignal = init.signal ?? undefined
+          return new Promise<Response>((_resolve, reject) => {
+            rejectHung = reject
+          })
+        })
+        .mockResolvedValue(new Response(null, { status: 202 }))
+      const reporter = new BrowserObservabilityReporter(reporterOptions({
+        fetch: fetchMock,
+        fetchTimeoutMs: 50,
+        autoFlush: true
+      }))
+      const eventIds = await enqueueNumberedEvents(reporter, 11)
+
+      const hungFlush = reporter.flush()
+      await vi.advanceTimersByTimeAsync(49)
+      expect(hungSignal?.aborted).toBe(false)
+      await vi.advanceTimersByTimeAsync(1)
+      await hungFlush
+
+      expect(hungSignal?.aborted).toBe(true)
+      expect(vi.getTimerCount()).toBe(1)
+      rejectHung?.(new Error("late private rejection"))
+      await Promise.resolve()
+      await vi.advanceTimersByTimeAsync(1_000)
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(fetchBodies(fetchMock)).toEqual([
+        eventIds.slice(0, 10),
+        eventIds.slice(0, 10),
+        eventIds.slice(10)
+      ])
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  test("times out every hung page-exit fallback and requeues them in source order", async () => {
+    vi.useFakeTimers()
+    try {
+      const signals: AbortSignal[] = []
+      const fetchMock = vi.fn((_url: string, init: RequestInit) => {
+        if (init.signal) signals.push(init.signal)
+        return new Promise<Response>(() => {})
+      })
+      const beacon = vi.fn(() => false)
+      const reporter = new BrowserObservabilityReporter(reporterOptions({
+        fetch: fetchMock,
+        beacon,
+        fetchTimeoutMs: 50,
+        autoFlush: true
+      }))
+      const eventIds = await enqueueNumberedEvents(reporter, 23)
+
+      const firstExitFlush = reporter.flush(true)
+      const secondExitFlush = reporter.flush(true)
+      expect(fetchBodies(fetchMock)).toEqual([
+        eventIds.slice(0, 10),
+        eventIds.slice(10, 20),
+        eventIds.slice(20)
+      ])
+      await vi.advanceTimersByTimeAsync(50)
+      await Promise.all([firstExitFlush, secondExitFlush])
+
+      expect(signals).toHaveLength(3)
+      expect(signals.every(signal => signal.aborted)).toBe(true)
+      expect(vi.getTimerCount()).toBe(1)
+      fetchMock.mockResolvedValue(new Response(null, { status: 202 }))
+      await reporter.flush()
+      await reporter.flush()
+      await reporter.flush()
+      expect(fetchBodies(fetchMock).slice(3)).toEqual([
+        eventIds.slice(0, 10),
+        eventIds.slice(10, 20),
+        eventIds.slice(20)
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  test("ignores a late successful settlement after a delivery deadline", async () => {
+    vi.useFakeTimers()
+    try {
+      let resolveHung: ((response: Response) => void) | undefined
+      const fetchMock = vi.fn()
+        .mockImplementationOnce(() => new Promise<Response>(resolve => {
+          resolveHung = resolve
+        }))
+        .mockResolvedValue(new Response(null, { status: 202 }))
+      const reporter = new BrowserObservabilityReporter(reporterOptions({
+        fetch: fetchMock,
+        fetchTimeoutMs: 50,
+        autoFlush: true
+      }))
+      const eventIds = await enqueueNumberedEvents(reporter, 1)
+
+      const hungFlush = reporter.flush()
+      await vi.advanceTimersByTimeAsync(50)
+      await hungFlush
+      resolveHung?.(new Response(null, { status: 202 }))
+      await Promise.resolve()
+
+      expect(fetchBodies(fetchMock)).toEqual([eventIds])
+      expect(vi.getTimerCount()).toBe(1)
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(fetchBodies(fetchMock)).toEqual([eventIds, eventIds])
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   test("requeues a page-exit 429 fallback ahead of its untouched tail", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(null, { status: 429 }))

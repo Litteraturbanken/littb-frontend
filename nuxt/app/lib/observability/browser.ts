@@ -13,6 +13,7 @@ const MAX_QUEUE_EVENTS = 50
 const DEDUPLICATION_WINDOW_MS = 60_000
 const FLUSH_DELAY_MS = 1_000
 const MAX_RETRY_DELAY_MS = 30_000
+const FETCH_TIMEOUT_MS = 10_000
 const TERMINAL_INTAKE_STATUSES = new Set([400, 403, 413, 415, 422])
 const SAFE_LABEL_PATTERN = /^[A-Za-z0-9_.:-]{1,120}$/u
 const EVENT_ID_PATTERN
@@ -83,6 +84,7 @@ interface ReporterOptions {
   beacon?: (url: string, data: Blob) => boolean
   autoFlush?: boolean
   nowMs?: () => number
+  fetchTimeoutMs?: number
 }
 
 function safeLabel(value: string | null | undefined): string | null {
@@ -449,17 +451,34 @@ export class BrowserObservabilityReporter {
   async #deliverByFetch(body: string): Promise<boolean> {
     const fetchRequest = this.#options.fetch
       ?? ((url: string, init: RequestInit) => globalThis.fetch(url, init))
+    const controller = new AbortController()
+    let timeout: ReturnType<typeof setTimeout> | undefined
     try {
-      const response = await fetchRequest(this.#options.endpoint, {
+      const request = fetchRequest(this.#options.endpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body,
         credentials: "same-origin",
-        keepalive: true
+        keepalive: true,
+        signal: controller.signal
       })
+      const observedRequest = request.then(
+        response => response,
+        () => null
+      )
+      const deadline = new Promise<null>(resolve => {
+        timeout = setTimeout(() => {
+          controller.abort()
+          resolve(null)
+        }, this.#options.fetchTimeoutMs ?? FETCH_TIMEOUT_MS)
+      })
+      const response = await Promise.race([observedRequest, deadline])
+      if (!response) return false
       return response.ok || TERMINAL_INTAKE_STATUSES.has(response.status)
     } catch {
       return false
+    } finally {
+      if (timeout !== undefined) clearTimeout(timeout)
     }
   }
 
