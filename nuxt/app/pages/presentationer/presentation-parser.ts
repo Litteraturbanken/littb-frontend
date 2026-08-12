@@ -10,7 +10,6 @@ import {
   issueManagedPresentationStylesheetHref
 } from "#shared/utils/renderable-html"
 import { hasC0OrC1Control, hasLoneSurrogate, removeC0AndSpace } from "#shared/utils/text-safety"
-import parseCss from "postcss/lib/parse"
 import { SaxesParser, type SaxesTagNS } from "saxes"
 
 export { validatePresentationSegments } from "../../lib/presentation-routes"
@@ -81,6 +80,18 @@ const removedPresentationBodyAttributes = new Set([
 const allowedPresentationHrefProtocols = new Set(["http:", "https:", "mailto:", "tel:"])
 
 type PresentationStyleScope = "background" | "document"
+
+const asciiCssWhitespace = "[\\t\\n\\f\\r ]*"
+const allowedPresentationCss = {
+  // The frozen presentation corpus uses only these two declarations. Keeping
+  // this finite ASCII grammar avoids accepting CSS resource syntax or escapes.
+  document: new RegExp(
+    `^${asciiCssWhitespace}p\\.image${asciiCssWhitespace}\\{${asciiCssWhitespace}text-align${asciiCssWhitespace}:${asciiCssWhitespace}center${asciiCssWhitespace};?${asciiCssWhitespace}\\}${asciiCssWhitespace}$`
+  ),
+  background: new RegExp(
+    `^${asciiCssWhitespace}html${asciiCssWhitespace}\\{${asciiCssWhitespace}background-color${asciiCssWhitespace}:${asciiCssWhitespace}#[0-9a-f]{6}${asciiCssWhitespace};?${asciiCssWhitespace}\\}${asciiCssWhitespace}$`
+  )
+} as const
 
 function isExecutablePresentationAttribute(name: string): boolean {
   return /^(?:on|srcdoc$|v-|data-v-|ng-|data-ng-|x-|data-x-|[@:]|data-bind$)/iu.test(name)
@@ -236,48 +247,13 @@ function normalizedBackgroundImagePath(value: string): string | null {
   return normalizedOwnedAssetPath(value, "/red/bilder/")
 }
 
-function hasAllowedPresentationCssDeclaration(
-  scope: PresentationStyleScope,
-  property: string,
-  value: string
-): boolean {
-  if (scope === "document") {
-    return property === "text-align" && value.trim().toLowerCase() === "center"
-  }
-  return property === "background-color" && /^#[\da-f]{6}$/iu.test(value.trim())
-}
-
 function managedPresentationStyle(
   value: string,
   scope: PresentationStyleScope
 ): ManagedStyleText<"presentation-editorial"> | null {
-  if (value.includes("\\")) return null
-  try {
-    const stylesheet = parseCss(value)
-    let safe = true
-    let rules = 0
-    stylesheet.walkAtRules(() => { safe = false })
-    stylesheet.each(node => {
-      if (node.type !== "comment" && node.type !== "rule") safe = false
-    })
-    stylesheet.walkRules(rule => {
-      rules += 1
-      const selector = scope === "document" ? "p.image" : "html"
-      let declarations = 0
-      if (rule.selector.trim() !== selector) safe = false
-      rule.each(node => {
-        if (
-          node.type !== "decl"
-          || !hasAllowedPresentationCssDeclaration(scope, node.prop.toLowerCase(), node.value)
-        ) safe = false
-        else declarations += 1
-      })
-      if (declarations !== 1) safe = false
-    })
-    return safe && rules === 1 ? issueManagedPresentationStyle(value) : null
-  } catch {
-    return null
-  }
+  return allowedPresentationCss[scope].test(value)
+    ? issueManagedPresentationStyle(value)
+    : null
 }
 
 type ParsedBackgroundRule = {
@@ -338,7 +314,7 @@ function parseStrictBackgroundXml(source: string): ParsedBackgroundRule[] | null
         target: activeRule.target,
         rawImagePath: activeRule.rawImagePath,
         className: activeRule.className,
-        styleText: activeRule.styleParts.join("").trim() || null
+        styleText: activeRule.styleParts.join("").replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/gu, "") || null
       })
       activeRule = null
     }

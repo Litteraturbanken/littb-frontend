@@ -856,6 +856,20 @@ input[type="range"]::-moz-range-thumb { pointer-events: auto; }
     expect(result.stderr).toBe("")
   })
 
+  test("keeps the Presentation CSS gate free of production parser dependencies", () => {
+    const parser = readFileSync(
+      resolve(import.meta.dirname, "../../app/pages/presentationer/presentation-parser.ts"),
+      "utf8"
+    )
+    const packageJson = JSON.parse(readFileSync(
+      resolve(import.meta.dirname, "../../package.json"),
+      "utf8"
+    )) as { dependencies?: Record<string, string> }
+
+    expect(parser).not.toContain('from "postcss')
+    expect(packageJson.dependencies).not.toHaveProperty("postcss")
+  })
+
   test("rejects a local DOMParser shadow at a reviewed detached-DOM boundary", () => {
     const root = createTree()
     const path = "app/pages/presentationer/presentation-parser.ts"

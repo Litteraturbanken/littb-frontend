@@ -164,17 +164,32 @@ describe("Presentation XHTML parser", () => {
   ])("drops unsafe or malformed head inline CSS: %s", styleText => {
     const parsed = parsePresentationDocument(
       "<html><head>"
-      + "<style>/* safe formatting */ p.image { text-align: center; }</style>"
+      + "<style>p.image { text-align: center; }</style>"
       + "<style>" + styleText + "</style>"
       + "</head><body><h1>CSS-prov</h1></body></html>"
     )
 
     expect(parsed.styleNodes).toEqual([
-      { kind: "inline", textContent: "/* safe formatting */ p.image { text-align: center; }" }
+      { kind: "inline", textContent: "p.image { text-align: center; }" }
     ])
   })
 
   test.each(["", "/* editorial note */"])('drops head inline CSS without an allowed rule: %j', styleText => {
+    expect(parsePresentationDocument(
+      `<html><head><style>${styleText}</style></head><body><h1>CSS-prov</h1></body></html>`
+    ).styleNodes).toEqual([])
+  })
+
+  test.each([
+    "p.image { text-align: center; } @import url(https://evil.test/late.css);",
+    "/* comment */ p.image { text-align: center; }",
+    "\u0000p.image { text-align: center; }",
+    "\u00a0p.image { text-align: center; }",
+    "p.image { text-align: center; color: red; }",
+    "p.image { text-align: center; } p.image { text-align: center; }",
+    "P.image { text-align: center; }",
+    "p.image { TEXT-ALIGN: CENTER; }"
+  ])("drops CSS outside the exact case-sensitive head grammar: %j", styleText => {
     expect(parsePresentationDocument(
       `<html><head><style>${styleText}</style></head><body><h1>CSS-prov</h1></body></html>`
     ).styleNodes).toEqual([])
@@ -302,7 +317,27 @@ describe("Presentation background parser", () => {
       + '</style></background></backgrounds>'
     )
 
-    expect(rule?.styleText).toBeNull()
+    expect(rule?.styleText ?? null).toBeNull()
+  })
+
+  test.each([
+    "html { background-color: #382a32; } @import url(https://evil.test/late.css);",
+    "/* comment */ html { background-color: #382a32; }",
+    "\u0000html { background-color: #382a32; }",
+    "\u00a0html { background-color: #382a32; }",
+    "html { background-color: #382a32; color: red; }",
+    "html { background-color: #382a32; } html { background-color: #382a32; }",
+    "HTML { background-color: #382a32; }",
+    "html { BACKGROUND-COLOR: #382a32; }",
+    "html { background-color: #382A32; }"
+  ])("drops CSS outside the exact case-sensitive background grammar: %j", styleText => {
+    const [rule] = parseBackgroundRules(
+      '<backgrounds><background target="/presentationer/*"><style>'
+      + styleText
+      + '</style></background></backgrounds>'
+    )
+
+    expect(rule?.styleText ?? null).toBeNull()
   })
 
   test.each([
