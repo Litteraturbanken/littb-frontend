@@ -4,6 +4,7 @@ import type {
   ReaderFacsimileSize,
   ReaderFacsimileSource
 } from "#shared/types/reader"
+import { adjacentFacsimileSize } from "#shared/utils/facsimile-source"
 
 const props = defineProps<{
   page: ReaderFacsimilePage
@@ -25,12 +26,16 @@ const selectedSource = computed<ReaderFacsimileSource>(() => {
 const retinaSource = computed(() => props.page.sources.find(
   item => item.size === props.selectedSize + 2
 ))
-const smallerSize = computed(() => props.page.sources.find(
-  item => item.size === props.selectedSize - 1
-)?.size)
-const largerSize = computed(() => props.page.sources.find(
-  item => item.size === props.selectedSize + 1
-)?.size)
+const smallerSize = computed(() => adjacentFacsimileSize(
+  props.page.sources,
+  props.selectedSize,
+  -1
+))
+const largerSize = computed(() => adjacentFacsimileSize(
+  props.page.sources,
+  props.selectedSize,
+  1
+))
 const sourceSet = computed(() => retinaSource.value
   ? `${selectedSource.value.url} 1x, ${retinaSource.value.url} 2x`
   : undefined

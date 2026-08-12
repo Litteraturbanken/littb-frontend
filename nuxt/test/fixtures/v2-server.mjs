@@ -933,6 +933,14 @@ function readerMetadataResponse(titlePath) {
       }
     case "GostaBerlingsSaga":
       return readerFacsimileWorkInfoResponse
+    case "SparseFacsimileSizes":
+      return {
+        hits: 1,
+        data: [readerFacsimileRepresentation(titlePath, {
+          faksimil_sizes: [1, 3],
+          lbworkid: "lb-reader-sparse-facsimile-sizes"
+        })]
+      }
     case "EttVerkligtJordiskt":
       return readerBoyeWorkInfoResponse
     case "Affarer":
@@ -4486,6 +4494,16 @@ const server = createServer(async (request, response) => {
   if (
     request.method === "GET"
     && /^\/txt\/lb-reader-gosta-berlings-saga\/lb-reader-gosta-berlings-saga_[1-5]\/lb-reader-gosta-berlings-saga_[1-5]_\d{4}\.jpeg$/.test(url.pathname)
+  ) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerJpegRequests.push(recordedRequest)
+    return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
+  }
+
+  if (
+    request.method === "GET"
+    && /^\/txt\/lb-reader-sparse-facsimile-sizes\/lb-reader-sparse-facsimile-sizes_[24]\/lb-reader-sparse-facsimile-sizes_[24]_\d{4}\.jpeg$/.test(url.pathname)
   ) {
     const recordedRequest = `${url.pathname}${url.search}`
     readerRequests.push(recordedRequest)

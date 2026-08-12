@@ -1041,6 +1041,26 @@ test("an advertised direct faksimil size is server-rendered without a density pa
   ])
 })
 
+test("a sparse faksimil manifest server-renders its selected available source", async ({
+  request
+}) => {
+  const path = "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/" +
+    "SparseFacsimileSizes/sida/3/faksimil?storlek=2"
+  const response = await request.get(path)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  const work = "lb-reader-sparse-facsimile-sizes"
+
+  expect(html).toContain(`src="/txt/${work}/${work}_2/${work}_2_0009.jpeg"`)
+  expect(html).toContain(
+    `srcset="/txt/${work}/${work}_2/${work}_2_0009.jpeg 1x, ` +
+    `/txt/${work}/${work}_4/${work}_4_0009.jpeg 2x"`
+  )
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("LagerlöfS", "SparseFacsimileSizes", "faksimil")
+  ])
+})
+
 test("canonical faksimil selects the requested alternate representation", async ({ request }) => {
   const response = await request.get(
     "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/faksimil"

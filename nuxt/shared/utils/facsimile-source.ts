@@ -10,3 +10,14 @@ export function preferredFacsimileSize(
   if (sizes.includes(3)) return 3
   return sizes.filter(size => size < 3).at(-1) ?? sizes[0]!
 }
+
+export function adjacentFacsimileSize(
+  sources: readonly FacsimileSourceIdentity[],
+  selectedSize: FacsimileSize["size"],
+  direction: -1 | 1
+): FacsimileSize["size"] | undefined {
+  const sizes = sources.map(source => source.size).sort((left, right) => left - right)
+  return direction === -1
+    ? sizes.filter(size => size < selectedSize).at(-1)
+    : sizes.find(size => size > selectedSize)
+}

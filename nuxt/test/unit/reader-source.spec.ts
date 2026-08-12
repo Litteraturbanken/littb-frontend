@@ -20,7 +20,10 @@ import type {
 } from "../../shared/types/work-manifest"
 import type { ManagedAssetHtml } from "../../shared/types/renderable-html"
 import type { ReaderEtextPage } from "../../shared/types/reader"
-import { preferredFacsimileSize } from "../../shared/utils/facsimile-source"
+import {
+  adjacentFacsimileSize,
+  preferredFacsimileSize
+} from "../../shared/utils/facsimile-source"
 import type { transformManagedReaderHtml } from "../../shared/utils/renderable-html"
 
 const readerManifest = {
@@ -496,6 +499,21 @@ describe("faksimil assets", () => {
   test("requires an authoritative source for preferred-size selection", () => {
     expect(() => preferredFacsimileSize([])).toThrow(RangeError)
   })
+
+  test.each([
+    [[{ size: 2 }, { size: 4 }], 2, -1, undefined],
+    [[{ size: 2 }, { size: 4 }], 2, 1, 4],
+    [[{ size: 2 }, { size: 4 }], 4, -1, 2],
+    [[{ size: 2 }, { size: 4 }], 4, 1, undefined],
+    [[{ size: 5 }, { size: 1 }, { size: 3 }], 3, -1, 1],
+    [[{ size: 1 }, { size: 3 }, { size: 5 }], 3, -1, 1],
+    [[{ size: 1 }, { size: 3 }, { size: 5 }], 3, 1, 5]
+  ] as const)(
+    "finds the nearest available faksimil size in one direction",
+    (sources, selected, direction, expected) => {
+      expect(adjacentFacsimileSize(sources, selected, direction)).toBe(expected)
+    }
+  )
 
   test("RFC3986-encodes work IDs and keeps JPEG image number separate", () => {
     expect(facsimileImageUrl("lb 12/!*'()", 3, 27)).toBe(

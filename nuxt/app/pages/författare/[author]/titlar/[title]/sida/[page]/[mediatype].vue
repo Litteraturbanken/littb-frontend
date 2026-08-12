@@ -5,6 +5,7 @@ import type {
 } from "#shared/types/reader"
 import type { ManagedAssetHtml, ManagedStyleText } from "#shared/types/renderable-html"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
+import { adjacentFacsimileSize } from "#shared/utils/facsimile-source"
 import {
   emptyRenderableHtml
 } from "#shared/utils/renderable-html"
@@ -750,18 +751,20 @@ const selectedFacsimileSize = computed<ReaderFacsimileSize | null>(() => {
   }
   return currentReader.preferredSize
 })
-const focusSmallerSizeEnabled = computed(() => {
+const focusSmallerSize = computed(() => {
   const current = selectedFacsimileSize.value
-  return current !== null && Boolean(
-    facsimileReader.value?.sources.some(source => source.size === current - 1)
-  )
+  return current === null || !facsimileReader.value
+    ? undefined
+    : adjacentFacsimileSize(facsimileReader.value.sources, current, -1)
 })
-const focusLargerSizeEnabled = computed(() => {
+const focusLargerSize = computed(() => {
   const current = selectedFacsimileSize.value
-  return current !== null && Boolean(
-    facsimileReader.value?.sources.some(source => source.size === current + 1)
-  )
+  return current === null || !facsimileReader.value
+    ? undefined
+    : adjacentFacsimileSize(facsimileReader.value.sources, current, 1)
 })
+const focusSmallerSizeEnabled = computed(() => focusSmallerSize.value !== undefined)
+const focusLargerSizeEnabled = computed(() => focusLargerSize.value !== undefined)
 const focusParts = computed(() => reader.value?.parts.map(part => ({
   href: pageHref(part.start_page_name),
   label: part.nav_title || part.short_title || part.title
@@ -1729,13 +1732,10 @@ function hitHref(hit: WorkSearchHit): string {
 }
 
 function selectFacsimileSize(size: ReaderFacsimileSize): void {
-  const currentReader = facsimileReader.value
-  const selectedSize = selectedFacsimileSize.value
+  const identityMatchedReader = currentReader.value
   if (
-    !currentReader ||
-    selectedSize === null ||
-    Math.abs(size - selectedSize) !== 1 ||
-    !currentReader.sources.some(source => source.size === size)
+    identityMatchedReader?.mediaType !== "faksimil"
+    || !identityMatchedReader.sources.some(source => source.size === size)
   ) return
 
   void navigateRawFullPath(
@@ -1771,9 +1771,8 @@ function adjustFocusText(delta: number): void {
 }
 
 function selectFocusFacsimileSize(delta: -1 | 1): void {
-  const current = selectedFacsimileSize.value
-  if (current === null) return
-  selectFacsimileSize((current + delta) as ReaderFacsimileSize)
+  const size = delta === -1 ? focusSmallerSize.value : focusLargerSize.value
+  if (size !== undefined) selectFacsimileSize(size)
 }
 
 onMounted(() => {

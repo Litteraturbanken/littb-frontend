@@ -38,6 +38,15 @@ const storedFacsimilePath = "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/" +
   "GostaBerlingsSaga/sida/3/faksimil"
 const storedNextFacsimilePath = "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/" +
   "GostaBerlingsSaga/sida/5/faksimil"
+const sparseFacsimilePath = "/författare/LagerlöfS/titlar/" +
+  "SparseFacsimileSizes/sida/3/faksimil"
+const storedSparseFacsimilePath = "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/" +
+  "SparseFacsimileSizes/sida/3/faksimil"
+
+function sparseFacsimileSource(size: 2 | 4, imageNumber: 7 | 9 | 12): string {
+  const work = "lb-reader-sparse-facsimile-sizes"
+  return `/txt/${work}/${work}_${size}/${work}_${size}_${String(imageNumber).padStart(4, "0")}.jpeg`
+}
 
 function facsimileSource(size: 2 | 3 | 4 | 5, imageNumber: 7 | 9 | 12): string {
   const work = "lb-reader-gosta-berlings-saga"
@@ -2410,6 +2419,113 @@ test("faksimil size replacement changes exact sources and stops at both edges", 
   expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
   expect(await readerManifestRequests(request)).toEqual([])
   expect(problems).toEqual([])
+})
+
+test("sparse faksimil controls select nearest sizes and preserve replacement history", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  const historyBeforeReader = await page.evaluate(() => window.history.length)
+  await navigateClient(
+    page,
+    `${storedSparseFacsimilePath}?bare&space=a%20b&storlek=2&repeat=%2f&repeat=%2F#scan`
+  )
+  const readerHistoryLength = await page.evaluate(() => window.history.length)
+  expect(readerHistoryLength).toBe(historyBeforeReader + 1)
+
+  const image = page.locator("img.faksimil")
+  const controls = page.locator("#toolkit .reader-facsimile-size-controls")
+  const smaller = controls.getByRole("button", { name: "Mindre" })
+  const larger = controls.getByRole("button", { name: "Större" })
+  await expect(image).toHaveAttribute("src", sparseFacsimileSource(2, 9))
+  await expect(smaller).toBeDisabled()
+  await expect(larger).toBeEnabled()
+
+  await larger.click()
+  await expect.poll(() => page.evaluate(() => location.pathname + location.search + location.hash))
+    .toBe(`${storedSparseFacsimilePath}?bare&space=a%20b&storlek=4` +
+      "&repeat=%2f&repeat=%2F#scan")
+  await expect(image).toHaveAttribute("src", sparseFacsimileSource(4, 9))
+  await expect(smaller).toBeEnabled()
+  await expect(larger).toBeDisabled()
+  expect(await page.evaluate(() => window.history.length)).toBe(readerHistoryLength)
+
+  await smaller.click()
+  await expect(page).toHaveURL(`${sparseFacsimilePath}?bare&space=a%20b&storlek=2` +
+    "&repeat=%2f&repeat=%2F#scan")
+  await expect(image).toHaveAttribute("src", sparseFacsimileSource(2, 9))
+  expect(await page.evaluate(() => window.history.length)).toBe(readerHistoryLength)
+
+  await page.goBack()
+  await expect(page).toHaveURL("/bibliotek")
+  await page.goForward()
+  await expect(page).toHaveURL(`${sparseFacsimilePath}?bare&space=a%20b&storlek=2` +
+    "&repeat=%2f&repeat=%2F#scan")
+  expect(problems).toEqual([])
+})
+
+test("sparse faksimil Läsfokus controls select nearest sizes", async ({ page }) => {
+  await page.goto(`${sparseFacsimilePath}?bare&storlek=2&fokus#scan`, {
+    waitUntil: "networkidle"
+  })
+  await page.getByRole("button", { name: "Textinställningar" }).click()
+  const smaller = page.getByRole("button", { name: "Mindre bild" })
+  const larger = page.getByRole("button", { name: "Större bild" })
+  await expect(smaller).toBeDisabled()
+  await expect(larger).toBeEnabled()
+
+  await larger.click()
+  await expect(page).toHaveURL(`${sparseFacsimilePath}?bare&storlek=4&fokus#scan`)
+  await expect(page.locator("img.faksimil")).toHaveAttribute(
+    "src",
+    sparseFacsimileSource(4, 9)
+  )
+  await expect(smaller).toBeEnabled()
+  await expect(larger).toBeDisabled()
+  await smaller.click()
+  await expect(page).toHaveURL(`${sparseFacsimilePath}?bare&storlek=2&fokus#scan`)
+})
+
+test("retained sparse faksimil controls cannot rewrite a pending page identity", async ({
+  page
+}) => {
+  await page.goto(`${sparseFacsimilePath}?storlek=2`, { waitUntil: "networkidle" })
+  let releaseRequest!: () => void
+  const release = new Promise<void>(resolve => { releaseRequest = resolve })
+  let markRequestStarted!: () => void
+  const requestStarted = new Promise<void>(resolve => { markRequestStarted = resolve })
+  await page.route("**/api/reader/**/5/faksimil", async route => {
+    markRequestStarted()
+    await release
+    await route.continue()
+  })
+
+  await activateReaderLink(
+    page,
+    "Nästa sida",
+    "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/SparseFacsimileSizes/sida/5/faksimil" +
+    "?storlek=2"
+  )
+  await requestStarted
+  await expect(page).toHaveURL(
+    "/författare/LagerlöfS/titlar/SparseFacsimileSizes/sida/5/faksimil?storlek=2"
+  )
+  await expect(page.locator("img.faksimil")).toHaveAttribute(
+    "src",
+    sparseFacsimileSource(2, 9)
+  )
+  await page.locator("#toolkit .reader-facsimile-size-controls")
+    .getByRole("button", { name: "Större" }).click()
+  await expect(page).toHaveURL(
+    "/författare/LagerlöfS/titlar/SparseFacsimileSizes/sida/5/faksimil?storlek=2"
+  )
+
+  releaseRequest()
+  await expect(page.locator("img.faksimil")).toHaveAttribute(
+    "src",
+    sparseFacsimileSource(2, 12)
+  )
 })
 
 test("faksimil size replacement preserves raw query owners and its fragment", async ({ page }) => {
