@@ -294,6 +294,68 @@ describe("browser event delivery", () => {
     expect(sizes).toEqual([10, 2])
   })
 
+  test("accepts an equivalent event after its unsent queue record is evicted", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+    const first = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new Error("discarded-first"),
+      component: "EvictedComponent",
+      resourceKind: "unknown",
+      route: "/bibliotek",
+      environment: "stage",
+      deploymentGitSha: GIT_SHA,
+      randomUUID: () => "018f47c0-4d5b-7a62-8f41-000000000000"
+    })
+    reporter.enqueue(first)
+    const fillerIds = await enqueueNumberedEvents(reporter, 50)
+    const replacementId = "018f47c0-4d5b-7a62-8f41-999999999999"
+    reporter.enqueue({ ...first, event_id: replacementId })
+
+    for (let index = 0; index < 5; index += 1) await reporter.flush()
+
+    expect(fetchBodies(fetchMock).flat()).toEqual([
+      ...fillerIds.slice(1),
+      replacementId
+    ])
+  })
+
+  test("does not let an old evicted generation clear a newer dedup marker", async () => {
+    let now = 0
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({
+      fetch: fetchMock,
+      nowMs: () => now
+    }))
+    const first = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new Error("discarded-first"),
+      component: "GenerationComponent",
+      resourceKind: "unknown",
+      route: "/bibliotek",
+      environment: "stage",
+      deploymentGitSha: GIT_SHA,
+      randomUUID: () => "018f47c0-4d5b-7a62-8f41-100000000000"
+    })
+    reporter.enqueue(first)
+    now = 60_001
+    const secondId = "018f47c0-4d5b-7a62-8f41-100000000001"
+    reporter.enqueue({ ...first, event_id: secondId })
+    await enqueueNumberedEvents(reporter, 49)
+    reporter.enqueue({
+      ...first,
+      event_id: "018f47c0-4d5b-7a62-8f41-100000000002"
+    })
+
+    for (let index = 0; index < 5; index += 1) await reporter.flush()
+
+    const delivered = fetchBodies(fetchMock).flat()
+    expect(delivered.filter(eventId => eventId.startsWith(
+      "018f47c0-4d5b-7a62-8f41-10000000000"
+    ))).toEqual([secondId])
+    expect(delivered).toHaveLength(50)
+  })
+
   test("strips non-intake fields before delivery", async () => {
     const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
     const reporter = new BrowserObservabilityReporter(reporterOptions({
@@ -956,6 +1018,56 @@ describe("browser event delivery", () => {
     for (let index = 0; index < 5; index += 1) await reporter.flush()
 
     expect(delivered.flat()).toEqual([...firstIds, ...refillIds.slice(10, 50)])
+  })
+
+  test("releases a tail dedup marker when an active requeue truncates it", async () => {
+    let releaseActive: (() => void) | undefined
+    const delivered: string[][] = []
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => new Promise<Response>(resolve => {
+        releaseActive = () => resolve(new Response(null, { status: 503 }))
+      }))
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockImplementation(async (_url: string, init: RequestInit) => {
+        delivered.push(JSON.parse(String(init.body)).events.map(
+          (event: { event_id: string }) => event.event_id
+        ))
+        return new Response(null, { status: 202 })
+      })
+    const beacon = vi.fn(() => false)
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
+    const activeIds = await enqueueNumberedEvents(reporter, 10)
+    const normalFlush = reporter.flush()
+    const refillEvents: BrowserEvent[] = []
+    for (let index = 10; index < 60; index += 1) {
+      const eventId = `018f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`
+      const event = await createBrowserErrorEvent({
+        eventName: "browser.error",
+        error: new Error(`discarded-${index}`),
+        component: `Component${index}`,
+        resourceKind: "unknown",
+        route: "/bibliotek",
+        environment: "stage",
+        deploymentGitSha: GIT_SHA,
+        randomUUID: () => eventId
+      })
+      refillEvents.push(event)
+      reporter.enqueue(event)
+    }
+    const exitFlush = reporter.flush(true)
+    releaseActive?.()
+    await Promise.all([normalFlush, exitFlush])
+
+    const replacementId = "018f47c0-4d5b-7a62-8f41-999999999998"
+    reporter.enqueue({ ...refillEvents.at(-1)!, event_id: replacementId })
+    for (let index = 0; index < 5; index += 1) await reporter.flush()
+
+    expect(delivered.flat()).toEqual([
+      ...activeIds.slice(1),
+      ...refillEvents.slice(0, 40).map(event => event.event_id),
+      replacementId
+    ])
   })
 
   test("retries a transient delivery failure without another event", async () => {

@@ -33,7 +33,9 @@ interface CreateBrowserErrorEventOptions {
 }
 
 interface QueuedBrowserEvent {
+  deduplicationKey: string
   event: BrowserIntakeEvent
+  seenAt: number
 }
 
 interface BrowserIntakeEvent {
@@ -265,14 +267,17 @@ export class BrowserObservabilityReporter {
     const deduplicationKey = JSON.stringify([eventIdentity, correlationToken])
     const previous = this.#seen.get(deduplicationKey)
     if (previous !== undefined && now - previous < DEDUPLICATION_WINDOW_MS) return
-    const queued = { event }
+    const queued = { deduplicationKey, event, seenAt: now }
     if (byteLength(serializedBatch([queued])) > MAX_BATCH_BYTES) return
 
     this.#seen.set(deduplicationKey, now)
     for (const [key, seenAt] of this.#seen) {
       if (now - seenAt >= DEDUPLICATION_WINDOW_MS) this.#seen.delete(key)
     }
-    if (this.#queue.length >= MAX_QUEUE_EVENTS) this.#queue.shift()
+    if (this.#queue.length >= MAX_QUEUE_EVENTS) {
+      const discarded = this.#queue.shift()
+      if (discarded) this.#releaseDeduplicationMarker(discarded)
+    }
     this.#queue.push(queued)
     this.#scheduleFlush(FLUSH_DELAY_MS)
   }
@@ -405,7 +410,16 @@ export class BrowserObservabilityReporter {
 
   #requeueFront(batch: QueuedBrowserEvent[]): void {
     this.#queue.unshift(...batch)
-    if (this.#queue.length > MAX_QUEUE_EVENTS) this.#queue.length = MAX_QUEUE_EVENTS
+    if (this.#queue.length > MAX_QUEUE_EVENTS) {
+      const discarded = this.#queue.splice(MAX_QUEUE_EVENTS)
+      for (const queued of discarded) this.#releaseDeduplicationMarker(queued)
+    }
+  }
+
+  #releaseDeduplicationMarker(queued: QueuedBrowserEvent): void {
+    if (this.#seen.get(queued.deduplicationKey) === queued.seenAt) {
+      this.#seen.delete(queued.deduplicationKey)
+    }
   }
 
   #scheduleRetry(): void {
