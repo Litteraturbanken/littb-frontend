@@ -158,6 +158,29 @@ test("SSR removes credential links and hardens named author-profile targets", as
   expect(await profileRequests(request)).toEqual(["/private-v2/authors/ManagedHtmlProbe"])
 })
 
+test("SSR falls back from sanitized-empty Drama prose while retaining its variant portrait", async ({
+  request
+}) => {
+  const response = await request.get("/författare/SanitizedFallback/dramawebben")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+  const intro = document.querySelector(".introtext")
+
+  expect(compactText(intro?.textContent)).toContain("Ordinary fallback introduction.")
+  expect(compactText(intro?.querySelector(".introauthor em")?.textContent))
+    .toBe("Ordinary fallback editor")
+  expect(compactText(intro?.querySelector(".source_content")?.textContent))
+    .toBe("Ordinary fallback source")
+  expect(intro?.querySelector('.drama_subtitle a[href="/dramawebben"]')).not.toBeNull()
+  expect(document.querySelector(".portrait_container img")?.getAttribute("src"))
+    .toBe("/red/forfattare/StrindbergA/StrindbergA_dw_large.jpeg")
+  expect(compactText(document.querySelector("figcaption")?.textContent))
+    .toBe("Drama portrait remains variant-owned.")
+  expect(html).not.toMatch(/Drama removed (?:introduction|editor|source)/u)
+  expect(await profileRequests(request)).toEqual(["/private-v2/authors/SanitizedFallback"])
+})
+
 for (const [variant, path, intended] of [
   [
     "ordinary",

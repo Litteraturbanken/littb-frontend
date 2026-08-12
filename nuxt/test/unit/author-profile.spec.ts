@@ -331,6 +331,53 @@ describe("safe author profile view model", () => {
     expect(view.sourceHtml).toEqual(["<i>Ordinary source</i>"])
   })
 
+  test.each([
+    ["removed script", "<script>Drama script</script>"],
+    ["removed iframe", "<iframe>Drama frame</iframe>"],
+    ["comment", "<!-- Drama comment -->"],
+    ["empty wrapper", "<div><span></span><br></div>"],
+    ["ASCII whitespace", "<p> \t\n\r </p>"],
+    ["removed image", '<img src="/red/forfattare/StrindbergA/portrait.jpeg" alt="Drama">']
+  ])("falls back from a sanitized-empty Dramawebben %s as one prose bundle", (
+    _label,
+    introductionHtml
+  ) => {
+    const profile = maliciousProfile()
+    if (!profile.dramawebben) throw new Error("Rich fixture must have a Dramawebben profile")
+    profile.dramawebben.introduction_html = introductionHtml
+    const before = structuredClone(profile)
+
+    const view = createAuthorProfileView(profile, "dramawebben")
+
+    expect(view.introductionHtml).toBe("<p>Ordinary intro</p>")
+    expect(view.introductionBy).toBe("Gösta M. Bergman")
+    expect(view.sourceHtml).toEqual(["<i>Ordinary source</i>"])
+    expect(view.portrait?.url).toBe(
+      "/red/forfattare/StrindbergA/StrindbergA_dw_large.jpeg"
+    )
+    expect(profile).toEqual(before)
+  })
+
+  test.each([
+    ["safe text", "<p>Drama text</p>", "<p>Drama text</p>"],
+    ["escaped entity text", "<p>&amp;</p>", "<p>&amp;</p>"],
+    ["non-breaking-space text", "<p>&nbsp;</p>", "<p>&#160;</p>"]
+  ])("keeps the coherent Dramawebben bundle for %s", (
+    _label,
+    introductionHtml,
+    expectedHtml
+  ) => {
+    const profile = maliciousProfile()
+    if (!profile.dramawebben) throw new Error("Rich fixture must have a Dramawebben profile")
+    profile.dramawebben.introduction_html = introductionHtml
+
+    const view = createAuthorProfileView(profile, "dramawebben")
+
+    expect(view.introductionHtml).toBe(expectedHtml)
+    expect(view.introductionBy).toBe("Dramawebbens redaktion")
+    expect(view.sourceHtml).toEqual(["<cite>Drama source</cite>"])
+  })
+
   test("does not borrow the ordinary byline when a Dramawebben introduction has none", () => {
     const profile = maliciousProfile()
     if (!profile.dramawebben) throw new Error("Rich fixture must have a Dramawebben profile")

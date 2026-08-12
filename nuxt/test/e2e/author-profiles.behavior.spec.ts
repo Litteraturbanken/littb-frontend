@@ -171,6 +171,29 @@ test("managed HTML hydrates without retaining raw provider markers", async ({ pa
   expect(problems).toEqual([])
 })
 
+test("sanitized-empty Drama prose hydrates as one ordinary fallback bundle", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/SanitizedFallback/dramawebben", { waitUntil: "networkidle" })
+  const intro = page.locator(".introtext")
+
+  await expect(intro).toContainText("Ordinary fallback introduction.")
+  await expect(intro.locator(".introauthor em")).toHaveText("Ordinary fallback editor")
+  await expect(intro.locator(".source_content")).toHaveText("Ordinary fallback source")
+  await expect(intro.getByRole("link", { name: "Dramawebben" })).toHaveAttribute(
+    "href",
+    "/dramawebben"
+  )
+  await expect(page.getByRole("img", { name: "Porträtt av Sanerad Reservprofil" }))
+    .toHaveAttribute("src", "/red/forfattare/StrindbergA/StrindbergA_dw_large.jpeg")
+  await expect(page.locator("figcaption")).toHaveText("Drama portrait remains variant-owned.")
+  expect(await page.locator("body").innerText()).not.toMatch(/Drama removed (?:editor|source)/u)
+  expect(await profileRequests(request)).toEqual(["/private-v2/authors/SanitizedFallback"])
+  expect(problems).toEqual([])
+})
+
 test("ordinary and Dramawebben portraits expose stable Swedish accessible names", async ({
   page
 }) => {

@@ -274,6 +274,11 @@ export function sanitizeAuthorHtml(
   return issueAuthorProfileHtml(container.innerHTML)
 }
 
+function hasRenderableAuthorContent(value: SanitizedHtml<"author-profile">): boolean {
+  const document = parseHtmlDocument(`<!doctype html><html><body>${value}</body></html>`)
+  return /[^\t\n\f\r ]/u.test(document.body.textContent ?? "")
+}
+
 function profileLinks(links: AuthorProfile["related_links"]): Array<{ label: string, url: string }> {
   return links.flatMap(link => {
     const url = safeNativeHref(link.url)
@@ -321,11 +326,13 @@ export function createAuthorProfileView(
   variant: AuthorProfileVariant
 ): AuthorProfileView {
   const dramawebben = profile.dramawebben
+  const ordinaryIntroductionHtml = sanitizeAuthorHtml(profile.introduction_html)
+  const dramaIntroductionHtml = sanitizeAuthorHtml(dramawebben?.introduction_html)
   const useDramaIntroduction = variant === "dramawebben"
-    && Boolean(dramawebben?.introduction_html)
+    && hasRenderableAuthorContent(dramaIntroductionHtml)
   const introductionHtml = useDramaIntroduction
-    ? dramawebben?.introduction_html
-    : profile.introduction_html
+    ? dramaIntroductionHtml
+    : ordinaryIntroductionHtml
   const introductionBy = useDramaIntroduction
     ? dramawebben?.introduction_by
     : profile.introduction_by
@@ -341,7 +348,7 @@ export function createAuthorProfileView(
     authorId: profile.author_id,
     fullName: profile.full_name,
     lifespan: formatAuthorYears(profile.birth_year, profile.death_year),
-    introductionHtml: sanitizeAuthorHtml(introductionHtml),
+    introductionHtml,
     introductionBy: introductionBy?.full_name ?? "",
     sourceHtml: sources.map(source => sanitizeAuthorHtml(source)),
     pseudonymNames: profile.pseudonyms.map(pseudonym => pseudonym.full_name),

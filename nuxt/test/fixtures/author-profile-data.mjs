@@ -261,6 +261,45 @@ export const managedHtmlProbeAuthorProfile = {
 }
 
 /** @satisfies {AuthorProfile} */
+export const sanitizedFallbackAuthorProfile = {
+  author_id: "SanitizedFallback",
+  full_name: "Sanerad Reservprofil",
+  surname: "Reservprofil",
+  birth_year: null,
+  death_year: null,
+  canonical_path: "/författare/SanitizedFallback",
+  introduction_html: "<p>Ordinary fallback introduction.</p>",
+  introduction_by: {
+    author_id: "OrdinaryEditor",
+    full_name: "Ordinary fallback editor",
+    surname: "Editor"
+  },
+  source_html: ["<i>Ordinary fallback source</i>"],
+  pseudonyms: [],
+  other_names: [],
+  portrait: null,
+  search_url: null,
+  audio_url: null,
+  map_url: null,
+  has_more: false,
+  related_links: [],
+  encyclopedia_links: [],
+  dramawebben: {
+    introduction_html: "<script>Drama removed introduction</script>",
+    introduction_by: {
+      author_id: "DramaEditor",
+      full_name: "Drama removed editor",
+      surname: "Editor"
+    },
+    source_html: ["<i>Drama removed source</i>"],
+    portrait: {
+      url: "/red/forfattare/StrindbergA/StrindbergA_dw_large.jpeg",
+      caption_html: "Drama portrait remains variant-owned."
+    }
+  }
+}
+
+/** @satisfies {AuthorProfile} */
 export const unsafeSearchAuthorProfile = {
   ...strindbergAuthorProfile,
   author_id: "UnsafeSearch",
@@ -292,6 +331,7 @@ export const authorProfiles = new Map([
   [noIntroAuthorProfile.author_id, noIntroAuthorProfile],
   [rfc3986AuthorProfile.author_id, rfc3986AuthorProfile],
   [managedHtmlProbeAuthorProfile.author_id, managedHtmlProbeAuthorProfile],
+  [sanitizedFallbackAuthorProfile.author_id, sanitizedFallbackAuthorProfile],
   [unsafeSearchAuthorProfile.author_id, unsafeSearchAuthorProfile],
   [unsafePortraitAuthorProfile.author_id, unsafePortraitAuthorProfile]
 ])

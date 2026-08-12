@@ -26,6 +26,7 @@ import {
   managedHtmlProbeAuthorProfile,
   noIntroAuthorProfile,
   rfc3986AuthorProfile,
+  sanitizedFallbackAuthorProfile,
   soderbergAuthorProfile,
   strindbergAuthorProfile,
   unsafeSearchAuthorProfile,
@@ -1865,6 +1866,7 @@ describe("v2 fixture server operations", () => {
       noIntroAuthorProfile,
       rfc3986AuthorProfile,
       managedHtmlProbeAuthorProfile,
+      sanitizedFallbackAuthorProfile,
       unsafeSearchAuthorProfile,
       unsafePortraitAuthorProfile
     ])
