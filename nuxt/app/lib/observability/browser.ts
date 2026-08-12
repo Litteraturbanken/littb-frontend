@@ -33,8 +33,7 @@ interface CreateBrowserErrorEventOptions {
 }
 
 interface QueuedBrowserEvent {
-  event: BrowserEvent
-  correlationToken: string | null
+  event: BrowserIntakeEvent
 }
 
 interface BrowserIntakeEvent {
@@ -174,13 +173,7 @@ export async function createBrowserErrorEvent(
 }
 
 function intakeEvent(queued: QueuedBrowserEvent): BrowserIntakeEvent {
-  return {
-    event_id: queued.event.event_id,
-    event_name: queued.event.event_name,
-    error_type: queued.event.error_type ?? "UnknownError",
-    resource_kind: queued.event.attributes.resource_kind ?? "unknown",
-    correlation_token: queued.correlationToken
-  }
+  return queued.event
 }
 
 function serializedBatch(events: QueuedBrowserEvent[]): string {
@@ -189,6 +182,16 @@ function serializedBatch(events: QueuedBrowserEvent[]): string {
 
 function byteLength(value: string): number {
   return new TextEncoder().encode(value).byteLength
+}
+
+function eventIdentity(
+  eventName: BrowserEventName,
+  type: string,
+  component: string | null,
+  route: string | null,
+  resourceKind: NonNullable<BrowserEvent["attributes"]["resource_kind"]>
+): string {
+  return JSON.stringify([eventName, type, component, route, resourceKind])
 }
 
 export class BrowserObservabilityReporter {
@@ -204,7 +207,7 @@ export class BrowserObservabilityReporter {
     this.#options = options
   }
 
-  async capture(
+  capture(
     error: unknown,
     metadata: {
       eventName?: BrowserEventName
@@ -214,28 +217,52 @@ export class BrowserObservabilityReporter {
     } = {}
   ): Promise<void> {
     try {
-      const event = await createBrowserErrorEvent({
-        eventName: metadata.eventName ?? classifyBrowserError(error),
-        error,
-        component: metadata.component,
-        resourceKind: metadata.resourceKind,
-        route: this.#options.route(),
-        environment: this.#options.environment,
-        deploymentGitSha: this.#options.deploymentGitSha
-      })
-      this.enqueue(event, metadata.correlationToken)
+      const eventName = metadata.eventName ?? classifyBrowserError(error)
+      const type = errorType(error)
+      const component = safeLabel(metadata.component)
+      const route = safeRoute(this.#options.route())
+      const resourceKind = metadata.resourceKind ?? "unknown"
+      const correlationToken = metadata.correlationToken ?? null
+      this.#enqueueIntake({
+        event_id: globalThis.crypto.randomUUID(),
+        event_name: eventName,
+        error_type: type,
+        resource_kind: resourceKind,
+        correlation_token: correlationToken
+      }, eventIdentity(eventName, type, component, route, resourceKind), correlationToken)
     } catch {
       // Capturing an error must never create another application failure.
     }
+    return Promise.resolve()
   }
 
   enqueue(event: BrowserEvent, correlationToken: string | null = null): void {
+    const normalizedCorrelationToken = correlationToken ?? null
+    this.#enqueueIntake({
+      event_id: event.event_id,
+      event_name: event.event_name,
+      error_type: event.error_type ?? "UnknownError",
+      resource_kind: event.attributes.resource_kind ?? "unknown",
+      correlation_token: normalizedCorrelationToken
+    }, eventIdentity(
+      event.event_name,
+      event.error_type ?? "UnknownError",
+      safeLabel(event.attributes.component),
+      safeRoute(event.route),
+      event.attributes.resource_kind ?? "unknown"
+    ), normalizedCorrelationToken)
+  }
+
+  #enqueueIntake(
+    event: BrowserIntakeEvent,
+    eventIdentity: string,
+    correlationToken: string | null
+  ): void {
     const now = (this.#options.nowMs ?? Date.now)()
-    const deduplicationKey
-      = `${event.event_name}:${event.error_fingerprint}:${event.route}`
+    const deduplicationKey = JSON.stringify([eventIdentity, correlationToken])
     const previous = this.#seen.get(deduplicationKey)
     if (previous !== undefined && now - previous < DEDUPLICATION_WINDOW_MS) return
-    const queued = { event, correlationToken }
+    const queued = { event }
     if (byteLength(serializedBatch([queued])) > MAX_BATCH_BYTES) return
 
     this.#seen.set(deduplicationKey, now)

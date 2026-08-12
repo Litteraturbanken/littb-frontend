@@ -155,6 +155,119 @@ describe("browser event delivery", () => {
     expect(deliveries[0]).not.toContain("timestamp")
   })
 
+  test("serializes an explicitly undefined correlation token as required null", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+
+    await reporter.capture(new Error("private"), { correlationToken: undefined })
+    await reporter.flush()
+
+    const sent = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))
+    expect(sent.events[0]).toHaveProperty("correlation_token", null)
+  })
+
+  test("normalizes an explicitly undefined enqueue token as required null", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+    const event = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new Error("private"),
+      environment: "stage",
+      deploymentGitSha: GIT_SHA
+    })
+
+    reporter.enqueue(event, undefined as unknown as null)
+    await reporter.flush()
+
+    const sent = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))
+    expect(sent.events[0]).toHaveProperty("correlation_token", null)
+  })
+
+  test("reserves a captured event synchronously before asynchronous hashing can finish", async () => {
+    const digest = vi.spyOn(globalThis.crypto.subtle, "digest")
+    const beacon = vi.fn(() => true)
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ beacon }))
+
+    const capture = reporter.capture(new Error("private"))
+    const exitFlush = reporter.flush(true)
+
+    expect(beacon).toHaveBeenCalledOnce()
+    await Promise.all([capture, exitFlush])
+    expect(digest).not.toHaveBeenCalled()
+    digest.mockRestore()
+  })
+
+  test("retains equivalent enqueued failures with distinct correlation tokens", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+    const firstToken = "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e"
+    const secondToken = "018f47c0-4d5b-7a62-8f41-a04b5df3fd8f"
+    const event = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new Error("private"),
+      environment: "stage",
+      deploymentGitSha: GIT_SHA,
+      randomUUID: () => "018f47c0-4d5b-7a62-8f41-a04b5df3fd80"
+    })
+
+    reporter.enqueue(event, firstToken)
+    reporter.enqueue({
+      ...event,
+      event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd81"
+    }, secondToken)
+    await reporter.flush()
+
+    const sent = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))
+    expect(sent.events.map((event: { correlation_token: string }) => event.correlation_token))
+      .toEqual([firstToken, secondToken])
+  })
+
+  test("still deduplicates equivalent API failures with the same correlation token", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+    const token = "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e"
+
+    await reporter.capture(new Error("first private message"), { correlationToken: token })
+    await reporter.capture(new Error("second private message"), { correlationToken: token })
+    await reporter.flush()
+
+    const sent = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))
+    expect(sent.events).toHaveLength(1)
+    expect(sent.events[0].correlation_token).toBe(token)
+  })
+
+  test.each(["capture-first", "enqueue-first"])(
+    "deduplicates equivalent capture and enqueue events with the same token: %s",
+    async order => {
+      const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+      const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+      const token = "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e"
+      const event = await createBrowserErrorEvent({
+        eventName: "browser.error",
+        error: new Error("private"),
+        route: "/sök",
+        environment: "stage",
+        deploymentGitSha: GIT_SHA
+      })
+      const capture = () => reporter.capture(new Error("different private message"), {
+        correlationToken: token
+      })
+      const enqueue = () => reporter.enqueue(event, token)
+
+      if (order === "capture-first") {
+        await capture()
+        enqueue()
+      } else {
+        enqueue()
+        await capture()
+      }
+      await reporter.flush()
+
+      const sent = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))
+      expect(sent.events).toHaveLength(1)
+    }
+  )
+
   test("caps each batch at ten events and retains the remainder", async () => {
     const sizes: number[] = []
     const reporter = new BrowserObservabilityReporter(reporterOptions({
