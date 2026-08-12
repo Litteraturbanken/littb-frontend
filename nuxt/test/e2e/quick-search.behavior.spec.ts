@@ -229,6 +229,28 @@ test("keeps every ordinary static command and alias in Angular order", async ({ 
   }
 })
 
+test("Nytillkommet opens the canonical Latest collection directly", async ({ page }) => {
+  await openShell(page)
+  const historyLength = await page.evaluate(() => window.history.length)
+  await openQuickSearch(page)
+  await search(page, "nyt")
+
+  await page.getByRole("option", { name: "Gå till sidan Nytillkommet", exact: true }).click()
+  await expect(page).toHaveURL("/bibliotek?visa=latest&sort=nytillkommet")
+  await expect(page.locator('[data-library-tab="latest"]')).toHaveAttribute(
+    "aria-current",
+    "page"
+  )
+  await expect(page.locator('[data-library-sort="nytillkommet"]')).toHaveAttribute(
+    "aria-current",
+    "true"
+  )
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength + 1)
+
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL("/om/ide")
+})
+
 test("mouse and wrapped keyboard selection navigate exact URLs and skip the disabled no-hit row", async ({ page }) => {
   await openShell(page)
   await openQuickSearch(page)

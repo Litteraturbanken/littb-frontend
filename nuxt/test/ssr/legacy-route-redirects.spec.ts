@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test"
 
 const redirects = [
-  ["/om/aktuellt", "/bibliotek?sort=nytillkommet"],
-  ["/om/aktuellt?source=legacy", "/bibliotek?sort=nytillkommet"],
-  ["/nytt?source=legacy", "/bibliotek?sort=nytillkommet"],
+  ["/om/aktuellt", "/bibliotek?visa=latest&sort=nytillkommet"],
+  ["/om/aktuellt?source=legacy", "/bibliotek?visa=latest&sort=nytillkommet"],
+  ["/nytt?source=legacy", "/bibliotek?visa=latest&sort=nytillkommet"],
   [
     "/dramawebben/f%C3%B6rfattare",
     "/dramawebben/pj%C3%A4ser?visa=f%C3%B6rfattare"
@@ -19,6 +19,18 @@ for (const [source, location] of redirects) {
 
     expect(response.status()).toBe(308)
     expect(response.headers().location).toBe(location)
+  })
+}
+
+for (const source of ["/om/aktuellt", "/nytt"] as const) {
+  test(`${source} preserves permanent redirect method semantics`, async ({ request }) => {
+    for (const method of ["HEAD", "POST"] as const) {
+      const response = await request.fetch(source, { method, maxRedirects: 0 })
+      expect(response.status(), method).toBe(308)
+      expect(response.headers().location, method).toBe(
+        "/bibliotek?visa=latest&sort=nytillkommet"
+      )
+    }
   })
 }
 

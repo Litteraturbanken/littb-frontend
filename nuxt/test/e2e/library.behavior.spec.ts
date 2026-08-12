@@ -92,6 +92,35 @@ async function reset(request: APIRequestContext) {
   ])
 }
 
+for (const legacyPath of ["/om/aktuellt", "/nytt"] as const) {
+  test(`${legacyPath} redirects into Latest with one browser-history entry`, async ({ page }) => {
+    await page.goto("/om/ide", { waitUntil: "networkidle" })
+    const historyLength = await page.evaluate(() => window.history.length)
+    await page.evaluate(path => {
+      const link = document.createElement("a")
+      link.href = path
+      document.body.append(link)
+      link.click()
+    }, legacyPath)
+
+    await expect(page).toHaveURL(
+      "/bibliotek?visa=latest&sort=nytillkommet"
+    )
+    await expect(page.locator('[data-library-tab="latest"]')).toHaveAttribute(
+      "aria-current",
+      "page"
+    )
+    await expect(page.locator('[data-library-sort="nytillkommet"]')).toHaveAttribute(
+      "aria-current",
+      "true"
+    )
+    expect(await page.evaluate(() => window.history.length)).toBe(historyLength + 1)
+
+    await page.goBack({ waitUntil: "networkidle" })
+    await expect(page).toHaveURL("/om/ide")
+  })
+}
+
 async function libraryV2Requests(request: APIRequestContext) {
   return await (await request.get(`${fixture}/_library_v2/requests`)).json() as {
     options: Array<{ method: string, path: string, scope: string }>

@@ -1,4 +1,4 @@
-const NEW_TITLES_LOCATION = "/bibliotek?sort=nytillkommet"
+const NEW_TITLES_LOCATION = "/bibliotek?visa=latest&sort=nytillkommet"
 
 export default defineEventHandler(event => {
   const pathname = getRequestURL(event).pathname

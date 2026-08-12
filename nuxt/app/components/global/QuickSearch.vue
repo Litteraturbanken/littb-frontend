@@ -60,7 +60,7 @@ const commands: Command[] = [
   { label: "Sök", url: "/sok", aliases: ["Sok"] },
   { label: "Presentationer", url: "/presentationer" },
   { label: "Dramawebben", url: "/dramawebben" },
-  { label: "Nytillkommet", url: "/bibliotek?sort=nytillkommet" },
+  { label: "Nytillkommet", url: "/bibliotek?visa=latest&sort=nytillkommet" },
   { label: "Skolan", url: "/skolan" },
   { label: "Skolan/lyrik", url: "/skolan/lyrik" },
   { label: "Om", url: "/om/ide" },
