@@ -200,6 +200,67 @@ export function dramawebbenDocumentError(
   })
 }
 
+type CancelDramawebbenReader = () => Promise<void>
+
+async function readDramawebbenChunk(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  signal: AbortSignal,
+  cancelReader: CancelDramawebbenReader
+): Promise<ReadableStreamReadResult<Uint8Array>> {
+  if (signal.aborted) {
+    await cancelReader()
+    throw signal.reason
+  }
+  let rejectAbort!: (reason?: unknown) => void
+  const aborted = new Promise<never>((_resolve, reject) => { rejectAbort = reject })
+  const onAbort = () => {
+    rejectAbort(signal.reason)
+    void cancelReader()
+  }
+  signal.addEventListener("abort", onAbort, { once: true })
+  if (signal.aborted) onAbort()
+  try {
+    const result = await Promise.race([reader.read(), aborted])
+    if (signal.aborted) {
+      await cancelReader()
+      throw signal.reason
+    }
+    return result
+  } finally {
+    signal.removeEventListener("abort", onAbort)
+  }
+}
+
+async function collectDramawebbenChunks(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  signal: AbortSignal,
+  cancelReader: CancelDramawebbenReader
+): Promise<{ chunks: Uint8Array[], totalBytes: number }> {
+  const chunks: Uint8Array[] = []
+  let totalBytes = 0
+  try {
+    while (true) {
+      const { done, value } = await readDramawebbenChunk(reader, signal, cancelReader)
+      if (done) break
+      if (value === undefined) continue
+      totalBytes += value.byteLength
+      if (totalBytes > maxBytes) {
+        await cancelReader()
+        throw new InvalidDramawebbenDocumentSource()
+      }
+      chunks.push(value)
+    }
+  } catch (error) {
+    await cancelReader()
+    throw error
+  }
+  if (signal.aborted) {
+    await cancelReader()
+    throw signal.reason
+  }
+  return { chunks, totalBytes }
+}
+
 async function readBoundedResponse(response: Response, signal: AbortSignal): Promise<string> {
   const declaredLength = response.headers.get("content-length")
   if (declaredLength !== null
@@ -216,43 +277,11 @@ async function readBoundedResponse(response: Response, signal: AbortSignal): Pro
     cancellation ??= reader.cancel().catch(() => undefined)
     return cancellation
   }
-  const readChunk = async (): Promise<ReadableStreamReadResult<Uint8Array>> => {
-    if (signal.aborted) {
-      await cancelReader()
-      throw signal.reason
-    }
-    let rejectAbort!: (reason?: unknown) => void
-    const aborted = new Promise<never>((_resolve, reject) => { rejectAbort = reject })
-    const onAbort = () => {
-      void cancelReader()
-      rejectAbort(signal.reason)
-    }
-    signal.addEventListener("abort", onAbort, { once: true })
-    if (signal.aborted) onAbort()
-    try {
-      return await Promise.race([reader.read(), aborted])
-    } finally {
-      signal.removeEventListener("abort", onAbort)
-    }
-  }
-  const chunks: Uint8Array[] = []
-  let totalBytes = 0
-  try {
-    while (true) {
-      const { done, value } = await readChunk()
-      if (done) break
-      if (value === undefined) continue
-      totalBytes += value.byteLength
-      if (totalBytes > maxBytes) {
-        await cancelReader()
-        throw new InvalidDramawebbenDocumentSource()
-      }
-      chunks.push(value)
-    }
-  } catch (error) {
-    await cancelReader()
-    throw error
-  }
+  const { chunks, totalBytes } = await collectDramawebbenChunks(
+    reader,
+    signal,
+    cancelReader
+  )
 
   const bytes = new Uint8Array(totalBytes)
   let offset = 0

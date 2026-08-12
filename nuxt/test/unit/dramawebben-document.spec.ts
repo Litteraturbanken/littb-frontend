@@ -369,31 +369,20 @@ describe("Dramawebben managed source boundary", () => {
     const source = new TextEncoder().encode(
       "<!doctype html><html><body><p>partial-upstream-probe</p></body></html>"
     )
-    let readCount = 0
-    let finishStalledRead!: (result: ReadableStreamReadResult<Uint8Array>) => void
-    const stalledRead = new Promise<ReadableStreamReadResult<Uint8Array>>(resolve => {
-      finishStalledRead = resolve
-    })
     let markReadStarted!: () => void
     const readStarted = new Promise<void>(resolve => { markReadStarted = resolve })
-    const cancel = vi.fn(async () => {
-      finishStalledRead({ done: true, value: undefined })
+    const cancel = vi.fn()
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(source)
+      },
+      pull() {
+        markReadStarted()
+        return new Promise<void>(() => undefined)
+      },
+      cancel
     })
-    const response = {
-      status: 200,
-      headers: new Headers({ "content-type": "text/html" }),
-      body: {
-        getReader: () => ({
-          cancel,
-          read: vi.fn(async () => {
-            readCount += 1
-            if (readCount === 1) return { done: false, value: source }
-            markReadStarted()
-            return await stalledRead
-          })
-        })
-      }
-    } as unknown as Response
+    const response = managedResponse(body)
     vi.stubGlobal("fetch", vi.fn(async () => response))
 
     const result = loadDramawebbenDocument(event, "om")
