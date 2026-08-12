@@ -382,6 +382,41 @@ describe("typed Library boundary", () => {
   })
 
   test.each([
+    ["lb_valid_Work:12", true],
+    [`lb_${"a".repeat(97)}`, true],
+    ["", false],
+    [" lb-trimmed", false],
+    ["lb-one,lb-injected", false],
+    ["lb-hyphen", false],
+    ["lb/control", false],
+    ["lb\\control", false],
+    ["lb%2Cencoded", false],
+    ["lb\u0000control", false],
+    ["lb\u0085control", false],
+    ["lb\ud800surrogate", false],
+    [`lb_${"a".repeat(98)}`, false]
+  ] as const)("bounds source export work_id %j", (workId, accepted) => {
+    const response = {
+      mode: "works",
+      total_hits: 1,
+      total_works: 1,
+      items: [{
+        actions: [], author, author_url: "/författare/LagerlofS/", full_title: "Titel",
+        key: "work-1", route_author_id: "LagerlofS", route_media_type: "etext",
+        route_title_id: "Titel", title: "Titel", title_path: "Titel",
+        title_url: "/författare/LagerlofS/titlar/Titel/", year: "1900",
+        source_exports: [{ format: "txt", media_type: "etext", size: 1024, work_id: workId }]
+      }]
+    } satisfies LibrarySearchResponse
+
+    const view = toLibrarySearchView(response)
+    if (view.mode !== "works") throw new Error("expected works view")
+    expect(view.response.data[0].sourceExports).toEqual(accepted ? [{
+      lbworkid: workId, mediatype: "etext", type: "txt", size: 1024
+    }] : [])
+  })
+
+  test.each([
     ["read", "/f%C3%B6rfattare/LagerlofS/titlar/Titel/sida/-2/etext", "/f%C3%B6rfattare/LagerlofS/titlar/Titel/sida/-2/etext"],
     ["about", "/f%C3%B6rfattare/LagerlofS/titlar/Titel/sida/-2/etext?om-boken#info", "/f%C3%B6rfattare/LagerlofS/titlar/Titel/sida/-2/etext?om-boken#info"],
     ["search", "/sok?forfattare=LagerlofS&titlar=lb1&avancerad#träffar", "/sok?forfattare=LagerlofS&titlar=lb1&avancerad#träffar"],

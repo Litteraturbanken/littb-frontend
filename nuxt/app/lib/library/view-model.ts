@@ -10,6 +10,7 @@ import {
   safeNativeHref
 } from "../internal-navigation"
 import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
+import { validRouteSegment } from "#shared/utils/route-segment"
 import {
   assertNever,
   type LibraryAuthor,
@@ -296,6 +297,10 @@ function safeLibraryTitleHref(value: string): string | null {
   return about.test(safe.decodedPath) && safe.decodedQuery === "?om-boken" ? safe.href : null
 }
 
+function safeLibrarySourceWorkId(value: string): boolean {
+  return validRouteSegment(value, 100) && !/[,-]/u.test(value)
+}
+
 function safeLibraryDownloadHref(value: string, mode: DownloadMode): string | null {
   const safe = safeLibraryRootHref(value)
   if (!safe || safe.decodedQuery) return null
@@ -385,12 +390,14 @@ function mapBrowseItem(item: BrowseItem): BrowseResult {
       href: safeBrowseActionHref(action) ?? "",
       downloadFilename: action.download_filename ?? ""
     })),
-    sourceExports: item.source_exports.map(source => ({
-      lbworkid: source.work_id,
-      mediatype: source.media_type,
-      type: source.format,
-      size: source.size
-    }))
+    sourceExports: item.source_exports
+      .filter(source => safeLibrarySourceWorkId(source.work_id))
+      .map(source => ({
+        lbworkid: source.work_id,
+        mediatype: source.media_type,
+        type: source.format,
+        size: source.size
+      }))
   }
 }
 

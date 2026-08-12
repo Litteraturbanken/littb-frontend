@@ -1423,8 +1423,8 @@ const doktorGlasWork = libraryBrowseItem({
     libraryAboutAction("SöderbergH", "DoktorGlas")
   ],
   sourceExports: [
-    { format: "txt", media_type: "etext", size: 1024, work_id: "lb-DoktorGlas" },
-    { format: "pdf", media_type: "faksimil", size: 730000, work_id: "lb-DoktorGlas" }
+    { format: "txt", media_type: "etext", size: 1024, work_id: "lb1728740" },
+    { format: "pdf", media_type: "faksimil", size: 730000, work_id: "lb1728740" }
   ]
 })
 const folkvisorWork = libraryBrowseItem({
@@ -1435,7 +1435,7 @@ const folkvisorWork = libraryBrowseItem({
     { kind: "download", label: "Ladda ner epub", url: "/txt/epub/GeijerEGA_SvenskaFolkvisor.epub", download_filename: "GeijerEGA_SvenskaFolkvisor.epub" },
     libraryAboutAction("GeijerEGA", "SvenskaFolkvisor")
   ],
-  sourceExports: [{ format: "xml", media_type: "etext", size: 2048, work_id: "lb-SvenskaFolkvisor" }]
+  sourceExports: [{ format: "xml", media_type: "etext", size: 2048, work_id: "lb123456" }]
 })
 const bauerWork = libraryBrowseItem({
   title: "Bland tomtar och troll", fullTitle: "x".repeat(501), year: "1915",
@@ -1445,7 +1445,7 @@ const bauerWork = libraryBrowseItem({
     { kind: "download", label: "Ladda ner epub", url: "/txt/epub/BauerJ_BlandTomtarOchTroll.epub", download_filename: "BauerJ_BlandTomtarOchTroll.epub" },
     libraryAboutAction("BauerJ", "BlandTomtarOchTroll")
   ],
-  sourceExports: [{ format: "workdb", media_type: "etext", size: 512, work_id: "lb-BlandTomtarOchTroll" }]
+  sourceExports: [{ format: "workdb", media_type: "etext", size: 512, work_id: "lb234567" }]
 })
 const gostaWork = libraryBrowseItem({
   title: "Gösta Berlings saga", fullTitle: "Gösta Berlings saga. Roman", year: "1891",
@@ -1668,7 +1668,7 @@ function libraryWorksResponse(query, page) {
             ...gostaWork,
             source_exports: [{
               format: "txt", media_type: "etext", size: 4096,
-              work_id: "lb-GostaBerlingsSaga"
+              work_id: "lb278171"
             }]
           }]
         : [doktorGlasWork, folkvisorWork, bauerWork]
@@ -1681,7 +1681,7 @@ function libraryWorksResponse(query, page) {
         fullTitle: "En avsiktligt mycket lång nedladdningstitel som måste kortas inom verkets kolumn",
         year: "1905", author: libraryAuthors.soderberg, titleId: "LongDownloadTitle",
         sourceExports: [
-          { format: "txt", media_type: "etext", size: 1024, work_id: "lb-LongDownloadTitle" }
+          { format: "txt", media_type: "etext", size: 1024, work_id: "lb345678" }
         ]
       })
     ] }
@@ -1708,12 +1708,13 @@ function libraryWorksResponse(query, page) {
       title: "Säkert källmaterial", fullTitle: "Säkert källmaterial. Roman", year: "1905",
       author: libraryAuthors.soderberg, titleId: "SafeDownload",
       actions: [libraryReadAction("SöderbergH", "SafeDownload"), libraryAboutAction("SöderbergH", "SafeDownload")],
-      sourceExports: [{ format: "txt", media_type: "etext", size: 1024, work_id: "lb-SafeDownload" }]
+      sourceExports: [{ format: "txt", media_type: "etext", size: 1024, work_id: "lb456789" }]
     })
     const unsafe = libraryBrowseItem({
       title: "Osäkert källmaterial", fullTitle: "Osäkert källmaterial. Roman", year: "1905",
       author: libraryAuthors.soderberg, titleId: "UnsafeDownload", workId: "lb-Unsafe,Injected-etext-txt",
-      actions: [libraryReadAction("SöderbergH", "UnsafeDownload"), libraryAboutAction("SöderbergH", "UnsafeDownload")]
+      actions: [libraryReadAction("SöderbergH", "UnsafeDownload"), libraryAboutAction("SöderbergH", "UnsafeDownload")],
+      sourceExports: [{ format: "txt", media_type: "etext", size: 1024, work_id: "lbUnsafe,Injected" }]
     })
     return { mode: "works", total_hits: 2, total_works: 2, items: [safe, unsafe] }
   }

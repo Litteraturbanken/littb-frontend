@@ -1286,8 +1286,8 @@ test("nedladdning selects visible source works and posts the exact chosen export
     requests: [{
       path: "/api/download",
       files: [
-        "lb-DoktorGlas-etext-txt",
-        "lb-DoktorGlas-faksimil-pdf"
+        "lb1728740-etext-txt",
+        "lb1728740-faksimil-pdf"
       ]
     }]
   })
@@ -1383,14 +1383,14 @@ test("nedladdning rejects delimiter-bearing source tokens before native submissi
   await page.locator("[data-library-format-button]").click()
   await page.locator('[data-library-source-format="etext:txt"]').check()
   await expect(page.locator('input[name="files"]'))
-    .toHaveValue("lb-SafeDownload-etext-txt")
+    .toHaveValue("lb456789-etext-txt")
 
   await Promise.all([
     page.waitForURL(/\/api\/download$/),
     page.locator("[data-library-download-submit]").click()
   ])
   expect(await (await request.get(`${fixture}/_library_download_requests`)).json()).toEqual({
-    requests: [{ path: "/api/download", files: ["lb-SafeDownload-etext-txt"] }]
+    requests: [{ path: "/api/download", files: ["lb456789-etext-txt"] }]
   })
 })
 
