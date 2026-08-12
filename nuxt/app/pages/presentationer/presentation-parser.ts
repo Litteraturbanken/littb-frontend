@@ -10,6 +10,7 @@ import {
   issueManagedPresentationStylesheetHref
 } from "#shared/utils/renderable-html"
 import { hasC0OrC1Control, hasLoneSurrogate, removeC0AndSpace } from "#shared/utils/text-safety"
+import parseCss from "postcss/lib/parse"
 import { SaxesParser, type SaxesTagNS } from "saxes"
 
 export { validatePresentationSegments } from "../../lib/presentation-routes"
@@ -78,6 +79,8 @@ const removedPresentationBodyAttributes = new Set([
   "xlink:href"
 ])
 const allowedPresentationHrefProtocols = new Set(["http:", "https:", "mailto:", "tel:"])
+
+type PresentationStyleScope = "background" | "document"
 
 function isExecutablePresentationAttribute(name: string): boolean {
   return /^(?:on|srcdoc$|v-|data-v-|ng-|data-ng-|x-|data-x-|[@:]|data-bind$)/iu.test(name)
@@ -233,6 +236,50 @@ function normalizedBackgroundImagePath(value: string): string | null {
   return normalizedOwnedAssetPath(value, "/red/bilder/")
 }
 
+function hasAllowedPresentationCssDeclaration(
+  scope: PresentationStyleScope,
+  property: string,
+  value: string
+): boolean {
+  if (scope === "document") {
+    return property === "text-align" && value.trim().toLowerCase() === "center"
+  }
+  return property === "background-color" && /^#[\da-f]{6}$/iu.test(value.trim())
+}
+
+function managedPresentationStyle(
+  value: string,
+  scope: PresentationStyleScope
+): ManagedStyleText<"presentation-editorial"> | null {
+  if (value.includes("\\")) return null
+  try {
+    const stylesheet = parseCss(value)
+    let safe = true
+    let rules = 0
+    stylesheet.walkAtRules(() => { safe = false })
+    stylesheet.each(node => {
+      if (node.type !== "comment" && node.type !== "rule") safe = false
+    })
+    stylesheet.walkRules(rule => {
+      rules += 1
+      const selector = scope === "document" ? "p.image" : "html"
+      let declarations = 0
+      if (rule.selector.trim() !== selector) safe = false
+      rule.each(node => {
+        if (
+          node.type !== "decl"
+          || !hasAllowedPresentationCssDeclaration(scope, node.prop.toLowerCase(), node.value)
+        ) safe = false
+        else declarations += 1
+      })
+      if (declarations !== 1) safe = false
+    })
+    return safe && rules === 1 ? issueManagedPresentationStyle(value) : null
+  } catch {
+    return null
+  }
+}
+
 type ParsedBackgroundRule = {
   target: string
   rawImagePath: string | null
@@ -384,9 +431,10 @@ export function parsePresentationDocument(source: string): PresentationDocument 
     const styleNodes: PresentationStyleNode[] = head
       ? Array.from(head.querySelectorAll('link[rel~="stylesheet"], style')).flatMap<PresentationStyleNode>(node => {
           if (node.localName === "style") {
-            return [{
+            const textContent = managedPresentationStyle(node.textContent ?? "", "document")
+            return textContent === null ? [] : [{
               kind: "inline",
-              textContent: issueManagedPresentationStyle(node.textContent ?? "")
+              textContent
             }]
           }
           const href = managedStylesheetHref(node.getAttribute("href") ?? "")
@@ -414,7 +462,7 @@ export function parseBackgroundRules(source: string): BackgroundRule[] {
     className: rule.className,
     styleText: rule.styleText === null
       ? null
-      : issueManagedPresentationStyle(rule.styleText)
+      : managedPresentationStyle(rule.styleText, "background")
   })).filter(rule => rule.target.startsWith("/presentationer/"))
 }
 

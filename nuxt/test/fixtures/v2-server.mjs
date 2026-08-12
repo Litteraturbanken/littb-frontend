@@ -4518,9 +4518,30 @@ const server = createServer(async (request, response) => {
     }
     if (
       presentationHostileSubresources
+      && url.pathname === "/red/bilder/bakgrundsbilder/backgrounds.xml"
+    ) {
+      body = Buffer.from(body).toString("utf8").replace(
+        "</backgrounds>",
+        [
+          '<background target="/presentationer/specialomraden/ProductionSized.html">',
+          '<style>@import url(https://evil.test/background-import.css); html { background-image: url(https://evil.test/background-image.jpg); } html { background-image: image-set("https://evil.test/background-image-set.jpg" 1x); }</style>',
+          "</background>",
+          "</backgrounds>"
+        ].join("")
+      )
+    }
+    if (
+      presentationHostileSubresources
       && url.pathname === "/red/presentationer/specialomraden/ProductionSized.html"
     ) {
-      body = Buffer.from(body).toString("utf8").replace("</body>", [
+      body = Buffer.from(body).toString("utf8")
+        .replace("</head>", [
+          '<style>p.image { text-align: center; }</style>',
+          '<style>@import url(https://evil.test/document-import.css); #css-safe-marker { background-image: url(https://evil.test/document-image.jpg); } #css-safe-marker { background-image: image-set("https://evil.test/document-image-set.jpg" 1x); }</style>',
+          "</head>"
+        ].join(""))
+        .replace("</body>", [
+        '<p id="css-safe-marker" class="image">Safe inline CSS remains active.</p>',
         '<img id="owned-subresource" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg">',
         '<img id="external-attribution" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg" attributionsrc="https://evil.test/image-attribution">',
         '<img id="external-src" src="https://evil.test/src.jpg">',
@@ -4528,7 +4549,7 @@ const server = createServer(async (request, response) => {
         '<table id="legacy-background" background="https://evil.test/background.jpg"><tr><td>Legacy</td></tr></table>',
         '<p id="inline-style" style="background-image:url(https://evil.test/style.jpg)">Styled</p>',
         "</body>"
-      ].join(""))
+        ].join(""))
     }
     return sendBody(response, 200, contentType, body)
   }

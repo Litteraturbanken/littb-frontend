@@ -112,7 +112,7 @@ test("production-sized Presentation XHTML and text/xml background hydrate intact
   ])
 })
 
-test("managed Presentation body emits no unowned browser subresource requests", async ({
+test("managed Presentation body and CSS emit no unowned browser subresource requests", async ({
   page,
   request
 }) => {
@@ -140,6 +140,7 @@ test("managed Presentation body emits no unowned browser subresource requests", 
     "/red/presentationer/specialomraden/Burmanbilder/1.jpg"
   )
   await expect(page.locator("#external-attribution")).not.toHaveAttribute("attributionsrc")
+  await expect(page.locator("#css-safe-marker")).toHaveCSS("text-align", "center")
   for (const locator of ["#external-src", "#external-srcset", "#legacy-background", "#inline-style"]) {
     await expect(page.locator(locator)).not.toHaveAttribute("src")
     await expect(page.locator(locator)).not.toHaveAttribute("srcset")
@@ -147,6 +148,10 @@ test("managed Presentation body emits no unowned browser subresource requests", 
     await expect(page.locator(locator)).not.toHaveAttribute("style")
     await expect(page.locator(locator)).not.toHaveAttribute("attributionsrc")
   }
+  expect(await documentStyleText(page)).toContain(
+    "p.image { text-align: center; }"
+  )
+  expect((await documentStyleText(page)).join("\n")).not.toContain("evil.test")
   expect(externalRequests).toEqual([])
   expect(await presentationRequests(request)).toContain(
     "/red/presentationer/specialomraden/Burmanbilder/1.jpg"

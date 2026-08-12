@@ -22,9 +22,9 @@ describe("Presentation XHTML parser", () => {
         <title>Upstream title</title>
         <meta name="description" content="Upstream description">
         <link rel="stylesheet" href="app/style/article.css">
-        <style>.article { color: maroon; }</style>
+        <style>p.image { text-align: center; }</style>
         <link rel="stylesheet" href="app/style/theme.css">
-        <style>.article { background: linen; }</style>
+        <style>p.image { text-align: center; }</style>
         <script>window.headLeak = true</script>
       </head><body>
         <h1>En rubrik med sex ord faktiskt</h1>
@@ -38,9 +38,9 @@ describe("Presentation XHTML parser", () => {
       description: "En rubrik med sex ord",
       styleNodes: [
         { kind: "stylesheet", href: "/app/style/article.css" },
-        { kind: "inline", textContent: ".article { color: maroon; }" },
+        { kind: "inline", textContent: "p.image { text-align: center; }" },
         { kind: "stylesheet", href: "/app/style/theme.css" },
-        { kind: "inline", textContent: ".article { background: linen; }" }
+        { kind: "inline", textContent: "p.image { text-align: center; }" }
       ]
     })
   })
@@ -149,6 +149,38 @@ describe("Presentation XHTML parser", () => {
   })
 
   test.each([
+    "@import url(https://evil.test/import.css);",
+    "@namespace remote url(https://evil.test/namespace.xml);",
+    "p { background-image: url(https://evil.test/image.jpg); }",
+    "p { background-image: u\\72l(https://evil.test/escaped-image.jpg); }",
+    "p { background-image: image-set(\"https://evil.test/image-set.jpg\" 1x); }",
+    "p { content: image(\"https://evil.test/image-function.jpg\"); }",
+    "p { src: src(\"https://evil.test/src-function.jpg\"); }",
+    "p { width: expression(alert(1)); }",
+    "p { behavior: url(#default#time2); }",
+    "p { -moz-binding: url(https://evil.test/binding.xml#target); }",
+    "p.image { text-align: center; &:hover { text-align: center; } }",
+    "p { color: red;"
+  ])("drops unsafe or malformed head inline CSS: %s", styleText => {
+    const parsed = parsePresentationDocument(
+      "<html><head>"
+      + "<style>/* safe formatting */ p.image { text-align: center; }</style>"
+      + "<style>" + styleText + "</style>"
+      + "</head><body><h1>CSS-prov</h1></body></html>"
+    )
+
+    expect(parsed.styleNodes).toEqual([
+      { kind: "inline", textContent: "/* safe formatting */ p.image { text-align: center; }" }
+    ])
+  })
+
+  test.each(["", "/* editorial note */"])('drops head inline CSS without an allowed rule: %j', styleText => {
+    expect(parsePresentationDocument(
+      `<html><head><style>${styleText}</style></head><body><h1>CSS-prov</h1></body></html>`
+    ).styleNodes).toEqual([])
+  })
+
+  test.each([
     "javascript:alert(1)",
     "java\u000bscript:alert(1)",
     " JAVASCRIPT:alert(1)",
@@ -235,6 +267,44 @@ describe("Presentation XHTML parser", () => {
 })
 
 describe("Presentation background parser", () => {
+  test.each([
+    "@import url(https://evil.test/import.css);",
+    "@namespace remote url(https://evil.test/namespace.xml);",
+    "html { background-image: url(https://evil.test/image.jpg); }",
+    "html { background-image: u\\72l(https://evil.test/escaped-image.jpg); }",
+    "html { background-image: image-set(\"https://evil.test/image-set.jpg\" 1x); }",
+    "html { content: image(\"https://evil.test/image-function.jpg\"); }",
+    "html { src: src(\"https://evil.test/src-function.jpg\"); }",
+    "html { width: expression(alert(1)); }",
+    "html { behavior: url(#default#time2); }",
+    "html { -moz-binding: url(https://evil.test/binding.xml#target); }",
+    "html { background-color: #382a32; &amp;:hover { background-color: #382a32; } }",
+    "html { color: red;"
+  ])("drops unsafe or malformed background inline CSS: %s", styleText => {
+    const [rule] = parseBackgroundRules(
+      "<backgrounds><background target=\"/presentationer/*\" url=\"/red/bilder/bakgrundsbilder/rostratt_a.jpg\">"
+      + "<style>" + styleText + "</style>"
+      + "</background></backgrounds>"
+    )
+
+    expect(rule).toEqual({
+      target: "/presentationer/*",
+      imagePath: "/red/bilder/bakgrundsbilder/rostratt_a.jpg",
+      className: null,
+      styleText: null
+    })
+  })
+
+  test.each(["", "/* editorial note */"])('drops background inline CSS without an allowed rule: %j', styleText => {
+    const [rule] = parseBackgroundRules(
+      '<backgrounds><background target="/presentationer/*"><style>'
+      + styleText
+      + '</style></background></backgrounds>'
+    )
+
+    expect(rule?.styleText).toBeNull()
+  })
+
   test.each([
     ["duplicate XML declaration", "<?xml version=\"1.0\"?><?xml version=\"1.0\"?><backgrounds></backgrounds>"],
     ["XML declaration inside the root", "<backgrounds><?xml version=\"1.0\"?></backgrounds>"],
