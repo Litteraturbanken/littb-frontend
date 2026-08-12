@@ -389,7 +389,7 @@ function validEditorComplete(value: UnknownRecord, bounds: UnknownRecord): boole
   return passes(
     manifestText(value.display_title),
     manifestIdentifier(value.title_path),
-    validContributors(value.contributors, 1),
+    validContributors(value.contributors, 0),
     validParts(value.parts, value.pages),
     validNavigationName(value.start_page_name, value.pages),
     validNavigationName(value.end_page_name, value.pages),

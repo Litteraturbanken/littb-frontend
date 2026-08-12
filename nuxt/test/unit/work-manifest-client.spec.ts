@@ -596,6 +596,7 @@ describe("generated Editor manifest client", () => {
       start_page_name: null,
       end_page_name: null
     }],
+    ["no contributors", { ...completeManifest, contributors: [] }],
     ["a partial dense page collection", {
       ...completeManifest,
       pages: [{ page_index: 8, page_name: "9" }],
@@ -640,7 +641,6 @@ describe("generated Editor manifest client", () => {
     ["an unknown status discriminant", { ...completeManifest, status: "partial" }],
     ["the wrong requested media", { ...completeManifest, media_type: "etext" }],
     ["a mismatched requested work id", { ...completeManifest, work_id: "lb-editor-other" }],
-    ["no complete contributors", { ...completeManifest, contributors: [] }],
     ["more than 100 complete contributors", {
       ...completeManifest,
       contributors: [completeManifest.contributors[0], ...contributors(100)]

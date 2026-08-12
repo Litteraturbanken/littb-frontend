@@ -1278,6 +1278,16 @@ export function editorManifestResponse(workId, mediaType) {
       bounds: { kind: "dense", page_count: 3 }
     }
   }
+  if (workId === "lb-editor-no-contributors") {
+    const complete = editorManifestResponse("lb-editor-doktor", mediaType)
+    if (complete?.status !== "complete") return complete
+    return {
+      ...complete,
+      contributors: [],
+      public_reader_target: null,
+      work_id: workId
+    }
+  }
   const records = editorRawRepresentations(workId)
   const exact = records.filter(representation => representation.mediatype === mediaType)
   const raw = exact.length === 1 ? structuredClone(exact[0]) : null

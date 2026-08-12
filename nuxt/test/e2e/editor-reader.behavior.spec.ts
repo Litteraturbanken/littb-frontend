@@ -925,6 +925,27 @@ test("editor Reader suppresses non-atomic contributor and part metadata", async 
   }
 })
 
+test("editor Reader renders complete contributor-free metadata without author links", async ({
+  page
+}) => {
+  await page.goto("/editor/lb-editor-no-contributors/ix/1/f", { waitUntil: "networkidle" })
+
+  const context = page.locator("#toolkit-right .editor-reader-context")
+  await expect(page).toHaveTitle("Doktor Glas sida 1 | Litteraturbanken")
+  await expect(context.locator(".editor-metadata-controls .title").first())
+    .toContainText("Doktor Glas")
+  await expect(context.locator(".editor-metadata-controls .author")).toHaveText(["", ""])
+  await expect(context.locator('a[href*="/f%C3%B6rfattare/"]')).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "Sök i författarens texter" })).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "Mer om boken" })).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "Stäng editor" })).toHaveCount(0)
+  await expect(page.locator(".editor-reader .faksimil")).toHaveAttribute(
+    "src",
+    "/txt/lb-editor-no-contributors/lb-editor-no-contributors_3/" +
+      "lb-editor-no-contributors_3_0002.jpeg"
+  )
+})
+
 test("contextual editor e-text route renders the exact Editor representation", async ({
   page
 }) => {

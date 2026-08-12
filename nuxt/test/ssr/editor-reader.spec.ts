@@ -245,6 +245,42 @@ test("SSR contains an empty 200 Editor manifest as the existing source 502", asy
   ])
 })
 
+test("SSR renders a complete Editor manifest without contributors", async ({ request }) => {
+  const apiResponse = await request.get("/api/editor/lb-editor-no-contributors/1/f")
+
+  expect(apiResponse.status()).toBe(200)
+  expect(await apiResponse.json()).toMatchObject({
+    authorId: null,
+    authorName: null,
+    closeHref: null,
+    contributors: [],
+    imageUrl: "/txt/lb-editor-no-contributors/lb-editor-no-contributors_3/" +
+      "lb-editor-no-contributors_3_0002.jpeg",
+    metadataAvailable: true,
+    pageName: "-2",
+    title: "Doktor Glas",
+    titlePath: "DoktorGlas"
+  })
+
+  const response = await request.get("/editor/lb-editor-no-contributors/ix/1/f")
+  expect(response.status()).toBe(200)
+  const document = parseHTML(await response.text()).document
+  expect(document.querySelector("title")?.textContent)
+    .toBe("Doktor Glas sida 1 | Litteraturbanken")
+  expect(document.querySelector(".reader-context-ssr .editor-metadata-controls")?.textContent)
+    .toContain("Doktor Glas")
+  expect(document.querySelector(".reader-context-ssr .editor-metadata-controls .author")?.textContent)
+    .toBe("")
+  expect(document.querySelector('.reader-context-ssr a[href*="/f%C3%B6rfattare/"]')).toBeNull()
+  expect(document.querySelector('a[href*="forfattare="]')).toBeNull()
+  expect(document.querySelector(".editor-reader .faksimil")?.getAttribute("src"))
+    .toBe("/txt/lb-editor-no-contributors/lb-editor-no-contributors_3/" +
+      "lb-editor-no-contributors_3_0002.jpeg")
+  expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(2).fill(
+    "/v2/works/lb-editor-no-contributors/editor-manifest?media_type=faksimil"
+  ))
+})
+
 test("SSR sanitizes bounded editor e-text before it enters the DTO", async ({ request }) => {
   const response = await request.get("/api/editor/lb-editor-doktor-glas/1/e")
   expect(response.status()).toBe(200)
