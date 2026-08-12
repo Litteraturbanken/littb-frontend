@@ -319,7 +319,11 @@ export class BrowserObservabilityReporter {
         credentials: "same-origin",
         keepalive: true
       })
-      return response.ok || (response.status >= 400 && response.status < 500)
+      return response.ok || (
+        response.status >= 400
+        && response.status < 500
+        && response.status !== 429
+      )
     } catch {
       return false
     }

@@ -444,6 +444,7 @@ describe("browser event delivery", () => {
     await reporter.flush(true)
     await reporter.flush()
     await reporter.flush()
+    await reporter.flush()
 
     expect(fetchBodies(fetchMock)).toEqual([
       eventIds.slice(10, 20),
@@ -531,6 +532,74 @@ describe("browser event delivery", () => {
       vi.useRealTimers()
     }
   })
+
+  test("retries a throttled delivery after backoff without losing the batch", async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(new Response(null, { status: 429 }))
+        .mockResolvedValueOnce(new Response(null, { status: 202 }))
+      const reporter = new BrowserObservabilityReporter(reporterOptions({
+        fetch: fetchMock,
+        autoFlush: true
+      }))
+      const eventIds = await enqueueNumberedEvents(reporter, 3)
+
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(fetchBodies(fetchMock)).toEqual([eventIds])
+
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(fetchBodies(fetchMock)).toEqual([eventIds, eventIds])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  test("requeues a page-exit 429 fallback ahead of its untouched tail", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 429 }))
+      .mockResolvedValueOnce(new Response(null, { status: 202 }))
+      .mockResolvedValueOnce(new Response(null, { status: 202 }))
+      .mockResolvedValueOnce(new Response(null, { status: 202 }))
+    const beacon = vi.fn(() => false)
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
+    const eventIds = await enqueueNumberedEvents(reporter, 23)
+
+    await reporter.flush(true)
+    await reporter.flush()
+    await reporter.flush()
+    await reporter.flush()
+
+    expect(beacon).toHaveBeenCalledOnce()
+    expect(fetchBodies(fetchMock)).toEqual([
+      eventIds.slice(0, 10),
+      eventIds.slice(0, 10),
+      eventIds.slice(10, 20),
+      eventIds.slice(20)
+    ])
+  })
+
+  test.each([400, 403, 413, 415, 422])(
+    "treats terminal intake status %i as delivered without retry",
+    async status => {
+      vi.useFakeTimers()
+      try {
+        const fetchMock = vi.fn(async () => new Response(null, { status }))
+        const reporter = new BrowserObservabilityReporter(reporterOptions({
+          fetch: fetchMock,
+          autoFlush: true
+        }))
+        await enqueueNumberedEvents(reporter, 1)
+
+        await vi.advanceTimersByTimeAsync(60_000)
+
+        expect(fetchMock).toHaveBeenCalledOnce()
+        expect(vi.getTimerCount()).toBe(0)
+      } finally {
+        vi.useRealTimers()
+      }
+    }
+  )
 
   test("reschedules an event queued during an in-flight flush", async () => {
     const firstEvent = await createBrowserErrorEvent({
