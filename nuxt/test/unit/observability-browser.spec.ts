@@ -860,7 +860,8 @@ describe("browser event delivery", () => {
       const exitFlush = reporter.flush(true)
       expect(await beaconBodies(beacon)).toEqual([
         eventIds.slice(10, 20),
-        eventIds.slice(20)
+        eventIds.slice(20),
+        eventIds.slice(0, 10)
       ])
       releaseFetch?.()
       await Promise.all([normalFlush, exitFlush])
@@ -869,12 +870,78 @@ describe("browser event delivery", () => {
       expect(fetchBodies(fetchMock)).toEqual([
         eventIds.slice(0, 10)
       ])
-      expect(beacon).toHaveBeenCalledTimes(2)
+      expect(beacon).toHaveBeenCalledTimes(3)
       expect(vi.getTimerCount()).toBe(0)
     } finally {
       vi.useRealTimers()
     }
   })
+
+  test.each(["abort-aware", "abort-ignoring"] as const)(
+    "page exit transfers a hung %s active delivery before awaiting its settlement",
+    async behavior => {
+      vi.useFakeTimers()
+      try {
+        let normalSignal: AbortSignal | undefined
+        let settleOriginal: ((status: number) => void) | undefined
+        const fetchMock = vi.fn()
+          .mockImplementationOnce((_url: string, init: RequestInit) => {
+            normalSignal = init.signal ?? undefined
+            return new Promise<Response>((resolve, reject) => {
+              settleOriginal = status => resolve(new Response(null, { status }))
+              if (behavior === "abort-aware") {
+                init.signal?.addEventListener("abort", () => reject(new Error("aborted")))
+              }
+            })
+          })
+          .mockResolvedValue(new Response(null, { status: 202 }))
+        const beacon = vi.fn(() => true)
+        const reporter = new BrowserObservabilityReporter(reporterOptions({
+          fetch: fetchMock,
+          beacon,
+          autoFlush: true
+        }))
+        const eventIds = await enqueueNumberedEvents(reporter, 11)
+
+        const normalFlush = reporter.flush()
+        const firstExitFlush = reporter.flush(true)
+        const secondExitFlush = reporter.flush(true)
+
+        expect(normalSignal?.aborted).toBe(true)
+        expect(await beaconBodies(beacon)).toEqual([
+          eventIds.slice(10),
+          eventIds.slice(0, 10)
+        ])
+        await Promise.all([firstExitFlush, secondExitFlush])
+        const later = await createBrowserErrorEvent({
+          eventName: "browser.error",
+          error: new Error("discarded-later"),
+          component: "LaterAfterTransfer",
+          resourceKind: "unknown",
+          route: "/bibliotek",
+          environment: "stage",
+          deploymentGitSha: GIT_SHA,
+          randomUUID: () => "018f47c0-4d5b-7a62-8f41-999999999994"
+        })
+        reporter.enqueue(later)
+        await vi.advanceTimersByTimeAsync(1_000)
+        expect(fetchBodies(fetchMock).at(-1)).toEqual([later.event_id])
+        settleOriginal?.(503)
+        await normalFlush
+        await Promise.resolve()
+        await Promise.resolve()
+
+        expect(beacon).toHaveBeenCalledTimes(2)
+        expect(fetchBodies(fetchMock)).toEqual([
+          eventIds.slice(0, 10),
+          [later.event_id]
+        ])
+        expect(vi.getTimerCount()).toBe(0)
+      } finally {
+        vi.useRealTimers()
+      }
+    }
+  )
 
   test("deduplicates page-exit calls while an active failure is requeued before its tail", async () => {
     let releaseFetch: (() => void) | undefined
@@ -890,7 +957,10 @@ describe("browser event delivery", () => {
     const normalFlush = reporter.flush()
     const firstExitFlush = reporter.flush(true)
     const secondExitFlush = reporter.flush(true)
-    expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(10))
+    expect((await beaconBodies(beacon)).flat()).toEqual([
+      ...eventIds.slice(10),
+      ...eventIds.slice(0, 10)
+    ])
     releaseFetch?.()
     await Promise.all([normalFlush, firstExitFlush, secondExitFlush])
 
@@ -986,7 +1056,10 @@ describe("browser event delivery", () => {
 
         const normalFlush = reporter.flush()
         const exitFlush = reporter.flush(true)
-        expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(10))
+        expect((await beaconBodies(beacon)).flat()).toEqual([
+          ...eventIds.slice(10),
+          ...eventIds.slice(0, 10)
+        ])
         releaseFetch?.()
         await Promise.all([normalFlush, exitFlush])
 
@@ -1002,7 +1075,7 @@ describe("browser event delivery", () => {
     }
   )
 
-  test("waits for an active successful delivery before exit-draining only its tail", async () => {
+  test("supersedes an active delivery and exit-drains its batch with its tail", async () => {
     let releaseFetch: (() => void) | undefined
     const fetchMock = vi.fn(() => new Promise<Response>(resolve => {
       releaseFetch = () => resolve(new Response(null, { status: 202 }))
@@ -1013,11 +1086,17 @@ describe("browser event delivery", () => {
 
     const normalFlush = reporter.flush()
     const exitFlush = reporter.flush(true)
-    expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(10))
+    expect((await beaconBodies(beacon)).flat()).toEqual([
+      ...eventIds.slice(10),
+      ...eventIds.slice(0, 10)
+    ])
     releaseFetch?.()
     await Promise.all([normalFlush, exitFlush])
 
-    expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(10))
+    expect((await beaconBodies(beacon)).flat()).toEqual([
+      ...eventIds.slice(10),
+      ...eventIds.slice(0, 10)
+    ])
     expect(fetchBodies(fetchMock)).toEqual([eventIds.slice(0, 10)])
   })
 
@@ -1038,15 +1117,16 @@ describe("browser event delivery", () => {
     releaseActive?.()
     await Promise.all([normalFlush, exitFlush])
 
-    expect(beacon).toHaveBeenCalledTimes(2)
+    expect(beacon).toHaveBeenCalledTimes(3)
     expect(fetchBodies(fetchMock)).toEqual([
       eventIds.slice(0, 10),
       eventIds.slice(10, 20),
-      eventIds.slice(20)
+      eventIds.slice(20),
+      eventIds.slice(0, 10)
     ])
 
     await reporter.flush()
-    expect(fetchBodies(fetchMock).at(-1)).toEqual(eventIds.slice(10, 20))
+    expect(fetchBodies(fetchMock).at(-1)).toEqual(eventIds.slice(0, 10))
   })
 
   test("attempts a newly requeued active head without retrying an already blocked tail", async () => {

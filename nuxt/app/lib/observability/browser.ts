@@ -88,6 +88,16 @@ interface ExitDrainResult {
   sentBytes: number
 }
 
+interface ActiveDelivery {
+  batch: QueuedBrowserEvent[]
+  bytes: number
+  controller: AbortController
+  delivery: Promise<boolean>
+  owner: "normal" | "exit"
+  transfer: Promise<void>
+  resolveTransfer: () => void
+}
+
 interface ReporterOptions {
   endpoint: string
   environment: EventEnvironment
@@ -262,9 +272,7 @@ export class BrowserObservabilityReporter {
   readonly #seen = new Map<string, number>()
   #timer: ReturnType<typeof setTimeout> | undefined
   #flushing: Promise<void> | undefined
-  #activeBatch: QueuedBrowserEvent[] | undefined
-  #activeBatchBytes = 0
-  #activeBatchFailed = false
+  #activeDelivery: ActiveDelivery | undefined
   #exitFlushing: Promise<void> | undefined
   #retryDelayMs = FLUSH_DELAY_MS
   #retryDueAt: number | undefined
@@ -402,36 +410,30 @@ export class BrowserObservabilityReporter {
   }
 
   async #deliverAroundActiveFlush(): Promise<void> {
-    const activeFlush = this.#flushing
-    if (!activeFlush) {
+    const active = this.#activeDelivery
+    if (!active) {
       await this.#deliverOnExit()
       return
     }
-    const activeBatchBytes = this.#activeBatchBytes
+    active.owner = "exit"
+    this.#activeDelivery = undefined
+    active.resolveTransfer()
+    active.controller.abort()
+    // A non-cooperative original request may remain in flight after abort, so
+    // reserve room for both that body and the active exit retry before tails.
     const exitPlan = this.#startExitDrain(
-      remainingPageExitBytes(activeBatchBytes)
+      remainingPageExitBytes(active.bytes, active.bytes)
     )
-    await activeFlush
-    // The keepalive quota covers bodies still in flight. The awaited active
-    // request is done here, so only exit-drain bodies remain reserved.
-    let activeBatch: QueuedBrowserEvent[] | undefined
-    let activeDelivery: Promise<{ bytes: number, delivered: boolean }> | undefined
-    if (this.#activeBatchFailed && this.#activeBatch) {
-      activeBatch = this.#activeBatch
-      this.#activeBatch = undefined
-      this.#activeBatchBytes = 0
-      this.#activeBatchFailed = false
-      activeDelivery = this.#deliverExitBatch(
-        activeBatch,
-        remainingPageExitBytes(exitPlan.sentBytes)
-      )
-    }
+    const activeDelivery = this.#deliverExitBatch(
+      active.batch,
+      remainingPageExitBytes(active.bytes, exitPlan.sentBytes)
+    )
     const [exitDelivery, resolvedActiveDelivery] = await Promise.all([
       this.#settleExitDrain(exitPlan),
-      activeDelivery ?? Promise.resolve({ bytes: 0, delivered: true })
+      activeDelivery
     ])
     const failedBatch = [
-      ...(activeBatch && !resolvedActiveDelivery.delivered ? activeBatch : []),
+      ...(!resolvedActiveDelivery.delivered ? active.batch : []),
       ...exitDelivery.failedBatch
     ]
     if (failedBatch.length > 0) {
@@ -480,38 +482,48 @@ export class BrowserObservabilityReporter {
     }
   }
 
-  async #deliverByFetch(body: string): Promise<boolean> {
+  #startFetchDelivery(body: string): {
+    controller: AbortController
+    delivery: Promise<boolean>
+  } {
     const fetchRequest = this.#options.fetch
       ?? ((url: string, init: RequestInit) => globalThis.fetch(url, init))
     const controller = new AbortController()
-    let timeout: ReturnType<typeof setTimeout> | undefined
-    try {
-      const request = fetchRequest(this.#options.endpoint, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body,
-        credentials: "same-origin",
-        keepalive: true,
-        signal: controller.signal
-      })
-      const observedRequest = request.then(
-        response => response,
-        () => null
-      )
-      const deadline = new Promise<null>(resolve => {
-        timeout = setTimeout(() => {
-          controller.abort()
-          resolve(null)
-        }, this.#options.fetchTimeoutMs ?? FETCH_TIMEOUT_MS)
-      })
-      const response = await Promise.race([observedRequest, deadline])
-      if (!response) return false
-      return response.ok || TERMINAL_INTAKE_STATUSES.has(response.status)
-    } catch {
-      return false
-    } finally {
-      if (timeout !== undefined) clearTimeout(timeout)
-    }
+    const delivery = (async (): Promise<boolean> => {
+      let timeout: ReturnType<typeof setTimeout> | undefined
+      try {
+        const request = fetchRequest(this.#options.endpoint, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body,
+          credentials: "same-origin",
+          keepalive: true,
+          signal: controller.signal
+        })
+        const observedRequest = request.then(
+          response => response,
+          () => null
+        )
+        const deadline = new Promise<null>(resolve => {
+          timeout = setTimeout(() => {
+            controller.abort()
+            resolve(null)
+          }, this.#options.fetchTimeoutMs ?? FETCH_TIMEOUT_MS)
+        })
+        const response = await Promise.race([observedRequest, deadline])
+        if (!response) return false
+        return response.ok || TERMINAL_INTAKE_STATUSES.has(response.status)
+      } catch {
+        return false
+      } finally {
+        if (timeout !== undefined) clearTimeout(timeout)
+      }
+    })()
+    return { controller, delivery }
+  }
+
+  async #deliverByFetch(body: string): Promise<boolean> {
+    return await this.#startFetchDelivery(body).delivery
   }
 
   #retryBatch(batch: QueuedBrowserEvent[]): void {
@@ -553,22 +565,32 @@ export class BrowserObservabilityReporter {
     if (this.#queue.length === 0) return
     const batch = this.#takeBatch()
     if (batch.length === 0) return
-    this.#activeBatch = batch
-    this.#activeBatchFailed = false
-
     const body = serializedBatch(batch)
-    this.#activeBatchBytes = byteLength(body)
-    if (await this.#deliverByFetch(body)) {
-      this.#activeBatch = undefined
-      this.#activeBatchBytes = 0
+    const attempt = this.#startFetchDelivery(body)
+    let resolveTransfer = () => {}
+    const transfer = new Promise<void>(resolve => {
+      resolveTransfer = resolve
+    })
+    const active: ActiveDelivery = {
+      batch,
+      bytes: byteLength(body),
+      controller: attempt.controller,
+      delivery: attempt.delivery,
+      owner: "normal",
+      transfer,
+      resolveTransfer
+    }
+    this.#activeDelivery = active
+    const delivered = await Promise.race([
+      active.delivery,
+      active.transfer.then(() => false)
+    ])
+    if (this.#activeDelivery !== active || active.owner !== "normal") return
+    this.#activeDelivery = undefined
+    if (delivered) {
       this.#resetRetry()
       return
     }
-    this.#activeBatchFailed = true
-    if (this.#exitFlushing) return
-    this.#activeBatch = undefined
-    this.#activeBatchBytes = 0
-    this.#activeBatchFailed = false
     this.#retryBatch(batch)
   }
 
