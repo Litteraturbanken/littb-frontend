@@ -36,6 +36,32 @@ function validateTextSearchReturnOrigin(value: unknown): string | null {
   return phrase.length >= 1 && phrase.length <= 200 ? value : null
 }
 
+function validateTextSearchReaderHref(value: string): string | null {
+  if (!value.startsWith("/") || value.startsWith("//")) return null
+  const decoded = decodeSafeHref(value)
+  if (decoded === null) return null
+  const queryIndex = value.indexOf("?")
+  const rawPath = queryIndex < 0 ? value : value.slice(0, queryIndex)
+  const path = decodeURIComponent(rawPath)
+  if (!/^\/författare\/[^/]+\/titlar\/[^/]+\/sida\/[^/]+\/(?:etext|faksimil)$/u.test(path)) {
+    return null
+  }
+  const query = new URLSearchParams(queryIndex < 0 ? "" : value.slice(queryIndex + 1))
+  return query.has("s_return") ? null : value
+}
+
+export function attachTextSearchReturnHref(readerHref: string, searchFullPath: string): string {
+  const origin = validateTextSearchReturnOrigin(searchFullPath)
+  const reader = validateTextSearchReaderHref(readerHref)
+  if (!origin || !reader) return readerHref
+
+  const queryIndex = reader.indexOf("?")
+  const path = queryIndex < 0 ? reader : reader.slice(0, queryIndex)
+  const params = new URLSearchParams(queryIndex < 0 ? "" : reader.slice(queryIndex + 1))
+  params.append("s_return", origin)
+  return `${path}?${params.toString()}`
+}
+
 function decodeRawQueryComponent(value: string): string | null {
   try {
     return decodeURIComponent(value.replaceAll("+", " "))

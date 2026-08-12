@@ -1,5 +1,10 @@
 import type { components } from "./api/generated/lbapi"
 
+export {
+  attachTextSearchReturnHref,
+  parseTextSearchReturnHref
+} from "./text-search-navigation"
+
 export type TextSearchResultsRequest = components["schemas"]["TextSearchResultsRequest"]
 export type TextSearchCountRequest = components["schemas"]["TextSearchCountRequest"]
 export type TextSearchOptionsRequest = components["schemas"]["TextSearchOptionsRequest"]
@@ -754,65 +759,6 @@ function appendSearchParam(params: URLSearchParams, key: string, value: unknown)
   if (value !== null && value !== undefined && value !== "") {
     params.append(key, String(value))
   }
-}
-
-const textSearchReturnMaximumLength = 8_192
-
-function decodeSafeHref(value: string): string | null {
-  if (value.length > textSearchReturnMaximumLength ||
-    /[\\\p{Cc}\p{Cs}]/u.test(value) || value.includes("#")) return null
-  try {
-    const decoded = decodeURIComponent(value)
-    return /[\\\p{Cc}\p{Cs}]/u.test(decoded) ? null : decoded
-  } catch {
-    return null
-  }
-}
-
-function validateTextSearchReturnOrigin(value: unknown): string | null {
-  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
-    return null
-  }
-  if (decodeSafeHref(value) === null) return null
-  const queryIndex = value.indexOf("?")
-  const path = queryIndex < 0 ? value : value.slice(0, queryIndex)
-  if (decodeSafeHref(path) !== "/sök") return null
-
-  const query = new URLSearchParams(queryIndex < 0 ? "" : value.slice(queryIndex + 1))
-  const phrases = query.getAll("fras")
-  if (phrases.length !== 1 || query.has("s_return")) return null
-  const phrase = phrases[0]!.trim()
-  return phrase.length >= 1 && phrase.length <= 200 ? value : null
-}
-
-function validateTextSearchReaderHref(value: string): string | null {
-  if (!value.startsWith("/") || value.startsWith("//")) return null
-  const decoded = decodeSafeHref(value)
-  if (decoded === null) return null
-  const queryIndex = value.indexOf("?")
-  const rawPath = queryIndex < 0 ? value : value.slice(0, queryIndex)
-  const path = decodeURIComponent(rawPath)
-  if (!/^\/författare\/[^/]+\/titlar\/[^/]+\/sida\/[^/]+\/(?:etext|faksimil)$/u.test(path)) {
-    return null
-  }
-  const query = new URLSearchParams(queryIndex < 0 ? "" : value.slice(queryIndex + 1))
-  return query.has("s_return") ? null : value
-}
-
-export function attachTextSearchReturnHref(readerHref: string, searchFullPath: string): string {
-  const origin = validateTextSearchReturnOrigin(searchFullPath)
-  const reader = validateTextSearchReaderHref(readerHref)
-  if (!origin || !reader) return readerHref
-
-  const queryIndex = reader.indexOf("?")
-  const path = queryIndex < 0 ? reader : reader.slice(0, queryIndex)
-  const params = new URLSearchParams(queryIndex < 0 ? "" : reader.slice(queryIndex + 1))
-  params.append("s_return", origin)
-  return `${path}?${params.toString()}`
-}
-
-export function parseTextSearchReturnHref(query: TextSearchRouteQuery): string | null {
-  return validateTextSearchReturnOrigin(query.s_return)
 }
 
 function textSearchReaderPath(work: TextSearchWork, highlight: TextSearchHighlight): string {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest"
 
 import {
+  attachTextSearchReturnHref,
   DEFAULT_TEXT_SEARCH_HREF,
   parseTextSearchReturnHref,
   rawTextSearchReturnQuery,
@@ -35,6 +36,35 @@ describe("remembered text-search navigation", () => {
 })
 
 describe("Reader search return navigation", () => {
+  const reader = "/författare/A/titlar/T/sida/1/etext?q=frihet&hit=0"
+  const origin = "/s%C3%B6k?fras=frihet&traffsida=2&utm=a+b&repeat=%2f&repeat=%2F"
+
+  test("attaches and parses one exact raw Search origin through the shared boundary", () => {
+    const attached = attachTextSearchReturnHref(reader, origin)
+
+    expect(attached).toBe(
+      "/författare/A/titlar/T/sida/1/etext?q=frihet&hit=0&" +
+      "s_return=%2Fs%25C3%25B6k%3Ffras%3Dfrihet%26traffsida%3D2%26" +
+      "utm%3Da%2Bb%26repeat%3D%252f%26repeat%3D%252F"
+    )
+    expect(parseTextSearchReturnHref(rawTextSearchReturnQuery(attached))).toBe(origin)
+  })
+
+  test("leaves invalid origins and Reader destinations unchanged", () => {
+    expect(attachTextSearchReturnHref(
+      reader,
+      "https://example.test/s%C3%B6k?fras=frihet"
+    )).toBe(reader)
+    expect(attachTextSearchReturnHref(
+      "https://example.test/reader",
+      origin
+    )).toBe("https://example.test/reader")
+    expect(attachTextSearchReturnHref(
+      `${reader}&s_return=existing`,
+      origin
+    )).toBe(`${reader}&s_return=existing`)
+  })
+
   test("extracts one outer return value without normalizing its inner URL bytes", () => {
     expect(rawTextSearchReturnQuery(
       "/editor/lb/ix/1/f?s_return=%2Fs%25C3%25B6k%3Ffras%3Da%252Bb" +
