@@ -4522,6 +4522,7 @@ const server = createServer(async (request, response) => {
     ) {
       body = Buffer.from(body).toString("utf8").replace("</body>", [
         '<img id="owned-subresource" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg">',
+        '<img id="external-attribution" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg" attributionsrc="https://evil.test/image-attribution">',
         '<img id="external-src" src="https://evil.test/src.jpg">',
         '<img id="external-srcset" srcset="https://evil.test/srcset.jpg 1x">',
         '<table id="legacy-background" background="https://evil.test/background.jpg"><tr><td>Legacy</td></tr></table>',
