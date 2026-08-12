@@ -39,7 +39,7 @@ interface StoredRequestObservability {
 const REQUEST_ID_PATTERN
   = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u
 const TRACEPARENT_PATTERN
-  = /^00-([0-9a-f]{32})-([0-9a-f]{16})-[0-9a-f]{2}$/u
+  = /^00-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})$/u
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u
 const ZERO_GIT_SHA = "0".repeat(40)
 const HTTP_METHODS = new Set([
@@ -73,6 +73,7 @@ export function createObservabilityContext(incoming: {
     : null
   const suppliedTraceId = traceMatch?.[1]
   const suppliedParentId = traceMatch?.[2]
+  const suppliedTraceFlags = traceMatch?.[3]
   const validIncomingTrace = suppliedTraceId
     && suppliedParentId
     && !/^0+$/u.test(suppliedTraceId)
@@ -81,12 +82,15 @@ export function createObservabilityContext(incoming: {
     ? suppliedTraceId
     : nonZeroHex(16)
   const spanId = nonZeroHex(8)
+  const traceFlags = validIncomingTrace && suppliedTraceFlags
+    ? (Number.parseInt(suppliedTraceFlags, 16) & 1).toString(16).padStart(2, "0")
+    : "01"
 
   return {
     requestId,
     traceId,
     spanId,
-    traceparent: `00-${traceId}-${spanId}-01`
+    traceparent: `00-${traceId}-${spanId}-${traceFlags}`
   }
 }
 

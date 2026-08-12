@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from "vitest"
 
 import {
+  createCorrelatedLbApiClient,
   createLbApiClient,
   normalizeApiRequestCorrelation,
   observeApiFailures
@@ -64,13 +65,81 @@ describe("generated LB API client", () => {
     })
   })
 
+  test.each(["00", "01"])(
+    "keeps valid W3C trace flags %s in request correlation",
+    flags => {
+      const traceparent
+        = `00-0123456789abcdef0123456789abcdef-fedcba9876543210-${flags}`
+
+      expect(normalizeApiRequestCorrelation({
+        requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+        traceparent
+      })?.traceparent).toBe(traceparent)
+    }
+  )
+
   test.each([
     null,
     [],
     { requestId: "../../spoofed", traceparent: "00-not-a-trace" },
+    {
+      requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+      traceparent: "01-0123456789abcdef0123456789abcdef-fedcba9876543210-00"
+    },
+    {
+      requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+      traceparent: "00-0123456789abcdef0123456789abcdef-fedcba9876543210-0G"
+    },
+    {
+      requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+      traceparent: "00-0123456789abcdef0123456789abcdef-fedcba9876543210-02"
+    },
+    {
+      requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+      traceparent: "00-0123456789abcdef0123456789abcdef-fedcba9876543210-03"
+    },
+    {
+      requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+      traceparent: "00-0123456789abcdef0123456789abcdef-fedcba9876543210-a2"
+    },
+    {
+      requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+      traceparent: "00-0123456789abcdef0123456789abcdef-fedcba9876543210-ff"
+    },
+    {
+      requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+      traceparent: `00-${"0".repeat(32)}-fedcba9876543210-00`
+    },
+    {
+      requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+      traceparent: `00-0123456789abcdef0123456789abcdef-${"0".repeat(16)}-00`
+    },
     { requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d" }
   ])("rejects malformed request correlation %#", value => {
     expect(normalizeApiRequestCorrelation(value)).toBeUndefined()
+  })
+
+  test("forwards an unsampled validated correlation without resampling", async () => {
+    let request: Request | undefined
+    const traceparent
+      = "00-0123456789abcdef0123456789abcdef-fedcba9876543210-00"
+    const client = createCorrelatedLbApiClient(
+      "http://example.test/v2",
+      {
+        requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+        traceparent
+      },
+      async value => {
+        request = value
+        return json({ items: [] })
+      }
+    )
+
+    await client.GET("/works/popular", { params: { query: { limit: 30 } } })
+
+    expect(request?.headers.get("x-request-id"))
+      .toBe("018f47c0-4d5b-7a62-8f41-a04b5df3fd8d")
+    expect(request?.headers.get("traceparent")).toBe(traceparent)
   })
 
   test("associates a server failure with its exact response correlation token", async () => {

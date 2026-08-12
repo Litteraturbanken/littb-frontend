@@ -672,7 +672,7 @@ describe("proxy correlation", () => {
       await fetch(`http://127.0.0.1:${proxyAddress.port}/stats`, {
         headers: {
           "x-request-id": "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
-          traceparent: "00-0123456789abcdef0123456789abcdef-0123456789abcdef-01"
+          traceparent: "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
         }
       })
 
@@ -680,7 +680,7 @@ describe("proxy correlation", () => {
         "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d"
       )
       expect(upstreamHeaders?.get("traceparent")).toMatch(
-        /^00-0123456789abcdef0123456789abcdef-[0-9a-f]{16}-01$/u
+        /^00-0123456789abcdef0123456789abcdef-[0-9a-f]{16}-00$/u
       )
     } finally {
       proxy.close()

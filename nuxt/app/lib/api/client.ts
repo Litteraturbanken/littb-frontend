@@ -5,7 +5,7 @@ import type { paths } from "./generated/lbapi"
 const CORRELATION_ID_PATTERN
   = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u
 const TRACEPARENT_PATTERN
-  = /^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/u
+  = /^00-([0-9a-f]{32})-([0-9a-f]{16})-(?:00|01)$/u
 
 export interface ApiFailureCorrelation {
   correlationToken: string | null
@@ -24,10 +24,16 @@ export function normalizeApiRequestCorrelation(
     return undefined
   }
   const { requestId, traceparent } = value as Record<string, unknown>
-  return typeof requestId === "string"
-    && CORRELATION_ID_PATTERN.test(requestId)
-    && typeof traceparent === "string"
-    && TRACEPARENT_PATTERN.test(traceparent)
+  if (typeof requestId !== "string"
+    || !CORRELATION_ID_PATTERN.test(requestId)
+    || typeof traceparent !== "string") return undefined
+  const traceMatch = TRACEPARENT_PATTERN.exec(traceparent)
+  const traceId = traceMatch?.[1]
+  const parentId = traceMatch?.[2]
+  return traceId
+    && parentId
+    && !/^0+$/u.test(traceId)
+    && !/^0+$/u.test(parentId)
     ? { requestId, traceparent }
     : undefined
 }

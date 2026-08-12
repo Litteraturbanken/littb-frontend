@@ -8,10 +8,21 @@ const CONTEXT = {
   requestId: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
   traceId: "1".repeat(32),
   spanId: "2".repeat(16),
-  traceparent: `00-${"1".repeat(32)}-${"2".repeat(16)}-01`
+  traceparent: `00-${"1".repeat(32)}-${"2".repeat(16)}-00`
 }
 
 describe("correlation token store", () => {
+  test("preserves exact trace flags without exposing mutable stored context", () => {
+    const store = new CorrelationTokenStore(3, 1_000)
+    const token = store.issue(CONTEXT, 100)
+    const first = store.resolve(token, 101)
+
+    expect(first).toEqual(CONTEXT)
+    if (!first) throw new Error("Expected stored correlation")
+    first.traceparent = `00-${"3".repeat(32)}-${"4".repeat(16)}-01`
+    expect(store.resolve(token, 102)).toEqual(CONTEXT)
+  })
+
   test("evicts only the oldest entry when its bounded capacity is reached", () => {
     const store = new CorrelationTokenStore(3, 1_000)
     const oldest = store.issue(CONTEXT, 100)

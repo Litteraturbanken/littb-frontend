@@ -90,7 +90,7 @@ describe("server lb-api client", () => {
       authorization: "Bearer untrusted",
       cookie: "session=untrusted",
       "x-request-id": VALID_REQUEST_ID,
-      traceparent: `00-${VALID_TRACE_ID}-${VALID_PARENT_ID}-01`,
+      traceparent: `00-${VALID_TRACE_ID}-${VALID_PARENT_ID}-00`,
       "x-untrusted": "untrusted"
     })
 
@@ -98,7 +98,7 @@ describe("server lb-api client", () => {
     expect(request.method).toBe("POST")
     expect(request.headers.get("x-request-id")).toBe(VALID_REQUEST_ID)
     expect(request.headers.get("traceparent")).toMatch(
-      new RegExp(`^00-${VALID_TRACE_ID}-[0-9a-f]{16}-01$`, "u")
+      new RegExp(`^00-${VALID_TRACE_ID}-[0-9a-f]{16}-00$`, "u")
     )
     expect(request.headers.get("authorization")).toBeNull()
     expect(request.headers.get("cookie")).toBeNull()

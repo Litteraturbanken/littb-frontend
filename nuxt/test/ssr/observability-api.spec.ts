@@ -141,11 +141,19 @@ test("cross-origin, malformed, oversized, and privacy-unsafe batches fail closed
 })
 
 test("an issued correlation token links only its exact server request", async ({ request }) => {
-  const correlatedResponse = await request.get("/robots.txt")
+  const incomingTraceId = "0123456789abcdef0123456789abcdef"
+  const correlatedResponse = await request.get("/robots.txt", {
+    headers: {
+      traceparent: `00-${incomingTraceId}-0123456789abcdef-00`
+    }
+  })
   const token = correlatedResponse.headers()["x-lb-observability-correlation"]
   const requestId = correlatedResponse.headers()["x-request-id"]
   const traceparent = correlatedResponse.headers().traceparent
   expect(token).toMatch(/^[0-9a-f-]{36}$/u)
+  expect(traceparent).toMatch(
+    new RegExp(`^00-${incomingTraceId}-[0-9a-f]{16}-00$`, "u")
+  )
 
   const correlatedEvent = {
     ...event("018f47c0-4d5b-7a62-8f41-a04b5df3fd91"),
@@ -160,9 +168,11 @@ test("an issued correlation token links only its exact server request", async ({
     `${fixtureOrigin}/_observability_requests`
   )).json()).requests
   const forwarded = JSON.parse(ledger[0].body).events[0]
+  expect(forwarded.event_id).toBe(correlatedEvent.event_id)
   expect(forwarded.request_id).toBe(requestId)
   expect(forwarded.trace_id).toBe(traceparent.split("-")[1])
   expect(forwarded.span_id).toMatch(/^[0-9a-f]{16}$/u)
+  expect(forwarded.span_id).not.toBe(traceparent.split("-")[2])
 })
 
 test("replayed event IDs are acknowledged without a second upstream delivery", async ({ request }) => {

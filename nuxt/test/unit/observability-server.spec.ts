@@ -15,20 +15,30 @@ const VALID_TRACE_ID = "0123456789abcdef0123456789abcdef"
 const VALID_PARENT_ID = "0123456789abcdef"
 
 describe("Nuxt observability context", () => {
-  test("continues valid request and trace identifiers with a new server span", () => {
-    const context = createObservabilityContext({
-      requestId: VALID_REQUEST_ID,
-      traceparent: `00-${VALID_TRACE_ID}-${VALID_PARENT_ID}-01`
-    })
+  test.each([
+    ["00", "00"],
+    ["01", "01"],
+    ["02", "00"],
+    ["a2", "00"],
+    ["03", "01"],
+    ["ff", "01"]
+  ])(
+    "continues valid request and trace identifiers with flags %s as %s",
+    (incomingFlags, outgoingFlags) => {
+      const context = createObservabilityContext({
+        requestId: VALID_REQUEST_ID,
+        traceparent: `00-${VALID_TRACE_ID}-${VALID_PARENT_ID}-${incomingFlags}`
+      })
 
-    expect(context.requestId).toBe(VALID_REQUEST_ID)
-    expect(context.traceId).toBe(VALID_TRACE_ID)
-    expect(context.spanId).toMatch(/^[0-9a-f]{16}$/u)
-    expect(context.spanId).not.toBe(VALID_PARENT_ID)
-    expect(context.traceparent).toBe(
-      `00-${VALID_TRACE_ID}-${context.spanId}-01`
-    )
-  })
+      expect(context.requestId).toBe(VALID_REQUEST_ID)
+      expect(context.traceId).toBe(VALID_TRACE_ID)
+      expect(context.spanId).toMatch(/^[0-9a-f]{16}$/u)
+      expect(context.spanId).not.toBe(VALID_PARENT_ID)
+      expect(context.traceparent).toBe(
+        `00-${VALID_TRACE_ID}-${context.spanId}-${outgoingFlags}`
+      )
+    }
+  )
 
   test.each([
     ["request ID", { requestId: "../../secret", traceparent: undefined }],
@@ -50,6 +60,9 @@ describe("Nuxt observability context", () => {
     )
     expect(context.traceId).toMatch(/^[0-9a-f]{32}$/u)
     expect(context.traceId).not.toBe("0".repeat(32))
+    expect(context.traceparent).toMatch(
+      /^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/u
+    )
   })
 
   test("replaces a trace whose parent span is all zero", () => {
@@ -98,7 +111,7 @@ describe("Nuxt request events", () => {
         {
           headers: {
             "x-request-id": VALID_REQUEST_ID,
-            traceparent: `00-${VALID_TRACE_ID}-${VALID_PARENT_ID}-01`
+            traceparent: `00-${VALID_TRACE_ID}-${VALID_PARENT_ID}-00`
           }
         }
       )
@@ -107,7 +120,7 @@ describe("Nuxt request events", () => {
 
       expect(response.headers.get("x-request-id")).toBe(VALID_REQUEST_ID)
       expect(response.headers.get("traceparent")).toMatch(
-        new RegExp(`^00-${VALID_TRACE_ID}-[0-9a-f]{16}-01$`, "u")
+        new RegExp(`^00-${VALID_TRACE_ID}-[0-9a-f]{16}-00$`, "u")
       )
       expect(emitted[0]).toMatchObject({
         schema_version: "lb.observability.v1",
@@ -124,6 +137,12 @@ describe("Nuxt request events", () => {
       })
       expect(JSON.stringify(emitted[0])).not.toContain("private-value")
       expect(emitted[0].duration_ms).toBeGreaterThanOrEqual(0)
+      expect(emitted[0].span_id).toBe(
+        response.headers.get("traceparent")?.split("-")[2]
+      )
+      expect(emitted[0].event_id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u
+      )
     } finally {
       server.close()
       await once(server, "close")
