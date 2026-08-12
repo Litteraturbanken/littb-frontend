@@ -15,6 +15,13 @@ const FLUSH_DELAY_MS = 1_000
 const MAX_RETRY_DELAY_MS = 30_000
 const TERMINAL_INTAKE_STATUSES = new Set([400, 403, 413, 415, 422])
 const SAFE_LABEL_PATTERN = /^[A-Za-z0-9_.:-]{1,120}$/u
+const EVENT_ID_PATTERN
+  = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u
+const BROWSER_EVENT_NAMES = new Set<BrowserEventName>([
+  "browser.error",
+  "browser.unhandled_rejection",
+  "browser.chunk_error"
+])
 const BROWSER_ERROR_TYPES = new Set([
   "ApiNetworkError",
   "ApiResponseError",
@@ -30,6 +37,13 @@ const BROWSER_ERROR_TYPES = new Set([
   "URIError",
   "UnknownError"
 ])
+const RESOURCE_KINDS = new Set([
+  "document",
+  "script",
+  "style",
+  "image",
+  "unknown"
+] as const)
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u
 const ZERO_GIT_SHA = "0".repeat(40)
 
@@ -96,6 +110,24 @@ function safeBrowserErrorType(value: unknown): string {
   return BROWSER_ERROR_TYPES.has(value) ? value : "OtherError"
 }
 
+function safeBrowserEventName(value: unknown): BrowserEventName {
+  return typeof value === "string" && BROWSER_EVENT_NAMES.has(value as BrowserEventName)
+    ? value as BrowserEventName
+    : "browser.error"
+}
+
+function safeBrowserResourceKind(
+  value: unknown
+): NonNullable<BrowserEvent["attributes"]["resource_kind"]> {
+  return typeof value === "string" && RESOURCE_KINDS.has(value as never)
+    ? value as NonNullable<BrowserEvent["attributes"]["resource_kind"]>
+    : "unknown"
+}
+
+function safeCorrelationToken(value: unknown): string | null {
+  return typeof value === "string" && EVENT_ID_PATTERN.test(value) ? value : null
+}
+
 function errorType(error: unknown): string {
   let candidate = "UnknownError"
   if (error instanceof Error) {
@@ -130,12 +162,13 @@ export function classifyBrowserError(error: unknown): BrowserEventName {
 export async function createBrowserErrorEvent(
   options: CreateBrowserErrorEventOptions
 ): Promise<BrowserEvent> {
+  const eventName = safeBrowserEventName(options.eventName)
   const type = errorType(options.error)
   const component = safeLabel(options.component)
   const route = safeRoute(options.route)
-  const resourceKind = options.resourceKind ?? "unknown"
+  const resourceKind = safeBrowserResourceKind(options.resourceKind)
   const fingerprint = await sha256([
-    options.eventName,
+    eventName,
     type,
     component ?? "",
     route ?? "",
@@ -170,11 +203,11 @@ export async function createBrowserErrorEvent(
     }
   }
 
-  if (options.eventName === "browser.unhandled_rejection") {
-    return { ...common, event_name: options.eventName }
+  if (eventName === "browser.unhandled_rejection") {
+    return { ...common, event_name: eventName }
   }
-  if (options.eventName === "browser.chunk_error") {
-    return { ...common, event_name: options.eventName }
+  if (eventName === "browser.chunk_error") {
+    return { ...common, event_name: eventName }
   }
   return { ...common, event_name: "browser.error" }
 }
@@ -227,14 +260,18 @@ export class BrowserObservabilityReporter {
     } = {}
   ): Promise<void> {
     try {
-      const eventName = metadata.eventName ?? classifyBrowserError(error)
+      const eventName = safeBrowserEventName(
+        metadata.eventName ?? classifyBrowserError(error)
+      )
       const type = errorType(error)
       const component = safeLabel(metadata.component)
       const route = safeRoute(this.#options.route())
-      const resourceKind = metadata.resourceKind ?? "unknown"
-      const correlationToken = metadata.correlationToken ?? null
+      const resourceKind = safeBrowserResourceKind(metadata.resourceKind)
+      const correlationToken = safeCorrelationToken(metadata.correlationToken)
+      const eventId = globalThis.crypto.randomUUID()
+      if (!EVENT_ID_PATTERN.test(eventId)) return Promise.resolve()
       this.#enqueueIntake({
-        event_id: globalThis.crypto.randomUUID(),
+        event_id: eventId,
         event_name: eventName,
         error_type: type,
         resource_kind: resourceKind,
@@ -247,20 +284,31 @@ export class BrowserObservabilityReporter {
   }
 
   enqueue(event: BrowserEvent, correlationToken: string | null = null): void {
-    const normalizedCorrelationToken = correlationToken ?? null
+    let eventId = event.event_id
+    if (typeof eventId !== "string" || !EVENT_ID_PATTERN.test(eventId)) {
+      try {
+        eventId = globalThis.crypto.randomUUID()
+      } catch {
+        return
+      }
+      if (!EVENT_ID_PATTERN.test(eventId)) return
+    }
+    const eventName = safeBrowserEventName(event.event_name)
+    const resourceKind = safeBrowserResourceKind(event.attributes?.resource_kind)
+    const normalizedCorrelationToken = safeCorrelationToken(correlationToken)
     const type = safeBrowserErrorType(event.error_type)
     this.#enqueueIntake({
-      event_id: event.event_id,
-      event_name: event.event_name,
+      event_id: eventId,
+      event_name: eventName,
       error_type: type,
-      resource_kind: event.attributes.resource_kind ?? "unknown",
+      resource_kind: resourceKind,
       correlation_token: normalizedCorrelationToken
     }, eventIdentity(
-      event.event_name,
+      eventName,
       type,
       safeLabel(event.attributes.component),
       safeRoute(event.route),
-      event.attributes.resource_kind ?? "unknown"
+      resourceKind
     ), normalizedCorrelationToken)
   }
 

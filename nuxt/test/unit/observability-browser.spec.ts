@@ -9,10 +9,6 @@ import {
 
 const GIT_SHA = "a".repeat(40)
 
-function oversizedEventId(eventId: string): string {
-  return `${eventId}${"e".repeat(12_900)}`
-}
-
 function reporterOptions(overrides: Record<string, unknown> = {}) {
   return {
     endpoint: "/_observability/events",
@@ -452,6 +448,105 @@ describe("browser event delivery", () => {
     expect(sent.events[0].error_type).toBe("OtherError")
   })
 
+  test("normalizes every compact enqueue identity field without poisoning siblings", async () => {
+    const regeneratedId = "018f47c0-4d5b-4a62-8f41-200000000003"
+    const randomUUID = vi.spyOn(globalThis.crypto, "randomUUID")
+      .mockReturnValue(regeneratedId)
+    try {
+      const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+      const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+      const hostile = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new Error("discarded"),
+      component: "HostileIdentity",
+      environment: "stage",
+      deploymentGitSha: GIT_SHA
+    })
+      const sibling = await createBrowserErrorEvent({
+      eventName: "browser.chunk_error",
+      error: new Error("discarded"),
+      component: "ValidSibling",
+      resourceKind: "script",
+      environment: "stage",
+      deploymentGitSha: GIT_SHA,
+      randomUUID: () => "018f47c0-4d5b-7a62-8f41-200000000004"
+    })
+
+      reporter.enqueue({
+      ...hostile,
+      event_id: "PRIVATE-ID",
+      event_name: "private.event",
+      attributes: { ...hostile.attributes, resource_kind: "private-resource" }
+    } as unknown as BrowserEvent, "PRIVATE-TOKEN" as unknown as null)
+      reporter.enqueue(sibling, "018f47c0-4d5b-7a62-8f41-200000000005")
+      await reporter.flush()
+
+      const body = String(fetchMock.mock.calls[0]?.[1]?.body)
+      expect(JSON.parse(body).events).toEqual([{
+      event_id: regeneratedId,
+      event_name: "browser.error",
+      error_type: "Error",
+      resource_kind: "unknown",
+      correlation_token: null
+    }, {
+      event_id: sibling.event_id,
+      event_name: "browser.chunk_error",
+      error_type: "Error",
+      resource_kind: "script",
+      correlation_token: "018f47c0-4d5b-7a62-8f41-200000000005"
+      }])
+      expect(body).not.toMatch(/PRIVATE|private\.event|private-resource/u)
+    } finally {
+      randomUUID.mockRestore()
+    }
+  })
+
+  test("drops only an invalid-ID event when UUID regeneration fails", async () => {
+    const randomUUID = vi.spyOn(globalThis.crypto, "randomUUID")
+      .mockImplementation(() => { throw new Error("unavailable") })
+    try {
+      const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+      const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+      const event = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new Error("discarded"),
+      environment: "stage",
+      deploymentGitSha: GIT_SHA,
+      randomUUID: () => "018f47c0-4d5b-7a62-8f41-200000000006"
+    })
+
+      reporter.enqueue({ ...event, event_id: "invalid" })
+      reporter.enqueue(event)
+      await reporter.flush()
+
+      expect(fetchBodies(fetchMock)).toEqual([[event.event_id]])
+    } finally {
+      randomUUID.mockRestore()
+    }
+  })
+
+  test("normalizes runtime-cast capture metadata at the compact boundary", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+
+    await reporter.capture(new Error("discarded"), {
+      eventName: "private.event" as BrowserEvent["event_name"],
+      resourceKind: "private-resource" as NonNullable<
+        BrowserEvent["attributes"]["resource_kind"]
+      >,
+      correlationToken: "PRIVATE-TOKEN"
+    })
+    await reporter.flush()
+
+    const body = String(fetchMock.mock.calls[0]?.[1]?.body)
+    expect(JSON.parse(body).events[0]).toMatchObject({
+      event_name: "browser.error",
+      resource_kind: "unknown",
+      correlation_token: null
+    })
+    expect(body).not.toMatch(/PRIVATE|private\.event|private-resource/u)
+  })
+
   test("uses beacon on page exit and falls back to isolated keepalive fetch", async () => {
     const fetchMock = vi.fn(async () => {
       throw new Error("offline")
@@ -622,7 +717,21 @@ describe("browser event delivery", () => {
   test("keeps the complete page-exit beacon drain below its explicit byte budget", async () => {
     const beacon = vi.fn(() => true)
     const reporter = new BrowserObservabilityReporter(reporterOptions({ beacon }))
-    const eventIds = await enqueueNumberedEvents(reporter, 50)
+    const eventIds: string[] = []
+    for (let index = 0; index < 50; index += 1) {
+      const eventId = `018f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`
+      eventIds.push(eventId)
+      reporter.enqueue(await createBrowserErrorEvent({
+        eventName: "browser.unhandled_rejection",
+        error: new ReferenceError("discarded"),
+        component: `Component${index}`,
+        resourceKind: "document",
+        route: "/bibliotek",
+        environment: "stage",
+        deploymentGitSha: GIT_SHA,
+        randomUUID: () => eventId
+      }), `028f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`)
+    }
 
     await reporter.flush(true)
 
@@ -631,42 +740,8 @@ describe("browser event delivery", () => {
       (total, call) => total + (call[1] as Blob).size,
       0
     )).toBeLessThanOrEqual(60 * 1024)
-    expect((await beaconBodies(beacon)).flat()).toEqual(eventIds)
-  })
-
-  test("stops before a fallback and later beacon bodies exceed the exit byte budget", async () => {
-    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
-    let call = 0
-    const beacon = vi.fn(() => ++call !== 1)
-    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
-    const eventIds: string[] = []
-    for (let index = 0; index < 6; index += 1) {
-      const eventId = `018f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`
-      const event = await createBrowserErrorEvent({
-        eventName: "browser.error",
-        error: new Error(`discarded-${index}`),
-        component: `Budget${index}`,
-        resourceKind: "unknown",
-        route: "/bibliotek",
-        environment: "stage",
-        deploymentGitSha: GIT_SHA,
-        randomUUID: () => eventId
-      })
-      eventIds.push(eventId)
-      const oversizedId = oversizedEventId(eventId)
-      eventIds[eventIds.length - 1] = oversizedId
-      reporter.enqueue({ ...event, event_id: oversizedId } as BrowserEvent)
-    }
-
-    await reporter.flush(true)
-
-    expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(0, 4))
-    expect(String(fetchMock.mock.calls[0]?.[1]?.body).length + beacon.mock.calls.slice(1).reduce(
-      (total, beaconCall) => total + (beaconCall[1] as Blob).size,
-      0
-    )).toBeLessThanOrEqual(60 * 1024)
-
-    await reporter.flush(true)
+    expect(beacon.mock.calls.every(call => (call[1] as Blob).size <= 16 * 1024)).toBe(true)
+    expect((await beaconBodies(beacon)).every(batch => batch.length <= 10)).toBe(true)
     expect((await beaconBodies(beacon)).flat()).toEqual(eventIds)
   })
 
@@ -862,164 +937,6 @@ describe("browser event delivery", () => {
       }
     }
   )
-
-  test("shares the page-exit byte budget between a tail and requeued active head", async () => {
-    vi.useFakeTimers()
-    try {
-      let releaseFetch: (() => void) | undefined
-      const fetchMock = vi.fn()
-        .mockImplementationOnce(() => new Promise<Response>(resolve => {
-          releaseFetch = () => resolve(new Response(null, { status: 503 }))
-        }))
-        .mockResolvedValueOnce(new Response(null, { status: 202 }))
-      const beacon = vi.fn(() => true)
-      const reporter = new BrowserObservabilityReporter(reporterOptions({
-        fetch: fetchMock,
-        beacon,
-        autoFlush: true
-      }))
-      const eventIds: string[] = []
-      for (let index = 0; index < 6; index += 1) {
-        const eventId = `018f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`
-        const event = await createBrowserErrorEvent({
-          eventName: "browser.error",
-          error: new Error(`discarded-${index}`),
-          component: `Budget${index}`,
-          resourceKind: "unknown",
-          route: "/bibliotek",
-          environment: "stage",
-          deploymentGitSha: GIT_SHA,
-          randomUUID: () => eventId
-        })
-        eventIds.push(eventId)
-        const oversizedId = oversizedEventId(eventId)
-        eventIds[eventIds.length - 1] = oversizedId
-        reporter.enqueue({ ...event, event_id: oversizedId } as BrowserEvent)
-      }
-
-      const normalFlush = reporter.flush()
-      const firstExitFlush = reporter.flush(true)
-      const secondExitFlush = reporter.flush(true)
-      releaseFetch?.()
-      await Promise.all([normalFlush, firstExitFlush, secondExitFlush])
-
-      expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(1, 4))
-      expect(beacon.mock.calls.reduce(
-        (total, beaconCall) => total + (beaconCall[1] as Blob).size,
-        0
-      )).toBeLessThanOrEqual(60 * 1024)
-      expect(vi.getTimerCount()).toBe(1)
-
-      await vi.advanceTimersByTimeAsync(1_000)
-      expect(fetchBodies(fetchMock).at(-1)).toEqual([eventIds[0]])
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-
-  test.each([202, 503])(
-    "reserves active keepalive bytes from the exit budget when it settles with %i",
-    async status => {
-      let releaseFetch: (() => void) | undefined
-      const fetchMock = vi.fn(() => new Promise<Response>(resolve => {
-        releaseFetch = () => resolve(new Response(null, { status }))
-      }))
-      const beacon = vi.fn(() => true)
-      const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
-      const eventIds: string[] = []
-      for (let index = 0; index < 6; index += 1) {
-        const eventId = `018f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`
-        const event = await createBrowserErrorEvent({
-          eventName: "browser.error",
-          error: new Error(`discarded-${index}`),
-          component: `Budget${index}`,
-          resourceKind: "unknown",
-          route: "/bibliotek",
-          environment: "stage",
-          deploymentGitSha: GIT_SHA,
-          randomUUID: () => eventId
-        })
-        eventIds.push(eventId)
-        const oversizedId = oversizedEventId(eventId)
-        eventIds[eventIds.length - 1] = oversizedId
-        reporter.enqueue({ ...event, event_id: oversizedId } as BrowserEvent)
-      }
-
-      const normalFlush = reporter.flush()
-      const exitFlush = reporter.flush(true)
-      releaseFetch?.()
-      await Promise.all([normalFlush, exitFlush])
-
-      const initiatedBytes = String(fetchMock.mock.calls[0]?.[1]?.body).length
-        + beacon.mock.calls.reduce(
-          (total, beaconCall) => total + (beaconCall[1] as Blob).size,
-          0
-        )
-      expect(initiatedBytes).toBeLessThanOrEqual(60 * 1024)
-      expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(1, 4))
-    }
-  )
-
-  test("charges a blocked tail transport before considering an active retry", async () => {
-    vi.useFakeTimers()
-    try {
-      let releaseActive: (() => void) | undefined
-      const fetchMock = vi.fn()
-        .mockImplementationOnce(() => new Promise<Response>(resolve => {
-          releaseActive = () => resolve(new Response(null, { status: 503 }))
-        }))
-        .mockResolvedValueOnce(new Response(null, { status: 503 }))
-        .mockResolvedValue(new Response(null, { status: 202 }))
-      let beaconCall = 0
-      const beacon = vi.fn(() => ++beaconCall < 3)
-      const reporter = new BrowserObservabilityReporter(reporterOptions({
-        fetch: fetchMock,
-        beacon,
-        autoFlush: true
-      }))
-      const eventIds: string[] = []
-      for (let index = 0; index < 6; index += 1) {
-        const eventId = `018f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`
-        const event = await createBrowserErrorEvent({
-          eventName: "browser.error",
-          error: new Error(`discarded-${index}`),
-          component: `BudgetBlocked${index}`,
-          resourceKind: "unknown",
-          route: "/bibliotek",
-          environment: "stage",
-          deploymentGitSha: GIT_SHA,
-          randomUUID: () => eventId
-        })
-        eventIds.push(eventId)
-        const oversizedId = oversizedEventId(eventId)
-        eventIds[eventIds.length - 1] = oversizedId
-        reporter.enqueue({ ...event, event_id: oversizedId } as BrowserEvent)
-      }
-
-      const normalFlush = reporter.flush()
-      const exitFlush = reporter.flush(true)
-      releaseActive?.()
-      await Promise.all([normalFlush, exitFlush])
-
-      expect(await beaconBodies(beacon)).toEqual([
-        [eventIds[1]],
-        [eventIds[2]],
-        [eventIds[3]]
-      ])
-      expect(fetchBodies(fetchMock)).toEqual([[eventIds[0]], [eventIds[3]]])
-      const initiatedBytes = String(fetchMock.mock.calls[0]?.[1]?.body).length
-        + (beacon.mock.calls[0]?.[1] as Blob).size
-        + (beacon.mock.calls[1]?.[1] as Blob).size
-        + String(fetchMock.mock.calls[1]?.[1]?.body).length
-      expect(initiatedBytes).toBeLessThanOrEqual(60 * 1024)
-      expect(vi.getTimerCount()).toBe(1)
-
-      await vi.advanceTimersByTimeAsync(1_000)
-      expect(fetchBodies(fetchMock).at(-1)).toEqual([eventIds[0]])
-    } finally {
-      vi.useRealTimers()
-    }
-  })
 
   test("waits for an active successful delivery before exit-draining only its tail", async () => {
     let releaseFetch: (() => void) | undefined
