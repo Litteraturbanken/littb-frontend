@@ -361,6 +361,7 @@ let legacyAuthorRouteRequests = []
 let legacyAuthorRouteFailure = null
 let legacyDramawebbenRouteRequests = []
 let legacyDramawebbenRouteFailure = null
+let legacyDramawebbenRouteLocation = null
 let legacyDramawebbenRedirectTargetRequests = []
 let authorDocumentPdfRequests = []
 let authorDocumentRedirectTargetRequests = []
@@ -3843,6 +3844,20 @@ const server = createServer(async (request, response) => {
     legacyDramawebbenRouteFailure = null
     return sendJson(response, 200, { failure: legacyDramawebbenRouteFailure })
   }
+  if (url.pathname === "/_legacy_dramawebben_route_location" && request.method === "PUT") {
+    const body = await readJson(request)
+    if (
+      body === null || typeof body !== "object" || Array.isArray(body)
+      || Object.keys(body).length !== 1
+      || typeof body.location !== "string"
+    ) return validationError(response)
+    legacyDramawebbenRouteLocation = body.location
+    return sendJson(response, 200, { location: legacyDramawebbenRouteLocation })
+  }
+  if (url.pathname === "/_legacy_dramawebben_route_location" && request.method === "DELETE") {
+    legacyDramawebbenRouteLocation = null
+    return sendJson(response, 200, { location: legacyDramawebbenRouteLocation })
+  }
   if (url.pathname === "/_legacy_dramawebben_redirect_target_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: legacyDramawebbenRedirectTargetRequests })
   }
@@ -5391,6 +5406,9 @@ const server = createServer(async (request, response) => {
   ) {
     const body = await readJson(request)
     legacyDramawebbenRouteRequests.push({ path: request.url, body })
+    if (legacyDramawebbenRouteLocation !== null) {
+      return sendJson(response, 200, { location: legacyDramawebbenRouteLocation })
+    }
     if (legacyDramawebbenRouteFailure === "malformed-200") {
       return sendJson(response, 200, { location: 7 })
     }

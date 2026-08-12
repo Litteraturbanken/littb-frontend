@@ -1,6 +1,10 @@
 import { createError, type H3Event } from "h3"
 
 import type { components } from "../../app/lib/api/generated/lbapi"
+import {
+  encodeValidatedRouteSegment,
+  validRouteSegment
+} from "../../shared/utils/route-segment"
 import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
 import { createServerLbApiClient } from "./server-lb-api-client"
 
@@ -48,26 +52,15 @@ function decodeStable(raw: string, maximum: number): string {
   return legacyDramawebbenRouteError(404, "legacy_dramawebben_route_not_found")
 }
 
-function isSafeSegment(value: string, maximum: number): boolean {
-  return value.length >= 1 && value.length <= maximum
-    && value === value.trim()
-    && value !== "." && value !== ".."
-    && !value.includes("\\")
-    && !value.includes("/")
-    && !value.includes("%")
-    && !hasC0OrC1Control(value)
-    && !hasLoneSurrogate(value)
-}
-
 export function decodeLegacyDramawebbenSegment(raw: string): string {
   const decoded = decodeStable(raw, 200)
-  if (!isSafeSegment(decoded, 200)) {
+  if (!validRouteSegment(decoded, 200)) {
     return legacyDramawebbenRouteError(404, "legacy_dramawebben_route_not_found")
   }
   return decoded
 }
 
-type ParsedLocalLocation = { segments: string[]; url: URL }
+type ParsedLocalLocation = { rawPathname: string; segments: string[]; url: URL }
 
 function decodedLocationSegments(url: URL): string[] | null {
   const segments: string[] = []
@@ -81,15 +74,27 @@ function decodedLocationSegments(url: URL): string[] | null {
   return segments
 }
 
+function isLocalLocationText(value: unknown): value is string {
+  return typeof value === "string"
+    && value.length >= 1
+    && value.length <= 2048
+    && value.startsWith("/")
+    && !value.startsWith("//")
+    && !value.includes("\\")
+    && !value.includes("#")
+    && !hasC0OrC1Control(value)
+    && !hasLoneSurrogate(value)
+}
+
 function parseLocalLocation(value: unknown): ParsedLocalLocation | null {
-  if (typeof value !== "string" || value.length < 1 || value.length > 2048
-    || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")
-    || value.includes("#") || hasC0OrC1Control(value) || hasLoneSurrogate(value)) return null
+  if (!isLocalLocationText(value)) return null
   try {
     const url = new URL(value, "http://littb.invalid")
     if (url.origin !== "http://littb.invalid") return null
     const segments = decodedLocationSegments(url)
-    return segments ? { segments, url } : null
+    const queryStart = value.indexOf("?")
+    const rawPathname = queryStart === -1 ? value : value.slice(0, queryStart)
+    return segments ? { rawPathname, segments, url } : null
   } catch {
     return null
   }
@@ -98,7 +103,7 @@ function parseLocalLocation(value: unknown): ParsedLocalLocation | null {
 function isAuthorLocation({ segments, url }: ParsedLocalLocation): boolean {
   return segments.length === 3
     && segments[0] === "författare"
-    && isSafeSegment(segments[1]!, 100)
+    && validRouteSegment(segments[1]!, 100)
     && segments[2] === "dramawebben"
     && url.search === ""
 }
@@ -106,11 +111,11 @@ function isAuthorLocation({ segments, url }: ParsedLocalLocation): boolean {
 function isReaderLocation({ segments, url }: ParsedLocalLocation): boolean {
   return segments.length === 7
     && segments[0] === "författare"
-    && isSafeSegment(segments[1]!, 100)
+    && validRouteSegment(segments[1]!, 100)
     && segments[2] === "titlar"
-    && isSafeSegment(segments[3]!, 200)
+    && validRouteSegment(segments[3]!, 200)
     && segments[4] === "sida"
-    && isSafeSegment(segments[5]!, 100)
+    && validRouteSegment(segments[5]!, 100)
     && ["etext", "faksimil"].includes(segments[6]!)
     && url.search === ""
 }
@@ -118,23 +123,85 @@ function isReaderLocation({ segments, url }: ParsedLocalLocation): boolean {
 function isPdfLocation({ segments, url }: ParsedLocalLocation): boolean {
   return segments.length === 3
     && segments[0] === "txt"
-    && isSafeSegment(segments[1]!, 100)
+    && validRouteSegment(segments[1]!, 100)
     && segments[2] === `${segments[1]}.pdf`
     && url.search === ""
 }
 
-function isInformationLocation({ segments, url }: ParsedLocalLocation): boolean {
-  return segments.length === 2
-    && segments[0] === "dramawebben"
-    && segments[1] === "pjäser"
-    && /^\?om-boken&authorid=[^&=]+&titlepath=[^&=]+$/u.test(url.search)
+function decodedQueryPair(pair: string): readonly [string, string] | null {
+  const separator = pair.indexOf("=")
+  const rawKey = separator === -1 ? pair : pair.slice(0, separator)
+  const rawValue = separator === -1 ? "" : pair.slice(separator + 1)
+  try {
+    return [
+      decodeURIComponent(rawKey.replace(/\+/gu, " ")),
+      decodeURIComponent(rawValue.replace(/\+/gu, " "))
+    ]
+  } catch {
+    return null
+  }
 }
 
-function isSafeLocalLocation(value: unknown, kind: "play" | "author"): value is string {
+function hasExactInformationPath(rawPathname: string): boolean {
+  const canonicalRawPathname = rawPathname.replace(
+    /%[0-9a-f]{2}/giu,
+    escape => escape.toUpperCase()
+  )
+  return rawPathname === "/dramawebben/pjäser"
+    || canonicalRawPathname === "/dramawebben/pj%C3%A4ser"
+}
+
+function exactInformationQuery(url: URL): Map<string, string> | null {
+  const rawPairs = url.search.slice(1).split("&")
+  if (rawPairs.length !== 3) return null
+  const values = new Map<string, string>()
+  for (const rawPair of rawPairs) {
+    const pair = decodedQueryPair(rawPair)
+    if (pair === null || values.has(pair[0])) return null
+    values.set(...pair)
+  }
+  if (
+    values.size !== 3
+    || values.get("om-boken") !== ""
+    || !values.has("authorid")
+    || !values.has("titlepath")
+  ) return null
+  return values
+}
+
+function normalizedInformationLocation({
+  rawPathname,
+  segments,
+  url
+}: ParsedLocalLocation): string | null {
+  if (
+    !hasExactInformationPath(rawPathname)
+    || segments.length !== 2
+    || segments[0] !== "dramawebben"
+    || segments[1] !== "pjäser"
+  ) return null
+
+  const values = exactInformationQuery(url)
+  if (values === null) return null
+  const authorId = values.get("authorid")!
+  const titlePath = values.get("titlepath")!
+  if (!validRouteSegment(authorId, 100) || !validRouteSegment(titlePath, 200)) return null
+
+  return "/dramawebben/pj%C3%A4ser?om-boken"
+    + `&authorid=${encodeValidatedRouteSegment(authorId)}`
+    + `&titlepath=${encodeValidatedRouteSegment(titlePath)}`
+}
+
+function normalizedSafeLocalLocation(value: unknown, kind: "play" | "author"): string | null {
   const location = parseLocalLocation(value)
-  if (!location) return false
-  if (kind === "author") return isAuthorLocation(location)
-  return isReaderLocation(location) || isPdfLocation(location) || isInformationLocation(location)
+  if (!location) return null
+  if (kind === "author") {
+    return isAuthorLocation(location) ? `${location.url.pathname}${location.url.search}` : null
+  }
+  if (isReaderLocation(location) || isPdfLocation(location)) {
+    return `${location.url.pathname}${location.url.search}`
+  }
+  return normalizedInformationLocation(location)
 }
 
 export async function resolveLegacyDramawebbenRoutePrivately(
@@ -154,15 +221,14 @@ export async function resolveLegacyDramawebbenRoutePrivately(
 
   if (result.response.status === 404) return null
   const value: unknown = result.data
-  if (
-    result.response.status !== 200
-    || !isRecord(value)
-    || Object.keys(value).length !== resolutionKeys.size
-    || Object.keys(value).some(key => !resolutionKeys.has(key))
-    || !isSafeLocalLocation(value.location, request.kind)
-  ) {
+  const location = result.response.status === 200
+    && isRecord(value)
+    && Object.keys(value).length === resolutionKeys.size
+    && Object.keys(value).every(key => resolutionKeys.has(key))
+    ? normalizedSafeLocalLocation(value.location, request.kind)
+    : null
+  if (location === null) {
     return legacyDramawebbenRouteError(502, "legacy_dramawebben_route_unavailable")
   }
-  const normalized = new URL(value.location, "http://littb.invalid")
-  return { location: `${normalized.pathname}${normalized.search}` }
+  return { location }
 }

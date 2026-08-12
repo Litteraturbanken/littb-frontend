@@ -14,8 +14,16 @@ async function reset(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_legacy_dramawebben_route_requests`),
     request.delete(`${fixture}/_legacy_dramawebben_route_failure`),
+    request.delete(`${fixture}/_legacy_dramawebben_route_location`),
     request.delete(`${fixture}/_legacy_dramawebben_redirect_target_requests`)
   ])
+}
+
+async function setResolverLocation(request: APIRequestContext, location: string) {
+  const response = await request.put(`${fixture}/_legacy_dramawebben_route_location`, {
+    data: { location }
+  })
+  expect(response.ok()).toBe(true)
 }
 
 async function resolverRequests(request: APIRequestContext): Promise<ResolverRequest[]> {
@@ -75,6 +83,55 @@ for (const [legacyUrl, location] of [
 
     expect(response.status()).toBe(307)
     expect(response.headers().location).toBe(location)
+  })
+}
+
+test("canonicalizes a valid information location independent of query order", async ({
+  request
+}) => {
+  await setResolverLocation(
+    request,
+    "/dramawebben/pjäser?titlepath=Fr%C3%B6ken+Julie&om-boken=&authorid=Alml%C3%B6fN"
+  )
+
+  const response = await request.get("/dramawebben/pjas/information-only", {
+    maxRedirects: 0
+  })
+
+  expect(response.status()).toBe(307)
+  expect(response.headers().location).toBe(
+    "/dramawebben/pj%C3%A4ser?om-boken&authorid=Alml%C3%B6fN&titlepath=Fr%C3%B6ken%20Julie"
+  )
+})
+
+for (const [label, location] of [
+  ["encoded slash", "/dramawebben/pjäser?om-boken&authorid=Strindberg%2FA&titlepath=Info"],
+  ["encoded percent", "/dramawebben/pjäser?om-boken&authorid=Strindberg%25A&titlepath=Info"],
+  ["encoded control", "/dramawebben/pjäser?om-boken&authorid=Strindberg%00A&titlepath=Info"],
+  ["lone surrogate", "/dramawebben/pjäser?om-boken&authorid=StrindbergA&titlepath=\ud800"],
+  ["malformed escape", "/dramawebben/pjäser?om-boken&authorid=StrindbergA&titlepath=%E0%A4%A"],
+  ["duplicate author", "/dramawebben/pjäser?om-boken&authorid=A&authorid=B&titlepath=Info"],
+  ["extra parameter", "/dramawebben/pjäser?om-boken&authorid=A&titlepath=Info&keep=1"],
+  ["nonempty marker", "/dramawebben/pjäser?om-boken=yes&authorid=A&titlepath=Info"],
+  ["overlong author", `/dramawebben/pjäser?om-boken&authorid=${"a".repeat(101)}&titlepath=Info`],
+  ["overlong title", `/dramawebben/pjäser?om-boken&authorid=A&titlepath=${"t".repeat(201)}`],
+  ["encoded fixed path text", "/dramawebben/%70j%C3%A4ser?om-boken&authorid=A&titlepath=Info"],
+  ["normalized path traversal", "/dramawebben/unused/../pjäser?om-boken&authorid=A&titlepath=Info"]
+] as const) {
+  test(`maps an unsafe resolver information location to a non-leaking 502: ${label}`, async ({
+    request
+  }) => {
+    await setResolverLocation(request, location)
+
+    const response = await request.get("/dramawebben/pjas/information-only", {
+      headers: { accept: "application/json" },
+      maxRedirects: 0
+    })
+
+    expect(response.status()).toBe(502)
+    const payload = await response.json() as { data?: { code?: string } }
+    expect(payload.data?.code).toBe("legacy_dramawebben_route_unavailable")
+    expect(JSON.stringify(payload)).not.toMatch(/titlepath|private-v2|127\.0\.0\.1:4100/iu)
   })
 }
 

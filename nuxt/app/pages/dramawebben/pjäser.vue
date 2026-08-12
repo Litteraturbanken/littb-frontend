@@ -25,14 +25,13 @@ import type { components } from "~/lib/api/generated/lbapi"
 import { authorProfilePath } from "~/lib/author-profile"
 import { queryWithoutKey, queryWithoutKeys } from "~/lib/dramawebben-query"
 import { catalogSourceInfoKey } from "~/lib/dramawebben-source-info"
-import { canonicalNuxtHref, validRouteSegment } from "~/lib/internal-navigation"
+import { canonicalNuxtHref } from "~/lib/internal-navigation"
 import { readerSourceInfoIsOpen } from "~/lib/reader-routes"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
+import { validRouteSegment } from "#shared/utils/route-segment"
 import {
-  hasC0OrC1Control,
   hasC0OrDelete,
-  hasEcmaWhitespace,
-  hasLoneSurrogate
+  hasEcmaWhitespace
 } from "#shared/utils/text-safety"
 
 type Catalog = components["schemas"]["DramawebbenCatalogResponse"]
@@ -213,18 +212,6 @@ function oneQuery(value: unknown): string | null {
   return typeof value === "string" ? value : null
 }
 
-function validSourceInfoSegment(value: unknown, maximum: number): value is string {
-  return typeof value === "string"
-    && value.length >= 1 && value.length <= maximum
-    && value === value.trim()
-    && value !== "." && value !== ".."
-    && !value.includes("\\")
-    && !value.includes("/")
-    && !value.includes("%")
-    && !hasC0OrC1Control(value)
-    && !hasLoneSurrogate(value)
-}
-
 function normalizedTokens(value: string): string[] {
   return value.toLocaleLowerCase("sv-SE").split(/\s+/u).filter(Boolean)
 }
@@ -267,7 +254,8 @@ function sourceInfoIdentityFromMedia(media: CatalogMedia) {
   const parsed = new URL(media.url, "http://catalog.local")
   const authorId = parsed.searchParams.get("authorid")
   const titlePath = parsed.searchParams.get("titlepath")
-  return validSourceInfoSegment(authorId, 100) && validSourceInfoSegment(titlePath, 200)
+  return typeof authorId === "string" && typeof titlePath === "string"
+    && validRouteSegment(authorId, 100) && validRouteSegment(titlePath, 200)
     ? { authorId, titlePath }
     : null
 }
@@ -335,7 +323,8 @@ const sourceInfoIdentity = computed(() => {
   ) return null
   const authorId = route.query.authorid
   const titlePath = route.query.titlepath
-  return validSourceInfoSegment(authorId, 100) && validSourceInfoSegment(titlePath, 200)
+  return typeof authorId === "string" && typeof titlePath === "string"
+    && validRouteSegment(authorId, 100) && validRouteSegment(titlePath, 200)
     ? { authorId, titlePath }
     : null
 })
