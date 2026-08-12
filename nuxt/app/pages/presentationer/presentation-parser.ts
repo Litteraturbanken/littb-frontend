@@ -10,6 +10,7 @@ import {
   issueManagedPresentationStylesheetHref
 } from "#shared/utils/renderable-html"
 import { hasC0OrC1Control, hasLoneSurrogate, removeC0AndSpace } from "#shared/utils/text-safety"
+import { SaxesParser, type SaxesTagNS } from "saxes"
 
 export { validatePresentationSegments } from "../../lib/presentation-routes"
 
@@ -77,8 +78,6 @@ const removedPresentationBodyAttributes = new Set([
   "xlink:href"
 ])
 const allowedPresentationHrefProtocols = new Set(["http:", "https:", "mailto:", "tel:"])
-const xmlNameStart = /[A-Za-z_:]/u
-const xmlNamePart = /[A-Za-z0-9_.:-]/u
 
 function isExecutablePresentationAttribute(name: string): boolean {
   return /^(?:on|srcdoc$|v-|data-v-|ng-|data-ng-|x-|data-x-|[@:]|data-bind$)/iu.test(name)
@@ -180,162 +179,6 @@ function normalizedUrl(value: string): string | null {
   }
 }
 
-function isXmlName(value: string): boolean {
-  return xmlNameStart.test(value[0] ?? "") && [...value.slice(1)].every(character =>
-    xmlNamePart.test(character)
-  )
-}
-
-function isValidXmlEntity(value: string): boolean {
-  if (["amp", "apos", "gt", "lt", "quot"].includes(value)) return true
-  const numeric = /^#(?:(x)([\da-f]+)|(\d+))$/iu.exec(value)
-  if (!numeric) return false
-  const codePoint = Number.parseInt(numeric[2] ?? numeric[3] ?? "", numeric[1] ? 16 : 10)
-  return Number.isInteger(codePoint)
-    && codePoint > 0
-    && codePoint <= 0x10ffff
-    && (codePoint < 0xd800 || codePoint > 0xdfff)
-}
-
-function hasOnlyWellFormedXmlText(value: string): boolean {
-  if (hasLoneSurrogate(value)) return false
-  for (const character of value) {
-    const codePoint = character.codePointAt(0) ?? 0
-    if (
-      (codePoint <= 0x1f && ![0x09, 0x0a, 0x0d].includes(codePoint))
-      || (codePoint >= 0x7f && codePoint <= 0x9f)
-    ) return false
-  }
-  for (let index = 0; index < value.length; index += 1) {
-    if (value[index] !== "&") continue
-    const end = value.indexOf(";", index + 1)
-    if (end < 0 || !isValidXmlEntity(value.slice(index + 1, end))) return false
-    index = end
-  }
-  return true
-}
-
-function readXmlName(source: string, index: number): { name: string, index: number } | null {
-  let end = index
-  while (xmlNamePart.test(source[end] ?? "")) end += 1
-  const name = source.slice(index, end)
-  return isXmlName(name) ? { name, index: end } : null
-}
-
-function skipXmlWhitespace(source: string, index: number): number {
-  while (/\s/u.test(source[index] ?? "")) index += 1
-  return index
-}
-
-function readXmlStartTag(
-  source: string,
-  index: number
-): { name: string, index: number, selfClosing: boolean } | null {
-  const tag = readXmlName(source, index)
-  if (!tag) return null
-  const attributes = new Set<string>()
-  index = tag.index
-  while (index < source.length) {
-    index = skipXmlWhitespace(source, index)
-    if (source.startsWith("/>", index)) return { name: tag.name, index: index + 2, selfClosing: true }
-    if (source[index] === ">") return { name: tag.name, index: index + 1, selfClosing: false }
-    const attributeEnd = readXmlAttribute(source, index, attributes)
-    if (attributeEnd === null) return null
-    index = attributeEnd
-  }
-  return null
-}
-
-function readXmlAttribute(source: string, index: number, attributes: Set<string>): number | null {
-  const attribute = readXmlName(source, index)
-  if (!attribute || attributes.has(attribute.name)) return null
-  attributes.add(attribute.name)
-  index = skipXmlWhitespace(source, attribute.index)
-  if (source[index] !== "=") return null
-  index = skipXmlWhitespace(source, index + 1)
-  const quote = source[index]
-  if (quote !== '"' && quote !== "'") return null
-  const end = source.indexOf(quote, index + 1)
-  return end >= 0 && hasOnlyWellFormedXmlText(source.slice(index + 1, end))
-    ? end + 1
-    : null
-}
-
-type XmlValidationState = {
-  elements: string[]
-  rootName: string | null
-}
-
-function readXmlComment(source: string, index: number): number | null {
-  const end = source.indexOf("-->", index + 4)
-  return end < 0 || source.slice(index + 4, end).includes("--") ? null : end + 3
-}
-
-function readXmlCdata(source: string, index: number, hasElement: boolean): number | null {
-  const end = source.indexOf("]]>", index + 9)
-  return end < 0 || !hasElement ? null : end + 3
-}
-
-function readXmlProcessingInstruction(source: string, index: number): number | null {
-  const end = source.indexOf("?>", index + 2)
-  return end < 0 ? null : end + 2
-}
-
-function consumeXmlClosingTag(
-  source: string,
-  index: number,
-  elements: string[]
-): number | null {
-  const closing = readXmlName(source, index + 2)
-  if (!closing) return null
-  const end = skipXmlWhitespace(source, closing.index)
-  return source[end] === ">" && elements.pop() === closing.name ? end + 1 : null
-}
-
-function consumeXmlOpeningTag(
-  source: string,
-  index: number,
-  state: XmlValidationState
-): number | null {
-  const opening = readXmlStartTag(source, index + 1)
-  if (!opening || (!state.elements.length && state.rootName !== null)) return null
-  if (!state.elements.length) state.rootName = opening.name
-  if (!opening.selfClosing) state.elements.push(opening.name)
-  return opening.index
-}
-
-function consumeXmlMarkup(source: string, index: number, state: XmlValidationState): number | null {
-  if (source.startsWith("<!--", index)) return readXmlComment(source, index)
-  if (source.startsWith("<![CDATA[", index)) return readXmlCdata(source, index, Boolean(state.elements.length))
-  if (source.startsWith("<?", index)) return readXmlProcessingInstruction(source, index)
-  if (source.startsWith("<!", index)) return null
-  if (source.startsWith("</", index)) return consumeXmlClosingTag(source, index, state.elements)
-  return consumeXmlOpeningTag(source, index, state)
-}
-
-/**
- * This validates the XML grammar required by managed background files before
- * Linkedom reads it. DTDs are deliberately unsupported, so only XML's five
- * predefined entities and numeric references are accepted; reviewed files do
- * not use a DTD. The narrow scanner avoids shipping a second XML parser while
- * preventing Linkedom's recovery parser from inventing missing close tags.
- */
-function isStrictBackgroundXml(source: string): boolean {
-  const state: XmlValidationState = { elements: [], rootName: null }
-  let index = source.startsWith("\uFEFF") ? 1 : 0
-
-  while (index < source.length) {
-    const markup = source.indexOf("<", index)
-    const text = source.slice(index, markup < 0 ? source.length : markup)
-    if (!hasOnlyWellFormedXmlText(text) || (!state.elements.length && text.trim())) return false
-    if (markup < 0) break
-    const next = consumeXmlMarkup(source, markup, state)
-    if (next === null) return false
-    index = next
-  }
-  return state.rootName === "backgrounds" && state.elements.length === 0
-}
-
 function hasUnsafeAssetCharacters(value: string): boolean {
   return value.includes("'")
     || value.includes("\\")
@@ -388,6 +231,80 @@ function normalizedOwnedAssetPath(value: string, allowedPathPrefix: string): str
 
 function normalizedBackgroundImagePath(value: string): string | null {
   return normalizedOwnedAssetPath(value, "/red/bilder/")
+}
+
+type ParsedBackgroundRule = {
+  target: string
+  rawImagePath: string | null
+  className: string | null
+  styleText: string | null
+}
+
+function saxAttribute(tag: SaxesTagNS, name: string): string | null {
+  return tag.attributes[name]?.value ?? null
+}
+
+/**
+ * Parses managed background XML with an XML 1.0-conformant event parser on
+ * both SSR and the client. DTDs and processing instructions are not part of
+ * the reviewed data contract, so they fail closed rather than expanding custom
+ * entities or permitting parser-specific document structure.
+ */
+function parseStrictBackgroundXml(source: string): ParsedBackgroundRule[] | null {
+  const parser = new SaxesParser({ xmlns: true, defaultXMLVersion: "1.0" })
+  const elementNames: string[] = []
+  const parsedRules: ParsedBackgroundRule[] = []
+  let activeRule: Omit<ParsedBackgroundRule, "styleText"> & { styleParts: string[] } | null = null
+  let styleDepth: number | null = null
+  let rootClosed = false
+  let valid = true
+
+  parser.on("error", () => { valid = false })
+  parser.on("doctype", () => { valid = false })
+  parser.on("processinginstruction", () => { valid = false })
+  parser.on("opentag", tag => {
+    if (!elementNames.length) {
+      if (rootClosed || tag.name !== "backgrounds") valid = false
+    } else if (elementNames.length === 1 && tag.name === "background") {
+      activeRule = {
+        target: saxAttribute(tag, "target") ?? "",
+        rawImagePath: saxAttribute(tag, "url"),
+        className: saxAttribute(tag, "class"),
+        styleParts: []
+      }
+    } else if (activeRule && tag.name === "style") {
+      styleDepth = elementNames.length + 1
+    }
+    elementNames.push(tag.name)
+  })
+  parser.on("text", text => {
+    if (activeRule && styleDepth === elementNames.length) activeRule.styleParts.push(text)
+  })
+  parser.on("cdata", text => {
+    if (activeRule && styleDepth === elementNames.length) activeRule.styleParts.push(text)
+  })
+  parser.on("closetag", tag => {
+    if (elementNames.at(-1) !== tag.name) valid = false
+    if (activeRule && tag.name === "style" && styleDepth === elementNames.length) styleDepth = null
+    if (activeRule && tag.name === "background" && elementNames.length === 2) {
+      parsedRules.push({
+        target: activeRule.target,
+        rawImagePath: activeRule.rawImagePath,
+        className: activeRule.className,
+        styleText: activeRule.styleParts.join("").trim() || null
+      })
+      activeRule = null
+    }
+    elementNames.pop()
+    if (!elementNames.length && tag.name === "backgrounds") rootClosed = true
+  })
+
+  try {
+    parser.write(source).close()
+  } catch {
+    return null
+  }
+  return valid && rootClosed && !elementNames.length ? parsedRules : null
 }
 
 function normalizedPresentationImageSrc(value: string): string | null {
@@ -488,28 +405,17 @@ export function parsePresentationDocument(source: string): PresentationDocument 
 }
 
 export function parseBackgroundRules(source: string): BackgroundRule[] {
-  if (!source.trim() || !isStrictBackgroundXml(source)) return []
-
-  try {
-    const document = new DOMParser().parseFromString(source, "text/xml") as unknown as ParsedDocument
-    if (document.documentElement?.localName !== "backgrounds") return []
-
-    return Array.from(document.querySelectorAll("background"), node => {
-      const target = node.getAttribute("target") ?? ""
-      const rawImagePath = node.getAttribute("url")
-      const rawStyleText = node.querySelector("style")?.textContent?.trim() || null
-      return {
-        target,
-        imagePath: rawImagePath === null ? null : normalizedBackgroundImagePath(rawImagePath),
-        className: node.getAttribute("class"),
-        styleText: rawStyleText === null
-          ? null
-          : issueManagedPresentationStyle(rawStyleText)
-      }
-    }).filter(rule => rule.target.startsWith("/presentationer/"))
-  } catch {
-    return []
-  }
+  if (!source.trim()) return []
+  const parsedRules = parseStrictBackgroundXml(source)
+  if (!parsedRules) return []
+  return parsedRules.map(rule => ({
+    target: rule.target,
+    imagePath: rule.rawImagePath === null ? null : normalizedBackgroundImagePath(rule.rawImagePath),
+    className: rule.className,
+    styleText: rule.styleText === null
+      ? null
+      : issueManagedPresentationStyle(rule.styleText)
+  })).filter(rule => rule.target.startsWith("/presentationer/"))
 }
 
 function wildcardMatches(pattern: string, path: string): boolean {

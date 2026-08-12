@@ -236,6 +236,21 @@ describe("Presentation XHTML parser", () => {
 
 describe("Presentation background parser", () => {
   test.each([
+    ["duplicate XML declaration", "<?xml version=\"1.0\"?><?xml version=\"1.0\"?><backgrounds></backgrounds>"],
+    ["XML declaration inside the root", "<backgrounds><?xml version=\"1.0\"?></backgrounds>"],
+    ["processing instruction inside the root", "<backgrounds><?editor keep?></backgrounds>"],
+    ["empty processing instruction", "<??><backgrounds></backgrounds>"],
+    ["reserved XML processing instruction", "<?xml keep?><backgrounds></backgrounds>"],
+    ["literal less-than sign in an attribute", "<backgrounds><background target=\"/presentationer/*\" url=\"/red/bilder/a<.jpg\" /></backgrounds>"],
+    ["CDATA terminator in text", "<backgrounds>text ]]></backgrounds>"],
+    ["invalid XML 1.0 numeric entity", "<backgrounds>&#x1;</backgrounds>"],
+    ["form-feed outside the root", "\f<backgrounds></backgrounds>"],
+    ["non-breaking space outside the root", "\u00a0<backgrounds></backgrounds>"]
+  ])("fails closed for strict XML violation: %s", (_label, source) => {
+    expect(parseBackgroundRules(source)).toEqual([])
+  })
+
+  test.each([
     ["truncated background", '<backgrounds><background target="/presentationer/*" url="/red/bilder/bakgrundsbilder/rostratt_a.jpg">'],
     ["mismatched nested nodes", '<backgrounds><background target="/presentationer/*" url="/red/bilder/bakgrundsbilder/rostratt_a.jpg"><style>one</background></style></backgrounds>'],
     ["truncated style", '<backgrounds><background target="/presentationer/*" url="/red/bilder/bakgrundsbilder/rostratt_a.jpg"><style>one</style>'],
