@@ -13,6 +13,7 @@ const MAX_QUEUE_EVENTS = 50
 const DEDUPLICATION_WINDOW_MS = 60_000
 const FLUSH_DELAY_MS = 1_000
 const MAX_RETRY_DELAY_MS = 30_000
+const TERMINAL_INTAKE_STATUSES = new Set([400, 403, 413, 415, 422])
 const SAFE_LABEL_PATTERN = /^[A-Za-z0-9_.:-]{1,120}$/u
 const ERROR_TYPE_PATTERN = /^[A-Za-z0-9_.:-]{1,160}$/u
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u
@@ -263,18 +264,34 @@ export class BrowserObservabilityReporter {
       await this.#flushing
     } finally {
       this.#flushing = undefined
-      if (this.#queue.length > 0) this.#scheduleFlush(FLUSH_DELAY_MS)
+      if (this.#queue.length > 0 && !this.#exitFlushing) {
+        this.#scheduleFlush(FLUSH_DELAY_MS)
+      }
     }
   }
 
   async #flushOnExit(): Promise<void> {
     if (this.#timer) clearTimeout(this.#timer)
     this.#timer = undefined
-    if (!this.#exitFlushing) this.#exitFlushing = this.#deliverOnExit()
+    if (!this.#exitFlushing) this.#exitFlushing = this.#deliverAroundActiveFlush()
     try {
       await this.#exitFlushing
     } finally {
+      if (this.#timer) clearTimeout(this.#timer)
+      this.#timer = undefined
       this.#exitFlushing = undefined
+      if (this.#queue.length > 0) this.#scheduleFlush(FLUSH_DELAY_MS)
+    }
+  }
+
+  async #deliverAroundActiveFlush(): Promise<void> {
+    const activeFlush = this.#flushing
+    const exitDelivery = await this.#deliverOnExit()
+    if (activeFlush) {
+      await activeFlush
+      if (!exitDelivery.blocked) {
+        await this.#deliverOnExit(MAX_PAGE_EXIT_BYTES - exitDelivery.sentBytes)
+      }
     }
   }
 
@@ -319,11 +336,7 @@ export class BrowserObservabilityReporter {
         credentials: "same-origin",
         keepalive: true
       })
-      return response.ok || (
-        response.status >= 400
-        && response.status < 500
-        && response.status !== 429
-      )
+      return response.ok || TERMINAL_INTAKE_STATUSES.has(response.status)
     } catch {
       return false
     }
@@ -349,14 +362,17 @@ export class BrowserObservabilityReporter {
     this.#retryBatch(batch)
   }
 
-  async #deliverOnExit(): Promise<void> {
+  async #deliverOnExit(byteBudget = MAX_PAGE_EXIT_BYTES): Promise<{
+    blocked: boolean
+    sentBytes: number
+  }> {
     let sentBytes = 0
     while (this.#queue.length > 0) {
       const batch = this.#takeBatch()
       if (batch.length === 0) break
       const body = serializedBatch(batch)
       const bodyBytes = byteLength(body)
-      if (sentBytes + bodyBytes > MAX_PAGE_EXIT_BYTES) {
+      if (sentBytes + bodyBytes > byteBudget) {
         this.#queue.unshift(...batch)
         break
       }
@@ -367,11 +383,12 @@ export class BrowserObservabilityReporter {
       }
       if (!await this.#deliverByFetch(body)) {
         this.#retryBatch(batch)
-        return
+        return { blocked: true, sentBytes }
       }
       sentBytes += bodyBytes
       this.#retryDelayMs = FLUSH_DELAY_MS
     }
     if (this.#queue.length > 0) this.#scheduleFlush(FLUSH_DELAY_MS)
+    return { blocked: false, sentBytes }
   }
 }

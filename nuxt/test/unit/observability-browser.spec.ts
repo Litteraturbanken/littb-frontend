@@ -453,7 +453,7 @@ describe("browser event delivery", () => {
     ])
   })
 
-  test("page exit drains the remainder during an in-flight normal flush without a timer", async () => {
+  test("page exit synchronously drains the tail around an in-flight normal flush", async () => {
     vi.useFakeTimers()
     try {
       let releaseFetch: (() => void) | undefined
@@ -488,7 +488,7 @@ describe("browser event delivery", () => {
     }
   })
 
-  test("retains an older in-flight batch that fails after the queued tail was beaconed", async () => {
+  test("deduplicates page-exit calls while an active failure is requeued before its tail", async () => {
     let releaseFetch: (() => void) | undefined
     const fetchMock = vi.fn()
       .mockImplementationOnce(() => new Promise<Response>(resolve => {
@@ -500,16 +500,152 @@ describe("browser event delivery", () => {
     const eventIds = await enqueueNumberedEvents(reporter, 21)
 
     const normalFlush = reporter.flush()
-    await reporter.flush(true)
-    releaseFetch?.()
-    await normalFlush
-    await reporter.flush()
-
+    const firstExitFlush = reporter.flush(true)
+    const secondExitFlush = reporter.flush(true)
     expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(10))
+    releaseFetch?.()
+    await Promise.all([normalFlush, firstExitFlush, secondExitFlush])
+
+    expect((await beaconBodies(beacon)).flat()).toEqual([
+      ...eventIds.slice(10),
+      ...eventIds.slice(0, 10)
+    ])
     expect(fetchBodies(fetchMock)).toEqual([
-      eventIds.slice(0, 10),
       eventIds.slice(0, 10)
     ])
+  })
+
+  test.each([408, 425, 429])(
+    "exit-drains an active retryable %i response and its tail without a timer",
+    async status => {
+      vi.useFakeTimers()
+      try {
+        let releaseFetch: (() => void) | undefined
+        const fetchMock = vi.fn(() => new Promise<Response>(resolve => {
+          releaseFetch = () => resolve(new Response(null, { status }))
+        }))
+        const beacon = vi.fn(() => true)
+        const reporter = new BrowserObservabilityReporter(reporterOptions({
+          fetch: fetchMock,
+          beacon,
+          autoFlush: true
+        }))
+        const eventIds = await enqueueNumberedEvents(reporter, 23)
+
+        const normalFlush = reporter.flush()
+        const exitFlush = reporter.flush(true)
+        expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(10))
+        releaseFetch?.()
+        await Promise.all([normalFlush, exitFlush])
+
+        expect((await beaconBodies(beacon)).flat()).toEqual([
+          ...eventIds.slice(10),
+          ...eventIds.slice(0, 10)
+        ])
+        expect(fetchBodies(fetchMock)).toEqual([eventIds.slice(0, 10)])
+        expect(vi.getTimerCount()).toBe(0)
+      } finally {
+        vi.useRealTimers()
+      }
+    }
+  )
+
+  test("shares the page-exit byte budget between a tail and requeued active head", async () => {
+    vi.useFakeTimers()
+    try {
+      let releaseFetch: (() => void) | undefined
+      const fetchMock = vi.fn()
+        .mockImplementationOnce(() => new Promise<Response>(resolve => {
+          releaseFetch = () => resolve(new Response(null, { status: 503 }))
+        }))
+        .mockResolvedValueOnce(new Response(null, { status: 202 }))
+      const beacon = vi.fn(() => true)
+      const reporter = new BrowserObservabilityReporter(reporterOptions({
+        fetch: fetchMock,
+        beacon,
+        autoFlush: true
+      }))
+      const eventIds: string[] = []
+      for (let index = 0; index < 6; index += 1) {
+        const eventId = `018f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`
+        const event = await createBrowserErrorEvent({
+          eventName: "browser.error",
+          error: new Error(`discarded-${index}`),
+          component: `Budget${index}`,
+          resourceKind: "unknown",
+          route: "/bibliotek",
+          environment: "stage",
+          deploymentGitSha: GIT_SHA,
+          randomUUID: () => eventId
+        })
+        eventIds.push(eventId)
+        reporter.enqueue({ ...event, error_type: "E".repeat(13_000) } as BrowserEvent)
+      }
+
+      const normalFlush = reporter.flush()
+      const firstExitFlush = reporter.flush(true)
+      const secondExitFlush = reporter.flush(true)
+      releaseFetch?.()
+      await Promise.all([normalFlush, firstExitFlush, secondExitFlush])
+
+      expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(1, 5))
+      expect(beacon.mock.calls.reduce(
+        (total, beaconCall) => total + (beaconCall[1] as Blob).size,
+        0
+      )).toBeLessThanOrEqual(60 * 1024)
+      expect(vi.getTimerCount()).toBe(1)
+
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(fetchBodies(fetchMock).at(-1)).toEqual([eventIds[0]])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  test("waits for an active successful delivery before exit-draining only its tail", async () => {
+    let releaseFetch: (() => void) | undefined
+    const fetchMock = vi.fn(() => new Promise<Response>(resolve => {
+      releaseFetch = () => resolve(new Response(null, { status: 202 }))
+    }))
+    const beacon = vi.fn(() => true)
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
+    const eventIds = await enqueueNumberedEvents(reporter, 23)
+
+    const normalFlush = reporter.flush()
+    const exitFlush = reporter.flush(true)
+    expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(10))
+    releaseFetch?.()
+    await Promise.all([normalFlush, exitFlush])
+
+    expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(10))
+    expect(fetchBodies(fetchMock)).toEqual([eventIds.slice(0, 10)])
+  })
+
+  test("does not retry a blocked exit tail after its active delivery settles", async () => {
+    let releaseActive: (() => void) | undefined
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => new Promise<Response>(resolve => {
+        releaseActive = () => resolve(new Response(null, { status: 202 }))
+      }))
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockResolvedValueOnce(new Response(null, { status: 202 }))
+    const beacon = vi.fn(() => false)
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
+    const eventIds = await enqueueNumberedEvents(reporter, 23)
+
+    const normalFlush = reporter.flush()
+    const exitFlush = reporter.flush(true)
+    releaseActive?.()
+    await Promise.all([normalFlush, exitFlush])
+
+    expect(beacon).toHaveBeenCalledOnce()
+    expect(fetchBodies(fetchMock)).toEqual([
+      eventIds.slice(0, 10),
+      eventIds.slice(10, 20)
+    ])
+
+    await reporter.flush()
+    expect(fetchBodies(fetchMock).at(-1)).toEqual(eventIds.slice(10, 20))
   })
 
   test("retries a transient delivery failure without another event", async () => {
@@ -595,6 +731,29 @@ describe("browser event delivery", () => {
 
         expect(fetchMock).toHaveBeenCalledOnce()
         expect(vi.getTimerCount()).toBe(0)
+      } finally {
+        vi.useRealTimers()
+      }
+    }
+  )
+
+  test.each([401, 404, 408, 409, 425, 429])(
+    "retries nonterminal client status %i",
+    async status => {
+      vi.useFakeTimers()
+      try {
+        const fetchMock = vi.fn()
+          .mockResolvedValueOnce(new Response(null, { status }))
+          .mockResolvedValueOnce(new Response(null, { status: 202 }))
+        const reporter = new BrowserObservabilityReporter(reporterOptions({
+          fetch: fetchMock,
+          autoFlush: true
+        }))
+        const eventIds = await enqueueNumberedEvents(reporter, 1)
+
+        await vi.advanceTimersByTimeAsync(2_000)
+
+        expect(fetchBodies(fetchMock)).toEqual([eventIds, eventIds])
       } finally {
         vi.useRealTimers()
       }
