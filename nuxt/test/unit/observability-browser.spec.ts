@@ -903,6 +903,70 @@ describe("browser event delivery", () => {
     ])
   })
 
+  test("exit-attempts a failed active head before a pending tail fallback settles", async () => {
+    vi.useFakeTimers()
+    try {
+      let releaseTail: ((status: number) => void) | undefined
+      let releaseActiveRetry: ((status: number) => void) | undefined
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(new Response(null, { status: 503 }))
+        .mockImplementationOnce(() => new Promise<Response>(resolve => {
+          releaseTail = status => resolve(new Response(null, { status }))
+        }))
+        .mockImplementationOnce(() => new Promise<Response>(resolve => {
+          releaseActiveRetry = status => resolve(new Response(null, { status }))
+        }))
+      const beacon = vi.fn(() => false)
+      const reporter = new BrowserObservabilityReporter(reporterOptions({
+        fetch: fetchMock,
+        beacon,
+        autoFlush: true
+      }))
+      const eventIds = await enqueueNumberedEvents(reporter, 11)
+
+      const normalFlush = reporter.flush()
+      const firstExitFlush = reporter.flush(true)
+      const secondExitFlush = reporter.flush(true)
+      await normalFlush
+
+      expect(fetchBodies(fetchMock)).toEqual([
+        eventIds.slice(0, 10),
+        eventIds.slice(10),
+        eventIds.slice(0, 10)
+      ])
+      const concurrent = await createBrowserErrorEvent({
+        eventName: "browser.error",
+        error: new Error("discarded-concurrent"),
+        component: "ConcurrentAfterActiveFailure",
+        resourceKind: "unknown",
+        route: "/bibliotek",
+        environment: "stage",
+        deploymentGitSha: GIT_SHA,
+        randomUUID: () => "018f47c0-4d5b-7a62-8f41-999999999996"
+      })
+      reporter.enqueue(concurrent)
+      releaseActiveRetry?.(503)
+      await Promise.resolve()
+      releaseTail?.(503)
+      await Promise.all([normalFlush, firstExitFlush, secondExitFlush])
+
+      expect(await beaconBodies(beacon)).toEqual([
+        eventIds.slice(10),
+        eventIds.slice(0, 10)
+      ])
+      expect(vi.getTimerCount()).toBe(1)
+      fetchMock.mockResolvedValue(new Response(null, { status: 202 }))
+      await reporter.flush()
+      await reporter.flush()
+      expect(fetchBodies(fetchMock).slice(3)).toEqual([
+        eventIds.slice(0, 10),
+        [eventIds[10], concurrent.event_id]
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   test.each([408, 425, 429])(
     "exit-drains an active retryable %i response and its tail without a timer",
     async status => {

@@ -75,6 +75,19 @@ interface BrowserIntakeEvent {
   correlation_token: string | null
 }
 
+interface ExitDrainPlan {
+  fallbackDeliveries: Array<{
+    batch: QueuedBrowserEvent[]
+    delivery: Promise<boolean>
+  }>
+  sentBytes: number
+}
+
+interface ExitDrainResult {
+  failedBatch: QueuedBrowserEvent[]
+  sentBytes: number
+}
+
 interface ReporterOptions {
   endpoint: string
   environment: EventEnvironment
@@ -384,37 +397,47 @@ export class BrowserObservabilityReporter {
 
   async #deliverAroundActiveFlush(): Promise<void> {
     const activeFlush = this.#flushing
-    const activeBatchBytes = activeFlush ? this.#activeBatchBytes : 0
-    const exitDelivery = await this.#deliverOnExit(
+    if (!activeFlush) {
+      await this.#deliverOnExit()
+      return
+    }
+    const activeBatchBytes = this.#activeBatchBytes
+    const exitPlan = this.#startExitDrain(
       remainingPageExitBytes(activeBatchBytes)
     )
-    if (activeFlush) {
-      await activeFlush
-      // The keepalive quota covers bodies still in flight. The awaited active
-      // request is done here, so only exit-drain bodies remain reserved.
-      if (this.#activeBatchFailed && this.#activeBatch) {
-        const activeBatch = this.#activeBatch
-        this.#activeBatch = undefined
-        this.#activeBatchBytes = 0
-        this.#activeBatchFailed = false
-        const activeDelivery = await this.#deliverExitBatch(
-          activeBatch,
-          remainingPageExitBytes(exitDelivery.sentBytes)
-        )
-        if (!activeDelivery.delivered) {
-          this.#requeueFront(activeBatch)
-          this.#scheduleRetry()
-        }
-        else if (!exitDelivery.blocked) {
-          await this.#deliverOnExit(
-            remainingPageExitBytes(exitDelivery.sentBytes, activeDelivery.bytes)
-          )
-        }
-      } else if (!exitDelivery.blocked) {
-        await this.#deliverOnExit(
-          remainingPageExitBytes(exitDelivery.sentBytes)
-        )
-      }
+    await activeFlush
+    // The keepalive quota covers bodies still in flight. The awaited active
+    // request is done here, so only exit-drain bodies remain reserved.
+    let activeBatch: QueuedBrowserEvent[] | undefined
+    let activeDelivery: Promise<{ bytes: number, delivered: boolean }> | undefined
+    if (this.#activeBatchFailed && this.#activeBatch) {
+      activeBatch = this.#activeBatch
+      this.#activeBatch = undefined
+      this.#activeBatchBytes = 0
+      this.#activeBatchFailed = false
+      activeDelivery = this.#deliverExitBatch(
+        activeBatch,
+        remainingPageExitBytes(exitPlan.sentBytes)
+      )
+    }
+    const [exitDelivery, resolvedActiveDelivery] = await Promise.all([
+      this.#settleExitDrain(exitPlan),
+      activeDelivery ?? Promise.resolve({ bytes: 0, delivered: true })
+    ])
+    const failedBatch = [
+      ...(activeBatch && !resolvedActiveDelivery.delivered ? activeBatch : []),
+      ...exitDelivery.failedBatch
+    ]
+    if (failedBatch.length > 0) {
+      this.#requeueFront(failedBatch)
+      this.#scheduleRetry()
+      return
+    }
+    if (this.#queue.length > 0) {
+      await this.#deliverOnExit(remainingPageExitBytes(
+        exitDelivery.sentBytes,
+        resolvedActiveDelivery.bytes
+      ))
     }
   }
 
@@ -543,14 +566,8 @@ export class BrowserObservabilityReporter {
     return { bytes: bodyBytes, delivered }
   }
 
-  async #deliverOnExit(byteBudget = MAX_PAGE_EXIT_BYTES): Promise<{
-    blocked: boolean
-    sentBytes: number
-  }> {
-    const fallbackDeliveries: Array<{
-      batch: QueuedBrowserEvent[]
-      delivery: Promise<boolean>
-    }> = []
+  #startExitDrain(byteBudget: number): ExitDrainPlan {
+    const fallbackDeliveries: ExitDrainPlan["fallbackDeliveries"] = []
     let sentBytes = 0
     while (this.#queue.length > 0) {
       const batch = this.#takeBatch()
@@ -569,21 +586,29 @@ export class BrowserObservabilityReporter {
       sentBytes += bodyBytes
       fallbackDeliveries.push({ batch, delivery: this.#deliverByFetch(body) })
     }
-    const fallbackResults = await Promise.all(fallbackDeliveries.map(
+    return { fallbackDeliveries, sentBytes }
+  }
+
+  async #settleExitDrain(plan: ExitDrainPlan): Promise<ExitDrainResult> {
+    const fallbackResults = await Promise.all(plan.fallbackDeliveries.map(
       fallback => fallback.delivery
     ))
-    const failedBatches = fallbackDeliveries.flatMap((fallback, index) => (
+    const failedBatch = plan.fallbackDeliveries.flatMap((fallback, index) => (
       fallbackResults[index] ? [] : fallback.batch
     ))
-    if (failedBatches.length > 0) {
-      this.#requeueFront(failedBatches)
-      this.#scheduleRetry()
-      return { blocked: true, sentBytes }
-    }
-    if (fallbackDeliveries.length > 0) {
+    if (plan.fallbackDeliveries.length > 0 && failedBatch.length === 0) {
       this.#retryDelayMs = FLUSH_DELAY_MS
     }
+    return { failedBatch, sentBytes: plan.sentBytes }
+  }
+
+  async #deliverOnExit(byteBudget = MAX_PAGE_EXIT_BYTES): Promise<ExitDrainResult> {
+    const result = await this.#settleExitDrain(this.#startExitDrain(byteBudget))
+    if (result.failedBatch.length > 0) {
+      this.#requeueFront(result.failedBatch)
+      this.#scheduleRetry()
+    }
     if (this.#queue.length > 0) this.#scheduleFlush(FLUSH_DELAY_MS)
-    return { blocked: false, sentBytes }
+    return result
   }
 }
