@@ -227,7 +227,10 @@ function handleFormatPopoverKeydown(event: KeyboardEvent) {
     formatPopoverOpen.value = false
     void nextTick(() => formatButtonElement.value?.focus())
 }
-
+function toggleSourceWorkFromRow(event: MouseEvent, item: BrowseResult) {
+    if (event.target instanceof Element && event.target.closest("a,button,input,select,textarea,label")) return
+    toggleSourceWork(item)
+}
 function toggleSourceWork(item: BrowseResult) {
     const selected = new Map(selectedSourceWorks.value)
     if (selected.delete(item.key)) {
@@ -320,7 +323,7 @@ onUnmounted(() => {
                         :key="item.key"
                         data-library-work-row
                         class="work_link grid w-full items-baseline transition-colors duration-150 hover:bg-gray-300 hover:bg-opacity-50 grid-cols-[minmax(0,1fr)_11rem] sm:grid-cols-[minmax(0,1fr)_7rem_11rem]"
-                        @click="toggleSourceWork(item)"
+                        @click="toggleSourceWorkFromRow($event, item)"
                     >
                         <td class="block min-w-0">
                             <div class="min-w-0 items-center gap-2 flex">

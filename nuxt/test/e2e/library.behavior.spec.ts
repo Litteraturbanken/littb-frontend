@@ -1086,6 +1086,40 @@ test("download-mode work titles use native Enter and Space selection semantics",
   await expect(page.locator("[data-library-selected-work]")).toHaveCount(0)
 })
 
+test("download-mode row links navigate natively without selecting their work", async ({
+  page,
+  context
+}) => {
+  const sourceUrl = "/bibliotek?avancerat=1&visa=works&nedladdning=1&filter=unsafe-download-token"
+  await page.goto(sourceUrl, { waitUntil: "networkidle" })
+  const locateWork = () => page.getByRole("button", {
+    name: "Säkert källmaterial",
+    exact: true
+  }).locator("xpath=ancestor::*[@data-library-work-row]")
+  let work = locateWork()
+  await expect(work.locator("[data-library-source-checkbox]")).not.toBeChecked()
+
+  const year = work.locator("[data-library-imprint-year]")
+  const yearHref = await year.getAttribute("href")
+  await year.click()
+  await expect(page).toHaveURL(new URL(yearHref!, page.url()).href)
+  await page.goBack()
+  await expect(page).toHaveURL(new RegExp(sourceUrl.replace(/[?]/g, "\\?")))
+
+  work = locateWork()
+  await expect(work.locator("[data-library-source-checkbox]")).not.toBeChecked()
+  const author = work.locator('[data-library-tooltip-kind="author"]')
+  const authorHref = await author.getAttribute("href")
+  const popupPromise = context.waitForEvent("page")
+  await author.click({ modifiers: ["Meta"] })
+  const popup = await popupPromise
+  await popup.waitForLoadState()
+  await expect(popup).toHaveURL(new URL(authorHref!, page.url()).href)
+  await expect(work.locator("[data-library-source-checkbox]")).not.toBeChecked()
+  await expect(page.locator("[data-library-selected-work]")).toHaveCount(0)
+  await popup.close()
+})
+
 test("download-mode work titles without exports are disabled no-ops", async ({ page }) => {
   await page.goto(
     "/bibliotek?avancerat=1&visa=works&nedladdning=1&filter=unsafe-download-token",

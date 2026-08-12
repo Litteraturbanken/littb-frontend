@@ -1035,6 +1035,16 @@ describe("Library component ownership", () => {
     expect(firstTarget.querySelectorAll("[data-library-selected-work]")).toHaveLength(1)
     expect(secondTarget.querySelectorAll("[data-library-selected-work]")).toHaveLength(0)
 
+    secondTarget.querySelector<HTMLAnchorElement>("[data-library-imprint-year]")?.click()
+    await nextTick()
+    expect(secondTarget.querySelectorAll("[data-library-selected-work]")).toHaveLength(0)
+    secondTarget.querySelector<HTMLAnchorElement>('[data-library-tooltip-kind="author"]')?.click()
+    await nextTick()
+    expect(secondTarget.querySelectorAll("[data-library-selected-work]")).toHaveLength(0)
+    secondTarget.querySelector<HTMLElement>("[data-library-work-row] td")?.click()
+    await nextTick()
+    expect(secondTarget.querySelectorAll("[data-library-selected-work]")).toHaveLength(1)
+
     first.unmount()
     second.unmount()
     firstTarget.remove()
