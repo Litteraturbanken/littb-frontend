@@ -4,6 +4,7 @@ import {
   libraryAuthorTooltipText,
   usefulLibraryTooltipText
 } from "../library-tooltip"
+import { safeNativeHref } from "../internal-navigation"
 import {
   assertNever,
   type LibraryAuthor,
@@ -211,7 +212,7 @@ function mapExternalItem(item: ExternalItem): LibraryResult {
     ...baseResult(externalIndex[item.kind], item.highlights),
     sourceLabel: item.source_label,
     primaryLabel: item.title,
-    primaryHref: item.url,
+    primaryHref: safeNativeHref(item.url) ?? "",
     secondaryAuthor: item.byline ?? ""
   }
 }

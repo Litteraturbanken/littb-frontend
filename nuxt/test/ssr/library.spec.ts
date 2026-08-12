@@ -155,6 +155,25 @@ test("SSR renders the default Library slice from typed private options and searc
   expect(await legacyQueryRequests(request)).toEqual([])
 })
 
+test("SSR keeps unsafe external results visible without rendering a clickable href", async ({
+  request
+}) => {
+  const response = await request.get("/bibliotek?filter=external-href-boundary")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  const rows = [...document.querySelectorAll("[data-library-result]")]
+  expect(rows).toHaveLength(3)
+  const rowFor = (title: string) => rows.find(row => row.textContent?.includes(title))
+  expect(rowFor("Säker intern kringtext")?.querySelector("a")?.getAttribute("href"))
+    .toBe("/presentationer/forfattare/StrindbergA.html")
+  expect(rowFor("Säker extern kringtext")?.querySelector("a")?.getAttribute("href"))
+    .toBe("https://litteraturbanken.se/oversattarlexikon/artiklar/Saker")
+  const unsafeRow = rowFor("Osäker extern kringtext")
+  expect(unsafeRow?.textContent).toContain("Osäker extern kringtext")
+  expect(unsafeRow?.querySelector("a")).toBeNull()
+})
+
 test("SSR owns every ordinary Strindberg tab summary under one filter", async ({ request }) => {
   const response = await request.get("/bibliotek?filter=strindberg")
   expect(response.status()).toBe(200)

@@ -133,6 +133,37 @@ describe("typed Library boundary", () => {
     ] }])
   })
 
+  test.each([
+    ["/presentationer/forfattare/StrindbergA.html", "/presentationer/forfattare/StrindbergA.html"],
+    ["http://example.test/kringtext", "http://example.test/kringtext"],
+    ["https://litteraturbanken.se/presentationer/kringtext", "https://litteraturbanken.se/presentationer/kringtext"],
+    ["javascript:alert(1)", ""],
+    ["data:text/html,unsafe", ""],
+    ["//evil.test/kringtext", ""],
+    ["https://user:secret@example.test/kringtext", ""],
+    ["https://example.test/kring\u0000text", ""],
+    ["https://example.test/%0Akringtext", ""],
+    ["https://example.test/%E0%A4%A", ""],
+    ["/presentationer/%5C%5Cevil.test", ""]
+  ])("validates external all-result href %s", (url, expectedHref) => {
+    const response = {
+      mode: "all",
+      total_hits: 1,
+      items: [{
+        kind: "presentation",
+        source_label: "Kringtexter",
+        title: "Extern träff",
+        url,
+        byline: "Litteraturbanken",
+        highlights: []
+      }]
+    } satisfies LibrarySearchResponse
+
+    const view = toLibrarySearchView(response)
+    if (view.mode !== "all") throw new Error("expected all view")
+    expect(view.response.data[0].primaryHref).toBe(expectedHref)
+  })
+
   test("defensively hides zero author lifespan sentinels", () => {
     const response = {
       mode: "all",

@@ -89,8 +89,9 @@ function imprintYearTo(year: string): RouteLocationRaw {
                             }}</span>
                         </td>
                         <td class="order-2 min-w-0">
+                            <span v-if="!item.primaryHref">{{ item.primaryLabel }}</span>
                             <a
-                                v-if="item.download || !isNuxtInternalHref(item.primaryHref)"
+                                v-else-if="item.download || !isNuxtInternalHref(item.primaryHref)"
                                 :href="item.primaryHref"
                                 :download="item.download || undefined"
                                 :data-library-author-name="item.index === 'author' || undefined"

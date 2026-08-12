@@ -282,6 +282,26 @@ test("keeps all production-shaped rows when a presentation has no article author
   await expect(row.locator("td").nth(3)).toHaveText("")
 })
 
+test("hydrates unsafe external results as visible inert text while preserving safe links", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?filter=external-href-boundary", { waitUntil: "networkidle" })
+
+  await expect(page.locator("[data-library-result]")).toHaveCount(3)
+  await expect(page.getByRole("link", { name: "Säker intern kringtext", exact: true }))
+    .toHaveAttribute("href", "/presentationer/forfattare/StrindbergA.html")
+  await expect(page.getByRole("link", { name: "Säker extern kringtext", exact: true }))
+    .toHaveAttribute("href", "https://litteraturbanken.se/oversattarlexikon/artiklar/Saker")
+  const unsafeRow = page.locator("[data-library-result]").filter({
+    hasText: "Osäker extern kringtext"
+  })
+  await expect(unsafeRow).toHaveCount(1)
+  await expect(unsafeRow).toContainText("Osäker extern kringtext")
+  await expect(unsafeRow.getByRole("link", { name: "Osäker extern kringtext", exact: true }))
+    .toHaveCount(0)
+  await expect(unsafeRow.locator('a[href^="javascript:"]')).toHaveCount(0)
+})
+
 test("client-side Library entry uses public runtime config without private-key warnings", async ({
   page,
   request

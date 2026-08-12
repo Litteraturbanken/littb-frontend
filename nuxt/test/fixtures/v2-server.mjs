@@ -1578,6 +1578,16 @@ function libraryAllResponse(query, page) {
       ]
     }
   }
+  if (query === "external-href-boundary") {
+    return {
+      mode: "all", total_hits: 3,
+      items: [
+        { kind: "presentation", source_label: "Kringtexter", title: "Säker intern kringtext", url: "/presentationer/forfattare/StrindbergA.html", byline: "Litteraturbanken", highlights: [] },
+        { kind: "translator_lexicon", source_label: "Översättarlexikon", title: "Säker extern kringtext", url: "https://litteraturbanken.se/oversattarlexikon/artiklar/Saker", byline: "Litteraturbanken", highlights: [] },
+        { kind: "wordpress", source_label: "Artikel", title: "Osäker extern kringtext", url: "javascript:globalThis.__libraryUnsafeHref = true", byline: "Litteraturbanken", highlights: [] }
+      ]
+    }
+  }
   if (query === "all-pagination") {
     const pageStart = (page - 1) * 100
     return {
