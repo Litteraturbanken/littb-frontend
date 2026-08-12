@@ -205,7 +205,10 @@ function validateWorkIdentity(
     || !validSegment(value.author_id)
     || value.title_path !== requestedTitlePath
     || !validSegment(value.title_path)
-    || !["etext", "faksimil", "pdf", "infopost"].includes(String(value.media_type))
+    || (value.media_type !== "etext"
+      && value.media_type !== "faksimil"
+      && value.media_type !== "pdf"
+      && value.media_type !== "infopost")
     || !optionalString(value.start_page, 200)
     || (value.start_page !== null && !validSegment(value.start_page))
   ) invalidSourceInfo()
@@ -313,12 +316,19 @@ function validDownloadUrl(url: string, mediaType: "epub" | "pdf"): boolean {
     && url.endsWith(".pdf")
 }
 
+function hasDownloadIdentity(
+  value: UnknownRecord
+): value is UnknownRecord & { filename: string, media_type: "epub" | "pdf" } {
+  return (value.media_type === "epub" || value.media_type === "pdf")
+    && typeof value.filename === "string"
+}
+
 function validateDownloadAction(value: unknown, media: Set<string>): void {
   if (!isReaderSourceRecord(value) || !exactKeys(value, downloadActionKeys)) {
     invalidSourceInfo()
   }
-  if (value.media_type !== "epub" && value.media_type !== "pdf") invalidSourceInfo()
-  const filename = String(value.filename)
+  if (!hasDownloadIdentity(value)) invalidSourceInfo()
+  const filename = value.filename
   if (
     value.label !== value.media_type
     || media.has(value.media_type)

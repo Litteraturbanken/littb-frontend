@@ -219,6 +219,61 @@ describe("Reader source-information runtime contract", () => {
     )).toThrow("Invalid Reader source information")
   })
 
+  test.each([
+    ["epub", () => ["book.epub"]],
+    ["epub", () => ({ toString: () => "book.epub" })],
+    ["epub", () => 123],
+    ["epub", () => null],
+    ["pdf", () => ["book.pdf"]],
+    ["pdf", () => ({ toString: () => "book.pdf" })],
+    ["pdf", () => 123],
+    ["pdf", () => null]
+  ] as const)("rejects a non-string %s download filename %#", (mediaType, invalid) => {
+    const value = cloneRecord(dramaSourceInfo)
+    const action = requiredArray(value, "download_actions")
+      .map(item => requiredRecord({ action: item }, "action"))
+      .find(item => item.media_type === mediaType)
+    if (!action) throw new Error(`Expected ${mediaType} action`)
+    action.filename = invalid()
+
+    expect(() => validateReaderSourceInfoResponse(
+      value,
+      "AlmlöfN",
+      "Affarer",
+      "faksimil"
+    )).toThrow("Invalid Reader source information")
+  })
+
+  test("rejects array coercion for the selected media type", () => {
+    const value = cloneRecord(doktorGlasSourceInfo)
+    value.media_type = ["etext"]
+
+    expect(() => validateReaderSourceInfoResponse(
+      value,
+      "SöderbergH",
+      "DoktorGlas",
+      "etext"
+    )).toThrow("Invalid Reader source information")
+  })
+
+  test("rejects a filename object without invoking its coercion hook", () => {
+    const value = cloneRecord(doktorGlasSourceInfo)
+    const action = requiredRecord(
+      { action: requiredArray(value, "download_actions")[0] },
+      "action"
+    )
+    const toString = vi.fn(() => "book.epub")
+    action.filename = { toString }
+
+    expect(() => validateReaderSourceInfoResponse(
+      value,
+      "SöderbergH",
+      "DoktorGlas",
+      "etext"
+    )).toThrow("Invalid Reader source information")
+    expect(toString).not.toHaveBeenCalled()
+  })
+
   test("accepts the backend selected-media fallback for an explicit request", () => {
     expect(validateReaderSourceInfoResponse(
       doktorGlasSourceInfo,
