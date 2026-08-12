@@ -200,6 +200,8 @@ export class BrowserObservabilityReporter {
   readonly #seen = new Map<string, number>()
   #timer: ReturnType<typeof setTimeout> | undefined
   #flushing: Promise<void> | undefined
+  #activeBatch: QueuedBrowserEvent[] | undefined
+  #activeBatchFailed = false
   #exitFlushing: Promise<void> | undefined
   #retryDelayMs = FLUSH_DELAY_MS
 
@@ -316,7 +318,24 @@ export class BrowserObservabilityReporter {
     const exitDelivery = await this.#deliverOnExit()
     if (activeFlush) {
       await activeFlush
-      if (!exitDelivery.blocked) {
+      if (this.#activeBatchFailed && this.#activeBatch) {
+        const activeBatch = this.#activeBatch
+        this.#activeBatch = undefined
+        this.#activeBatchFailed = false
+        const activeDelivery = await this.#deliverExitBatch(
+          activeBatch,
+          MAX_PAGE_EXIT_BYTES - exitDelivery.sentBytes
+        )
+        if (!activeDelivery.delivered) {
+          this.#requeueFront(activeBatch)
+          this.#scheduleRetry()
+        }
+        else if (!exitDelivery.blocked) {
+          await this.#deliverOnExit(
+            MAX_PAGE_EXIT_BYTES - exitDelivery.sentBytes - activeDelivery.bytes
+          )
+        }
+      } else if (!exitDelivery.blocked) {
         await this.#deliverOnExit(MAX_PAGE_EXIT_BYTES - exitDelivery.sentBytes)
       }
     }
@@ -370,8 +389,16 @@ export class BrowserObservabilityReporter {
   }
 
   #retryBatch(batch: QueuedBrowserEvent[]): void {
+    this.#requeueFront(batch)
+    this.#scheduleRetry()
+  }
+
+  #requeueFront(batch: QueuedBrowserEvent[]): void {
     this.#queue.unshift(...batch)
     if (this.#queue.length > MAX_QUEUE_EVENTS) this.#queue.length = MAX_QUEUE_EVENTS
+  }
+
+  #scheduleRetry(): void {
     this.#scheduleFlush(this.#retryDelayMs)
     this.#retryDelayMs = Math.min(this.#retryDelayMs * 2, MAX_RETRY_DELAY_MS)
   }
@@ -380,13 +407,34 @@ export class BrowserObservabilityReporter {
     if (this.#queue.length === 0) return
     const batch = this.#takeBatch()
     if (batch.length === 0) return
+    this.#activeBatch = batch
+    this.#activeBatchFailed = false
 
     const body = serializedBatch(batch)
     if (await this.#deliverByFetch(body)) {
+      this.#activeBatch = undefined
       this.#retryDelayMs = FLUSH_DELAY_MS
       return
     }
+    this.#activeBatchFailed = true
+    if (this.#exitFlushing) return
+    this.#activeBatch = undefined
+    this.#activeBatchFailed = false
     this.#retryBatch(batch)
+  }
+
+  async #deliverExitBatch(batch: QueuedBrowserEvent[], byteBudget: number): Promise<{
+    bytes: number
+    delivered: boolean
+  }> {
+    const body = serializedBatch(batch)
+    const bodyBytes = byteLength(body)
+    if (bodyBytes > byteBudget) return { bytes: 0, delivered: false }
+    if (this.#deliverByBeacon(body) || await this.#deliverByFetch(body)) {
+      this.#retryDelayMs = FLUSH_DELAY_MS
+      return { bytes: bodyBytes, delivered: true }
+    }
+    return { bytes: 0, delivered: false }
   }
 
   async #deliverOnExit(byteBudget = MAX_PAGE_EXIT_BYTES): Promise<{
@@ -400,7 +448,7 @@ export class BrowserObservabilityReporter {
       const body = serializedBatch(batch)
       const bodyBytes = byteLength(body)
       if (sentBytes + bodyBytes > byteBudget) {
-        this.#queue.unshift(...batch)
+        this.#requeueFront(batch)
         break
       }
       if (this.#deliverByBeacon(body)) {

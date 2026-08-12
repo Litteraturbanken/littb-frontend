@@ -761,6 +761,103 @@ describe("browser event delivery", () => {
     expect(fetchBodies(fetchMock).at(-1)).toEqual(eventIds.slice(10, 20))
   })
 
+  test("attempts a newly requeued active head without retrying an already blocked tail", async () => {
+    vi.useFakeTimers()
+    try {
+      let releaseActive: (() => void) | undefined
+      const fetchMock = vi.fn()
+        .mockImplementationOnce(() => new Promise<Response>(resolve => {
+          releaseActive = () => resolve(new Response(null, { status: 503 }))
+        }))
+        .mockResolvedValueOnce(new Response(null, { status: 503 }))
+        .mockResolvedValueOnce(new Response(null, { status: 202 }))
+        .mockResolvedValueOnce(new Response(null, { status: 202 }))
+        .mockResolvedValueOnce(new Response(null, { status: 202 }))
+      let call = 0
+      const beacon = vi.fn(() => {
+        call += 1
+        return call === 2
+      })
+      const reporter = new BrowserObservabilityReporter(reporterOptions({
+        fetch: fetchMock,
+        beacon,
+        autoFlush: true
+      }))
+      const eventIds = await enqueueNumberedEvents(reporter, 23)
+
+      const normalFlush = reporter.flush()
+      const firstExitFlush = reporter.flush(true)
+      const secondExitFlush = reporter.flush(true)
+      releaseActive?.()
+      await Promise.all([normalFlush, firstExitFlush, secondExitFlush])
+
+      expect(await beaconBodies(beacon)).toEqual([
+        eventIds.slice(10, 20),
+        eventIds.slice(0, 10)
+      ])
+      expect(fetchBodies(fetchMock)).toEqual([
+        eventIds.slice(0, 10),
+        eventIds.slice(10, 20)
+      ])
+      expect(vi.getTimerCount()).toBe(1)
+
+      await vi.advanceTimersByTimeAsync(1_000)
+      await vi.advanceTimersByTimeAsync(1_000)
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(fetchBodies(fetchMock).slice(-3)).toEqual([
+        eventIds.slice(10, 20),
+        eventIds.slice(10, 20),
+        eventIds.slice(20)
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  test("caps a deferred active requeue ahead of a refilled queue", async () => {
+    let releaseActive: (() => void) | undefined
+    const delivered: string[][] = []
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => new Promise<Response>(resolve => {
+        releaseActive = () => resolve(new Response(null, { status: 503 }))
+      }))
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockImplementation(async (_url: string, init: RequestInit) => {
+        delivered.push(JSON.parse(String(init.body)).events.map(
+          (event: { event_id: string }) => event.event_id
+        ))
+        return new Response(null, { status: 202 })
+      })
+    let beaconCall = 0
+    const beacon = vi.fn(() => ++beaconCall === 1)
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
+    const firstIds = await enqueueNumberedEvents(reporter, 10)
+    const normalFlush = reporter.flush()
+    const refillIds: string[] = []
+    for (let index = 10; index < 60; index += 1) {
+      const eventId = `018f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`
+      refillIds.push(eventId)
+      reporter.enqueue(await createBrowserErrorEvent({
+        eventName: "browser.error",
+        error: new Error(`discarded-${index}`),
+        component: `Component${index}`,
+        resourceKind: "unknown",
+        route: "/bibliotek",
+        environment: "stage",
+        deploymentGitSha: GIT_SHA,
+        randomUUID: () => eventId
+      }))
+    }
+    const exitFlush = reporter.flush(true)
+
+    releaseActive?.()
+    await Promise.all([normalFlush, exitFlush])
+    for (let index = 0; index < 5; index += 1) await reporter.flush()
+
+    expect(delivered.flat()).toEqual([...firstIds, ...refillIds.slice(10, 50)])
+  })
+
   test("retries a transient delivery failure without another event", async () => {
     vi.useFakeTimers()
     try {
