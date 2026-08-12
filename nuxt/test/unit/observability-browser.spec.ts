@@ -257,6 +257,38 @@ describe("browser event delivery", () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
+  test.each(["missing", "non-function", "throwing getter"])(
+    "falls back without losing the batch when default sendBeacon is %s",
+    async failure => {
+      const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, "navigator")
+      try {
+        Object.defineProperty(globalThis, "navigator", {
+          configurable: true,
+          ...(failure === "throwing getter"
+            ? { get: () => { throw new Error("navigator unavailable") } }
+            : { value: failure === "missing" ? undefined : { sendBeacon: "not callable" } })
+        })
+        const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+        const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+        const eventIds = await enqueueNumberedEvents(reporter, 23)
+
+        await expect(reporter.flush(true)).resolves.toBeUndefined()
+
+        expect(fetchBodies(fetchMock)).toEqual([
+          eventIds.slice(0, 10),
+          eventIds.slice(10, 20),
+          eventIds.slice(20)
+        ])
+      } finally {
+        if (originalNavigator) {
+          Object.defineProperty(globalThis, "navigator", originalNavigator)
+        } else {
+          Reflect.deleteProperty(globalThis, "navigator")
+        }
+      }
+    }
+  )
+
   test.each([11, 23])(
     "drains all %i queued page-exit events through ordered beacon batches",
     async count => {
@@ -295,36 +327,109 @@ describe("browser event delivery", () => {
     expect((await beaconBodies(beacon)).flat()).toEqual(eventIds)
   })
 
-  test.each(["returns false", "throws"])(
-    "falls back only the exact rejected page-exit batch when beacon %s",
-    async failure => {
-      const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
-      let call = 0
-      const beacon = vi.fn(() => {
-        call += 1
-        if (call !== 2) return true
-        if (failure === "throws") throw new Error("beacon unavailable")
-        return false
+  test("stops before a fallback and later beacon bodies exceed the exit byte budget", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    let call = 0
+    const beacon = vi.fn(() => ++call !== 1)
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
+    const eventIds: string[] = []
+    for (let index = 0; index < 6; index += 1) {
+      const eventId = `018f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`
+      const event = await createBrowserErrorEvent({
+        eventName: "browser.error",
+        error: new Error(`discarded-${index}`),
+        component: `Budget${index}`,
+        resourceKind: "unknown",
+        route: "/bibliotek",
+        environment: "stage",
+        deploymentGitSha: GIT_SHA,
+        randomUUID: () => eventId
       })
-      const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
-      const eventIds = await enqueueNumberedEvents(reporter, 21)
+      eventIds.push(eventId)
+      reporter.enqueue({ ...event, error_type: "E".repeat(13_000) } as BrowserEvent)
+    }
 
-      await reporter.flush(true)
+    await reporter.flush(true)
 
-      expect(await beaconBodies(beacon)).toEqual([
-        eventIds.slice(0, 10),
-        eventIds.slice(10, 20)
-      ])
-      expect(fetchBodies(fetchMock)).toEqual([
-        eventIds.slice(10, 20)
-      ])
-      await reporter.flush()
-      expect(fetchBodies(fetchMock)).toEqual([
-        eventIds.slice(10, 20),
-        eventIds.slice(20)
-      ])
+    expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(0, 4))
+    expect(String(fetchMock.mock.calls[0]?.[1]?.body).length + beacon.mock.calls.slice(1).reduce(
+      (total, beaconCall) => total + (beaconCall[1] as Blob).size,
+      0
+    )).toBeLessThanOrEqual(60 * 1024)
+
+    await reporter.flush(true)
+    expect((await beaconBodies(beacon)).flat()).toEqual(eventIds)
+  })
+
+  test.each([
+    ["first", 1],
+    ["middle", 2]
+  ] as const)(
+    "continues the page-exit drain after the %s beacon batch uses a successful fallback",
+    async (_position, failedCall) => {
+      vi.useFakeTimers()
+      try {
+        const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+        let call = 0
+        const beacon = vi.fn(() => {
+          call += 1
+          return call !== failedCall
+        })
+        const reporter = new BrowserObservabilityReporter(reporterOptions({
+          fetch: fetchMock,
+          beacon,
+          autoFlush: true
+        }))
+        const eventIds = await enqueueNumberedEvents(reporter, 23)
+
+        await reporter.flush(true)
+
+        expect((await beaconBodies(beacon)).flat()).toEqual(eventIds)
+        expect(fetchBodies(fetchMock)).toEqual([
+          eventIds.slice((failedCall - 1) * 10, failedCall * 10)
+        ])
+        expect(vi.getTimerCount()).toBe(0)
+      } finally {
+        vi.useRealTimers()
+      }
     }
   )
+
+  test("continues the page-exit drain after a thrown beacon uses a successful fallback", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    let call = 0
+    const beacon = vi.fn(() => {
+      call += 1
+      if (call === 2) throw new Error("beacon unavailable")
+      return true
+    })
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
+    const eventIds = await enqueueNumberedEvents(reporter, 23)
+
+    await reporter.flush(true)
+
+    expect((await beaconBodies(beacon)).flat()).toEqual(eventIds)
+    expect(fetchBodies(fetchMock)).toEqual([eventIds.slice(10, 20)])
+  })
+
+  test("waits for fallback success before continuing the ordered page-exit drain", async () => {
+    let releaseFallback: (() => void) | undefined
+    const fetchMock = vi.fn(() => new Promise<Response>(resolve => {
+      releaseFallback = () => resolve(new Response(null, { status: 202 }))
+    }))
+    let call = 0
+    const beacon = vi.fn(() => ++call !== 1)
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
+    const eventIds = await enqueueNumberedEvents(reporter, 23)
+
+    const exitFlush = reporter.flush(true)
+    expect(await beaconBodies(beacon)).toEqual([eventIds.slice(0, 10)])
+
+    releaseFallback?.()
+    await exitFlush
+
+    expect((await beaconBodies(beacon)).flat()).toEqual(eventIds)
+  })
 
   test("requeues only a page-exit batch whose beacon and fallback both fail", async () => {
     const fetchMock = vi.fn()

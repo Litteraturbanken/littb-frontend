@@ -291,13 +291,18 @@ export class BrowserObservabilityReporter {
   }
 
   #deliverByBeacon(body: string): boolean {
-    const beacon = this.#options.beacon
-      ?? (typeof navigator === "undefined" ? undefined : navigator.sendBeacon.bind(navigator))
     try {
-      return beacon?.(
+      let beacon = this.#options.beacon
+      if (!beacon) {
+        if (typeof navigator === "undefined") return false
+        const defaultBeacon = navigator.sendBeacon
+        if (typeof defaultBeacon !== "function") return false
+        beacon = defaultBeacon.bind(navigator)
+      }
+      return beacon(
         this.#options.endpoint,
         new Blob([body], { type: "application/json" })
-      ) ?? false
+      )
     } catch {
       return false
     }
@@ -360,8 +365,8 @@ export class BrowserObservabilityReporter {
         this.#retryBatch(batch)
         return
       }
+      sentBytes += bodyBytes
       this.#retryDelayMs = FLUSH_DELAY_MS
-      break
     }
     if (this.#queue.length > 0) this.#scheduleFlush(FLUSH_DELAY_MS)
   }
