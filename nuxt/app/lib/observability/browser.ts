@@ -256,16 +256,6 @@ function remainingPageExitBytes(...inflightBodyBytes: number[]): number {
   )
 }
 
-function eventIdentity(
-  eventName: BrowserEventName,
-  type: string,
-  component: string | null,
-  route: string | null,
-  resourceKind: NonNullable<BrowserEvent["attributes"]["resource_kind"]>
-): string {
-  return JSON.stringify([eventName, type, component, route, resourceKind])
-}
-
 export class BrowserObservabilityReporter {
   readonly #options: ReporterOptions
   readonly #queue: QueuedBrowserEvent[] = []
@@ -295,8 +285,6 @@ export class BrowserObservabilityReporter {
         metadata.eventName ?? classifyBrowserError(error)
       )
       const type = errorType(error)
-      const component = safeLabel(metadata.component)
-      const route = safeRoute(this.#options.route())
       const resourceKind = safeBrowserResourceKind(metadata.resourceKind)
       const correlationToken = safeCorrelationToken(metadata.correlationToken)
       const eventId = globalThis.crypto.randomUUID()
@@ -307,7 +295,7 @@ export class BrowserObservabilityReporter {
         error_type: type,
         resource_kind: resourceKind,
         correlation_token: correlationToken
-      }, eventIdentity(eventName, type, component, route, resourceKind), correlationToken)
+      })
     } catch {
       // Capturing an error must never create another application failure.
     }
@@ -334,22 +322,17 @@ export class BrowserObservabilityReporter {
       error_type: type,
       resource_kind: resourceKind,
       correlation_token: normalizedCorrelationToken
-    }, eventIdentity(
-      eventName,
-      type,
-      safeLabel(event.attributes.component),
-      safeRoute(event.route),
-      resourceKind
-    ), normalizedCorrelationToken)
+    })
   }
 
-  #enqueueIntake(
-    event: BrowserIntakeEvent,
-    eventIdentity: string,
-    correlationToken: string | null
-  ): void {
+  #enqueueIntake(event: BrowserIntakeEvent): void {
     const now = (this.#options.nowMs ?? Date.now)()
-    const deduplicationKey = JSON.stringify([eventIdentity, correlationToken])
+    const deduplicationKey = JSON.stringify([
+      event.event_name,
+      event.error_type,
+      event.resource_kind,
+      event.correlation_token
+    ])
     const previous = this.#seen.get(deduplicationKey)
     if (previous !== undefined && now - previous < DEDUPLICATION_WINDOW_MS) return
     const queued = { deduplicationKey, event, seenAt: now }

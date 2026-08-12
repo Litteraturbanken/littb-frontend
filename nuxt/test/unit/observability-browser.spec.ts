@@ -37,7 +37,7 @@ async function enqueueNumberedEvents(
       environment: "stage",
       deploymentGitSha: GIT_SHA,
       randomUUID: () => eventId
-    }))
+    }), `028f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`)
   }
   return eventIds
 }
@@ -268,6 +268,57 @@ describe("browser event delivery", () => {
     }
   )
 
+  test("deduplicates cross-path events that differ only in dropped route and component", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({
+      fetch: fetchMock,
+      route: () => "/capture-route"
+    }))
+    const event = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new TypeError("private"),
+      component: "EnqueueComponent",
+      resourceKind: "script",
+      route: "/enqueue-route",
+      environment: "stage",
+      deploymentGitSha: GIT_SHA
+    })
+
+    await reporter.capture(new TypeError("different private"), {
+      component: "CaptureComponent",
+      resourceKind: "script"
+    })
+    reporter.enqueue(event)
+    await reporter.flush()
+
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)).events).toHaveLength(1)
+  })
+
+  test("partitions compact deduplication by every server-visible semantic field", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+    const base = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new TypeError("private"),
+      resourceKind: "unknown",
+      environment: "stage",
+      deploymentGitSha: GIT_SHA,
+      randomUUID: () => "018f47c0-4d5b-7a62-8f41-100000000010"
+    })
+    const token = "018f47c0-4d5b-7a62-8f41-100000000099"
+    reporter.enqueue(base)
+    reporter.enqueue({ ...base, event_id: "018f47c0-4d5b-7a62-8f41-100000000011",
+      event_name: "browser.unhandled_rejection" })
+    reporter.enqueue({ ...base, event_id: "018f47c0-4d5b-7a62-8f41-100000000012",
+      error_type: "ReferenceError" })
+    reporter.enqueue({ ...base, event_id: "018f47c0-4d5b-7a62-8f41-100000000013",
+      attributes: { ...base.attributes, resource_kind: "script" } })
+    reporter.enqueue({ ...base, event_id: "018f47c0-4d5b-7a62-8f41-100000000014" }, token)
+    await reporter.flush()
+
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)).events).toHaveLength(5)
+  })
+
   test("caps each batch at ten events and retains the remainder", async () => {
     const sizes: number[] = []
     const reporter = new BrowserObservabilityReporter(reporterOptions({
@@ -285,7 +336,7 @@ describe("browser event delivery", () => {
         route: "/bibliotek",
         environment: "stage",
         deploymentGitSha: GIT_SHA
-      }))
+      }), `038f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`)
     }
 
     await reporter.flush()
@@ -1220,7 +1271,7 @@ describe("browser event delivery", () => {
         environment: "stage",
         deploymentGitSha: GIT_SHA,
         randomUUID: () => eventId
-      }))
+      }), `048f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`)
     }
     const exitFlush = reporter.flush(true)
 
@@ -1268,7 +1319,7 @@ describe("browser event delivery", () => {
         randomUUID: () => eventId
       })
       refillEvents.push(event)
-      reporter.enqueue(event)
+      reporter.enqueue(event, `058f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`)
     }
     const exitFlush = reporter.flush(true)
     releaseActive?.()
@@ -1646,7 +1697,7 @@ describe("browser event delivery", () => {
 
       reporter.enqueue(firstEvent)
       const activeFlush = reporter.flush()
-      reporter.enqueue(secondEvent)
+      reporter.enqueue(secondEvent, "068f47c0-4d5b-7a62-8f41-000000000001")
       await vi.advanceTimersByTimeAsync(1_000)
       releaseFirst?.()
       await activeFlush
