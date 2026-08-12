@@ -599,6 +599,18 @@ export const malformedAuthorWorksResponse = {
   }
 }
 
+/** Structurally valid provider body with one unsafe consumed URL. */
+export const unsafeUrlAuthorWorksResponse = structuredClone(emptyAuthorWorks)
+unsafeUrlAuthorWorksResponse.author.author_id = "UnsafeWorks"
+unsafeUrlAuthorWorksResponse.author.full_name = "Unsafe provider author"
+unsafeUrlAuthorWorksResponse.author.related_links = [{
+  label: "Unsafe provider destination",
+  url: "javascript:alert('author-works-provider-url')"
+}]
+unsafeUrlAuthorWorksResponse.about_sections[0].label = "Verk om Unsafe provider author"
+unsafeUrlAuthorWorksResponse.about_sections[1].label
+  = "Kortare texter om Unsafe provider author"
+
 /** @type {ReadonlyMap<string, AuthorWorksResponse>} */
 export const authorWorksById = new Map(
   /** @type {Array<[string, AuthorWorksResponse]>} */ ([

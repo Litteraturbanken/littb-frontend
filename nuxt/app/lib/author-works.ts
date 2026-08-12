@@ -1,4 +1,17 @@
 import type { components } from "~/lib/api/generated/lbapi"
+import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
+import {
+  authorProfilePath,
+  safeAuthorPortraitAssetUrl,
+  safeAuthorSearchHref,
+  safeHttpUrl
+} from "./author-profile"
+import {
+  canonicalNuxtHref,
+  isNuxtInternalHref,
+  safeNativeHref,
+  validRouteSegment
+} from "./internal-navigation"
 
 export type AuthorWorksResponse = components["schemas"]["AuthorWorksResponse"]
 export type AuthorWork = components["schemas"]["AuthorWork"]
@@ -40,11 +53,157 @@ function isNullableString(value: unknown): value is string | null {
   return value === null || isString(value)
 }
 
+type SafeRootHref = {
+  decodedPath: string
+  decodedQuery: string
+  hasFragment: boolean
+}
+
+function rawHrefParts(value: string): {
+  rawPath: string
+  rawQuery: string
+  hasQuery: boolean
+  rawFragment: string
+  hasFragment: boolean
+} {
+  const fragmentIndex = value.indexOf("#")
+  const withoutFragment = fragmentIndex === -1 ? value : value.slice(0, fragmentIndex)
+  const queryIndex = withoutFragment.indexOf("?")
+  return {
+    rawPath: queryIndex === -1 ? withoutFragment : withoutFragment.slice(0, queryIndex),
+    rawQuery: queryIndex === -1 ? "" : withoutFragment.slice(queryIndex + 1),
+    hasQuery: queryIndex !== -1,
+    rawFragment: fragmentIndex === -1 ? "" : value.slice(fragmentIndex + 1),
+    hasFragment: fragmentIndex !== -1
+  }
+}
+
+function fullyDecodedHref(value: string): string | null {
+  let decoded = value
+  for (let depth = 0; depth < 16; depth += 1) {
+    let next: string
+    try {
+      next = decodeURIComponent(decoded)
+    } catch {
+      return null
+    }
+    if (hasC0OrC1Control(next) || hasLoneSurrogate(next) || next.includes("\\")) return null
+    if (next === decoded) return decoded
+    decoded = next
+  }
+  return null
+}
+
+function safeRootHref(value: string): SafeRootHref | null {
+  if (value.length > 2_000 || safeNativeHref(value) !== value || !value.startsWith("/")) return null
+  const { rawPath, rawQuery, rawFragment, hasQuery, hasFragment } = rawHrefParts(value)
+  const decodedPath = fullyDecodedHref(rawPath)
+  const decodedQueryValue = fullyDecodedHref(rawQuery)
+  const decodedFragment = fullyDecodedHref(rawFragment)
+  if (decodedPath === null || decodedQueryValue === null || decodedFragment === null
+    || decodedPath.startsWith("//")) return null
+  if (decodedPath.split("/").some(segment => segment === "." || segment === "..")) return null
+  return {
+    decodedPath,
+    decodedQuery: hasQuery ? `?${decodedQueryValue}` : "",
+    hasFragment
+  }
+}
+
+function isSafeNativeLinkUrl(value: string): boolean {
+  if (safeNativeHref(value) !== value) return false
+  const decoded = fullyDecodedHref(value)
+  if (decoded === null || decoded.startsWith("//")) return false
+  const decodedPath = decoded.split(/[?#]/u, 1)[0] ?? ""
+  return !decodedPath.split("/").some(segment => segment === "." || segment === "..")
+    && safeNativeHref(decoded) === decoded
+}
+
+function isSafeHttpUrl(value: string | null): boolean {
+  return value === null || safeHttpUrl(value) === value
+}
+
+function isSafeSearchUrl(value: string | null, authorId: string): boolean {
+  if (value === null || safeAuthorSearchHref(value) === "") return value === null
+  const safe = safeRootHref(value)
+  if (!safe || safe.hasFragment || (safe.decodedPath !== "/sok" && safe.decodedPath !== "/sök")) {
+    return false
+  }
+  try {
+    const params = new URL(value, "https://author-works.invalid").searchParams
+    return [...params.keys()].length === 2
+      && params.getAll("forfattare").length === 1
+      && params.get("forfattare") === authorId
+      && params.getAll("avancerad").length === 1
+      && params.get("avancerad") === ""
+  } catch {
+    return false
+  }
+}
+
+function isSafePersonUrl(url: string, authorId: string): boolean {
+  const safe = safeRootHref(url)
+  return safe !== null && !safe.decodedQuery && !safe.hasFragment
+    && canonicalNuxtHref(url) === authorProfilePath(authorId)
+    && isNuxtInternalHref(canonicalNuxtHref(url))
+}
+
+function safeReaderActionUrl(value: string, mediaType: string, titlePath: string): boolean {
+  const safe = safeRootHref(value)
+  if (!safe || safe.decodedQuery || safe.hasFragment) return false
+  const match = /^\/författare\/([^/]+)\/titlar\/([^/]+)\/sida\/([^/]+)\/(etext|faksimil)$/u
+    .exec(safe.decodedPath)
+  if (!match || match[4] !== mediaType || match[2] !== titlePath) return false
+  const segments: readonly [string, number][] = [
+    [match[1] ?? "", 100],
+    [match[2] ?? "", 200],
+    [match[3] ?? "", 512]
+  ]
+  return segments.every(([segment, maximum]) => validRouteSegment(segment, maximum))
+    && isNuxtInternalHref(canonicalNuxtHref(value))
+}
+
+function hasExactInfoPostQuery(params: URLSearchParams): boolean {
+  return [...params.keys()].length === 3
+    && params.getAll("om-boken").length === 1
+    && params.get("om-boken") === ""
+    && params.getAll("authorid").length === 1
+    && params.getAll("titlepath").length === 1
+}
+
+function safeInfoPostActionUrl(value: string, titlePath: string): boolean {
+  const safe = safeRootHref(value)
+  if (!safe || safe.hasFragment || safe.decodedPath !== "/dramawebben/pjäser") return false
+  try {
+    const params = new URL(value, "https://author-works.invalid").searchParams
+    const authorId = params.get("authorid") ?? ""
+    const actionTitlePath = params.get("titlepath") ?? ""
+    return hasExactInfoPostQuery(params)
+      && validRouteSegment(authorId, 100)
+      && validRouteSegment(actionTitlePath, 200)
+      && actionTitlePath === titlePath
+  } catch {
+    return false
+  }
+}
+
+function safeDownloadActionUrl(value: string, mediaType: string): boolean {
+  const safe = safeRootHref(value)
+  if (!safe || safe.decodedQuery || safe.hasFragment) return false
+  if (mediaType === "epub") return /^\/txt\/epub\/[^/]+\.epub$/u.test(safe.decodedPath)
+  return mediaType === "pdf" && (
+    /^\/export\/faksimil\/[^/]+\.pdf$/u.test(safe.decodedPath)
+    || (!safe.decodedPath.startsWith("/txt/epub/")
+      && /^\/txt\/[^/]+\/[^/]+\.pdf$/u.test(safe.decodedPath))
+  )
+}
+
 function isLink(value: unknown): boolean {
   return isRecord(value)
     && hasExactKeys(value, ["label", "url"])
     && isString(value.label)
     && isString(value.url)
+    && isSafeNativeLinkUrl(value.url)
 }
 
 function isPortrait(value: unknown): boolean {
@@ -52,6 +211,7 @@ function isPortrait(value: unknown): boolean {
     isRecord(value)
     && hasExactKeys(value, ["url", "caption_html"])
     && isString(value.url)
+    && safeAuthorPortraitAssetUrl(value.url) === value.url
     && isNullableString(value.caption_html)
   )
 }
@@ -63,6 +223,8 @@ function isPerson(value: unknown): boolean {
     && isString(value.name_for_index)
     && isNullableString(value.surname)
     && isString(value.url)
+    && validRouteSegment(value.author_id, 100)
+    && isSafePersonUrl(value.url, value.author_id)
 }
 
 function isContainingWork(value: unknown): boolean {
@@ -74,7 +236,7 @@ function isContainingWork(value: unknown): boolean {
   )
 }
 
-function isAction(value: unknown): boolean {
+function isAction(value: unknown, titlePath: string): boolean {
   if (
     !isRecord(value)
     || !hasExactKeys(value, ["media_type", "kind", "url", "download_filename"])
@@ -82,17 +244,30 @@ function isAction(value: unknown): boolean {
   ) return false
 
   if (value.kind === "read") {
-    return isString(value.media_type)
-      && ["etext", "faksimil", "infopost"].includes(value.media_type)
-      && value.download_filename === null
+    return isSafeReadAction(value, titlePath)
   }
   if (value.kind === "download") {
-    return isString(value.media_type)
-      && ["epub", "pdf"].includes(value.media_type)
-      && isString(value.download_filename)
-      && value.download_filename.trim().length > 0
+    return isSafeDownloadAction(value)
   }
   return false
+}
+
+function isSafeReadAction(value: Record<string, unknown>, titlePath: string): boolean {
+  if (!isString(value.media_type) || !isString(value.url) || value.download_filename !== null) {
+    return false
+  }
+  if (value.media_type === "infopost") return safeInfoPostActionUrl(value.url, titlePath)
+  return ["etext", "faksimil"].includes(value.media_type)
+    && safeReaderActionUrl(value.url, value.media_type, titlePath)
+}
+
+function isSafeDownloadAction(value: Record<string, unknown>): boolean {
+  return isString(value.media_type)
+    && ["epub", "pdf"].includes(value.media_type)
+    && isString(value.url)
+    && isString(value.download_filename)
+    && value.download_filename.trim().length > 0
+    && safeDownloadActionUrl(value.url, value.media_type)
 }
 
 function hasWorkIdentity(value: Record<string, unknown>): boolean {
@@ -130,11 +305,19 @@ function isWork(value: unknown, requireDisplayAuthor: boolean): boolean {
   if (!Array.isArray(value.actions) || value.actions.length < 1 || value.actions.length > 5) {
     return false
   }
-  return hasWorkIdentity(value)
+  if (!(hasWorkIdentity(value)
     && hasWorkLabels(value)
     && displayAuthorIsValid(value.display_author, requireDisplayAuthor)
     && isContainingWork(value.containing_work)
-    && value.actions.every(isAction)
+  )) return false
+  if (!value.actions.every(action => isAction(action, value.title_path as string))) return false
+  const actions = value.actions as Array<{ kind: string, media_type: string, url: string }>
+  return actions.some(action => (
+    ((action.kind === "download" || action.media_type === "infopost")
+      && action.url === value.title_url)
+    || (action.kind === "read" && action.media_type !== "infopost"
+      && `${action.url}?om-boken` === value.title_url)
+  ))
 }
 
 function isSection(
@@ -161,8 +344,11 @@ function hasShellIdentity(value: Record<string, unknown>): boolean {
 
 function hasShellLinks(value: Record<string, unknown>): boolean {
   return isNullableString(value.search_url)
+    && isSafeSearchUrl(value.search_url, value.author_id as string)
     && isNullableString(value.audio_url)
+    && isSafeHttpUrl(value.audio_url)
     && isNullableString(value.map_url)
+    && isSafeHttpUrl(value.map_url)
 }
 
 function hasShellCollections(value: Record<string, unknown>): boolean {

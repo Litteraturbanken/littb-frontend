@@ -522,6 +522,14 @@ test("empty, 404, 503, and malformed transitions clear rich content and metadata
       failure: false
     },
     {
+      authorId: "UnsafeWorks",
+      path: "/f%C3%B6rfattare/UnsafeWorks/titlar",
+      finalTitle: "Författarverk | Litteraturbanken",
+      finalHeading: "Författarens verk kan inte visas just nu",
+      error: true,
+      failure: false
+    },
+    {
       authorId: "WrongIdentityA",
       path: "/f%C3%B6rfattare/WrongIdentityA/titlar",
       finalTitle: "Författarverk | Litteraturbanken",
@@ -562,6 +570,8 @@ test("empty, 404, 503, and malformed transitions clear rich content and metadata
     await expectNoRichResidue(page)
     if (scenario.error) {
       await expect(page.locator(".error")).toContainText(scenario.finalHeading)
+      await expect(page.locator('a[href^="javascript:"]')).toHaveCount(0)
+      await expect(page.getByText("Unsafe provider destination", { exact: true })).toHaveCount(0)
       await expect(page.locator("body")).not.toContainText("42")
       await expect(page.locator("body")).not.toContainText("August Strindberg")
     } else {

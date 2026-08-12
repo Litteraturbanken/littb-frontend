@@ -15,7 +15,8 @@ import {
 import { authorProfiles } from "./author-profile-data.mjs"
 import {
   authorWorksById,
-  malformedAuthorWorksResponse
+  malformedAuthorWorksResponse,
+  unsafeUrlAuthorWorksResponse
 } from "./author-works-data.mjs"
 import { historyAuthorSummaries } from "./history-data.mjs"
 import {
@@ -5612,6 +5613,9 @@ const server = createServer(async (request, response) => {
     }
     if (authorWorksAuthorId.authorId === "MalformedA") {
       return sendJson(response, 200, malformedAuthorWorksResponse)
+    }
+    if (authorWorksAuthorId.authorId === "UnsafeWorks") {
+      return sendJson(response, 200, unsafeUrlAuthorWorksResponse)
     }
     if (authorWorksAuthorId.authorId === "WrongIdentityA") {
       return sendJson(response, 200, authorWorksById.get("StrindbergA"))

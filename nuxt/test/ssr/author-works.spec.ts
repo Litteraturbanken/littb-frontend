@@ -336,6 +336,23 @@ test("SSR rejects malformed Author Works before serializing provider data", asyn
   await expectOnlyWorksRequest(request, "/private-v2/authors/MalformedA/works")
 })
 
+test("SSR rejects an unsafe Author Works URL before rendering or serializing it", async ({
+  request
+}) => {
+  const response = await request.get("/författare/UnsafeWorks/titlar")
+  expect(response.status()).toBe(503)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+
+  expect(document.querySelector(".error")?.textContent)
+    .toContain("Författarens verk kan inte visas just nu")
+  expect(document.querySelector(".page_content")).toBeNull()
+  expect(document.querySelector('a[href^="javascript:"]')).toBeNull()
+  expect(html).not.toContain("author-works-provider-url")
+  expect(html).not.toContain("Unsafe provider destination")
+  await expectOnlyWorksRequest(request, "/private-v2/authors/UnsafeWorks/works")
+})
+
 test("SSR rejects a structurally valid response for the wrong author identity", async ({
   request
 }) => {

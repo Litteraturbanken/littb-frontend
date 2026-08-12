@@ -188,7 +188,7 @@ function safeHref(value: string): string | null {
     : value
 }
 
-function safeHttpUrl(value: string | null | undefined): string {
+export function safeHttpUrl(value: string | null | undefined): string {
   if (!value || !/^https?:\/\//iu.test(value)) return ""
   const href = safeHref(value)
   return href && /^https?:\/\//iu.test(href) ? href : ""
@@ -268,7 +268,7 @@ function profileLinks(links: AuthorProfile["related_links"]): Array<{ label: str
   })
 }
 
-function safeAuthorSearchHref(value: string | null | undefined): string {
+export function safeAuthorSearchHref(value: string | null | undefined): string {
   if (!value) return ""
   const href = safeNativeHref(value)
   if (href === null) return ""
@@ -292,7 +292,7 @@ function isAuthorPortraitAssetPath(value: string): boolean {
     && /\.(?:jpe?g)$/iu.test(filename)
 }
 
-function safeAuthorPortraitAssetUrl(value: string): string | null {
+export function safeAuthorPortraitAssetUrl(value: string): string | null {
   const href = safeNativeHref(value)
   if (href === null || !href.startsWith("/red/forfattare/")) return null
 
