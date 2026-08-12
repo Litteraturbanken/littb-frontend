@@ -17,12 +17,12 @@ useHead({
 })
 
 const route = useRoute()
-const isSol = route.query.sol !== undefined
-const fromSchool = route.query.skola !== undefined
+const isSol = computed(() => route.query.sol !== undefined)
+const fromSchool = computed(() => route.query.skola !== undefined)
 
 const name = ref("")
 const email = ref("")
-const message = ref(isSol ? "[Ang. Översättarlexikon]\n\n" : "")
+const message = ref(isSol.value ? "[Ang. Översättarlexikon]\n\n" : "")
 const newsletterEmail = ref("")
 
 const nameDirty = ref(false)
@@ -89,8 +89,8 @@ async function submitContactForm() {
       body: {
         sender_name: name.value || null,
         sender_address: email.value,
-        message: fromSchool ? `[skola] ${message.value}` : message.value,
-        audience: isSol ? "oversattarlexikon" : "litteraturbanken"
+        message: fromSchool.value ? `[skola] ${message.value}` : message.value,
+        audience: isSol.value ? "oversattarlexikon" : "litteraturbanken"
       },
       signal: AbortSignal.timeout(30_000)
     })

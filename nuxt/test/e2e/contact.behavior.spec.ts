@@ -30,6 +30,19 @@ async function openContact(page: Page, path = "/om/kontakt") {
   return problems
 }
 
+async function navigateContactClient(page: Page, path: string) {
+  await page.evaluate(async target => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: {
+        config: { globalProperties: { $router: { push: (path: string) => Promise<void> } } }
+      }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    await router.push(target)
+  }, path)
+}
+
 async function submissions(request: APIRequestContext) {
   const response = await request.get(`${fixture}/_contact_submissions`)
   return (await response.json()).contactSubmissions as Record<string, unknown>[]
@@ -278,6 +291,47 @@ test("captures SOL and school flags once, composes the exact payload, and fixes 
 
   await page.goto("/om/kontakt")
   await expect(page.locator(".contactform textarea")).toHaveValue("")
+})
+
+test("client query transitions use the current SOL and school flags without reloading Contact", async ({
+  page,
+  request
+}) => {
+  await openContact(page)
+  await page.clock.install()
+
+  await navigateContactClient(page, "/om/kontakt?sol=&skola=1&other=bevarad")
+  await expect(page).toHaveURL("/om/kontakt?sol=&skola=1&other=bevarad")
+  await page.locator("#emailInput").fill("sol@example.test")
+  await page.locator(".contactform textarea").fill("Efter SOL-navigering")
+  await page.locator("form.contactform button.submit").click()
+  expect(await waitForSubmissions(request)).toEqual([{
+    sender_name: null,
+    sender_address: "sol@example.test",
+    message: "[skola] Efter SOL-navigering",
+    audience: "oversattarlexikon"
+  }])
+  await page.clock.fastForward(4_000)
+
+  await navigateContactClient(page, "/om/kontakt?skola=1&other=bevarad")
+  await expect(page).toHaveURL("/om/kontakt?skola=1&other=bevarad")
+  await page.locator("#emailInput").fill("ordinarie@example.test")
+  await page.locator(".contactform textarea").fill("Efter vanlig navigering")
+  await page.locator("form.contactform button.submit").click()
+  expect(await waitForSubmissions(request, 2)).toEqual([
+    {
+      sender_name: null,
+      sender_address: "sol@example.test",
+      message: "[skola] Efter SOL-navigering",
+      audience: "oversattarlexikon"
+    },
+    {
+      sender_name: null,
+      sender_address: "ordinarie@example.test",
+      message: "[skola] Efter vanlig navigering",
+      audience: "litteraturbanken"
+    }
+  ])
 })
 
 test("pointer-submitted newsletter has one polite status, retains its address, and clears Contact fields", async ({ page, request }) => {
