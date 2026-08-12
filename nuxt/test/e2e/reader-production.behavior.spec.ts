@@ -315,16 +315,34 @@ test("Reader production keys copy typed values and push alternate media history"
 }) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
 
+  const notices = page.locator(
+    '.reader-page > div[role="status"][aria-live="polite"]:not(.reader-search-state)'
+  )
+  await expect(notices).toHaveCount(2)
+  await expect(notices.filter({ hasText: /.+/u })).toHaveCount(0)
+  await expect(page.locator(".alert_popup")).toHaveCount(0)
+  expect(await notices.evaluateAll(elements => elements.map(element => (
+    element.getBoundingClientRect().height
+  )))).toEqual([0, 0])
+
   await page.keyboard.press("i")
-  await expect(page.locator(".alert_popup")).toHaveText("Kopierade lbworkid")
+  const productionNotice = notices.nth(1)
+  await expect(productionNotice).toHaveText("Kopierade lbworkid")
+  await expect(productionNotice).toHaveClass("alert_popup")
   await page.keyboard.press("u")
-  await expect(page.locator(".alert_popup")).toHaveText("Kopierade urn")
+  await expect(productionNotice).toHaveText("Kopierade urn")
+  await expect(productionNotice).toHaveClass("alert_popup")
+  await expect(notices).toHaveCount(2)
   expect(await page.evaluate(() => (
     window as typeof window & { __copiedValues?: string[] }
   ).__copiedValues)).toEqual([
     "lb-editor-doktor-glas",
     "https://urn.kb.se/resolve?urn=urn:nbn:se:lb-lb-reader-doktor-glas"
   ])
+  await expect(productionNotice).toHaveText("", { timeout: 4_000 })
+  await expect(productionNotice).not.toHaveClass("alert_popup")
+  expect(await productionNotice.evaluate(element => element.getBoundingClientRect().height))
+    .toBe(0)
 
   const historyLength = await page.evaluate(() => window.history.length)
   await page.keyboard.press("[")

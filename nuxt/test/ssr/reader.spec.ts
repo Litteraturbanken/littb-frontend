@@ -185,6 +185,11 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   expect(html).toContain('class="reader-work-search-trigger"')
 
   const { document } = parseHTML(html)
+  const notices = [...document.querySelectorAll(
+    '.reader-page > div[role="status"][aria-live="polite"]:not(.reader-search-state)'
+  )]
+  expect(notices).toHaveLength(2)
+  expect(notices.every(notice => notice.textContent === "" && notice.className === "")).toBe(true)
   const eTextHost = document.querySelector(".reader_main > .etext.txt")
   expect(eTextHost?.tagName).toBe("DIV")
   expect(document.querySelectorAll(".reader_main > .etext.txt")).toHaveLength(1)
