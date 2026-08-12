@@ -9,6 +9,10 @@ import {
 
 const GIT_SHA = "a".repeat(40)
 
+function oversizedEventId(eventId: string): string {
+  return `${eventId}${"e".repeat(12_900)}`
+}
+
 function reporterOptions(overrides: Record<string, unknown> = {}) {
   return {
     endpoint: "/_observability/events",
@@ -394,6 +398,60 @@ describe("browser event delivery", () => {
     expect(JSON.stringify(sent)).not.toContain("x".repeat(100))
   })
 
+  test("normalizes public enqueue error types before batching valid siblings", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+    const unsafe = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new Error("discarded"),
+      component: "UnsafeType",
+      environment: "stage",
+      deploymentGitSha: GIT_SHA,
+      randomUUID: () => "018f47c0-4d5b-7a62-8f41-200000000000"
+    })
+    const valid = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new TypeError("discarded"),
+      component: "ValidType",
+      environment: "stage",
+      deploymentGitSha: GIT_SHA,
+      randomUUID: () => "018f47c0-4d5b-7a62-8f41-200000000001"
+    })
+    const hostileType = "private\nhttps://example.test/?token=secret"
+
+    reporter.enqueue({ ...unsafe, error_type: hostileType } as BrowserEvent)
+    reporter.enqueue(valid)
+    await reporter.flush()
+
+    const body = String(fetchMock.mock.calls[0]?.[1]?.body)
+    expect(JSON.parse(body).events.map((event: { error_type: string }) => event.error_type))
+      .toEqual(["OtherError", "TypeError"])
+    expect(body).not.toContain(hostileType)
+  })
+
+  test("deduplicates distinct unsafe enqueue types after normalization", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+    const event = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new Error("discarded"),
+      environment: "stage",
+      deploymentGitSha: GIT_SHA
+    })
+
+    reporter.enqueue({ ...event, error_type: "PrivateOne" } as BrowserEvent)
+    reporter.enqueue({
+      ...event,
+      event_id: "018f47c0-4d5b-7a62-8f41-200000000002",
+      error_type: "PrivateTwo"
+    } as BrowserEvent)
+    await reporter.flush()
+
+    const sent = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))
+    expect(sent.events).toHaveLength(1)
+    expect(sent.events[0].error_type).toBe("OtherError")
+  })
+
   test("uses beacon on page exit and falls back to isolated keepalive fetch", async () => {
     const fetchMock = vi.fn(async () => {
       throw new Error("offline")
@@ -595,7 +653,9 @@ describe("browser event delivery", () => {
         randomUUID: () => eventId
       })
       eventIds.push(eventId)
-      reporter.enqueue({ ...event, error_type: "E".repeat(13_000) } as BrowserEvent)
+      const oversizedId = oversizedEventId(eventId)
+      eventIds[eventIds.length - 1] = oversizedId
+      reporter.enqueue({ ...event, event_id: oversizedId } as BrowserEvent)
     }
 
     await reporter.flush(true)
@@ -832,7 +892,9 @@ describe("browser event delivery", () => {
           randomUUID: () => eventId
         })
         eventIds.push(eventId)
-        reporter.enqueue({ ...event, error_type: "E".repeat(13_000) } as BrowserEvent)
+        const oversizedId = oversizedEventId(eventId)
+        eventIds[eventIds.length - 1] = oversizedId
+        reporter.enqueue({ ...event, event_id: oversizedId } as BrowserEvent)
       }
 
       const normalFlush = reporter.flush()
@@ -878,7 +940,9 @@ describe("browser event delivery", () => {
           randomUUID: () => eventId
         })
         eventIds.push(eventId)
-        reporter.enqueue({ ...event, error_type: "E".repeat(13_000) } as BrowserEvent)
+        const oversizedId = oversizedEventId(eventId)
+        eventIds[eventIds.length - 1] = oversizedId
+        reporter.enqueue({ ...event, event_id: oversizedId } as BrowserEvent)
       }
 
       const normalFlush = reporter.flush()
@@ -927,7 +991,9 @@ describe("browser event delivery", () => {
           randomUUID: () => eventId
         })
         eventIds.push(eventId)
-        reporter.enqueue({ ...event, error_type: "E".repeat(13_000) } as BrowserEvent)
+        const oversizedId = oversizedEventId(eventId)
+        eventIds[eventIds.length - 1] = oversizedId
+        reporter.enqueue({ ...event, event_id: oversizedId } as BrowserEvent)
       }
 
       const normalFlush = reporter.flush()

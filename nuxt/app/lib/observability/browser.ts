@@ -15,7 +15,21 @@ const FLUSH_DELAY_MS = 1_000
 const MAX_RETRY_DELAY_MS = 30_000
 const TERMINAL_INTAKE_STATUSES = new Set([400, 403, 413, 415, 422])
 const SAFE_LABEL_PATTERN = /^[A-Za-z0-9_.:-]{1,120}$/u
-const ERROR_TYPE_PATTERN = /^[A-Za-z0-9_.:-]{1,160}$/u
+const BROWSER_ERROR_TYPES = new Set([
+  "ApiNetworkError",
+  "ApiResponseError",
+  "ChunkLoadError",
+  "Error",
+  "NullRejection",
+  "OtherError",
+  "RangeError",
+  "ReferenceError",
+  "StringRejection",
+  "SyntaxError",
+  "TypeError",
+  "URIError",
+  "UnknownError"
+])
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u
 const ZERO_GIT_SHA = "0".repeat(40)
 
@@ -77,6 +91,11 @@ function safeRoute(value: string | null | undefined): string | null {
   return value
 }
 
+function safeBrowserErrorType(value: unknown): string {
+  if (typeof value !== "string") return "UnknownError"
+  return BROWSER_ERROR_TYPES.has(value) ? value : "OtherError"
+}
+
 function errorType(error: unknown): string {
   let candidate = "UnknownError"
   if (error instanceof Error) {
@@ -88,21 +107,7 @@ function errorType(error: unknown): string {
   } else if (error !== undefined) {
     candidate = `${typeof error}Rejection`
   }
-  if (!ERROR_TYPE_PATTERN.test(candidate)) return "UnknownError"
-  return new Set([
-    "ApiNetworkError",
-    "ApiResponseError",
-    "ChunkLoadError",
-    "Error",
-    "NullRejection",
-    "RangeError",
-    "ReferenceError",
-    "StringRejection",
-    "SyntaxError",
-    "TypeError",
-    "URIError",
-    "UnknownError"
-  ]).has(candidate) ? candidate : "OtherError"
+  return safeBrowserErrorType(candidate)
 }
 
 async function sha256(value: string): Promise<string> {
@@ -243,15 +248,16 @@ export class BrowserObservabilityReporter {
 
   enqueue(event: BrowserEvent, correlationToken: string | null = null): void {
     const normalizedCorrelationToken = correlationToken ?? null
+    const type = safeBrowserErrorType(event.error_type)
     this.#enqueueIntake({
       event_id: event.event_id,
       event_name: event.event_name,
-      error_type: event.error_type ?? "UnknownError",
+      error_type: type,
       resource_kind: event.attributes.resource_kind ?? "unknown",
       correlation_token: normalizedCorrelationToken
     }, eventIdentity(
       event.event_name,
-      event.error_type ?? "UnknownError",
+      type,
       safeLabel(event.attributes.component),
       safeRoute(event.route),
       event.attributes.resource_kind ?? "unknown"
