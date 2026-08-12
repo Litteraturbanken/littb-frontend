@@ -701,11 +701,111 @@ describe("browser event delivery", () => {
       releaseFetch?.()
       await Promise.all([normalFlush, firstExitFlush, secondExitFlush])
 
-      expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(1, 5))
+      expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(1, 4))
       expect(beacon.mock.calls.reduce(
         (total, beaconCall) => total + (beaconCall[1] as Blob).size,
         0
       )).toBeLessThanOrEqual(60 * 1024)
+      expect(vi.getTimerCount()).toBe(1)
+
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(fetchBodies(fetchMock).at(-1)).toEqual([eventIds[0]])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  test.each([202, 503])(
+    "reserves active keepalive bytes from the exit budget when it settles with %i",
+    async status => {
+      let releaseFetch: (() => void) | undefined
+      const fetchMock = vi.fn(() => new Promise<Response>(resolve => {
+        releaseFetch = () => resolve(new Response(null, { status }))
+      }))
+      const beacon = vi.fn(() => true)
+      const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
+      const eventIds: string[] = []
+      for (let index = 0; index < 6; index += 1) {
+        const eventId = `018f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`
+        const event = await createBrowserErrorEvent({
+          eventName: "browser.error",
+          error: new Error(`discarded-${index}`),
+          component: `Budget${index}`,
+          resourceKind: "unknown",
+          route: "/bibliotek",
+          environment: "stage",
+          deploymentGitSha: GIT_SHA,
+          randomUUID: () => eventId
+        })
+        eventIds.push(eventId)
+        reporter.enqueue({ ...event, error_type: "E".repeat(13_000) } as BrowserEvent)
+      }
+
+      const normalFlush = reporter.flush()
+      const exitFlush = reporter.flush(true)
+      releaseFetch?.()
+      await Promise.all([normalFlush, exitFlush])
+
+      const initiatedBytes = String(fetchMock.mock.calls[0]?.[1]?.body).length
+        + beacon.mock.calls.reduce(
+          (total, beaconCall) => total + (beaconCall[1] as Blob).size,
+          0
+        )
+      expect(initiatedBytes).toBeLessThanOrEqual(60 * 1024)
+      expect((await beaconBodies(beacon)).flat()).toEqual(eventIds.slice(1, 4))
+    }
+  )
+
+  test("charges a blocked tail transport before considering an active retry", async () => {
+    vi.useFakeTimers()
+    try {
+      let releaseActive: (() => void) | undefined
+      const fetchMock = vi.fn()
+        .mockImplementationOnce(() => new Promise<Response>(resolve => {
+          releaseActive = () => resolve(new Response(null, { status: 503 }))
+        }))
+        .mockResolvedValueOnce(new Response(null, { status: 503 }))
+        .mockResolvedValue(new Response(null, { status: 202 }))
+      let beaconCall = 0
+      const beacon = vi.fn(() => ++beaconCall < 3)
+      const reporter = new BrowserObservabilityReporter(reporterOptions({
+        fetch: fetchMock,
+        beacon,
+        autoFlush: true
+      }))
+      const eventIds: string[] = []
+      for (let index = 0; index < 6; index += 1) {
+        const eventId = `018f47c0-4d5b-7a62-8f41-${String(index).padStart(12, "0")}`
+        const event = await createBrowserErrorEvent({
+          eventName: "browser.error",
+          error: new Error(`discarded-${index}`),
+          component: `BudgetBlocked${index}`,
+          resourceKind: "unknown",
+          route: "/bibliotek",
+          environment: "stage",
+          deploymentGitSha: GIT_SHA,
+          randomUUID: () => eventId
+        })
+        eventIds.push(eventId)
+        reporter.enqueue({ ...event, error_type: "E".repeat(13_000) } as BrowserEvent)
+      }
+
+      const normalFlush = reporter.flush()
+      const exitFlush = reporter.flush(true)
+      releaseActive?.()
+      await Promise.all([normalFlush, exitFlush])
+
+      expect(await beaconBodies(beacon)).toEqual([
+        [eventIds[1]],
+        [eventIds[2]],
+        [eventIds[3]]
+      ])
+      expect(fetchBodies(fetchMock)).toEqual([[eventIds[0]], [eventIds[3]]])
+      const initiatedBytes = String(fetchMock.mock.calls[0]?.[1]?.body).length
+        + (beacon.mock.calls[0]?.[1] as Blob).size
+        + (beacon.mock.calls[1]?.[1] as Blob).size
+        + String(fetchMock.mock.calls[1]?.[1]?.body).length
+      expect(initiatedBytes).toBeLessThanOrEqual(60 * 1024)
       expect(vi.getTimerCount()).toBe(1)
 
       await vi.advanceTimersByTimeAsync(1_000)

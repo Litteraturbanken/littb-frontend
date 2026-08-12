@@ -201,6 +201,7 @@ export class BrowserObservabilityReporter {
   #timer: ReturnType<typeof setTimeout> | undefined
   #flushing: Promise<void> | undefined
   #activeBatch: QueuedBrowserEvent[] | undefined
+  #activeBatchBytes = 0
   #activeBatchFailed = false
   #exitFlushing: Promise<void> | undefined
   #retryDelayMs = FLUSH_DELAY_MS
@@ -315,16 +316,20 @@ export class BrowserObservabilityReporter {
 
   async #deliverAroundActiveFlush(): Promise<void> {
     const activeFlush = this.#flushing
-    const exitDelivery = await this.#deliverOnExit()
+    const activeBatchBytes = activeFlush ? this.#activeBatchBytes : 0
+    const exitDelivery = await this.#deliverOnExit(
+      MAX_PAGE_EXIT_BYTES - activeBatchBytes
+    )
     if (activeFlush) {
       await activeFlush
       if (this.#activeBatchFailed && this.#activeBatch) {
         const activeBatch = this.#activeBatch
         this.#activeBatch = undefined
+        this.#activeBatchBytes = 0
         this.#activeBatchFailed = false
         const activeDelivery = await this.#deliverExitBatch(
           activeBatch,
-          MAX_PAGE_EXIT_BYTES - exitDelivery.sentBytes
+          MAX_PAGE_EXIT_BYTES - activeBatchBytes - exitDelivery.sentBytes
         )
         if (!activeDelivery.delivered) {
           this.#requeueFront(activeBatch)
@@ -332,11 +337,16 @@ export class BrowserObservabilityReporter {
         }
         else if (!exitDelivery.blocked) {
           await this.#deliverOnExit(
-            MAX_PAGE_EXIT_BYTES - exitDelivery.sentBytes - activeDelivery.bytes
+            MAX_PAGE_EXIT_BYTES
+            - activeBatchBytes
+            - exitDelivery.sentBytes
+            - activeDelivery.bytes
           )
         }
       } else if (!exitDelivery.blocked) {
-        await this.#deliverOnExit(MAX_PAGE_EXIT_BYTES - exitDelivery.sentBytes)
+        await this.#deliverOnExit(
+          MAX_PAGE_EXIT_BYTES - activeBatchBytes - exitDelivery.sentBytes
+        )
       }
     }
   }
@@ -411,14 +421,17 @@ export class BrowserObservabilityReporter {
     this.#activeBatchFailed = false
 
     const body = serializedBatch(batch)
+    this.#activeBatchBytes = byteLength(body)
     if (await this.#deliverByFetch(body)) {
       this.#activeBatch = undefined
+      this.#activeBatchBytes = 0
       this.#retryDelayMs = FLUSH_DELAY_MS
       return
     }
     this.#activeBatchFailed = true
     if (this.#exitFlushing) return
     this.#activeBatch = undefined
+    this.#activeBatchBytes = 0
     this.#activeBatchFailed = false
     this.#retryBatch(batch)
   }
@@ -430,11 +443,11 @@ export class BrowserObservabilityReporter {
     const body = serializedBatch(batch)
     const bodyBytes = byteLength(body)
     if (bodyBytes > byteBudget) return { bytes: 0, delivered: false }
-    if (this.#deliverByBeacon(body) || await this.#deliverByFetch(body)) {
+    const delivered = this.#deliverByBeacon(body) || await this.#deliverByFetch(body)
+    if (delivered) {
       this.#retryDelayMs = FLUSH_DELAY_MS
-      return { bytes: bodyBytes, delivered: true }
     }
-    return { bytes: 0, delivered: false }
+    return { bytes: bodyBytes, delivered }
   }
 
   async #deliverOnExit(byteBudget = MAX_PAGE_EXIT_BYTES): Promise<{
@@ -457,6 +470,7 @@ export class BrowserObservabilityReporter {
         continue
       }
       if (!await this.#deliverByFetch(body)) {
+        sentBytes += bodyBytes
         this.#retryBatch(batch)
         return { blocked: true, sentBytes }
       }
