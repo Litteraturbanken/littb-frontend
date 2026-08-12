@@ -1,13 +1,22 @@
 import type { H3Event } from "h3"
-import { brotliDecompressSync } from "node:zlib"
-import { beforeAll, describe, expect, test, vi } from "vitest"
+import {
+  brotliCompressSync as actualBrotliCompressSync,
+  brotliDecompressSync
+} from "node:zlib"
+import { beforeAll, beforeEach, describe, expect, test, vi } from "vitest"
 
 import { acceptsBrotliEncoding } from "../../server/utils/response-compression"
 
 type BeforeResponseHook = (
   event: H3Event,
   response: { body: unknown }
-) => void
+) => Promise<void> | void
+
+type PendingCompression = {
+  body: Buffer
+  callback: (error: Error | null, result?: Buffer) => void
+  options: Parameters<typeof actualBrotliCompressSync>[1]
+}
 
 type ResponseOptions = {
   acceptEncoding?: string
@@ -44,8 +53,21 @@ class TestResponse {
 }
 
 let beforeResponse: BeforeResponseHook
+const pendingCompressions: PendingCompression[] = []
+const brotliCompressSync = vi.fn(actualBrotliCompressSync)
 
 beforeAll(async () => {
+  vi.doMock("node:zlib", async (importOriginal) => ({
+    ...await importOriginal<typeof import("node:zlib")>(),
+    brotliCompress(
+      body: Buffer,
+      options: PendingCompression["options"],
+      callback: PendingCompression["callback"]
+    ) {
+      pendingCompressions.push({ body, callback, options })
+    },
+    brotliCompressSync
+  }))
   vi.doMock("#server/utils/response-compression", () => ({ acceptsBrotliEncoding }))
   vi.stubGlobal("defineNitroPlugin", (register: (app: unknown) => void) => {
     register({
@@ -57,6 +79,11 @@ beforeAll(async () => {
     })
   })
   await import("../../server/plugins/response-compression")
+})
+
+beforeEach(() => {
+  pendingCompressions.length = 0
+  brotliCompressSync.mockClear()
 })
 
 function runResponse(options: ResponseOptions = {}) {
@@ -83,9 +110,9 @@ function runResponse(options: ResponseOptions = {}) {
   } as unknown as H3Event
   const response = { body: options.body ?? "A".repeat(4_096) }
 
-  beforeResponse(event, response)
+  const completion = Promise.resolve(beforeResponse(event, response))
 
-  return { nodeResponse, response }
+  return { completion, nodeResponse, response }
 }
 
 describe("Brotli content negotiation", () => {
@@ -111,8 +138,9 @@ describe("Brotli content negotiation", () => {
 describe("HTML response compression boundary", () => {
   test.each([undefined, "gzip"])(
     "varies an eligible identity response when the request accepts %j",
-    (acceptEncoding) => {
-      const { nodeResponse, response } = runResponse({ acceptEncoding })
+    async (acceptEncoding) => {
+      const { completion, nodeResponse, response } = runResponse({ acceptEncoding })
+      await completion
 
       expect(response.body).toBe("A".repeat(4_096))
       expect(nodeResponse.getHeader("content-encoding")).toBeUndefined()
@@ -121,8 +149,21 @@ describe("HTML response compression boundary", () => {
     }
   )
 
-  test("compresses the same eligible representation when Brotli is accepted", () => {
-    const { nodeResponse, response } = runResponse({ acceptEncoding: "br" })
+  test("compresses without invoking the synchronous Brotli API", async () => {
+    const { completion, nodeResponse, response } = runResponse({ acceptEncoding: "br" })
+    let settled = false
+    void completion.finally(() => { settled = true })
+
+    expect(pendingCompressions).toHaveLength(1)
+    expect(settled).toBe(false)
+    expect(response.body).toBe("A".repeat(4_096))
+    expect(nodeResponse.getHeader("content-encoding")).toBeUndefined()
+    expect(nodeResponse.getHeader("content-length")).toBe("4096")
+    expect(brotliCompressSync).not.toHaveBeenCalled()
+
+    const pending = pendingCompressions.shift()!
+    pending.callback(null, actualBrotliCompressSync(pending.body, pending.options))
+    await completion
 
     expect(Buffer.isBuffer(response.body)).toBe(true)
     expect(brotliDecompressSync(response.body as Buffer).toString()).toBe("A".repeat(4_096))
@@ -131,16 +172,29 @@ describe("HTML response compression boundary", () => {
     expect(nodeResponse.getHeader("content-length")).toBeUndefined()
   })
 
-  test("merges and case-insensitively deduplicates existing Vary tokens", () => {
-    const { nodeResponse } = runResponse({
+  test("leaves the identity representation intact when async compression fails", async () => {
+    const { completion, nodeResponse, response } = runResponse({ acceptEncoding: "br" })
+    pendingCompressions.shift()!.callback(new Error("compression unavailable"))
+
+    await expect(completion).rejects.toThrow("compression unavailable")
+    expect(response.body).toBe("A".repeat(4_096))
+    expect(nodeResponse.getHeader("content-encoding")).toBeUndefined()
+    expect(nodeResponse.getHeader("content-length")).toBe("4096")
+    expect(nodeResponse.getHeader("vary")).toBe("Accept-Encoding")
+  })
+
+  test("merges and case-insensitively deduplicates existing Vary tokens", async () => {
+    const { completion, nodeResponse } = runResponse({
       vary: ["Origin, ACCEPT-ENCODING", "origin, Cookie", "accept-encoding"]
     })
+    await completion
 
     expect(nodeResponse.getHeader("vary")).toBe("Origin, ACCEPT-ENCODING, Cookie")
   })
 
-  test("preserves a wildcard Vary header", () => {
-    const { nodeResponse } = runResponse({ vary: "*" })
+  test("preserves a wildcard Vary header", async () => {
+    const { completion, nodeResponse } = runResponse({ vary: "*" })
+    await completion
 
     expect(nodeResponse.getHeader("vary")).toBe("*")
   })
@@ -154,8 +208,12 @@ describe("HTML response compression boundary", () => {
     ["a non-HTML representation", { contentType: "text/plain" }],
     ["a POST response", { method: "POST" }],
     ["an OPTIONS response", { method: "OPTIONS" }]
-  ] satisfies [string, ResponseOptions][])("does not vary or compress %s", (_case, options) => {
-    const { nodeResponse, response } = runResponse({ ...options, acceptEncoding: "br" })
+  ] satisfies [string, ResponseOptions][])("does not vary or compress %s", async (_case, options) => {
+    const { completion, nodeResponse, response } = runResponse({
+      ...options,
+      acceptEncoding: "br"
+    })
+    await completion
 
     expect(response.body).toEqual(options.body ?? "A".repeat(4_096))
     expect(nodeResponse.getHeader("content-encoding")).toBe(options.contentEncoding)
@@ -163,8 +221,9 @@ describe("HTML response compression boundary", () => {
     expect(nodeResponse.getHeader("content-length")).toBe("4096")
   })
 
-  test("varies an eligible HEAD representation", () => {
-    const { nodeResponse } = runResponse({ method: "HEAD" })
+  test("varies an eligible HEAD representation", async () => {
+    const { completion, nodeResponse } = runResponse({ method: "HEAD" })
+    await completion
 
     expect(nodeResponse.getHeader("vary")).toBe("Accept-Encoding")
   })

@@ -1,4 +1,4 @@
-import { constants, brotliCompressSync } from "node:zlib"
+import { brotliCompress, constants } from "node:zlib"
 
 import {
   getRequestHeader,
@@ -10,6 +10,20 @@ import {
 import { acceptsBrotliEncoding } from "#server/utils/response-compression"
 
 const minimumCompressibleCharacters = 1_024
+const brotliOptions = {
+  params: {
+    [constants.BROTLI_PARAM_QUALITY]: 4
+  }
+}
+
+function compressHtml(body: string): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    brotliCompress(Buffer.from(body), brotliOptions, (error, result) => {
+      if (error) reject(error)
+      else resolve(result)
+    })
+  })
+}
 
 function isEligibleHtmlResponse(
   event: Parameters<typeof getResponseStatus>[0],
@@ -43,16 +57,12 @@ function appendAcceptEncodingVary(event: Parameters<typeof getResponseStatus>[0]
 }
 
 export default defineNitroPlugin((nitroApp) => {
-  nitroApp.hooks.hook("beforeResponse", (event, response) => {
+  nitroApp.hooks.hook("beforeResponse", async (event, response) => {
     if (!isEligibleHtmlResponse(event, response.body)) return
     appendAcceptEncodingVary(event)
     if (!acceptsBrotliEncoding(getRequestHeader(event, "accept-encoding"))) return
 
-    response.body = brotliCompressSync(Buffer.from(response.body), {
-      params: {
-        [constants.BROTLI_PARAM_QUALITY]: 4
-      }
-    })
+    response.body = await compressHtml(response.body)
     removeResponseHeader(event, "content-length")
     setResponseHeader(event, "content-encoding", "br")
   })
