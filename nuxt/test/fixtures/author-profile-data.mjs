@@ -338,7 +338,7 @@ export const unsafeSearchAuthorProfile = {
   full_name: "Osäker sökprofil",
   surname: "Sökprofil",
   canonical_path: "/författare/UnsafeSearch",
-  search_url: "https://evil.invalid/sok?forfattare=UnsafeSearch"
+  search_url: "/sok?forfattare=StrindbergA&avancerad"
 }
 
 /** @satisfies {AuthorProfile} */

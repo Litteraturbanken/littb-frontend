@@ -121,7 +121,7 @@ test("SSR omits an unsafe backend author search URL", async ({ request }) => {
   const { document } = parseHTML(await response.text())
   const navigation = document.querySelector('nav[aria-label="Författarsidor"]')
 
-  expect(navigation?.querySelector('a[href*="evil.invalid"]')).toBeNull()
+  expect(navigation?.querySelector('a[href*="forfattare=StrindbergA"]')).toBeNull()
   expect([...navigation?.querySelectorAll("a") ?? []].map(link => link.textContent?.trim()))
     .not.toContain("Sök i texterna")
   expect(await profileRequests(request)).toEqual(["/private-v2/authors/UnsafeSearch"])

@@ -7,6 +7,7 @@ import {
   createAuthorProfileView,
   encodeRfc3986Segment,
   formatAuthorYears,
+  safeAuthorSearchHref,
   sanitizeAuthorHtml,
   validateAuthorRouteParam
 } from "../../app/lib/author-profile"
@@ -477,16 +478,36 @@ describe("safe author profile view model", () => {
   })
 
   test.each([
-    ["/sok?forfattare=StrindbergA&avancerad", "/s%C3%B6k?forfattare=StrindbergA&avancerad"],
-    ["https://evil.invalid/sok?forfattare=StrindbergA", ""],
-    ["/sok?forfattare=%E0%A4%A", ""],
-    ["/sok?forfattare=Strindberg\ud800A", ""],
-    ["/bibliotek?forfattare=StrindbergA", ""]
-  ])("keeps only a safe internal search URL: %s", (searchUrl, expected) => {
+    ["/sok?forfattare=StrindbergA&avancerad", "StrindbergA", "/s%C3%B6k?forfattare=StrindbergA&avancerad"],
+    ["/sök?avancerad&forfattare=O%27Neil%28A", "O'Neil(A", "/s%C3%B6k?avancerad&forfattare=O%27Neil%28A"],
+    ["/sok?forfattare=Annan&avancerad", "StrindbergA", ""],
+    ["/sok?avancerad", "StrindbergA", ""],
+    ["/sok?forfattare=StrindbergA", "StrindbergA", ""],
+    ["/sok?forfattare=StrindbergA&forfattare=Annan&avancerad", "StrindbergA", ""],
+    ["/sok?forfattare=StrindbergA&avancerad&avancerad", "StrindbergA", ""],
+    ["/sok?forfattare=StrindbergA&avancerad=true", "StrindbergA", ""],
+    ["/sok?forfattare=StrindbergA&avancerad&genre=drama", "StrindbergA", ""],
+    ["/sok?forfattare=StrindbergA&avancerad#resultat", "StrindbergA", ""],
+    ["https://evil.invalid/sok?forfattare=StrindbergA&avancerad", "StrindbergA", ""],
+    ["/sok?forfattare=%E0%A4%A&avancerad", "StrindbergA", ""],
+    ["/sok?forfattare=Strindberg%25ZZ&avancerad", "StrindbergA", ""],
+    ["/sok?forfattare=Strindberg\ud800A&avancerad", "StrindbergA", ""],
+    ["/sok?forfattare=Bad%250AId&avancerad", "Bad%0AId", ""],
+    ["/sok?forfattare=Bad%255cId&avancerad", "Bad%5cId", ""],
+    ["/sok?forfattare=Bad%2525Id&avancerad", "Bad%25Id", ""],
+    [`/sok?forfattare=StrindbergA&avancerad${"x".repeat(2_001)}`, "StrindbergA", ""],
+    ["/bibliotek?forfattare=StrindbergA&avancerad", "StrindbergA", ""]
+  ])("keeps only a relational internal search URL: %s", (
+    searchUrl,
+    authorId,
+    expected
+  ) => {
     const profile = maliciousProfile()
+    profile.author_id = authorId
     profile.search_url = searchUrl
 
     expect(createAuthorProfileView(profile, "ordinary").searchUrl).toBe(expected)
+    expect(safeAuthorSearchHref(searchUrl, authorId)).toBe(expected)
   })
 
   test("copies validated profile links without rewriting their destinations", () => {

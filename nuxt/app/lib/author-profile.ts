@@ -295,13 +295,31 @@ function profileLinks(links: AuthorProfile["related_links"]): Array<{ label: str
   })
 }
 
-export function safeAuthorSearchHref(value: string | null | undefined): string {
-  if (!value) return ""
+function authorSearchParamsMatch(rawQuery: string, authorId: string): boolean {
+  const params = new URLSearchParams(rawQuery)
+  return [...params.keys()].length === 2
+    && params.getAll("forfattare").length === 1
+    && params.get("forfattare") === authorId
+    && params.getAll("avancerad").length === 1
+    && params.get("avancerad") === ""
+}
+
+export function safeAuthorSearchHref(value: string | null | undefined, authorId: string): string {
+  if (!value || value.length > 2_000 || !validateAuthorRouteParam(authorId)) return ""
   const href = safeNativeHref(value)
   if (href === null) return ""
   const canonical = canonicalNuxtHref(href)
-  const pathname = canonical.split(/[?#]/u, 1)[0]
-  return pathname === "/s%C3%B6k" && isNuxtInternalHref(canonical) ? canonical : ""
+  const { rawPath, rawQuery, hasQuery, hasFragment } = rawUrlParts(canonical)
+  if (rawPath !== "/s%C3%B6k" || !hasQuery || hasFragment || !isNuxtInternalHref(canonical)) {
+    return ""
+  }
+  const decodedQuery = repeatedlyDecode(rawQuery)
+  if (decodedQuery === null || hasUnsafeHrefCodeUnits(decodedQuery)) return ""
+  try {
+    return authorSearchParamsMatch(rawQuery, authorId) ? canonical : ""
+  } catch {
+    return ""
+  }
 }
 
 function isAuthorPortraitAssetSegment(value: string | undefined): value is string {
@@ -371,7 +389,7 @@ export function createAuthorProfileView(
           captionHtml: sanitizeAuthorHtml(selectedPortrait.caption_html)
         }
       : null,
-    searchUrl: safeAuthorSearchHref(profile.search_url),
+    searchUrl: safeAuthorSearchHref(profile.search_url, profile.author_id),
     audioUrl: safeHttpUrl(profile.audio_url),
     mapUrl: safeHttpUrl(profile.map_url),
     hasMore: profile.has_more === true,

@@ -112,21 +112,7 @@ function isSafeHttpUrl(value: string | null): boolean {
 }
 
 function isSafeSearchUrl(value: string | null, authorId: string): boolean {
-  if (value === null || safeAuthorSearchHref(value) === "") return value === null
-  const safe = safeRootHref(value)
-  if (!safe || safe.hasFragment || (safe.decodedPath !== "/sok" && safe.decodedPath !== "/sök")) {
-    return false
-  }
-  try {
-    const params = new URL(value, "https://author-works.invalid").searchParams
-    return [...params.keys()].length === 2
-      && params.getAll("forfattare").length === 1
-      && params.get("forfattare") === authorId
-      && params.getAll("avancerad").length === 1
-      && params.get("avancerad") === ""
-  } catch {
-    return false
-  }
+  return value === null || safeAuthorSearchHref(value, authorId) !== ""
 }
 
 function isSafePersonUrl(url: string, authorId: string): boolean {
