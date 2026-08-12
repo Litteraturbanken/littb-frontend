@@ -5,7 +5,7 @@ import {
   RENDERABLE_HTML_TAGS,
   type RenderableHtmlProps,
   type RenderableHtmlTag
-} from "../../../shared/types/renderable-html"
+} from "#shared/types/renderable-html"
 
 const isRenderableHtmlTag = (value: unknown): value is RenderableHtmlTag =>
   typeof value === "string" && RENDERABLE_HTML_TAGS.some(tag => tag === value)
