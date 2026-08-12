@@ -103,11 +103,11 @@ describe("Presentation XHTML parser", () => {
   test("removes non-src body subresource attributes and inline styles", () => {
     const parsed = parsePresentationDocument(`
       <html><body><h1>Attribut-prov</h1>
-        <img id="image" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg" srcset="https://evil.test/srcset.jpg 1x">
+        <img id="image" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg" srcset="https://evil.test/srcset.jpg 1x" ATTRIBUTIONSRC="https://evil.test/image-attribution">
         <table id="legacy-background" background="https://evil.test/background.jpg"><tr><td>Tabell</td></tr></table>
         <p id="inline-style" style="background-image:url(https://evil.test/style.jpg)">Text</p>
         <p id="other-url-attributes" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg" action="https://evil.test/action" poster="https://evil.test/poster.jpg" xlink:href="https://evil.test/vector">Fler attribut</p>
-        <a id="ping-link" href="/författare/Test" ping="https://evil.test/ping">Länk</a>
+        <a id="ping-link" href="/författare/Test" ping="https://evil.test/ping" attributionsrc="https://evil.test/link-attribution">Länk</a>
       </body></html>`)
 
     expect(parsed.bodyHtml).toContain('id="image" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg"')
@@ -115,7 +115,7 @@ describe("Presentation XHTML parser", () => {
     expect(parsed.bodyHtml).toContain('id="inline-style">Text</p>')
     expect(parsed.bodyHtml).toContain('id="other-url-attributes">Fler attribut</p>')
     expect(parsed.bodyHtml).toContain('id="ping-link" href="/författare/Test">Länk</a>')
-    expect(parsed.bodyHtml).not.toMatch(/(?:srcset|background=|style=|action=|poster=|xlink:href|ping=|evil\.test)/iu)
+    expect(parsed.bodyHtml).not.toMatch(/(?:srcset|background=|style=|action=|poster=|xlink:href|ping=|attributionsrc|evil\.test)/iu)
   })
 
   test("issues stylesheet hrefs only for normalized root-owned paths", () => {

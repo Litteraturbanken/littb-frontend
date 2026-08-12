@@ -57,6 +57,7 @@ const blockedPresentationBodyElements = new Set([
 const removedPresentationBodyAttributes = new Set([
   "action",
   "archive",
+  "attributionsrc",
   "background",
   "cite",
   "codebase",

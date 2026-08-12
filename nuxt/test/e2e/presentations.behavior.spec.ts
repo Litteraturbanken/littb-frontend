@@ -135,11 +135,17 @@ test("managed Presentation body emits no unowned browser subresource requests", 
     "src",
     "/red/presentationer/specialomraden/Burmanbilder/1.jpg"
   )
+  await expect(page.locator("#external-attribution")).toHaveAttribute(
+    "src",
+    "/red/presentationer/specialomraden/Burmanbilder/1.jpg"
+  )
+  await expect(page.locator("#external-attribution")).not.toHaveAttribute("attributionsrc")
   for (const locator of ["#external-src", "#external-srcset", "#legacy-background", "#inline-style"]) {
     await expect(page.locator(locator)).not.toHaveAttribute("src")
     await expect(page.locator(locator)).not.toHaveAttribute("srcset")
     await expect(page.locator(locator)).not.toHaveAttribute("background")
     await expect(page.locator(locator)).not.toHaveAttribute("style")
+    await expect(page.locator(locator)).not.toHaveAttribute("attributionsrc")
   }
   expect(externalRequests).toEqual([])
   expect(await presentationRequests(request)).toContain(
