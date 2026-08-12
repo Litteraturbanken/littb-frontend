@@ -296,7 +296,7 @@ describe("safe author profile view model", () => {
     expect(JSON.stringify(view)).not.toMatch(/drama-(?:raw|source-raw|caption-raw)|v-html|onclick|style=/)
   })
 
-  test("falls back to the ordinary introduction and matching byline as one pair", () => {
+  test("falls back to ordinary introduction, byline, and sources as one branch when Dramawebben has none", () => {
     const profile = maliciousProfile()
     if (!profile.dramawebben) throw new Error("Rich fixture must have a Dramawebben profile")
     profile.dramawebben.introduction_html = null
@@ -310,6 +310,18 @@ describe("safe author profile view model", () => {
 
     expect(view.introductionHtml).toBe("<p>Ordinary intro</p>")
     expect(view.introductionBy).toBe("Gösta M. Bergman")
+    expect(view.sourceHtml).toEqual(["<i>Ordinary source</i>"])
+  })
+
+  test("falls back to ordinary sources when the Dramawebben introduction is empty", () => {
+    const profile = maliciousProfile()
+    if (!profile.dramawebben) throw new Error("Rich fixture must have a Dramawebben profile")
+    profile.dramawebben.introduction_html = ""
+
+    const view = createAuthorProfileView(profile, "dramawebben")
+
+    expect(view.introductionHtml).toBe("<p>Ordinary intro</p>")
+    expect(view.sourceHtml).toEqual(["<i>Ordinary source</i>"])
   })
 
   test("does not borrow the ordinary byline when a Dramawebben introduction has none", () => {

@@ -316,7 +316,7 @@ export function createAuthorProfileView(
   const introductionBy = useDramaIntroduction
     ? dramawebben?.introduction_by
     : profile.introduction_by
-  const sources = variant === "dramawebben"
+  const sources = useDramaIntroduction
     ? dramawebben?.source_html ?? []
     : profile.source_html
   const selectedPortrait = variant === "dramawebben"
