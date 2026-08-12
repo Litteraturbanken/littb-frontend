@@ -57,7 +57,7 @@ describe("Presentation XHTML parser", () => {
     expect(parsed.title).toBe("Första rubriken har flera än | Litteraturbanken")
   })
 
-  test("root-normalizes ordinary anchor navigation independently from body subresources", () => {
+  test("allows only approved ordinary anchor navigation schemes", () => {
     const parsed = parsePresentationDocument(`
       <html><body><h1>URL-prov</h1>
         <a id="relative" href="red/presentationer/file.pdf" download>PDF</a>
@@ -65,8 +65,18 @@ describe("Presentation XHTML parser", () => {
         <a id="fragment" href="#del">Del</a>
         <a id="mail" href="mailto:test@example.test">Mejl</a>
         <a id="telephone" href="tel:+461234">Telefon</a>
+        <a id="http" href="http://example.test/path">HTTP</a>
         <a id="external" href="https://example.test/path">Extern</a>
         <a id="protocol-relative" href="//cdn.example.test/file">CDN</a>
+        <a id="file" href="file:///etc/passwd">Fil</a>
+        <a id="blob" href="blob:https://example.test/id">Blob</a>
+        <a id="intent" href="intent://example.test/#Intent">Intent</a>
+        <a id="custom" href="custom:document">Annan</a>
+        <a id="credential" href="https://user:password@example.test/path">Inloggad</a>
+        <a id="control" href="https://example.test/&#x0B;path">Kontroll</a>
+        <a id="encoded-control" href="https://example.test/%0Bpath">Kodad kontroll</a>
+        <a id="malformed" href="https://">Trasig</a>
+        <a id="malformed-escape" href="https://example.test/%">Trasig kodning</a>
       </body></html>`)
 
     expect(parsed.bodyHtml).toContain('id="relative" href="/red/presentationer/file.pdf" download')
@@ -75,9 +85,13 @@ describe("Presentation XHTML parser", () => {
       "#del",
       "mailto:test@example.test",
       "tel:+461234",
-      "https://example.test/path",
-      "//cdn.example.test/file"
+      "http://example.test/path",
+      "https://example.test/path"
     ]) expect(parsed.bodyHtml).toContain(value)
+    for (const id of ["protocol-relative", "file", "blob", "intent", "custom", "credential", "control", "encoded-control", "malformed", "malformed-escape"]) {
+      expect(parsed.bodyHtml).toContain(`id="${id}"`)
+      expect(parsed.bodyHtml).not.toContain(`id="${id}" href=`)
+    }
   })
 
   test("keeps only canonical owned Presentation image sources", () => {
@@ -221,6 +235,24 @@ describe("Presentation XHTML parser", () => {
 })
 
 describe("Presentation background parser", () => {
+  test.each([
+    ["truncated background", '<backgrounds><background target="/presentationer/*" url="/red/bilder/bakgrundsbilder/rostratt_a.jpg">'],
+    ["mismatched nested nodes", '<backgrounds><background target="/presentationer/*" url="/red/bilder/bakgrundsbilder/rostratt_a.jpg"><style>one</background></style></backgrounds>'],
+    ["truncated style", '<backgrounds><background target="/presentationer/*" url="/red/bilder/bakgrundsbilder/rostratt_a.jpg"><style>one</style>'],
+    ["undeclared entity", '<backgrounds><background target="/presentationer/*" url="/red/bilder/bakgrundsbilder/rostratt_a.jpg"><style>&unknown;</style></background></backgrounds>'],
+    ["invalid comment", '<backgrounds><background target="/presentationer/*" url="/red/bilder/bakgrundsbilder/rostratt_a.jpg"><!-- invalid -- comment --></background></backgrounds>']
+  ])("fails closed for %s XML", (_label, source) => {
+    expect(parseBackgroundRules(source)).toEqual([])
+  })
+
+  test("fails closed for structural mutations of the reviewed background fixture", async () => {
+    const source = await readFile(fileURLToPath(new URL("backgrounds.xml", fixtureRoot)), "utf8")
+    for (const mutation of [
+      source.replace("</backgrounds>", ""),
+      source.replace("</style>", "</background>")
+    ]) expect(parseBackgroundRules(mutation)).toEqual([])
+  })
+
   test("keeps ordered rules and exact duplicate declarations", async () => {
     const source = await readFile(
       fileURLToPath(new URL("backgrounds.xml", fixtureRoot)),
@@ -303,8 +335,7 @@ describe("Presentation background parser", () => {
     "/red/other/background.jpg",
     "/red/bilder/../presentationer/background.jpg",
     "/red/bilder/%2e%2e/presentationer/background.jpg",
-    "/red/bilder/background.jpg\\\\outside",
-    "/red/bilder/background.jpg\u0000"
+    "/red/bilder/background.jpg\\\\outside"
   ])("rejects non-owned background asset URL %s", imagePath => {
     const encodedImagePath = imagePath
       .replaceAll("&", "&amp;")
@@ -316,6 +347,14 @@ describe("Presentation background parser", () => {
     `)
 
     expect(rule?.imagePath).toBeNull()
+  })
+
+  test("rejects an XML-invalid background control entity before rule extraction", () => {
+    expect(parseBackgroundRules(`
+      <backgrounds>
+        <background target="/presentationer/specialomraden/*" url="/red/bilder/background.jpg&#0;" />
+      </backgrounds>
+    `)).toEqual([])
   })
 })
 
