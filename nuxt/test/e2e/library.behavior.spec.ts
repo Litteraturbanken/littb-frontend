@@ -719,6 +719,68 @@ test("delayed Works and Dikt transitions never relabel rows owned by the other m
   await expect(page.locator("[data-library-work-row]")).toHaveCount(0)
 })
 
+test("replacement loading removes stale Works and Dikt controls until results settle", async ({
+  page,
+  request
+}) => {
+  for (const item of [
+    {
+      mode: "works",
+      initialSort: "popularitet",
+      nextSort: "titlar",
+      apiSort: "title",
+      row: "[data-library-work-row]",
+      restoredText: "Doktor Glas"
+    },
+    {
+      mode: "parts",
+      initialSort: "titlar",
+      nextSort: "forfattare",
+      apiSort: "author",
+      row: "[data-library-part-row]",
+      restoredText: "En novell"
+    }
+  ] as const) {
+    await page.goto(`/bibliotek?visa=${item.mode}&sort=${item.initialSort}`, {
+      waitUntil: "networkidle"
+    })
+    await expect(page.locator(item.row).first()).toBeVisible()
+    if (item.mode === "works") {
+      await page.locator("[data-library-work-toggle]").first().click()
+      await expect(page.locator("[data-library-work-actions]").first()).toBeVisible()
+    } else {
+      await expect(page.locator("[data-library-page]").first()).toBeVisible()
+    }
+    await setLibraryDelay(request, "search", {
+      mode: item.mode,
+      filters: libraryFilters(),
+      sort: item.apiSort,
+      reverse: false,
+      page: 1,
+      ...(item.mode === "works" ? { source_only: false } : {})
+    })
+
+    await page.locator(`[data-library-sort="${item.nextSort}"]`).click()
+    await expect(page.locator('[data-library-loading][role="status"]')).toHaveCount(1)
+    await expect(page.locator('[data-library-loading][role="status"] .sr-only'))
+      .toHaveText("Laddar resultat")
+    await expect(page.locator(item.row)).toHaveCount(0)
+    await expect(page.locator("[data-library-work-actions]")).toHaveCount(0)
+    await expect(page.locator("[data-library-page]")).toHaveCount(0)
+    await expect(page.locator(`[data-library-sort="${item.nextSort}"]`)).toBeVisible()
+
+    await expect(page.locator(item.row).filter({ hasText: item.restoredText }).first())
+      .toBeVisible()
+    await expect(page.locator("[data-library-loading]")).toHaveCount(0)
+    if (item.mode === "works") {
+      await expect(page.locator("[data-library-work-actions]").first()).toBeHidden()
+      await expect(page.locator("[data-library-work-toggle]").first()).toBeVisible()
+    } else {
+      await expect(page.locator("[data-library-page]").first()).toBeVisible()
+    }
+  }
+})
+
 test("a Selma filter invalidates a delayed Strindberg summary", async ({
   page,
   request

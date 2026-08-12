@@ -84,11 +84,12 @@ function workActionsId(key: string): string {
             <span class="sr-only">Laddar resultat</span>
             <i aria-hidden="true" class="spinner fa fa-spinner fa-pulse" />
         </div>
-        <div v-if="response.failed" data-library-error role="alert">Ett fel uppstod.</div>
-        <div v-else-if="!response.data.length" data-library-empty class="pb-4">
-            Inga träffar.
-        </div>
-        <table v-else-if="mode === 'works'" id="table" class="table w-full flex-grow -ml-2">
+        <template v-else>
+            <div v-if="response.failed" data-library-error role="alert">Ett fel uppstod.</div>
+            <div v-else-if="!response.data.length" data-library-empty class="pb-4">
+                Inga träffar.
+            </div>
+            <table v-else-if="mode === 'works'" id="table" class="table w-full flex-grow -ml-2">
             <tbody class="block">
                 <tr
                     v-for="item in response.data"
@@ -176,8 +177,8 @@ function workActionsId(key: string): string {
                     </td>
                 </tr>
             </tbody>
-        </table>
-        <table v-else class="table flex-grow w-full">
+            </table>
+            <table v-else class="table flex-grow w-full">
             <tbody>
                 <tr
                     v-for="item in response.data"
@@ -231,12 +232,13 @@ function workActionsId(key: string): string {
                     </td>
                 </tr>
             </tbody>
-        </table>
-        <LibraryPagination
-            v-if="pagination.pageCount > 1"
-            :model="pagination"
-            @select-page="emit('selectPage', $event)"
-        />
+            </table>
+            <LibraryPagination
+                v-if="pagination.pageCount > 1"
+                :model="pagination"
+                @select-page="emit('selectPage', $event)"
+            />
+        </template>
     </div>
 </template>
 
