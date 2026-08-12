@@ -147,6 +147,55 @@ test("editor Reader hydrates a directly requested contents dialog once", async (
   await expect(contents).toHaveCount(0)
 })
 
+test("editor contents links keep modified clicks native and select normally", async ({ page }) => {
+  const initial = "/editor/lb-editor-boye/ix/4/f?bare&keep=%2f&keep=%2F&innehall#part"
+  await page.goto(initial, { waitUntil: "networkidle" })
+  const hydratedInitial = "/editor/lb-editor-boye/ix/4/f" +
+    "?bare&keep=/&keep=/&innehall#part"
+  const dialog = page.getByRole("dialog", { name: "Innehållsförteckning" })
+  const link = dialog.getByRole("link", { name: "Kronologi" })
+  await expect(link).toHaveAttribute(
+    "href",
+    "/editor/lb-editor-boye/ix/8/f?bare&keep=%2f&keep=%2F#part"
+  )
+  const historyLength = await page.evaluate(() => window.history.length)
+
+  for (const init of [
+    { ctrlKey: true },
+    { metaKey: true },
+    { shiftKey: true },
+    { button: 1 }
+  ]) {
+    const nativeAllowed = await link.evaluate((anchor, eventInit) => {
+      let defaultPreventedByComponent: boolean | null = null
+      const blockNativeNavigation = (event: MouseEvent) => {
+        defaultPreventedByComponent = event.defaultPrevented
+        event.preventDefault()
+      }
+      anchor.addEventListener("click", blockNativeNavigation, { once: true })
+      anchor.dispatchEvent(new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        ...eventInit
+      }))
+      return defaultPreventedByComponent === false
+    }, init)
+    expect(nativeAllowed).toBe(true)
+    await expect(dialog).toBeVisible()
+    expect(new URL(page.url()).pathname + new URL(page.url()).search + new URL(page.url()).hash)
+      .toBe(hydratedInitial)
+  }
+
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
+  await link.click()
+  await expect(page).toHaveURL(
+    "/editor/lb-editor-boye/ix/8/f?bare&keep=%2f&keep=%2F#part"
+  )
+  await expect(dialog).toHaveCount(0)
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength + 1)
+})
+
 test("editor Reader restores focus mode through raw-preserving router history", async ({ page }) => {
   const initial = `${editorFaksimil}?bare&repeat=%2f&repeat=%2F#focus-marker`
   await page.goto(initial, { waitUntil: "networkidle" })

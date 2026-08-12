@@ -31,6 +31,20 @@ function authorLabel(author: WorkManifestPartAuthor): string {
   return readerManifestPartAuthorLabel(author, true)
 }
 
+function selectPart(event: MouseEvent, pageName: string): void {
+  if (
+    event.defaultPrevented
+    || event.button !== 0
+    || event.altKey
+    || event.ctrlKey
+    || event.metaKey
+    || event.shiftKey
+  ) return
+  event.preventDefault()
+  event.stopPropagation()
+  emit("select-page", pageName)
+}
+
 const dialogPanel = ref<HTMLElement | null>(null)
 const headlessReady = ref(false)
 
@@ -98,7 +112,7 @@ onMounted(() => {
                   :to="partHrefs[partIndex]"
                 ><a
                   :href="href || partHrefs[partIndex] || ''"
-                  @click.prevent.stop="emit('select-page', part.start_page_name)"
+                  @click="selectPart($event, part.start_page_name)"
                 >{{ partLabel(part) }}</a></NuxtLink>
               </span>
             </li>

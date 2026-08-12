@@ -18,7 +18,8 @@ export default defineConfig({
           exclude: [
             "test/unit/renderable-html.spec.ts",
             "test/unit/search-multi-select.spec.ts",
-            "test/unit/library-component-boundaries.spec.ts"
+            "test/unit/library-component-boundaries.spec.ts",
+            "test/unit/reader-contents-dialog.spec.ts"
           ]
         }
       },

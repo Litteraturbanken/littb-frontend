@@ -337,7 +337,7 @@ async function closeContents(): Promise<void> {
 function selectContentsPage(pageName: string): void {
   const part = page.value?.parts.find(item => item.start_page_name === pageName)
   if (!part) return
-  void navigateRawFullPath(href(part.start_page_index))
+  void navigateRawFullPath(readerContentsNeutralFullPath(href(part.start_page_index)))
 }
 
 const sourceInfoRequested = computed(() => readerSourceInfoIsOpen(route.query["om-boken"]))

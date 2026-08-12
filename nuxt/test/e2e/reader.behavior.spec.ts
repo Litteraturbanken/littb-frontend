@@ -1310,6 +1310,59 @@ test("contents rows use surnames and selecting a nested part pushes its raw targ
     .toBe(selectedEncodedPath)
 })
 
+test("contents part links preserve native modified clicks before a normal selection", async ({
+  page
+}) => {
+  const rawQuery = "?bare&repeat=%2f&repeat=%2F&innehall#contents-fragment"
+  await page.goto(`${readerPartsPath}${rawQuery}`, { waitUntil: "networkidle" })
+  const initialUrl = page.url()
+  const dialog = page.getByRole("dialog", { name: "Innehållsförteckning" })
+  const link = dialog.getByRole("link", { name: "Mellandelen" })
+  await expect(link).toHaveAttribute(
+    "href",
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-3/etext" +
+    "?bare&repeat=%2f&repeat=%2F#contents-fragment"
+  )
+  await startHistoryMutationCounter(page)
+  const historyLength = await page.evaluate(() => window.history.length)
+
+  for (const init of [
+    { ctrlKey: true },
+    { metaKey: true },
+    { shiftKey: true },
+    { button: 1 }
+  ]) {
+    const nativeAllowed = await link.evaluate((anchor, eventInit) => {
+      let defaultPreventedByComponent: boolean | null = null
+      const blockNativeNavigation = (event: MouseEvent) => {
+        defaultPreventedByComponent = event.defaultPrevented
+        event.preventDefault()
+      }
+      anchor.addEventListener("click", blockNativeNavigation, { once: true })
+      anchor.dispatchEvent(new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        ...eventInit
+      }))
+      return defaultPreventedByComponent === false
+    }, init)
+    expect(nativeAllowed).toBe(true)
+    await expect(dialog).toBeVisible()
+    expect(page.url()).toBe(initialUrl)
+  }
+
+  expect(await historyMutationCounts(page)).toEqual({ pushState: 0, replaceState: 0 })
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
+  await link.click()
+  await expect(page).toHaveURL(
+    `${readerPartsPath.replace("/-1/", "/-3/")}` +
+    "?bare&repeat=%2f&repeat=%2F#contents-fragment"
+  )
+  await expect(dialog).toHaveCount(0)
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength + 1)
+})
+
 test("part gaps and page boundaries remove metadata and disabled focus targets", async ({
   page
 }) => {
