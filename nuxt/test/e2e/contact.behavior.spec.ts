@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 const angularEmail = /^(?=.{1,254}$)(?=.{1,64}@)[-!#$%&'*+/0-9=?A-Z^_`a-z{|}~]+(\.[-!#$%&'*+/0-9=?A-Z^_`a-z{|}~]+)*@[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/
 
 async function reset(request: APIRequestContext) {
@@ -64,6 +64,22 @@ test("renders exact copy, pristine controls, Angular email grammar, and dirty-bl
   await expect(page.locator("ul.links a.active")).toHaveCount(1)
   await expect(page.getByRole("link", { name: "Kontakt", exact: true })).toHaveClass(/\bactive\b/)
   await expect(page.locator("#nameInput")).toBeFocused()
+  await expect(page.getByRole("textbox", { name: "Meddelande", exact: true })).toHaveCount(1)
+  const messageLabelStyles = await page.locator('label[for="messageInput"]').evaluate(element => {
+    const style = getComputedStyle(element)
+    return {
+      position: style.position,
+      height: style.height,
+      overflow: style.overflow,
+      clip: style.clip
+    }
+  })
+  expect(messageLabelStyles).toEqual({
+    position: "absolute",
+    height: "1px",
+    overflow: "hidden",
+    clip: "rect(0px, 0px, 0px, 0px)"
+  })
 
   const contactButton = page.locator("form.contactform button.submit")
   const newsletterButton = page.locator("form.subscribeform button.submit")
@@ -96,7 +112,7 @@ test("renders exact copy, pristine controls, Angular email grammar, and dirty-bl
   expect(problems).toEqual([])
 })
 
-test("submits trimmed Contact data, exposes only its spinner, and clears fields four seconds after success", async ({ page, request }) => {
+test("keyboard-submits trimmed Contact data, exposes one polite status, and clears fields four seconds after success", async ({ page, request }) => {
   await openContact(page)
   await page.evaluate(() => document.fonts.ready)
   await page.clock.install()
@@ -107,7 +123,7 @@ test("submits trimmed Contact data, exposes only its spinner, and clears fields 
     message: "  Hej!  "
   })
 
-  await page.locator("form.contactform button.submit").click()
+  await page.locator("form.contactform button.submit").press("Enter")
   expect(await waitForSubmissions(request)).toEqual([{
     sender_name: "Anna Andersson",
     sender_address: "anna@example.test",
@@ -134,8 +150,11 @@ test("submits trimmed Contact data, exposes only its spinner, and clears fields 
   await expect(page.locator(".page-contactForm > div").first()).toBeVisible()
 
   await request.delete(`${fixture}/_contact_defer`)
-  const status = page.getByText("Tack för ditt meddelande, vi svarar så fort vi kan.", { exact: true })
+  const status = page.getByRole("status")
   await expect(status).toBeVisible()
+  await expect(status).toHaveText("Tack för ditt meddelande, vi svarar så fort vi kan.")
+  await expect(status).toHaveAttribute("aria-live", "polite")
+  await expect(page.getByRole("status")).toHaveCount(1)
   await expect(page.locator(".page-contactForm > div").first()).toBeHidden()
   await expect(page.locator("#nameInput")).toHaveValue("Anna Andersson")
   await page.clock.fastForward(3_999)
@@ -171,15 +190,16 @@ test("keeps Contact submission available while pending and sends each duplicate 
   await expect(page.getByText("Tack för ditt meddelande, vi svarar så fort vi kan.", { exact: true })).toBeVisible()
 })
 
-test("a failed Contact submission restores the mounted form after four seconds and retains values", async ({ page, request }) => {
+test("a failed Contact submission alerts before restoring the mounted form after four seconds", async ({ page, request }) => {
   await request.put(`${fixture}/_failure`, { data: { resource: "contact" } })
   await openContact(page)
   await page.clock.install()
   await fillContact(page)
   await page.locator("form.contactform button.submit").click()
 
-  const status = page.getByText("Ett fel uppstod. Vänligen försök igen senare.", { exact: true })
+  const status = page.getByRole("alert")
   await expect(status).toBeVisible()
+  await expect(status).toHaveText("Ett fel uppstod. Vänligen försök igen senare.")
   await expect(page.locator(".contactform .spinner")).toBeHidden()
   await expect(page.locator(".page-contactForm > div").first()).toBeHidden()
   await page.clock.fastForward(4_000)
@@ -210,7 +230,7 @@ test("captures SOL and school flags once, composes the exact payload, and fixes 
   await expect(page.locator(".contactform textarea")).toHaveValue("")
 })
 
-test("newsletter always targets Litteraturbanken, has no spinner, retains its address, and clears Contact fields", async ({ page, request }) => {
+test("pointer-submitted newsletter has one polite status, retains its address, and clears Contact fields", async ({ page, request }) => {
   await openContact(page, "/om/kontakt?sol")
   await page.clock.install()
   await fillContact(page)
@@ -224,14 +244,33 @@ test("newsletter always targets Litteraturbanken, has no spinner, retains its ad
     audience: "litteraturbanken"
   }])
   await expect(page.locator(".page-contactForm .spinner")).toBeHidden()
-  const status = page.getByText("Tack för din anmälan.", { exact: true })
+  const status = page.getByRole("status")
   await expect(status).toBeVisible()
+  await expect(status).toHaveText("Tack för din anmälan.")
+  await expect(status).toHaveAttribute("aria-live", "polite")
+  await expect(page.getByRole("status")).toHaveCount(1)
   await page.clock.fastForward(4_000)
   await expect(status).toBeHidden()
   await expect(page.locator("#nameInput")).toHaveValue("")
   await expect(page.locator("#emailInput")).toHaveValue("")
   await expect(page.locator(".contactform textarea")).toHaveValue("")
   await expect(page.locator("#newsletterEmail")).toHaveValue("utskick@example.test")
+})
+
+test("concurrent Contact and newsletter successes expose only the final status", async ({ page, request }) => {
+  await openContact(page)
+  await request.put(`${fixture}/_contact_defer`)
+  await fillContact(page)
+  await page.locator("#newsletterEmail").fill("utskick@example.test")
+
+  await page.locator("form.contactform button.submit").click()
+  await page.locator("form.subscribeform button.submit").click()
+  await waitForSubmissions(request, 2)
+  await request.delete(`${fixture}/_contact_defer`)
+
+  const statuses = page.getByRole("status")
+  await expect(statuses).toHaveCount(1)
+  await expect(statuses).toHaveText("Tack för din anmälan.")
 })
 
 test("keeps newsletter submission available while pending and sends each duplicate attempt", async ({ page, request }) => {

@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
 import { parseHTML } from "linkedom"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 
 const pages = [
   ["ide", "/red/om/ide/omlitteraturbanken.html", ["Introduktion", "Om urvalet av texter", "Mål"]],
@@ -183,6 +183,18 @@ test("Contact renders exact metadata, copy, and active state without submitting 
   expect(html).toContain("Tack för ditt meddelande, vi svarar så fort vi kan.")
   expect(html).toContain("Tack för din anmälan.")
   expect(html).toContain("Ett fel uppstod. Vänligen försök igen senare.")
+  const { document } = parseHTML(html)
+  const message = document.querySelector("textarea#messageInput")
+  expect(message).not.toBeNull()
+  expect(document.querySelector('label[for="messageInput"]')?.textContent).toBe("Meddelande")
+  const statuses = [...document.querySelectorAll('[role="status"]')]
+  expect(statuses.map(status => status.textContent)).toEqual([
+    "Tack för ditt meddelande, vi svarar så fort vi kan.",
+    "Tack för din anmälan."
+  ])
+  expect(statuses.every(status => status.getAttribute("aria-live") === "polite")).toBe(true)
+  expect(document.querySelector('[role="alert"]')?.textContent)
+    .toBe("Ett fel uppstod. Vänligen försök igen senare.")
   expectActiveAboutLink(html, "/om/kontakt")
 
   const submissions = await (await request.get(`${fixture}/_contact_submissions`)).json()

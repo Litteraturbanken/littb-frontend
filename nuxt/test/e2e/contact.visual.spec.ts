@@ -2,7 +2,7 @@ import { expect, test, type APIRequestContext } from "@playwright/test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 
 async function resetFixture(request: APIRequestContext) {
   await Promise.all([

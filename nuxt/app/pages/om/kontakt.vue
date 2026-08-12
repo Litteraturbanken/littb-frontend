@@ -82,6 +82,8 @@ async function submitContactForm() {
   }
 
   isLoading.value = false
+  showNewsletter.value = false
+  showError.value = false
   showContact.value = true
   hideSuccessAfterDelay()
 }
@@ -102,6 +104,8 @@ async function subscribe() {
     return showFailure()
   }
 
+  showContact.value = false
+  showError.value = false
   showNewsletter.value = true
   hideSuccessAfterDelay()
 }
@@ -140,7 +144,9 @@ async function subscribe() {
             </div>
           </div>
           <div class="msg_box">
+            <label class="sr-only" for="messageInput">Meddelande</label>
             <textarea
+              id="messageInput"
               v-model.trim="message"
               required
               :class="{ 'ng-dirty': messageDirty, 'ng-invalid': messageDirty && !messageValid }"
@@ -173,9 +179,9 @@ async function subscribe() {
           </form>
         </div>
       </div>
-      <div v-show="showContact">Tack för ditt meddelande, vi svarar så fort vi kan.</div>
-      <div v-show="showNewsletter">Tack för din anmälan.</div>
-      <div v-show="showError">Ett fel uppstod. Vänligen försök igen senare.</div>
+      <div v-show="showContact" role="status" aria-live="polite">Tack för ditt meddelande, vi svarar så fort vi kan.</div>
+      <div v-show="showNewsletter" role="status" aria-live="polite">Tack för din anmälan.</div>
+      <div v-show="showError" role="alert">Ett fel uppstod. Vänligen försök igen senare.</div>
     </div>
   </AboutPageShell>
 </template>
