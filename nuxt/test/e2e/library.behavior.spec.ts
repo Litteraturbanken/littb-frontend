@@ -516,6 +516,12 @@ test("Nytt owns its canonical query state and restores through browser history",
   await expect(page.locator('[data-library-tab="latest"]')).toHaveAttribute("aria-current", "page")
   await expect(page.locator("[data-library-latest-row]")).toHaveCount(1)
   await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
+  const hide1800Toggle = page.getByRole("button", {
+    name: "Dölj verk från Nya vägar till det förflutna",
+    exact: true
+  })
+  await expect(hide1800Toggle).toHaveAttribute("aria-pressed", "false")
+  await expect(page.getByText("Dölj verk:", { exact: true })).toBeVisible()
 
   let ledger = publicEpubRequests(await epubRequests(request))
   expect(ledger).toHaveLength(1)
@@ -530,14 +536,31 @@ test("Nytt owns its canonical query state and restores through browser history",
   await expect(page.locator('[data-library-tab="latest"]')).toHaveAttribute("aria-current", "page")
   await expect(page.locator("[data-library-filter]")).toHaveValue("Selma")
   await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
+  await expect(hide1800Toggle).toHaveAttribute("aria-pressed", "false")
 
-  await page.locator("[data-library-hide-1800]").click()
+  await hide1800Toggle.focus()
+  await page.keyboard.press("Space")
   await expect(page).toHaveURL(/(?:\?|&)hide1800(?:=|&|$)/)
-  await expect(page.locator("[data-library-hide-1800]")).toBeVisible()
+  await expect(hide1800Toggle).toHaveAttribute("aria-pressed", "true")
+  await expect(page.getByText("Visa även från:", { exact: true })).toBeVisible()
 
   ledger = publicEpubRequests(await epubRequests(request))
   expect(ledger).toHaveLength(3)
   expect(ledger[2]?.body).toMatchObject({ mode: "latest", filters: libraryFilters({ query: "Selma" }), hide_1800: true })
+
+  await hide1800Toggle.focus()
+  await page.keyboard.press("Enter")
+  await expect(page).not.toHaveURL(/(?:\?|&)hide1800(?:=|&|$)/)
+  await expect(hide1800Toggle).toHaveAttribute("aria-pressed", "false")
+
+  await hide1800Toggle.click()
+  await expect(page).toHaveURL(/(?:\?|&)hide1800(?:=|&|$)/)
+  await expect(hide1800Toggle).toHaveAttribute("aria-pressed", "true")
+  await pushRoute(page, "/bibliotek?filter=Senaste")
+  await expect(page.getByRole("link", { name: "Senaste träffen", exact: true })).toBeVisible()
+  await page.goBack()
+  await expect(page).toHaveURL(/(?:\?|&)hide1800(?:=|&|$)/)
+  await expect(hide1800Toggle).toHaveAttribute("aria-pressed", "true")
 })
 
 test("Författare, Verk, and Dikt tabs navigate, render, and restore through history", async ({

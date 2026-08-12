@@ -402,6 +402,22 @@ test("SSR leaves author lifespan text inert in the mixed all-results view", asyn
   expect(row?.querySelector("[data-library-imprint-year]")).toBeNull()
 })
 
+test("SSR exposes the latest 1800 filter as one named pressed toggle", async ({ request }) => {
+  for (const { path, pressed, visiblePrefix } of [
+    { path: "/bibliotek?visa=latest", pressed: "false", visiblePrefix: "Dölj verk:" },
+    { path: "/bibliotek?visa=latest&hide1800", pressed: "true", visiblePrefix: "Visa även från:" }
+  ]) {
+    const document = parseHTML(await (await request.get(path)).text()).document
+    const toggle = document.querySelector<HTMLButtonElement>("[data-library-hide-1800]")!
+
+    expect(toggle.getAttribute("aria-label")).toBe("Dölj verk från Nya vägar till det förflutna")
+    expect(toggle.getAttribute("aria-pressed")).toBe(pressed)
+    expect(toggle.textContent?.trim()).toBe("Nya vägar till det förflutna")
+    expect(toggle.parentElement?.textContent?.replace(/\s+/g, " ").trim())
+      .toBe(`${visiblePrefix} Nya vägar till det förflutna`)
+  }
+})
+
 test("SSR renders authors, works, parts, and latest from discriminated search responses", async ({
   request
 }) => {

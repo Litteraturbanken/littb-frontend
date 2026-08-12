@@ -936,9 +936,14 @@ describe("Library component ownership", () => {
       .toContain("Aktiv sortering, stigande")
     expect(target.querySelector(".fa-caret-up")?.getAttribute("aria-hidden")).toBe("true")
     expect(target.querySelector(".fa")?.classList.contains("fa-caret-up")).toBe(true)
+    const hide1800 = target.querySelector<HTMLButtonElement>("[data-library-hide-1800]")!
+    expect(hide1800.getAttribute("aria-label"))
+      .toBe("Dölj verk från Nya vägar till det förflutna")
+    expect(hide1800.getAttribute("aria-pressed")).toBe("false")
+    expect(hide1800.textContent?.trim()).toBe("Nya vägar till det förflutna")
 
     target.querySelector<HTMLAnchorElement>('[data-library-sort="nytillkommet"]')?.click()
-    target.querySelector<HTMLButtonElement>("[data-library-hide-1800]")?.click()
+    hide1800.click()
     target.querySelector<HTMLAnchorElement>('[data-library-page="2"]')?.click()
     await nextTick()
     expect(selectedSorts).toEqual(["nytillkommet"])

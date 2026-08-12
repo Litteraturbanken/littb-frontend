@@ -85,6 +85,8 @@ function imprintYearTo(year: string): RouteLocationRaw {
                 <button
                     type="button"
                     data-library-hide-1800
+                    aria-label="Dölj verk från Nya vägar till det förflutna"
+                    :aria-pressed="hide1800"
                     class="text-primary sc ml-2 hover:text-gray-900 cursor-pointer bg-transparent border-0 p-0"
                     @click="emit('toggleHide1800')"
                 >
