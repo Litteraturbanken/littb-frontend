@@ -692,7 +692,36 @@ describe("text search route state", () => {
     expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
   })
 
-  test("enforces request highlight and context list caps", () => {
+  test.each(["left_context", "right_context"] as const)(
+    "accepts five and rejects six %s tokens",
+    contextKey => {
+      const request = buildTextSearchResultsRequest(
+        parseTextSearchRouteQuery({ fras: "frihet" })
+      )
+      const identity = textSearchResultsRequestIdentity(request)
+      const response = resultsResponse()
+      const highlight = response.works[0]!.highlights[0]!
+      highlight.left_context = []
+      highlight.match[0]!.word_id = "w12_10"
+      highlight.right_context = []
+      highlight[contextKey] = Array.from({ length: 5 }, (_, index) => ({
+        word: String(index + 1).repeat(29),
+        page_name: "12",
+        word_id: `w12_${contextKey === "left_context" ? index + 1 : index + 11}`
+      }))
+
+      expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
+
+      highlight[contextKey].push({
+        word: "6".repeat(29),
+        page_name: "12",
+        word_id: `w12_${contextKey === "left_context" ? 6 : 16}`
+      })
+      expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
+    }
+  )
+
+  test("enforces the request highlight and match list caps", () => {
     const request = buildTextSearchResultsRequest(
       parseTextSearchRouteQuery({ fras: "frihet" }),
       5
@@ -700,15 +729,14 @@ describe("text search route state", () => {
     const identity = textSearchResultsRequestIdentity(request)
     const response = resultsResponse()
     const highlight = response.works[0]!.highlights[0]!
-    highlight.left_context = Array.from({ length: 1000 }, (_, index) => ({
-      word: "context", page_name: "12", word_id: `w12_${index + 1}`
+    highlight.left_context = []
+    highlight.match = Array.from({ length: 1000 }, (_, index) => ({
+      word: "match", page_name: "12", word_id: `w12_${index + 1}`
     }))
-    highlight.match = [{ word: "frihet", page_name: "12", word_id: "w12_1001" }]
     highlight.right_context = []
     expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
 
-    highlight.left_context.push({ word: "overflow", page_name: "12", word_id: "w12_1002" })
-    highlight.match[0]!.word_id = "w12_1003"
+    highlight.match.push({ word: "overflow", page_name: "12", word_id: "w12_1001" })
     expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
 
     const highlights = resultsResponse()
@@ -1073,6 +1101,33 @@ describe("text search route state", () => {
       word("x".repeat(30), 2),
       word("t".repeat(10), 3)
     ])
+  })
+
+  test("preserves five 29-character right-context tokens in order without mutating input", () => {
+    const rightContext = Array.from({ length: 5 }, (_, index) => ({
+      word: String(index + 1).repeat(29),
+      page_name: "1",
+      word_id: `w1_${index + 3}`
+    }))
+    const highlight = {
+      left_context: [{ word: "left", page_name: "1", word_id: "w1_1" }],
+      match: [{ word: "match", page_name: "1", word_id: "w1_2" }],
+      right_context: rightContext
+    }
+    const original = structuredClone(highlight)
+
+    const prepared = prepareTextSearchHighlight(highlight)
+
+    expect(prepared.right_context).toEqual(rightContext)
+    expect(prepared.right_context.map(token => token.word)).toEqual([
+      "1".repeat(29),
+      "2".repeat(29),
+      "3".repeat(29),
+      "4".repeat(29),
+      "5".repeat(29)
+    ])
+    expect(prepared.right_context).not.toBe(rightContext)
+    expect(highlight).toEqual(original)
   })
 
   test("prepares contexts without removing or reordering match tokens", () => {

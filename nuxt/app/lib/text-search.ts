@@ -548,7 +548,8 @@ function isTextSearchHighlight(value: unknown, workId: string): value is TextSea
   if (!isRecord(value) ||
     !hasExactKeys(value, ["left_context", "match", "right_context"]) ||
     !isWordList(value.left_context, workId) || !isWordList(value.match, workId) ||
-    !isWordList(value.right_context, workId) || value.match.length === 0) return false
+    !isWordList(value.right_context, workId) || value.left_context.length > 5 ||
+    value.right_context.length > 5 || value.match.length === 0) return false
   if (new Set(value.match.map(word => word.page_name)).size !== 1) return false
   const positions = value.match.map(word => wordPosition(word.word_id, workId)!)
   return positions.every((position, index) => index === 0 ||

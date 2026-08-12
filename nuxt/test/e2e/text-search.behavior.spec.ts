@@ -1913,6 +1913,21 @@ test("SSR hydration is single-fetch and Reader hit destination is navigable", as
   expect(problems).toEqual([])
 })
 
+test("renders all five authoritative right-context tokens without truncation", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?fras=five-context")
+
+  const rightContext = page.locator("#results tr.sentence").first()
+    .locator(".right_context .word")
+  await expect(rightContext).toHaveCount(5)
+  expect(await rightContext.allTextContents()).toEqual([
+    `${"1".repeat(29)} `,
+    `${"2".repeat(29)} `,
+    `${"3".repeat(29)} `,
+    `${"4".repeat(29)} `,
+    `${"5".repeat(29)} `
+  ])
+})
+
 test("Search result return restores the exact origin and Reader hit", async ({ page }) => {
   const origin = "/s%C3%B6k?fras=overflow&traffsida=2&avancerad=1&forfattare=StrindbergA&utm=a+b&repeat=%2f&repeat=%2F"
   await openSearch(page, origin)

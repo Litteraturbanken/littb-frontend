@@ -2346,6 +2346,17 @@ function textSearchResultsResponse(body) {
     rich.author_facets[0].count = 41
     rich.author_facets[1].count = 23
   }
+  if (body.query === "five-context") {
+    rich.total_work_hits = 1
+    rich.author_facets = [{ ...rich.author_facets[0], count: 1 }]
+    rich.works = [rich.works[0]]
+    rich.works[0].highlights[0].match[0].word = body.query
+    rich.works[0].highlights[0].right_context = Array.from({ length: 5 }, (_, index) => ({
+      word: String(index + 1).repeat(29),
+      word_id: `w1_${index + 12}`,
+      page_name: "1"
+    }))
+  }
   if (body.work_ids?.length) {
     const workIds = new Set(body.work_ids)
     rich.works = rich.works.filter(work => workIds.has(work.lbworkid))
@@ -2383,6 +2394,9 @@ function textSearchCountResponse(body) {
   }
   if (body.query === "overflow") {
     return { query: body.query, total_documents: 64, total_highlights: 512 }
+  }
+  if (body.query === "five-context") {
+    return { query: body.query, total_documents: 1, total_highlights: 1 }
   }
   if (body.facet_author_id) {
     return { query: body.query, total_documents: 1, total_highlights: 1 }
