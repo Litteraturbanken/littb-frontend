@@ -175,6 +175,7 @@ describe("Dramawebben managed XHTML parsing", () => {
   test.each([
     ["fragment", "#section"],
     ["root relative", "/dramawebben/om?x=1#section"],
+    ["encoded delimiter data", "/safe/%3Fdel/%23avsnitt?x=1#section"],
     ["absolute HTTPS", "https://example.test/path?q=1#section"]
   ])("preserves a safe %s href", (_, href) => {
     const output = parseDramawebbenDocumentBody(
@@ -194,6 +195,8 @@ describe("Dramawebben managed XHTML parsing", () => {
     "/../private",
     "/%2e%2e/private",
     "/%252e%252e/private",
+    "/safe/%3F/%2e%2e/private",
+    "/safe/%2523/%252e%252e/private",
     "/safe%0Aevil",
     "/safe\udfff",
     "https://example.test/%2e%2e/private",

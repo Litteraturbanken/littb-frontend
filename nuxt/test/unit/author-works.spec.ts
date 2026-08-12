@@ -92,6 +92,8 @@ describe("Author Works runtime contract", () => {
     "https://user:pass@evil.test/resource",
     "/safe\\evil",
     "/safe%250Aevil",
+    "/safe/%3F/%2e%2e/private",
+    "https://example.test/safe/%2523/%252e%252e/private",
     " https://litteraturbanken.se/resource",
     "https://%"
   ])("rejects hostile native-link form %s", url => {
@@ -102,6 +104,16 @@ describe("Author Works runtime contract", () => {
     const encyclopedia = structuredClone(richAuthorWorks) as AuthorWorksResponse
     encyclopedia.author.encyclopedia_links[0]!.url = url
     expect(isAuthorWorksResponse(encyclopedia)).toBe(false)
+  })
+
+  test("preserves encoded delimiter data and literal URL suffixes in native links", () => {
+    const body = structuredClone(richAuthorWorks) as AuthorWorksResponse
+    body.author.related_links[0]!.url
+      = "/safe/%3Fdel/%23avsnitt?view=1#section"
+    body.author.encyclopedia_links[0]!.url
+      = "https://example.test/safe/%3Fdel/%23avsnitt?view=1#section"
+
+    expect(isAuthorWorksResponse(body)).toBe(true)
   })
 
   test("requires title destinations to correspond to a validated work action", () => {

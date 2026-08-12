@@ -10,6 +10,7 @@ import type {
 import type { SanitizedHtml } from "../../shared/types/renderable-html"
 import { issueAuthorDocumentHtml } from "../../shared/utils/renderable-html"
 import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
+import { rawUrlParts } from "../../shared/utils/url-safety"
 import { createServerLbApiClient } from "./server-lb-api-client"
 
 export type AuthorDocumentDescriptor = components["schemas"]["AuthorDocumentDescriptor"]
@@ -217,9 +218,16 @@ function fullyDecode(value: string): string | null {
   return null
 }
 
-function hasTraversalSegment(value: string): boolean {
-  const withoutFragment = value.split("#", 1)[0] ?? ""
-  const path = withoutFragment.split("?", 1)[0] ?? ""
+function decodedUrlParts(value: string): { path: string, suffix: string } | null {
+  const { rawPath, rawQuery, rawFragment, hasQuery, hasFragment } = rawUrlParts(value)
+  const path = fullyDecode(rawPath)
+  const suffix = fullyDecode(
+    (hasQuery ? `?${rawQuery}` : "") + (hasFragment ? `#${rawFragment}` : "")
+  )
+  return path === null || suffix === null ? null : { path, suffix }
+}
+
+function hasTraversalSegment(path: string): boolean {
   return path.split("/").some(segment => segment === "." || segment === "..")
 }
 
@@ -229,12 +237,15 @@ function hasUnsafeUrlCodeUnit(value: string): boolean {
 
 function safeUrl(value: string, kind: "href" | "src"): boolean {
   if (value !== value.trim() || hasUnsafeUrlCodeUnit(value)) return false
-  const decoded = fullyDecode(value)
-  if (decoded === null || hasUnsafeUrlCodeUnit(decoded)) return false
-  if (decoded.startsWith("//") || hasTraversalSegment(decoded)) return false
+  const decoded = decodedUrlParts(value)
+  if (decoded === null
+    || hasUnsafeUrlCodeUnit(decoded.path)
+    || hasUnsafeUrlCodeUnit(decoded.suffix)) return false
+  if (decoded.path.startsWith("//") || hasTraversalSegment(decoded.path)) return false
 
-  if (decoded.startsWith("#")) return kind === "href"
-  const scheme = /^([a-z][a-z0-9+.-]*):/iu.exec(decoded)?.[1]?.toLowerCase()
+  const decodedHref = decoded.path + decoded.suffix
+  if (decodedHref.startsWith("#")) return kind === "href"
+  const scheme = /^([a-z][a-z0-9+.-]*):/iu.exec(decodedHref)?.[1]?.toLowerCase()
   if (!scheme) return true
   if (kind === "src") return scheme === "https"
   return ["http", "https", "mailto", "tel"].includes(scheme)
@@ -243,12 +254,13 @@ function safeUrl(value: string, kind: "href" | "src"): boolean {
 function safeSlaHref(value: string): boolean {
   if (value !== value.trim() || hasUnsafeUrlCodeUnit(value)) return false
   if (!value.startsWith(slaHrefPrefix)) return false
-  const decoded = fullyDecode(value)
+  const decoded = decodedUrlParts(value)
   return decoded !== null
-    && !hasUnsafeUrlCodeUnit(decoded)
-    && decoded.startsWith(slaHrefPrefix)
-    && !decoded.startsWith("//")
-    && !hasTraversalSegment(decoded)
+    && !hasUnsafeUrlCodeUnit(decoded.path)
+    && !hasUnsafeUrlCodeUnit(decoded.suffix)
+    && decoded.path.startsWith(slaHrefPrefix)
+    && !decoded.path.startsWith("//")
+    && !hasTraversalSegment(decoded.path)
 }
 
 function hasClass(element: SanitizableElement, className: string): boolean {

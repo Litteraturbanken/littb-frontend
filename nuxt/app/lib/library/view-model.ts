@@ -11,6 +11,7 @@ import {
 } from "../internal-navigation"
 import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 import { validRouteSegment } from "#shared/utils/route-segment"
+import { rawUrlParts } from "#shared/utils/url-safety"
 import {
   assertNever,
   type LibraryAuthor,
@@ -266,16 +267,34 @@ function fullyDecodedHref(value: string): string | null {
   return null
 }
 
+function decodedLibraryHrefParts(value: string): {
+  decodedPath: string
+  decodedQuery: string
+  decodedFragment: string
+  hasFragment: boolean
+} | null {
+  const { rawPath, rawQuery, rawFragment, hasQuery, hasFragment } = rawUrlParts(value)
+  const decodedPath = fullyDecodedHref(rawPath)
+  const decodedQueryValue = fullyDecodedHref(rawQuery)
+  const decodedFragment = fullyDecodedHref(rawFragment)
+  if (decodedPath === null || decodedQueryValue === null || decodedFragment === null) return null
+  return {
+    decodedPath,
+    decodedQuery: hasQuery ? `?${decodedQueryValue}` : "",
+    decodedFragment,
+    hasFragment
+  }
+}
+
 function safeLibraryRootHref(value: string): SafeLibraryRootHref | null {
   if (value.length > 2_000 || safeNativeHref(value) !== value || !value.startsWith("/")) return null
-  const decoded = fullyDecodedHref(value)
-  if (decoded === null || decoded === "/#external" || decoded === "/#external-link") return null
-  const withoutFragment = decoded.split("#", 1)[0] ?? ""
-  const queryIndex = withoutFragment.indexOf("?")
-  const decodedPath = queryIndex === -1 ? withoutFragment : withoutFragment.slice(0, queryIndex)
-  const decodedQuery = queryIndex === -1 ? "" : withoutFragment.slice(queryIndex)
+  const decoded = decodedLibraryHrefParts(value)
+  if (!decoded) return null
+  const { decodedPath, decodedQuery, decodedFragment, hasFragment } = decoded
+  if (decodedPath === "/" && !decodedQuery
+    && (decodedFragment === "external" || decodedFragment === "external-link")) return null
   if (decodedPath.split("/").some(segment => segment === "." || segment === "..")) return null
-  return { decodedPath, decodedQuery, hasFragment: decoded !== withoutFragment, href: value }
+  return { decodedPath, decodedQuery, hasFragment, href: value }
 }
 
 function safeLibraryAuthorHref(value: string): string | null {

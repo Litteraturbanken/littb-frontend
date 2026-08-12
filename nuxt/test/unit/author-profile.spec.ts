@@ -115,7 +115,10 @@ describe("managed author HTML sanitization", () => {
     '<a href="\\\\evil.example\\path">Bakstreck</a>',
     '<a href="/safe/../admin">Traversal</a>',
     '<a href="/%252e%252e/admin">Kodad traversal</a>',
+    '<a href="/safe/%3F/%2e%2e/admin">Frågeteckens-traversal</a>',
+    '<a href="/safe/%2523/%252e%252e/admin">Dubbelkodad fragment-traversal</a>',
     '<a href="/%ZZ/admin">Felaktig kodning</a>',
+    '<a href="/safe/%3Fdel/%23avsnitt?view=1#part">Kodade avgränsare</a>',
     '<script>script-probe</script>',
     '<style>.style-probe { display: block }</style>',
     '<form><p>form-probe</p><input value="x"></form>',
@@ -195,6 +198,8 @@ describe("managed author HTML sanitization", () => {
     expect(links.get("Telefon")?.href).toBe("tel:+461234567")
     expect(links.get("Relativ")?.href).toBe("titlar/Ett-verk?x=1#del")
     expect(links.get("Legacy")?.href).toBe("/författare/StrindbergA/titlar")
+    expect(links.get("Kodade avgränsare")?.href)
+      .toBe("/safe/%3Fdel/%23avsnitt?view=1#part")
 
     for (const label of [
       "JS",
@@ -207,6 +212,8 @@ describe("managed author HTML sanitization", () => {
       "Bakstreck",
       "Traversal",
       "Kodad traversal",
+      "Frågeteckens-traversal",
+      "Dubbelkodad fragment-traversal",
       "Felaktig kodning"
     ]) {
       expect(links.get(label)?.href, label).toBeNull()

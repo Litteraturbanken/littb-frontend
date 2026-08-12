@@ -1,5 +1,6 @@
 import type { components } from "~/lib/api/generated/lbapi"
 import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
+import { rawUrlParts } from "#shared/utils/url-safety"
 import {
   authorProfilePath,
   safeAuthorPortraitAssetUrl,
@@ -59,25 +60,6 @@ type SafeRootHref = {
   hasFragment: boolean
 }
 
-function rawHrefParts(value: string): {
-  rawPath: string
-  rawQuery: string
-  hasQuery: boolean
-  rawFragment: string
-  hasFragment: boolean
-} {
-  const fragmentIndex = value.indexOf("#")
-  const withoutFragment = fragmentIndex === -1 ? value : value.slice(0, fragmentIndex)
-  const queryIndex = withoutFragment.indexOf("?")
-  return {
-    rawPath: queryIndex === -1 ? withoutFragment : withoutFragment.slice(0, queryIndex),
-    rawQuery: queryIndex === -1 ? "" : withoutFragment.slice(queryIndex + 1),
-    hasQuery: queryIndex !== -1,
-    rawFragment: fragmentIndex === -1 ? "" : value.slice(fragmentIndex + 1),
-    hasFragment: fragmentIndex !== -1
-  }
-}
-
 function fullyDecodedHref(value: string): string | null {
   let decoded = value
   for (let depth = 0; depth < 16; depth += 1) {
@@ -96,7 +78,7 @@ function fullyDecodedHref(value: string): string | null {
 
 function safeRootHref(value: string): SafeRootHref | null {
   if (value.length > 2_000 || safeNativeHref(value) !== value || !value.startsWith("/")) return null
-  const { rawPath, rawQuery, rawFragment, hasQuery, hasFragment } = rawHrefParts(value)
+  const { rawPath, rawQuery, rawFragment, hasQuery, hasFragment } = rawUrlParts(value)
   const decodedPath = fullyDecodedHref(rawPath)
   const decodedQueryValue = fullyDecodedHref(rawQuery)
   const decodedFragment = fullyDecodedHref(rawFragment)
@@ -112,11 +94,17 @@ function safeRootHref(value: string): SafeRootHref | null {
 
 function isSafeNativeLinkUrl(value: string): boolean {
   if (safeNativeHref(value) !== value) return false
-  const decoded = fullyDecodedHref(value)
-  if (decoded === null || decoded.startsWith("//")) return false
-  const decodedPath = decoded.split(/[?#]/u, 1)[0] ?? ""
+  const { rawPath, rawQuery, rawFragment, hasQuery, hasFragment } = rawUrlParts(value)
+  const decodedPath = fullyDecodedHref(rawPath)
+  const decodedQuery = fullyDecodedHref(rawQuery)
+  const decodedFragment = fullyDecodedHref(rawFragment)
+  if (decodedPath === null || decodedQuery === null || decodedFragment === null
+    || decodedPath.startsWith("//")) return false
+  const decodedHref = decodedPath
+    + (hasQuery ? `?${decodedQuery}` : "")
+    + (hasFragment ? `#${decodedFragment}` : "")
   return !decodedPath.split("/").some(segment => segment === "." || segment === "..")
-    && safeNativeHref(decoded) === decoded
+    && safeNativeHref(decodedHref) === decodedHref
 }
 
 function isSafeHttpUrl(value: string | null): boolean {

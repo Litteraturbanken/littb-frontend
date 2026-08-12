@@ -229,12 +229,17 @@ const maliciousBody = [
   '<a href="//evil.test/path">Protokollrelativ</a>',
   '<a href="\\\\evil.test\\path">Bakstreck</a>',
   '<a href="/%252e%252e/private">Traversal</a>',
+  '<a href="/safe/%3F/%2e%2e/private">Frågeteckens-traversal</a>',
+  '<a href="/safe/%2523/%252e%252e/private">Dubbelkodad fragment-traversal</a>',
   '<a href="/%ZZ/private">Felaktig kodning</a>',
+  '<a href="/safe/%3Fdel/%23avsnitt?view=1#section">Kodade avgränsare</a>',
   '<a href="#safe">Fragment</a>',
   '<a href="mailto:editor@example.test">E-post</a>',
   '<a href="tel:+461234">Telefon</a>',
   '<img src="http://example.test/insecure.png" alt="HTTP">',
   '<img src="data:image/png;base64,evil" alt="Data">',
+  '<img src="/safe/%3F/%2e%2e/evil.png" alt="Traversalbild">',
+  '<img src="/safe/%3Fdel/%23avsnitt.png?size=1#crop" alt="Kodad avgränsarbild">',
   '<img src="https://example.test/safe.png" alt="HTTPS">',
   "<!-- comment-probe -->",
   "<script>script-probe</script><style>style-probe</style>",
@@ -311,6 +316,8 @@ describe("managed author XHTML sanitization", () => {
     "/författare/LagerlöfS/omtexterna/../private.html",
     "/författare/LagerlöfS/omtexterna/%2e%2e/private.html",
     "/författare/LagerlöfS/omtexterna/%252e%252e/private.html",
+    "/författare/LagerlöfS/omtexterna/%3F/%2e%2e/private.html",
+    "/författare/LagerlöfS/omtexterna/%2523/%252e%252e/private.html",
     "/författare/LagerlöfS/omtexterna/Safe.html%0Aevil",
     "/författare/LagerlöfS\\omtexterna\\Safe.html",
     "//evil.test/författare/LagerlöfS/Safe.html",
@@ -511,6 +518,8 @@ describe("managed author XHTML sanitization", () => {
       "Protokollrelativ",
       "Bakstreck",
       "Traversal",
+      "Frågeteckens-traversal",
+      "Dubbelkodad fragment-traversal",
       "Felaktig kodning"
     ]) {
       const anchor = [...document.querySelectorAll("a")]
@@ -522,8 +531,15 @@ describe("managed author XHTML sanitization", () => {
       .toBeNull()
     expect(images.find(image => image.getAttribute("alt") === "Data")?.getAttribute("src"))
       .toBeNull()
+    expect(images.find(image => image.getAttribute("alt") === "Traversalbild")
+      ?.getAttribute("src")).toBeNull()
+    expect(images.find(image => image.getAttribute("alt") === "Kodad avgränsarbild")
+      ?.getAttribute("src")).toBe("/safe/%3Fdel/%23avsnitt.png?size=1#crop")
     expect(images.find(image => image.getAttribute("alt") === "HTTPS")?.getAttribute("src"))
       .toBe("https://example.test/safe.png")
+    expect([...document.querySelectorAll("a")]
+      .find(anchor => anchor.textContent === "Kodade avgränsare")?.getAttribute("href"))
+      .toBe("/safe/%3Fdel/%23avsnitt?view=1#section")
   })
 
   test("is deterministic and idempotent", () => {

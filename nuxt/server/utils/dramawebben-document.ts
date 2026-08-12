@@ -9,6 +9,7 @@ import type {
 import type { SanitizedHtml } from "../../shared/types/renderable-html"
 import { issueDramawebbenDocumentHtml } from "../../shared/utils/renderable-html"
 import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
+import { rawUrlParts } from "../../shared/utils/url-safety"
 
 type SanitizableAttribute = { name: string }
 type SanitizableParent = { removeChild: (node: SanitizableNode) => unknown }
@@ -70,9 +71,16 @@ function fullyDecode(value: string): string | null {
   return null
 }
 
-function hasTraversalSegment(value: string): boolean {
-  const withoutFragment = value.split("#", 1)[0] ?? ""
-  const path = withoutFragment.split("?", 1)[0] ?? ""
+function decodedUrlParts(value: string): { path: string, suffix: string } | null {
+  const { rawPath, rawQuery, rawFragment, hasQuery, hasFragment } = rawUrlParts(value)
+  const path = fullyDecode(rawPath)
+  const suffix = fullyDecode(
+    (hasQuery ? `?${rawQuery}` : "") + (hasFragment ? `#${rawFragment}` : "")
+  )
+  return path === null || suffix === null ? null : { path, suffix }
+}
+
+function hasTraversalSegment(path: string): boolean {
   return path.split("/").some(segment => segment === "." || segment === "..")
 }
 
@@ -82,15 +90,19 @@ function hasUnsafeUrlCodeUnit(value: string): boolean {
 
 function safeHref(value: string): boolean {
   if (value !== value.trim() || hasUnsafeUrlCodeUnit(value)) return false
-  const decoded = fullyDecode(value)
-  if (decoded === null || hasUnsafeUrlCodeUnit(decoded) || hasTraversalSegment(decoded)) {
+  const decoded = decodedUrlParts(value)
+  if (decoded === null
+    || hasUnsafeUrlCodeUnit(decoded.path)
+    || hasUnsafeUrlCodeUnit(decoded.suffix)
+    || hasTraversalSegment(decoded.path)) {
     return false
   }
-  if (decoded.startsWith("#")) return true
-  if (decoded.startsWith("/")) return !decoded.startsWith("//")
-  if (!/^https:\/\//iu.test(decoded)) return false
+  const decodedHref = decoded.path + decoded.suffix
+  if (decodedHref.startsWith("#")) return true
+  if (decoded.path.startsWith("/")) return !decoded.path.startsWith("//")
+  if (!/^https:\/\//iu.test(decodedHref)) return false
   try {
-    return new URL(decoded).protocol === "https:"
+    return new URL(decodedHref).protocol === "https:"
   } catch {
     return false
   }

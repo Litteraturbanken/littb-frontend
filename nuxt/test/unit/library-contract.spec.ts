@@ -266,6 +266,8 @@ describe("typed Library boundary", () => {
     ["//evil.test/author", "https://evil.test/title", "", ""],
     ["/författare/LagerlofS/?next=evil", "/författare/LagerlofS/titlar/Titel/?next=evil", "", ""],
     ["/författare/%2e%2e/", "/författare/LagerlofS/titlar/%2e%2e/", "", ""],
+    ["/författare/safe/%3F/%2e%2e", "/författare/LagerlofS/titlar/safe/%3F/%2e%2e", "", ""],
+    ["/författare/safe/%2523/%252e%252e", "/författare/LagerlofS/titlar/safe/%2523/%252e%252e", "", ""],
     ["/författare/%00evil", "/författare/LagerlofS/titlar/%5Cevil", "", ""]
   ] as const)("bounds Download author/title API hrefs %s %s", (
     authorUrl,
@@ -340,6 +342,36 @@ describe("typed Library boundary", () => {
       expect(result).toMatchObject({ authorHref: "", titleHref: "" })
     }
   )
+
+  test("preserves encoded delimiter data in exact Library author and title paths", () => {
+    const authorUrl = "/författare/Lagerlof%3FS%23A"
+    const titleUrl = `${authorUrl}/titlar/Titel%3Fdel%23avsnitt/`
+    const response = {
+      mode: "epub",
+      total_hits: 1,
+      total_works: 1,
+      items: [{
+        author,
+        author_url: authorUrl,
+        download_filename: "Titel.epub",
+        download_url: "/txt/epub/LagerlofS_Titel.epub",
+        full_title: "Full titel",
+        route_author_id: "LagerlofS",
+        route_media_type: "etext",
+        route_title_id: "Titel",
+        title: "Titel",
+        title_url: titleUrl,
+        year: "1900"
+      }]
+    } satisfies LibrarySearchResponse
+
+    const view = toLibrarySearchView(response)
+    if (view.mode !== "epub") throw new Error("expected epub view")
+    expect(view.response.data[0]).toMatchObject({
+      authorHref: authorUrl,
+      titleHref: titleUrl
+    })
+  })
 
   test("preserves browse action order and labels source exports and sizes", () => {
     const response = {

@@ -1,4 +1,5 @@
 import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
+import { rawUrlParts } from "#shared/utils/url-safety"
 import type { SanitizedHtml } from "#shared/types/renderable-html"
 import {
   emptyRenderableHtml,
@@ -152,9 +153,17 @@ export function formatAuthorYears(
   return ""
 }
 
-function hasTraversal(value: string): boolean {
-  const path = value.split(/[?#]/u, 1)[0] ?? ""
+function hasTraversal(path: string): boolean {
   return path.split("/").some(segment => segment === "." || segment === "..")
+}
+
+function decodedHrefParts(value: string): { path: string, suffix: string } | null {
+  const { rawPath, rawQuery, rawFragment, hasQuery, hasFragment } = rawUrlParts(value)
+  const path = repeatedlyDecode(rawPath)
+  const suffix = repeatedlyDecode(
+    (hasQuery ? `?${rawQuery}` : "") + (hasFragment ? `#${rawFragment}` : "")
+  )
+  return path === null || suffix === null ? null : { path, suffix }
 }
 
 function hasUnsafeHrefCodeUnits(value: string): boolean {
@@ -177,9 +186,13 @@ function parsedSafeHref(value: string): URL | null {
 function safeHref(value: string): string | null {
   if (!value || value !== value.trim() || hasUnsafeHrefCodeUnits(value)) return null
 
-  const decoded = repeatedlyDecode(value)
-  if (decoded === null || hasUnsafeHrefCodeUnits(decoded)) return null
-  if (value.startsWith("//") || decoded.startsWith("//") || hasTraversal(decoded)) return null
+  const decoded = decodedHrefParts(value)
+  if (decoded === null
+    || hasUnsafeHrefCodeUnits(decoded.path)
+    || hasUnsafeHrefCodeUnits(decoded.suffix)) return null
+  if (value.startsWith("//") || decoded.path.startsWith("//") || hasTraversal(decoded.path)) {
+    return null
+  }
 
   if (!parsedSafeHref(value)) return null
 
