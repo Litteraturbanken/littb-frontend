@@ -9,7 +9,7 @@ import {
   issueManagedPresentationStyle,
   issueManagedPresentationStylesheetHref
 } from "#shared/utils/renderable-html"
-import { removeC0AndSpace } from "#shared/utils/text-safety"
+import { hasC0OrC1Control, hasLoneSurrogate, removeC0AndSpace } from "#shared/utils/text-safety"
 
 export { validatePresentationSegments } from "../../lib/presentation-routes"
 
@@ -17,6 +17,7 @@ type ParsedElement = {
   localName: string
   textContent: string | null
   innerHTML: string
+  attributes: ArrayLike<{ name: string }>
   querySelector: (selectors: string) => ParsedElement | null
   querySelectorAll: (selectors: string) => ArrayLike<ParsedElement>
   getAttribute: (name: string) => string | null
@@ -24,6 +25,38 @@ type ParsedElement = {
   removeAttribute: (name: string) => void
   setAttribute: (name: string, value: string) => void
   remove: () => void
+}
+
+const maxDecodePasses = 16
+const blockedPresentationBodyElements = new Set([
+  "applet",
+  "audio",
+  "base",
+  "button",
+  "embed",
+  "form",
+  "frame",
+  "frameset",
+  "iframe",
+  "input",
+  "link",
+  "math",
+  "meta",
+  "noscript",
+  "object",
+  "option",
+  "script",
+  "select",
+  "source",
+  "style",
+  "svg",
+  "template",
+  "textarea",
+  "video"
+])
+
+function isExecutablePresentationAttribute(name: string): boolean {
+  return /^(?:on|srcdoc$|v-|data-v-|ng-|data-ng-|x-|data-x-|[@:]|data-bind$)/iu.test(name)
 }
 
 type ParsedDocument = {
@@ -83,14 +116,51 @@ function normalizedUrl(value: string): string | null {
   }
 }
 
+function hasUnsafeBackgroundCharacters(value: string): boolean {
+  return value.includes("'")
+    || value.includes("\\")
+    || value.includes("\uFFFD")
+    || hasC0OrC1Control(value)
+    || hasLoneSurrogate(value)
+}
+
+function hasTraversalSegment(pathname: string): boolean {
+  return pathname.split("/").some(segment => segment === "." || segment === "..")
+}
+
+function safelyDecodedBackgroundPath(pathname: string): boolean {
+  let decodedPath = pathname
+  for (let pass = 0; pass < maxDecodePasses; pass += 1) {
+    if (hasUnsafeBackgroundCharacters(decodedPath) || hasTraversalSegment(decodedPath)) return false
+    const next = decodeURIComponent(decodedPath)
+    if (next === decodedPath) return true
+    decodedPath = next
+  }
+  return false
+}
+
+function ownedBackgroundImagePath(value: string): { normalized: string, pathname: string } | null {
+  const base = new URL("https://presentation.invalid")
+  const parsed = new URL(value, base)
+  const normalized = `${parsed.pathname}${parsed.search}${parsed.hash}`
+  if (
+    parsed.origin !== base.origin
+    || normalized !== value
+    || !parsed.pathname.startsWith("/red/bilder/")
+  ) return null
+  return { normalized, pathname: parsed.pathname }
+}
+
 function normalizedBackgroundImagePath(value: string): string | null {
-  const normalized = normalizedUrl(value)
-  if (normalized === null || normalized.includes("'")) return null
-  if ([...normalized].some(character => {
-    const codePoint = character.codePointAt(0) ?? 0
-    return codePoint <= 0x1f || codePoint === 0x7f
-  })) return null
-  return normalized
+  if (!value.startsWith("/") || value.startsWith("//") || hasUnsafeBackgroundCharacters(value)) return null
+  try {
+    const ownedPath = ownedBackgroundImagePath(value)
+    return ownedPath && safelyDecodedBackgroundPath(ownedPath.pathname)
+      ? ownedPath.normalized
+      : null
+  } catch {
+    return null
+  }
 }
 
 function managedStylesheetHref(
@@ -122,6 +192,26 @@ function firstHeadingMetadata(body: ParsedElement): Pick<PresentationDocument, "
   }
 }
 
+function inertPresentationBody(body: ParsedElement): void {
+  Array.from(body.querySelectorAll("*")).forEach(element => {
+    if (blockedPresentationBodyElements.has(element.localName.toLowerCase())) element.remove()
+  })
+
+  Array.from(body.querySelectorAll("*")).forEach(element => {
+    for (const attribute of Array.from(element.attributes)) {
+      if (isExecutablePresentationAttribute(attribute.name.toLowerCase())) {
+        element.removeAttribute(attribute.name)
+      }
+    }
+    for (const name of ["href", "src"] as const) {
+      if (!element.hasAttribute(name)) continue
+      const normalized = normalizedUrl(element.getAttribute(name) ?? "")
+      if (normalized === null) element.removeAttribute(name)
+      else element.setAttribute(name, normalized)
+    }
+  })
+}
+
 export function parsePresentationDocument(source: string): PresentationDocument {
   if (!source.trim()) return emptyPresentationDocument()
 
@@ -131,14 +221,7 @@ export function parsePresentationDocument(source: string): PresentationDocument 
     if (!body) return emptyPresentationDocument()
 
     Array.from(document.querySelectorAll("script")).forEach(script => script.remove())
-    Array.from(body.querySelectorAll("[href], [src]")).forEach(element => {
-      for (const name of ["href", "src"] as const) {
-        if (!element.hasAttribute(name)) continue
-        const normalized = normalizedUrl(element.getAttribute(name) ?? "")
-        if (normalized === null) element.removeAttribute(name)
-        else element.setAttribute(name, normalized)
-      }
-    })
+    inertPresentationBody(body)
 
     const head = document.querySelector("head")
     const styleNodes: PresentationStyleNode[] = head

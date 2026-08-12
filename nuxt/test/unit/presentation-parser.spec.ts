@@ -114,6 +114,38 @@ describe("Presentation XHTML parser", () => {
     expect(parsed.bodyHtml.toLowerCase()).not.toContain(unsafeUrl.trim().toLowerCase())
   })
 
+  test("keeps safe editorial markup while inerting executable body markup and URL attributes", () => {
+    const parsed = parsePresentationDocument(`
+      <html><body><h1>Säkert innehåll</h1>
+        <p id="safe-copy" class="article">Bevara <em>denna</em> text.</p>
+        <a id="safe-link" href="red/presentationer/file.pdf">PDF</a>
+        <img id="safe-image" src="images/ett.jpg" alt="Ett motiv">
+        <p id="event-probe" onclick="window.executed = true" v-html="window.executed" @click="window.executed = true" :title="window.executed" ng-click="window.executed = true" data-ng-click="window.executed = true">Inert text</p>
+        <img id="image-probe" src="java&#x0B;script:alert(1)" onerror="window.executed = true" srcdoc="&lt;script&gt;window.executed = true&lt;/script&gt;">
+        <a id="link-probe" href="data:text/html,&lt;script&gt;window.executed = true&lt;/script&gt;">Inert länktext</a>
+        <iframe srcdoc="&lt;script&gt;window.executed = true&lt;/script&gt;">iframe-probe</iframe>
+        <object data="https://evil.example/object">object-probe</object>
+        <embed src="https://evil.example/embed">embed-probe</embed>
+        <audio src="https://evil.example/audio">audio-probe</audio>
+        <video src="https://evil.example/video">video-probe</video>
+        <form action="https://evil.example/form"><input value="form-probe"><button>form-button</button></form>
+        <button type="button">button-probe</button>
+        <svg><a href="javascript:alert(1)">svg-probe</a></svg>
+        <math><mi>math-probe</mi></math>
+      </body></html>
+    `)
+
+    expect(parsed.bodyHtml).toContain('<p id="safe-copy" class="article">Bevara <em>denna</em> text.</p>')
+    expect(parsed.bodyHtml).toContain('id="safe-link" href="/red/presentationer/file.pdf"')
+    expect(parsed.bodyHtml).toContain('id="safe-image" src="/images/ett.jpg" alt="Ett motiv"')
+    expect(parsed.bodyHtml).toContain('id="event-probe">Inert text</p>')
+    expect(parsed.bodyHtml).toContain('id="image-probe"')
+    expect(parsed.bodyHtml).toContain('id="link-probe">Inert länktext</a>')
+    expect(parsed.bodyHtml).not.toMatch(/(?:onerror|onclick|srcdoc|v-html|@click|:title|ng-click|data-ng-click|javascript:|data:text)/iu)
+    expect(parsed.bodyHtml).not.toMatch(/<(?:iframe|object|embed|audio|video|form|button|svg|math)\b/iu)
+    expect(parsed.bodyHtml).not.toMatch(/(?:audio-probe|video-probe|form-probe|form-button|button-probe|svg-probe|math-probe)/iu)
+  })
+
   test("returns a stable empty representation for missing or malformed document structure", () => {
     expect(parsePresentationDocument("")).toEqual({
       bodyHtml: "",
@@ -218,6 +250,29 @@ describe("Presentation background parser", () => {
       .replaceAll("&", "&amp;")
       .replaceAll("'", "&apos;")
       .replaceAll("\n", "&#10;")
+    const [rule] = parseBackgroundRules(`
+      <backgrounds>
+        <background target="/presentationer/specialomraden/*" url="${encodedImagePath}" />
+      </backgrounds>
+    `)
+
+    expect(rule?.imagePath).toBeNull()
+  })
+
+  test.each([
+    "//cdn.example.test/background.jpg",
+    "https://cdn.example.test/background.jpg",
+    "mailto:editor@example.test",
+    "tel:+461234",
+    "/red/other/background.jpg",
+    "/red/bilder/../presentationer/background.jpg",
+    "/red/bilder/%2e%2e/presentationer/background.jpg",
+    "/red/bilder/background.jpg\\\\outside",
+    "/red/bilder/background.jpg\u0000"
+  ])("rejects non-owned background asset URL %s", imagePath => {
+    const encodedImagePath = imagePath
+      .replaceAll("&", "&amp;")
+      .replaceAll("\u0000", "&#0;")
     const [rule] = parseBackgroundRules(`
       <backgrounds>
         <background target="/presentationer/specialomraden/*" url="${encodedImagePath}" />
