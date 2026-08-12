@@ -84,10 +84,17 @@ export type LibraryNativeSortOption<Key extends string> = Readonly<{
 }>
 
 export function librarySortDirection(
+    mode: LibraryMode,
     key: string,
     reversed: boolean
 ): "stigande" | "fallande" {
-    const descendingByDefault = key === "popularitet" || key === "kronologi"
+    let descendingByDefault = false
+    if (mode === "latest") descendingByDefault = true
+    else if (mode === "all") descendingByDefault = key === "relevans" || key === "kronologi"
+    else if (mode === "authors") descendingByDefault = key === "popularitet"
+    else if (mode !== "parts") {
+        descendingByDefault = key === "popularitet" || key === "kronologi"
+    }
     return descendingByDefault !== reversed ? "fallande" : "stigande"
 }
 

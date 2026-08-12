@@ -1596,6 +1596,27 @@ test("clicking the active EPUB sort reverses its primary field without changing 
     .toMatchObject({ mode: "epub", sort: "title", reverse: false })
 })
 
+test("the active All sort exposes its backend direction and updates after reversal", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?sort=relevans", { waitUntil: "networkidle" })
+  await reset(request)
+
+  const sort = page.locator('[data-library-sort="relevans"]')
+  const item = sort.locator("xpath=..")
+  await expect(sort).toHaveAttribute("aria-current", "true")
+  await expect(item.locator(".sr-only")).toHaveText("Aktiv sortering, fallande")
+  await expect(item.locator(".fa-caret-down")).toHaveAttribute("aria-hidden", "true")
+
+  await sort.click()
+  await expect.poll(async () => (await libraryV2Requests(request)).search.length).toBe(1)
+  await expect(item.locator(".sr-only")).toHaveText("Aktiv sortering, stigande")
+  await expect(item.locator(".fa-caret-up")).toHaveAttribute("aria-hidden", "true")
+  expect((await libraryV2Requests(request)).search.at(-1)?.body)
+    .toMatchObject({ mode: "all", sort: "relevance", reverse: true })
+})
+
 test("reversing a multi-field sort leaves its ascending tie-breaker intact", async ({
   page,
   request

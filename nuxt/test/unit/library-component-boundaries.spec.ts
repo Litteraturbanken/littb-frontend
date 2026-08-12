@@ -50,6 +50,11 @@ vi.mock("../../app/components/global/ChronologyRangeSlider.vue", async () => {
 const nuxtRoot = resolve(import.meta.dirname, "../..")
 const source = (path: string) => readFile(resolve(nuxtRoot, path), "utf8")
 
+function sortDescription(target: HTMLElement, key: string): HTMLElement | null {
+  const id = target.querySelector(`[data-library-sort="${key}"]`)?.getAttribute("aria-describedby")
+  return id ? target.querySelector(`[id="${id}"]`) : null
+}
+
 function sourceResponse(
   items: readonly { key: string; title: string; sourceExports?: BrowseResponse["data"][number]["sourceExports"] }[]
 ): BrowseResponse {
@@ -573,6 +578,24 @@ describe("Library component ownership", () => {
     }
   })
 
+  test("all result sort owners expose their active direction", async () => {
+    const owners = [
+      ["all", await source("app/components/library/LibraryAllResults.vue")],
+      ["latest", await source("app/components/library/LibraryLatestResults.vue")],
+      ["author", await source("app/components/library/LibraryAuthorResults.vue")],
+      ["source-download", await source("app/components/library/LibrarySourceDownloadWorkspace.vue")]
+    ] as const
+
+    for (const [owner, componentSource] of owners) {
+      expect(componentSource).toContain(':aria-current="item.active ? \'true\' : undefined"')
+      expect(componentSource).toContain(":aria-describedby=")
+      expect(componentSource).toContain(`library-${owner}-sort-direction-`)
+      expect(componentSource).toContain("Aktiv sortering,")
+      expect(componentSource).toContain('aria-hidden="true"')
+      expect(componentSource).toContain('class="fa"')
+    }
+  })
+
   test("renders the pagination contract and emits selected pages", async () => {
     const target = document.createElement("div")
     document.body.append(target)
@@ -721,6 +744,11 @@ describe("Library component ownership", () => {
 
     expect(target.querySelector("[data-library-error]")?.textContent).toBe("Ett fel uppstod.")
     expect(target.querySelector("[data-library-error]")?.getAttribute("role")).toBe("alert")
+    expect(target.querySelector('[data-library-sort="relevans"]')?.getAttribute("aria-current"))
+      .toBe("true")
+    expect(sortDescription(target, "relevans")?.textContent)
+      .toContain("Aktiv sortering, fallande")
+    expect(target.querySelector(".fa-caret-down")?.getAttribute("aria-hidden")).toBe("true")
 
     response.value = { data: [], hits: 0, suggest: [], failed: false }
     await nextTick()
@@ -869,6 +897,11 @@ describe("Library component ownership", () => {
       .toBe("/bibliotek?intervall=1879%2C1879")
     expect(target.querySelector('[data-library-tooltip-kind="author"]')?.textContent)
       .toBe("Strindberg")
+    expect(target.querySelector('[data-library-sort="nytillkommet"]')?.getAttribute("aria-current"))
+      .toBe("true")
+    expect(sortDescription(target, "nytillkommet")?.textContent)
+      .toContain("Aktiv sortering, stigande")
+    expect(target.querySelector(".fa-caret-up")?.getAttribute("aria-hidden")).toBe("true")
     expect(target.querySelector(".fa")?.classList.contains("fa-caret-up")).toBe(true)
 
     target.querySelector<HTMLAnchorElement>('[data-library-sort="nytillkommet"]')?.click()
@@ -946,6 +979,7 @@ describe("Library component ownership", () => {
         })
       })
       app.component("NuxtLink", NuxtLink)
+      app.config.idPrefix = target === firstTarget ? "first-" : "second-"
       app.mount(target)
       return app
     }
@@ -955,6 +989,16 @@ describe("Library component ownership", () => {
 
     firstTarget.querySelector<HTMLButtonElement>("[data-library-work-toggle]")?.click()
     await nextTick()
+    expect(firstTarget.querySelector('[data-library-sort="popularitet"]')?.getAttribute("aria-current"))
+      .toBe("true")
+    expect(sortDescription(firstTarget, "popularitet")?.textContent)
+      .toContain("Aktiv sortering, fallande")
+    expect(firstTarget.querySelector(".fa-caret-down")?.getAttribute("aria-hidden")).toBe("true")
+    const ids = [...document.querySelectorAll<HTMLElement>('[id*="sort-direction"]')]
+      .map(element => element.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(sortDescription(secondTarget, "popularitet")?.textContent)
+      .toContain("Aktiv sortering, fallande")
     expect(firstTarget.querySelectorAll("[data-library-selected-work]")).toHaveLength(1)
     expect(secondTarget.querySelectorAll("[data-library-selected-work]")).toHaveLength(0)
 
@@ -1414,7 +1458,7 @@ describe("Library component ownership", () => {
     expect(target.querySelector("[data-library-work-actions] a")?.getAttribute("download")).toBe("roda-rummet.epub")
     expect(target.querySelector('[data-library-sort="titlar"]')?.getAttribute("aria-current"))
       .toBe("true")
-    expect(target.querySelector("#library-browse-sort-direction-titlar")?.textContent)
+    expect(sortDescription(target, "titlar")?.textContent)
       .toContain("Aktiv sortering, stigande")
     expect(target.querySelector(".fa-caret-down")?.getAttribute("aria-hidden")).toBe("true")
     const toggle = target.querySelector<HTMLButtonElement>("[data-library-work-toggle]")
@@ -1568,6 +1612,11 @@ describe("Library component ownership", () => {
       .toBe("Strindberg, August")
     expect(target.querySelector("[data-library-authors-show-all]")?.textContent?.trim())
       .toBe("Visa alla 4 träffar")
+    expect(target.querySelector('[data-library-sort="popularitet"]')?.getAttribute("aria-current"))
+      .toBe("true")
+    expect(sortDescription(target, "popularitet")?.textContent)
+      .toContain("Aktiv sortering, fallande")
+    expect(target.querySelector(".fa-caret-down")?.getAttribute("aria-hidden")).toBe("true")
     target.querySelector<HTMLAnchorElement>('[data-library-sort="namn"]')?.click()
     target.querySelector<HTMLButtonElement>("[data-library-authors-show-all]")?.click()
     await nextTick()
@@ -1872,7 +1921,7 @@ describe("Library component ownership", () => {
       .toBe("roda-rummet.epub")
     expect(target.querySelector('[data-library-sort="titlar"]')?.getAttribute("aria-current"))
       .toBe("true")
-    expect(target.querySelector("#library-download-sort-direction-titlar")?.textContent)
+    expect(sortDescription(target, "titlar")?.textContent)
       .toContain("Aktiv sortering, fallande")
     expect(target.querySelector(".fa-caret-up")?.getAttribute("aria-hidden")).toBe("true")
     expect(target.querySelector(".fa")?.classList.contains("fa-caret-up")).toBe(true)

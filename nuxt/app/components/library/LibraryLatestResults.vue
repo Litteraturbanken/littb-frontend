@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, useId } from "vue"
 import type { RouteLocationRaw } from "vue-router"
 import { libraryTooltipDirective } from "../../directives/library-tooltip"
 import { canonicalNuxtHref } from "../../lib/internal-navigation"
-import type {
-    LibraryImprintYearTarget,
-    LibraryPaginationModel,
-    LibrarySortOption
-} from "~/lib/library/component-models"
+import {
+    librarySortDirection,
+    type LibraryImprintYearTarget,
+    type LibraryPaginationModel,
+    type LibrarySortOption
+} from "../../lib/library/component-models"
 import type { LatestSortKey } from "~/lib/library/navigation"
 import type { LatestResponse } from "~/lib/library/page-results"
 import LibraryPagination from "./LibraryPagination.vue"
@@ -31,6 +32,7 @@ const vLibraryTooltip = libraryTooltipDirective
 const imprintYearTargetsByYear = computed(
     () => new Map(props.imprintYearTargets.map(target => [target.year, target.to]))
 )
+const sortDirectionId = `library-latest-sort-direction-${useId()}`
 
 function hasImprintYearTarget(year: string): boolean {
     return imprintYearTargetsByYear.value.has(year)
@@ -59,14 +61,21 @@ function imprintYearTo(year: string): RouteLocationRaw {
                             class="sort_item"
                             :class="{ active: item.active }"
                             :href="href || ''"
+                            :aria-current="item.active ? 'true' : undefined"
+                            :aria-describedby="item.active ? `${sortDirectionId}-${item.key}` : undefined"
                             @click.prevent="emit('selectSort', item.key)"
                             >{{ item.label }}</a
                         ></NuxtLink>{{ " "
-                        }}<i
-                            v-if="item.active"
-                            class="fa"
-                            :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'"
-                        />
+                        }}<template v-if="item.active"
+                            ><span :id="`${sortDirectionId}-${item.key}`" class="sr-only"
+                                >Aktiv sortering, {{ librarySortDirection("latest", item.key, sortReversed) }}</span
+                            >{{ " "
+                            }}<i
+                                aria-hidden="true"
+                                class="fa"
+                                :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'"
+                            />
+                        </template>
                     </li>
                 </ul>
             </div>

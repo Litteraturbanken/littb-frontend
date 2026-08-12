@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, useId } from "vue"
 import type { RouteLocationRaw } from "vue-router"
 import { canonicalNuxtHref, isNuxtInternalHref } from "../../lib/internal-navigation"
-import type {
-    LibraryImprintYearTarget,
-    LibraryPaginationModel,
-    LibrarySortOption
-} from "~/lib/library/component-models"
+import {
+    librarySortDirection,
+    type LibraryImprintYearTarget,
+    type LibraryPaginationModel,
+    type LibrarySortOption
+} from "../../lib/library/component-models"
 import type { RelevanceSortKey } from "~/lib/library/navigation"
 import type { LibraryResponse } from "~/lib/library/page-results"
 import LibraryPagination from "./LibraryPagination.vue"
@@ -27,6 +28,7 @@ const emit = defineEmits<{
 const imprintYearTargetsByYear = computed(
     () => new Map(props.imprintYearTargets.map(target => [target.year, target.to]))
 )
+const sortDirectionId = `library-all-sort-direction-${useId()}`
 
 function hasImprintYearTarget(year: string): boolean {
     return imprintYearTargetsByYear.value.has(year)
@@ -53,14 +55,21 @@ function imprintYearTo(year: string): RouteLocationRaw {
                         class="sort_item"
                         :class="{ active: item.active }"
                         :data-library-sort="item.key"
+                        :aria-current="item.active ? 'true' : undefined"
+                        :aria-describedby="item.active ? `${sortDirectionId}-${item.key}` : undefined"
                         @click.prevent="emit('selectSort', item.key)"
                         >{{ item.label }}</a
                     ></NuxtLink>
-                    <i
-                        v-if="item.active"
-                        class="fa"
-                        :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'"
-                    />
+                    <template v-if="item.active"
+                        ><span :id="`${sortDirectionId}-${item.key}`" class="sr-only"
+                            >Aktiv sortering, {{ librarySortDirection("all", item.key, sortReversed) }}</span
+                        >{{ " "
+                        }}<i
+                            aria-hidden="true"
+                            class="fa"
+                            :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'"
+                        />
+                    </template>
                 </li>
             </ul>
         </div>

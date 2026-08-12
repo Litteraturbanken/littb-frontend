@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, type CSSProperties, watch } from "vue"
+import { computed, nextTick, onMounted, onUnmounted, ref, type CSSProperties, useId, watch } from "vue"
 import type { RouteLocationRaw } from "vue-router"
 import { libraryTooltipDirective } from "../../directives/library-tooltip"
 import { canonicalNuxtHref } from "../../lib/internal-navigation"
-import type {
-    LibraryImprintYearTarget,
-    LibraryNativeSortOption,
-    LibraryPaginationModel,
-    LibrarySourceFormatGroup,
-    LibrarySourceFormatKey
-} from "~/lib/library/component-models"
+import {
+    librarySortDirection,
+    type LibraryImprintYearTarget,
+    type LibraryNativeSortOption,
+    type LibraryPaginationModel,
+    type LibrarySourceFormatGroup,
+    type LibrarySourceFormatKey
+} from "../../lib/library/component-models"
 import type { BrowseSortKey } from "~/lib/library/navigation"
 import type { BrowseResponse } from "~/lib/library/page-results"
 import type { BrowseResult } from "~/lib/library/view-model"
@@ -34,12 +35,9 @@ const formatButtonElement = ref<HTMLButtonElement | null>(null)
 const formatPopoverElement = ref<HTMLDivElement | null>(null)
 const formatPopoverScrollportElement = ref<HTMLDivElement | null>(null)
 const formatPopoverPlacement = ref<"top" | "bottom">("top")
-const formatPopoverStyle = ref<CSSProperties>({
-    top: "0px",
-    left: "0px",
-    visibility: "hidden"
-})
+const formatPopoverStyle = ref<CSSProperties>({ top: "0px", left: "0px", visibility: "hidden" })
 const formatPopoverScrollportStyle = ref<CSSProperties>({})
+const sortDirectionId = `library-source-download-sort-direction-${useId()}`
 const sourceFormatGroups: readonly LibrarySourceFormatGroup[] = [
     {
         mediatype: "etext",
@@ -304,11 +302,13 @@ onUnmounted(() => {
                             class="sort_item"
                             :class="{ active: item.active }"
                             :data-library-sort="item.key"
+                            :aria-current="item.active ? 'true' : undefined"
+                            :aria-describedby="item.active ? `${sortDirectionId}-${item.key}` : undefined"
                             @click.prevent="emit('selectSort', item.key)"
                             >{{ item.label }}</a
-                        ><template v-if="item.active"
-                            >{{ " "
-                            }}<i class="fa" :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'" />
+                        ><template v-if="item.active">
+                            <span :id="`${sortDirectionId}-${item.key}`" class="sr-only">Aktiv sortering, {{ librarySortDirection("works", item.key, sortReversed) }}</span
+                            >{{ " " }}<i aria-hidden="true" class="fa" :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'" />
                         </template>
                     </li>
                 </ul>

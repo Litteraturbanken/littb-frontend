@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { useId } from "vue"
 import { canonicalNuxtHref } from "../../lib/internal-navigation"
-import type { LibraryNativeSortOption } from "~/lib/library/component-models"
+import {
+    librarySortDirection,
+    type LibraryNativeSortOption
+} from "../../lib/library/component-models"
 import type { AuthorSortKey } from "~/lib/library/navigation"
 import type { AuthorBrowseResponse } from "~/lib/library/page-results"
 
@@ -15,6 +19,7 @@ const emit = defineEmits<{
     selectSort: [sort: AuthorSortKey]
     showAll: []
 }>()
+const sortDirectionId = `library-author-sort-direction-${useId()}`
 </script>
 
 <template>
@@ -28,11 +33,19 @@ const emit = defineEmits<{
                         class="sort_item"
                         :class="{ active: item.active }"
                         :data-library-sort="item.key"
+                        :aria-current="item.active ? 'true' : undefined"
+                        :aria-describedby="item.active ? `${sortDirectionId}-${item.key}` : undefined"
                         @click.prevent="emit('selectSort', item.key)"
                         >{{ item.label }}</a>
                     <template v-if="item.active"
+                        ><span :id="`${sortDirectionId}-${item.key}`" class="sr-only"
+                            >Aktiv sortering, {{ librarySortDirection("authors", item.key, sortReversed) }}</span
                         >{{ " "
-                        }}<i class="fa" :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'" />
+                        }}<i
+                            aria-hidden="true"
+                            class="fa"
+                            :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'"
+                        />
                     </template>
                 </li>
             </ul>

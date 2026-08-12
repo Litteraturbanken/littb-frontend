@@ -14,6 +14,7 @@ import {
   toLibrarySearchView
 } from "../../app/lib/library/view-model"
 import { libraryAuthorTooltipText } from "../../app/lib/library-tooltip"
+import { librarySortDirection } from "../../app/lib/library/component-models"
 
 const filterState = {
   query: "  Selma  ",
@@ -36,6 +37,39 @@ const author = {
 } satisfies LibraryAuthor
 
 describe("typed Library boundary", () => {
+  test.each([
+    ["all", "relevans", "fallande"],
+    ["all", "forfattare", "stigande"],
+    ["all", "titlar", "stigande"],
+    ["all", "kronologi", "fallande"],
+    ["latest", "nytillkommet", "fallande"],
+    ["authors", "namn", "stigande"],
+    ["authors", "popularitet", "fallande"],
+    ["authors", "kronologi", "stigande"],
+    ["works", "forfattare", "stigande"],
+    ["works", "titlar", "stigande"],
+    ["works", "popularitet", "fallande"],
+    ["works", "kronologi", "fallande"],
+    ["parts", "forfattare", "stigande"],
+    ["parts", "titlar", "stigande"],
+    ["epub", "forfattare", "stigande"],
+    ["epub", "titlar", "stigande"],
+    ["epub", "popularitet", "fallande"],
+    ["epub", "kronologi", "fallande"],
+    ["pdf", "forfattare", "stigande"],
+    ["pdf", "titlar", "stigande"],
+    ["pdf", "popularitet", "fallande"],
+    ["pdf", "kronologi", "fallande"]
+  ] as const)("describes the %s %s sort from its backend default", (
+    mode,
+    key,
+    expected
+  ) => {
+    expect(librarySortDirection(mode, key, false)).toBe(expected)
+    expect(librarySortDirection(mode, key, true))
+      .toBe(expected === "stigande" ? "fallande" : "stigande")
+  })
+
   test("maps route filter state to the complete generated filters shape", () => {
     expect(buildLibraryFilters(filterState)).toEqual({
       query: "  Selma  ",

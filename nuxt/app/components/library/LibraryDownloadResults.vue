@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, useId } from "vue"
 import type { RouteLocationRaw } from "vue-router"
 import { libraryTooltipDirective } from "../../directives/library-tooltip"
 import { canonicalNuxtHref } from "../../lib/internal-navigation"
@@ -32,6 +32,7 @@ const vLibraryTooltip = libraryTooltipDirective
 const imprintYearTargetsByYear = computed(
     () => new Map(props.imprintYearTargets.map(target => [target.year, target.to]))
 )
+const sortDirectionId = `library-download-sort-direction-${useId()}`
 
 function hasImprintYearTarget(year: string): boolean {
     return imprintYearTargetsByYear.value.has(year)
@@ -58,14 +59,14 @@ function imprintYearTo(year: string): RouteLocationRaw {
                             :aria-current="item.active ? 'true' : undefined"
                             :aria-describedby="
                                 item.active
-                                    ? `library-download-sort-direction-${item.key}`
+                                    ? `${sortDirectionId}-${item.key}`
                                     : undefined
                             "
                             @click.prevent="emit('selectSort', item.key)"
                             >{{ item.label }}</a>
                         <template v-if="item.active"
-                            ><span :id="`library-download-sort-direction-${item.key}`" class="sr-only"
-                                >Aktiv sortering, {{ librarySortDirection(item.key, sortReversed) }}</span
+                            ><span :id="`${sortDirectionId}-${item.key}`" class="sr-only"
+                                >Aktiv sortering, {{ librarySortDirection(mode, item.key, sortReversed) }}</span
                             >{{ " "
                             }}<i aria-hidden="true" class="fa" :class="sortReversed ? 'fa-caret-up' : 'fa-caret-down'" />
                         </template>
