@@ -6,8 +6,10 @@ import { afterEach, describe, expect, test, vi } from "vitest"
 import {
   InvalidAuthorDocumentSource,
   expectedAuthorDocumentSource,
+  isExactSlaHtmlResponse,
   loadAuthorDocument,
-  parseAuthorDocumentBody
+  parseAuthorDocumentBody,
+  readAuthorDocumentResponse
 } from "../../server/utils/author-document"
 import {
   lagerlofOmtexterna,
@@ -593,6 +595,37 @@ afterEach(() => {
 })
 
 describe("SLA author document transport boundary", () => {
+  test("rejects malformed UTF-8 instead of replacing it in a managed document", async () => {
+    await expect(readAuthorDocumentResponse(
+      new Response(new Uint8Array([0xc3, 0x28])),
+      10
+    )).rejects.toThrow()
+  })
+
+  test.each([
+    "text/html",
+    " TEXT/HTML ",
+    "text/html; charset=UTF-8",
+    'text/html; CHARSET="utf8"'
+  ])("accepts only the managed UTF-8 SLA declaration %#", contentType => {
+    expect(isExactSlaHtmlResponse(new Response(null, {
+      headers: { "content-type": contentType }
+    }))).toBe(true)
+  })
+
+  test.each([
+    "text/html; charset=iso-8859-1",
+    'text/html; charset="windows-1252"',
+    "text/html; charset=utf-8; charset=utf8",
+    "text/html; boundary=x",
+    "text/html; charset",
+    'text/html; charset="utf-8'
+  ])("rejects a non-UTF-8 or malformed SLA declaration %#", contentType => {
+    expect(isExactSlaHtmlResponse(new Response(null, {
+      headers: { "content-type": contentType }
+    }))).toBe(false)
+  })
+
   test("uses only the fixed private descriptor and source requests", async () => {
     stubAuthorRuntimeConfig()
     const fetchMock = stubSlaResponses(htmlResponse(
@@ -671,10 +704,31 @@ describe("SLA author document transport boundary", () => {
   })
 
   test.each([
+    "text/html; charset=iso-8859-1",
+    'text/html; charset="windows-1252"'
+  ])("rejects and cancels a non-UTF-8 SLA source declaration %#", async contentType => {
+    stubAuthorRuntimeConfig()
+    const source = new Response("<!doctype html><html><body><p>Safe</p></body></html>", {
+      status: 200,
+      headers: { "content-type": contentType }
+    })
+    const cancel = vi.spyOn(source.body!, "cancel")
+    stubSlaResponses(source)
+
+    await expectUnavailable(
+      loadAuthorDocument(event, "LagerlöfS", "omtexterna"),
+      502,
+      "author_document_unavailable"
+    )
+    expect(cancel).toHaveBeenCalledOnce()
+  })
+
+  test.each([
     "text/html",
     " TEXT/HTML ",
     "text/html; charset=UTF-8",
-    'text/html; CHARSET="utf-8"'
+    'text/html; CHARSET="utf-8"',
+    "text/html; charset=utf8"
   ])("accepts the exact SLA media type with optional charset %#", async contentType => {
     stubAuthorRuntimeConfig()
     stubSlaResponses(new Response(
@@ -721,6 +775,32 @@ describe("SLA author document transport boundary", () => {
 
     await expect(loadAuthorDocument(event, "SöderbergH", "presentation"))
       .resolves.toMatchObject({ documentKind: "presentation", bodyHtml: "<h1>Safe</h1>" })
+  })
+
+  test("maps malformed UTF-8 in a generic source to 502 after consuming its body", async () => {
+    stubAuthorRuntimeConfig()
+    const reader = {
+      read: vi.fn()
+        .mockResolvedValueOnce({ done: false, value: new Uint8Array([0xc3, 0x28]) })
+        .mockResolvedValueOnce({ done: true, value: undefined }),
+      cancel: vi.fn(async () => undefined)
+    }
+    const source = {
+      status: 200,
+      headers: new Headers({ "content-type": "application/xhtml+xml" }),
+      body: { getReader: vi.fn(() => reader) }
+    } as unknown as Response
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(jsonResponse(descriptor()))
+      .mockResolvedValueOnce(source))
+
+    await expectUnavailable(
+      loadAuthorDocument(event, "SöderbergH", "presentation"),
+      502,
+      "author_document_unavailable"
+    )
+    expect(reader.read).toHaveBeenCalledTimes(2)
+    expect(reader.cancel).not.toHaveBeenCalled()
   })
 
   test("cancels an over-limit declared SLA body before reading", async () => {

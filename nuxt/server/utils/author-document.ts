@@ -468,12 +468,12 @@ export async function readAuthorDocumentResponse(
     bytes.set(chunk, offset)
     offset += chunk.byteLength
   }
-  return new TextDecoder().decode(bytes)
+  return new TextDecoder("utf-8", { fatal: true }).decode(bytes)
 }
 
 export function isExactSlaHtmlResponse(response: Response): boolean {
   const contentType = response.headers.get("content-type")
-  return contentType !== null && /^[ \t]*text\/html[ \t]*(?:;[ \t]*charset[ \t]*=[ \t]*(?:"[^"]+"|[!#$%&'*+.^_`|~0-9A-Za-z-]+)[ \t]*)?$/iu
+  return contentType !== null && /^[ \t]*text\/html[ \t]*(?:;[ \t]*charset[ \t]*=[ \t]*(?:"utf-?8"|utf-?8)[ \t]*)?$/iu
     .test(contentType)
 }
 

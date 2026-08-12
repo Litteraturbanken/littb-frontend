@@ -432,6 +432,28 @@ describe("SLA article transport boundary", () => {
     expect(cancel).toHaveBeenCalledOnce()
   })
 
+  test.each([
+    "text/html; charset=iso-8859-1",
+    'text/html; charset="windows-1252"'
+  ])("rejects and cancels a non-UTF-8 SLA article declaration %#", async contentType => {
+    stubRuntimeConfig()
+    const source = new Response("<!doctype html><html><body><p>Safe</p></body></html>", {
+      status: 200,
+      headers: { "content-type": contentType }
+    })
+    const cancel = vi.spyOn(source.body!, "cancel")
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(jsonResponse(exactDescriptor))
+      .mockResolvedValueOnce(source))
+
+    await expectUnavailable(
+      loadSlaArticle(event, "LagerlöfS", articleId),
+      502,
+      "sla_article_unavailable"
+    )
+    expect(cancel).toHaveBeenCalledOnce()
+  })
+
   test("cancels a declared body above 262144 before reading", async () => {
     stubRuntimeConfig()
     let readerRequested = false
