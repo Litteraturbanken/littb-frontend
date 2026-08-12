@@ -120,6 +120,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                         <span
                                             v-else
                                             v-library-tooltip="item.titleTooltip"
+                                            :tabindex="item.titleTooltip ? 0 : undefined"
                                             :data-library-epub-title="mode === 'epub' || undefined"
                                             :data-library-pdf-title="mode === 'pdf' || undefined"
                                             data-library-tooltip-kind="title"
@@ -157,6 +158,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                 ><span
                                     v-else
                                     v-library-tooltip="item.authorTooltip"
+                                    :tabindex="item.authorTooltip ? 0 : undefined"
                                     :data-library-epub-author="mode === 'epub' || undefined"
                                     :data-library-pdf-author="mode === 'pdf' || undefined"
                                     data-library-tooltip-kind="author"

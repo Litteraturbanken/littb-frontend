@@ -140,6 +140,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                             ><span
                                                 v-else
                                                 v-library-tooltip="item.titleTooltip"
+                                                :tabindex="item.titleTooltip ? 0 : undefined"
                                                 :data-library-latest-title="item.titleId"
                                                 data-library-tooltip-kind="title"
                                                 >{{ item.title }}</span
@@ -170,6 +171,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                     ><span
                                         v-else
                                         v-library-tooltip="item.authorTooltip"
+                                        :tabindex="item.authorTooltip ? 0 : undefined"
                                         data-library-tooltip-kind="author"
                                         >{{ item.surname }}</span
                                     ><template v-if="item.roleSuffix"

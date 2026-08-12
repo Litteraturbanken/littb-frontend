@@ -17,6 +17,7 @@ export default defineProject({
       "test/unit/renderable-html.spec.ts",
       "test/unit/search-multi-select.spec.ts",
       "test/unit/library-component-boundaries.spec.ts",
+      "test/unit/library-tooltip-directive.spec.ts",
       "test/unit/reader-contents-dialog.spec.ts",
       "test/unit/reader-focus-controls.spec.ts",
       "test/unit/reader-source-info-dialog.spec.ts"

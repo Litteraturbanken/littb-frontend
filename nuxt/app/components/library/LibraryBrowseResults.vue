@@ -164,6 +164,7 @@ function workActionsId(key: string): string {
                                 ><span
                                     v-else
                                     v-library-tooltip="item.authorTooltip"
+                                    :tabindex="item.authorTooltip ? 0 : undefined"
                                     data-library-tooltip-kind="author"
                                     class="min-w-0 shrink overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
                                     >{{ item.surname }}</span
@@ -197,6 +198,7 @@ function workActionsId(key: string): string {
                             ><span
                                 v-else
                                 v-library-tooltip="item.titleTooltip"
+                                :tabindex="item.titleTooltip ? 0 : undefined"
                                 data-library-tooltip-kind="title"
                                 >{{ item.title }}</span
                             ></span
@@ -221,6 +223,7 @@ function workActionsId(key: string): string {
                         ><span
                             v-else
                             v-library-tooltip="item.authorTooltip"
+                            :tabindex="item.authorTooltip ? 0 : undefined"
                             data-library-tooltip-kind="author"
                             >{{ item.surname }}</span
                         ><template v-if="item.roleSuffix"

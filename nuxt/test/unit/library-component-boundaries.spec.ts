@@ -1619,7 +1619,15 @@ describe("Library component ownership", () => {
       sourceExports: []
     }
     const browseResponse = {
-      data: [inertBrowseItem], hits: 1, distinctHits: 1, authorIds: [], suggest: [], failed: false
+      data: [inertBrowseItem, {
+        ...inertBrowseItem,
+        key: "empty-tooltip",
+        title: "Kort titel",
+        titleTooltip: "",
+        surname: "Kort",
+        authorTooltip: ""
+      }],
+      hits: 2, distinctHits: 2, authorIds: [], suggest: [], failed: false
     }
     const baseProps = {
       loading: false,
@@ -1686,11 +1694,22 @@ describe("Library component ownership", () => {
       expect(section.querySelector('a[href=""]')).toBeNull()
       expect(section.querySelector('a[href^="javascript:"]')).toBeNull()
       expect(section.querySelector('[data-library-tooltip-kind="author"]')?.localName).toBe("span")
+      expect(section.querySelector('[data-library-tooltip-kind="author"]')?.getAttribute("tabindex"))
+        .toBe("0")
     }
     expect(target.querySelector('[data-inert-owner="parts"] [data-library-tooltip-kind="title"]')?.localName)
       .toBe("span")
+    expect(target.querySelector('[data-inert-owner="parts"] [data-library-tooltip-kind="title"]')
+      ?.getAttribute("tabindex")).toBe("0")
+    const emptyTooltipPart = target.querySelectorAll('[data-inert-owner="parts"] [data-library-part-row]')[1]!
+    expect(emptyTooltipPart.querySelector('[data-library-tooltip-kind="title"]')?.hasAttribute("tabindex"))
+      .toBe(false)
+    expect(emptyTooltipPart.querySelector('[data-library-tooltip-kind="author"]')?.hasAttribute("tabindex"))
+      .toBe(false)
     expect(target.querySelector("[data-library-epub-title]")?.localName).toBe("span")
+    expect(target.querySelector("[data-library-epub-title]")?.getAttribute("tabindex")).toBe("0")
     expect(target.querySelector("[data-library-latest-title]")?.localName).toBe("span")
+    expect(target.querySelector("[data-library-latest-title]")?.getAttribute("tabindex")).toBe("0")
     expect(target.querySelector("[data-library-epub-download]")?.getAttribute("href"))
       .toBe("/txt/epub/safe.epub")
     app.unmount()

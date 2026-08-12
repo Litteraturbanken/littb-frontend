@@ -43,6 +43,18 @@ async function waitForHydration(page: import("@playwright/test").Page) {
   await page.locator('[data-library-mounted="true"]').waitFor({ state: "attached" })
 }
 
+async function tabTo(
+  page: import("@playwright/test").Page,
+  target: import("@playwright/test").Locator,
+  maximumTabs = 80
+) {
+  for (let index = 0; index < maximumTabs; index += 1) {
+    await page.keyboard.press("Tab")
+    if (await target.evaluate(element => element === document.activeElement)) return
+  }
+  throw new Error(`Target was not keyboard reachable after ${maximumTabs} Tab presses`)
+}
+
 async function chooseMultiOptions(
   page: import("@playwright/test").Page,
   control: import("@playwright/test").Locator,
@@ -54,6 +66,41 @@ async function chooseMultiOptions(
 }
 
 test.beforeEach(async ({ request }) => resetRequests(request))
+
+test("inert Library tooltip hosts join keyboard order and reveal their full text", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?visa=epub&filter=unsafe-navigation-hrefs", {
+    waitUntil: "networkidle"
+  })
+  await waitForHydration(page)
+  const unsafe = page.locator("[data-library-epub-row]").filter({ hasText: "Osäker navigering" })
+  const title = unsafe.locator("[data-library-epub-title]")
+  const author = unsafe.locator("[data-library-epub-author]")
+  const safe = page.locator("[data-library-epub-row]").filter({ hasText: "Gösta Berlings saga" })
+
+  await expect(title).toHaveAttribute("tabindex", "0")
+  await expect(author).toHaveAttribute("tabindex", "0")
+  await expect(safe.locator("[data-library-epub-title]")).not.toHaveAttribute("tabindex", /./)
+  await expect(safe.locator("[data-library-epub-author]")).not.toHaveAttribute("tabindex", /./)
+
+  await tabTo(page, title)
+  await expect(title).toBeFocused()
+  await expect(page.getByRole("tooltip")).toHaveText("Doktor Glas. Roman")
+  await expect(title).toHaveAttribute("aria-describedby", await page.getByRole("tooltip").getAttribute("id"))
+  await expect(title).toHaveCSS("outline-style", "solid")
+  await expect(title).toHaveCSS("outline-width", "2px")
+
+  await tabTo(page, author, 10)
+  await expect(author).toBeFocused()
+  await expect(page.getByRole("tooltip")).toHaveText("Hjalmar Söderberg (1869-1941)")
+  await expect(author).toHaveAttribute("aria-describedby", await page.getByRole("tooltip").getAttribute("id"))
+  await expect(author).toHaveCSS("outline-style", "solid")
+  await page.keyboard.press("Tab")
+  await expect(page.getByRole("tooltip")).toHaveCount(0)
+  await expect(title).not.toHaveAttribute("aria-describedby", /library-tooltip-/)
+  await expect(author).not.toHaveAttribute("aria-describedby", /library-tooltip-/)
+})
 
 test("advanced Library placeholders retain the production baseline at each breakpoint", async ({
   page

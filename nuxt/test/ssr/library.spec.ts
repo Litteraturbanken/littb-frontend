@@ -540,6 +540,8 @@ test("SSR keeps rejected API title and author destinations visible and inert", a
   expect(unsafe.querySelector("[data-library-epub-author]")?.localName).toBe("span")
   expect(unsafe.querySelector("[data-library-epub-title]")?.hasAttribute("href")).toBe(false)
   expect(unsafe.querySelector("[data-library-epub-author]")?.hasAttribute("href")).toBe(false)
+  expect(unsafe.querySelector("[data-library-epub-title]")?.getAttribute("tabindex")).toBe("0")
+  expect(unsafe.querySelector("[data-library-epub-author]")?.getAttribute("tabindex")).toBe("0")
   expect(unsafe.querySelector("a[href^='javascript:'], a[href^='https://evil.test']")).toBeNull()
 
   const safe = rows[1]!
@@ -547,6 +549,8 @@ test("SSR keeps rejected API title and author destinations visible and inert", a
     .toBe("/f%C3%B6rfattare/LagerlofS/titlar/GostaBerlingsSaga/etext?om-boken")
   expect(safe.querySelector("[data-library-epub-author]")?.getAttribute("href"))
     .toBe("/f%C3%B6rfattare/LagerlofS")
+  expect(safe.querySelector("[data-library-epub-title]")?.hasAttribute("tabindex")).toBe(false)
+  expect(safe.querySelector("[data-library-epub-author]")?.hasAttribute("tabindex")).toBe(false)
 })
 
 test("SSR renders EPUB immediately with a null inactive PDF count", async ({ request }) => {

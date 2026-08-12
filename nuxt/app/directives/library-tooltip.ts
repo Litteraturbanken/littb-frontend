@@ -1,4 +1,4 @@
-import type { DirectiveBinding, ObjectDirective } from "vue"
+import type { DirectiveBinding, ObjectDirective, VNode } from "vue"
 
 const libraryTooltipDelay = 500
 let libraryTooltipSequence = 0
@@ -10,10 +10,53 @@ type LibraryTooltipState = {
   timer: ReturnType<typeof setTimeout> | null
   popup: HTMLDivElement | null
   previousDescribedBy: string | null
+  tabIndexOwned: boolean
   cleanup: () => void
 }
 
 const libraryTooltipStates = new WeakMap<HTMLElement, LibraryTooltipState>()
+
+const naturallyFocusableTags = new Set(["button", "input", "select", "textarea", "summary"])
+
+function vnodeHasTabIndex(vnode: VNode): boolean {
+  return vnode.props != null
+    && (Object.hasOwn(vnode.props, "tabindex") || Object.hasOwn(vnode.props, "tabIndex"))
+}
+
+function isNaturallyFocusable(element: HTMLElement): boolean {
+  const tag = element.localName
+  if (naturallyFocusableTags.has(tag)) return true
+  if (tag === "a" && element.hasAttribute("href")) return true
+  return element.hasAttribute("contenteditable") && element.getAttribute("contenteditable") !== "false"
+}
+
+function releaseLibraryTooltipTabIndex(element: HTMLElement, state: LibraryTooltipState): void {
+  if (!state.tabIndexOwned) return
+  if (element.getAttribute("tabindex") === "0") element.removeAttribute("tabindex")
+  state.tabIndexOwned = false
+}
+
+function updateLibraryTooltipTabIndex(
+  element: HTMLElement,
+  state: LibraryTooltipState,
+  vnode?: VNode
+): void {
+  if (vnode && vnodeHasTabIndex(vnode)) {
+    state.tabIndexOwned = false
+    return
+  }
+  if (state.tabIndexOwned) {
+    if (element.getAttribute("tabindex") !== "0") {
+      state.tabIndexOwned = false
+      return
+    }
+    if (!state.content || isNaturallyFocusable(element)) releaseLibraryTooltipTabIndex(element, state)
+    return
+  }
+  if (!state.content || isNaturallyFocusable(element) || element.hasAttribute("tabindex")) return
+  element.setAttribute("tabindex", "0")
+  state.tabIndexOwned = true
+}
 
 function hideLibraryTooltip(element: HTMLElement, state: LibraryTooltipState): void {
   if (state.timer) clearTimeout(state.timer)
@@ -60,7 +103,11 @@ function updateLibraryTooltipVisibility(
   else hideLibraryTooltip(element, state)
 }
 
-function mountLibraryTooltip(element: HTMLElement, binding: DirectiveBinding<string>): void {
+function mountLibraryTooltip(
+  element: HTMLElement,
+  binding: DirectiveBinding<string>,
+  vnode?: VNode
+): void {
   const mouseenter = () => {
     state.hovered = true
     updateLibraryTooltipVisibility(element, state)
@@ -84,6 +131,10 @@ function mountLibraryTooltip(element: HTMLElement, binding: DirectiveBinding<str
     timer: null,
     popup: null,
     previousDescribedBy: element.getAttribute("aria-describedby"),
+    tabIndexOwned: Boolean(
+      vnode && !vnodeHasTabIndex(vnode) && !isNaturallyFocusable(element)
+      && element.getAttribute("tabindex") === "0"
+    ),
     cleanup: () => {
       for (const [event, handler] of [
         ["mouseenter", mouseenter],
@@ -100,23 +151,25 @@ function mountLibraryTooltip(element: HTMLElement, binding: DirectiveBinding<str
     ["blur", blur]
   ] as const) element.addEventListener(event, handler)
   libraryTooltipStates.set(element, state)
+  updateLibraryTooltipTabIndex(element, state, vnode)
 }
 
 export const libraryTooltipDirective: ObjectDirective<HTMLElement, string> = {
   getSSRProps(binding) {
     return binding.value ? { "data-library-tooltip-content": binding.value } : {}
   },
-  mounted(element, binding) {
-    if (binding.value) mountLibraryTooltip(element, binding)
+  mounted(element, binding, vnode) {
+    if (binding.value) mountLibraryTooltip(element, binding, vnode)
   },
-  updated(element, binding) {
+  updated(element, binding, vnode) {
     const state = libraryTooltipStates.get(element)
     if (!state) {
-      if (binding.value) mountLibraryTooltip(element, binding)
+      if (binding.value) mountLibraryTooltip(element, binding, vnode)
       return
     }
     if (state.content !== binding.value) hideLibraryTooltip(element, state)
     state.content = binding.value || ""
+    updateLibraryTooltipTabIndex(element, state, vnode)
     if (!state.content) {
       state.cleanup()
       libraryTooltipStates.delete(element)
@@ -126,6 +179,7 @@ export const libraryTooltipDirective: ObjectDirective<HTMLElement, string> = {
     const state = libraryTooltipStates.get(element)
     if (!state) return
     hideLibraryTooltip(element, state)
+    releaseLibraryTooltipTabIndex(element, state)
     state.cleanup()
     libraryTooltipStates.delete(element)
   }

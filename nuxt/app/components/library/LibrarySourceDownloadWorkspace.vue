@@ -402,7 +402,7 @@ onUnmounted(() => {
                                     ><span
                                         v-else
                                         v-library-tooltip="item.authorTooltip"
-                                        data-library-tooltip-kind="author"
+                                        :tabindex="item.authorTooltip ? 0 : undefined" data-library-tooltip-kind="author"
                                         class="min-w-0 shrink overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
                                         >{{ item.surname }}</span
                                     ><template v-if="item.roleSuffix"
