@@ -184,8 +184,11 @@ describe("Library component ownership", () => {
     await nextTick()
 
     const searchInput = searchTarget.querySelector<HTMLInputElement>("[data-library-filter]")!
+    const searchLabel = searchTarget.querySelector<HTMLLabelElement>("label.sr-only")!
     expect(searchInput.value).toBe("Berg")
     expect(searchInput.getAttribute("placeholder")).toBe("Skriv författarnamn eller titel")
+    expect(searchLabel.textContent?.trim()).toBe("Sök i biblioteket")
+    expect(searchLabel.getAttribute("for")).toBe(searchInput.id)
     searchInput.value = "Söderberg"
     searchInput.dispatchEvent(new window.Event("input"))
     const submit = new window.Event("submit", { bubbles: true, cancelable: true })

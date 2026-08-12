@@ -104,6 +104,10 @@ test("SSR renders the default Library slice from typed private options and searc
   expect(document.querySelector("h1")?.textContent?.trim()).toBe("Botanisera i biblioteket")
   expect(document.querySelector<HTMLInputElement>("[data-library-filter]")?.value)
     .toBe("Röda rummet")
+  const searchInput = document.querySelector<HTMLInputElement>("[data-library-filter]")
+  expect(searchInput?.id).toBeTruthy()
+  expect(document.querySelector(`label[for="${searchInput?.id}"]`)?.textContent?.trim())
+    .toBe("Sök i biblioteket")
   expect([...document.querySelectorAll("[data-library-tab]")].map(node => node.textContent?.trim()))
     .toEqual([
       "Alla träffar", "Nytt", "Författare: 156", "Verk: 3",
@@ -617,6 +621,10 @@ test("standalone EPUB keeps its shell and uses the same typed primary owner", as
   expect(document.body.className).toBe("focus page-epub ready")
   expect(document.documentElement.getAttribute("style")).toContain("background-image:none")
   expect(document.querySelector("h1")?.textContent?.trim()).toBe("Hämta e-böcker")
+  const searchInput = document.querySelector<HTMLInputElement>("[data-library-filter]")
+  expect(searchInput?.id).toBeTruthy()
+  expect(document.querySelector(`label[for="${searchInput?.id}"]`)?.textContent?.trim())
+    .toBe("Sök i biblioteket")
   expect([...document.querySelectorAll("[data-library-tab]")].map(tab => tab.textContent?.trim()))
     .toEqual(["Epub: 201", "PDF"])
   expect(epubRows(document)).toHaveLength(3)

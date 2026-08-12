@@ -380,6 +380,23 @@ test("submit before debounce persists one request and durable filter state", asy
   expect(ledger.filter(entry => entry.scope === "public")).toHaveLength(1)
 })
 
+test("the shared Library search field has a stable accessible name and submits by keyboard", async ({
+  page
+}) => {
+  for (const path of ["/bibliotek", "/epub"]) {
+    await page.goto(path, { waitUntil: "networkidle" })
+    const input = page.getByRole("textbox", { name: "Sök i biblioteket" })
+    await expect(input).toHaveCount(1)
+    await expect(input).toHaveAttribute("placeholder", "Skriv författarnamn eller titel")
+    await input.fill("Selma")
+    await input.press("Enter")
+    await expect(page).toHaveURL(/(?:\?|&)filter=Selma(?:&|$)/)
+    await expect(path === "/epub"
+      ? page.getByRole("link", { name: "Gösta Berlings saga" })
+      : page.getByRole("link", { name: /Lagerlöf/ }).first()).toBeVisible()
+  }
+})
+
 test("a delayed stale Library request cannot replace the latest results", async ({
   page,
   request

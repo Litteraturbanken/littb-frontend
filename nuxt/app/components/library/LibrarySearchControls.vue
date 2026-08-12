@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { useId } from "vue"
+
 defineProps<{
     filter: string
     hasActiveFilters: boolean
     advancedOpen: boolean
 }>()
+
+const searchInputId = `library-search-${useId()}`
 
 const emit = defineEmits<{
     "update-filter": [value: string]
@@ -23,6 +27,7 @@ function inputValue(event: Event): string {
         @submit.prevent="emit('submit')"
     >
         <div class="main_input flex flex-wrap -ml-6 relative mb-8 items-center">
+            <label :for="searchInputId" class="sr-only">Sök i biblioteket</label>
             <svg
                 class="w-6 h-6 relative left-10 top-0 -mt-px"
                 viewBox="0 0 24 24"
@@ -38,6 +43,7 @@ function inputValue(event: Event): string {
                 />
             </svg>
             <input
+                :id="searchInputId"
                 :value="filter"
                 data-library-filter
                 class="filter_input border border-gray-500 mr-4 flex-grow py-3 pl-12 pr-4 text-base"
