@@ -42,6 +42,7 @@ function stubRuntimeConfig() {
 }
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
 })
@@ -248,7 +249,8 @@ describe("Dramawebben managed source boundary", () => {
     })
     expect(fetchMock).toHaveBeenCalledWith(`https://managed.test${path}`, {
       method: "GET",
-      redirect: "manual"
+      redirect: "manual",
+      signal: expect.any(AbortSignal)
     })
   })
 
@@ -283,8 +285,152 @@ describe("Dramawebben managed source boundary", () => {
     expect(fetchMock).toHaveBeenCalledOnce()
     expect(fetchMock.mock.calls[0]).toEqual([
       "https://managed.test/red/dramawebben/om.html",
-      { method: "GET", redirect: "manual" }
+      {
+        method: "GET",
+        redirect: "manual",
+        signal: expect.any(AbortSignal)
+      }
     ])
+  })
+
+  test("aborts a fetch that exceeds the managed-source deadline", async () => {
+    vi.useFakeTimers()
+    stubRuntimeConfig()
+    let signal: AbortSignal | undefined
+    const fetchMock = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      signal = init?.signal ?? undefined
+      return await new Promise<Response>((_resolve, reject) => {
+        signal?.addEventListener("abort", () => {
+          reject(new Error("fetch-timeout-upstream-probe"))
+        }, { once: true })
+      })
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    const result = loadDramawebbenDocument(event, "om")
+    let rejection: unknown
+    void result.catch(error => { rejection = error })
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(signal?.aborted).toBe(true)
+    expect(rejection).toMatchObject({
+      statusCode: 502,
+      data: { code: "dramawebben_document_unavailable" }
+    })
+    await expectDocumentError(result, 502, "dramawebben_document_unavailable")
+    await expect(result).rejects.not.toThrow(/fetch-timeout-upstream-probe/iu)
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  test("cancels a response body that stalls past the same deadline", async () => {
+    vi.useFakeTimers()
+    stubRuntimeConfig()
+    let signal: AbortSignal | undefined
+    let markReadStarted!: () => void
+    const readStarted = new Promise<void>(resolve => { markReadStarted = resolve })
+    const cancel = vi.fn(async () => undefined)
+    const read = vi.fn(async () => {
+      markReadStarted()
+      return await new Promise<ReadableStreamReadResult<Uint8Array>>(() => undefined)
+    })
+    const response = {
+      status: 200,
+      headers: new Headers({ "content-type": "text/html; charset=utf-8" }),
+      body: { getReader: () => ({ read, cancel }) }
+    } as unknown as Response
+    vi.stubGlobal("fetch", vi.fn(async (
+      _input: string | URL | Request,
+      init?: RequestInit
+    ) => {
+      signal = init?.signal ?? undefined
+      return response
+    }))
+
+    const result = loadDramawebbenDocument(event, "om")
+    let rejection: unknown
+    void result.catch(error => { rejection = error })
+    await readStarted
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(signal?.aborted).toBe(true)
+    expect(cancel).toHaveBeenCalledOnce()
+    expect(rejection).toMatchObject({
+      statusCode: 502,
+      data: { code: "dramawebben_document_unavailable" }
+    })
+    await expectDocumentError(result, 502, "dramawebben_document_unavailable")
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  test("does not accept a parseable partial body when cancellation settles its stalled read", async () => {
+    vi.useFakeTimers()
+    stubRuntimeConfig()
+    const source = new TextEncoder().encode(
+      "<!doctype html><html><body><p>partial-upstream-probe</p></body></html>"
+    )
+    let readCount = 0
+    let finishStalledRead!: (result: ReadableStreamReadResult<Uint8Array>) => void
+    const stalledRead = new Promise<ReadableStreamReadResult<Uint8Array>>(resolve => {
+      finishStalledRead = resolve
+    })
+    let markReadStarted!: () => void
+    const readStarted = new Promise<void>(resolve => { markReadStarted = resolve })
+    const cancel = vi.fn(async () => {
+      finishStalledRead({ done: true, value: undefined })
+    })
+    const response = {
+      status: 200,
+      headers: new Headers({ "content-type": "text/html" }),
+      body: {
+        getReader: () => ({
+          cancel,
+          read: vi.fn(async () => {
+            readCount += 1
+            if (readCount === 1) return { done: false, value: source }
+            markReadStarted()
+            return await stalledRead
+          })
+        })
+      }
+    } as unknown as Response
+    vi.stubGlobal("fetch", vi.fn(async () => response))
+
+    const result = loadDramawebbenDocument(event, "om")
+    let rejection: unknown
+    void result.catch(error => { rejection = error })
+    await readStarted
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(cancel).toHaveBeenCalledOnce()
+    expect(rejection).toMatchObject({
+      statusCode: 502,
+      data: { code: "dramawebben_document_unavailable" }
+    })
+    await expect(result).rejects.not.toThrow(/partial-upstream-probe/iu)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  test("clears the deadline after a successful managed response", async () => {
+    vi.useFakeTimers()
+    stubRuntimeConfig()
+    let signal: AbortSignal | undefined
+    vi.stubGlobal("fetch", vi.fn(async (
+      _input: string | URL | Request,
+      init?: RequestInit
+    ) => {
+      signal = init?.signal ?? undefined
+      return managedResponse("<!doctype html><html><body><p>Safe</p></body></html>")
+    }))
+
+    await expect(loadDramawebbenDocument(event, "om")).resolves.toMatchObject({
+      documentKind: "om"
+    })
+    expect(signal?.aborted).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+
+    await vi.advanceTimersByTimeAsync(20_000)
+    expect(signal?.aborted).toBe(false)
   })
 
   test.each([

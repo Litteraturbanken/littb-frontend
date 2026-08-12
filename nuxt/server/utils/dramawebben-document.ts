@@ -38,6 +38,7 @@ const sources = Object.freeze({
 } as const)
 
 const maxBytes = 262_144
+const managedSourceTimeoutMs = 10_000
 const allowedElements = new Set([
   "a", "br", "div", "em", "h2", "h3", "i", "p", "strong", "table",
   "tbody", "td", "tr"
@@ -199,7 +200,7 @@ export function dramawebbenDocumentError(
   })
 }
 
-async function readBoundedResponse(response: Response): Promise<string> {
+async function readBoundedResponse(response: Response, signal: AbortSignal): Promise<string> {
   const declaredLength = response.headers.get("content-length")
   if (declaredLength !== null
     && /^\d+$/u.test(declaredLength)
@@ -210,18 +211,47 @@ async function readBoundedResponse(response: Response): Promise<string> {
 
   if (response.body === null) return ""
   const reader = response.body.getReader()
+  let cancellation: Promise<void> | null = null
+  const cancelReader = (): Promise<void> => {
+    cancellation ??= reader.cancel().catch(() => undefined)
+    return cancellation
+  }
+  const readChunk = async (): Promise<ReadableStreamReadResult<Uint8Array>> => {
+    if (signal.aborted) {
+      await cancelReader()
+      throw signal.reason
+    }
+    let rejectAbort!: (reason?: unknown) => void
+    const aborted = new Promise<never>((_resolve, reject) => { rejectAbort = reject })
+    const onAbort = () => {
+      void cancelReader()
+      rejectAbort(signal.reason)
+    }
+    signal.addEventListener("abort", onAbort, { once: true })
+    if (signal.aborted) onAbort()
+    try {
+      return await Promise.race([reader.read(), aborted])
+    } finally {
+      signal.removeEventListener("abort", onAbort)
+    }
+  }
   const chunks: Uint8Array[] = []
   let totalBytes = 0
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    if (value === undefined) continue
-    totalBytes += value.byteLength
-    if (totalBytes > maxBytes) {
-      await reader.cancel().catch(() => undefined)
-      throw new InvalidDramawebbenDocumentSource()
+  try {
+    while (true) {
+      const { done, value } = await readChunk()
+      if (done) break
+      if (value === undefined) continue
+      totalBytes += value.byteLength
+      if (totalBytes > maxBytes) {
+        await cancelReader()
+        throw new InvalidDramawebbenDocumentSource()
+      }
+      chunks.push(value)
     }
-    chunks.push(value)
+  } catch (error) {
+    await cancelReader()
+    throw error
   }
 
   const bytes = new Uint8Array(totalBytes)
@@ -249,34 +279,47 @@ export async function loadDramawebbenDocument(
 
   const config = useRuntimeConfig(event)
   const sourceUrl = `${config.contentBase.replace(/\/$/u, "")}${sources[kind]}`
-  let response: Response
+  const controller = new AbortController()
+  const timer = setTimeout(() => {
+    controller.abort(new Error("Dramawebben managed source timeout"))
+  }, managedSourceTimeoutMs)
   try {
-    response = await fetch(sourceUrl, { method: "GET", redirect: "manual" })
-  } catch {
-    return dramawebbenDocumentError(502, "dramawebben_document_unavailable")
-  }
+    let response: Response
+    try {
+      response = await fetch(sourceUrl, {
+        method: "GET",
+        redirect: "manual",
+        signal: controller.signal
+      })
+      if (controller.signal.aborted) throw controller.signal.reason
+    } catch {
+      return dramawebbenDocumentError(502, "dramawebben_document_unavailable")
+    }
 
-  if (response.status === 404) {
-    await response.body?.cancel().catch(() => undefined)
-    return dramawebbenDocumentError(404, "dramawebben_document_not_found")
-  }
-  if (response.status !== 200 || !isHtmlResponse(response)) {
-    await response.body?.cancel().catch(() => undefined)
-    return dramawebbenDocumentError(502, "dramawebben_document_unavailable")
-  }
+    if (response.status === 404) {
+      await response.body?.cancel().catch(() => undefined)
+      return dramawebbenDocumentError(404, "dramawebben_document_not_found")
+    }
+    if (response.status !== 200 || !isHtmlResponse(response)) {
+      await response.body?.cancel().catch(() => undefined)
+      return dramawebbenDocumentError(502, "dramawebben_document_unavailable")
+    }
 
-  let source: string
-  try {
-    source = await readBoundedResponse(response)
-  } catch {
-    return dramawebbenDocumentError(502, "dramawebben_document_unavailable")
-  }
+    let source: string
+    try {
+      source = await readBoundedResponse(response, controller.signal)
+    } catch {
+      return dramawebbenDocumentError(502, "dramawebben_document_unavailable")
+    }
 
-  let bodyHtml: SanitizedHtml<"dramawebben-document">
-  try {
-    bodyHtml = parseDramawebbenDocumentBody(source)
-  } catch {
-    return dramawebbenDocumentError(502, "dramawebben_document_unavailable")
+    let bodyHtml: SanitizedHtml<"dramawebben-document">
+    try {
+      bodyHtml = parseDramawebbenDocumentBody(source)
+    } catch {
+      return dramawebbenDocumentError(502, "dramawebben_document_unavailable")
+    }
+    return { documentKind: kind, bodyHtml }
+  } finally {
+    clearTimeout(timer)
   }
-  return { documentKind: kind, bodyHtml }
 }
