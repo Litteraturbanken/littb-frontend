@@ -1226,6 +1226,101 @@ describe("browser event delivery", () => {
     }
   })
 
+  test("preserves exponential retry timing across repeated page-exit cleanup", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-08-12T12:00:00Z"))
+    try {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(new Response(null, { status: 503 }))
+        .mockResolvedValueOnce(new Response(null, { status: 503 }))
+        .mockResolvedValueOnce(new Response(null, { status: 202 }))
+      const beacon = vi.fn(() => false)
+      const reporter = new BrowserObservabilityReporter(reporterOptions({
+        fetch: fetchMock,
+        beacon,
+        autoFlush: true
+      }))
+      const eventIds = await enqueueNumberedEvents(reporter, 1)
+
+      await reporter.flush()
+      const firstExitFlush = reporter.flush(true)
+      const secondExitFlush = reporter.flush(true)
+      await Promise.all([firstExitFlush, secondExitFlush])
+
+      const concurrent = await createBrowserErrorEvent({
+        eventName: "browser.error",
+        error: new Error("discarded-concurrent"),
+        component: "ConcurrentDuringBackoff",
+        resourceKind: "unknown",
+        route: "/bibliotek",
+        environment: "stage",
+        deploymentGitSha: GIT_SHA,
+        randomUUID: () => "018f47c0-4d5b-7a62-8f41-999999999995"
+      })
+      reporter.enqueue(concurrent)
+
+      expect(fetchBodies(fetchMock)).toEqual([eventIds, eventIds])
+      expect(vi.getTimerCount()).toBe(1)
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(vi.getTimerCount()).toBe(1)
+      await vi.advanceTimersByTimeAsync(999)
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+      await vi.advanceTimersByTimeAsync(1)
+      expect(fetchBodies(fetchMock)).toEqual([
+        eventIds,
+        eventIds,
+        [eventIds[0], concurrent.event_id]
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  test.each([
+    [503, 202, "failed tail"],
+    [202, 503, "failed active retry"]
+  ] as const)(
+    "does not reset durable backoff after a mixed exit outcome: %s/%s %s",
+    async (tailStatus, activeRetryStatus) => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date("2026-08-12T12:00:00Z"))
+      try {
+        const fetchMock = vi.fn()
+          .mockResolvedValueOnce(new Response(null, { status: 503 }))
+          .mockResolvedValueOnce(new Response(null, { status: 503 }))
+          .mockResolvedValueOnce(new Response(null, { status: tailStatus }))
+          .mockResolvedValueOnce(new Response(null, { status: activeRetryStatus }))
+          .mockResolvedValueOnce(new Response(null, { status: 202 }))
+        const beacon = vi.fn(() => false)
+        const reporter = new BrowserObservabilityReporter(reporterOptions({
+          fetch: fetchMock,
+          beacon,
+          autoFlush: true
+        }))
+        const eventIds = await enqueueNumberedEvents(reporter, 11)
+
+        await reporter.flush()
+        const normalFlush = reporter.flush()
+        const exitFlush = reporter.flush(true)
+        await Promise.all([normalFlush, exitFlush])
+
+        expect(fetchMock).toHaveBeenCalledTimes(4)
+        expect(vi.getTimerCount()).toBe(1)
+        await vi.advanceTimersByTimeAsync(1_000)
+        expect(fetchMock).toHaveBeenCalledTimes(4)
+        await vi.advanceTimersByTimeAsync(999)
+        expect(fetchMock).toHaveBeenCalledTimes(4)
+        await vi.advanceTimersByTimeAsync(1)
+        expect(fetchBodies(fetchMock).at(-1)).toEqual(
+          tailStatus === 503 ? eventIds.slice(10) : eventIds.slice(0, 10)
+        )
+      } finally {
+        vi.useRealTimers()
+      }
+    }
+  )
+
   test("retries a throttled delivery after backoff without losing the batch", async () => {
     vi.useFakeTimers()
     try {

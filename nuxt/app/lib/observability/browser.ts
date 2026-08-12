@@ -267,6 +267,7 @@ export class BrowserObservabilityReporter {
   #activeBatchFailed = false
   #exitFlushing: Promise<void> | undefined
   #retryDelayMs = FLUSH_DELAY_MS
+  #retryDueAt: number | undefined
 
   constructor(options: ReporterOptions) {
     this.#options = options
@@ -360,8 +361,12 @@ export class BrowserObservabilityReporter {
 
   #scheduleFlush(delay: number): void {
     if (this.#options.autoFlush === false || this.#timer) return
+    if (this.#retryDueAt !== undefined) {
+      delay = Math.max(0, this.#retryDueAt - Date.now())
+    }
     this.#timer = setTimeout(() => {
       this.#timer = undefined
+      this.#retryDueAt = undefined
       void this.flush()
     }, delay)
   }
@@ -392,6 +397,7 @@ export class BrowserObservabilityReporter {
       this.#timer = undefined
       this.#exitFlushing = undefined
       if (this.#queue.length > 0) this.#scheduleFlush(FLUSH_DELAY_MS)
+      else this.#retryDueAt = undefined
     }
   }
 
@@ -432,6 +438,9 @@ export class BrowserObservabilityReporter {
       this.#requeueFront(failedBatch)
       this.#scheduleRetry()
       return
+    }
+    if (exitPlan.sentBytes > 0 || resolvedActiveDelivery.bytes > 0) {
+      this.#resetRetry()
     }
     if (this.#queue.length > 0) {
       await this.#deliverOnExit(remainingPageExitBytes(
@@ -525,8 +534,19 @@ export class BrowserObservabilityReporter {
   }
 
   #scheduleRetry(): void {
+    const dueAt = Date.now() + this.#retryDelayMs
+    this.#retryDueAt = Math.max(this.#retryDueAt ?? 0, dueAt)
+    if (this.#timer) clearTimeout(this.#timer)
+    this.#timer = undefined
     this.#scheduleFlush(this.#retryDelayMs)
     this.#retryDelayMs = Math.min(this.#retryDelayMs * 2, MAX_RETRY_DELAY_MS)
+  }
+
+  #resetRetry(): void {
+    if (this.#timer) clearTimeout(this.#timer)
+    this.#timer = undefined
+    this.#retryDelayMs = FLUSH_DELAY_MS
+    this.#retryDueAt = undefined
   }
 
   async #deliver(): Promise<void> {
@@ -541,7 +561,7 @@ export class BrowserObservabilityReporter {
     if (await this.#deliverByFetch(body)) {
       this.#activeBatch = undefined
       this.#activeBatchBytes = 0
-      this.#retryDelayMs = FLUSH_DELAY_MS
+      this.#resetRetry()
       return
     }
     this.#activeBatchFailed = true
@@ -560,9 +580,6 @@ export class BrowserObservabilityReporter {
     const bodyBytes = byteLength(body)
     if (bodyBytes > byteBudget) return { bytes: 0, delivered: false }
     const delivered = this.#deliverByBeacon(body) || await this.#deliverByFetch(body)
-    if (delivered) {
-      this.#retryDelayMs = FLUSH_DELAY_MS
-    }
     return { bytes: bodyBytes, delivered }
   }
 
@@ -580,7 +597,6 @@ export class BrowserObservabilityReporter {
       }
       if (this.#deliverByBeacon(body)) {
         sentBytes += bodyBytes
-        this.#retryDelayMs = FLUSH_DELAY_MS
         continue
       }
       sentBytes += bodyBytes
@@ -596,9 +612,6 @@ export class BrowserObservabilityReporter {
     const failedBatch = plan.fallbackDeliveries.flatMap((fallback, index) => (
       fallbackResults[index] ? [] : fallback.batch
     ))
-    if (plan.fallbackDeliveries.length > 0 && failedBatch.length === 0) {
-      this.#retryDelayMs = FLUSH_DELAY_MS
-    }
     return { failedBatch, sentBytes: plan.sentBytes }
   }
 
@@ -608,6 +621,7 @@ export class BrowserObservabilityReporter {
       this.#requeueFront(result.failedBatch)
       this.#scheduleRetry()
     }
+    else if (result.sentBytes > 0) this.#resetRetry()
     if (this.#queue.length > 0) this.#scheduleFlush(FLUSH_DELAY_MS)
     return result
   }
