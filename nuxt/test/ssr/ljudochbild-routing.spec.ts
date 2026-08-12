@@ -44,6 +44,21 @@ test("preserves query strings exactly", async ({ request }) => {
   )
 })
 
+test("hands Ljud och bild off only for safe methods", async ({ request }) => {
+  const path = "/ljudochbild/f%C3%B6rfattare?media=ljud%2Fbild&empty="
+  const head = await request.fetch(path, { method: "HEAD", maxRedirects: 0 })
+  expect(head.status()).toBe(302)
+  expect(head.headers().location).toBe(
+    `${externalBase}f%C3%B6rfattare?media=ljud%2Fbild&empty=`
+  )
+
+  for (const method of ["POST", "PUT", "DELETE"] as const) {
+    const response = await request.fetch(path, { method, maxRedirects: 0 })
+    expect(response.status(), method).toBe(404)
+    expect(response.headers().location, method).toBeUndefined()
+  }
+})
+
 test("keeps absolute-looking suffixes on the fixed external origin", async ({ request }) => {
   await expectExternalRedirect(
     request,

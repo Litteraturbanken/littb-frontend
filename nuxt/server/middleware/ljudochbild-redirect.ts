@@ -18,6 +18,8 @@ function isSafeSuffix(suffix: string) {
 }
 
 export default defineEventHandler(event => {
+  if (event.method !== "GET" && event.method !== "HEAD") return
+
   const requestUrl = getRequestURL(event)
   const pathname = requestUrl.pathname
 

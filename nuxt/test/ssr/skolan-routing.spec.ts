@@ -52,6 +52,19 @@ test("preserves Skolan query strings exactly", async ({ request }) => {
   )
 })
 
+test("hands Skolan off only for safe methods", async ({ request }) => {
+  const path = "/skolan/lyrik?media=text%2Fbild&empty="
+  const head = await request.fetch(path, { method: "HEAD", maxRedirects: 0 })
+  expect(head.status()).toBe(302)
+  expect(head.headers().location).toBe(`${externalBase}lyrik?media=text%2Fbild&empty=`)
+
+  for (const method of ["POST", "PUT", "DELETE"] as const) {
+    const response = await request.fetch(path, { method, maxRedirects: 0 })
+    expect(response.status(), method).toBe(404)
+    expect(response.headers().location, method).toBeUndefined()
+  }
+})
+
 test("keeps absolute-looking Skolan suffixes on the fixed external origin", async ({
   request
 }) => {

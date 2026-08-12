@@ -88,6 +88,21 @@ test("does not hand off non-project object property names", async ({ request }) 
 })
 
 for (const project of projects) {
+  test(`hands off ${project.slug} only for safe methods`, async ({ request }) => {
+    const path = `/${project.encodedSlug}/samling?view=text%2Fbild&empty=`
+    const head = await request.fetch(path, { method: "HEAD", maxRedirects: 0 })
+    expect(head.status()).toBe(302)
+    expect(head.headers().location).toBe(
+      `${externalBase(project)}samling?view=text%2Fbild&empty=`
+    )
+
+    for (const method of ["POST", "PUT", "DELETE"] as const) {
+      const response = await request.fetch(path, { method, maxRedirects: 0 })
+      expect(response.status(), method).toBe(404)
+      expect(response.headers().location, method).toBeUndefined()
+    }
+  })
+
   test(`redirects every ${project.slug} root spelling to the external trailing-slash root`, async ({
     request
   }) => {

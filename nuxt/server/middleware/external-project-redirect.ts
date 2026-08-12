@@ -24,6 +24,8 @@ function isSafeSuffix(suffix: string) {
 }
 
 export default defineEventHandler(event => {
+  if (event.method !== "GET" && event.method !== "HEAD") return
+
   const rawUrl = event.node.req.url ?? "/"
   const queryStart = rawUrl.indexOf("?")
   const pathname = queryStart === -1 ? rawUrl : rawUrl.slice(0, queryStart)
