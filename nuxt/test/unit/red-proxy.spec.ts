@@ -2,13 +2,15 @@ import {
   createServer,
   request as httpRequest,
   type IncomingHttpHeaders,
+  type IncomingMessage,
   type RequestListener,
-  type Server
+  type Server,
+  type ServerResponse
 } from "node:http"
 import { once } from "node:events"
 import { gzipSync } from "node:zlib"
 
-import { createApp, createRouter, toNodeListener } from "h3"
+import { createApp, createRouter, toNodeListener, type H3Event } from "h3"
 import { afterEach, describe, expect, test, vi } from "vitest"
 
 const openServers: Server[] = []
@@ -31,13 +33,20 @@ async function listen(listener: RequestListener): Promise<{
   }
 }
 
-async function redProxyOrigin(contentBase: string): Promise<string> {
+async function redProxyOrigin(
+  contentBase: string,
+  onEvent?: (event: H3Event) => void
+): Promise<string> {
   vi.stubGlobal("defineEventHandler", (handler: unknown) => handler)
   vi.stubGlobal("useRuntimeConfig", () => ({ contentBase }))
   const handler = (await import("../../server/routes/red/[...path]")).default
+  const observedHandler = (event: H3Event) => {
+    onEvent?.(event)
+    return handler(event)
+  }
   const router = createRouter()
-    .get("/red/**:path", handler)
-    .head("/red/**:path", handler)
+    .get("/red/**:path", observedHandler)
+    .head("/red/**:path", observedHandler)
   const { origin } = await listen(toNodeListener(createApp().use(router.handler)))
   return origin
 }
@@ -75,6 +84,84 @@ afterEach(async () => {
 })
 
 describe("red content proxy boundary", () => {
+  test("cancels a streaming upstream response when the downstream client disconnects", async () => {
+    let requestAborted = false
+    let responseClosedBeforeEnd = false
+    let resolveClosed!: (closedBeforeCompletion: boolean) => void
+    const closed = new Promise<boolean>(resolve => {
+      resolveClosed = resolve
+    })
+    const upstream = await listen((_request, response) => {
+      let completed = false
+      response.writeHead(200, { "content-type": "application/octet-stream" })
+      response.write(Buffer.alloc(1024, 1))
+      const interval = setInterval(() => response.write(Buffer.alloc(1024, 2)), 25)
+      const completion = setTimeout(() => {
+        completed = true
+        clearInterval(interval)
+        response.end()
+      }, 5_000)
+      response.on("close", () => {
+        clearInterval(interval)
+        clearTimeout(completion)
+        resolveClosed(!completed)
+      })
+    })
+    const proxyOrigin = await redProxyOrigin(upstream.origin, (event) => {
+      event.node.req.once("aborted", () => { requestAborted = true })
+      event.node.res.once("close", () => {
+        responseClosedBeforeEnd = !event.node.res.writableEnded
+      })
+    })
+    const url = new URL("/red/assets/slow.bin", proxyOrigin)
+
+    const downstream = httpRequest(url)
+    downstream.on("error", () => undefined)
+    const firstChunk = new Promise<void>((resolve, reject) => {
+      downstream.on("response", (response) => {
+        response.once("data", () => resolve())
+        response.on("error", () => undefined)
+      })
+      downstream.on("error", reject)
+    })
+    downstream.end()
+    await firstChunk
+    downstream.destroy()
+
+    expect(await Promise.race([
+      closed,
+      new Promise<boolean>(resolve => setTimeout(() => resolve(false), 1_000))
+    ])).toBe(true)
+    expect(responseClosedBeforeEnd).toBe(true)
+    expect(requestAborted || responseClosedBeforeEnd).toBe(true)
+  })
+
+  test("removes disconnect listeners after a normally completed response", async () => {
+    let upstreamClosedBeforeCompletion: boolean | undefined
+    const upstream = await listen((_request, response) => {
+      let completed = false
+      response.on("close", () => {
+        upstreamClosedBeforeCompletion = !completed
+      })
+      response.writeHead(200, { "content-type": "text/plain" })
+      completed = true
+      response.end("complete asset")
+    })
+    let request: IncomingMessage | undefined
+    let response: ServerResponse | undefined
+    const proxyOrigin = await redProxyOrigin(upstream.origin, (event) => {
+      request = event.node.req
+      response = event.node.res
+    })
+
+    const result = await fetch(`${proxyOrigin}/red/assets/complete.txt`)
+
+    expect(await result.text()).toBe("complete asset")
+    expect(upstreamClosedBeforeCompletion).toBe(false)
+    expect(request?.listenerCount("aborted")).toBe(0)
+    expect(response?.listenerCount("close")).toBe(0)
+  })
+
   test("decodes each raw path segment exactly once and forwards canonical encoding", async () => {
     const upstreamTargets: string[] = []
     const upstream = await listen((request, response) => {

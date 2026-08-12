@@ -100,14 +100,40 @@ function safeProxyTarget(event: H3Event): { path: string, search: string } {
   }
 }
 
-export default defineEventHandler((event) => {
+function abortOnDisconnect(event: H3Event, controller: AbortController): () => void {
+  const abort = () => controller.abort()
+  const abortUnfinishedResponse = () => {
+    if (!event.node.res.writableEnded) abort()
+  }
+  event.node.req.once("aborted", abort)
+  event.node.res.once("close", abortUnfinishedResponse)
+  return () => {
+    event.node.req.off("aborted", abort)
+    event.node.res.off("close", abortUnfinishedResponse)
+  }
+}
+
+export default defineEventHandler(async (event) => {
   assertProxyMethod(event, ["GET", "HEAD"])
   const { path, search } = safeProxyTarget(event)
   const contentBase = useRuntimeConfig(event).contentBase.replace(/\/$/u, "")
   const target = `${contentBase}/red/${path}${search}`
-  return sendProxy(event, target, {
-    headers: contentRequestHeaders(event),
-    fetchOptions: { method: event.method, redirect: "manual" },
-    onResponse: allowAssetResponseHeaders
-  })
+  const controller = new AbortController()
+  const removeAbortListeners = abortOnDisconnect(event, controller)
+  try {
+    return await sendProxy(event, target, {
+      headers: contentRequestHeaders(event),
+      fetchOptions: {
+        method: event.method,
+        redirect: "manual",
+        signal: controller.signal
+      },
+      onResponse: allowAssetResponseHeaders
+    })
+  } catch (error) {
+    if (controller.signal.aborted) return
+    throw error
+  } finally {
+    removeAbortListeners()
+  }
 })
