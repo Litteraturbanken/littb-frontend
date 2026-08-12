@@ -8,6 +8,7 @@ export type { BrowserEvent } from "./events"
 
 const MAX_BATCH_EVENTS = 10
 const MAX_BATCH_BYTES = 16 * 1024
+const MAX_PAGE_EXIT_BYTES = 60 * 1024
 const MAX_QUEUE_EVENTS = 50
 const DEDUPLICATION_WINDOW_MS = 60_000
 const FLUSH_DELAY_MS = 1_000
@@ -195,6 +196,7 @@ export class BrowserObservabilityReporter {
   readonly #seen = new Map<string, number>()
   #timer: ReturnType<typeof setTimeout> | undefined
   #flushing: Promise<void> | undefined
+  #exitFlushing: Promise<void> | undefined
   #retryDelayMs = FLUSH_DELAY_MS
 
   constructor(options: ReporterOptions) {
@@ -253,13 +255,26 @@ export class BrowserObservabilityReporter {
   }
 
   async flush(preferBeacon = false): Promise<void> {
+    if (preferBeacon) return await this.#flushOnExit()
+    if (this.#exitFlushing) return await this.#exitFlushing
     if (this.#flushing) return await this.#flushing
-    this.#flushing = this.#deliver(preferBeacon)
+    this.#flushing = this.#deliver()
     try {
       await this.#flushing
     } finally {
       this.#flushing = undefined
       if (this.#queue.length > 0) this.#scheduleFlush(FLUSH_DELAY_MS)
+    }
+  }
+
+  async #flushOnExit(): Promise<void> {
+    if (this.#timer) clearTimeout(this.#timer)
+    this.#timer = undefined
+    if (!this.#exitFlushing) this.#exitFlushing = this.#deliverOnExit()
+    try {
+      await this.#exitFlushing
+    } finally {
+      this.#exitFlushing = undefined
     }
   }
 
@@ -312,20 +327,42 @@ export class BrowserObservabilityReporter {
     this.#retryDelayMs = Math.min(this.#retryDelayMs * 2, MAX_RETRY_DELAY_MS)
   }
 
-  async #deliver(preferBeacon: boolean): Promise<void> {
+  async #deliver(): Promise<void> {
     if (this.#queue.length === 0) return
     const batch = this.#takeBatch()
     if (batch.length === 0) return
 
     const body = serializedBatch(batch)
-    if (preferBeacon && this.#deliverByBeacon(body)) {
-      this.#retryDelayMs = FLUSH_DELAY_MS
-      return
-    }
     if (await this.#deliverByFetch(body)) {
       this.#retryDelayMs = FLUSH_DELAY_MS
       return
     }
     this.#retryBatch(batch)
+  }
+
+  async #deliverOnExit(): Promise<void> {
+    let sentBytes = 0
+    while (this.#queue.length > 0) {
+      const batch = this.#takeBatch()
+      if (batch.length === 0) break
+      const body = serializedBatch(batch)
+      const bodyBytes = byteLength(body)
+      if (sentBytes + bodyBytes > MAX_PAGE_EXIT_BYTES) {
+        this.#queue.unshift(...batch)
+        break
+      }
+      if (this.#deliverByBeacon(body)) {
+        sentBytes += bodyBytes
+        this.#retryDelayMs = FLUSH_DELAY_MS
+        continue
+      }
+      if (!await this.#deliverByFetch(body)) {
+        this.#retryBatch(batch)
+        return
+      }
+      this.#retryDelayMs = FLUSH_DELAY_MS
+      break
+    }
+    if (this.#queue.length > 0) this.#scheduleFlush(FLUSH_DELAY_MS)
   }
 }
