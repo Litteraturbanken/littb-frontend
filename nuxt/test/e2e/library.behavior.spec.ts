@@ -1119,6 +1119,27 @@ test("unsafe Work actions and download results hydrate as inert visible text", a
   await expect(row.getByRole("link", { name: "Hämta", exact: true })).toHaveCount(0)
 })
 
+test("unsafe Library API title and author destinations stay inert after hydration", async ({ page }) => {
+  await page.goto("/bibliotek?visa=epub&filter=unsafe-navigation-hrefs", {
+    waitUntil: "networkidle"
+  })
+  const rows = page.locator("[data-library-epub-row]")
+  await expect(rows).toHaveCount(2)
+  const unsafe = rows.filter({ hasText: "Osäker navigering" })
+  await expect(unsafe.locator("[data-library-epub-title]"))
+    .not.toHaveAttribute("href", /./)
+  await expect(unsafe.locator("[data-library-epub-author]"))
+    .not.toHaveAttribute("href", /./)
+  await expect(unsafe.getByRole("link", { name: "Osäker navigering", exact: true }))
+    .toHaveCount(0)
+
+  const safe = rows.filter({ hasText: "Gösta Berlings saga" })
+  await expect(safe.locator("[data-library-epub-title]"))
+    .toHaveAttribute("href", "/f%C3%B6rfattare/LagerlofS/titlar/GostaBerlingsSaga/etext?om-boken")
+  await expect(safe.locator("[data-library-epub-author]"))
+    .toHaveAttribute("href", "/f%C3%B6rfattare/LagerlofS")
+})
+
 test("an encoded Library Reader link navigates through Nuxt without reloading the document", async ({
   page
 }) => {

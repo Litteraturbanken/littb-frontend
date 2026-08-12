@@ -257,6 +257,90 @@ describe("typed Library boundary", () => {
     })
   })
 
+  test.each([
+    ["/författare/LagerlofS/", "/författare/LagerlofS/titlar/GostaBerlingsSaga/", "/författare/LagerlofS/", "/författare/LagerlofS/titlar/GostaBerlingsSaga/"],
+    ["/f%C3%B6rfattare/Lagerl%C3%B6fS", "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/G%C3%B6staBerlingsSaga/sida/-2/etext", "/f%C3%B6rfattare/Lagerl%C3%B6fS", "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/G%C3%B6staBerlingsSaga/sida/-2/etext"],
+    ["/författare/LagerlofS", "/författare/LagerlofS/titlar/Titel/faksimil?om-boken", "/författare/LagerlofS", "/författare/LagerlofS/titlar/Titel/faksimil?om-boken"],
+    ["/författare/LagerlofS", "/txt/lb-Titel/lb-Titel.pdf", "/författare/LagerlofS", "/txt/lb-Titel/lb-Titel.pdf"],
+    ["javascript:alert(1)", "javascript:alert(2)", "", ""],
+    ["//evil.test/author", "https://evil.test/title", "", ""],
+    ["/författare/LagerlofS/?next=evil", "/författare/LagerlofS/titlar/Titel/?next=evil", "", ""],
+    ["/författare/%2e%2e/", "/författare/LagerlofS/titlar/%2e%2e/", "", ""],
+    ["/författare/%00evil", "/författare/LagerlofS/titlar/%5Cevil", "", ""]
+  ] as const)("bounds Download author/title API hrefs %s %s", (
+    authorUrl,
+    titleUrl,
+    expectedAuthor,
+    expectedTitle
+  ) => {
+    const response = {
+      mode: "epub",
+      total_hits: 1,
+      total_works: 1,
+      items: [{
+        author,
+        author_url: authorUrl,
+        download_filename: "Titel.epub",
+        download_url: "/txt/epub/LagerlofS_Titel.epub",
+        full_title: "Full titel",
+        route_author_id: "LagerlofS",
+        route_media_type: "etext",
+        route_title_id: "Titel",
+        title: "Titel",
+        title_url: titleUrl,
+        year: "1900"
+      }]
+    } satisfies LibrarySearchResponse
+
+    const view = toLibrarySearchView(response)
+    if (view.mode !== "epub") throw new Error("expected epub view")
+    expect(view.response.data[0]).toMatchObject({
+      authorHref: expectedAuthor,
+      titleHref: expectedTitle
+    })
+  })
+
+  test.each(["works", "parts", "latest"] as const)(
+    "bounds %s title_url and author_url at the shared view boundary",
+    mode => {
+      const item = {
+        actions: [],
+        author,
+        author_url: "data:text/html,evil",
+        full_title: "Full titel",
+        key: "work-1",
+        route_author_id: "LagerlofS",
+        route_media_type: "etext" as const,
+        route_title_id: "Titel",
+        source_exports: [],
+        title: "Titel",
+        title_path: "Titel",
+        title_url: "/författare/LagerlofS/titlar/Titel/%00evil",
+        year: "1900"
+      }
+      const response = mode === "latest"
+        ? {
+            mode,
+            total_hits: 1,
+            total_works: 1,
+            groups: [{
+              imported_on: "2026-08-12",
+              source_count: 1,
+              items: [{ ...item, imported_on: "2026-08-12" }]
+            }]
+          }
+        : { mode, total_hits: 1, total_works: 1, items: [item] }
+
+      const view = toLibrarySearchView(response as LibrarySearchResponse)
+      const result = view.mode === "latest"
+        ? view.response.groups[0]?.results[0]
+        : view.mode === "works" || view.mode === "parts"
+          ? view.response.data[0]
+          : undefined
+      expect(result).toMatchObject({ authorHref: "", titleHref: "" })
+    }
+  )
+
   test("preserves browse action order and labels source exports and sizes", () => {
     const response = {
       mode: "works",

@@ -101,17 +101,30 @@ function imprintYearTo(year: string): RouteLocationRaw {
                             <div class="header_container min-w-0 flex-1 align-middle">
                                 <div class="header block overflow-hidden text-ellipsis whitespace-nowrap text-lg leading-tight">
                                     <span class="title_inner">
-                                        <NuxtLink v-slot="{ navigate }" :to="item.titleTo" custom>
+                                        <NuxtLink
+                                            v-if="item.titleHref"
+                                            v-slot="{ href, navigate }"
+                                            :to="item.titleTo"
+                                            custom
+                                        >
                                             <a
                                                 v-library-tooltip="item.titleTooltip"
                                                 :data-library-epub-title="mode === 'epub' || undefined"
                                                 :data-library-pdf-title="mode === 'pdf' || undefined"
                                                 data-library-tooltip-kind="title"
-                                                :href="canonicalNuxtHref(item.titleHref)"
+                                                :href="href || ''"
                                                 @click="navigate"
                                                 >{{ item.title }}</a
                                             >
                                         </NuxtLink>
+                                        <span
+                                            v-else
+                                            v-library-tooltip="item.titleTooltip"
+                                            :data-library-epub-title="mode === 'epub' || undefined"
+                                            :data-library-pdf-title="mode === 'pdf' || undefined"
+                                            data-library-tooltip-kind="title"
+                                            >{{ item.title }}</span
+                                        >
                                     </span>
                                 </div>
                             </div>
@@ -134,12 +147,20 @@ function imprintYearTo(year: string): RouteLocationRaw {
                         <div class="text-ellipsis whitespace-nowrap overflow-hidden">
                             <span class="author uppercase text-sm">
                                 <NuxtLink
+                                    v-if="item.authorHref"
                                     v-library-tooltip="item.authorTooltip"
                                     :data-library-epub-author="mode === 'epub' || undefined"
                                     :data-library-pdf-author="mode === 'pdf' || undefined"
                                     data-library-tooltip-kind="author"
                                     :to="canonicalNuxtHref(item.authorHref)"
                                     >{{ item.surname }}</NuxtLink
+                                ><span
+                                    v-else
+                                    v-library-tooltip="item.authorTooltip"
+                                    :data-library-epub-author="mode === 'epub' || undefined"
+                                    :data-library-pdf-author="mode === 'pdf' || undefined"
+                                    data-library-tooltip-kind="author"
+                                    >{{ item.surname }}</span
                                 ><template v-if="item.roleSuffix"
                                     >{{ " "
                                     }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template

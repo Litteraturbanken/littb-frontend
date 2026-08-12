@@ -1744,6 +1744,17 @@ function libraryDownloadResponse(body) {
         download_url: "javascript:globalThis.__libraryUnsafeDownload = true"
       }] }
     }
+    if (query === "unsafe-navigation-hrefs") {
+      return { mode: "epub", total_hits: 2, total_works: 2, items: [
+        {
+          ...doktorEpub,
+          title: "Osäker navigering",
+          title_url: "javascript:globalThis.__libraryUnsafeTitle = true",
+          author_url: "https://evil.test/author"
+        },
+        gostaEpub
+      ] }
+    }
     if (query.toLowerCase() === "strindberg") {
       return {
         mode: "epub", total_hits: 136, total_works: 136,

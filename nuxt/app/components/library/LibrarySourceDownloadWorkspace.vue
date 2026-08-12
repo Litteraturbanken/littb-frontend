@@ -148,21 +148,15 @@ function sourceFormatKey(
 function hasImprintYearTarget(year: string): boolean {
     return imprintYearTargetsByYear.value.has(year)
 }
-
 function imprintYearTo(year: string): RouteLocationRaw {
     return imprintYearTargetsByYear.value.get(year)!
 }
-
-function workActionsId(key: string): string {
-    return `library-work-actions-${encodeURIComponent(key)}`
-}
-
+function workActionsId(key: string): string { return `library-work-actions-${encodeURIComponent(key)}` }
 function clearSourceSelection() {
     selectedSourceWorks.value = new Map()
     selectedSourceFormats.value = new Set()
     formatPopoverOpen.value = false
 }
-
 function positionFormatPopover() {
     if (!formatPopoverOpen.value) return
     const button = formatButtonElement.value
@@ -176,10 +170,7 @@ function positionFormatPopover() {
     const popoverChromeHeight = popoverBox.height - scrollport.clientHeight
     const naturalHeight = scrollport.scrollHeight + popoverChromeHeight
     const availableAbove = Math.max(0, buttonBox.top - triggerGap - viewportPadding)
-    const availableBelow = Math.max(
-        0,
-        window.innerHeight - buttonBox.bottom - triggerGap - viewportPadding
-    )
+    const availableBelow = Math.max(0, window.innerHeight - buttonBox.bottom - triggerGap - viewportPadding)
     const placement = naturalHeight <= availableAbove || availableAbove >= availableBelow
         ? "top"
         : "bottom"
@@ -208,7 +199,6 @@ function positionFormatPopover() {
         overflowY: naturalHeight > availableHeight ? "auto" : "visible"
     }
 }
-
 async function toggleFormatPopover() {
     if (formatPopoverOpen.value) {
         formatPopoverOpen.value = false
@@ -231,7 +221,6 @@ async function toggleFormatPopover() {
     ) ?? popover?.querySelector<HTMLElement>("[data-library-download-submit]:not(:disabled)") ?? popover
     focusTarget?.focus()
 }
-
 function handleFormatPopoverKeydown(event: KeyboardEvent) {
     if (event.key !== "Escape" || !formatPopoverOpen.value) return
     event.preventDefault()
@@ -374,15 +363,16 @@ onUnmounted(() => {
                                         :key="`${action.kind}:${action.href}`"
                                     >
                                         <a
-                                            v-if="action.kind === 'download'"
+                                            v-if="action.href && action.kind === 'download'"
                                             :href="action.href"
                                             target="_self"
                                             :download="action.downloadFilename"
                                             >{{ action.label }}</a
                                         >
-                                        <NuxtLink v-else :to="canonicalNuxtHref(action.href)">
+                                        <NuxtLink v-else-if="action.href" :to="canonicalNuxtHref(action.href)">
                                             {{ action.label }}
                                         </NuxtLink>
+                                        <span v-else>{{ action.label }}</span>
                                     </li>
                                 </ul>
                             </div>
@@ -400,11 +390,18 @@ onUnmounted(() => {
                             <div class="min-w-0 whitespace-nowrap">
                                 <span class="author uppercase text-sm flex min-w-0 justify-end">
                                     <NuxtLink
+                                        v-if="item.authorHref"
                                         v-library-tooltip="item.authorTooltip"
                                         data-library-tooltip-kind="author"
                                         class="min-w-0 shrink overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
                                         :to="canonicalNuxtHref(item.authorHref)"
                                         >{{ item.surname }}</NuxtLink
+                                    ><span
+                                        v-else
+                                        v-library-tooltip="item.authorTooltip"
+                                        data-library-tooltip-kind="author"
+                                        class="min-w-0 shrink overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
+                                        >{{ item.surname }}</span
                                     ><template v-if="item.roleSuffix"
                                         ><span class="shrink-0 text-gray-700 sc"
                                             >&nbsp;{{ item.roleSuffix.trim() }}</span

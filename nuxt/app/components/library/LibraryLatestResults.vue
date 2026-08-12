@@ -131,11 +131,18 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                     >
                                         <span class="title_inner">
                                             <NuxtLink
+                                                v-if="item.titleHref"
                                                 v-library-tooltip="item.titleTooltip"
                                                 :data-library-latest-title="item.titleId"
                                                 data-library-tooltip-kind="title"
                                                 :to="canonicalNuxtHref(item.titleHref)"
                                                 >{{ item.title }}</NuxtLink
+                                            ><span
+                                                v-else
+                                                v-library-tooltip="item.titleTooltip"
+                                                :data-library-latest-title="item.titleId"
+                                                data-library-tooltip-kind="title"
+                                                >{{ item.title }}</span
                                             >
                                         </span>
                                     </div>
@@ -155,10 +162,16 @@ function imprintYearTo(year: string): RouteLocationRaw {
                             <div class="text-ellipsis whitespace-nowrap overflow-hidden">
                                 <span class="author uppercase text-sm">
                                     <NuxtLink
+                                        v-if="item.authorHref"
                                         v-library-tooltip="item.authorTooltip"
                                         data-library-tooltip-kind="author"
                                         :to="canonicalNuxtHref(item.authorHref)"
                                         >{{ item.surname }}</NuxtLink
+                                    ><span
+                                        v-else
+                                        v-library-tooltip="item.authorTooltip"
+                                        data-library-tooltip-kind="author"
+                                        >{{ item.surname }}</span
                                     ><template v-if="item.roleSuffix"
                                         >{{ " "
                                         }}<span class="text-gray-700 sc">{{

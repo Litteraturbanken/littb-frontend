@@ -1571,6 +1571,115 @@ describe("Library component ownership", () => {
     target.remove()
   })
 
+  test("renders rejected Library API title and author hrefs as inert visible text", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [
+      { createApp, h, nextTick },
+      { default: LibraryBrowseResults },
+      { default: LibraryDownloadResults },
+      { default: LibraryLatestResults },
+      { default: LibrarySourceDownloadWorkspace }
+    ] = await Promise.all([
+      import("vue"),
+      import("../../app/components/library/LibraryBrowseResults.vue"),
+      import("../../app/components/library/LibraryDownloadResults.vue"),
+      import("../../app/components/library/LibraryLatestResults.vue"),
+      import("../../app/components/library/LibrarySourceDownloadWorkspace.vue")
+    ])
+    const inertBrowseItem = {
+      key: "unsafe",
+      titlePath: "unsafe",
+      title: "Osäker titel",
+      titleTooltip: "Full osäker titel",
+      year: "1900",
+      surname: "Osäker författare",
+      authorTooltip: "Osäker författare, Förnamn",
+      roleSuffix: "",
+      titleHref: "",
+      authorHref: "",
+      actions: [],
+      sourceExports: []
+    }
+    const browseResponse = {
+      data: [inertBrowseItem], hits: 1, distinctHits: 1, authorIds: [], suggest: [], failed: false
+    }
+    const baseProps = {
+      loading: false,
+      sortOptions: [],
+      sortReversed: false,
+      pagination: { currentPage: 1, pageCount: 1, previous: null, next: null, entries: [] },
+      imprintYearTargets: []
+    }
+    const source = sourceResponse([{ key: "unsafe", title: "Osäker titel" }])
+    source.data[0]!.authorHref = ""
+    const NuxtLink = {
+      props: { to: { type: [String, Object], required: true }, custom: Boolean },
+      setup(props: { to: string; custom: boolean }, { slots }: { slots: { default?: (slotProps?: { href: string; navigate: () => void }) => unknown[] } }) {
+        if (!props.to) throw new Error("an inert API href mounted NuxtLink")
+        return () => props.custom
+          ? slots.default?.({ href: String(props.to), navigate: () => undefined })
+          : h("a", { href: String(props.to) }, slots.default?.())
+      }
+    }
+    const app = createApp({
+      setup: () => () => h("div", [
+        h("section", { "data-inert-owner": "works" }, [h(LibraryBrowseResults, {
+          ...baseProps, mode: "works", response: browseResponse, expandedKey: ""
+        })]),
+        h("section", { "data-inert-owner": "parts" }, [h(LibraryBrowseResults, {
+          ...baseProps, mode: "parts", response: browseResponse, expandedKey: ""
+        })]),
+        h("section", { "data-inert-owner": "download" }, [h(LibraryDownloadResults, {
+          ...baseProps,
+          mode: "epub",
+          response: {
+            data: [{
+              title: "Osäker titel", titleTooltip: "Full osäker titel", year: "1900",
+              surname: "Osäker författare", authorTooltip: "Osäker författare, Förnamn",
+              roleSuffix: "", titleHref: "", titleTo: "/safe-structured-route",
+              authorHref: "", downloadHref: "/txt/epub/safe.epub", downloadFilename: "safe.epub"
+            }],
+            hits: 1, distinctHits: 1, suggest: [], failed: false
+          }
+        })]),
+        h("section", { "data-inert-owner": "latest" }, [h(LibraryLatestResults, {
+          ...baseProps,
+          hide1800: false,
+          response: {
+            groups: [{
+              imported: "2026-08-12", label: "12 augusti 2026 (1 verk)",
+              results: [{ ...inertBrowseItem, titleId: "unsafe", imported: "2026-08-12" }]
+            }],
+            hits: 1, distinctHits: 1, suggest: [], failed: false
+          }
+        })]),
+        h("section", { "data-inert-owner": "source" }, [h(LibrarySourceDownloadWorkspace, {
+          ...baseProps, response: source
+        })])
+      ])
+    })
+    app.component("NuxtLink", NuxtLink)
+    app.mount(target)
+    await nextTick()
+
+    for (const owner of ["works", "parts", "download", "latest", "source"]) {
+      const section = target.querySelector(`[data-inert-owner="${owner}"]`)!
+      expect(section.textContent).toContain("Osäker")
+      expect(section.querySelector('a[href=""]')).toBeNull()
+      expect(section.querySelector('a[href^="javascript:"]')).toBeNull()
+      expect(section.querySelector('[data-library-tooltip-kind="author"]')?.localName).toBe("span")
+    }
+    expect(target.querySelector('[data-inert-owner="parts"] [data-library-tooltip-kind="title"]')?.localName)
+      .toBe("span")
+    expect(target.querySelector("[data-library-epub-title]")?.localName).toBe("span")
+    expect(target.querySelector("[data-library-latest-title]")?.localName).toBe("span")
+    expect(target.querySelector("[data-library-epub-download]")?.getAttribute("href"))
+      .toBe("/txt/epub/safe.epub")
+    app.unmount()
+    target.remove()
+  })
+
   test("renders author rows, disclosure, and result states", async () => {
     const target = document.createElement("div")
     document.body.append(target)

@@ -154,11 +154,18 @@ function workActionsId(key: string): string {
                         <div class="min-w-0 whitespace-nowrap">
                             <span class="author uppercase text-sm flex min-w-0 justify-end">
                                 <NuxtLink
+                                    v-if="item.authorHref"
                                     v-library-tooltip="item.authorTooltip"
                                     data-library-tooltip-kind="author"
                                     class="min-w-0 shrink overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
                                     :to="canonicalNuxtHref(item.authorHref)"
                                     >{{ item.surname }}</NuxtLink
+                                ><span
+                                    v-else
+                                    v-library-tooltip="item.authorTooltip"
+                                    data-library-tooltip-kind="author"
+                                    class="min-w-0 shrink overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
+                                    >{{ item.surname }}</span
                                 ><template v-if="item.roleSuffix"
                                     ><span class="shrink-0 text-gray-700 sc">&nbsp;{{
                                         item.roleSuffix.trim()
@@ -181,10 +188,16 @@ function workActionsId(key: string): string {
                     <td class="title">
                         <span class="title_inner"
                             ><NuxtLink
+                                v-if="item.titleHref"
                                 v-library-tooltip="item.titleTooltip"
                                 data-library-tooltip-kind="title"
                                 :to="canonicalNuxtHref(item.titleHref)"
                                 >{{ item.title }}</NuxtLink
+                            ><span
+                                v-else
+                                v-library-tooltip="item.titleTooltip"
+                                data-library-tooltip-kind="title"
+                                >{{ item.title }}</span
                             ></span
                         >
                     </td>
@@ -199,10 +212,16 @@ function workActionsId(key: string): string {
                     </td>
                     <td class="text-right uppercase text-sm w-40">
                         <NuxtLink
+                            v-if="item.authorHref"
                             v-library-tooltip="item.authorTooltip"
                             data-library-tooltip-kind="author"
                             :to="canonicalNuxtHref(item.authorHref)"
                             >{{ item.surname }}</NuxtLink
+                        ><span
+                            v-else
+                            v-library-tooltip="item.authorTooltip"
+                            data-library-tooltip-kind="author"
+                            >{{ item.surname }}</span
                         ><template v-if="item.roleSuffix"
                             >{{ " "
                             }}<span class="text-xs text-gray-600">{{

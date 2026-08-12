@@ -524,6 +524,27 @@ test("SSR keeps unsafe Work actions and download rows visible without clickable 
   expect(epubRow?.querySelector("[data-library-epub-download]")?.hasAttribute("href")).toBe(false)
 })
 
+test("SSR keeps rejected API title and author destinations visible and inert", async ({ request }) => {
+  const document = parseHTML(await (await request.get(
+    "/bibliotek?visa=epub&filter=unsafe-navigation-hrefs"
+  )).text()).document
+  const rows = document.querySelectorAll("[data-library-epub-row]")
+  expect(rows).toHaveLength(2)
+  const unsafe = rows[0]!
+  expect(unsafe.textContent).toContain("Osäker navigering")
+  expect(unsafe.querySelector("[data-library-epub-title]")?.localName).toBe("span")
+  expect(unsafe.querySelector("[data-library-epub-author]")?.localName).toBe("span")
+  expect(unsafe.querySelector("[data-library-epub-title]")?.hasAttribute("href")).toBe(false)
+  expect(unsafe.querySelector("[data-library-epub-author]")?.hasAttribute("href")).toBe(false)
+  expect(unsafe.querySelector("a[href^='javascript:'], a[href^='https://evil.test']")).toBeNull()
+
+  const safe = rows[1]!
+  expect(safe.querySelector("[data-library-epub-title]")?.getAttribute("href"))
+    .toBe("/f%C3%B6rfattare/LagerlofS/titlar/GostaBerlingsSaga/etext?om-boken")
+  expect(safe.querySelector("[data-library-epub-author]")?.getAttribute("href"))
+    .toBe("/f%C3%B6rfattare/LagerlofS")
+})
+
 test("SSR renders EPUB immediately with a null inactive PDF count", async ({ request }) => {
   const document = parseHTML(await (await request.get(
     "/bibliotek?visa=epub&sort=popularitet&filter=Selma"

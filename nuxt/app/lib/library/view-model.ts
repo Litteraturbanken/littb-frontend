@@ -243,9 +243,10 @@ function mapAllItem(item: AllItem): LibraryResult {
 type DownloadMode = "epub" | "pdf"
 
 type SafeLibraryRootHref = {
-  decodedPath: string
-  decodedQuery: string
-  href: string
+    decodedPath: string
+    decodedQuery: string
+    hasFragment: boolean
+    href: string
 }
 
 function fullyDecodedHref(value: string): string | null {
@@ -273,7 +274,26 @@ function safeLibraryRootHref(value: string): SafeLibraryRootHref | null {
   const decodedPath = queryIndex === -1 ? withoutFragment : withoutFragment.slice(0, queryIndex)
   const decodedQuery = queryIndex === -1 ? "" : withoutFragment.slice(queryIndex)
   if (decodedPath.split("/").some(segment => segment === "." || segment === "..")) return null
-  return { decodedPath, decodedQuery, href: value }
+  return { decodedPath, decodedQuery, hasFragment: decoded !== withoutFragment, href: value }
+}
+
+function safeLibraryAuthorHref(value: string): string | null {
+  const safe = safeLibraryRootHref(value)
+  if (!safe || safe.decodedQuery || safe.hasFragment) return null
+  return /^\/författare\/[^/]+\/?$/u.test(safe.decodedPath) ? safe.href : null
+}
+
+function safeLibraryTitleHref(value: string): string | null {
+  const safe = safeLibraryRootHref(value)
+  if (!safe || safe.hasFragment) return null
+  if (safeLibraryDownloadHref(value, "pdf")) return safe.href
+  const titleRoot = /^\/författare\/[^/]+\/titlar\/[^/]+\/?$/u
+  const reader = /^\/författare\/[^/]+\/titlar\/[^/]+\/sida\/[^/]+\/(?:etext|faksimil)$/u
+  const about = /^\/författare\/[^/]+\/titlar\/[^/]+\/(?:etext|faksimil|infopost|pdf)$/u
+  if ((titleRoot.test(safe.decodedPath) || reader.test(safe.decodedPath)) && !safe.decodedQuery) {
+    return safe.href
+  }
+  return about.test(safe.decodedPath) && safe.decodedQuery === "?om-boken" ? safe.href : null
 }
 
 function safeLibraryDownloadHref(value: string, mode: DownloadMode): string | null {
@@ -330,7 +350,7 @@ function mapDownloadItem(item: DownloadItem, mode: DownloadMode): DownloadResult
     surname,
     authorTooltip: libraryAuthorTooltipText(item.author, surname),
     roleSuffix: roleSuffix(item.author.role),
-    titleHref: item.title_url,
+    titleHref: safeLibraryTitleHref(item.title_url) ?? "",
     titleTo: {
       name: "författare-author-titlar-title-mediatype",
       params: {
@@ -340,7 +360,7 @@ function mapDownloadItem(item: DownloadItem, mode: DownloadMode): DownloadResult
       },
       query: { "om-boken": null }
     },
-    authorHref: item.author_url,
+    authorHref: safeLibraryAuthorHref(item.author_url) ?? "",
     downloadHref: safeLibraryDownloadHref(item.download_url, mode) ?? "",
     downloadFilename: item.download_filename
   }
@@ -357,8 +377,8 @@ function mapBrowseItem(item: BrowseItem): BrowseResult {
     surname,
     authorTooltip: libraryAuthorTooltipText(item.author, surname),
     roleSuffix: roleSuffix(item.author.role),
-    titleHref: item.title_url,
-    authorHref: item.author_url,
+    titleHref: safeLibraryTitleHref(item.title_url) ?? "",
+    authorHref: safeLibraryAuthorHref(item.author_url) ?? "",
     actions: item.actions.map(action => ({
       kind: action.kind,
       label: action.label,
@@ -384,8 +404,8 @@ function mapLatestItem(item: LatestItem): LatestResult {
     surname,
     authorTooltip: libraryAuthorTooltipText(item.author, surname),
     roleSuffix: roleSuffix(item.author.role),
-    titleHref: item.title_url,
-    authorHref: item.author_url,
+    titleHref: safeLibraryTitleHref(item.title_url) ?? "",
+    authorHref: safeLibraryAuthorHref(item.author_url) ?? "",
     imported: item.imported_on
   }
 }
