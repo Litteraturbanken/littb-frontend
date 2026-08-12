@@ -35,9 +35,9 @@ export default defineEventHandler(async event => {
   const segments = decodeAndValidatePathSegments(pathname)
   const reader = matchLegacyReaderSegments(segments)
   const resolution = await resolveLegacyAuthorRoutePrivately(event, {
-    normalized_author_id: normalizeLegacyRouteIdentity(segments[1]!),
+    normalized_author_id: normalizeLegacyRouteIdentity(segments[1]!, 100),
     normalized_title_id: reader
-      ? normalizeLegacyRouteIdentity(reader.title)
+      ? normalizeLegacyRouteIdentity(reader.title, 200)
       : null,
     media_type: reader?.mediaType ?? null
   })

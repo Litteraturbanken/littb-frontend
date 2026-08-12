@@ -18,8 +18,31 @@ function errorData(action: () => unknown) {
 
 describe("legacy author route parsing", () => {
   test("normalizes accented legacy route identities for the resolver index", () => {
-    expect(normalizeLegacyRouteIdentity("LönnlövS")).toBe("LonnlovS")
-    expect(normalizeLegacyRouteIdentity("DörrarOchÖppningar")).toBe("DorrarOchOppningar")
+    expect(normalizeLegacyRouteIdentity("LönnlövS", 100)).toBe("LonnlovS")
+    expect(normalizeLegacyRouteIdentity("DörrarOchÖppningar", 200))
+      .toBe("DorrarOchOppningar")
+  })
+
+  test("preserves compatibility expansions within each resolver identity ceiling", () => {
+    expect(normalizeLegacyRouteIdentity("ﬃ".repeat(33), 100)).toBe("ffi".repeat(33))
+    expect(normalizeLegacyRouteIdentity("ﬃ".repeat(66), 200)).toBe("ffi".repeat(66))
+  })
+
+  test.each([
+    ["fullwidth slash", "A／B", 100],
+    ["fullwidth backslash", "A＼B", 100],
+    ["fullwidth percent", "A％B", 100],
+    ["fullwidth dot", "．", 100],
+    ["fullwidth dotdot", "．．", 100],
+    ["combining marks only", "\u0301\u0308", 100],
+    ["author ligature expansion", "ﬃ".repeat(34), 100],
+    ["title ligature expansion", "ﬃ".repeat(67), 200]
+  ])("rejects %s introduced by compatibility normalization", (_, value, maximum) => {
+    expect(() => normalizeLegacyRouteIdentity(value as string, maximum as number)).toThrow()
+    expect(errorData(() => normalizeLegacyRouteIdentity(
+      value as string,
+      maximum as number
+    ))).toEqual({ code: "legacy_author_route_not_found" })
   })
 
   test("returns no match for every non-legacy prefix", () => {
@@ -60,6 +83,14 @@ describe("legacy author route parsing", () => {
     expect(matchLegacyReaderSegments(segments)).toBeNull()
   })
 
+  test("preserves the wider legacy bound for a non-Reader fourth segment", () => {
+    const segments = decodeAndValidatePathSegments(
+      `/forfattare/A/mer/${"T".repeat(201)}`
+    )
+    expect(segments[3]).toHaveLength(201)
+    expect(matchLegacyReaderSegments(segments)).toBeNull()
+  })
+
   test.each([
     [100, true],
     [101, false]
@@ -86,6 +117,30 @@ describe("legacy author route parsing", () => {
     expect(() => decodeAndValidatePathSegments(
       `/forfattare/A/%74itlar/${"T".repeat(201)}/sida/1/etext`
     )).toThrow()
+  })
+
+  test.each([
+    ["author", `/forfattare/${"%2525252541".repeat(82)}`],
+    [
+      "Reader title",
+      `/forfattare/A/titlar/${"%2525252554".repeat(164)}/sida/1/etext`
+    ]
+  ])("rejects a %s whose raw encoding exceeds its semantic cap", (_, pathname) => {
+    expect(() => decodeAndValidatePathSegments(pathname)).toThrow()
+    expect(errorData(() => decodeAndValidatePathSegments(pathname))).toEqual({
+      code: "legacy_author_route_not_found"
+    })
+  })
+
+  test("accepts direct UTF-8 encodings at the author and title raw ceilings", () => {
+    const author = "文".repeat(100)
+    const title = "文".repeat(200)
+    expect(decodeAndValidatePathSegments(
+      `/forfattare/${encodeURIComponent(author)}`
+    )[1]).toBe(author)
+    expect(decodeAndValidatePathSegments(
+      `/forfattare/A/titlar/${encodeURIComponent(title)}/sida/1/etext`
+    )[3]).toBe(title)
   })
 
   test.each([

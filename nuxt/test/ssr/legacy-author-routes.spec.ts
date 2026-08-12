@@ -103,6 +103,20 @@ test("uses author-only resolution for safe unsupported suffixes", async ({ reque
   })
 })
 
+test("preserves a non-Reader fourth segment above the Reader title cap", async ({ request }) => {
+  const suffix = "T".repeat(201)
+  const response = await request.get(`/forfattare/SoderbergH/mer/${suffix}`, {
+    maxRedirects: 0
+  })
+  expect(response.status()).toBe(307)
+  expect(response.headers().location).toBe(`/f%C3%B6rfattare/S%C3%B6derbergH/mer/${suffix}`)
+  expect((await resolverRequests(request))[0]?.body).toEqual({
+    normalized_author_id: "SoderbergH",
+    normalized_title_id: null,
+    media_type: null
+  })
+})
+
 test("canonicalizes the Almqvist semer suffix and preserves its raw query", async ({
   request
 }) => {
@@ -161,6 +175,55 @@ test("rejects an encoded fixed Reader segment with a 201-character title locally
     `/forfattare/SoderbergH/%74itlar/${"T".repeat(201)}/sida/1/etext`,
     { maxRedirects: 0 }
   )
+  expect(response.status()).toBe(404)
+  expect(await resolverRequests(request)).toEqual([])
+})
+
+for (const [label, path] of [
+  ["raw author", `/forfattare/${"A".repeat(901)}`],
+  ["nested encoded author", `/forfattare/${"%2525252541".repeat(82)}`],
+  [
+    "nested encoded Reader title",
+    `/forfattare/A/titlar/${"%2525252554".repeat(164)}/sida/1/etext`
+  ]
+] as const) {
+  test(`rejects an oversized ${label} before resolver IO`, async ({ request }) => {
+    const response = await request.get(path, { maxRedirects: 0 })
+    expect(response.status()).toBe(404)
+    expect(await resolverRequests(request)).toEqual([])
+  })
+}
+
+test("accepts a direct UTF-8 author encoding at the raw ceiling", async ({ request }) => {
+  const response = await request.get(`/forfattare/${encodeURIComponent("文".repeat(100))}`, {
+    maxRedirects: 0
+  })
+  expect(response.status()).toBe(404)
+  expect(await resolverRequests(request)).toHaveLength(1)
+})
+
+for (const [label, identity] of [
+  ["fullwidth slash", "A／B"],
+  ["fullwidth backslash", "A＼B"],
+  ["fullwidth percent", "A％B"],
+  ["fullwidth dot", "．"],
+  ["fullwidth dotdot", "．．"],
+  ["combining marks only", "\u0301\u0308"],
+  ["ligature expansion", "ﬃ".repeat(34)]
+] as const) {
+  test(`rejects normalized ${label} before resolver IO`, async ({ request }) => {
+    const path = `/forfattare/${encodeURIComponent(identity)}`
+    const response = await request.get(path, { maxRedirects: 0 })
+    expect(response.status()).toBe(404)
+    expect(await resolverRequests(request)).toEqual([])
+  })
+}
+
+test("rejects an unsafe normalized identity locally for HEAD too", async ({ request }) => {
+  const response = await request.fetch(`/forfattare/${encodeURIComponent("A／B")}`, {
+    method: "HEAD",
+    maxRedirects: 0
+  })
   expect(response.status()).toBe(404)
   expect(await resolverRequests(request)).toEqual([])
 })

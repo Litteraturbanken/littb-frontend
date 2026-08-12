@@ -16,6 +16,7 @@ type LegacyReaderMatch = {
 
 type UnknownRecord = Record<string, unknown>
 const resolutionKeys = new Set(["author_id", "title_id"])
+const maximumEncodedLengthPerCodeUnit = 9
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -33,6 +34,9 @@ export function legacyRouteError(
 }
 
 function decodeStable(raw: string, maximum: number): string {
+  if (raw.length > maximum * maximumEncodedLengthPerCodeUnit) {
+    return legacyRouteError(404, "legacy_author_route_not_found")
+  }
   let value = raw
   for (let pass = 0; pass < 16; pass += 1) {
     let next: string
@@ -61,8 +65,12 @@ function validDecodedSegment(value: string, maximum: number): boolean {
     && !hasLoneSurrogate(value)
 }
 
-export function normalizeLegacyRouteIdentity(value: string): string {
-  return value.normalize("NFKD").replace(/\p{M}/gu, "")
+export function normalizeLegacyRouteIdentity(value: string, maximum: number): string {
+  const normalized = value.normalize("NFKD").replace(/\p{M}/gu, "")
+  if (!validDecodedSegment(normalized, maximum)) {
+    return legacyRouteError(404, "legacy_author_route_not_found")
+  }
+  return normalized
 }
 
 function legacyReaderShape(segments: string[]): boolean {
@@ -73,6 +81,23 @@ function legacyReaderShape(segments: string[]): boolean {
     && ["etext", "faksimil"].includes(segments[6] ?? "")
 }
 
+function decodedEquals(raw: string | undefined, expected: string): boolean {
+  if (raw === undefined) return false
+  try {
+    return decodeStable(raw, expected.length) === expected
+  } catch {
+    return false
+  }
+}
+
+function rawLegacyReaderShape(segments: string[]): boolean {
+  return segments.length === 7
+    && decodedEquals(segments[0], "forfattare")
+    && decodedEquals(segments[2], "titlar")
+    && decodedEquals(segments[4], "sida")
+    && (decodedEquals(segments[6], "etext") || decodedEquals(segments[6], "faksimil"))
+}
+
 export function decodeAndValidatePathSegments(pathname: string): string[] {
   if (!pathname.startsWith("/forfattare/")) return []
   const raw = pathname.slice(1).split("/")
@@ -80,10 +105,13 @@ export function decodeAndValidatePathSegments(pathname: string): string[] {
     return legacyRouteError(404, "legacy_author_route_not_found")
   }
 
-  // Decode before structural classification so encoded fixed segments cannot
-  // bypass the 200-character Reader title boundary.
-  const decoded = raw.map(segment => decodeStable(segment, 512))
-  const readerShape = legacyReaderShape(decoded)
+  // Decode the fixed structural positions before choosing semantic caps so an
+  // encoded Reader marker cannot bypass the 200-character title boundary.
+  const readerShape = rawLegacyReaderShape(raw)
+  const decoded = raw.map((segment, index) => decodeStable(
+    segment,
+    index === 1 ? 100 : readerShape && index === 3 ? 200 : 512
+  ))
 
   for (const [index, segment] of decoded.entries()) {
     const maximum = index === 1 ? 100 : readerShape && index === 3 ? 200 : 512
@@ -97,11 +125,7 @@ export function decodeAndValidatePathSegments(pathname: string): string[] {
 export function matchLegacyReaderSegments(
   segments: string[]
 ): LegacyReaderMatch | null {
-  if (segments.length !== 7
-    || segments[0] !== "forfattare"
-    || segments[2] !== "titlar"
-    || segments[4] !== "sida"
-    || !["etext", "faksimil"].includes(segments[6] ?? "")) return null
+  if (!legacyReaderShape(segments)) return null
   return {
     title: segments[3]!,
     mediaType: segments[6] as "etext" | "faksimil"
