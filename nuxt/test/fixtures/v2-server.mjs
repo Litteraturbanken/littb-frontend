@@ -180,12 +180,12 @@ const dramawebbenDocumentContent = new Map([
 ])
 const maliciousDramawebbenDocument = Buffer.from([
   "<!doctype html><html><head><title>upstream-payload-probe</title></head><body>",
-  '<div class="safe" id="drop" onclick="bad()">safe-visible-probe</div>',
+  '<div class="safe\u0085unsafe" id="drop" onclick="bad()">safe-visible-probe</div>',
   '<a href="javascript:alert(1)">unsafe-js-link</a>',
   '<a href="data:text/html,evil">unsafe-data-link</a>',
   '<a href="http://evil.test/path">unsafe-http-link</a>',
   '<a href="/%252e%252e/private">unsafe-traversal-link</a>',
-  '<a href="https://example.test/safe" target="_blank" rel="external">blank-probe</a>',
+  '<a href="https://example.test/safe" target="_blank" rel="external unsafe_token">blank-probe</a>',
   "<!-- comment-probe --><script>script-probe</script>",
   "<form><p>form-probe</p></form><svg><text>svg-probe</text></svg>",
   "</body></html>"

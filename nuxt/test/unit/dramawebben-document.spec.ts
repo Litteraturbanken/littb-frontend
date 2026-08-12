@@ -126,6 +126,52 @@ describe("Dramawebben managed XHTML parsing", () => {
   })
 
   test.each([
+    ["C0 control", "safe\u0001unsafe"],
+    ["C1 control", "safe\u0085unsafe"],
+    ["lone surrogate", "safe\ud800unsafe"],
+    ["invalid token", "safe 1unsafe"],
+    ["oversized token", `safe ${"a".repeat(65)}`],
+    ["oversized value", Array.from(
+      { length: 60 }, (_, index) => `class${String(index).padStart(4, "0")}`
+    ).join(" ")]
+  ])("removes a class with an unsafe %s", (_, value) => {
+    const output = parseDramawebbenDocumentBody(
+      `<!doctype html><html><body><div class="${value}">Body</div></body></html>`
+    )
+    expect(parseHTML(`<body>${output}</body>`).document.querySelector("div")
+      ?.hasAttribute("class")).toBe(false)
+  })
+
+  test.each([
+    ["C0 control", "external\u0001unsafe"],
+    ["C1 control", "external\u0085unsafe"],
+    ["lone surrogate", "external\udfffunsafe"],
+    ["invalid token", "external unsafe_token"],
+    ["oversized token", `external ${"a".repeat(33)}`],
+    ["oversized value", Array.from(
+      { length: 15 }, (_, index) => `relation${String(index).padStart(2, "0")}`
+    ).join(" ")]
+  ])("removes a rel with an unsafe %s", (_, value) => {
+    const output = parseDramawebbenDocumentBody(
+      `<!doctype html><html><body><a href="/safe" rel="${value}">Safe</a></body></html>`
+    )
+    expect(parseHTML(`<body>${output}</body>`).document.querySelector("a")
+      ?.hasAttribute("rel")).toBe(false)
+  })
+
+  test("preserves class and rel tokens at their compatibility ceilings", () => {
+    const className = `a${"1".repeat(63)}`
+    const rel = `a${"1".repeat(31)}`
+    const output = parseDramawebbenDocumentBody(
+      `<!doctype html><html><body><a class="${className}" href="/safe" rel="${rel}">Safe</a></body></html>`
+    )
+    const anchor = parseHTML(`<body>${output}</body>`).document.querySelector("a")
+
+    expect(anchor?.getAttribute("class")).toBe(className)
+    expect(anchor?.getAttribute("rel")).toBe(rel)
+  })
+
+  test.each([
     ["fragment", "#section"],
     ["root relative", "/dramawebben/om?x=1#section"],
     ["absolute HTTPS", "https://example.test/path?q=1#section"]
@@ -172,6 +218,16 @@ describe("Dramawebben managed XHTML parsing", () => {
     expect(anchors[0]?.getAttribute("target")).toBe("_blank")
     expect(anchors[0]?.getAttribute("rel")).toBe("external noopener noreferrer")
     expect(anchors[1]?.hasAttribute("target")).toBe(false)
+  })
+
+  test("normalizes an unsafe _blank rel before applying opener hardening", () => {
+    const output = parseDramawebbenDocumentBody(
+      '<!doctype html><html><body><a href="https://example.test" target="_blank" rel="external unsafe_token">Blank</a></body></html>'
+    )
+    const anchor = parseHTML(`<body>${output}</body>`).document.querySelector("a")
+
+    expect(anchor?.getAttribute("target")).toBe("_blank")
+    expect(anchor?.getAttribute("rel")).toBe("noopener noreferrer")
   })
 })
 

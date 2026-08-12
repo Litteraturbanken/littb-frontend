@@ -48,6 +48,8 @@ const removedSubtrees = new Set([
   "option", "picture", "script", "select", "source", "style", "svg", "template",
   "textarea", "video"
 ])
+const safeClassToken = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/u
+const safeRelToken = /^[a-z][a-z0-9-]{0,31}$/u
 
 function isDocumentKind(value: unknown): value is DramawebbenDocumentKind {
   return value === "om" || value === "kringtexter"
@@ -98,12 +100,27 @@ function attributeAllowed(elementName: string, attributeName: string): boolean {
     || (elementName === "a" && ["href", "target", "rel"].includes(attributeName))
 }
 
+function safeClassValue(value: string): boolean {
+  return value === value.trim()
+    && value.length <= 512
+    && value.split(/\s+/u).every(token => safeClassToken.test(token))
+}
+
+function safeRelValue(value: string): boolean {
+  return value === value.trim()
+    && value.length <= 128
+    && value.split(/\s+/u).every(token => safeRelToken.test(token))
+}
+
 function sanitizeAnchor(element: SanitizableElement): void {
   if (element.hasAttribute("href") && !safeHref(element.getAttribute("href") ?? "")) {
     element.removeAttribute("href")
   }
   if (element.hasAttribute("target") && element.getAttribute("target") !== "_blank") {
     element.removeAttribute("target")
+  }
+  if (element.hasAttribute("rel") && !safeRelValue(element.getAttribute("rel") ?? "")) {
+    element.removeAttribute("rel")
   }
   if (element.getAttribute("target") !== "_blank") return
   const rel = new Set((element.getAttribute("rel") ?? "").split(/\s+/u).filter(Boolean))
@@ -128,6 +145,11 @@ function sanitizeElement(element: SanitizableElement): void {
   for (const attribute of [...element.attributes]) {
     const attributeName = attribute.name.toLowerCase()
     if (!attributeAllowed(name, attributeName)) element.removeAttribute(attribute.name)
+  }
+
+  if (element.hasAttribute("class")
+    && !safeClassValue(element.getAttribute("class") ?? "")) {
+    element.removeAttribute("class")
   }
 
   if (name === "a") sanitizeAnchor(element)

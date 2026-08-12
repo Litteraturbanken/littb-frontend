@@ -604,6 +604,13 @@ test("SSR renders only the sanitized malicious source body", async ({ request })
   expect(response.status()).toBe(200)
   const html = await response.text()
   expectManagedShell(html, "om", "safe-visible-probe")
+  const { document } = parseHTML(html)
+  const visibleProbe = [...document.querySelectorAll("div")]
+    .find(element => element.textContent === "safe-visible-probe")
+  const blankProbe = [...document.querySelectorAll("a")]
+    .find(element => element.textContent === "blank-probe")
+  expect(visibleProbe?.hasAttribute("class")).toBe(false)
+  expect(blankProbe?.getAttribute("rel")).toBe("noopener noreferrer")
   expect(html).not.toMatch(
     /script-probe|form-probe|svg-probe|comment-probe|javascript:|data:text|http:\/\/evil\.test|\.\.\/private/iu
   )

@@ -96,6 +96,13 @@ async function setCatalogFailure(request: APIRequestContext, failure: string) {
   expect(response.status()).toBe(200)
 }
 
+async function setDocumentFailure(request: APIRequestContext, failure: string) {
+  const response = await request.put(`${fixture}/_dramawebben_document_failure`, {
+    data: { failure }
+  })
+  expect(response.status()).toBe(200)
+}
+
 async function routerPush(page: Page, path: string) {
   await page.evaluate(async target => {
     const root = document.querySelector("#__nuxt") as HTMLElement & {
@@ -190,6 +197,21 @@ for (const documentCase of [
     expect(problems).toEqual([])
   })
 }
+
+test("hydrates sanitized managed attribute values without weakening blank-link hardening", async ({
+  page,
+  request
+}) => {
+  await setDocumentFailure(request, "malicious")
+  await page.goto("/dramawebben/om", { waitUntil: "networkidle" })
+
+  const visibleProbe = page.getByText("safe-visible-probe", { exact: true })
+  const blankProbe = page.getByRole("link", { name: "blank-probe", exact: true })
+  await expect(visibleProbe).not.toHaveAttribute("class")
+  await expect(blankProbe).toHaveAttribute("href", "https://example.test/safe")
+  await expect(blankProbe).toHaveAttribute("target", "_blank")
+  await expect(blankProbe).toHaveAttribute("rel", "noopener noreferrer")
+})
 
 test("query-only history preserves the managed identity without refetching", async ({
   page,
