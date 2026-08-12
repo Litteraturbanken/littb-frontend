@@ -497,6 +497,87 @@ describe("Reader source-information static resources", () => {
       .not.toContain("hänvisar till och")
   })
 
+  test("does not classify unknown faksimil print state as a manuscript", () => {
+    const projected = projectReaderSourceInfoProvenance(
+      sourceInfoProvenance,
+      [{ library: "GUB", signum: "Litt. Sv.", use_alternate_text: false }],
+      "faksimil",
+      null
+    )
+
+    expect(projected).toEqual([{
+      fullName: "Göteborgs universitetsbibliotek",
+      imageUrl: "/red/bilder/gemensamt/gublogga.png",
+      link: "http://www.ub.gu.se/",
+      text: ""
+    }])
+    expect(projectReaderSourceInfoProvenance(
+      sourceInfoProvenance,
+      [{ library: "GUB", signum: "Litt. Sv.", use_alternate_text: false }],
+      "faksimil",
+      false
+    )[0]?.text).toBe(
+      "Det avbildade manuskriptet tillhör Göteborgs universitetsbibliotek (Litt. Sv.)."
+    )
+  })
+
+  test("keeps nullable faksimil provenance identity through the full projection", async () => {
+    const source = { ...dramaSourceInfo, is_printed: null }
+    const sourceInfo = await buildReaderSourceInfo(
+      source,
+      { provenance: sourceInfoProvenance, licenses: sourceInfoLicenses },
+      async () => []
+    )
+
+    expect(sourceInfo.isPrinted).toBeNull()
+    expect(sourceInfo.provenance).toHaveLength(2)
+    expect(sourceInfo.provenance.map(item => item.text)).toEqual(["", ""])
+  })
+
+  test("omits a provenance-dependent license when projection has no provenance", async () => {
+    expect(projectReaderSourceInfoLicense(sourceInfoLicenses, "pd", []))
+      .toBeNull()
+    expect(projectReaderSourceInfoLicense(sourceInfoLicenses, "cc-0", []))
+      .not.toBeNull()
+
+    const sourceInfo = await buildReaderSourceInfo(
+      { ...navigableSparseSourceInfo, license_key: "pd" },
+      { provenance: sourceInfoProvenance, licenses: sourceInfoLicenses },
+      async () => []
+    )
+    expect(sourceInfo.provenance).toEqual([])
+    expect(sourceInfo.licenseHtml).toBeNull()
+  })
+
+  test("uses only nonblank provenance identities in license attribution", () => {
+    const privateProvenance = projectReaderSourceInfoProvenance(
+      sourceInfoProvenance,
+      [{ library: "privat", signum: null, use_alternate_text: false }],
+      "etext",
+      true
+    )
+    const gubProvenance = projectReaderSourceInfoProvenance(
+      sourceInfoProvenance,
+      [{ library: "GUB", signum: null, use_alternate_text: false }],
+      "etext",
+      true
+    )
+
+    expect(projectReaderSourceInfoLicense(
+      sourceInfoLicenses,
+      "pd",
+      privateProvenance
+    )).toBeNull()
+    const mixed = projectReaderSourceInfoLicense(
+      sourceInfoLicenses,
+      "pd",
+      [...privateProvenance, ...gubProvenance]
+    )
+    expect(mixed).toContain(">Göteborgs universitetsbibliotek</a>")
+    expect(mixed).not.toContain(" – ")
+    expect(mixed).not.toContain("hänvisar till  och")
+  })
+
   test("builds the Cendrillon infopost attribution without a dangling conjunction", async () => {
     expect(validateReaderSourceInfoResponse(
       cendrillonInfopostSourceInfo,

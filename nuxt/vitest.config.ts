@@ -20,7 +20,8 @@ export default defineConfig({
             "test/unit/search-multi-select.spec.ts",
             "test/unit/library-component-boundaries.spec.ts",
             "test/unit/reader-contents-dialog.spec.ts",
-            "test/unit/reader-focus-controls.spec.ts"
+            "test/unit/reader-focus-controls.spec.ts",
+            "test/unit/reader-source-info-dialog.spec.ts"
           ]
         }
       },

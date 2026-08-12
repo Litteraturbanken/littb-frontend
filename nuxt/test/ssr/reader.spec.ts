@@ -7,6 +7,7 @@ const readerPartsPath = "/författare/SöderbergH/titlar/DoktorGlasParts/sida/-1
 const workScopedReaderPath = "/författare/SöderbergH/titlar/WorkScopedIdsReader/sida/-2/etext"
 const facsimilePath = "/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/3/faksimil"
 const dramaFacsimilePath = "/författare/AlmlöfN/titlar/Affarer/sida/-2/faksimil"
+const sparseReaderPath = "/författare/SparseA/titlar/SparseTitle/sida/-2/etext"
 const longErrataPath = "/författare/LongErrataA/titlar/LongErrata/sida/-2/etext"
 const hugeErrataPath = "/författare/HugeErrataA/titlar/HugeErrata/sida/-2/etext"
 const boyeFacsimilePath = "/författare/BoyeK/titlar/EttVerkligtJordiskt/sida/3/faksimil"
@@ -396,6 +397,19 @@ test("direct bare source-information SSR renders the Reader and complete modal o
   expect(await readerManifestRequests(request)).toEqual([
     expectedReaderManifest("SöderbergH", "DoktorGlas")
   ])
+})
+
+test("provenance-dependent license stays absent when no provenance was projected", async ({
+  request
+}) => {
+  const response = await request.get(`${sparseReaderPath}?om-boken`)
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const dialog = document.querySelector(".about-modal")
+
+  expect(dialog?.querySelector(".header .title")?.textContent?.trim()).toBe("Glest verk")
+  expect(dialog?.querySelector(".provenance")).toBeNull()
+  expect(dialog?.querySelector(".license")).toBeNull()
 })
 
 test("exact empty source-information assignment remains closed and makes no request", async ({

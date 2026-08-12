@@ -304,7 +304,7 @@ export const navigableSparseSourceInfo = {
   media_type: "etext",
   start_page: "-2",
   provenance: [],
-  license_key: null,
+  license_key: "pd",
   errata: []
 }
 

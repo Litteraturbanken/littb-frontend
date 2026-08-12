@@ -52,7 +52,10 @@ function provenanceTextKey(
   mediaType: ReaderSourceInfoMediaType,
   isPrinted: boolean | null
 ): keyof ProvenanceTextDefinition | null {
-  if (mediaType === "faksimil") return isPrinted ? "faksimilprint" : "faksimilnoprint"
+  if (mediaType === "faksimil") {
+    if (isPrinted === null) return null
+    return isPrinted ? "faksimilprint" : "faksimilnoprint"
+  }
   if (mediaType === "etext" || mediaType === "pdf") return mediaType
   return null
 }
@@ -117,11 +120,15 @@ export function projectReaderSourceInfoLicense(
   if (licenseKey === null) return null
   const source = definitions[licenseKey]
   if (source === undefined) return null
-  const provenanceHtml = provenance.map(item => item.link === null
+  const template = unwrapLicenseText(source)
+  const provenanceHtml = provenance
+    .filter(item => item.fullName.trim().length > 0)
+    .map(item => item.link === null
     ? escapeHtml(item.fullName)
     : `<a href="${escapeHtml(item.link)}">${escapeHtml(item.fullName)}</a>`
-  ).join(" – ")
-  const interpolated = unwrapLicenseText(source).replaceAll(
+    ).join(" – ")
+  if (!provenanceHtml && template.includes("{{provenance}}")) return null
+  const interpolated = template.replaceAll(
     "{{provenance}}",
     provenanceHtml
   )
