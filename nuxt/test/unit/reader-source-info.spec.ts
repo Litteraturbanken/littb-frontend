@@ -19,6 +19,7 @@ import {
 } from "../../server/utils/reader-source-info-sanitizer"
 import {
   parseReaderSourceInfoRequest,
+  safeRootUrl,
   validateReaderSourceInfoResponse
 } from "../../server/utils/reader-source-info-validation"
 import {
@@ -274,6 +275,68 @@ describe("Reader source-information runtime contract", () => {
     expect(toString).not.toHaveBeenCalled()
   })
 
+  test.each([
+    "/txt/%3F/../secret.pdf",
+    "/txt/%23/./secret.pdf",
+    "/txt/%253F/%252e%252e/secret.pdf",
+    "/txt/%2523/%252e/secret.pdf",
+    "/txt/%3F/safe%255Cname.pdf",
+    "/txt/%23/safe%250Aname.pdf"
+  ])("rejects hidden pathname hazards in %s", value => {
+    expect(safeRootUrl(value)).toBe(false)
+  })
+
+  test.each([
+    "/txt/S%C3%B6derbergH/book.pdf?download=1#page-2",
+    "/txt/%3Fquestion/%23answer/book.pdf?next=..#fragment%3Fone"
+  ])("preserves safe encoded pathname data and raw suffixes in %s", value => {
+    expect(safeRootUrl(value)).toBe(true)
+  })
+
+  test("accepts encoded delimiter data in an exact generated author URL", () => {
+    const value = cloneRecord(doktorGlasSourceInfo)
+    const authorId = "Question?Hash#"
+    value.author_id = authorId
+    const author = requiredRecord(
+      { author: requiredArray(value, "authors")[0] },
+      "author"
+    )
+    author.author_id = authorId
+    author.url = "/författare/Question%3FHash%23"
+
+    expect(validateReaderSourceInfoResponse(
+      value,
+      authorId,
+      "DoktorGlas",
+      "etext"
+    )).toEqual(value)
+  })
+
+  test.each([
+    ["read", "/författare/%3F/../secret/etext"],
+    ["read double", "/författare/%2523/%252e%252e/secret/etext"],
+    ["download", "/txt/%3F/../secret.pdf"],
+    ["download double", "/txt/%2523/%252e%252e/secret.pdf"]
+  ])("rejects a %s action with traversal after an encoded delimiter", (kind, url) => {
+    const value = cloneRecord(dramaSourceInfo)
+    const actions = requiredArray(
+      value,
+      kind.startsWith("read") ? "read_actions" : "download_actions"
+    ).map(item => requiredRecord({ action: item }, "action"))
+    const action = kind.startsWith("read")
+      ? actions.find(item => item.media_type === "etext")
+      : actions.find(item => item.media_type === "pdf")
+    if (!action) throw new Error(`Expected ${kind} action`)
+    action.url = url
+
+    expect(() => validateReaderSourceInfoResponse(
+      value,
+      "AlmlöfN",
+      "Affarer",
+      "faksimil"
+    )).toThrow("Invalid Reader source information")
+  })
+
   test("accepts the backend selected-media fallback for an explicit request", () => {
     expect(validateReaderSourceInfoResponse(
       doktorGlasSourceInfo,
@@ -359,6 +422,20 @@ describe("Reader source-information request boundary", () => {
 })
 
 describe("Reader source-information sanitizer", () => {
+  test("removes delimiter-hidden image traversal without rejecting encoded filenames", () => {
+    const html = sanitizeReaderSourceInfoHtml([
+      '<img src="/red/bilder/gemensamt/%3F/../evil.png" alt="evil">',
+      '<img src="/red/bilder/gemensamt/%2523/%252e%252e/evil.png" alt="double">',
+      '<img src="/red/bilder/gemensamt/logotyp%C3%B6.png" alt="safe">'
+    ].join(""), "editorial")
+
+    expect(html).not.toContain("evil.png")
+    expect(html).not.toContain('alt="double"')
+    expect(html).toContain(
+      '<img src="/red/bilder/gemensamt/logotyp%C3%B6.png" alt="safe">'
+    )
+  })
+
   test("preserves editorial structure while stripping active and unknown markup", () => {
     const source = [
       '<p class="workintro modal-backdrop modal fixed hidden in" onclick="bad()">Text <em>kursiv</em> <strong>fet</strong>.</p>',
@@ -368,6 +445,8 @@ describe("Reader source-information sanitizer", () => {
       '<a href="https://example.test/x" target="frame">extern</a>',
       '<a href="javascript:bad()">farlig</a>',
       '<a href="/%252e%252e/private">traversal</a>',
+      '<a href="/safe/%3F/%252e%252e/private">delimiter traversal</a>',
+      '<a href="/safe/%3Fquestion/%23answer?view=1#part">encoded delimiters</a>',
       '<script>script-probe</script><form><p>form-probe</p></form>',
       '<iframe src="https://example.test">iframe-probe</iframe>',
       '<unknown><i>bevarad text</i></unknown>'
@@ -389,7 +468,12 @@ describe("Reader source-information sanitizer", () => {
     expect(html).not.toContain("hidden")
     expect(html).not.toContain('class="workintro')
     expect(html).not.toContain("javascript:")
-    expect(html).not.toContain("%252e")
+    expect(html).not.toContain('href="/%252e%252e/private"')
+    expect(html).not.toContain('href="/safe/%3F/%252e%252e/private"')
+    expect(html).toContain("<a>delimiter traversal</a>")
+    expect(html).toContain(
+      '<a href="/safe/%3Fquestion/%23answer?view=1#part">encoded delimiters</a>'
+    )
     expect(html).not.toContain("script-probe")
     expect(html).not.toContain("form-probe")
     expect(html).not.toContain("iframe-probe")

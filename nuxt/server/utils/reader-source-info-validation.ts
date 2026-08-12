@@ -125,9 +125,15 @@ function fullyDecode(value: string): string | null {
   return null
 }
 
+function rawPathname(value: string): string {
+  const query = value.indexOf("?")
+  const fragment = value.indexOf("#")
+  const boundaries = [query, fragment].filter(index => index >= 0)
+  return boundaries.length === 0 ? value : value.slice(0, Math.min(...boundaries))
+}
+
 function hasTraversal(value: string): boolean {
-  const path = (value.split("#", 1)[0] ?? "").split("?", 1)[0] ?? ""
-  return path.split("/").some(segment => segment === "." || segment === "..")
+  return value.split("/").some(segment => segment === "." || segment === "..")
 }
 
 function hasUnsafeUrlCodeUnit(value: string): boolean {
@@ -139,12 +145,17 @@ export function safeRootUrl(value: unknown): value is string {
   if (!value.startsWith("/") || value.startsWith("//") || hasUnsafeUrlCodeUnit(value)) {
     return false
   }
-  const decoded = fullyDecode(value)
-  return decoded !== null
-    && decoded.startsWith("/")
-    && !decoded.startsWith("//")
-    && !hasUnsafeUrlCodeUnit(decoded)
-    && !hasTraversal(decoded)
+  const pathname = rawPathname(value)
+  const suffix = value.slice(pathname.length)
+  const decodedPathname = fullyDecode(pathname)
+  const decodedSuffix = fullyDecode(suffix)
+  return decodedPathname !== null
+    && decodedSuffix !== null
+    && decodedPathname.startsWith("/")
+    && !decodedPathname.startsWith("//")
+    && !hasUnsafeUrlCodeUnit(decodedPathname)
+    && !hasUnsafeUrlCodeUnit(decodedSuffix)
+    && !hasTraversal(decodedPathname)
 }
 
 export function safeHttpUrl(value: unknown): value is string {
