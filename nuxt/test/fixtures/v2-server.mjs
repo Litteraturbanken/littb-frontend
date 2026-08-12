@@ -313,6 +313,7 @@ let homeFailure = false
 let presentationRequests = []
 let presentationFailures = new Set()
 let presentationProductionShape = false
+let presentationHostileSubresources = false
 let litteraturkartanRequests = []
 let readerRequests = []
 let readerMetadataRequests = []
@@ -3157,6 +3158,17 @@ const server = createServer(async (request, response) => {
     presentationProductionShape = false
     return sendJson(response, 200, { enabled: presentationProductionShape })
   }
+  if (url.pathname === "/_presentation_hostile_subresources" && request.method === "GET") {
+    return sendJson(response, 200, { enabled: presentationHostileSubresources })
+  }
+  if (url.pathname === "/_presentation_hostile_subresources" && request.method === "PUT") {
+    presentationHostileSubresources = true
+    return sendJson(response, 200, { enabled: presentationHostileSubresources })
+  }
+  if (url.pathname === "/_presentation_hostile_subresources" && request.method === "DELETE") {
+    presentationHostileSubresources = false
+    return sendJson(response, 200, { enabled: presentationHostileSubresources })
+  }
   if (url.pathname === "/_litteraturkartan_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: litteraturkartanRequests })
   }
@@ -4503,6 +4515,19 @@ const server = createServer(async (request, response) => {
     ) {
       contentType = "text/xml; charset=utf-8"
       body = productionSizedPresentationBackground
+    }
+    if (
+      presentationHostileSubresources
+      && url.pathname === "/red/presentationer/specialomraden/ProductionSized.html"
+    ) {
+      body = Buffer.from(body).toString("utf8").replace("</body>", [
+        '<img id="owned-subresource" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg">',
+        '<img id="external-src" src="https://evil.test/src.jpg">',
+        '<img id="external-srcset" srcset="https://evil.test/srcset.jpg 1x">',
+        '<table id="legacy-background" background="https://evil.test/background.jpg"><tr><td>Legacy</td></tr></table>',
+        '<p id="inline-style" style="background-image:url(https://evil.test/style.jpg)">Styled</p>',
+        "</body>"
+      ].join(""))
     }
     return sendBody(response, 200, contentType, body)
   }

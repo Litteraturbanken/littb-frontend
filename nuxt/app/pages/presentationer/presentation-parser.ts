@@ -54,6 +54,27 @@ const blockedPresentationBodyElements = new Set([
   "textarea",
   "video"
 ])
+const removedPresentationBodyAttributes = new Set([
+  "action",
+  "archive",
+  "background",
+  "cite",
+  "codebase",
+  "data",
+  "dynsrc",
+  "formaction",
+  "imagesrcset",
+  "longdesc",
+  "lowsrc",
+  "manifest",
+  "ping",
+  "poster",
+  "profile",
+  "srcset",
+  "style",
+  "usemap",
+  "xlink:href"
+])
 
 function isExecutablePresentationAttribute(name: string): boolean {
   return /^(?:on|srcdoc$|v-|data-v-|ng-|data-ng-|x-|data-x-|[@:]|data-bind$)/iu.test(name)
@@ -116,7 +137,7 @@ function normalizedUrl(value: string): string | null {
   }
 }
 
-function hasUnsafeBackgroundCharacters(value: string): boolean {
+function hasUnsafeAssetCharacters(value: string): boolean {
   return value.includes("'")
     || value.includes("\\")
     || value.includes("\uFFFD")
@@ -128,10 +149,10 @@ function hasTraversalSegment(pathname: string): boolean {
   return pathname.split("/").some(segment => segment === "." || segment === "..")
 }
 
-function safelyDecodedBackgroundPath(pathname: string): boolean {
+function safelyDecodedAssetPath(pathname: string): boolean {
   let decodedPath = pathname
   for (let pass = 0; pass < maxDecodePasses; pass += 1) {
-    if (hasUnsafeBackgroundCharacters(decodedPath) || hasTraversalSegment(decodedPath)) return false
+    if (hasUnsafeAssetCharacters(decodedPath) || hasTraversalSegment(decodedPath)) return false
     const next = decodeURIComponent(decodedPath)
     if (next === decodedPath) return true
     decodedPath = next
@@ -139,28 +160,39 @@ function safelyDecodedBackgroundPath(pathname: string): boolean {
   return false
 }
 
-function ownedBackgroundImagePath(value: string): { normalized: string, pathname: string } | null {
+function ownedAssetPath(
+  value: string,
+  allowedPathPrefix: string
+): { normalized: string, pathname: string } | null {
   const base = new URL("https://presentation.invalid")
   const parsed = new URL(value, base)
   const normalized = `${parsed.pathname}${parsed.search}${parsed.hash}`
   if (
     parsed.origin !== base.origin
     || normalized !== value
-    || !parsed.pathname.startsWith("/red/bilder/")
+    || !parsed.pathname.startsWith(allowedPathPrefix)
   ) return null
   return { normalized, pathname: parsed.pathname }
 }
 
-function normalizedBackgroundImagePath(value: string): string | null {
-  if (!value.startsWith("/") || value.startsWith("//") || hasUnsafeBackgroundCharacters(value)) return null
+function normalizedOwnedAssetPath(value: string, allowedPathPrefix: string): string | null {
+  if (!value.startsWith("/") || value.startsWith("//") || hasUnsafeAssetCharacters(value)) return null
   try {
-    const ownedPath = ownedBackgroundImagePath(value)
-    return ownedPath && safelyDecodedBackgroundPath(ownedPath.pathname)
+    const ownedPath = ownedAssetPath(value, allowedPathPrefix)
+    return ownedPath && safelyDecodedAssetPath(ownedPath.pathname)
       ? ownedPath.normalized
       : null
   } catch {
     return null
   }
+}
+
+function normalizedBackgroundImagePath(value: string): string | null {
+  return normalizedOwnedAssetPath(value, "/red/bilder/")
+}
+
+function normalizedPresentationImageSrc(value: string): string | null {
+  return normalizedOwnedAssetPath(value, "/red/presentationer/")
 }
 
 function managedStylesheetHref(
@@ -199,16 +231,25 @@ function inertPresentationBody(body: ParsedElement): void {
 
   Array.from(body.querySelectorAll("*")).forEach(element => {
     for (const attribute of Array.from(element.attributes)) {
-      if (isExecutablePresentationAttribute(attribute.name.toLowerCase())) {
+      const name = attribute.name.toLowerCase()
+      if (
+        isExecutablePresentationAttribute(name)
+        || removedPresentationBodyAttributes.has(name)
+      ) {
         element.removeAttribute(attribute.name)
       }
     }
-    for (const name of ["href", "src"] as const) {
-      if (!element.hasAttribute(name)) continue
-      const normalized = normalizedUrl(element.getAttribute(name) ?? "")
-      if (normalized === null) element.removeAttribute(name)
-      else element.setAttribute(name, normalized)
+    if (element.hasAttribute("href")) {
+      const normalized = normalizedUrl(element.getAttribute("href") ?? "")
+      if (normalized === null) element.removeAttribute("href")
+      else element.setAttribute("href", normalized)
     }
+    if (!element.hasAttribute("src")) return
+    const normalized = element.localName.toLowerCase() === "img"
+      ? normalizedPresentationImageSrc(element.getAttribute("src") ?? "")
+      : null
+    if (normalized === null) element.removeAttribute("src")
+    else element.setAttribute("src", normalized)
   })
 }
 

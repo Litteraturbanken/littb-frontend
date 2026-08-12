@@ -8,7 +8,8 @@ async function resetPresentation(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_presentation_requests`),
     request.delete(`${fixture}/_presentation_failures`),
-    request.delete(`${fixture}/_presentation_production_shape`)
+    request.delete(`${fixture}/_presentation_production_shape`),
+    request.delete(`${fixture}/_presentation_hostile_subresources`)
   ])
 }
 
@@ -109,6 +110,41 @@ test("production-sized Presentation XHTML and text/xml background hydrate intact
     backgroundsPath,
     "/red/bilder/bakgrundsbilder/rostratt_a.jpg"
   ])
+})
+
+test("managed Presentation body emits no unowned browser subresource requests", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_presentation_hostile_subresources`)
+  const externalRequests: string[] = []
+  await page.route("**/*", async route => {
+    const requestUrl = new URL(route.request().url())
+    if (requestUrl.hostname === "evil.test") {
+      externalRequests.push(requestUrl.href)
+      return route.abort("blockedbyclient")
+    }
+    return route.continue()
+  })
+
+  await page.goto("/presentationer/specialomraden/ProductionSized.html", {
+    waitUntil: "networkidle"
+  })
+
+  await expect(page.locator("#owned-subresource")).toHaveAttribute(
+    "src",
+    "/red/presentationer/specialomraden/Burmanbilder/1.jpg"
+  )
+  for (const locator of ["#external-src", "#external-srcset", "#legacy-background", "#inline-style"]) {
+    await expect(page.locator(locator)).not.toHaveAttribute("src")
+    await expect(page.locator(locator)).not.toHaveAttribute("srcset")
+    await expect(page.locator(locator)).not.toHaveAttribute("background")
+    await expect(page.locator(locator)).not.toHaveAttribute("style")
+  }
+  expect(externalRequests).toEqual([])
+  expect(await presentationRequests(request)).toContain(
+    "/red/presentationer/specialomraden/Burmanbilder/1.jpg"
+  )
 })
 
 test("direct Presentation ankare scrolls after hydration with one index request and no XML", async ({ page, request }) => {

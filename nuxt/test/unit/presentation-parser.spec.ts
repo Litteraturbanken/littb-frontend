@@ -57,11 +57,10 @@ describe("Presentation XHTML parser", () => {
     expect(parsed.title).toBe("Första rubriken har flera än | Litteraturbanken")
   })
 
-  test("root-normalizes safe relative body URLs and preserves safe absolute forms", () => {
+  test("root-normalizes ordinary anchor navigation independently from body subresources", () => {
     const parsed = parsePresentationDocument(`
       <html><body><h1>URL-prov</h1>
         <a id="relative" href="red/presentationer/file.pdf" download>PDF</a>
-        <img id="image" src="images/ett.jpg">
         <a id="root" href="/författare/Test">Rot</a>
         <a id="fragment" href="#del">Del</a>
         <a id="mail" href="mailto:test@example.test">Mejl</a>
@@ -71,7 +70,6 @@ describe("Presentation XHTML parser", () => {
       </body></html>`)
 
     expect(parsed.bodyHtml).toContain('id="relative" href="/red/presentationer/file.pdf" download')
-    expect(parsed.bodyHtml).toContain('id="image" src="/images/ett.jpg"')
     for (const value of [
       "/författare/Test",
       "#del",
@@ -80,6 +78,44 @@ describe("Presentation XHTML parser", () => {
       "https://example.test/path",
       "//cdn.example.test/file"
     ]) expect(parsed.bodyHtml).toContain(value)
+  })
+
+  test("keeps only canonical owned Presentation image sources", () => {
+    const parsed = parsePresentationDocument(`
+      <html><body><h1>Bild-prov</h1>
+        <img id="owned" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg">
+        <img id="relative" src="images/ett.jpg">
+        <img id="other-red" src="/red/andra/ett.jpg">
+        <img id="external" src="https://evil.test/ett.jpg">
+        <img id="protocol-relative" src="//evil.test/ett.jpg">
+        <img id="encoded-traversal" src="/red/presentationer/%252e%252e/andra/ett.jpg">
+      </body></html>`)
+
+    expect(parsed.bodyHtml).toContain(
+      'id="owned" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg"'
+    )
+    for (const id of ["relative", "other-red", "external", "protocol-relative", "encoded-traversal"]) {
+      expect(parsed.bodyHtml).toContain(`id="${id}"`)
+      expect(parsed.bodyHtml).not.toContain(`id="${id}" src=`)
+    }
+  })
+
+  test("removes non-src body subresource attributes and inline styles", () => {
+    const parsed = parsePresentationDocument(`
+      <html><body><h1>Attribut-prov</h1>
+        <img id="image" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg" srcset="https://evil.test/srcset.jpg 1x">
+        <table id="legacy-background" background="https://evil.test/background.jpg"><tr><td>Tabell</td></tr></table>
+        <p id="inline-style" style="background-image:url(https://evil.test/style.jpg)">Text</p>
+        <p id="other-url-attributes" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg" action="https://evil.test/action" poster="https://evil.test/poster.jpg" xlink:href="https://evil.test/vector">Fler attribut</p>
+        <a id="ping-link" href="/författare/Test" ping="https://evil.test/ping">Länk</a>
+      </body></html>`)
+
+    expect(parsed.bodyHtml).toContain('id="image" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg"')
+    expect(parsed.bodyHtml).toContain('id="legacy-background">')
+    expect(parsed.bodyHtml).toContain('id="inline-style">Text</p>')
+    expect(parsed.bodyHtml).toContain('id="other-url-attributes">Fler attribut</p>')
+    expect(parsed.bodyHtml).toContain('id="ping-link" href="/författare/Test">Länk</a>')
+    expect(parsed.bodyHtml).not.toMatch(/(?:srcset|background=|style=|action=|poster=|xlink:href|ping=|evil\.test)/iu)
   })
 
   test("issues stylesheet hrefs only for normalized root-owned paths", () => {
@@ -119,7 +155,7 @@ describe("Presentation XHTML parser", () => {
       <html><body><h1>Säkert innehåll</h1>
         <p id="safe-copy" class="article">Bevara <em>denna</em> text.</p>
         <a id="safe-link" href="red/presentationer/file.pdf">PDF</a>
-        <img id="safe-image" src="images/ett.jpg" alt="Ett motiv">
+        <img id="safe-image" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg" alt="Ett motiv">
         <p id="event-probe" onclick="window.executed = true" v-html="window.executed" @click="window.executed = true" :title="window.executed" ng-click="window.executed = true" data-ng-click="window.executed = true">Inert text</p>
         <img id="image-probe" src="java&#x0B;script:alert(1)" onerror="window.executed = true" srcdoc="&lt;script&gt;window.executed = true&lt;/script&gt;">
         <a id="link-probe" href="data:text/html,&lt;script&gt;window.executed = true&lt;/script&gt;">Inert länktext</a>
@@ -137,7 +173,7 @@ describe("Presentation XHTML parser", () => {
 
     expect(parsed.bodyHtml).toContain('<p id="safe-copy" class="article">Bevara <em>denna</em> text.</p>')
     expect(parsed.bodyHtml).toContain('id="safe-link" href="/red/presentationer/file.pdf"')
-    expect(parsed.bodyHtml).toContain('id="safe-image" src="/images/ett.jpg" alt="Ett motiv"')
+    expect(parsed.bodyHtml).toContain('id="safe-image" src="/red/presentationer/specialomraden/Burmanbilder/1.jpg" alt="Ett motiv"')
     expect(parsed.bodyHtml).toContain('id="event-probe">Inert text</p>')
     expect(parsed.bodyHtml).toContain('id="image-probe"')
     expect(parsed.bodyHtml).toContain('id="link-probe">Inert länktext</a>')
