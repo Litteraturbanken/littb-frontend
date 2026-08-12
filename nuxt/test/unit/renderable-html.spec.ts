@@ -98,6 +98,45 @@ describe("RenderableHtmlContent", () => {
     target.remove()
   })
 
+  test("renders no element or HTML when an untyped caller supplies an unsupported runtime tag", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [
+      { createApp, h, nextTick },
+      { renderToString },
+      { default: RenderableHtmlContent },
+      { issueAuthorProfileHtml }
+    ] = await Promise.all([
+      import("vue"),
+      import("@vue/server-renderer"),
+      import("../../app/components/global/RenderableHtmlContent.vue"),
+      import("../../shared/utils/renderable-html")
+    ])
+    const invalidProps = {
+      as: "script",
+      html: issueAuthorProfileHtml("<strong data-unsafe-render>Reviewed HTML</strong>")
+    } as never
+    const originalWarn = console.warn
+    console.warn = () => undefined
+    const app = createApp({
+      render: () => h(RenderableHtmlContent, invalidProps)
+    })
+
+    try {
+      app.mount(target)
+      await nextTick()
+
+      expect(target.children).toHaveLength(0)
+      expect(target.querySelector("script")).toBeNull()
+      expect(target.querySelector("[data-unsafe-render]")).toBeNull()
+      await expect(renderToString(h(RenderableHtmlContent, invalidProps))).resolves.toBe("<!---->")
+    } finally {
+      app.unmount()
+      console.warn = originalWarn
+      target.remove()
+    }
+  })
+
   test("adds no element when its conditional owner omits it", async () => {
     const target = document.createElement("div")
     document.body.append(target)

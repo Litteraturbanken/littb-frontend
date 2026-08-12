@@ -1,10 +1,19 @@
 <script lang="ts">
-import { defineComponent, h } from "vue"
+import { defineComponent, h, type PropType } from "vue"
 
-import type { RenderableHtmlProps } from "../../../shared/types/renderable-html"
+import {
+  RENDERABLE_HTML_TAGS,
+  type RenderableHtmlProps,
+  type RenderableHtmlTag
+} from "../../../shared/types/renderable-html"
+
+const isRenderableHtmlTag = (value: unknown): value is RenderableHtmlTag =>
+  typeof value === "string" && RENDERABLE_HTML_TAGS.some(tag => tag === value)
 
 export default defineComponent(
   (props: RenderableHtmlProps, { attrs }) => () => {
+    if (!isRenderableHtmlTag(props.as)) return null
+
     const forwardedAttrs = Object.fromEntries(
       Object.entries(attrs).filter(([name]) => name !== "innerHTML" && name !== "textContent")
     )
@@ -16,7 +25,11 @@ export default defineComponent(
   {
     inheritAttrs: false,
     props: {
-      as: { type: null, required: true },
+      as: {
+        type: String as PropType<RenderableHtmlTag>,
+        required: true,
+        validator: isRenderableHtmlTag
+      },
       html: { type: null, required: true }
     }
   }

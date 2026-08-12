@@ -44,7 +44,9 @@ export type RenderableCapability =
   | ManagedStyleText<"presentation-editorial" | "reader-etext">
   | ManagedStylesheetHref<"presentation-editorial">
 
-export type RenderableHtmlTag = "div" | "section" | "figcaption" | "td"
+export const RENDERABLE_HTML_TAGS = ["div", "section", "figcaption", "td"] as const
+
+export type RenderableHtmlTag = typeof RENDERABLE_HTML_TAGS[number]
 
 export type RenderableHtmlProps = {
   as: RenderableHtmlTag
