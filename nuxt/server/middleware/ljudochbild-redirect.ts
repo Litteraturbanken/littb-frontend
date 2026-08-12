@@ -1,27 +1,14 @@
+import { isSafeHandoffSuffix, rawHandoffTarget } from "../utils/external-handoff"
+
 const LOCAL_PREFIX = "/ljudochbild"
 const EXTERNAL_BASE = "https://litteraturbanken.se/ljudochbild/"
-
-function isSafeSuffix(suffix: string) {
-  return suffix.split("/").every(segment => {
-    try {
-      const decoded = decodeURIComponent(segment)
-      return (
-        decoded !== "." &&
-        decoded !== ".." &&
-        !decoded.includes("/") &&
-        !decoded.includes("\\")
-      )
-    } catch {
-      return false
-    }
-  })
-}
 
 export default defineEventHandler(event => {
   if (event.method !== "GET" && event.method !== "HEAD") return
 
-  const requestUrl = getRequestURL(event)
-  const pathname = requestUrl.pathname
+  const target = rawHandoffTarget(event.node.req.url ?? "/")
+  if (!target) return
+  const { pathname, search } = target
 
   if (pathname !== LOCAL_PREFIX && !pathname.startsWith(`${LOCAL_PREFIX}/`)) return
 
@@ -29,7 +16,7 @@ export default defineEventHandler(event => {
     ? ""
     : pathname.slice(`${LOCAL_PREFIX}/`.length)
 
-  if (!isSafeSuffix(suffix)) return
+  if (!isSafeHandoffSuffix(suffix)) return
 
-  return sendRedirect(event, `${EXTERNAL_BASE}${suffix}${requestUrl.search}`, 302)
+  return sendRedirect(event, `${EXTERNAL_BASE}${suffix}${search}`, 302)
 })

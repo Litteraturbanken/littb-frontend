@@ -1,3 +1,4 @@
+import { request as makeHttpRequest } from "node:http"
 import { expect, test, type APIRequestContext } from "@playwright/test"
 
 const externalBase = "https://litteraturbanken.se/skolan/"
@@ -17,6 +18,29 @@ async function expectExternalRedirect(
   expect(body).not.toContain("leftCorridor")
 }
 
+async function expectRawNotRedirected(baseURL: string, path: string) {
+  const origin = new URL(baseURL)
+  const result = await new Promise<{ status?: number, location?: string }>((resolve, reject) => {
+    const outgoing = makeHttpRequest({
+      hostname: origin.hostname,
+      port: origin.port,
+      method: "GET",
+      path
+    }, response => {
+      response.resume()
+      response.on("end", () => resolve({
+        status: response.statusCode,
+        location: response.headers.location
+      }))
+    })
+    outgoing.on("error", reject)
+    outgoing.end()
+  })
+
+  expect(result.status).toBe(404)
+  expect(result.location).toBeUndefined()
+}
+
 test("redirects both Skolan root spellings to the external trailing-slash root", async ({
   request
 }) => {
@@ -33,7 +57,7 @@ test("hands the legacy lyrik path to the exact external path", async ({ request 
 })
 
 test("preserves nested Skolan suffixes and their percent encoding", async ({ request }) => {
-  const suffix = "teman/Svensk%20lyrik/"
+  const suffix = "teman/Svensk%20lyrik/F%25C3%25B6rfattare/fr%C3%A5ga%3Fsvar%23del/"
 
   await expectExternalRedirect(
     request,
@@ -84,11 +108,17 @@ test("does not match Skolan prefix lookalikes", async ({ request }) => {
   }
 })
 
-test("rejects encoded Skolan dot-segment escapes", async ({ request }) => {
-  const response = await request.get("/skolan/%2E%2E%2Fadmin", {
-    maxRedirects: 0
-  })
-
-  expect(response.status()).toBe(404)
-  expect(response.headers().location).toBeUndefined()
+test("rejects raw encoded Skolan handoff escapes", async ({ baseURL }) => {
+  expect(baseURL).toBeTruthy()
+  for (const suffix of [
+    "foo/%2e%2e/admin",
+    "foo/%252e%252e/admin",
+    "safe%2fadmin",
+    "safe%252fadmin",
+    "safe%5cadmin",
+    "safe%255cadmin",
+    "safe%250aadmin"
+  ]) {
+    await expectRawNotRedirected(baseURL!, `/skolan/${suffix}`)
+  }
 })

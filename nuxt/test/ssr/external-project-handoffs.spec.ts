@@ -115,7 +115,7 @@ for (const project of projects) {
   })
 
   test(`preserves the raw nested ${project.slug} suffix`, async ({ request }) => {
-    const suffix = "samling/F%C3%B6rfattare%20A/%E2%80%93/"
+    const suffix = "samling/F%C3%B6rfattare%20A/F%25C3%25B6rfattare/fr%C3%A5ga%3Fsvar%23del/%E2%80%93/"
 
     await expectExternalRedirect(
       request,
@@ -156,8 +156,12 @@ for (const project of projects) {
       "../admin",
       "%2E",
       "%2E%2E/admin",
+      "%252E%252E/admin",
       "safe%2Fadmin",
-      "safe%5Cadmin"
+      "safe%252Fadmin",
+      "safe%5Cadmin",
+      "safe%255Cadmin",
+      "safe%250Aadmin"
     ]) {
       await expectRawNotRedirected(baseURL!, `/${project.encodedSlug}/${suffix}`)
     }

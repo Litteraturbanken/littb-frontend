@@ -1,3 +1,5 @@
+import { isSafeHandoffSuffix, rawHandoffTarget } from "../utils/external-handoff"
+
 const EXTERNAL_BASES = new Map([
   [
     "översättarlexikon",
@@ -7,29 +9,12 @@ const EXTERNAL_BASES = new Map([
   ["diktensmuseum", "https://litteraturbanken.se/diktensmuseum/"]
 ])
 
-function isSafeSuffix(suffix: string) {
-  return suffix.split("/").every(segment => {
-    try {
-      const decoded = decodeURIComponent(segment)
-      return (
-        decoded !== "." &&
-        decoded !== ".." &&
-        !decoded.includes("/") &&
-        !decoded.includes("\\")
-      )
-    } catch {
-      return false
-    }
-  })
-}
-
 export default defineEventHandler(event => {
   if (event.method !== "GET" && event.method !== "HEAD") return
 
-  const rawUrl = event.node.req.url ?? "/"
-  const queryStart = rawUrl.indexOf("?")
-  const pathname = queryStart === -1 ? rawUrl : rawUrl.slice(0, queryStart)
-  const search = queryStart === -1 ? "" : rawUrl.slice(queryStart)
+  const target = rawHandoffTarget(event.node.req.url ?? "/")
+  if (!target) return
+  const { pathname, search } = target
 
   if (!pathname.startsWith("/")) return
 
@@ -49,7 +34,7 @@ export default defineEventHandler(event => {
   if (!externalBase) return
 
   const suffix = suffixStart === -1 ? "" : pathname.slice(suffixStart + 1)
-  if (!isSafeSuffix(suffix)) {
+  if (!isSafeHandoffSuffix(suffix)) {
     throw createError({ statusCode: 404, statusMessage: "Page Not Found" })
   }
 
