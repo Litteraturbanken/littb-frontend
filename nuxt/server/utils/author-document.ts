@@ -512,18 +512,16 @@ export async function loadAuthorDocument(
 ): Promise<AuthorSupplementalPage> {
   const config = useRuntimeConfig(event)
   const client = createServerLbApiClient(event)
-  let result
-  try {
-    result = await client.GET("/authors/{author_id}/documents/{document_kind}", {
-      redirect: "manual",
-      params: {
-        path: {
-          author_id: requestedAuthor,
-          document_kind: requestedKind
-        }
+  const result = await client.GET("/authors/{author_id}/documents/{document_kind}", {
+    redirect: "manual",
+    params: {
+      path: {
+        author_id: requestedAuthor,
+        document_kind: requestedKind
       }
-    })
-  } catch {
+    }
+  }).catch(() => null)
+  if (result === null) {
     return documentError(502, "author_document_unavailable")
   }
 
