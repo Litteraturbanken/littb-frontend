@@ -224,7 +224,9 @@ test("SSR omits absent sparse-profile sections without inventing fallbacks", asy
 })
 
 test("SSR renders the Dramawebben variant and keeps ordinary link boxes out", async ({ request }) => {
-  const response = await request.get("/författare/StrindbergA/dramawebben")
+  const response = await request.get("/författare/StrindbergA/dramawebben", {
+    maxRedirects: 0
+  })
   expect(response.status()).toBe(200)
   const { document } = parseHTML(await response.text())
 

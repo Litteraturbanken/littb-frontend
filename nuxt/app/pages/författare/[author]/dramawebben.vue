@@ -90,6 +90,11 @@ if (import.meta.server && response.value?.status !== 200) {
 
 const redirectedIdentity = shallowRef("")
 async function redirectToCanonical(candidate: ProfileResponse | null, identity: string) {
+  // The profile API derives canonicalPath from the requested author id and uses
+  // it to select the default profile variant. A profile with both ordinary and
+  // Dramawebben introductions is canonically rooted at the ordinary page, but
+  // its explicit /dramawebben variant must remain addressable. Only profiles
+  // without Dramawebben content leave this route.
   if (!candidate || candidate.identity !== identity
     || candidate.status !== 200 || candidate.hasDramawebben) return
   const requestedAuthor = identity.slice("dramawebben:".length)
