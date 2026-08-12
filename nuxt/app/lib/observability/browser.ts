@@ -468,6 +468,10 @@ export class BrowserObservabilityReporter {
     blocked: boolean
     sentBytes: number
   }> {
+    const fallbackDeliveries: Array<{
+      batch: QueuedBrowserEvent[]
+      delivery: Promise<boolean>
+    }> = []
     let sentBytes = 0
     while (this.#queue.length > 0) {
       const batch = this.#takeBatch()
@@ -483,12 +487,21 @@ export class BrowserObservabilityReporter {
         this.#retryDelayMs = FLUSH_DELAY_MS
         continue
       }
-      if (!await this.#deliverByFetch(body)) {
-        sentBytes += bodyBytes
-        this.#retryBatch(batch)
-        return { blocked: true, sentBytes }
-      }
       sentBytes += bodyBytes
+      fallbackDeliveries.push({ batch, delivery: this.#deliverByFetch(body) })
+    }
+    const fallbackResults = await Promise.all(fallbackDeliveries.map(
+      fallback => fallback.delivery
+    ))
+    const failedBatches = fallbackDeliveries.flatMap((fallback, index) => (
+      fallbackResults[index] ? [] : fallback.batch
+    ))
+    if (failedBatches.length > 0) {
+      this.#requeueFront(failedBatches)
+      this.#scheduleRetry()
+      return { blocked: true, sentBytes }
+    }
+    if (fallbackDeliveries.length > 0) {
       this.#retryDelayMs = FLUSH_DELAY_MS
     }
     if (this.#queue.length > 0) this.#scheduleFlush(FLUSH_DELAY_MS)
