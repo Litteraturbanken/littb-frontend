@@ -712,20 +712,21 @@ export function isTextSearchPunctuation(word: string): boolean {
 export function compactTextSearchLeftContext(
   context: readonly TextSearchWord[]
 ): TextSearchWord[] {
+  const compacted = context.filter(token => token.word.length < 30)
   let start = 0
-  const characters = context.reduce((total, token) => total + token.word.length, 0)
+  const characters = compacted.reduce((total, token) => total + token.word.length, 0)
   if (characters > 40) {
     const difference = characters - 40
     let dropped = 0
-    for (let index = 0; index < context.length; index += 1) {
+    for (let index = 0; index < compacted.length; index += 1) {
       if (dropped >= difference) {
         start = index
         break
       }
-      dropped += context[index]!.word.length
+      dropped += compacted[index]!.word.length
     }
   }
-  return context.slice(start).filter(token => token.word.length < 30)
+  return compacted.slice(start)
 }
 
 export function compactTextSearchRightContext(

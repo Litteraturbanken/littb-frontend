@@ -1054,6 +1054,27 @@ describe("text search route state", () => {
     ])).toEqual([word("short", 3), word("tail", 5)])
   })
 
+  test("excludes discarded long words before budgeting left context", () => {
+    const word = (text: string, ordinal: number) => ({
+      word: text, page_name: "1", word_id: `w1_${ordinal}`
+    })
+    const context = [
+      word("v".repeat(20), 1),
+      word("x".repeat(30), 2),
+      word("t".repeat(10), 3)
+    ]
+
+    expect(compactTextSearchLeftContext(context)).toEqual([
+      word("v".repeat(20), 1),
+      word("t".repeat(10), 3)
+    ])
+    expect(context).toEqual([
+      word("v".repeat(20), 1),
+      word("x".repeat(30), 2),
+      word("t".repeat(10), 3)
+    ])
+  })
+
   test("prepares contexts without removing or reordering match tokens", () => {
     const match = [
       { word: "first", page_name: "1", word_id: "w1_2" },
