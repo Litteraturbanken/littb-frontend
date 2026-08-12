@@ -313,6 +313,20 @@ function sanitizeSlaAnchor(element: SanitizableElement): void {
   }
 }
 
+function hardenNavigatingTarget(element: SanitizableElement): void {
+  const target = element.getAttribute("target")
+  if (!target || ["_self", "_parent", "_top"].includes(target.toLowerCase())) return
+
+  const tokens = (element.getAttribute("rel") ?? "")
+    .split(/\s+/u)
+    .filter(Boolean)
+  const lowerTokens = new Set(tokens.map(token => token.toLowerCase()))
+  for (const token of ["noopener", "noreferrer"]) {
+    if (!lowerTokens.has(token)) tokens.push(token)
+  }
+  element.setAttribute("rel", tokens.join(" "))
+}
+
 function sanitizeGenericElement(element: SanitizableElement, name: string): void {
   if (name === "a" && element.hasAttribute("href")) {
     const href = element.getAttribute("href") ?? ""
@@ -322,11 +336,7 @@ function sanitizeGenericElement(element: SanitizableElement, name: string): void
     const src = element.getAttribute("src") ?? ""
     if (!safeUrl(src, "src")) element.removeAttribute("src")
   }
-  if (name !== "a" || element.getAttribute("target") !== "_blank") return
-  const rel = new Set((element.getAttribute("rel") ?? "").split(/\s+/u).filter(Boolean))
-  rel.add("noopener")
-  rel.add("noreferrer")
-  element.setAttribute("rel", [...rel].join(" "))
+  if (name === "a") hardenNavigatingTarget(element)
 }
 
 function sanitizeElement(

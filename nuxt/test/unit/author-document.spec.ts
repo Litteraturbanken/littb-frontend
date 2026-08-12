@@ -461,6 +461,31 @@ describe("managed author XHTML sanitization", () => {
     )
   })
 
+  test("hardens every generic named browsing context without changing special targets", () => {
+    const output = parseAuthorDocumentBody([
+      "<!doctype html><html><body>",
+      '<a id="external" href="https://example.test" target="namedWindow" rel="external NOOPENER editorial">External</a>',
+      '<a id="relative" href="chapter.html" target="readerPane" rel="next">Relative</a>',
+      '<a id="mail" href="mailto:editor@example.test" target="composeWindow">Mail</a>',
+      '<a id="telephone" href="tel:+461234" target="dialWindow">Telephone</a>',
+      '<a id="self" href="chapter.html" target="_SeLf" rel="author">Self</a>',
+      '<a id="parent" href="chapter.html" target="_PARENT" rel="author">Parent</a>',
+      '<a id="top" href="chapter.html" target="_Top" rel="author">Top</a>',
+      '<a id="empty" href="chapter.html" target="" rel="author">Empty</a>',
+      "</body></html>"
+    ].join(""))
+    const { document } = parseHTML(`<body>${output}</body>`)
+    const link = (id: string) => document.querySelector(`#${id}`)
+
+    expect(link("external")?.getAttribute("rel")).toBe("external NOOPENER editorial noreferrer")
+    expect(link("relative")?.getAttribute("rel")).toBe("next noopener noreferrer")
+    expect(link("mail")?.getAttribute("rel")).toBe("noopener noreferrer")
+    expect(link("telephone")?.getAttribute("rel")).toBe("noopener noreferrer")
+    for (const id of ["self", "parent", "top", "empty"]) {
+      expect(link(id)?.getAttribute("rel")).toBe("author")
+    }
+  })
+
   test("removes active subtrees, comments, unsafe URLs, and every raw marker", () => {
     const output = parseAuthorDocumentBody(maliciousBody)
     const { document } = parseHTML(`<body>${output}</body>`)
