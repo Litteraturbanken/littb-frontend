@@ -418,8 +418,24 @@ test("a late source-information alias cannot leave the route that replaced it", 
     data: { "SöderbergH|DoktorGlas": 350 }
   })
   await page.goto("/bibliotek", { waitUntil: "networkidle" })
-  const resolverResponse = page.waitForResponse(response =>
-    new URL(response.url()).pathname.endsWith(
+  await page.evaluate(() => {
+    const scope = window as typeof window & { __sourceInfoAliasAbortSeen?: boolean }
+    scope.__sourceInfoAliasAbortSeen = false
+    const originalFetch = window.fetch.bind(window)
+    window.fetch = (input, init) => {
+      const request = input instanceof Request ? input : null
+      const url = request?.url ?? String(input)
+      const signal = request?.signal ?? init?.signal
+      if (url.includes("/api/reader/resolve/S%C3%B6derbergH/DoktorGlas")) {
+        signal?.addEventListener("abort", () => {
+          scope.__sourceInfoAliasAbortSeen = true
+        }, { once: true })
+      }
+      return originalFetch(input, init)
+    }
+  })
+  const resolverRequestFailed = page.waitForEvent("requestfailed", browserRequest =>
+    new URL(browserRequest.url()).pathname.endsWith(
       "/api/reader/resolve/S%C3%B6derbergH/DoktorGlas"
     )
   )
@@ -431,7 +447,10 @@ test("a late source-information alias cannot leave the route that replaced it", 
   await expect.poll(async () => (await sourceInfoRequests(request)).length).toBe(1)
   await navigateClient(page, "/")
 
-  expect((await resolverResponse).status()).toBe(200)
+  expect((await resolverRequestFailed).failure()?.errorText).toMatch(/abort/iu)
+  await expect.poll(() => page.evaluate(() => (
+    window as typeof window & { __sourceInfoAliasAbortSeen?: boolean }
+  ).__sourceInfoAliasAbortSeen)).toBe(true)
   await page.waitForTimeout(400)
   await expect(page).toHaveURL("/")
   expect(await readerManifestRequests(request)).toEqual([])
@@ -452,14 +471,49 @@ for (const [alias, expectedStatus] of [
   })
 }
 
-test("source-information aliases map upstream unavailability to the public 502", async ({
+for (const alias of [
+  "/författare/SöderbergH/titlar/DoktorGlas",
+  "/författare/SöderbergH/titlar/DoktorGlas/info"
+]) {
+  test(`${alias} makes one resolver request when upstream is unavailable`, async ({ request }) => {
+    await request.put(`${fixture}/_source_info_failure`)
+    const response = await request.get(alias, { maxRedirects: 0 })
+    expect(response.status()).toBe(502)
+    expect(await sourceInfoRequests(request)).toEqual([{
+      scope: "private",
+      path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
+      query: ""
+    }])
+    expect(await readerManifestRequests(request)).toEqual([])
+  })
+}
+
+test("client media source-information aliases resolve the latest same-record media type", async ({
+  page,
   request
 }) => {
-  await request.put(`${fixture}/_source_info_failure`)
-  const response = await request.get(
-    "/författare/SöderbergH/titlar/DoktorGlas/info",
-    { maxRedirects: 0 }
+  await request.put(`${fixture}/_source_info_delays`, {
+    data: { "AlmlöfN|Affarer": 350 }
+  })
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+
+  await startClientNavigation(
+    page,
+    "/f%C3%B6rfattare/Alml%C3%B6fN/titlar/Affarer/info/etext"
   )
-  expect(response.status()).toBe(502)
-  expect(await readerManifestRequests(request)).toEqual([])
+  await expect.poll(async () => (await sourceInfoRequests(request)).length).toBe(1)
+  await navigateClient(
+    page,
+    "/f%C3%B6rfattare/Alml%C3%B6fN/titlar/Affarer/info/faksimil"
+  )
+
+  await expect(page).toHaveURL(
+    "/författare/AlmlöfN/titlar/Affarer/sida/-2/faksimil?om-boken"
+  )
+  const requests = await sourceInfoRequests(request)
+  expect(requests.filter(({ query }: { query: string }) => query === "?media_type=etext"))
+    .toHaveLength(1)
+  // The alias and the canonical destination both load their own source-info payload.
+  expect(requests.filter(({ query }: { query: string }) => query === "?media_type=faksimil"))
+    .toHaveLength(2)
 })

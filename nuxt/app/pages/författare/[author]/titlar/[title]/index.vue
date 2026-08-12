@@ -20,6 +20,7 @@ const requestedFullPath = route.fullPath
 const requestedAuthor = scalarParam("author")
 const requestedTitle = scalarParam("title")
 const activeIdentity = { current: true }
+const resolutionController = new AbortController()
 const resolverPath = [
   "/api/reader/resolve",
   encodeRfc3986Segment(requestedAuthor),
@@ -73,14 +74,18 @@ function isCurrentIdentity(): boolean {
 
 onBeforeRouteLeave(() => {
   activeIdentity.current = false
+  resolutionController.abort()
 })
 onBeforeUnmount(() => {
   activeIdentity.current = false
+  resolutionController.abort()
 })
 
 let resolution: ReaderRouteResolution | null = null
 try {
   const result = await requestFetch<unknown>(resolverPath, {
+    retry: 0,
+    signal: resolutionController.signal,
     query: props.mediaType === undefined ? undefined : { media_type: props.mediaType }
   })
   if (!isExpectedResolution(result)) {
