@@ -34,6 +34,8 @@ const showContact = ref(false)
 const showNewsletter = ref(false)
 const showError = ref(false)
 const isLoading = ref(false)
+let submissionGeneration = 0
+let feedbackTimer: number | undefined
 
 const emailValid = computed(() => angularEmail.test(email.value))
 const messageValid = computed(() => message.value.length > 0)
@@ -44,27 +46,43 @@ const showForms = computed(() => !showContact.value && !showNewsletter.value && 
 
 const client = useLbApiClient()
 
-function hideSuccessAfterDelay() {
-  window.setTimeout(() => {
+function startSubmission() {
+  submissionGeneration += 1
+  if (feedbackTimer !== undefined) {
+    window.clearTimeout(feedbackTimer)
+    feedbackTimer = undefined
+  }
+  return submissionGeneration
+}
+
+function hideFeedbackAfterDelay(generation: number) {
+  feedbackTimer = window.setTimeout(() => {
+    if (generation !== submissionGeneration) return
+    feedbackTimer = undefined
     showContact.value = false
     showNewsletter.value = false
+    showError.value = false
     name.value = ""
     email.value = ""
     message.value = ""
   }, 4_000)
 }
 
-function showFailure() {
+function showFailure(generation: number) {
+  if (generation !== submissionGeneration) return
   showError.value = true
   showContact.value = false
   showNewsletter.value = false
   isLoading.value = false
-  window.setTimeout(() => {
+  feedbackTimer = window.setTimeout(() => {
+    if (generation !== submissionGeneration) return
+    feedbackTimer = undefined
     showError.value = false
   }, 4_000)
 }
 
 async function submitContactForm() {
+  const generation = startSubmission()
   isLoading.value = true
   try {
     const { error: requestError } = await client.POST("/contact", {
@@ -76,19 +94,21 @@ async function submitContactForm() {
       },
       signal: AbortSignal.timeout(30_000)
     })
-    if (requestError) return showFailure()
+    if (requestError) return showFailure(generation)
   } catch {
-    return showFailure()
+    return showFailure(generation)
   }
 
+  if (generation !== submissionGeneration) return
   isLoading.value = false
   showNewsletter.value = false
   showError.value = false
   showContact.value = true
-  hideSuccessAfterDelay()
+  hideFeedbackAfterDelay(generation)
 }
 
 async function subscribe() {
+  const generation = startSubmission()
   try {
     const { error: requestError } = await client.POST("/contact", {
       body: {
@@ -99,15 +119,17 @@ async function subscribe() {
       },
       signal: AbortSignal.timeout(30_000)
     })
-    if (requestError) return showFailure()
+    if (requestError) return showFailure(generation)
   } catch {
-    return showFailure()
+    return showFailure(generation)
   }
 
+  if (generation !== submissionGeneration) return
+  isLoading.value = false
   showContact.value = false
   showError.value = false
   showNewsletter.value = true
-  hideSuccessAfterDelay()
+  hideFeedbackAfterDelay(generation)
 }
 </script>
 
@@ -125,6 +147,7 @@ async function subscribe() {
                 v-model.trim="name"
                 type="text"
                 autofocus
+                aria-invalid="false"
                 :class="{ 'ng-dirty': nameDirty }"
                 @input="nameDirty = true"
               >
@@ -137,10 +160,12 @@ async function subscribe() {
                 name="uEmail"
                 type="email"
                 required
+                :aria-invalid="emailDirty && !emailValid"
+                aria-errormessage="contact-email-error"
                 :class="{ 'ng-dirty': emailDirty, 'ng-invalid': emailDirty && !emailValid }"
                 @input="emailDirty = true"
               >
-              <span class="error_msg">Skriv din epostadress</span>
+              <span id="contact-email-error" class="error_msg">Skriv din epostadress</span>
             </div>
           </div>
           <div class="msg_box">
@@ -149,10 +174,12 @@ async function subscribe() {
               id="messageInput"
               v-model.trim="message"
               required
+              :aria-invalid="messageDirty && !messageValid"
+              aria-errormessage="contact-message-error"
               :class="{ 'ng-dirty': messageDirty, 'ng-invalid': messageDirty && !messageValid }"
               @input="messageDirty = true"
             />
-            <div class="error_msg">Meddelandet är tomt.</div>
+            <div id="contact-message-error" class="error_msg">Meddelandet är tomt.</div>
             <div class="submit_container flex justify-end">
               <div v-show="isLoading" class="pt-1 pr-2 ng-fade"><i class="spinner fa fa-spinner fa-pulse" /></div>
               <button class="btn submit" :disabled="!contactDirty || !contactValid">Skicka</button>
@@ -172,9 +199,12 @@ async function subscribe() {
               class="mr-4 flex-grow"
               required
               type="email"
+              :aria-invalid="newsletterDirty && !newsletterValid"
+              aria-errormessage="newsletter-email-error"
               :class="{ 'ng-dirty': newsletterDirty, 'ng-invalid': newsletterDirty && !newsletterValid }"
               @input="newsletterDirty = true"
             >
+            <span id="newsletter-email-error" class="error_msg">Skriv din epostadress</span>
             <button class="btn submit" :disabled="!newsletterDirty || !newsletterValid">Skicka</button>
           </form>
         </div>

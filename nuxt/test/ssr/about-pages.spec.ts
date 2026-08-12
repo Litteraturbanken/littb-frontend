@@ -187,6 +187,17 @@ test("Contact renders exact metadata, copy, and active state without submitting 
   const message = document.querySelector("textarea#messageInput")
   expect(message).not.toBeNull()
   expect(document.querySelector('label[for="messageInput"]')?.textContent).toBe("Meddelande")
+  expect(document.querySelector("#nameInput")?.getAttribute("aria-invalid")).toBe("false")
+  for (const [fieldId, errorId] of [
+    ["emailInput", "contact-email-error"],
+    ["messageInput", "contact-message-error"],
+    ["newsletterEmail", "newsletter-email-error"]
+  ]) {
+    const field = document.querySelector(`#${fieldId}`)
+    expect(field?.getAttribute("aria-invalid")).toBe("false")
+    expect(field?.getAttribute("aria-errormessage")).toBe(errorId)
+    expect(document.querySelector(`#${errorId}`)).not.toBeNull()
+  }
   const statuses = [...document.querySelectorAll('[role="status"]')]
   expect(statuses.map(status => status.textContent)).toEqual([
     "Tack för ditt meddelande, vi svarar så fort vi kan.",

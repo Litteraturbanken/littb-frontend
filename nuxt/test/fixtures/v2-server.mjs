@@ -544,16 +544,16 @@ async function readText(request) {
   return Buffer.concat(chunks).toString("utf8")
 }
 
-function waitForContactRelease() {
-  if (!deferContactSubmissions) return Promise.resolve()
-  return new Promise(resolve => pendingContactReleases.push(resolve))
+function waitForContactRelease(submission) {
+  if (!deferContactSubmissions) return Promise.resolve({ failure: false })
+  return new Promise(resolve => pendingContactReleases.push({ resolve, submission }))
 }
 
 function releaseContactSubmissions() {
   deferContactSubmissions = false
   const releases = pendingContactReleases
   pendingContactReleases = []
-  for (const release of releases) release()
+  for (const release of releases) release.resolve({ failure: false })
 }
 
 function waitForQuickSearchDelay(query) {
@@ -2887,6 +2887,18 @@ const server = createServer(async (request, response) => {
       pending: pendingContactReleases.length
     })
   }
+  if (url.pathname === "/_contact_release" && request.method === "POST") {
+    const body = await readJson(request)
+    const index = typeof body.sender_name === "string"
+      ? pendingContactReleases.findIndex(release => release.submission.sender_name === body.sender_name)
+      : Number(body.index)
+    if (!Number.isInteger(index) || index < 0 || index >= pendingContactReleases.length) {
+      return sendJson(response, 400, { error: "invalid pending Contact release index" })
+    }
+    const release = pendingContactReleases.splice(index, 1)[0]
+    release.resolve({ failure: body.failure === true })
+    return sendJson(response, 200, { pending: pendingContactReleases.length })
+  }
   if (url.pathname === "/_quick_search_requests" && request.method === "GET") {
     return sendJson(response, 200, { queries: quickSearchQueries })
   }
@@ -4591,9 +4603,10 @@ const server = createServer(async (request, response) => {
 
   if (request.method === "POST" && apiPathname === "/v2/contact") {
     requests.push(`${url.pathname}${url.search}`)
-    contactSubmissions.push(await readJson(request))
-    await waitForContactRelease()
-    if (failure === "contact") {
+    const submission = await readJson(request)
+    contactSubmissions.push(submission)
+    const release = await waitForContactRelease(submission)
+    if (release.failure || failure === "contact") {
       return sendJson(response, 502, {
         error: {
           code: "contact_delivery_failed",

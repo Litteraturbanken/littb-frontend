@@ -40,6 +40,17 @@ async function waitForSubmissions(request: APIRequestContext, count = 1) {
   return submissions(request)
 }
 
+function waitForContactResponse(page: Page) {
+  return page.waitForResponse(response => (
+    response.request().method() === "POST"
+    && new URL(response.url()).pathname === "/api/v2/contact"
+  ))
+}
+
+async function waitForFeedbackRender(page: Page) {
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())))
+}
+
 async function fillContact(page: Page, values = {
   name: "Anna Andersson",
   email: "anna@example.test",
@@ -110,6 +121,45 @@ test("renders exact copy, pristine controls, Angular email grammar, and dirty-bl
   await page.locator("#newsletterEmail").fill("a@b")
   await expect(newsletterButton).toBeEnabled()
   expect(problems).toEqual([])
+})
+
+test("Contact validation exposes each visual error through its invalid field", async ({ page }) => {
+  await openContact(page)
+  const contactName = page.getByRole("textbox", { name: "Namn", exact: true })
+  const contactEmail = page.getByRole("textbox", { name: "Epost", exact: true }).first()
+  const message = page.getByRole("textbox", { name: "Meddelande", exact: true })
+  const newsletterEmail = page.getByRole("textbox", { name: "Epost", exact: true }).last()
+
+  await expect(contactName).toHaveAttribute("aria-invalid", "false")
+  await expect(contactEmail).toHaveAttribute("aria-invalid", "false")
+  await expect(contactEmail).toHaveAttribute("aria-errormessage", "contact-email-error")
+  await expect(message).toHaveAttribute("aria-invalid", "false")
+  await expect(message).toHaveAttribute("aria-errormessage", "contact-message-error")
+  await expect(newsletterEmail).toHaveAttribute("aria-invalid", "false")
+  await expect(newsletterEmail).toHaveAttribute("aria-errormessage", "newsletter-email-error")
+
+  await contactEmail.fill("invalid")
+  await message.fill("x")
+  await message.fill(" ")
+  await newsletterEmail.fill("invalid")
+  await page.locator(".header").click()
+
+  for (const [field, error, copy] of [
+    [contactEmail, page.locator("#contact-email-error"), "Skriv din epostadress"],
+    [message, page.locator("#contact-message-error"), "Meddelandet är tomt."],
+    [newsletterEmail, page.locator("#newsletter-email-error"), "Skriv din epostadress"]
+  ] as const) {
+    await expect(field).toHaveAttribute("aria-invalid", "true")
+    await expect(error).toBeVisible()
+    await expect(error).toHaveText(copy)
+  }
+
+  await contactEmail.fill("anna@example.test")
+  await message.fill("Hej")
+  await newsletterEmail.fill("utskick@example.test")
+  await expect(contactEmail).toHaveAttribute("aria-invalid", "false")
+  await expect(message).toHaveAttribute("aria-invalid", "false")
+  await expect(newsletterEmail).toHaveAttribute("aria-invalid", "false")
 })
 
 test("keyboard-submits trimmed Contact data, exposes one polite status, and clears fields four seconds after success", async ({ page, request }) => {
@@ -271,6 +321,62 @@ test("concurrent Contact and newsletter successes expose only the final status",
   const statuses = page.getByRole("status")
   await expect(statuses).toHaveCount(1)
   await expect(statuses).toHaveText("Tack för din anmälan.")
+})
+
+test("only the latest delayed submission may publish feedback or own its timeout", async ({ page, request }) => {
+  await openContact(page)
+  await page.clock.install()
+  await request.put(`${fixture}/_contact_defer`)
+  await fillContact(page)
+  await page.locator("#newsletterEmail").fill("utskick@example.test")
+
+  await page.locator("form.contactform button.submit").click()
+  await waitForSubmissions(request)
+  await page.clock.fastForward(1_000)
+  await page.locator("form.subscribeform button.submit").click()
+  await waitForSubmissions(request, 2)
+
+  const oldResponse = waitForContactResponse(page)
+  await request.post(`${fixture}/_contact_release`, { data: { sender_name: "Anna Andersson" } })
+  await oldResponse
+  await waitForFeedbackRender(page)
+  await expect(page.getByRole("status")).toHaveCount(0)
+  await page.clock.fastForward(1_000)
+  const newResponse = waitForContactResponse(page)
+  await request.post(`${fixture}/_contact_release`, { data: { sender_name: "Utskickslista" } })
+  await newResponse
+
+  const status = page.getByRole("status")
+  await expect(status).toHaveText("Tack för din anmälan.")
+  await expect(page.getByRole("alert")).toHaveCount(0)
+  await page.clock.fastForward(3_000)
+  await expect(status).toBeVisible()
+})
+
+test("an older delayed failure cannot replace newer success feedback", async ({ page, request }) => {
+  await openContact(page)
+  await request.put(`${fixture}/_contact_defer`)
+  await fillContact(page)
+  await page.locator("#newsletterEmail").fill("utskick@example.test")
+
+  await page.locator("form.contactform button.submit").click()
+  await page.locator("form.subscribeform button.submit").click()
+  await waitForSubmissions(request, 2)
+
+  const newResponse = waitForContactResponse(page)
+  await request.post(`${fixture}/_contact_release`, { data: { sender_name: "Utskickslista" } })
+  await newResponse
+  const status = page.getByRole("status")
+  await expect(status).toHaveText("Tack för din anmälan.")
+  const oldResponse = waitForContactResponse(page)
+  await request.post(`${fixture}/_contact_release`, {
+    data: { sender_name: "Anna Andersson", failure: true }
+  })
+  await oldResponse
+  await waitForFeedbackRender(page)
+
+  await expect(status).toHaveText("Tack för din anmälan.")
+  await expect(page.getByRole("alert")).toHaveCount(0)
 })
 
 test("keeps newsletter submission available while pending and sends each duplicate attempt", async ({ page, request }) => {
