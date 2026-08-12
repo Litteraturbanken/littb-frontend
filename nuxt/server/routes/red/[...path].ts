@@ -1,14 +1,16 @@
 import {
   createError,
   getRequestHeader,
-  getRequestURL,
-  getRouterParam,
   removeResponseHeader,
   sendProxy,
   type H3Event
 } from "h3"
 
+import { hasC0OrC1Control, hasLoneSurrogate } from "../../../shared/utils/text-safety"
+import { rawUrlParts } from "../../../shared/utils/url-safety"
 import { assertProxyMethod } from "../../utils/backend-proxy"
+
+const MAX_DECODE_PASSES = 16
 
 const contentRequestHeaderNames = [
   "accept",
@@ -22,17 +24,20 @@ const contentRequestHeaderNames = [
   "range"
 ] as const
 
-const hopByHopResponseHeaderNames = [
-  "connection",
-  "keep-alive",
-  "proxy-authenticate",
-  "proxy-authorization",
-  "proxy-connection",
-  "te",
-  "trailer",
-  "transfer-encoding",
-  "upgrade"
+const contentResponseHeaderNames = [
+  "accept-ranges",
+  "cache-control",
+  "content-disposition",
+  "content-language",
+  "content-range",
+  "content-type",
+  "etag",
+  "expires",
+  "last-modified",
+  "vary"
 ] as const
+
+const contentResponseHeaders = new Set<string>(contentResponseHeaderNames)
 
 function contentRequestHeaders(event: H3Event): Headers {
   const headers = new Headers()
@@ -43,43 +48,66 @@ function contentRequestHeaders(event: H3Event): Headers {
   return headers
 }
 
-function stripUnsafeResponseHeaders(event: H3Event, response: Response): void {
-  const connectionHeaderNames = response.headers.get("connection")
-    ?.split(",")
-    .map(name => name.trim())
-    .filter(Boolean) ?? []
-  for (const name of [
-    "set-cookie",
-    ...hopByHopResponseHeaderNames,
-    ...connectionHeaderNames
-  ]) {
-    removeResponseHeader(event, name)
+function allowAssetResponseHeaders(event: H3Event, response: Response): void {
+  for (const name of response.headers.keys()) {
+    if (!contentResponseHeaders.has(name.toLowerCase())) {
+      removeResponseHeader(event, name)
+    }
   }
 }
 
-function safeProxyPath(value: string | undefined): string {
-  if (
-    !value
+function hasUnsafePathSegment(value: string): boolean {
+  return !value
+    || value === "."
+    || value === ".."
+    || value.includes("/")
     || value.includes("\\")
-    || value.split("/").some(segment => !segment || segment === "." || segment === "..")
-    || [...value].some(character => {
-      const codePoint = character.codePointAt(0) ?? 0
-      return codePoint <= 31 || codePoint === 127
-    })
-  ) {
+    || hasC0OrC1Control(value)
+    || hasLoneSurrogate(value)
+}
+
+function safeProxySegment(value: string): string | null {
+  try {
+    const decoded = decodeURIComponent(value)
+    let safetyValue = decoded
+    for (let pass = 0; pass < MAX_DECODE_PASSES; pass += 1) {
+      if (hasUnsafePathSegment(safetyValue)) return null
+      const next = decodeURIComponent(safetyValue)
+      if (next === safetyValue) return encodeURIComponent(decoded)
+      safetyValue = next
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
+function safeProxyTarget(event: H3Event): { path: string, search: string } {
+  const rawTarget = event.node.req.url ?? ""
+  const { rawPath, rawQuery, hasFragment, hasQuery } = rawUrlParts(rawTarget)
+  const rawPrefix = "/red/"
+  if (hasFragment || !rawPath.startsWith(rawPrefix)) {
     throw createError({ statusCode: 400, statusMessage: "Invalid red asset path" })
   }
-  return value.split("/").map(encodeURIComponent).join("/")
+  const segments = rawPath.slice(rawPrefix.length).split("/")
+  const path = segments.map(safeProxySegment)
+  if (path.some(segment => segment === null)) {
+    throw createError({ statusCode: 400, statusMessage: "Invalid red asset path" })
+  }
+  return {
+    path: path.join("/"),
+    search: hasQuery ? `?${rawQuery}` : ""
+  }
 }
 
 export default defineEventHandler((event) => {
   assertProxyMethod(event, ["GET", "HEAD"])
-  const path = safeProxyPath(getRouterParam(event, "path"))
+  const { path, search } = safeProxyTarget(event)
   const contentBase = useRuntimeConfig(event).contentBase.replace(/\/$/u, "")
-  const target = `${contentBase}/red/${path}${getRequestURL(event).search}`
+  const target = `${contentBase}/red/${path}${search}`
   return sendProxy(event, target, {
     headers: contentRequestHeaders(event),
     fetchOptions: { method: event.method, redirect: "manual" },
-    onResponse: stripUnsafeResponseHeaders
+    onResponse: allowAssetResponseHeaders
   })
 })

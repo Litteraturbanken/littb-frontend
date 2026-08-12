@@ -1,4 +1,10 @@
-import { createServer, type RequestListener, type Server } from "node:http"
+import {
+  createServer,
+  request as httpRequest,
+  type IncomingHttpHeaders,
+  type RequestListener,
+  type Server
+} from "node:http"
 import { once } from "node:events"
 import { gzipSync } from "node:zlib"
 
@@ -36,6 +42,31 @@ async function redProxyOrigin(contentBase: string): Promise<string> {
   return origin
 }
 
+async function rawRequest(origin: string, path: string): Promise<{
+  body: string
+  headers: IncomingHttpHeaders
+  status: number
+}> {
+  const url = new URL(origin)
+  return await new Promise((resolve, reject) => {
+    const request = httpRequest({
+      hostname: url.hostname,
+      path,
+      port: url.port
+    }, (response) => {
+      const chunks: Buffer[] = []
+      response.on("data", chunk => chunks.push(Buffer.from(chunk)))
+      response.on("end", () => resolve({
+        body: Buffer.concat(chunks).toString("utf8"),
+        headers: response.headers,
+        status: response.statusCode ?? 0
+      }))
+    })
+    request.on("error", reject)
+    request.end()
+  })
+}
+
 afterEach(async () => {
   vi.unstubAllGlobals()
   const servers = openServers.splice(0)
@@ -44,6 +75,56 @@ afterEach(async () => {
 })
 
 describe("red content proxy boundary", () => {
+  test("decodes each raw path segment exactly once and forwards canonical encoding", async () => {
+    const upstreamTargets: string[] = []
+    const upstream = await listen((request, response) => {
+      upstreamTargets.push(request.url ?? "")
+      response.writeHead(200, { "content-type": "text/plain" })
+      response.end("asset")
+    })
+    const proxyOrigin = await redProxyOrigin(upstream.origin)
+
+    const encoded = await rawRequest(
+      proxyOrigin,
+      "/red/images/Svensk%20lyrik/F%c3%b6rfattare%3F%23.jpg?download=a%2Fb&mode=a+b"
+    )
+    const safelyNestedEncoding = await rawRequest(
+      proxyOrigin,
+      "/red/images/F%25C3%25B6rfattare/cover%2520one.jpg"
+    )
+
+    expect(encoded.status).toBe(200)
+    expect(safelyNestedEncoding.status).toBe(200)
+    expect(upstreamTargets).toEqual([
+      "/red/images/Svensk%20lyrik/F%C3%B6rfattare%3F%23.jpg?download=a%2Fb&mode=a+b",
+      "/red/images/F%25C3%25B6rfattare/cover%2520one.jpg"
+    ])
+  })
+
+  test.each([
+    "/red/images/%2e%2e/private.txt",
+    "/red/images/%252e%252e/private.txt",
+    "/red/images/safe%2Fprivate.txt",
+    "/red/images/safe%252fprivate.txt",
+    "/red/images/safe%5cprivate.txt",
+    "/red/images/safe%255cprivate.txt",
+    "/red/images/safe%250Aprivate.txt",
+    "/red/images/%E0%A4%A.txt"
+  ])("rejects unsafe or malformed encoded asset path %s", async (path) => {
+    let upstreamRequests = 0
+    const upstream = await listen((_request, response) => {
+      upstreamRequests += 1
+      response.writeHead(200)
+      response.end("unexpected")
+    })
+    const proxyOrigin = await redProxyOrigin(upstream.origin)
+
+    const response = await rawRequest(proxyOrigin, path)
+
+    expect(response.status).toBe(400)
+    expect(upstreamRequests).toBe(0)
+  })
+
   test("does not send client credentials or private headers to the content origin", async () => {
     let upstreamHeaders: Headers | undefined
     const upstream = await listen((request, response) => {
@@ -153,7 +234,7 @@ describe("red content proxy boundary", () => {
       targetRange: redirectTargetHeaders?.get("range"),
       targetRequests: redirectTargetRequests
     }).toEqual({
-      location: `${redirectTarget.origin}/private-network-target`,
+      location: null,
       status: 307,
       targetIfNoneMatch: undefined,
       targetRange: undefined,
@@ -249,14 +330,31 @@ describe("red content proxy boundary", () => {
     expect(response.headers.get("etag")).toBe('"current-asset"')
   })
 
-  test("does not copy origin hop-by-hop response headers", async () => {
+  test("only exposes static asset response metadata", async () => {
     const upstream = await listen((_request, response) => {
       response.writeHead(200, {
+        "accept-ranges": "bytes",
+        "access-control-allow-origin": "*",
+        "cache-control": "public, max-age=3600",
+        "clear-site-data": "\"cookies\"",
         connection: "x-origin-hop, bad/name",
+        "content-disposition": "inline; filename=cover.txt",
+        "content-language": "sv",
+        "content-security-policy": "default-src https://origin.invalid",
+        "content-type": "text/plain; charset=utf-8",
+        etag: '"asset-v1"',
+        expires: "Wed, 21 Oct 2037 07:28:00 GMT",
         "keep-alive": "timeout=99",
+        "last-modified": "Wed, 21 Oct 2015 07:28:00 GMT",
+        location: "https://origin.invalid/private",
+        "permissions-policy": "camera=*",
         "proxy-authenticate": "Basic realm=origin",
+        refresh: "0; url=https://origin.invalid/private",
+        "set-cookie": "origin_session=secret; Path=/; HttpOnly",
+        vary: "Accept",
+        "www-authenticate": "Bearer realm=origin",
         "x-origin-hop": "origin-secret",
-        "x-static-metadata": "preserved"
+        "x-static-metadata": "origin-only"
       })
       response.end("asset")
     })
@@ -270,7 +368,47 @@ describe("red content proxy boundary", () => {
     expect(response.headers.get("keep-alive")).not.toBe("timeout=99")
     expect(response.headers.get("proxy-authenticate")).toBeNull()
     expect(response.headers.get("x-origin-hop")).toBeNull()
-    expect(response.headers.get("x-static-metadata")).toBe("preserved")
+    expect(response.headers.get("x-static-metadata")).toBeNull()
+    expect(Object.fromEntries([
+      "clear-site-data",
+      "content-security-policy",
+      "location",
+      "permissions-policy",
+      "refresh",
+      "set-cookie",
+      "access-control-allow-origin",
+      "www-authenticate"
+    ].map(name => [name, response.headers.get(name)]))).toEqual({
+      "clear-site-data": null,
+      "content-security-policy": null,
+      location: null,
+      "permissions-policy": null,
+      refresh: null,
+      "set-cookie": null,
+      "access-control-allow-origin": null,
+      "www-authenticate": null
+    })
+    expect(Object.fromEntries([
+      "accept-ranges",
+      "cache-control",
+      "content-disposition",
+      "content-language",
+      "content-type",
+      "etag",
+      "expires",
+      "last-modified",
+      "vary"
+    ].map(name => [name, response.headers.get(name)]))).toEqual({
+      "accept-ranges": "bytes",
+      "cache-control": "public, max-age=3600",
+      "content-disposition": "inline; filename=cover.txt",
+      "content-language": "sv",
+      "content-type": "text/plain; charset=utf-8",
+      etag: '"asset-v1"',
+      expires: "Wed, 21 Oct 2037 07:28:00 GMT",
+      "last-modified": "Wed, 21 Oct 2015 07:28:00 GMT",
+      vary: "Accept"
+    })
   })
 
   test("lets Fetch negotiate and decode compression instead of copying the client encoding", async () => {
@@ -279,6 +417,7 @@ describe("red content proxy boundary", () => {
       upstreamAcceptEncoding = request.headers["accept-encoding"]
       response.writeHead(200, {
         "content-encoding": "gzip",
+        "content-length": String(gzipSync("compressed asset").byteLength),
         "content-type": "text/plain",
         etag: '"compressed-v1"'
       })
@@ -292,6 +431,7 @@ describe("red content proxy boundary", () => {
 
     expect(upstreamAcceptEncoding).not.toBe("client-only-encoding")
     expect(response.headers.get("content-encoding")).toBeNull()
+    expect(response.headers.get("content-length")).toBeNull()
     expect(response.headers.get("etag")).toBe('"compressed-v1"')
     expect(await response.text()).toBe("compressed asset")
   })
