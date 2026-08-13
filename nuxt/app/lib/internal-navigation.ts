@@ -1,5 +1,6 @@
 import { validatePresentationSegments } from "./presentation-routes"
 import { isSlaArticleId } from "#shared/types/sla-article"
+import { isEditorRouteIdentity } from "#shared/utils/editor-route-identity"
 import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 
 const authorPrefixes = ["/forfattare", "/författare", "/f%C3%B6rfattare"] as const
@@ -149,17 +150,29 @@ function decodedNuxtPath(value: string): { decoded: string; segments: string[] }
 
 function isEditorRoute(segments: string[]): boolean {
   return segments.length === 5 && segments[2] === "ix"
-    && /^(?:0|[1-9]\d*)$/u.test(segments[3]!)
-    && (segments[4] === "e" || segments[4] === "f")
+    && isEditorRouteIdentity(segments[1], segments[3], segments[4])
 }
 
 function isPresentationRoute(segments: string[]): boolean {
   return segments.length === 1 || validatePresentationSegments(segments.slice(1))
 }
 
+function isIdRouteSegment(value: string): boolean {
+  return value.length > 0
+    && value.length <= 200
+    && value === value.trim()
+    && !value.includes("\\")
+    && !value.includes("/")
+    && !hasC0OrC1Control(value)
+    && !hasLoneSurrogate(value)
+}
+
 function isKnownRootRoute(segments: string[]): boolean | null {
   const root = segments[0]
-  if (root === "id") return segments.length <= 2
+  if (root === "id") {
+    return segments.length === 1
+      || (segments.length === 2 && isIdRouteSegment(segments[1]!))
+  }
   if (root === "om") return segments.length === 2 && aboutPages.has(segments[1]!)
   if (root === "dramawebben") {
     return segments.length === 2 && dramawebbenPages.has(segments[1]!)
