@@ -408,20 +408,29 @@ async function fetchLibrarySummary(
     }
 }
 
-async function fetchLibraryOptions(): Promise<LibraryOptionsResponse> {
+async function fetchLibraryOptions(signal?: AbortSignal): Promise<LibraryOptionsResponse> {
     try {
-        const { data } = await libraryClient.GET("/library/options")
+        const { data } = await libraryClient.GET("/library/options", { signal })
         return data ?? { chronology: null, about_authors: null }
-    } catch {
+    } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") throw error
         return { chronology: null, about_authors: null }
     }
 }
 
-const { data: libraryOptionsData } = await useAsyncData<LibraryOptionsResponse>(
+const optionsAsyncData = useAsyncData<LibraryOptionsResponse>(
     `library:options:${route.path}`,
-    fetchLibraryOptions,
-    { default: () => ({ chronology: null, about_authors: null }) }
+    (_nuxtApp, { signal }) => fetchLibraryOptions(signal),
+    {
+        default: () => ({ chronology: null, about_authors: null }),
+        immediate: import.meta.server,
+        getCachedData: (key, app) => app.isHydrating
+            ? app.payload.data[key] as LibraryOptionsResponse | undefined
+            : undefined
+    }
 )
+if (import.meta.server) await optionsAsyncData
+const { data: libraryOptionsData } = optionsAsyncData
 const chronologyBounds = computed<ImprintBounds | null>(() => {
     const chronology = libraryOptionsData.value?.chronology
     return chronology ? { from: chronology.year_from, to: chronology.year_to } : null
@@ -456,12 +465,12 @@ const initialEpubSort =
         ? (initialState.sort as EpubSortKey)
         : "popularitet"
 const initialBrowseSort = browseSortForState(initialState)
-async function fetchInitialData(): Promise<LibraryInitialData> {
-    const pagePromise = fetchLibraryPageData(initialState)
+async function fetchInitialData(signal?: AbortSignal): Promise<LibraryInitialData> {
+    const pagePromise = fetchLibraryPageData(initialState, signal)
     const summaryPromise =
         initialState.standalone || initialState.downloadMode
             ? Promise.resolve(null)
-            : fetchLibrarySummary(initialState.filter, initialState.advancedFilters)
+            : fetchLibrarySummary(initialState.filter, initialState.advancedFilters, signal)
     const [page, summary] = await Promise.all([pagePromise, summaryPromise])
     return { page, summary }
 }
@@ -470,11 +479,20 @@ function emptyInitialData(): LibraryInitialData {
     return { page: emptyPageData(initialState.mode), summary: null }
 }
 
-const { data: initialData } = await useAsyncData<LibraryInitialData>(
+const initialAsyncData = useAsyncData<LibraryInitialData>(
     `library:${route.path}:${mode}:${initialFilter}:${initialState.sort}:${initialState.page}:${initialState.hide1800}:${initialState.downloadMode}:${JSON.stringify(initialState.advancedFilters)}`,
-    fetchInitialData,
-    { default: emptyInitialData }
+    (_nuxtApp, { signal }) => fetchInitialData(signal),
+    {
+        default: emptyInitialData,
+        immediate: import.meta.server,
+        getCachedData: (key, app) => app.isHydrating
+            ? app.payload.data[key] as LibraryInitialData | undefined
+            : undefined
+    }
 )
+if (import.meta.server) await initialAsyncData
+const { data: initialData } = initialAsyncData
+const initialDataWasLoaded = initialAsyncData.status.value === "success"
 const initialPageData = initialData.value?.page ?? emptyPageData(initialState.mode)
 
 function canonicalAllResultPage(
@@ -683,7 +701,8 @@ const expandedWorkKey = ref(
               ?.key ?? "")
         : ""
 )
-const loading = ref(false)
+const libraryOptionsReady = ref(initialDataWasLoaded)
+const loading = ref(import.meta.client && !initialDataWasLoaded)
 let timer: ReturnType<typeof setTimeout> | null = null
 let controller: AbortController | null = null
 let requestVersion = 0
@@ -785,7 +804,7 @@ function cancelPending() {
 
 function invalidateIntent(): number {
     cancelPending()
-    loading.value = false
+    loading.value = !libraryOptionsReady.value
     return ++requestVersion
 }
 
@@ -1072,11 +1091,25 @@ async function reconcileAllResultPage(
     return await replaceBrowserRoute(canonicalState, version)
 }
 
+async function requestStateAfterOptions(
+    state: QueryState,
+    version: number
+): Promise<QueryState | null> {
+    if (libraryOptionsReady.value) return state
+    await optionsAsyncData.execute({ dedupe: "defer" }).catch(() => null)
+    if (version !== requestVersion || optionsAsyncData.status.value !== "success") return null
+    libraryOptionsReady.value = true
+    return syncRouteState(routeState(route.path, route.query))
+}
+
 async function runBrowserRequest(state: QueryState, version: number) {
     if (version !== requestVersion) return
+    loading.value = true
+    const acceptedState = await requestStateAfterOptions(state, version)
+    if (!acceptedState) return
+    state = acceptedState
     const activeController = new AbortController()
     controller = activeController
-    loading.value = true
     const reversed = isSortReversed(state.mode, state.sort)
     const pageData = await fetchLibraryPageData(state, activeController.signal, reversed).catch(
         () => null
@@ -1244,6 +1277,26 @@ function syncAdvancedControls(state: LibraryRouteState) {
             state.advancedFilters.yearRange?.[1] ?? chronologyBounds.value?.to ?? ""
         )
     }
+}
+
+function syncRouteState(parsedRoute: LibraryRouteState): QueryState {
+    const state = requestState(parsedRoute)
+    syncAdvancedControls(parsedRoute)
+    currentMode.value = state.mode
+    invalidateLibrarySummary(state.filter, state.advancedFilters)
+    invalidateDownloadCounts(state.filter, state.advancedFilters)
+    filter.value = state.filter
+    currentPage.value = state.page
+    hide1800.value = state.hide1800
+    downloadMode.value = state.downloadMode
+    if (state.mode === "epub" || state.mode === "pdf") {
+        selectedEpubSort.value = state.sort as EpubSortKey
+    } else if (state.mode === "all") {
+        selectedSort.value = state.sort as RelevanceSortKey
+    } else if (state.mode === "authors" || state.mode === "works" || state.mode === "parts") {
+        selectedBrowseSort.value = state.sort as BrowseSortKey
+    }
+    return state
 }
 
 type AdvancedQueryKey =
@@ -1418,22 +1471,7 @@ watch(
     },
     () => {
         const previousStateKey = stateKey(currentState())
-        const parsedRoute = routeState(route.path, route.query)
-        const state = requestState(parsedRoute)
-        syncAdvancedControls(parsedRoute)
-        currentMode.value = state.mode
-        invalidateLibrarySummary(state.filter, state.advancedFilters)
-        invalidateDownloadCounts(state.filter, state.advancedFilters)
-        filter.value = state.filter
-        currentPage.value = state.page
-        hide1800.value = state.hide1800
-        downloadMode.value = state.downloadMode
-        if (state.mode === "epub" || state.mode === "pdf") {
-            selectedEpubSort.value = state.sort as EpubSortKey
-        } else if (state.mode === "all") selectedSort.value = state.sort as RelevanceSortKey
-        else if (state.mode === "authors" || state.mode === "works" || state.mode === "parts") {
-            selectedBrowseSort.value = state.sort as BrowseSortKey
-        }
+        const state = syncRouteState(routeState(route.path, route.query))
         if (ownedNavigation?.key === stateKey(state)) return
         if (
             state.mode === "all"
@@ -1934,8 +1972,18 @@ useHead({
     bodyAttrs: { class: standalone ? "focus page-epub ready" : "focus page-library ready" }
 })
 
+async function loadInitialClientState(): Promise<void> {
+    const version = ++requestVersion
+    const state = requestState(routeState(route.path, route.query))
+    await runBrowserRequest(state, version)
+}
+
 onMounted(() => {
     mounted.value = true
+    if (!initialDataWasLoaded) {
+        void loadInitialClientState()
+        return
+    }
     if (currentMode.value === "authors" && route.query.sida !== undefined) {
         void router.replace({ path: route.path, query: queryFor(currentState()) })
     }
@@ -1949,6 +1997,8 @@ onMounted(() => {
 })
 onUnmounted(() => {
     disposeLibraryRequest()
+    optionsAsyncData.clear()
+    initialAsyncData.clear()
 })
 </script>
 

@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Locator } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Locator, type Route } from "@playwright/test"
 
 import type { operations } from "../../app/lib/api/generated/lbapi"
 import { libraryImprintYearCases } from "../helpers/library-imprint-year-cases"
@@ -189,6 +189,30 @@ async function pushRoute(page: import("@playwright/test").Page, path: string) {
     }
     await root.__vue_app__?.config.globalProperties.$router.push(nextPath)
   }, path)
+}
+
+function createRequestGate() {
+  const releases: Array<() => void> = []
+  let requestCount = 0
+
+  return {
+    async handle(route: Route) {
+      requestCount += 1
+      await new Promise<void>(resolve => releases.push(resolve))
+      await route.continue()
+    },
+    count() {
+      return requestCount
+    },
+    releaseNext() {
+      const release = releases.shift()
+      expect(release, "an owned Library options request is waiting").toBeDefined()
+      release?.()
+    },
+    releaseAll() {
+      for (const release of releases.splice(0)) release()
+    }
+  }
 }
 
 test.beforeEach(async ({ request }) => reset(request))
@@ -2303,6 +2327,146 @@ test("SPA navigation between Library and its EPUB alias updates the complete she
   )).toBe("alive")
 
   expect(publicOnlyEpubRequests(await epubRequests(request))).toHaveLength(1)
+})
+
+test("fresh SPA Library entry mounts its empty loading shell before options and results settle", async ({
+  page,
+  request
+}) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await reset(request)
+
+  const optionsGate = createRequestGate()
+  await page.route("**/v2/library/options", route => optionsGate.handle(route))
+
+  try {
+    await page.locator(".mainnav")
+      .getByRole("link", { name: "Biblioteket", exact: true })
+      .click()
+
+    await expect.poll(() => optionsGate.count()).toBe(1)
+    await expect(page).toHaveURL("/bibliotek")
+    await expect(page.getByRole("heading", {
+      level: 1,
+      name: "Botanisera i biblioteket"
+    })).toBeVisible({ timeout: 1_000 })
+    await expect(page.locator("body")).toHaveClass(/page-library/u)
+    await expect(page.locator('[data-library-loading][role="status"]')).toHaveCount(1)
+    await expect(page.locator('[data-library-loading][role="status"] .sr-only'))
+      .toHaveText("Laddar resultat")
+    await expect(page.locator('[data-library-loading][role="status"] .spinner'))
+      .toHaveAttribute("aria-hidden", "true")
+    await expect(page.locator("[data-library-result]")).toHaveCount(0)
+
+    optionsGate.releaseNext()
+    await expect(page.locator("[data-library-result]")).toHaveCount(3)
+    await expect(page.locator("[data-library-loading]")).toHaveCount(0)
+
+    await page.locator(".mainnav").getByRole("link", { name: "Om LB", exact: true }).click()
+    await expect(page).toHaveURL("/om/ide")
+
+    await page.locator(".mainnav")
+      .getByRole("link", { name: "Biblioteket", exact: true })
+      .click()
+    await expect.poll(() => optionsGate.count()).toBe(2)
+    await expect(page.getByRole("heading", {
+      level: 1,
+      name: "Botanisera i biblioteket"
+    })).toBeVisible({ timeout: 1_000 })
+    await expect(page.locator('[data-library-loading][role="status"]')).toHaveCount(1)
+    await expect(page.locator("[data-library-result]")).toHaveCount(0)
+
+    optionsGate.releaseNext()
+    await expect(page.locator("[data-library-result]")).toHaveCount(3)
+    await expect(page.locator("[data-library-loading]")).toHaveCount(0)
+  } finally {
+    optionsGate.releaseAll()
+    await page.unroute("**/v2/library/options")
+  }
+})
+
+test("fresh advanced Library SPA entry validates remote option filters before searching", async ({
+  page,
+  request
+}) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await reset(request)
+
+  const optionsGate = createRequestGate()
+  await page.route("**/v2/library/options", route => optionsGate.handle(route))
+
+  try {
+    await pushRoute(
+      page,
+      "/bibliotek?avancerat=1&about_authors=LagerlofS&intervall=1850,1900"
+    )
+    await expect.poll(() => optionsGate.count()).toBe(1)
+    await expect(page.locator('[data-library-loading][role="status"]')).toHaveCount(1)
+    await expect(page.locator("[data-library-result]")).toHaveCount(0)
+
+    await page.locator("[data-library-filter]").fill("Selma")
+    await page.locator("[data-library-filter]").press("Enter")
+    await expect(page.locator('[data-library-loading][role="status"]')).toHaveCount(1)
+    expect(optionsGate.count()).toBe(1)
+    expect((await libraryV2Requests(request)).search).toEqual([])
+
+    optionsGate.releaseNext()
+    await expect.poll(async () => (await libraryV2Requests(request)).search.length).toBeGreaterThan(0)
+    expect((await libraryV2Requests(request)).search[0]?.body.filters).toMatchObject({
+      query: "Selma",
+      about_author_ids: ["LagerlofS"],
+      year_from: 1850,
+      year_to: 1900
+    })
+    await expect(page.locator("[data-library-loading]")).toHaveCount(0)
+  } finally {
+    optionsGate.releaseAll()
+    await page.unroute("**/v2/library/options")
+  }
+})
+
+test("leaving a fresh Library entry aborts its pending result request without stale UI", async ({
+  page,
+  request
+}) => {
+  const problems: string[] = []
+  page.on("pageerror", error => problems.push(error.message))
+  page.on("console", message => {
+    if (message.type() === "error") problems.push(message.text())
+  })
+  await setLibraryDelay(request, "search", {
+    mode: "all",
+    filters: libraryFilters(),
+    sort: "relevance",
+    reverse: false,
+    page: 1
+  }, 1_200)
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+
+  await page.locator(".mainnav")
+    .getByRole("link", { name: "Biblioteket", exact: true })
+    .click()
+  await expect(page.getByRole("heading", {
+    level: 1,
+    name: "Botanisera i biblioteket"
+  })).toBeVisible({ timeout: 1_000 })
+  await expect(page.locator('[data-library-loading][role="status"]')).toHaveCount(1)
+
+  await page.locator(".mainnav").getByRole("link", { name: "Om LB", exact: true }).click()
+  await expect(page).toHaveURL("/om/ide")
+  await request.delete(`${fixture}/_library_v2/delays`)
+  await page.waitForTimeout(1_300)
+  expect(problems).toEqual([])
+  await expect(page.locator("[data-library-result]")).toHaveCount(0)
+
+  await reset(request)
+  await page.locator(".mainnav")
+    .getByRole("link", { name: "Biblioteket", exact: true })
+    .click()
+  await expect(page.locator("[data-library-result]")).toHaveCount(3)
+  const ledger = await libraryV2Requests(request)
+  expect(ledger.options).toHaveLength(1)
+  expect(ledger.search.filter(entry => entry.body.mode === "all")).toHaveLength(1)
 })
 
 test("PDF debounce, immediate submit, and reset own one request per committed state", async ({
