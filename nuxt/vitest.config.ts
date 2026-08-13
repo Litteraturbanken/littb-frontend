@@ -21,6 +21,7 @@ export default defineConfig({
             "test/unit/library-component-boundaries.spec.ts",
             "test/unit/library-tooltip-directive.spec.ts",
             "test/unit/legacy-notice.spec.ts",
+            "test/unit/reader-contributors.spec.ts",
             "test/unit/reader-contents-dialog.spec.ts",
             "test/unit/reader-focus-controls.spec.ts",
             "test/unit/reader-source-info-dialog.spec.ts"

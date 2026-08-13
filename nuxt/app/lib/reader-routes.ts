@@ -1,3 +1,5 @@
+import { encodeRfc3986Segment } from "./internal-navigation"
+
 interface ReaderRouteSegments {
   author: string
   title: string
@@ -161,7 +163,7 @@ export function readerMediaFullPath(
 }
 
 export function readerAuthorHref(author: string): string {
-  return `/f%C3%B6rfattare/${encodeURIComponent(author)}`
+  return `/f%C3%B6rfattare/${encodeRfc3986Segment(author)}`
 }
 
 export function readerPageHref({
@@ -173,12 +175,12 @@ export function readerPageHref({
 }: ReaderRouteSegments): string {
   const path = [
     "/f%C3%B6rfattare",
-    encodeURIComponent(author),
+    encodeRfc3986Segment(author),
     "titlar",
-    encodeURIComponent(title),
+    encodeRfc3986Segment(title),
     "sida",
-    encodeURIComponent(page),
-    encodeURIComponent(mediaType)
+    encodeRfc3986Segment(page),
+    encodeRfc3986Segment(mediaType)
   ].join("/")
   if (!query) return path
 

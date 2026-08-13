@@ -22,6 +22,9 @@ describe("reader route links", () => {
     expect(readerAuthorHref("Söderberg/H? #")).toBe(
       "/f%C3%B6rfattare/S%C3%B6derberg%2FH%3F%20%23"
     )
+    expect(readerAuthorHref("O'Neil!()*A")).toBe(
+      "/f%C3%B6rfattare/O%27Neil%21%28%29%2AA"
+    )
     expect(readerPageHref({
       author: "Söderberg/H? #",
       title: "Doktor Glas/utkast",
@@ -31,6 +34,16 @@ describe("reader route links", () => {
       "/f%C3%B6rfattare/S%C3%B6derberg%2FH%3F%20%23" +
       "/titlar/Doktor%20Glas%2Futkast" +
       "/sida/-2%3Fx%23y%2Fz/e%2Ftext"
+    )
+    expect(readerPageHref({
+      author: "O'Neil!()*A",
+      title: "Title'!()*A",
+      page: "Page'!()*A",
+      mediaType: "Media'!()*A"
+    })).toBe(
+      "/f%C3%B6rfattare/O%27Neil%21%28%29%2AA" +
+      "/titlar/Title%27%21%28%29%2AA" +
+      "/sida/Page%27%21%28%29%2AA/Media%27%21%28%29%2AA"
     )
   })
 
