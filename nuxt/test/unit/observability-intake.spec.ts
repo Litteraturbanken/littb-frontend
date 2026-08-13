@@ -220,6 +220,22 @@ describe("observability intake guard", () => {
     )).toThrowError(expect.objectContaining({ statusCode: 409 }))
   })
 
+  test("does not expire a pending reservation while its owner is in flight", () => {
+    const guard = new ObservabilityIntakeGuard()
+    const event = { event_id: intakeEventId }
+    const owner = Symbol("in-flight request")
+
+    expect(guard.reserveNewEvents([event], 0, owner)).toEqual([event])
+    expect(() => guard.reserveNewEvents(
+      [event],
+      300_001,
+      Symbol("late overlap")
+    )).toThrowError(expect.objectContaining({ statusCode: 409 }))
+    guard.release([event.event_id], owner)
+    expect(guard.reserveNewEvents([event], 300_002, Symbol("retry")))
+      .toEqual([event])
+  })
+
   test("keeps mixed pending overlaps atomic and capacity owner-safe", () => {
     const guard = new ObservabilityIntakeGuard(3)
     const first = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd81" }
@@ -260,6 +276,7 @@ describe("observability intake guard", () => {
 
   test("makes overlapping delivery retryable until the exact owner settles", async () => {
     const guard = new ObservabilityIntakeGuard()
+    let now = 0
     let settleFirst: ((response: Response) => void) | undefined
     const firstResponse = new Promise<Response>(resolve => {
       settleFirst = resolve
@@ -270,7 +287,7 @@ describe("observability intake guard", () => {
     const options = {
       fetch: fetchImplementation,
       guard,
-      now: () => 1_000
+      now: () => now
     }
 
     const firstDelivery = handleObservabilityIntake(
@@ -279,6 +296,7 @@ describe("observability intake guard", () => {
       options
     )
     await vi.waitFor(() => expect(fetchImplementation).toHaveBeenCalledOnce())
+    now = 300_001
     await expect(handleObservabilityIntake(
       intakeRequest(),
       intakeConfig,
@@ -288,12 +306,65 @@ describe("observability intake guard", () => {
 
     settleFirst?.(new Response(null, { status: 503 }))
     await expect(firstDelivery).rejects.toMatchObject({ statusCode: 502 })
+    now = 300_002
     await expect(handleObservabilityIntake(
       intakeRequest(),
       intakeConfig,
       options
     )).resolves.toEqual({ accepted: 1 })
     expect(fetchImplementation).toHaveBeenCalledTimes(2)
+  })
+
+  test("times out a non-cooperative upstream and releases its pending owner", async () => {
+    vi.useFakeTimers()
+    try {
+      const signals: AbortSignal[] = []
+      let rejectLate: ((reason?: unknown) => void) | undefined
+      const fetchImplementation = vi.fn<typeof globalThis.fetch>()
+        .mockImplementationOnce((_target, init) => {
+          if (init?.signal) signals.push(init.signal)
+          return new Promise<Response>((_resolve, reject) => {
+            rejectLate = reject
+          })
+        })
+        .mockResolvedValueOnce(acceptedResponse())
+      const options = {
+        fetch: fetchImplementation,
+        fetchTimeoutMs: 50,
+        guard: new ObservabilityIntakeGuard(),
+        now: () => 1_000
+      }
+
+      const timedOut = handleObservabilityIntake(
+        intakeRequest(),
+        intakeConfig,
+        options
+      )
+      const timeoutFailure = expect(timedOut).rejects.toMatchObject({ statusCode: 502 })
+      await vi.advanceTimersByTimeAsync(49)
+      expect(signals[0]?.aborted).toBe(false)
+      await vi.advanceTimersByTimeAsync(1)
+      await timeoutFailure
+      expect(signals[0]?.aborted).toBe(true)
+
+      await expect(handleObservabilityIntake(
+        intakeRequest(),
+        intakeConfig,
+        options
+      )).resolves.toEqual({ accepted: 1 })
+      expect(fetchImplementation).toHaveBeenCalledTimes(2)
+      rejectLate?.(new Error("late upstream rejection"))
+      await Promise.resolve()
+      await expect(handleObservabilityIntake(
+        intakeRequest(),
+        intakeConfig,
+        options
+      )).resolves.toEqual({ accepted: 0 })
+      expect(fetchImplementation).toHaveBeenCalledTimes(2)
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   test("suppresses later duplicates only after the pending owner succeeds", async () => {

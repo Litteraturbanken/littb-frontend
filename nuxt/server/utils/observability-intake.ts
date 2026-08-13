@@ -28,6 +28,7 @@ const RATE_LIMIT = 60
 const REPLAY_WINDOW_MS = 5 * 60_000
 const MAX_CLIENTS = 10_000
 const MAX_EVENT_IDS = 20_000
+const FORWARD_TIMEOUT_MS = 10_000
 const EVENT_ID_PATTERN
   = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u
@@ -126,10 +127,10 @@ export class ObservabilityIntakeGuard {
 
   #pruneEventIds(now: number): void {
     for (const [eventId, reservation] of this.#eventIds) {
-      const storedAt = reservation.state === "pending"
-        ? reservation.reservedAt
-        : reservation.acceptedAt
-      if (now - storedAt >= REPLAY_WINDOW_MS) this.#eventIds.delete(eventId)
+      if (reservation.state === "accepted"
+        && now - reservation.acceptedAt >= REPLAY_WINDOW_MS) {
+        this.#eventIds.delete(eventId)
+      }
     }
   }
 
@@ -385,6 +386,7 @@ export async function readBoundedRequestBody(
 interface ObservabilityIntakeOptions {
   guard?: ObservabilityIntakeGuard
   fetch?: typeof globalThis.fetch
+  fetchTimeoutMs?: number
   now?: () => number
   resolveCorrelation?: typeof resolveCorrelationToken
 }
@@ -463,13 +465,31 @@ async function forwardEvents(
   intakeEvents: BrowserIntakeEvent[],
   guard: ObservabilityIntakeGuard,
   reservationOwner: symbol,
-  fetchImplementation: typeof globalThis.fetch
+  fetchImplementation: typeof globalThis.fetch,
+  timeoutMs: number
 ): Promise<Response> {
+  const controller = new AbortController()
+  let timeout: ReturnType<typeof setTimeout> | undefined
   try {
-    return await fetchImplementation(request.target, request.init)
+    const observedRequest = fetchImplementation(request.target, {
+      ...request.init,
+      signal: controller.signal
+    }).then(
+      response => response,
+      error => Promise.reject(error)
+    )
+    const deadline = new Promise<never>((_resolve, reject) => {
+      timeout = setTimeout(() => {
+        controller.abort()
+        reject(new Error("Observability forwarding timed out"))
+      }, timeoutMs)
+    })
+    return await Promise.race([observedRequest, deadline])
   } catch {
     guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
     throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
+  } finally {
+    if (timeout !== undefined) clearTimeout(timeout)
   }
 }
 
@@ -520,7 +540,8 @@ export async function handleObservabilityIntake(
     intakeEvents,
     guard,
     reservationOwner,
-    options.fetch ?? globalThis.fetch
+    options.fetch ?? globalThis.fetch,
+    options.fetchTimeoutMs ?? FORWARD_TIMEOUT_MS
   )
   if (response.status === 409) {
     guard.accept(intakeEvents.map(item => item.event_id), reservationOwner)
