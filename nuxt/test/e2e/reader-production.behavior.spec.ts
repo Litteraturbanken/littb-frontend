@@ -52,7 +52,7 @@ test("dot-page manifests fail as controlled Reader errors before page asset work
   request
 }) => {
   const manifestPath = "/v2/works/S%C3%B6derbergH/DotPageReader/manifest?media_type=etext"
-  const apiPath = "/api/reader/S%C3%B6derbergH/DotPageReader/1/etext"
+  const apiPath = "/nuxt-api/reader/S%C3%B6derbergH/DotPageReader/1/etext"
   await Promise.all([
     "_reader_requests",
     "_reader_html_requests",

@@ -7,6 +7,7 @@ type ProxyRule = {
 
 type NuxtConfig = {
   nitro: {
+    apiBaseURL: string
     imports: {
       dirsScanOptions: {
         fileFilter: (path: string) => boolean
@@ -29,7 +30,7 @@ type NuxtConfig = {
   }
 }
 
-const legacyProxyPattern = "^/api/(?!v2(?:/|$)|reader(?:/|$)|editor(?:/|$)|dev(?:/|$)|about(?:/|$)|author-documents(?:/|$)|dramawebben(?:/|$)|observability(?:/|$))"
+const legacyProxyPattern = "^/api/(?!v2(?:/|$))"
 
 async function loadConfig(): Promise<NuxtConfig> {
   vi.stubGlobal("defineNuxtConfig", (config: NuxtConfig) => config)
@@ -44,6 +45,12 @@ afterEach(() => {
 })
 
 describe("local legacy library API defaults", () => {
+  test("keeps frontend-owned handlers outside the backend API namespace", async () => {
+    const config = await loadConfig()
+
+    expect(config.nitro.apiBaseURL).toBe("/nuxt-api")
+  })
+
   test("routes SSR and browser library requests to the local FastAPI service", async () => {
     vi.stubEnv("LBAPI_LEGACY_PROXY_TARGET", undefined)
 
@@ -54,6 +61,8 @@ describe("local legacy library API defaults", () => {
     expect(proxy?.target).toBe("http://127.0.0.1:8000")
     expect(proxy?.rewrite?.("/api/relevance/etext?from=0&to=1"))
       .toBe("/relevance/etext?from=0&to=1")
+    expect(proxy?.rewrite?.("/api/reader/not-a-frontend-route"))
+      .toBe("/reader/not-a-frontend-route")
   })
 
   test("honors an explicit legacy proxy target without changing its path contract", async () => {

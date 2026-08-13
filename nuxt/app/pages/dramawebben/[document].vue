@@ -63,7 +63,7 @@ async function loadPageResult(
 ): Promise<PageResult> {
   try {
     const page = await fetcher<DramawebbenManagedDocument>(
-      `/api/dramawebben/documents/${kind}`,
+      `/nuxt-api/dramawebben/documents/${kind}`,
       { retry: 0 }
     )
     if (!isManagedDocument(page) || page.documentKind !== kind) {

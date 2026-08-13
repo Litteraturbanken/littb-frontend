@@ -60,7 +60,7 @@ describe("author profile paths", () => {
     value => {
       expect(() => encodeRfc3986Segment(value)).toThrow(TypeError)
       expect(() => new URL(
-        `/api/reader/resolve/Test/${encodeRfc3986Segment(value)}`,
+        `/nuxt-api/reader/resolve/Test/${encodeRfc3986Segment(value)}`,
         "https://example.test"
       )).toThrow(TypeError)
     }
@@ -71,9 +71,9 @@ describe("author profile paths", () => {
     value => {
       const encoded = encodeRfc3986Segment(value)
       expect(new URL(
-        `/api/reader/resolve/Test/${encoded}`,
+        `/nuxt-api/reader/resolve/Test/${encoded}`,
         "https://example.test"
-      ).pathname).toBe(`/api/reader/resolve/Test/${encoded}`)
+      ).pathname).toBe(`/nuxt-api/reader/resolve/Test/${encoded}`)
     }
   )
 

@@ -69,7 +69,7 @@ test("Reader /editor pushes the contextual Editor destination", async ({ page })
 test("development FTP endpoint stays in Nuxt and rejects invalid queries", async ({
   request
 }) => {
-  const response = await request.get("/api/dev/red-ftp?q=bad%2Fid")
+  const response = await request.get("/nuxt-api/dev/red-ftp?q=bad%2Fid")
 
   expect(response.status()).toBe(400)
   expect(await response.json()).toMatchObject({
@@ -115,7 +115,7 @@ test("lb lookup offers Editor and bounded FTP actions with inline success and fa
   page
 }) => {
   let fail = false
-  await page.route("**/api/dev/red-ftp?**", async route => {
+  await page.route("**/nuxt-api/dev/red-ftp?**", async route => {
     if (fail) {
       await route.fulfill({ status: 502, body: "lookup unavailable" })
       return
@@ -161,7 +161,7 @@ test("lb lookup offers Editor and bounded FTP actions with inline success and fa
 test("a dotted typed FTP identity never exposes or navigates to an invalid Editor route", async ({
   page
 }) => {
-  await page.route("**/api/dev/red-ftp?**", route => route.fulfill({
+  await page.route("**/nuxt-api/dev/red-ftp?**", route => route.fulfill({
     status: 200,
     contentType: "application/json; charset=utf-8",
     body: JSON.stringify({ entries: [] })

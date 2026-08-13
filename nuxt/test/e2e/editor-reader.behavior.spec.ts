@@ -460,7 +460,7 @@ test("editor Reader keeps a serialized work-search panel open while its page cha
   const pageRequestReleased = new Promise<void>(resolve => {
     releasePageRequest = resolve
   })
-  await page.route("**/api/editor/lb8345227/5/f", async route => {
+  await page.route("**/nuxt-api/editor/lb8345227/5/f", async route => {
     notePageRequest()
     await pageRequestReleased
     await route.continue()
@@ -934,7 +934,7 @@ test("dot-page manifests fail as controlled Editor errors before facsimile work"
     request.delete(`${fixture}/_editor_facsimile_requests`)
   ])
 
-  expect((await request.get("/api/editor/lb-editor-dot-page/0/f")).status()).toBe(502)
+  expect((await request.get("/nuxt-api/editor/lb-editor-dot-page/0/f")).status()).toBe(502)
   expect(await (await request.get(`${fixture}/_editor_manifest_requests`)).json()).toEqual({
     requests: [
       "/v2/works/lb-editor-dot-page/editor-manifest?media_type=faksimil"

@@ -2,10 +2,10 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 import { request as makeHttpRequest } from "node:http"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
-const resolveBase = "/api/reader/resolve/S%C3%B6derbergH"
+const resolveBase = "/nuxt-api/reader/resolve/S%C3%B6derbergH"
 const resolvePath = `${resolveBase}/DoktorGlas/etext`
 const shorthandBase = "/författare/SöderbergH/titlar"
-const facsimileResolveBase = "/api/reader/resolve/Lagerl%C3%B6fS"
+const facsimileResolveBase = "/nuxt-api/reader/resolve/Lagerl%C3%B6fS"
 const facsimileShorthandBase = "/författare/Lagerl%C3%B6fS/titlar"
 
 const readerStatuses = [
@@ -138,7 +138,7 @@ test("resolves a reordered contributor manifest through its declared primary aut
   request
 }) => {
   const response = await request.get(
-    "/api/reader/resolve/PrimaryP/ReorderedPrimary/etext"
+    "/nuxt-api/reader/resolve/PrimaryP/ReorderedPrimary/etext"
   )
   expect(response.status()).toBe(200)
   expect(await response.json()).toEqual({
@@ -170,7 +170,7 @@ test("uses uppercase RFC3986 escapes for every canonical Reader identity", async
   request
 }) => {
   const response = await request.get(
-    "/api/reader/resolve/O%27Neil%21%28%29%2AA/" +
+    "/nuxt-api/reader/resolve/O%27Neil%21%28%29%2AA/" +
     "Rfc%21Reader%27%28%29%2A/etext"
   )
   expect(response.status()).toBe(200)
@@ -379,7 +379,7 @@ test("source-information resolver selects requested media when available", async
   request
 }) => {
   const response = await request.get(
-    "/api/reader/resolve/Alml%C3%B6fN/Affarer?media_type=faksimil"
+    "/nuxt-api/reader/resolve/Alml%C3%B6fN/Affarer?media_type=faksimil"
   )
   expect(response.status()).toBe(200)
   expect(await response.json()).toEqual({
@@ -482,7 +482,7 @@ test("a late source-information alias cannot leave the route that replaced it", 
       const request = input instanceof Request ? input : null
       const url = request?.url ?? String(input)
       const signal = request?.signal ?? init?.signal
-      if (url.includes("/api/reader/resolve/S%C3%B6derbergH/DoktorGlas")) {
+      if (url.includes("/nuxt-api/reader/resolve/S%C3%B6derbergH/DoktorGlas")) {
         signal?.addEventListener("abort", () => {
           scope.__sourceInfoAliasAbortSeen = true
         }, { once: true })
@@ -492,7 +492,7 @@ test("a late source-information alias cannot leave the route that replaced it", 
   })
   const resolverRequestFailed = page.waitForEvent("requestfailed", browserRequest =>
     new URL(browserRequest.url()).pathname.endsWith(
-      "/api/reader/resolve/S%C3%B6derbergH/DoktorGlas"
+      "/nuxt-api/reader/resolve/S%C3%B6derbergH/DoktorGlas"
     )
   )
 

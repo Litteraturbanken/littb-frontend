@@ -128,13 +128,13 @@ async function installFirewall(page: Page) {
   const browserArticleRequests: string[] = []
   const unexpected: string[] = []
   const allowed = new Set([
-    "/api/author-documents/Lagerl%C3%B6fS/omtexterna/PublishedWorks.html",
-    "/api/author-documents/Lagerl%C3%B6fS/omtexterna/ScholarlyEditions.html",
-    "/api/author-documents/Lagerl%C3%B6fS/omtexterna/Introduktion.html"
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/PublishedWorks.html",
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/ScholarlyEditions.html",
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/Introduktion.html"
   ])
   page.on("request", request => {
     const url = new URL(request.url())
-    if (url.pathname.startsWith("/api/author-documents/")) {
+    if (url.pathname.startsWith("/nuxt-api/author-documents/")) {
       browserArticleRequests.push(`${url.pathname}${url.search}`)
     }
   })
@@ -142,7 +142,7 @@ async function installFirewall(page: Page) {
     const request = route.request()
     const url = new URL(request.url())
     const label = `${request.method()} ${url.href}`
-    if (url.pathname.startsWith("/api/author-documents/")) {
+    if (url.pathname.startsWith("/nuxt-api/author-documents/")) {
       if (request.method() === "GET" && allowed.has(`${url.pathname}${url.search}`)) {
         return route.continue()
       }
@@ -250,7 +250,7 @@ test("article navigation clears stale content and ignores a late older result", 
   const gate = new Promise<void>(resolve => { release = resolve })
   let markStarted!: () => void
   const started = new Promise<void>(resolve => { markStarted = resolve })
-  await page.route("**/api/author-documents/Lagerl%C3%B6fS/omtexterna/Introduktion.html", async route => {
+  await page.route("**/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/Introduktion.html", async route => {
     markStarted()
     await gate
     await route.fulfill({
@@ -294,8 +294,8 @@ test("article navigation clears stale content and ignores a late older result", 
     path: "/red/sla/ScholarlyEditions.html"
   }])
   expect(firewall.browserArticleRequests).toEqual([
-    "/api/author-documents/Lagerl%C3%B6fS/omtexterna/Introduktion.html",
-    "/api/author-documents/Lagerl%C3%B6fS/omtexterna/ScholarlyEditions.html"
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/Introduktion.html",
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/ScholarlyEditions.html"
   ])
   expect(firewall.unexpected).toEqual([])
   expect(problems).toEqual([])
@@ -322,7 +322,7 @@ test("client errors clear accepted content and a later article recovers", async 
     "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
   ])
   expect(evidence.responses).toEqual([{
-    path: "/api/author-documents/Lagerl%C3%B6fS/omtexterna/ScholarlyEditions.html",
+    path: "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/ScholarlyEditions.html",
     status: 502
   }])
   expect(evidence.problems).toEqual([])

@@ -1,8 +1,8 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
 
 const fixture = "http://127.0.0.1:4100"
-const omApi = "/api/dramawebben/documents/om"
-const kringtexterApi = "/api/dramawebben/documents/kringtexter"
+const omApi = "/nuxt-api/dramawebben/documents/om"
+const kringtexterApi = "/nuxt-api/dramawebben/documents/kringtexter"
 
 type ManagedRequest = {
   method: string
@@ -99,7 +99,7 @@ test("does not forward public query, cookies, or authorization", async ({ reques
 
 for (const kind of ["pjäser", "forfattare", "OM", "%252e%252e"]) {
   test(`rejects the non-mapped public name ${kind} before fetching`, async ({ request }) => {
-    const response = await request.get(`/api/dramawebben/documents/${kind}`)
+    const response = await request.get(`/nuxt-api/dramawebben/documents/${kind}`)
     await expectLocalError(response, 404, "dramawebben_document_not_found")
     expect(await managedRequests(request)).toEqual([])
   })

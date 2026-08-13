@@ -283,7 +283,7 @@ test("a delayed om response cannot replace the latest kringtexter identity", asy
   const omGate = new Promise<void>(resolve => { releaseOm = resolve })
   let omRequested!: () => void
   const omStarted = new Promise<void>(resolve => { omRequested = resolve })
-  await page.route("**/api/dramawebben/documents/om", async route => {
+  await page.route("**/nuxt-api/dramawebben/documents/om", async route => {
     omRequested()
     await omGate
     await route.fulfill({
@@ -322,7 +322,7 @@ test("a malformed successful document is redacted inside the stable latest shell
 }) => {
   const problems = collectProblems(page)
   await page.goto("/dramawebben/om", { waitUntil: "networkidle" })
-  await page.route("**/api/dramawebben/documents/kringtexter", route => route.fulfill({
+  await page.route("**/nuxt-api/dramawebben/documents/kringtexter", route => route.fulfill({
     status: 200,
     contentType: "application/json; charset=utf-8",
     body: JSON.stringify({ documentKind: "kringtexter", bodyHtml: 42 })
@@ -555,7 +555,7 @@ test("changing source-information identity aborts the obsolete request", async (
   })
   const aborted: string[] = []
   page.on("requestfailed", outgoing => {
-    if (new URL(outgoing.url()).pathname.includes("/api/reader/source-info/Alml%C3%B6fN/Affarer")) {
+    if (new URL(outgoing.url()).pathname.includes("/nuxt-api/reader/source-info/Alml%C3%B6fN/Affarer")) {
       aborted.push(outgoing.failure()?.errorText ?? "unknown")
     }
   })

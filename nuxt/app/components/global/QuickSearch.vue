@@ -362,7 +362,7 @@ async function copyDeveloperWorkId(context: QuickSearchContext | null): Promise<
 async function searchDeveloperFtp(label: string): Promise<void> {
   developerOutput.value = { kind: "ftp", entries: [], status: "Söker i red …" }
   try {
-    const response = await $fetch<{ entries: unknown }>("/api/dev/red-ftp", {
+    const response = await $fetch<{ entries: unknown }>("/nuxt-api/dev/red-ftp", {
       query: { q: label },
       retry: 0
     })

@@ -360,7 +360,7 @@ const sourceInfoFetch = await useAsyncData<CatalogSourceInfoResult>(
     sourceInfoController = controller
     try {
       const sourceInfo = await requestFetch<ReaderSourceInfo>(
-        "/api/reader/source-info/"
+        "/nuxt-api/reader/source-info/"
         + [identity.authorId, identity.titlePath].map(encodeURIComponent).join("/"),
         { retry: 0, signal: AbortSignal.any([signal, controller.signal]) }
       )

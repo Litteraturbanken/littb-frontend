@@ -33,7 +33,7 @@ const visualCases = [
   {
     name: "presentation",
     route: "/författare/S%C3%B6derbergH/presentation",
-    apiPath: "/api/author-documents/S%C3%B6derbergH/presentation",
+    apiPath: "/nuxt-api/author-documents/S%C3%B6derbergH/presentation",
     descriptorPath: "/private-v2/authors/S%C3%B6derbergH/documents/presentation",
     sourcePath: "/red/forfattare/SoderbergH/presentation/index.html",
     assets: []
@@ -41,7 +41,7 @@ const visualCases = [
   {
     name: "bibliografi",
     route: "/författare/Lagerl%C3%B6fS/bibliografi",
-    apiPath: "/api/author-documents/Lagerl%C3%B6fS/bibliografi",
+    apiPath: "/nuxt-api/author-documents/Lagerl%C3%B6fS/bibliografi",
     descriptorPath: "/private-v2/authors/Lagerl%C3%B6fS/documents/bibliografi",
     sourcePath: "/red/forfattare/LagerlofS/bibliografi/index.html",
     assets: []
@@ -49,7 +49,7 @@ const visualCases = [
   {
     name: "semer",
     route: "/författare/AlmqvistCJL/semer",
-    apiPath: "/api/author-documents/AlmqvistCJL/semer",
+    apiPath: "/nuxt-api/author-documents/AlmqvistCJL/semer",
     descriptorPath: "/private-v2/authors/AlmqvistCJL/documents/semer",
     sourcePath: "/red/forfattare/AlmqvistCJL/semer/index.html",
     assets: semerAuthorDocumentAssets.map(asset => asset.path)

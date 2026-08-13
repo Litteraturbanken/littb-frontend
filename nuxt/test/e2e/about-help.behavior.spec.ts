@@ -4,7 +4,7 @@ import { runSequentialCleanup } from "../helpers/sequential-cleanup"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 const contentPath = "/red/om/hjalp/hjalp.html"
-const managedContentPath = "/api/about/hjalp"
+const managedContentPath = "/nuxt-api/about/hjalp"
 const submenu = [
   ["SökaEfterVerk", "Söka efter verk"],
   ["SökaIVerk", "Söka i verk"],

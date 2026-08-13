@@ -218,14 +218,14 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
 
 test("canonical Reader API projects exact work searchability", async ({ request }) => {
   const searchable = await request.get(
-    "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext"
+    "/nuxt-api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext"
   )
   expect(searchable.status()).toBe(200)
   expect(searchable.headers()["cache-control"]).toBe("no-store")
   expect((await searchable.json()).searchable).toBe(true)
 
   const inert = await request.get(
-    "/api/reader/S%C3%B6derbergH/UnsearchableEtextReader/-2/etext"
+    "/nuxt-api/reader/S%C3%B6derbergH/UnsearchableEtextReader/-2/etext"
   )
   expect(inert.status()).toBe(200)
   expect((await inert.json()).searchable).toBe(false)
@@ -271,7 +271,7 @@ test("Reader source-information SSR renders inline errata markup in every visibl
 
 test("Boye Reader API and SSR retain ordered work contributors", async ({ request }) => {
   const api = await request.get(
-    "/api/reader/BoyeK/EttVerkligtJordiskt/3/faksimil"
+    "/nuxt-api/reader/BoyeK/EttVerkligtJordiskt/3/faksimil"
   )
   expect(api.status()).toBe(200)
   const body = await api.json()
@@ -325,7 +325,7 @@ test("Reader keeps contributor order while selecting the declared primary author
   request
 }) => {
   const api = await request.get(
-    "/api/reader/PrimaryP/ReorderedPrimary/-2/etext"
+    "/nuxt-api/reader/PrimaryP/ReorderedPrimary/-2/etext"
   )
   expect(api.status()).toBe(200)
   const body = await api.json()
@@ -484,7 +484,7 @@ test("the Nitro source-information boundary rejects a non-public canonical autho
   request
 }) => {
   const response = await request.get(
-    "/api/reader/source-info/CanonicalNotPublicA/DoktorGlas?media_type=etext"
+    "/nuxt-api/reader/source-info/CanonicalNotPublicA/DoktorGlas?media_type=etext"
   )
 
   expect(response.status()).toBe(502)
@@ -654,7 +654,7 @@ test("canonical API returns the exact searchable faksimil arm with selectable OC
   request
 }) => {
   const response = await request.get(
-    "/api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/3/faksimil"
+    "/nuxt-api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/3/faksimil"
   )
   expect(response.status()).toBe(200)
   expect(await response.json()).toEqual({
@@ -819,7 +819,7 @@ test("canonical API projects source-ordered generated Reader navigation without 
   request
 }) => {
   const response = await request.get(
-    "/api/reader/S%C3%B6derbergH/DoktorGlasParts/-1/etext"
+    "/nuxt-api/reader/S%C3%B6derbergH/DoktorGlasParts/-1/etext"
   )
   expect(response.status()).toBe(200)
   const body = await response.json()
@@ -889,7 +889,7 @@ test("canonical API projects source-ordered generated Reader navigation without 
 test("navigation projection keeps a page gap empty and chooses the first same-start source", async ({
   request
 }) => {
-  const gap = await request.get("/api/reader/S%C3%B6derbergH/DoktorGlasParts/2/etext")
+  const gap = await request.get("/nuxt-api/reader/S%C3%B6derbergH/DoktorGlasParts/2/etext")
   expect(gap.status()).toBe(200)
   expect(await gap.json()).toMatchObject({
     currentPartIndex: null,
@@ -901,7 +901,7 @@ test("navigation projection keeps a page gap empty and chooses the first same-st
   ])
 
   await resetReader(request)
-  const tie = await request.get("/api/reader/S%C3%B6derbergH/DoktorGlasParts/3/etext")
+  const tie = await request.get("/nuxt-api/reader/S%C3%B6derbergH/DoktorGlasParts/3/etext")
   expect(tie.status()).toBe(200)
   expect(await tie.json()).toMatchObject({
     currentPartIndex: 3,
@@ -917,7 +917,7 @@ test("partless metadata publishes empty navigation without calling the author re
   request
 }) => {
   const response = await request.get(
-    "/api/reader/S%C3%B6derbergH/PartlessReader/-2/etext"
+    "/nuxt-api/reader/S%C3%B6derbergH/PartlessReader/-2/etext"
   )
   expect(response.status()).toBe(200)
   expect(await response.json()).toMatchObject({
@@ -939,7 +939,7 @@ for (const title of [
 ] as const) {
   test(`${title} fails before resolver and page asset IO`, async ({ request }) => {
     const response = await request.get(
-      `/api/reader/S%C3%B6derbergH/${title}/-1/etext`
+      `/nuxt-api/reader/S%C3%B6derbergH/${title}/-1/etext`
     )
     expect(response.status()).toBe(502)
     expect(await authorResolveRequests(request)).toEqual([])
@@ -957,7 +957,7 @@ test("nullable generated part-author names remain direct without author lookup",
   request
 }) => {
   const api = await request.get(
-    "/api/reader/S%C3%B6derbergH/ReaderAuthorOmission/-1/etext"
+    "/nuxt-api/reader/S%C3%B6derbergH/ReaderAuthorOmission/-1/etext"
   )
   expect(api.status()).toBe(200)
   expect((await api.json()).parts[0].authors).toEqual([{
@@ -978,7 +978,7 @@ for (const title of [
   test(`${title} rejects a malformed work contributor before resolver and page IO`, async ({
     request
   }) => {
-    const response = await request.get(`/api/reader/S%C3%B6derbergH/${title}/-1/etext`)
+    const response = await request.get(`/nuxt-api/reader/S%C3%B6derbergH/${title}/-1/etext`)
     expect(response.status()).toBe(502)
     expect(await authorResolveRequests(request)).toEqual([])
     expect((await separateReaderRequests(request)).html).toEqual([])
@@ -995,7 +995,7 @@ for (const title of [
   test(`${title} rejects an unsafe locally matched author before resolver and page IO`, async ({
     request
   }) => {
-    const response = await request.get(`/api/reader/S%C3%B6derbergH/${title}/-1/etext`)
+    const response = await request.get(`/nuxt-api/reader/S%C3%B6derbergH/${title}/-1/etext`)
     expect(response.status()).toBe(502)
     expect(await authorResolveRequests(request)).toEqual([])
     expect((await separateReaderRequests(request)).html).toEqual([])
@@ -1114,7 +1114,7 @@ test("a sparse faksimil manifest server-renders its selected available source", 
 
 test("canonical faksimil selects the requested alternate representation", async ({ request }) => {
   const response = await request.get(
-    "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/faksimil"
+    "/nuxt-api/reader/S%C3%B6derbergH/DoktorGlas/-2/faksimil"
   )
   expect(response.status()).toBe(200)
   expect(await response.json()).toMatchObject({
@@ -1138,7 +1138,7 @@ test("canonical faksimil selects the requested alternate representation", async 
 
 test("canonical unknown media fails before reader IO", async ({ request }) => {
   const response = await request.get(
-    "/api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/3/pdf"
+    "/nuxt-api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/3/pdf"
   )
   expect(response.status()).toBe(404)
   expect(await separateReaderRequests(request)).toEqual({
@@ -1149,7 +1149,7 @@ test("canonical unknown media fails before reader IO", async ({ request }) => {
 
 test("canonical missing faksimil page fails before asset IO", async ({ request }) => {
   const response = await request.get(
-    "/api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/missing/faksimil"
+    "/nuxt-api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/missing/faksimil"
   )
   expect(response.status()).toBe(404)
   const recorded = await separateReaderRequests(request)
@@ -1169,7 +1169,7 @@ for (const titlePath of [
 ]) {
   test(`${titlePath} is a 502 without asset IO`, async ({ request }) => {
     const response = await request.get(
-      `/api/reader/Lagerl%C3%B6fS/${titlePath}/3/faksimil`
+      `/nuxt-api/reader/Lagerl%C3%B6fS/${titlePath}/3/faksimil`
     )
     expect(response.status()).toBe(502)
     const recorded = await separateReaderRequests(request)

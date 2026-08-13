@@ -80,7 +80,7 @@ const { data: contentPayload } = await useAsyncData<AboutContentPayload>(asyncKe
   try {
     return {
       page: requestedPage,
-      html: await requestFetch<AboutContent>(`/api/about/${encodeURIComponent(requestedPage)}`)
+      html: await requestFetch<AboutContent>(`/nuxt-api/about/${encodeURIComponent(requestedPage)}`)
     }
   } catch (error) {
     if (import.meta.dev) console.error(`About content request failed for ${requestedPage}`, error)

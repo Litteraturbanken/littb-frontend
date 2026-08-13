@@ -22,7 +22,7 @@ const requestedTitle = scalarParam("title")
 const activeIdentity = { current: true }
 const resolutionController = new AbortController()
 const resolverPath = [
-  "/api/reader/resolve",
+  "/nuxt-api/reader/resolve",
   encodeRfc3986Segment(requestedAuthor),
   encodeRfc3986Segment(requestedTitle)
 ].join("/")

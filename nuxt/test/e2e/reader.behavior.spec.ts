@@ -525,7 +525,7 @@ test("direct source information hydrates once without a client refetch", async (
   const clientSourceInfoRequests: string[] = []
   const clientSimilarWorkRequests: string[] = []
   page.on("request", browserRequest => {
-    if (new URL(browserRequest.url()).pathname.includes("/api/reader/source-info/")) {
+    if (new URL(browserRequest.url()).pathname.includes("/nuxt-api/reader/source-info/")) {
       clientSourceInfoRequests.push(browserRequest.url())
     }
     if (/\/works\/[^/]+\/similar$/u.test(new URL(browserRequest.url()).pathname)) {
@@ -777,7 +777,7 @@ test("a failed source-information request is modal-local and retries on reopen",
   request
 }) => {
   const failedSourceInfoUrl =
-    "/api/reader/source-info/S%C3%B6derbergH/DoktorGlas?media_type=etext"
+    "/nuxt-api/reader/source-info/S%C3%B6derbergH/DoktorGlas?media_type=etext"
   const problems = captureBrowserProblems(page, {
     httpErrors: [{
       method: "GET",
@@ -885,7 +885,7 @@ test("closing source information aborts its obsolete client request", async ({ p
   })
   await page.goto(readerPath, { waitUntil: "networkidle" })
 
-  const sourceInfoPath = "/api/reader/source-info/S%C3%B6derbergH/DoktorGlas"
+  const sourceInfoPath = "/nuxt-api/reader/source-info/S%C3%B6derbergH/DoktorGlas"
   const sourceInfoStarted = page.waitForRequest(browserRequest =>
     new URL(browserRequest.url()).pathname === sourceInfoPath
   )
@@ -1246,7 +1246,7 @@ test("contents rows use surnames and selecting a nested part pushes its raw targ
   const selectedHitRequests: string[] = []
   page.on("request", browserRequest => {
     const pathname = new URL(browserRequest.url()).pathname
-    if (pathname.startsWith("/api/reader/")) {
+    if (pathname.startsWith("/nuxt-api/reader/")) {
       selectedReaderRequests.push(browserRequest.url())
     }
     if (pathname.includes("/works/lb-reader-doktor-glas-parts/search-hits")) {
@@ -1791,7 +1791,7 @@ test("a late shorthand resolver cannot leave the route that replaced it", async 
   await page.goto("/", { waitUntil: "networkidle" })
   const resolverResponse = page.waitForResponse(response =>
     new URL(response.url()).pathname.endsWith(
-      "/api/reader/resolve/S%C3%B6derbergH/DoktorGlas/etext"
+      "/nuxt-api/reader/resolve/S%C3%B6derbergH/DoktorGlas/etext"
     )
   )
 
@@ -1891,7 +1891,7 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
   const problems = captureBrowserProblems(page)
   const clientReaderRequests: string[] = []
   page.on("request", request => {
-    if (new URL(request.url()).pathname.startsWith("/api/reader/")) {
+    if (new URL(request.url()).pathname.startsWith("/nuxt-api/reader/")) {
       clientReaderRequests.push(request.url())
     }
   })
@@ -2277,7 +2277,7 @@ test("page navigation preserves each page's horizontal history position", async 
 }) => {
   test.skip(isMobile, "the responsive reader has no horizontal page overflow")
   await page.setViewportSize({ width: 800, height: 900 })
-  await page.route("**/api/reader/**/-1/etext", async route => {
+  await page.route("**/nuxt-api/reader/**/-1/etext", async route => {
     await new Promise(resolve => setTimeout(resolve, 800))
     const response = await route.fetch()
     const reader = await response.json() as { html: string }
@@ -2565,7 +2565,7 @@ test("retained sparse faksimil controls cannot rewrite a pending page identity",
   const release = new Promise<void>(resolve => { releaseRequest = resolve })
   let markRequestStarted!: () => void
   const requestStarted = new Promise<void>(resolve => { markRequestStarted = resolve })
-  await page.route("**/api/reader/**/5/faksimil", async route => {
+  await page.route("**/nuxt-api/reader/**/5/faksimil", async route => {
     markRequestStarted()
     await release
     await route.continue()
@@ -3794,7 +3794,7 @@ test("a delayed primary Reader request keeps the reader shell mounted until the 
   const release = new Promise<void>(resolve => { releaseRequest = resolve })
   let markRequestStarted!: () => void
   const requestStarted = new Promise<void>(resolve => { markRequestStarted = resolve })
-  await page.route("**/api/reader/**/-1/etext", async route => {
+  await page.route("**/nuxt-api/reader/**/-1/etext", async route => {
     markRequestStarted()
     await release
     await route.continue()
@@ -3859,7 +3859,7 @@ test("an obsolete successful Reader request cannot replace the newest page", asy
   const delayedRequestStarted = new Promise<void>(resolve => {
     markDelayedRequestStarted = resolve
   })
-  await page.route("**/api/reader/**/-2/etext", async route => {
+  await page.route("**/nuxt-api/reader/**/-2/etext", async route => {
     markDelayedRequestStarted()
     await release
     await route.continue()
@@ -3873,7 +3873,7 @@ test("an obsolete successful Reader request cannot replace the newest page", asy
   await expect(page.locator(".reader_main .etext.txt")).toContainText("NÄSTA SIDA")
 
   const delayedResponse = page.waitForResponse(response =>
-    new URL(response.url()).pathname.endsWith("/api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext")
+    new URL(response.url()).pathname.endsWith("/nuxt-api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext")
   )
   releaseDelayedRequest()
   await delayedResponse
@@ -3897,7 +3897,7 @@ test("a remounted Reader never exposes a retained page under a different page UR
   const release = new Promise<void>(resolve => { releaseRequest = resolve })
   let markRequestStarted!: () => void
   const requestStarted = new Promise<void>(resolve => { markRequestStarted = resolve })
-  await page.route("**/api/reader/**/-1/etext", async route => {
+  await page.route("**/nuxt-api/reader/**/-1/etext", async route => {
     markRequestStarted()
     await release
     await route.continue()
@@ -3926,7 +3926,7 @@ test("a remounted Reader never exposes a retained page under a different page UR
 test("a failed primary Reader client request shows a bounded state without stale content or History", async ({
   page
 }) => {
-  const failedReaderUrl = "/api/reader/S%C3%B6derbergH/DoktorGlas/-1/etext"
+  const failedReaderUrl = "/nuxt-api/reader/S%C3%B6derbergH/DoktorGlas/-1/etext"
   const expectedReaderFailure = {
     method: "GET" as const,
     status: 503,
@@ -3937,7 +3937,7 @@ test("a failed primary Reader client request shows a bounded state without stale
   })
   await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, { waitUntil: "networkidle" })
   const historyBefore = await rawStoredPageViews(page)
-  await page.route("**/api/reader/**/-1/etext", async route => {
+  await page.route("**/nuxt-api/reader/**/-1/etext", async route => {
     await route.fulfill({
       status: 503,
       contentType: "application/json",
@@ -4544,7 +4544,7 @@ test("rapid page intents push every draft route and debounce only the final cont
     }
     const routeAt = state.__rapidReaderRoutes?.at(-1)?.at
     const requestAt = performance.getEntriesByType("resource")
-      .filter(entry => entry.name.includes("/api/reader/"))
+      .filter(entry => entry.name.includes("/nuxt-api/reader/"))
       .at(-1)?.startTime
     return routeAt === undefined || requestAt === undefined ? null : requestAt - routeAt
   })

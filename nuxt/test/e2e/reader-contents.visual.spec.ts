@@ -151,7 +151,7 @@ for (const visualCase of visualCases) {
         url.pathname.includes("/api/get_work_info") ||
         url.pathname.includes("/private-v2/") ||
         url.pathname.includes("/authors/resolve") ||
-        url.pathname.startsWith("/api/reader/")
+        url.pathname.startsWith("/nuxt-api/reader/")
       ) {
         unexpectedBrowserDataRequests.push(label)
         return route.abort("blockedbyclient")

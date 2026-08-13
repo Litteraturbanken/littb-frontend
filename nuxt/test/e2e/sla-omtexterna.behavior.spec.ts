@@ -119,12 +119,12 @@ async function installDataFirewall(page: Page) {
   const browserDocumentRequests: string[] = []
   const unexpected: string[] = []
   const allowedDocumentRequests = new Set([
-    "/api/author-documents/Lagerl%C3%B6fS/omtexterna",
-    "/api/author-documents/Lagerl%C3%B6fS/bibliografi"
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna",
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/bibliografi"
   ])
   page.on("request", request => {
     const url = new URL(request.url())
-    if (url.pathname.startsWith("/api/author-documents/")) {
+    if (url.pathname.startsWith("/nuxt-api/author-documents/")) {
       browserDocumentRequests.push(`${url.pathname}${url.search}`)
     }
   })
@@ -132,7 +132,7 @@ async function installDataFirewall(page: Page) {
     const request = route.request()
     const url = new URL(request.url())
     const label = `${request.method()} ${url.href}`
-    if (url.pathname.startsWith("/api/author-documents/")) {
+    if (url.pathname.startsWith("/nuxt-api/author-documents/")) {
       if (request.method() === "GET"
         && allowedDocumentRequests.has(`${url.pathname}${url.search}`)) {
         return route.continue()
@@ -311,8 +311,8 @@ test("a late SLA result cannot replace a newer adjacent author document", async 
     }
   ])
   expect(firewall.browserDocumentRequests).toEqual([
-    "/api/author-documents/Lagerl%C3%B6fS/omtexterna",
-    "/api/author-documents/Lagerl%C3%B6fS/bibliografi"
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna",
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/bibliografi"
   ])
   expect(firewall.unexpected).toEqual([])
   await expectAdjacentLedgersEmpty(request)

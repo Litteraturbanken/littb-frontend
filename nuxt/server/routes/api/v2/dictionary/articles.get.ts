@@ -1,4 +1,4 @@
-import { proxyBackendRequest } from "../../../utils/backend-proxy"
+import { proxyBackendRequest } from "../../../../utils/backend-proxy"
 
 export default defineEventHandler(event => {
   const apiBase = useRuntimeConfig(event).apiBase

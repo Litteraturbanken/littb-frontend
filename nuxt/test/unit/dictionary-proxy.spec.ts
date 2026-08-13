@@ -31,7 +31,7 @@ async function startDictionaryProxy(apiBase: string): Promise<RunningProxy> {
   vi.stubGlobal("defineEventHandler", (handler: unknown) => handler)
   vi.stubGlobal("useRuntimeConfig", () => ({ apiBase }))
   const dictionaryHandler = (
-    await import("../../server/api/v2/dictionary/articles.get")
+    await import("../../server/routes/api/v2/dictionary/articles.get")
   ).default
   const app = createApp()
     .use(event => {

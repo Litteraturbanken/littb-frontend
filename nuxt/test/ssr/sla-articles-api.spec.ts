@@ -2,7 +2,7 @@ import { expect, test, type APIRequestContext, type APIResponse } from "@playwri
 
 const fixture = "http://127.0.0.1:4100"
 const articleId = "PublishedWorks.html"
-const api = `/api/author-documents/Lagerl%C3%B6fS/omtexterna/${articleId}`
+const api = `/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/${articleId}`
 const descriptorPath
   = `/private-v2/authors/Lagerl%C3%B6fS/documents/omtexterna/articles/${articleId}`
 const sourcePath = `/red/sla/${articleId}`
@@ -153,13 +153,13 @@ test("returns the exact bounded article response", async ({ request }) => {
 
 test("rejects local route variants before either managed request", async ({ request }) => {
   const paths = [
-    `/api/author-documents/S%C3%B6derbergH/omtexterna/${articleId}`,
-    "/api/author-documents/Lagerl%C3%B6fS/omtexterna/NotRegistered.html",
-    "/api/author-documents/Lagerl%C3%B6fS/omtexterna/publishedWorks.html",
-    "/api/author-documents/Lagerl%C3%B6fS/omtexterna/%50ublishedWorks.html",
-    "/api/author-documents/Lagerl%C3%B6fS/omtexterna/%2550ublishedWorks.html",
-    "/api/author-documents/Lagerl%C3%B6fS/omtexterna/%252e%252e",
-    `/api/author-documents/Lagerl%C3%B6fS/omtexterna/${articleId}/extra`
+    `/nuxt-api/author-documents/S%C3%B6derbergH/omtexterna/${articleId}`,
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/NotRegistered.html",
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/publishedWorks.html",
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/%50ublishedWorks.html",
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/%2550ublishedWorks.html",
+    "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/%252e%252e",
+    `/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/${articleId}/extra`
   ]
   for (const path of paths) {
     const response = await request.get(path)

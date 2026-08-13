@@ -40,30 +40,30 @@ test("Nitro proxies bounded backend requests without shadowing exact APIs", asyn
     .toEqual({ requests: ["/private-v2/contact?probe=post"] })
 
   const exactReader = await request.get(
-    "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext"
+    "/nuxt-api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext"
   )
   expect(exactReader.status()).toBe(200)
   expect(exactReader.headers()["cache-control"]).toBe("no-store")
 
   for (const exactPath of [
-    "/api/editor/lb-editor-doktor/1/f",
-    "/api/author-documents/S%C3%B6derbergH/presentation",
-    "/api/dramawebben/documents/om",
+    "/nuxt-api/editor/lb-editor-doktor/1/f",
+    "/nuxt-api/author-documents/S%C3%B6derbergH/presentation",
+    "/nuxt-api/dramawebben/documents/om",
     "/api/v2/dictionary/articles?word=DOKTOR"
   ]) {
     expect((await request.get(exactPath)).status(), exactPath).toBe(200)
   }
 
-  const developerOnly = await request.get("/api/dev/red-ftp?q=lb123")
+  const developerOnly = await request.get("/nuxt-api/dev/red-ftp?q=lb123")
   expect(developerOnly.status()).toBe(404)
   expect((await developerOnly.json()).statusMessage).toBe("Not found")
 
   for (const exactPath of [
-    "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext",
-    "/api/editor/lb-editor-doktor/1/f",
-    "/api/author-documents/S%C3%B6derbergH/presentation",
-    "/api/dramawebben/documents/om",
-    "/api/dev/red-ftp?q=lb123",
+    "/nuxt-api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext",
+    "/nuxt-api/editor/lb-editor-doktor/1/f",
+    "/nuxt-api/author-documents/S%C3%B6derbergH/presentation",
+    "/nuxt-api/dramawebben/documents/om",
+    "/nuxt-api/dev/red-ftp?q=lb123",
     "/api/v2/dictionary/articles?word=DOKTOR"
   ]) {
     expect((await request.post(exactPath)).status(), exactPath).toBe(404)
@@ -156,7 +156,7 @@ for (const [acceptEncoding, accepted] of [
 }
 
 test("mutable reader API pages are never shared or browser cacheable", async ({ request }) => {
-  const path = "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext"
+  const path = "/nuxt-api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext"
   const first = await request.get(path)
 
   expect(first.status()).toBe(200)

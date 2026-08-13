@@ -81,7 +81,7 @@ async function loadPageResult(
 ): Promise<PageResult> {
   try {
     const page = await fetcher<SlaArticlePage>(
-      "/api/author-documents/"
+      "/nuxt-api/author-documents/"
       + [author, document, article].map(encodeRfc3986Segment).join("/"),
       { retry: 0 }
     )

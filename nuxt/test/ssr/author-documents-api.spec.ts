@@ -1,10 +1,10 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
 
 const fixture = "http://127.0.0.1:4100"
-const presentationApi = "/api/author-documents/S%C3%B6derbergH/presentation"
-const bibliographyApi = "/api/author-documents/Lagerl%C3%B6fS/bibliografi"
-const semerApi = "/api/author-documents/AlmqvistCJL/semer"
-const omtexternaApi = "/api/author-documents/Lagerl%C3%B6fS/omtexterna"
+const presentationApi = "/nuxt-api/author-documents/S%C3%B6derbergH/presentation"
+const bibliographyApi = "/nuxt-api/author-documents/Lagerl%C3%B6fS/bibliografi"
+const semerApi = "/nuxt-api/author-documents/AlmqvistCJL/semer"
+const omtexternaApi = "/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna"
 
 type AuthorDocumentRequest = {
   kind: "descriptor" | "content"
@@ -190,7 +190,7 @@ test("loads the exact SLA landing through the fixed bounded source", async ({ re
 test("supports the sparse descriptor without inventing optional navigation", async ({
   request
 }) => {
-  const response = await request.get("/api/author-documents/SparseDocument/presentation")
+  const response = await request.get("/nuxt-api/author-documents/SparseDocument/presentation")
   expect(response.status()).toBe(200)
   expect(await response.json()).toEqual({
     author: {
@@ -292,11 +292,11 @@ test("rejects unsupported kinds and unsafe author params without upstream conten
   request
 }) => {
   for (const path of [
-    "/api/author-documents/S%C3%B6derbergH/omtexterna",
-    "/api/author-documents/AlmqvistCJL/omtexterna",
-    "/api/author-documents/%252e%252e/presentation",
-    "/api/author-documents/%20S%C3%B6derbergH/presentation",
-    `/api/author-documents/${"A".repeat(101)}/presentation`
+    "/nuxt-api/author-documents/S%C3%B6derbergH/omtexterna",
+    "/nuxt-api/author-documents/AlmqvistCJL/omtexterna",
+    "/nuxt-api/author-documents/%252e%252e/presentation",
+    "/nuxt-api/author-documents/%20S%C3%B6derbergH/presentation",
+    `/nuxt-api/author-documents/${"A".repeat(101)}/presentation`
   ]) {
     const response = await request.get(path)
     expect(response.status(), path).toBe(404)

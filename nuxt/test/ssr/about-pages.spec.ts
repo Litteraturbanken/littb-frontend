@@ -150,7 +150,7 @@ test("unknown About page is a real 404 and cannot select a remote path", async (
 
 test("managed About API returns only the reviewed editorial body", async ({ request }) => {
   await reset(request)
-  const response = await request.get("/api/about/ide")
+  const response = await request.get("/nuxt-api/about/ide")
   expect(response.status()).toBe(200)
   expect(response.headers()["content-type"]).toBe("text/plain; charset=utf-8")
   expect(response.headers()["x-content-type-options"]).toBe("nosniff")
@@ -168,7 +168,7 @@ test("managed About API translates content failure to a controlled non-leaking 5
   await reset(request)
   await request.put(`${fixture}/_failure`, { data: { resource: "content" } })
 
-  const response = await request.get("/api/about/ide")
+  const response = await request.get("/nuxt-api/about/ide")
   expect(response.status()).toBe(502)
   expect(response.headers()["cache-control"]).toBe("no-store")
   const body = await response.text()
@@ -186,7 +186,7 @@ test("managed About API translates content failure to a controlled non-leaking 5
 
 test("managed About API rejects unknown pages before fetching content", async ({ request }) => {
   await reset(request)
-  expect((await request.get("/api/about/not-allowed")).status()).toBe(404)
+  expect((await request.get("/nuxt-api/about/not-allowed")).status()).toBe(404)
   const log = await (await request.get(`${fixture}/_requests`)).json()
   expect(log.requests).toEqual([])
 })

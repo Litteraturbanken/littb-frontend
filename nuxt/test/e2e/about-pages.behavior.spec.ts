@@ -176,7 +176,7 @@ test("client navigation clears the prior About body while the next body is pendi
   const requestStarted = new Promise<void>(resolve => { markRequestStarted = resolve })
   let releaseResponse!: () => void
   const responseReleased = new Promise<void>(resolve => { releaseResponse = resolve })
-  await page.route("**/api/about/organisation", async route => {
+  await page.route("**/nuxt-api/about/organisation", async route => {
     markRequestStarted()
     await responseReleased
     await route.fulfill({ response: await route.fetch() })

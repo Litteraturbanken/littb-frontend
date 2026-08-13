@@ -37,7 +37,7 @@ test("canonical faksimil OCR API returns one sanitized optional overlay", async 
   request
 }) => {
   const response = await request.get(
-    "/api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/3/faksimil?ocr=1"
+    "/nuxt-api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/3/faksimil?ocr=1"
   )
   expect(response.status()).toBe(200)
   expect(await response.json()).toMatchObject({
@@ -60,7 +60,7 @@ test("searchable facsimile API always returns OCR while non-searchable facsimile
   request
 }) => {
   const ordinary = await request.get(
-    "/api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/3/faksimil"
+    "/nuxt-api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/3/faksimil"
   )
   expect(ordinary.status()).toBe(200)
   expect(await ordinary.json()).toMatchObject({
@@ -76,7 +76,7 @@ test("searchable facsimile API always returns OCR while non-searchable facsimile
 
   await resetReader(request)
   const inert = await request.get(
-    "/api/reader/Lagerl%C3%B6fS/UnsearchableFacsimileReader/3/faksimil?ocr=1"
+    "/nuxt-api/reader/Lagerl%C3%B6fS/UnsearchableFacsimileReader/3/faksimil?ocr=1"
   )
   expect(inert.status()).toBe(200)
   expect(await inert.json()).toMatchObject({ searchable: false, ocrOverlay: null })

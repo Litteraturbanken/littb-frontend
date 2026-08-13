@@ -333,6 +333,22 @@ test.describe("Nuxt whole-site staging smoke", () => {
             .toBeVisible()
     })
 
+    test("retains About content during client-side tab navigation", async ({ page }) => {
+        await openNuxtRoute(page, "/om/ide")
+
+        await expect(page.getByRole("heading", {
+            name: "Introduktion",
+            exact: true
+        })).toBeVisible()
+        await page.getByRole("link", { name: "Organisation", exact: true }).click()
+
+        await expect(page).toHaveURL(/\/om\/organisation$/)
+        await expect(page.getByRole("heading", {
+            name: "Organisation",
+            exact: true
+        })).toBeVisible()
+    })
+
     test("restores Reader route and state after NuxtLink history navigation", async ({
         page
     }) => {

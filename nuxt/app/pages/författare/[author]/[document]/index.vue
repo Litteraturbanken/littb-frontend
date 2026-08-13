@@ -75,7 +75,7 @@ async function loadPageResult(
 ): Promise<PageResult> {
   try {
     const page = await fetcher<AuthorSupplementalPage>(
-      `/api/author-documents/${encodeRfc3986Segment(author)}/${kind}`,
+      `/nuxt-api/author-documents/${encodeRfc3986Segment(author)}/${kind}`,
       { retry: 0 }
     )
     if (!isAuthorSupplementalPage(page)

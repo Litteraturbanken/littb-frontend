@@ -47,7 +47,7 @@ test("SSR and the Editor API reject the same malformed route identities", async 
     "/editor/lb-editor-doktor/ix/01/f"
   ]) {
     expect((await request.get(path)).status()).toBe(404)
-    expect((await request.get(path.replace("/editor/", "/api/editor/").replace("/ix", ""))).status())
+    expect((await request.get(path.replace("/editor/", "/nuxt-api/editor/").replace("/ix", ""))).status())
       .toBe(404)
   }
   expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([])
@@ -68,7 +68,7 @@ for (const [partition, path] of [
 }
 
 test("SSR renders editor metadata, OCR, and generated page bounds", async ({ request }) => {
-  const apiResponse = await request.get("/api/editor/lb-editor-doktor/1/f")
+  const apiResponse = await request.get("/nuxt-api/editor/lb-editor-doktor/1/f")
   expect(apiResponse.status()).toBe(200)
   expect(apiResponse.headers()["cache-control"]).toBe("no-store")
   expect(await apiResponse.json()).toMatchObject({
@@ -151,7 +151,7 @@ test("SSR renders editor metadata, OCR, and generated page bounds", async ({ req
 test("SSR renders typed bounds-only navigation without metadata controls", async ({
   request
 }) => {
-  const apiResponse = await request.get("/api/editor/lb-editor-fallback/1/f")
+  const apiResponse = await request.get("/nuxt-api/editor/lb-editor-fallback/1/f")
   expect(apiResponse.status()).toBe(200)
   expect(apiResponse.headers()["cache-control"]).toBe("no-store")
   expect(await apiResponse.json()).toMatchObject({
@@ -237,7 +237,7 @@ test("SSR reports an unavailable editor when both metadata and page count fail",
 test("SSR contains an empty 200 Editor manifest as the existing source 502", async ({
   request
 }) => {
-  const response = await request.get("/api/editor/lb-editor-empty-manifest/0/f")
+  const response = await request.get("/nuxt-api/editor/lb-editor-empty-manifest/0/f")
 
   expect(response.status()).toBe(502)
   expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([
@@ -246,7 +246,7 @@ test("SSR contains an empty 200 Editor manifest as the existing source 502", asy
 })
 
 test("SSR renders a complete Editor manifest without contributors", async ({ request }) => {
-  const apiResponse = await request.get("/api/editor/lb-editor-no-contributors/1/f")
+  const apiResponse = await request.get("/nuxt-api/editor/lb-editor-no-contributors/1/f")
 
   expect(apiResponse.status()).toBe(200)
   expect(await apiResponse.json()).toMatchObject({
@@ -282,7 +282,7 @@ test("SSR renders a complete Editor manifest without contributors", async ({ req
 })
 
 test("SSR sanitizes bounded editor e-text before it enters the DTO", async ({ request }) => {
-  const response = await request.get("/api/editor/lb-editor-doktor-glas/1/e")
+  const response = await request.get("/nuxt-api/editor/lb-editor-doktor-glas/1/e")
   expect(response.status()).toBe(200)
   const body = await response.json()
 
@@ -297,7 +297,7 @@ test("SSR sanitizes bounded editor e-text before it enters the DTO", async ({ re
 test("SSR fails clearly when the selected editor facsimile asset is missing", async ({
   request
 }) => {
-  expect((await request.get("/api/editor/lb-editor-missing-image/1/f")).status()).toBe(502)
+  expect((await request.get("/nuxt-api/editor/lb-editor-missing-image/1/f")).status()).toBe(502)
   expect((await request.get("/editor/lb-editor-missing-image/ix/1/f")).status()).toBe(502)
   expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(2).fill(
     "/v2/works/lb-editor-missing-image/editor-manifest?media_type=faksimil"
@@ -309,7 +309,7 @@ test("complete Editor manifests use an available size when size 3 is absent", as
 }) => {
   const imageUrl = "/txt/lb-editor-size-four/lb-editor-size-four_4/" +
     "lb-editor-size-four_4_0002.jpeg"
-  const apiResponse = await request.get("/api/editor/lb-editor-size-four/1/f")
+  const apiResponse = await request.get("/nuxt-api/editor/lb-editor-size-four/1/f")
 
   expect(apiResponse.status()).toBe(200)
   expect(await apiResponse.json()).toMatchObject({
@@ -340,7 +340,7 @@ test("complete Editor manifests use an available size when size 3 is absent", as
 })
 
 test("SSR uses generated dense bounds for the exact e-text representation", async ({ request }) => {
-  const apiResponse = await request.get("/api/editor/lb-editor-doktor-glas/2/e")
+  const apiResponse = await request.get("/nuxt-api/editor/lb-editor-doktor-glas/2/e")
   expect(apiResponse.status()).toBe(200)
   expect(await apiResponse.json()).toMatchObject({
     metadataAvailable: true,
@@ -357,7 +357,7 @@ test("SSR uses generated dense bounds for the exact e-text representation", asyn
 })
 
 test("SSR derives sparse typed Editor bounds from the largest page index", async ({ request }) => {
-  const response = await request.get("/api/editor/lb-editor-sparse/12/f")
+  const response = await request.get("/nuxt-api/editor/lb-editor-sparse/12/f")
 
   expect(response.status()).toBe(200)
   expect(await response.json()).toMatchObject({
@@ -372,7 +372,7 @@ test("SSR derives sparse typed Editor bounds from the largest page index", async
   ])
   expect(await requestLedger(request, "/_reader_metadata_requests")).toEqual([])
 
-  expect((await request.get("/api/editor/lb-editor-sparse/13/f")).status()).toBe(404)
+  expect((await request.get("/nuxt-api/editor/lb-editor-sparse/13/f")).status()).toBe(404)
   expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual(Array(2).fill(
     "/v2/works/lb-editor-sparse/editor-manifest?media_type=faksimil"
   ))
@@ -417,7 +417,7 @@ test("SSR keeps the exact raw query spelling in editor page links", async ({ req
 test("SSR exposes bounded Editor contributors, mapped readable bounds, and part navigation", async ({
   request
 }) => {
-  const apiResponse = await request.get("/api/editor/lb-editor-boye/0/f")
+  const apiResponse = await request.get("/nuxt-api/editor/lb-editor-boye/0/f")
 
   expect(apiResponse.status()).toBe(200)
   expect(await apiResponse.json()).toMatchObject({
@@ -659,7 +659,7 @@ test("SSR rejects partial Editor contributor and part metadata atomically", asyn
     "lb-editor-malformed-contributor",
     "lb-editor-malformed-part"
   ]) {
-    const apiResponse = await request.get(`/api/editor/${workId}/0/f`)
+    const apiResponse = await request.get(`/nuxt-api/editor/${workId}/0/f`)
     expect(apiResponse.status()).toBe(200)
     expect(await apiResponse.json()).toMatchObject({
       authorId: null,

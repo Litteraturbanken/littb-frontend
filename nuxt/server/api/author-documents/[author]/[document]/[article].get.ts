@@ -27,7 +27,7 @@ function requireCanonicalRequestPath(
   const rawPath = (event.node.req.url ?? "").split("?", 1)[0]
   let expected: string
   try {
-    expected = "/api/author-documents/"
+    expected = "/nuxt-api/author-documents/"
       + [author, document, article].map(encodeRfc3986Segment).join("/")
   } catch {
     throw createError({ statusCode: 404, statusMessage: "Not Found" })

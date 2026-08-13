@@ -74,7 +74,7 @@ const requestFetch = useRequestFetch()
 const runtimeClient = useLbApiClient()
 function requestPage(): Promise<EditorReaderPage> {
   return requestFetch<EditorReaderPage>(
-    `/api/editor/${encodeURIComponent(workId.value)}/${index.value}/${alias.value}`,
+    `/nuxt-api/editor/${encodeURIComponent(workId.value)}/${index.value}/${alias.value}`,
     { retry: 0 }
   )
 }
@@ -371,7 +371,7 @@ const sourceInfoFetch = await useAsyncData<EditorSourceInfoState>(
     sourceInfoController = controller
     try {
       const sourceInfo = await requestFetch<ReaderSourceInfo>([
-        "/api/reader/source-info",
+        "/nuxt-api/reader/source-info",
         encodeURIComponent(current.authorId),
         encodeURIComponent(current.titlePath)
       ].join("/"), {
