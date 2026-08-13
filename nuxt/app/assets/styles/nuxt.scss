@@ -451,6 +451,17 @@
         background: transparent;
     }
 
+    .multiselect__tags {
+        align-items: stretch;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .multiselect:not(.multiselect--active):has(.select2-selection__choice)
+        .search-multiselect__native-search {
+        display: none;
+    }
+
     .multiselect__tags-wrap {
         display: flex;
         flex-wrap: wrap;

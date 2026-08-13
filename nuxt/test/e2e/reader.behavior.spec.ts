@@ -1983,12 +1983,16 @@ test("preserves the production desktop e-text reader layout", async ({ page }, t
       mainWidth: main.getBoundingClientRect().width,
       pageNameClientWidth: pageName.clientWidth,
       pageNameScrollWidth: pageName.scrollWidth,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
       rightMarginLeft: getComputedStyle(right).marginLeft,
       rightLeft: right.getBoundingClientRect().left,
       pagerDisplay: getComputedStyle(pagerLink).display,
+      pagerHeight: pagerLink.getBoundingClientRect().height,
       pagerMinHeight: getComputedStyle(pagerLink).minHeight,
       pagerPaddingBottom: getComputedStyle(pagerLink).paddingBottom,
       subnavDisplay: getComputedStyle(subnavLink).display,
+      subnavHeight: subnavLink.getBoundingClientRect().height,
       subnavMinHeight: getComputedStyle(subnavLink).minHeight,
       subnavPaddingBottom: getComputedStyle(subnavLink).paddingBottom
     }
@@ -1998,17 +2002,20 @@ test("preserves the production desktop e-text reader layout", async ({ page }, t
     disabledPreviousIconColor: "rgb(128, 128, 128)",
     disabledPreviousIconOpacity: "0.7",
     mainFlex: "0 1 auto",
-    rightMarginLeft: "64px",
-    pagerDisplay: "inline",
+    rightMarginLeft: "12px",
+    pagerDisplay: "inline-block",
+    pagerHeight: 24,
     pagerMinHeight: "0px",
-    pagerPaddingBottom: "0px",
-    subnavDisplay: "inline",
+    pagerPaddingBottom: "3px",
+    subnavDisplay: "inline-block",
+    subnavHeight: 24,
     subnavMinHeight: "0px",
-    subnavPaddingBottom: "0px"
+    subnavPaddingBottom: "3px"
   })
   expect(layout.mainWidth).toBe(layout.pageNameClientWidth + 40)
-  expect(layout.rightLeft - layout.mainLeft - layout.mainWidth).toBe(68.53125)
+  expect(layout.rightLeft - layout.mainLeft - layout.mainWidth).toBe(42.53125)
   expect(layout.pageNameScrollWidth).toBe(layout.pageNameClientWidth)
+  expect(layout.documentScrollWidth).toBe(layout.viewportWidth)
   await expect(page.locator(
     'a[aria-label="Föregående sida"][aria-disabled="true"] .navicon.left'
   )).toBeVisible()

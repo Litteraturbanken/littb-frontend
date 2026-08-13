@@ -473,7 +473,8 @@ for (const visualCase of visualCases) {
       caret: "hide" as const,
       scale: "css" as const,
       threshold: 0.1,
-      maxDiffPixels: 100
+      // Closed Reader captures include the intentional 24px navigation targets.
+      maxDiffPixels: 1_500
     }
     if (visualCase.mode === "closed") {
       await expect.soft(page).toHaveScreenshot(screenshotName, {

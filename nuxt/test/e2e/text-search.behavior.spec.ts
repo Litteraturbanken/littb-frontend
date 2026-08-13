@@ -188,7 +188,7 @@ test("advanced vue-multiselect SSR hydration renders without browser warnings", 
   expect(problems).toEqual([])
 })
 
-test("selected advanced multiselects keep chips beside a distinct labeled row", async ({ page }) => {
+test("selected advanced multiselects keep chips above a distinct labeled row", async ({ page }) => {
   await openSearch(
     page,
     "/s%C3%B6k?avancerad=1&forfattare=StrindbergA&titlar=lb238704" +
@@ -206,9 +206,11 @@ test("selected advanced multiselects keep chips beside a distinct labeled row", 
       chip.boundingBox(),
       row.boundingBox()
     ])
-    expect(rootBox?.height).toBeLessThan(45)
-    expect(chipBox!.x + chipBox!.width).toBeLessThanOrEqual(rowBox!.x)
-    expect(Math.abs(chipBox!.y - rowBox!.y)).toBeLessThan(8)
+    expect(rootBox!.height).toBeGreaterThan(45)
+    expect(rootBox!.height).toBeLessThan(65)
+    expect(Math.abs(chipBox!.x - rowBox!.x)).toBeLessThan(2)
+    expect(chipBox!.y + chipBox!.height).toBeLessThanOrEqual(rowBox!.y)
+    expect(rowBox!.y - (chipBox!.y + chipBox!.height)).toBeLessThan(8)
   }
 })
 

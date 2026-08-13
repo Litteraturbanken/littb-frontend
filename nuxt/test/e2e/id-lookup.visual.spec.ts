@@ -125,6 +125,7 @@ for (const populated of [false, true]) {
     }
 
     await expectReadyShell(page, populated)
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
     await waitForVisualAssets(page)
     expect(await page.evaluate(() => document.fonts.status)).toBe("loaded")
     expect(unexpectedApiRequests).toEqual([])

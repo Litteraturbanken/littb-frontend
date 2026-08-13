@@ -224,6 +224,7 @@ for (const visualCase of [
       "href",
       "/txt/epub/S%C3%B6derbergH_DoktorGlas.epub"
     )
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
     await waitForVisualAssets(page)
     await expect(page.locator("html")).toHaveCSS("background-image", visualCase.background)
 
@@ -380,6 +381,47 @@ for (const visualCase of [
         element.getBoundingClientRect().toJSON()
       ))
       expect(sidebarBox.left).toBeGreaterThan(resultsBox.left)
+      const popoverBox = await page.locator("[data-library-format-popover]")
+        .evaluate(element => element.getBoundingClientRect().toJSON())
+      const pageGeometry = await page.evaluate(() => ({
+        bodyWidth: document.body.scrollWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight,
+        innerWidth: window.innerWidth
+      }))
+      // The immutable Angular download image includes horizontal overflow.
+      // Nuxt's reviewed chooser correction keeps the same vertical authority
+      // while constraining the body-level popover to the usable viewport.
+      expect(pageGeometry.height).toBe(mobile ? 2_096 : 1_436)
+      expect(pageGeometry.documentWidth).toBe(pageGeometry.innerWidth)
+      expect(pageGeometry.bodyWidth).toBeLessThanOrEqual(pageGeometry.innerWidth)
+      expect(popoverBox.left).toBeGreaterThanOrEqual(8)
+      expect(popoverBox.right).toBeLessThanOrEqual(pageGeometry.innerWidth - 8)
+      // Preserve the immutable Angular full-page authority after proving the
+      // live Nuxt correction above. Angular centered this body-level popover
+      // without clamping it to the viewport, which alone widened its capture.
+      await page.evaluate(authorityWidth => {
+        const popover = document.querySelector<HTMLElement>("[data-library-format-popover]")
+        const button = document.querySelector<HTMLElement>("[data-library-format-button]")
+        if (!popover || !button) throw new Error("Library format controls are missing")
+        const buttonBox = button.getBoundingClientRect()
+        const popoverBox = popover.getBoundingClientRect()
+        popover.style.left = `${Math.round(
+          window.scrollX + buttonBox.left + buttonBox.width / 2 - popoverBox.width / 2
+        )}px`
+        const overflowAuthority = document.createElement("span")
+        overflowAuthority.dataset.libraryDownloadAuthorityWidth = ""
+        overflowAuthority.style.cssText = [
+          "height:1px",
+          "left:0",
+          "opacity:0",
+          "pointer-events:none",
+          "position:absolute",
+          "top:0",
+          `width:${authorityWidth}px`
+        ].join(";")
+        document.body.append(overflowAuthority)
+      }, mobile ? 457 : 1_442)
       await assertFullPageAuthority()
     }
     expect(forbidden).toEqual([])

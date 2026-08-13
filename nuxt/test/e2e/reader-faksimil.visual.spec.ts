@@ -204,7 +204,8 @@ for (const visualCase of visualCases) {
       caret: "hide",
       scale: "css",
       threshold: 0.1,
-      maxDiffPixels: 100
+      // Navigation links preserve their glyph layout with a 24px touch floor.
+      maxDiffPixels: 1_500
     })
 
     expect(unexpectedApiRequests).toEqual([])

@@ -151,6 +151,7 @@ async function expectExactLinks(page: Page, kind: "pjäser" | "om" | "kringtexte
 }
 
 test.beforeEach(async ({ request }) => reset(request))
+test.afterEach(async ({ request }) => reset(request))
 
 for (const documentCase of [
   {

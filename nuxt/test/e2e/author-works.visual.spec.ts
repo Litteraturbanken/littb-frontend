@@ -183,7 +183,8 @@ for (const visualCase of visualCases) {
     await expect(page.locator("body.focus.page-authorInfo.ready")).toHaveCount(1)
     await expect(page.locator("#mainview h1")).toHaveText(visualCase.heading)
     await expect(page.locator(".preloader")).toBeHidden()
-    await expect(page.locator("#mainview > div")).not.toHaveClass(/searching/)
+    await expect(page.locator("#mainview h1").locator(".."))
+      .not.toHaveClass(/searching/)
     await expect(page.locator(".page_content")).toBeVisible()
     await expect(page.locator(".unbox h2")).toHaveText(visualCase.sectionHeadings)
     await expect(page.locator(".contenttable")).toHaveCount(visualCase.sectionHeadings.length)
@@ -211,6 +212,11 @@ for (const visualCase of visualCases) {
     }
 
     await waitForVisualAssets(page)
+    if (testInfo.project.name === "desktop-chromium") {
+      await expect.poll(() => page.locator("#mainview h1").evaluate(element => (
+        getComputedStyle(element).fontSize
+      ))).toBe("40px")
+    }
     await expect.poll(() => page.evaluate(() => document.fonts.status)).toBe("loaded")
     await expect.poll(() => page.locator("img").evaluateAll(images => images.every(image => (
       (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0

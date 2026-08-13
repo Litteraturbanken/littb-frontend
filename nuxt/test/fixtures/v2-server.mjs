@@ -4412,7 +4412,7 @@ const server = createServer(async (request, response) => {
 
   if (
     ["GET", "HEAD"].includes(request.method) &&
-    /^\/txt\/(lb8345227|lb-editor-(?:boye|doktor|fallback|malformed-contributor|malformed-part|no-contributors|no-ocr|mixed|long|sparse))\/\1_[234]\/\1_[234]_\d{4}\.jpeg$/.test(url.pathname)
+    /^\/txt\/(lb8345227|lb-editor-(?:boye|doktor|fallback|malformed-contributor|malformed-part|no-contributors|no-ocr|mixed|long|sparse))\/\1_[2345]\/\1_[2345]_\d{4}\.jpeg$/.test(url.pathname)
   ) {
     return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
   }

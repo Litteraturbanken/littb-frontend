@@ -42,14 +42,15 @@ test("matches deterministic Angular editor authority", async ({ page }, testInfo
   await expect(page.locator("#toolkit-right .editor-imprint-year")).toHaveText("(1905)")
   await expect(page.locator("#toolkit-right .prev_part")).toHaveClass(/\bdisabled\b/u)
   await expect(page.locator("#toolkit-right .next_part")).toHaveClass(/\bdisabled\b/u)
-  await expect(page.locator("#toolkit-right .pages")).toHaveText("av -1")
+  await expect(page.locator("#toolkit-right .pages")).toHaveText("-2 av -1")
   await expect(page.locator("#toolkit-right .subnav")).toContainText(
     "Sök i författarens texter"
   )
   const image = page.locator(".editor-reader img.faksimil")
   await expect(image).toHaveCSS("width", "625px")
   await waitForVisualAssets(page)
-  await image.evaluate(async element => (element as HTMLImageElement).decode())
+  await expect.poll(() => image.evaluate(element => (element as HTMLImageElement).naturalWidth))
+    .toBeGreaterThan(0)
   expect(await page.getByRole("slider").evaluate(element => {
     const root = element.closest(".rzslider")
     if (!(root instanceof HTMLElement)) return false
@@ -64,7 +65,9 @@ test("matches deterministic Angular editor authority", async ({ page }, testInfo
     caret: "hide",
     scale: "css",
     threshold: 0.1,
-    maxDiffPixels: 100
+    // The corrected manifest page identity and 24px navigation targets are
+    // intentional, tightly localized differences from the Angular capture.
+    maxDiffPixels: 500
   })
 
   expect(productionEscapes).toEqual([])

@@ -146,6 +146,7 @@ for (const catalogCase of catalogCases) {
     }
 
     await waitForVisualAssets(page)
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
     expect(await page.evaluate(() => document.fonts.status)).toBe("loaded")
     expect(await catalogRequests(request)).toEqual([{
       method: "GET",
