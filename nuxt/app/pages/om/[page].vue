@@ -137,23 +137,34 @@ const removePageLoadingHook = useNuxtApp().hook("page:loading:end", () => {
   void scrollToHelpAnchor(route.query.ankare)
 })
 let helpResizeObserver: ResizeObserver | null = null
-onMounted(() => {
-  if (!helpContentComponent.value) return
-  let observedHeight: number | null = null
-  helpResizeObserver = new ResizeObserver(entries => {
-    const height = entries[0]?.contentRect.height
-    if (height === undefined) return
-    if (observedHeight === null) {
-      observedHeight = height
-      return
-    }
-    if (height === observedHeight) return
+watch(
+  [pageKey, helpContentComponent],
+  ([currentPage, helpContent], _previous, onCleanup) => {
     helpResizeObserver?.disconnect()
     helpResizeObserver = null
-    void scrollToHelpAnchor(route.query.ankare)
-  })
-  helpResizeObserver.observe(helpContentComponent.value.$el)
-})
+    if (currentPage !== "hjalp" || !helpContent) return
+
+    let observedHeight: number | null = null
+    helpResizeObserver = new ResizeObserver(entries => {
+      const height = entries[0]?.contentRect.height
+      if (height === undefined) return
+      if (observedHeight === null) {
+        observedHeight = height
+        return
+      }
+      if (height === observedHeight) return
+      helpResizeObserver?.disconnect()
+      helpResizeObserver = null
+      void scrollToHelpAnchor(route.query.ankare)
+    })
+    helpResizeObserver.observe(helpContent.$el)
+    onCleanup(() => {
+      helpResizeObserver?.disconnect()
+      helpResizeObserver = null
+    })
+  },
+  { flush: "post", immediate: true }
+)
 onBeforeUnmount(() => {
   helpResizeObserver?.disconnect()
   removePageLoadingHook()
