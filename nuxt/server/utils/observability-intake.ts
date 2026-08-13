@@ -365,11 +365,11 @@ async function prepareIntake(
   options: ObservabilityIntakeOptions
 ): Promise<PreparedIntake> {
   validateIntakeHeaders(event, config)
-  const batch = parseBatch(await readBoundedRequestBody(event))
   const guard = options.guard ?? intakeGuard
   const now = (options.now ?? Date.now)()
   const reservationOwner = Symbol("observability intake reservation")
   guard.enforceRate(clientKey(event), now)
+  const batch = parseBatch(await readBoundedRequestBody(event))
   return {
     guard,
     intakeEvents: guard.reserveNewEvents(batch.events, now, reservationOwner),

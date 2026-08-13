@@ -1,7 +1,7 @@
 import { Readable } from "node:stream"
 
 import type { H3Event } from "h3"
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 
 import {
   handleObservabilityIntake,
@@ -34,6 +34,28 @@ function intakeRequest(): H3Event {
     context: {},
     node: {
       req: request,
+      res: { statusCode: 200, statusMessage: "" }
+    }
+  } as unknown as H3Event
+}
+
+function intakeRequestWithBody(
+  body: string,
+  request: Readable = Readable.from([Buffer.from(body)])
+): H3Event {
+  const nodeRequest = Object.assign(request, {
+    headers: {
+      "content-length": String(Buffer.byteLength(body)),
+      "content-type": "application/json",
+      host: "localhost",
+      origin: "http://localhost"
+    },
+    socket: { encrypted: false, remoteAddress: "127.0.0.2" }
+  })
+  return {
+    context: {},
+    node: {
+      req: nodeRequest,
       res: { statusCode: 200, statusMessage: "" }
     }
   } as unknown as H3Event
@@ -72,6 +94,77 @@ describe("observability intake guard", () => {
       expect.objectContaining({ statusCode: 429 })
     )
     expect(() => guard.enforceRate("hashed-client", 61_001)).not.toThrow()
+  })
+
+  test("rate limits malformed bodies before reading the exhausted request", async () => {
+    const guard = new ObservabilityIntakeGuard()
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>()
+    const now = vi.fn(() => 1_000)
+    const config = {
+      apiBase: "http://localhost:4100",
+      allowedOrigins: "",
+      deploymentEnvironment: "stage",
+      deploymentGitSha: "a".repeat(40),
+      hmacSecret: "test-observability-secret-material-0123456789",
+      hmacSecretFile: ""
+    }
+    const options = { fetch: fetchImplementation, guard, now }
+
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      const body = attempt % 2 === 0 ? "{" : JSON.stringify({ events: [] })
+      await expect(handleObservabilityIntake(
+        intakeRequestWithBody(body),
+        config,
+        options
+      )).rejects.toMatchObject({ statusCode: 422 })
+    }
+
+    for (const [header, value, statusCode] of [
+      ["content-type", "text/plain", 415],
+      ["origin", "https://evil.invalid", 403],
+      ["content-length", String(16 * 1024 + 1), 413]
+    ] as const) {
+      const rejectedBeforeRate = intakeRequestWithBody("{")
+      rejectedBeforeRate.node.req.headers[header] = value
+      await expect(handleObservabilityIntake(
+        rejectedBeforeRate,
+        config,
+        options
+      )).rejects.toMatchObject({ statusCode })
+    }
+
+    let exhaustedBodyRead = false
+    const exhaustedBody = new Readable({
+      read() {
+        exhaustedBodyRead = true
+        this.push("{")
+        this.push(null)
+      }
+    })
+    await expect(handleObservabilityIntake(
+      intakeRequestWithBody("{", exhaustedBody),
+      config,
+      options
+    )).rejects.toMatchObject({ statusCode: 429 })
+    expect(exhaustedBodyRead).toBe(false)
+    expect(fetchImplementation).not.toHaveBeenCalled()
+
+    now.mockReturnValue(61_000)
+    let recoveredBodyRead = false
+    const recoveredBody = new Readable({
+      read() {
+        recoveredBodyRead = true
+        this.push("{")
+        this.push(null)
+      }
+    })
+    await expect(handleObservabilityIntake(
+      intakeRequestWithBody("{", recoveredBody),
+      config,
+      options
+    )).rejects.toMatchObject({ statusCode: 422 })
+    expect(recoveredBodyRead).toBe(true)
+    expect(now).toHaveBeenCalledTimes(62)
   })
 
   test("deduplicates event IDs temporarily and releases failed deliveries", () => {
