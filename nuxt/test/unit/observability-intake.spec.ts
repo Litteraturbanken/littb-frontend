@@ -424,14 +424,24 @@ describe("observability intake guard", () => {
     expect(fetchImplementation).toHaveBeenCalledOnce()
   })
 
-  test("commits a successful owner before parsing its response", async () => {
-    const guard = new ObservabilityIntakeGuard()
-    const malformedSuccess = new Response("not-json", { status: 202 })
+  test.each([
+    ["invalid JSON", "not-json"],
+    ["null body", "null"],
+    ["array body", JSON.stringify([{ accepted: 1 }])],
+    ["missing count", JSON.stringify({})],
+    ["string count", JSON.stringify({ accepted: "1" })],
+    ["negative count", JSON.stringify({ accepted: -1 })],
+    ["fractional count", JSON.stringify({ accepted: 0.5 })],
+    ["too-large count", JSON.stringify({ accepted: 2 })],
+    ["unsafe count", JSON.stringify({ accepted: Number.MAX_SAFE_INTEGER + 1 })],
+    ["extra field", JSON.stringify({ accepted: 1, status: "accepted" })]
+  ])("releases a successful owner for an upstream %s response", async (_case, body) => {
     const fetchImplementation = vi.fn<typeof globalThis.fetch>()
-      .mockResolvedValueOnce(malformedSuccess)
+      .mockResolvedValueOnce(new Response(body, { status: 202 }))
+      .mockResolvedValueOnce(acceptedResponse())
     const options = {
       fetch: fetchImplementation,
-      guard,
+      guard: new ObservabilityIntakeGuard(),
       now: () => 1_000
     }
 
@@ -440,6 +450,26 @@ describe("observability intake guard", () => {
       intakeConfig,
       options
     )).rejects.toMatchObject({ statusCode: 502 })
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 1 })
+    expect(fetchImplementation).toHaveBeenCalledTimes(2)
+  })
+
+  test.each([0, 1])("commits a valid upstream accepted count of %i", async accepted => {
+    const fetchImplementation = vi.fn(async () => acceptedResponse(accepted))
+    const options = {
+      fetch: fetchImplementation,
+      guard: new ObservabilityIntakeGuard(),
+      now: () => 1_000
+    }
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted })
     await expect(handleObservabilityIntake(
       intakeRequest(),
       intakeConfig,

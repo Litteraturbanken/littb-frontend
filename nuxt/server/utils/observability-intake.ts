@@ -506,6 +506,20 @@ function rejectFailedForward(
   })
 }
 
+function acceptedCount(value: unknown, eventCount: number): number | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  const result = value as Record<string, unknown>
+  if (Object.keys(result).length !== 1 || !Object.hasOwn(result, "accepted")) {
+    return null
+  }
+  return typeof result.accepted === "number"
+    && Number.isSafeInteger(result.accepted)
+    && result.accepted >= 0
+    && result.accepted <= eventCount
+    ? result.accepted
+    : null
+}
+
 export async function handleObservabilityIntake(
   event: H3Event,
   config: ObservabilityIntakeConfig,
@@ -551,16 +565,17 @@ export async function handleObservabilityIntake(
   if (!response.ok) {
     rejectFailedForward(response, intakeEvents, guard, reservationOwner)
   }
-  guard.accept(intakeEvents.map(item => item.event_id), reservationOwner)
-  let result: { accepted?: unknown }
+  let accepted: number | null
   try {
-    result = await response.json() as { accepted?: unknown }
+    accepted = acceptedCount(await response.json(), events.length)
   } catch {
+    accepted = null
+  }
+  if (accepted === null) {
+    guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
     throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
   }
-  const accepted = typeof result.accepted === "number"
-    ? result.accepted
-    : events.length
+  guard.accept(intakeEvents.map(item => item.event_id), reservationOwner)
   setResponseStatus(event, 202)
   return { accepted }
 }
