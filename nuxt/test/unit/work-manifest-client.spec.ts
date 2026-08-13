@@ -400,6 +400,13 @@ describe("generated Reader manifest client", () => {
         pages: [{ page_index: 0, page_name: "" }]
       }
     }],
+    ["an alternate-media dot page", {
+      ...readerManifest,
+      alternate_media: {
+        media_type: "faksimil",
+        pages: [{ page_index: 0, page_name: "." }]
+      }
+    }],
     ["a part with a mismatched page identity", {
       ...readerManifest,
       parts: [{
@@ -492,6 +499,64 @@ describe("generated Reader manifest client", () => {
     )).rejects.toMatchObject({ statusCode: 502 })
   })
 
+  test.each([".", ".."])(
+    "rejects internally consistent Reader dot page, navigation, and part identities %s",
+    async (pageName) => {
+      const body = {
+        ...readerManifest,
+        pages: [{ page_index: 0, page_name: pageName }],
+        start_page_name: pageName,
+        end_page_name: pageName,
+        parts: [{
+          authors: [],
+          end_page_index: 0,
+          end_page_name: pageName,
+          nav_title: null,
+          short_title: null,
+          source_index: 0,
+          start_page_index: 0,
+          start_page_name: pageName,
+          title: "Del",
+          title_id: null
+        }]
+      }
+      vi.stubGlobal("fetch", vi.fn(async () => json(body)))
+      stubConfig()
+
+      await expect(fetchReaderManifest(
+        {} as H3Event,
+        "SöderbergH",
+        "DoktorGlas",
+        "etext"
+      )).rejects.toMatchObject({
+        statusCode: 502,
+        statusMessage: "Invalid reader source"
+      })
+    }
+  )
+
+  test.each(["%2E", "%252E", "page/name", "page?name", "page#name"])(
+    "preserves non-dot Reader page identity data %s",
+    async (pageName) => {
+      const body = {
+        ...readerManifest,
+        imprint_year: ".",
+        pages: [{ page_index: 0, page_name: pageName }],
+        start_page_name: pageName,
+        end_page_name: pageName
+      }
+      vi.stubGlobal("fetch", vi.fn(async () => json(body)))
+      stubConfig()
+
+      await expect(fetchReaderManifest(
+        {} as H3Event,
+        "SöderbergH",
+        "DoktorGlas",
+        "etext"
+      )).resolves.toEqual(body)
+    }
+  )
+
   test("rejects a facsimile width above the backend maximum", async () => {
     const body = {
       ...facsimileReaderManifest,
@@ -580,6 +645,41 @@ describe("generated Editor manifest client", () => {
     expect(manifest.parts).toEqual(completeManifest.parts)
   })
 
+  test.each([".", ".."])(
+    "rejects internally consistent Editor dot page, navigation, part, and close identities %s",
+    async (pageName) => {
+      const body = {
+        ...completeManifest,
+        bounds: { kind: "dense", page_count: 1 },
+        pages: [{ page_index: 0, page_name: pageName }],
+        start_page_name: pageName,
+        end_page_name: pageName,
+        parts: [{
+          ...completeManifest.parts[0],
+          end_page_index: 0,
+          end_page_name: pageName,
+          start_page_index: 0,
+          start_page_name: pageName
+        }],
+        public_reader_target: {
+          ...completeManifest.public_reader_target,
+          start_page_name: pageName
+        }
+      }
+      vi.stubGlobal("fetch", vi.fn(async () => json(body)))
+      stubConfig()
+
+      await expect(fetchEditorManifest(
+        {} as H3Event,
+        "lb-editor-boye",
+        "faksimil"
+      )).rejects.toMatchObject({
+        statusCode: 502,
+        statusMessage: "Invalid Editor source"
+      })
+    }
+  )
+
   test.each([
     ["the inclusive dense bound", {
       ...boundsOnlyManifest,
@@ -597,6 +697,7 @@ describe("generated Editor manifest client", () => {
       end_page_name: null
     }],
     ["no contributors", { ...completeManifest, contributors: [] }],
+    ["a dot imprint year", { ...completeManifest, imprint_year: "." }],
     ["a partial dense page collection", {
       ...completeManifest,
       pages: [{ page_index: 8, page_name: "9" }],

@@ -735,6 +735,17 @@ function readerMetadataResponse(titlePath) {
         hits: 1,
         data: [readerRepresentation(titlePath, { keyword: ["1800"] })]
       }
+    case "DotPageReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          endpagename: ".",
+          lbworkid: "lb-reader-dot-page",
+          pages: [{ pagename: ".", pageindex: 0 }],
+          parts: [],
+          startpagename: "."
+        })]
+      }
     case "DoktorGlasParts":
       return readerPartsWorkInfoResponse
     case "SparseKeyboardReader":

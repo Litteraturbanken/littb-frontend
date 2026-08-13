@@ -1288,6 +1288,29 @@ export function editorManifestResponse(workId, mediaType) {
       work_id: workId
     }
   }
+  if (workId === "lb-editor-dot-page") {
+    const complete = editorManifestResponse("lb-editor-boye", mediaType)
+    if (complete?.status !== "complete") return complete
+    return {
+      ...complete,
+      bounds: { kind: "dense", page_count: 1 },
+      pages: [{ page_index: 0, page_name: "." }],
+      start_page_name: ".",
+      end_page_name: ".",
+      parts: [{
+        ...complete.parts[0],
+        end_page_index: 0,
+        end_page_name: ".",
+        start_page_index: 0,
+        start_page_name: "."
+      }],
+      public_reader_target: complete.public_reader_target && {
+        ...complete.public_reader_target,
+        start_page_name: "."
+      },
+      work_id: workId
+    }
+  }
   const records = editorRawRepresentations(workId)
   const exact = records.filter(representation => representation.mediatype === mediaType)
   const raw = exact.length === 1 ? structuredClone(exact[0]) : null

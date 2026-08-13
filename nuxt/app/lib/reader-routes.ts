@@ -140,7 +140,7 @@ export function readerPageFullPath(fullPath: string, pageName: string): string {
   if (segments.length < 3 || segments.at(-3) !== "sida") {
     throw new RangeError("Reader full path is not canonical")
   }
-  segments[segments.length - 2] = encodeURIComponent(pageName)
+  segments[segments.length - 2] = encodeRfc3986Segment(pageName)
   return `${segments.join("/")}${query}${fragment}`
 }
 

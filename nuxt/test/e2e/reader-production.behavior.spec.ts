@@ -47,6 +47,42 @@ test.afterEach(async ({ request }) => {
   expect(await fixtureRequests(request, "_editor_manifest_requests")).toEqual([])
 })
 
+test("dot-page manifests fail as controlled Reader errors before page asset work", async ({
+  page,
+  request
+}) => {
+  const manifestPath = "/v2/works/S%C3%B6derbergH/DotPageReader/manifest?media_type=etext"
+  const apiPath = "/api/reader/S%C3%B6derbergH/DotPageReader/1/etext"
+  await Promise.all([
+    "_reader_requests",
+    "_reader_html_requests",
+    "_reader_ocr_requests",
+    "_reader_jpeg_requests"
+  ].map(ledger => request.delete(`${fixture}/${ledger}`)))
+
+  expect((await request.get(apiPath)).status()).toBe(502)
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([manifestPath])
+  const pageAssetLedgers = [
+    "_reader_requests",
+    "_reader_html_requests",
+    "_reader_ocr_requests",
+    "_reader_jpeg_requests"
+  ]
+  for (const ledger of pageAssetLedgers) {
+    expect(await fixtureRequests(request, ledger)).toEqual([])
+  }
+
+  await resetReader(request)
+  expect((await page.goto(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DotPageReader/sida/1/etext"
+  ))?.status()).toBe(502)
+  await expect(page.locator(".reader-page")).toHaveCount(0)
+  expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([manifestPath])
+  for (const ledger of pageAssetLedgers) {
+    expect(await fixtureRequests(request, ledger)).toEqual([])
+  }
+})
+
 test("one selected Reader word opens the sanitized legacy dictionary dialog", async ({
   page,
   request

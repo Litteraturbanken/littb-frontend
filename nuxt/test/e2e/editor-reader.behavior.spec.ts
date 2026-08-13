@@ -925,6 +925,25 @@ test("editor Reader suppresses non-atomic contributor and part metadata", async 
   }
 })
 
+test("dot-page manifests fail as controlled Editor errors before facsimile work", async ({
+  request
+}) => {
+  await Promise.all([
+    request.delete(`${fixture}/_editor_manifest_requests`),
+    request.delete(`${fixture}/_editor_facsimile_requests`)
+  ])
+
+  expect((await request.get("/api/editor/lb-editor-dot-page/0/f")).status()).toBe(502)
+  expect(await (await request.get(`${fixture}/_editor_manifest_requests`)).json()).toEqual({
+    requests: [
+      "/v2/works/lb-editor-dot-page/editor-manifest?media_type=faksimil"
+    ]
+  })
+  expect(await (await request.get(`${fixture}/_editor_facsimile_requests`)).json()).toEqual({
+    requests: []
+  })
+})
+
 test("editor Reader renders complete contributor-free metadata without author links", async ({
   page
 }) => {

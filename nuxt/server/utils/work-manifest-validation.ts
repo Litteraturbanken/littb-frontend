@@ -91,15 +91,15 @@ function manifestIdentifier(value: unknown): value is string {
 }
 
 function manifestPageName(value: unknown): value is string {
-  return manifestText(value, 100)
+  return manifestText(value, 100) && value !== "." && value !== ".."
 }
 
 function optionalManifestTitle(value: unknown): value is string | null {
   return value === null || manifestText(value)
 }
 
-function optionalPageName(value: unknown): value is string | null {
-  return value === null || manifestPageName(value)
+function optionalShortText(value: unknown): value is string | null {
+  return value === null || manifestText(value, 100)
 }
 
 function optionalIdentifier(value: unknown): value is string | null {
@@ -280,7 +280,7 @@ function validReaderScalarFields(value: UnknownRecord): boolean {
     manifestText(value.full_title),
     typeof value.has_dramawebben === "boolean",
     typeof value.has_nya_vagar === "boolean",
-    optionalPageName(value.imprint_year),
+    optionalShortText(value.imprint_year),
     typeof value.is_drama === "boolean",
     positiveBoundedInteger(value.page_step),
     typeof value.searchable === "boolean",
@@ -394,7 +394,7 @@ function validEditorComplete(value: UnknownRecord, bounds: UnknownRecord): boole
     validNavigationName(value.start_page_name, value.pages),
     validNavigationName(value.end_page_name, value.pages),
     typeof value.searchable === "boolean",
-    optionalPageName(value.imprint_year),
+    optionalShortText(value.imprint_year),
     validSizes(value.sizes, 0),
     validPublicReaderTarget(value.public_reader_target)
   )

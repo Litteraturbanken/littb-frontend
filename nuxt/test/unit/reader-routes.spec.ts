@@ -203,6 +203,16 @@ describe("Reader contents raw-query ownership", () => {
     )).toBe(
       `/f%C3%B6rfattare/A/titlar/T/sida/ny%20sida%2F1/etext?${corpus}#del`
     )
+    expect(readerPageFullPath(
+      `/f%C3%B6rfattare/A/titlar/T/sida/-2/etext?${corpus}#del`,
+      "page'!()*"
+    )).toBe(
+      `/f%C3%B6rfattare/A/titlar/T/sida/page%27%21%28%29%2A/etext?${corpus}#del`
+    )
+    expect(() => readerPageFullPath("/f%C3%B6rfattare/A/titlar/T/sida/-2/etext", "."))
+      .toThrow(TypeError)
+    expect(() => readerPageFullPath("/f%C3%B6rfattare/A/titlar/T/sida/-2/etext", ".."))
+      .toThrow(TypeError)
   })
 
   test("keeps reordered search keys byte-for-byte in contents-neutral identity", () => {
