@@ -215,6 +215,9 @@ test("selected advanced multiselects keep chips above a distinct labeled row", a
 })
 
 async function pushRoute(page: Page, route: string) {
+  await page.waitForFunction(() => Boolean((document.querySelector("#__nuxt") as (
+    HTMLElement & { __vue_app__?: unknown }
+  ) | null)?.__vue_app__))
   await page.evaluate(async target => {
     type VueRoot = HTMLElement & {
       __vue_app__: { config: { globalProperties: {
@@ -228,6 +231,45 @@ async function pushRoute(page: Page, route: string) {
 
 test.beforeEach(async ({ request }) => reset(request))
 test.afterEach(async ({ request }) => reset(request))
+
+test("mounts Search before chronology settles", async ({ page, request }) => {
+  await page.goto("/om/ide", { waitUntil: "domcontentloaded" })
+  await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+  await request.delete(`${fixture}/_text_search/delays/chronology`)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "chronology", selector: "", delay: 5000 }
+  })
+
+  void pushRoute(page, "/s%C3%B6k?q=glas").catch(() => undefined)
+
+  const search = page.locator("[data-search-root]")
+  await expect(search).toBeVisible({ timeout: 1500 })
+  await expect(search.getByRole("heading", { name: "Sök i texterna" })).toBeVisible()
+  await expect(search.locator(".submit_form")).toBeVisible()
+  await expect.poll(async () => (await requests(request, "chronology")).length).toBe(1)
+  await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(1)
+  await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toHaveCount(0)
+  await expect(search.locator("#results .results tr")).toHaveCount(0)
+})
+
+test("mounts Search before advanced options settle", async ({ page, request }) => {
+  await page.goto("/om/ide", { waitUntil: "domcontentloaded" })
+  await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+  await request.delete(`${fixture}/_text_search/delays/options`)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "options", selector: "", delay: 5000 }
+  })
+
+  void pushRoute(page, "/s%C3%B6k?avancerad&fras=glas").catch(() => undefined)
+
+  const search = page.locator("[data-search-root]")
+  await expect(search).toBeVisible({ timeout: 1500 })
+  await expect(search.getByRole("heading", { name: "Sök i texterna" })).toBeVisible()
+  await expect(search.locator(".submit_form")).toBeVisible()
+  await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(1)
+  await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toHaveCount(0)
+  await expect(search.locator("#results .results tr")).toHaveCount(0)
+})
 
 test("reset is absent when pristine, clears every query key, and restores search focus", async ({
   page

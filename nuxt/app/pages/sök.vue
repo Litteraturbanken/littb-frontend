@@ -213,7 +213,8 @@ const chronologyAsyncData = useAsyncData<ChronologyEnvelope>(
   },
   {
     default: () => ({ bounds: null }),
-    immediate: !state.value.advanced
+    immediate: !state.value.advanced,
+    lazy: true
   }
 )
 const chronologyRequested = ref(!state.value.advanced)
@@ -314,7 +315,9 @@ const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
   }
 )
 
-const { data: chronologyData } = await chronologyAsyncData
+if (import.meta.server) await chronologyAsyncData
+else if (!state.value.advanced) void chronologyAsyncData.execute()
+const { data: chronologyData, pending: chronologyPending } = chronologyAsyncData
 const { data: primaryData, pending: primaryPending } = primaryAsyncData
 
 const acceptedPrimary = shallowRef<PrimaryEnvelope | null>(null)
@@ -567,9 +570,21 @@ async function loadOptions() {
   }
 }
 
-const initialOptions = state.value.advanced ? loadOptions() : Promise.resolve()
-await initialOptions
+const initialOptionsPending = ref(state.value.advanced)
+async function loadInitialOptions(): Promise<void> {
+  if (!state.value.advanced) return
+  try {
+    await loadOptions()
+  } finally {
+    initialOptionsPending.value = false
+  }
+}
+if (import.meta.server) await loadInitialOptions()
+else void loadInitialOptions()
 const options = computed(() => optionsCache.value[optionsIdentity.value] ?? null)
+const initialPrerequisitesPending = computed(() => (
+  state.value.advanced ? initialOptionsPending.value : chronologyPending.value
+))
 const lastAcceptedAdvancedChronologyBounds = shallowRef({
   yearFrom: options.value?.yearFrom ?? DEFAULT_CHRONOLOGY_FLOOR,
   yearTo: options.value?.yearTo ?? DEFAULT_CHRONOLOGY_CEILING
@@ -1495,7 +1510,19 @@ v-for="item in [
       class="row results_container"
       :class="{ searching: primaryLoading }"
     >
-      <div v-if="displayPrimary?.status === 200" class="table_viewport">
+      <div
+        v-if="initialPrerequisitesPending"
+        class="searching"
+        role="status"
+        aria-live="polite"
+        aria-label="Laddar sökdata"
+      >
+        <div class="preloader">
+          <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
+          <span class="sr-only">Laddar sökdata</span>
+        </div>
+      </div>
+      <div v-else-if="displayPrimary?.status === 200" class="table_viewport">
         <div class="table_container">
           <div v-if="results?.totalWorks === 0">Din sökning gav inga träffar</div>
           <table cellspacing="0" class="results">
