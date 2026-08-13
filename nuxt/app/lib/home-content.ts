@@ -269,7 +269,10 @@ function backgroundDeclaration(tag: string): {
   imagePath: string | null
   color: string | null
 } {
-  const imagePath = canonicalRedPath(attributeValue(tag, "src"))
+  const canonicalImagePath = canonicalRedPath(attributeValue(tag, "src"))
+  const imagePath = canonicalImagePath && !canonicalImagePath.includes("'")
+    ? canonicalImagePath
+    : null
   const colorValue = attributeValue(tag, "color")
   const color = colorValue && /^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(colorValue)
     ? colorValue

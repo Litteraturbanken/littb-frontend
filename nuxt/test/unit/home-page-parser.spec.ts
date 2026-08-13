@@ -111,6 +111,33 @@ describe("Home editorial content parser", () => {
     })
   })
 
+  test("rejects a canonical Home background path that breaks out of its CSS string", async () => {
+    const parseHomeContent = await loadParser()
+    const source = [
+      `<img bkg-img color="#333" src="/red/a');background:url(https://evil.test/x);/*"></img>`,
+      "<p>Behåll exakt</p>"
+    ].join("\n")
+
+    expect(parseHomeContent(source)).toEqual({
+      bodyHtml: "\n<p>Behåll exakt</p>",
+      stylesheetPath: null,
+      backgroundImagePath: null,
+      backgroundColor: null
+    })
+  })
+
+  test("preserves a percent-encoded apostrophe inside a canonical Home background path", async () => {
+    const parseHomeContent = await loadParser()
+    const source = '<img bkg-img color="#333" src="/red/bilder/a%27safe.jpg"></img>'
+
+    expect(parseHomeContent(source)).toEqual({
+      bodyHtml: "",
+      stylesheetPath: null,
+      backgroundImagePath: "/red/bilder/a%27safe.jpg",
+      backgroundColor: "#333"
+    })
+  })
+
   test.each([
     "https://example.test/red/asset.css",
     "//example.test/red/asset.css",

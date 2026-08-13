@@ -311,6 +311,7 @@ let authorWorksFailures = new Set()
 let authorWorksDelays = {}
 let homeRequests = []
 let homeFailure = false
+let homeHostileBackground = false
 let presentationRequests = []
 let presentationFailures = new Set()
 let presentationProductionShape = false
@@ -3202,6 +3203,14 @@ const server = createServer(async (request, response) => {
     homeFailure = false
     return sendJson(response, 200, { failure: homeFailure })
   }
+  if (url.pathname === "/_home_hostile_background" && request.method === "PUT") {
+    homeHostileBackground = true
+    return sendJson(response, 200, { hostileBackground: homeHostileBackground })
+  }
+  if (url.pathname === "/_home_hostile_background" && request.method === "DELETE") {
+    homeHostileBackground = false
+    return sendJson(response, 200, { hostileBackground: homeHostileBackground })
+  }
   if (url.pathname === "/_presentation_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: presentationRequests })
   }
@@ -3967,6 +3976,15 @@ const server = createServer(async (request, response) => {
     homeRequests.push(`${url.pathname}${url.search}`)
     if (homeFailure && url.pathname === "/red/om/start/startsida-ny.html") {
       return sendBody(response, 503, "text/plain; charset=utf-8", "content unavailable")
+    }
+    if (homeHostileBackground && url.pathname === "/red/om/start/startsida-ny.html") {
+      return sendBody(
+        response,
+        200,
+        "text/html; charset=utf-8",
+        `<img bkg-img color="#333" src="/red/a');background:url(https://evil.test/x);/*"></img>`
+          + '<p id="hostile-home-marker">Homeinnehållet är kvar</p>'
+      )
     }
     return sendBody(response, 200, home[0], home[1])
   }

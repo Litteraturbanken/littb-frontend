@@ -6,7 +6,8 @@ const description = "På Litteraturbanken kan du söka bland hundratals kända s
 async function resetHome(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_home_requests`),
-    request.delete(`${fixture}/_home_failure`)
+    request.delete(`${fixture}/_home_failure`),
+    request.delete(`${fixture}/_home_hostile_background`)
   ])
 }
 
@@ -68,4 +69,19 @@ test("Home failure keeps a successful empty shell without leaking upstream error
   expect((await homeRequests(request)).filter(path => path.startsWith(
     "/red/om/start/startsida-ny.html?"
   ))).toHaveLength(1)
+})
+
+test("Home rejects a managed background path that breaks out of its inline CSS string", async ({
+  request
+}) => {
+  await request.put(`${fixture}/_home_hostile_background`)
+
+  const response = await request.get("/")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+
+  expect(html).toContain('<p id="hostile-home-marker">Homeinnehållet är kvar</p>')
+  expect(html).not.toContain("evil.test")
+  expect(html).not.toContain("background:url")
+  expect(html).toMatch(/<html[^>]*style=""/u)
 })

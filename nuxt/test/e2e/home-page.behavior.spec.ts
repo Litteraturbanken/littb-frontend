@@ -5,7 +5,8 @@ const fixture = "http://127.0.0.1:4100"
 async function resetHome(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_home_requests`),
-    request.delete(`${fixture}/_home_failure`)
+    request.delete(`${fixture}/_home_failure`),
+    request.delete(`${fixture}/_home_hostile_background`)
   ])
 }
 
@@ -70,6 +71,28 @@ test("hydrates the SSR Home payload without refetching its editorial fragment", 
   expect(requests.filter(path => path.startsWith("/red/css/startsida.css?"))).toHaveLength(1)
   expect(requests.filter(path => path.endsWith("/start_bkg_172_2026.jpg"))).toHaveLength(1)
   expect(problems).toEqual([])
+})
+
+test("a managed Home background cannot inject inline CSS or an external request", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_home_hostile_background`)
+  const externalRequests: string[] = []
+  await page.route("**/*", async route => {
+    const requestUrl = new URL(route.request().url())
+    if (requestUrl.hostname === "evil.test") {
+      externalRequests.push(requestUrl.href)
+      return route.abort("blockedbyclient")
+    }
+    return route.continue()
+  })
+
+  const response = await page.goto("/", { waitUntil: "networkidle" })
+  expect(response?.status()).toBe(200)
+  await expect(page.locator("#hostile-home-marker")).toHaveText("Homeinnehållet är kvar")
+  await expect(page.locator("html")).not.toHaveAttribute("style", /evil\.test|background:url/u)
+  expect(externalRequests).toEqual([])
 })
 
 test("announces client route titles once without affecting page layout", async ({ page }) => {
