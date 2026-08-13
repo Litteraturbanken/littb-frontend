@@ -292,7 +292,10 @@ test.describe("Nuxt whole-site staging smoke", () => {
                 code: "editor_manifest_not_found",
                 message: "Editor manifest not found",
                 details: null
-            }
+            },
+            request_id: expect.stringMatching(
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u
+            )
         })
     })
 
