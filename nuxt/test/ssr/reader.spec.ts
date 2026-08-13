@@ -321,6 +321,38 @@ test("Boye Reader API and SSR retain ordered work contributors", async ({ reques
   ))
 })
 
+test("Reader keeps contributor order while selecting the declared primary author", async ({
+  request
+}) => {
+  const api = await request.get(
+    "/api/reader/PrimaryP/ReorderedPrimary/-2/etext"
+  )
+  expect(api.status()).toBe(200)
+  const body = await api.json()
+  expect(body.author).toEqual({
+    author_id: "PrimaryP",
+    author_type: null,
+    full_name: "Pia Primary",
+    role: null
+  })
+  expect(body.contributors.map((item: { author_id: string }) => item.author_id))
+    .toEqual(["EditorE", "PrimaryP"])
+  expect(body.description).toBe(
+    "ReorderedPrimary av Erika Editor (red.) & Pia Primary, sida -2 som etext."
+  )
+
+  const response = await request.get(
+    "/författare/PrimaryP/titlar/ReorderedPrimary/sida/-2/etext"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const links = [...document.querySelectorAll(".reader-context-ssr .author a")]
+  expect(links.map(link => link.textContent?.trim())).toEqual([
+    "Erika Editor red.",
+    "Pia Primary"
+  ])
+})
+
 test("direct bare source-information SSR renders the Reader and complete modal once", async ({
   request
 }) => {

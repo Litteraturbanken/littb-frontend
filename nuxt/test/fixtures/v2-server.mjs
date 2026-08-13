@@ -730,6 +730,25 @@ function readerMetadataResponse(titlePath) {
     }
     case "Rallarliv":
       return { hits: 0, data: [] }
+    case "ReorderedPrimary":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          authors: [
+            {
+              authorid: "EditorE",
+              full_name: "Erika Editor",
+              surname: "Editor",
+              type: "editor"
+            },
+            {
+              authorid: "PrimaryP",
+              full_name: "Pia Primary",
+              surname: "Primary"
+            }
+          ]
+        })]
+      }
     case "NyaVagarReader":
       return {
         hits: 1,
@@ -3369,6 +3388,9 @@ const server = createServer(async (request, response) => {
             ? readerAarnsethFacsimileWorkInfoResponse
             : readerMetadataResponse(titlePath)
         )
+        if (manifest && titlePath === "ReorderedPrimary") {
+          manifest.author_id = "PrimaryP"
+        }
         if (manifest === null || manifest.author_id !== authorId) {
           return sendJson(response, 404, {
             error: {

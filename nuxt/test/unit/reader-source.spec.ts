@@ -9,6 +9,7 @@ import {
   loadReaderMetadata,
   maximumReaderEtextBytes,
   rebaseRelativeStylesheetReferences,
+  readerCommonMetadata,
   readerFacsimileMetadata,
   resolveReaderPartNavigation
 } from "../../server/utils/reader-source"
@@ -142,6 +143,50 @@ afterEach(() => {
 })
 
 describe("generated Reader manifest boundary", () => {
+  test("selects the manifest author without reordering work contributors", () => {
+    const contributors = [
+      {
+        author_id: "EditorE",
+        full_name: "Erika Editor",
+        author_type: "editor" as const,
+        role: null
+      },
+      {
+        author_id: "PrimaryP",
+        full_name: "Pia Primary",
+        author_type: null,
+        role: null
+      }
+    ]
+    const reordered = {
+      ...readerManifest,
+      author_id: "PrimaryP",
+      contributors
+    } satisfies ReaderManifestResponse
+
+    const metadata = readerCommonMetadata(reordered, "https://assets.test")
+
+    expect(metadata.author).toBe(contributors[1])
+    expect(metadata.contributors).toBe(contributors)
+    expect(metadata.contributors.map(item => item.author_id)).toEqual([
+      "EditorE",
+      "PrimaryP"
+    ])
+  })
+
+  test("rejects a direct manifest without its declared author", () => {
+    const malformed = {
+      ...readerManifest,
+      author_id: "MissingPrimary"
+    } as ReaderManifestResponse
+
+    expect(() => readerCommonMetadata(malformed, "https://assets.test"))
+      .toThrowError(expect.objectContaining({
+        statusCode: 502,
+        statusMessage: "Invalid reader source"
+      }))
+  })
+
   test("passes generated faksimil sizes directly into Reader metadata", () => {
     const metadata = readerFacsimileMetadata(facsimileManifest, "https://assets.test")
 

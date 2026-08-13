@@ -293,9 +293,14 @@ export function readerCommonMetadata(
   manifest: ReaderManifestResponse,
   base: string
 ): ReaderWorkMetadataBase {
+  const author = manifest.contributors.find(
+    contributor => contributor.author_id === manifest.author_id
+  )
+  if (!author) invalidReaderSource()
+
   return {
     alternateMedia: manifest.alternate_media,
-    author: manifest.contributors[0]!,
+    author,
     base,
     contributors: manifest.contributors,
     declaredPageCount: manifest.declared_page_count,

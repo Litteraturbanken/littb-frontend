@@ -134,6 +134,27 @@ test("resolves exact Reader metadata without fetching page HTML", async ({ reque
   expect(await readerRequests(request)).toEqual([])
 })
 
+test("resolves a reordered contributor manifest through its declared primary author", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/api/reader/resolve/PrimaryP/ReorderedPrimary/etext"
+  )
+  expect(response.status()).toBe(200)
+  expect(await response.json()).toEqual({
+    authorId: "PrimaryP",
+    titlePath: "ReorderedPrimary",
+    mediaType: "etext",
+    startPageName: "-2",
+    canonicalPath:
+      "/författare/PrimaryP/titlar/ReorderedPrimary/sida/-2/etext"
+  })
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedManifestRequest("ReorderedPrimary", "etext", "PrimaryP")
+  ])
+  expect(await readerRequests(request)).toEqual([])
+})
+
 for (const [titlePath, status] of readerStatuses) {
   test(`${titlePath} resolves with ${status}`, async ({ request }) => {
     const response = await request.get(`${resolveBase}/${titlePath}/etext`)
