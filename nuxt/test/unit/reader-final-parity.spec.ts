@@ -99,7 +99,7 @@ describe("Reader OCR managed transport", () => {
       "work",
       1
     )).resolves.toMatchObject({ width: 625, height: 900 })
-    expect(fetchMock).toHaveBeenCalledWith(target, { redirect: "follow" })
+    expect(fetchMock).toHaveBeenCalledWith(target, { redirect: "manual" })
   })
 
   test("accepts an exact-boundary UTF-8 overlay from the exact HTML asset", async () => {
@@ -125,7 +125,7 @@ describe("Reader OCR managed transport", () => {
     )).resolves.toMatchObject({ width: 625, height: 900 })
     expect(fetchMock).toHaveBeenCalledWith(
       "https://assets.test/txt/lb%20work/ocr_00004.html",
-      { redirect: "follow" }
+      { redirect: "manual" }
     )
   })
 

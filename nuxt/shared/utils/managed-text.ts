@@ -291,6 +291,80 @@ function validatedManagedFinalUrl(
   return finalUrl
 }
 
+function validatedManagedRedirectUrl(
+  location: string | null,
+  currentUrl: URL,
+  authority: ConfiguredAuthority,
+  rules: ManagedTextRules
+): URL {
+  if (location === null || location === "" || location !== location.trim()) {
+    throw new Error("Managed text redirect location is not allowed")
+  }
+
+  let rawPath: string
+  if (/^[a-z][\d+.a-z-]*:\/\//i.test(location)) {
+    const rawLocation = inspectRawUrlAuthority(
+      location,
+      "Managed text redirect location is not allowed"
+    )
+    rawPath = rawPathname(rawLocation.suffix)
+  } else if (location.startsWith("//")) {
+    const rawLocation = inspectRawUrlAuthority(
+      `${currentUrl.protocol}${location}`,
+      "Managed text redirect location is not allowed"
+    )
+    rawPath = rawPathname(rawLocation.suffix)
+  } else {
+    const queryIndex = location.indexOf("?")
+    const fragmentIndex = location.indexOf("#")
+    const pathEnds = [queryIndex, fragmentIndex].filter(index => index >= 0)
+    const pathEnd = pathEnds.length === 0 ? location.length : Math.min(...pathEnds)
+    rawPath = location.slice(0, pathEnd)
+  }
+  if (rawPath && hasUnsafeEncodedPath(rawPath)) {
+    throw new Error("Managed text final path is not allowed")
+  }
+
+  let resolved: URL
+  try {
+    resolved = new URL(location, currentUrl)
+  } catch {
+    throw new Error("Managed text redirect location is not allowed")
+  }
+  return validatedManagedFinalUrl(resolved.href, authority, rules)
+}
+
+function validatedManagedInitialUrl(
+  value: string,
+  authority: ConfiguredAuthority,
+  rules: ManagedTextRules
+): URL {
+  if (value !== value.trim()) {
+    throw new Error("Managed text final URL is not allowed")
+  }
+  if (/^[a-z][\d+.a-z-]*:\/\//i.test(value)) {
+    return validatedManagedFinalUrl(value, authority, rules)
+  }
+  if (!value.startsWith("/")) {
+    throw new Error("Managed text final URL is not allowed")
+  }
+  if (hasUnsafeEncodedPath(rawPathname(value))) {
+    throw new Error("Managed text final path is not allowed")
+  }
+  return validatedManagedFinalUrl(new URL(value, authority.origin).href, authority, rules)
+}
+
+const managedRedirectStatuses = new Set([301, 302, 303, 307, 308])
+const maximumManagedRedirects = 5
+
+async function cancelManagedRedirectBody(response: Response): Promise<void> {
+  try {
+    await response.body?.cancel()
+  } catch {
+    // Redirect body cancellation is best effort and must not mask validation.
+  }
+}
+
 function validateManagedResponse(response: Response, rules: ManagedTextRules): void {
   if (!response.ok) throw new Error("Managed text request failed")
 
@@ -311,7 +385,39 @@ export async function fetchManagedText(
   fetcher: typeof fetch = fetch
 ): Promise<string> {
   const authority = configuredAuthority(rules.authorityOrigin)
-  const response = await fetcher(url, { redirect: "follow" })
+  const initialUrl = validatedManagedInitialUrl(url, authority, rules)
+  let response: Response
+  if (import.meta.client) {
+    response = await fetcher(initialUrl.href, { redirect: "follow" })
+  } else {
+    let currentUrl = initialUrl
+    let redirectCount = 0
+    while (true) {
+      response = await fetcher(currentUrl.href, { redirect: "manual" })
+      if (!managedRedirectStatuses.has(response.status)) break
+      if (redirectCount >= maximumManagedRedirects) {
+        return rejectUnreadBody(
+          response,
+          new Error("Managed text redirect limit exceeded")
+        )
+      }
+
+      let nextUrl: URL
+      try {
+        nextUrl = validatedManagedRedirectUrl(
+          response.headers.get("location"),
+          currentUrl,
+          authority,
+          rules
+        )
+      } catch (error) {
+        return rejectUnreadBody(response, error)
+      }
+      await cancelManagedRedirectBody(response)
+      currentUrl = nextUrl
+      redirectCount += 1
+    }
+  }
   try {
     validatedManagedFinalUrl(response.url, authority, rules)
     validateManagedResponse(response, rules)

@@ -479,7 +479,7 @@ describe("managed Reader e-text boundary", () => {
     )).resolves.toBe(source)
     expect(fetchMock).toHaveBeenCalledWith(
       "https://assets.test/txt/lb%20reader/res_00004.html?username=app",
-      { redirect: "follow" }
+      { redirect: "manual" }
     )
   })
 

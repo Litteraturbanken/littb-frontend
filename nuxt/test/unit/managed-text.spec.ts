@@ -1,3 +1,6 @@
+import { createServer } from "node:http"
+import { once } from "node:events"
+
 import { describe, expect, test, vi } from "vitest"
 
 import {
@@ -77,10 +80,11 @@ async function expectCancelledRejection(options: {
   cleanup: () => void
   unexpectedRead: Promise<void>
   managedRules?: ManagedTextRules
+  requestUrl?: string
 }): Promise<void> {
   const fetcher = responseFetcher(options.response)
   const operation = fetchManagedText(
-    "https://assets.test/txt/work/res_00001.html",
+    options.requestUrl ?? "https://assets.test/txt/work/res_00001.html",
     options.managedRules ?? rules,
     fetcher
   )
@@ -165,8 +169,182 @@ describe("managed text transport", () => {
     expect(fetcher).toHaveBeenCalledOnce()
     expect(fetcher).toHaveBeenCalledWith(
       "https://assets.test/txt/work/res_00001.html?username=app",
-      { redirect: "follow" }
+      { redirect: "manual" }
     )
+  })
+
+  test("rejects a cross-authority redirect without contacting its target", async () => {
+    const redirected = unreadResponse({
+      headers: {
+        location: "https://internal.test/private",
+        "content-type": "text/html"
+      },
+      status: 302,
+      url: "https://assets.test/txt/work/res_00001.html"
+    })
+    const fetcher = vi.fn<typeof fetch>(async () => redirected.response)
+
+    await expect(fetchManagedText(
+      "https://assets.test/txt/work/res_00001.html",
+      rules,
+      fetcher
+    )).rejects.toThrow("Managed text final authority is not allowed")
+    expect(fetcher).toHaveBeenCalledOnce()
+    expect(redirected.cancelled).toHaveBeenCalledOnce()
+    redirected.cleanup()
+  })
+
+  test("installed Node fetch does not follow a rejected redirect target", async () => {
+    let targetRequests = 0
+    const target = createServer((_request, response) => {
+      targetRequests += 1
+      response.writeHead(200, { "content-type": "text/html" })
+      response.end("private")
+    })
+    target.listen(0, "127.0.0.1")
+    await once(target, "listening")
+    const targetAddress = target.address()
+    if (!targetAddress || typeof targetAddress === "string") {
+      throw new Error("Expected managed text target TCP server")
+    }
+
+    const origin = createServer((_request, response) => {
+      response.writeHead(302, {
+        location: `http://127.0.0.1:${targetAddress.port}/private`
+      })
+      response.end("redirect")
+    })
+    origin.listen(0, "127.0.0.1")
+    await once(origin, "listening")
+    const originAddress = origin.address()
+    if (!originAddress || typeof originAddress === "string") {
+      throw new Error("Expected managed text origin TCP server")
+    }
+    const originUrl = `http://127.0.0.1:${originAddress.port}`
+
+    try {
+      await expect(fetchManagedText(
+        `${originUrl}/txt/start.html`,
+        { ...rules, authorityOrigin: originUrl }
+      )).rejects.toThrow("Managed text final authority is not allowed")
+      expect(targetRequests).toBe(0)
+    } finally {
+      origin.close()
+      target.close()
+      await Promise.all([once(origin, "close"), once(target, "close")])
+    }
+  })
+
+  test("follows a bounded same-authority relative and absolute redirect chain", async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(managedResponse(null, {
+        headers: { location: "next.html?step=1" },
+        status: 302,
+        url: "https://assets.test/txt/work/res_00001.html?initial=1"
+      }))
+      .mockResolvedValueOnce(managedResponse(null, {
+        headers: { location: "https://assets.test/txt/final.html?source=redirect" },
+        status: 307,
+        url: "https://assets.test/txt/work/next.html?step=1"
+      }))
+      .mockResolvedValueOnce(managedResponse("redirected", {
+        headers: { "content-type": "text/html" },
+        url: "https://assets.test/txt/final.html?source=redirect"
+      }))
+
+    await expect(fetchManagedText(
+      "https://assets.test/txt/work/res_00001.html?initial=1",
+      rules,
+      fetcher
+    )).resolves.toBe("redirected")
+    expect(fetcher.mock.calls).toEqual([
+      [
+        "https://assets.test/txt/work/res_00001.html?initial=1",
+        { redirect: "manual" }
+      ],
+      ["https://assets.test/txt/work/next.html?step=1", { redirect: "manual" }],
+      ["https://assets.test/txt/final.html?source=redirect", { redirect: "manual" }]
+    ])
+  })
+
+  test("resolves a root-relative managed client URL against its configured authority", async () => {
+    const fetcher = responseFetcher(managedResponse("relative", {
+      headers: { "content-type": "text/html" },
+      url: "https://assets.test/txt/work/res_00001.html?client=1"
+    }))
+
+    await expect(fetchManagedText(
+      "/txt/work/res_00001.html?client=1",
+      rules,
+      fetcher
+    )).resolves.toBe("relative")
+    expect(fetcher).toHaveBeenCalledWith(
+      "https://assets.test/txt/work/res_00001.html?client=1",
+      { redirect: "manual" }
+    )
+  })
+
+  test.each([
+    ["missing Location", undefined, "Managed text redirect location is not allowed"],
+    ["malformed Location", "https://[", "Managed text redirect location is not allowed"],
+    [
+      "credential-bearing Location",
+      "https://reader:secret@assets.test/txt/secret.html",
+      "Managed text redirect location is not allowed"
+    ],
+    [
+      "disallowed Location path",
+      "/private/secret.html",
+      "Managed text final path is not allowed"
+    ],
+    [
+      "encoded traversal Location path",
+      "/txt/work/%2e%2e/private.html",
+      "Managed text final path is not allowed"
+    ],
+    [
+      "nested encoded separator Location path",
+      "/txt/work/safe%252fprivate.html",
+      "Managed text final path is not allowed"
+    ]
+  ])("rejects a %s without a second request", async (_label, location, expected) => {
+    const headers = new Headers()
+    if (location !== undefined) headers.set("location", location)
+    const redirected = unreadResponse({
+      headers,
+      status: 302,
+      url: "https://assets.test/txt/work/res_00001.html"
+    })
+    const fetcher = vi.fn<typeof fetch>(async () => redirected.response)
+
+    await expect(fetchManagedText(
+      "https://assets.test/txt/work/res_00001.html",
+      rules,
+      fetcher
+    )).rejects.toThrow(expected)
+    expect(fetcher).toHaveBeenCalledOnce()
+    expect(redirected.cancelled).toHaveBeenCalledOnce()
+    redirected.cleanup()
+  })
+
+  test("stops a redirect loop at the managed redirect limit", async () => {
+    const redirects = Array.from({ length: 6 }, (_, index) => managedResponse(null, {
+      headers: { location: `/txt/loop-${index + 1}.html` },
+      status: 308,
+      url: `https://assets.test/txt/loop-${index}.html`
+    }))
+    const fetcher = vi.fn<typeof fetch>(async () => {
+      const response = redirects.shift()
+      if (!response) throw new Error("Managed text exceeded the redirect test boundary")
+      return response
+    })
+
+    await expect(fetchManagedText(
+      "https://assets.test/txt/loop-0.html",
+      rules,
+      fetcher
+    )).rejects.toThrow("Managed text redirect limit exceeded")
+    expect(fetcher).toHaveBeenCalledTimes(6)
   })
 
   test("rejects a non-success response without retrying", async () => {
@@ -293,7 +471,7 @@ describe("managed text transport", () => {
     ],
     ["empty authority", "https:///assets.test/txt/work/res_00001.html", rules]
   ])("rejects a final URL with raw %s and cancels its unread body", async (
-    _label,
+    label,
     url,
     managedRules
   ) => {
@@ -305,7 +483,10 @@ describe("managed text transport", () => {
     await expectCancelledRejection({
       ...rejected,
       expected: "Managed text final URL is not allowed",
-      managedRules
+      managedRules,
+      requestUrl: label === "empty bracketed IPv6 port"
+        ? "https://[2001:db8::1]/txt/work/res_00001.html"
+        : undefined
     })
   })
 
@@ -354,7 +535,8 @@ describe("managed text transport", () => {
     await expectCancelledRejection({
       ...rejected,
       expected: "Managed text final protocol is not allowed",
-      managedRules
+      managedRules,
+      requestUrl: `${new URL(managedRules.authorityOrigin).origin}/txt/work/res_00001.html`
     })
   })
 
@@ -367,7 +549,8 @@ describe("managed text transport", () => {
     await expectCancelledRejection({
       ...rejected,
       expected: "Managed text final path is not allowed",
-      managedRules: { ...rules, allowedPathPrefixes: ["/managed/page"] }
+      managedRules: { ...rules, allowedPathPrefixes: ["/managed/page"] },
+      requestUrl: "https://assets.test/managed/page"
     })
   })
 
@@ -452,7 +635,7 @@ describe("managed text transport", () => {
     }))
 
     await expect(fetchManagedText(
-      "https://assets.test/txt/work/res_00001.html",
+      `https://assets.test${path}`,
       { ...rules, allowedPathPrefixes: [prefix] },
       fetcher
     )).resolves.toBe("ordinary")
@@ -586,7 +769,8 @@ describe("managed text transport", () => {
     await expectCancelledRejection({
       ...rejected,
       expected: "Managed text final authority is not allowed",
-      managedRules: { ...rules, authorityOrigin: "https://assets.test:8443" }
+      managedRules: { ...rules, authorityOrigin: "https://assets.test:8443" },
+      requestUrl: "https://assets.test:8443/txt/work/res_00001.html"
     })
   })
 

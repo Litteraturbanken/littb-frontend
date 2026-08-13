@@ -77,20 +77,34 @@ describe("Home content authority fixtures", () => {
 
   test("the named Home rule accepts the frozen HTML once through a same-authority redirect", async () => {
     const content = await readFile(resolve(root, "startsida-ny.html"))
-    const fetcher = vi.fn<typeof fetch>(async () => managedResponse(content, {
-      headers: {
-        "content-length": String(content.byteLength),
-        "content-type": "text/html; charset=utf-8"
-      },
-      redirected: true
-    }))
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(managedResponse(null, {
+        headers: { location: "/red/om/start/startsida-ny.html?fixture=redirected" },
+        status: 302
+      }))
+      .mockResolvedValueOnce(managedResponse(content, {
+        headers: {
+          "content-length": String(content.byteLength),
+          "content-type": "text/html; charset=utf-8"
+        },
+        url: "https://assets.test/red/om/start/startsida-ny.html?fixture=redirected"
+      }))
 
     await expect(fetchManagedText(
       "https://assets.test/red/om/start/startsida-ny.html?fixture",
       managedHomeTextRules("https://assets.test"),
       fetcher
     )).resolves.toBe(content.toString("utf8"))
-    expect(fetcher).toHaveBeenCalledOnce()
+    expect(fetcher.mock.calls).toEqual([
+      [
+        "https://assets.test/red/om/start/startsida-ny.html?fixture",
+        { redirect: "manual" }
+      ],
+      [
+        "https://assets.test/red/om/start/startsida-ny.html?fixture=redirected",
+        { redirect: "manual" }
+      ]
+    ])
   })
 
   test.each([
