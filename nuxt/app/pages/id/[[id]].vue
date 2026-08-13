@@ -85,16 +85,43 @@ async function requestLookup(body: LookupBody, signal?: AbortSignal) {
 }
 
 const initialBody = bodyForRouteValue(routeValue)
-let initialResponse: LookupResponse = { items: [] }
-if (initialBody) {
-  const initialLookup = await useAsyncData(
+let initialLookupController: AbortController | null = null
+const initialLookup = initialBody
+  ? useAsyncData<LookupResponse | null>(
     `id-lookup:${route.path}`,
-    () => requestLookup(initialBody)
+    async (_nuxtApp, { signal }) => {
+      initialLookupController?.abort()
+      const controller = new AbortController()
+      initialLookupController = controller
+      const requestSignal = AbortSignal.any([signal, controller.signal])
+      try {
+        const response = await requestLookup(initialBody, requestSignal)
+        if (requestSignal.aborted) {
+          throw requestSignal.reason ?? new DOMException("Lookup request aborted", "AbortError")
+        }
+        return response
+      } finally {
+        if (initialLookupController === controller) initialLookupController = null
+      }
+    },
+    { lazy: true, default: () => null }
   )
-  initialResponse = initialLookup.data.value ?? { items: [] }
-}
+  : null
+if (import.meta.server && initialLookup) await initialLookup
+const initialLookupData = computed<LookupResponse | null>(() => (
+  initialLookup?.data.value ?? null
+))
+const initialLookupPending = computed(() => initialLookup
+  ? initialLookup.pending.value || initialLookup.status.value === "pending"
+  : false)
 
-const items = ref<LookupItem[]>(initialResponse.items)
+const items = ref<LookupItem[]>([])
+watch(initialLookupData, candidate => {
+  items.value = candidate?.items ?? []
+}, { immediate: true, flush: "sync" })
+watch(initialLookupPending, pending => {
+  if (initialBody) loading.value = pending
+}, { immediate: true, flush: "sync" })
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 let controller: AbortController | null = null
 let requestVersion = 0
@@ -115,6 +142,11 @@ function invalidateRequest(clearRows: boolean) {
 function clearLookup() {
   cancelTimer()
   invalidateRequest(true)
+}
+
+function cancelInitialLookup() {
+  initialLookupController?.abort()
+  initialLookup?.clear()
 }
 
 async function runLookup(body: LookupBody, signal?: AbortSignal) {
@@ -190,6 +222,7 @@ function onTextareaInput(event: Event) {
 watch(
   () => route.params.id,
   rawValue => {
+    cancelInitialLookup()
     clearLookup()
     const value = normalizedRouteValue(rawValue)
     workId.value = value.startsWith("lb") ? value : ""
@@ -200,7 +233,11 @@ watch(
   }
 )
 
-onUnmounted(clearLookup)
+onBeforeRouteLeave(cancelInitialLookup)
+onUnmounted(() => {
+  cancelInitialLookup()
+  clearLookup()
+})
 </script>
 
 <template>

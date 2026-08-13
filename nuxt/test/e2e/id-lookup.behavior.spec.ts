@@ -149,6 +149,151 @@ async function settleTransportLookup(
 
 test.beforeEach(async ({ request }) => reset(request))
 
+test("mounts ID lookup before the route lookup settles", async ({ page, request }) => {
+  const body = { work_id: "lb123", titles: [] }
+  await request.put(`${fixture}/_work_lookup_delays`, {
+    data: { [JSON.stringify(body)]: 5_000 }
+  })
+  let releaseLookup = () => {}
+  const lookupGate = new Promise<void>(resolve => { releaseLookup = resolve })
+  const lookupRoute = async (route: import("@playwright/test").Route) => {
+    const response = await route.fetch()
+    await lookupGate
+    await route.fulfill({
+      response,
+      json: {
+        items: [{
+          work_id: "lb123",
+          author: { label: "Testförfattare", url: "/författare/Test" },
+          title: { label: "Testtitel", url: "/verk/lb123" },
+          media: []
+        }]
+      }
+    })
+  }
+  await page.route("**/api/v2/works/lookup", lookupRoute)
+  try {
+    await page.goto("/om/ide", { waitUntil: "networkidle" })
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+
+    void pushRoute(page, "/id/lb123")
+    await expect.poll(() => lookupBodies(request)).toEqual([body])
+
+    await expect(page.getByPlaceholder("lbid")).toHaveValue("lb123")
+    await expect(page.getByPlaceholder("titel")).toHaveValue("")
+    await expect(page.getByPlaceholder("flera titlar separarade med nyrad")).toHaveValue("")
+    await expect.poll(() => page.locator("#mainview > div").getAttribute("class"))
+      .toContain("searching")
+    const status = page.locator('.preloader[role="status"]')
+    await expect(status).toHaveCount(1)
+    await expect(status).toBeVisible()
+    await expect(status.locator(".sr-only")).toHaveText("Hämtar resultat")
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toHaveCount(0)
+    await expect(page.locator(".table-striped tbody tr")).toHaveCount(0)
+
+    releaseLookup()
+    await expect(page.locator(".table-striped tbody tr td").first()).toHaveText("lb123")
+  } finally {
+    releaseLookup()
+    await page.unroute("**/api/v2/works/lookup", lookupRoute)
+  }
+})
+
+test("leaving a pending initial ID lookup keeps its later settlement inert", async ({ page }) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+
+  await page.evaluate(() => {
+    const nativeFetch = window.fetch.bind(window)
+    let releaseFirstLookup = () => {}
+    const firstLookupGate = new Promise<void>(resolve => { releaseFirstLookup = resolve })
+    let releaseSecondLookup = () => {}
+    const secondLookupGate = new Promise<void>(resolve => { releaseSecondLookup = resolve })
+    const gate = {
+      requests: 0,
+      firstStarted: false,
+      firstReleased: false,
+      firstAbortedWhenReleased: false,
+      releaseFirst: releaseFirstLookup,
+      releaseSecond: releaseSecondLookup,
+      restore: () => { window.fetch = nativeFetch }
+    }
+    ;(window as typeof window & { __initialIdLookupGate?: typeof gate })
+      .__initialIdLookupGate = gate
+    window.fetch = async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      if (new URL(request.url).pathname !== "/api/v2/works/lookup") {
+        return nativeFetch(input, init)
+      }
+      gate.requests += 1
+      const response = await nativeFetch(input, init)
+      if (gate.requests === 1) {
+        gate.firstStarted = true
+        await firstLookupGate
+        gate.firstReleased = true
+        gate.firstAbortedWhenReleased = request.signal.aborted
+      } else {
+        await secondLookupGate
+      }
+      return response
+    }
+  })
+  try {
+    void pushRoute(page, "/id/lb238704")
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __initialIdLookupGate?: { firstStarted: boolean }
+      }).__initialIdLookupGate?.firstStarted ?? false
+    ))).toBe(true)
+    await expect(page.locator('.preloader[role="status"]')).toHaveCount(1)
+
+    await pushRoute(page, "/om/ide")
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+    await page.evaluate(() => (
+      (window as typeof window & {
+        __initialIdLookupGate?: { releaseFirst: () => void }
+      }).__initialIdLookupGate?.releaseFirst()
+    ))
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __initialIdLookupGate?: {
+          firstReleased: boolean
+          firstAbortedWhenReleased: boolean
+        }
+      }).__initialIdLookupGate
+    ))).toMatchObject({ firstReleased: true, firstAbortedWhenReleased: true })
+
+    void pushRoute(page, "/id/lb238704")
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __initialIdLookupGate?: { requests: number }
+      }).__initialIdLookupGate?.requests ?? 0
+    )), { timeout: 2_000 }).toBe(2)
+    await expect(page.locator(".table-striped tbody tr")).toHaveCount(0)
+    await expect(page.locator('.preloader[role="status"]')).toHaveCount(1)
+
+    await page.evaluate(() => (
+      (window as typeof window & {
+        __initialIdLookupGate?: { releaseSecond: () => void }
+      }).__initialIdLookupGate?.releaseSecond()
+    ))
+    await expect(page.locator(".table-striped tbody tr td").first()).toHaveText("lb238704")
+  } finally {
+    await page.evaluate(() => {
+      const gate = (window as typeof window & {
+        __initialIdLookupGate?: {
+          releaseFirst: () => void
+          releaseSecond: () => void
+          restore: () => void
+        }
+      }).__initialIdLookupGate
+      gate?.releaseFirst()
+      gate?.releaseSecond()
+      gate?.restore()
+    })
+  }
+})
+
 test("result titles use client routing and Back restores the ID lookup", async ({
   page
 }) => {
