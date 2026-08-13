@@ -77,7 +77,8 @@ const { data } = await useAsyncData<ProfileResponse>(
     } catch {
       return { identity, view: null, status: 503, canonicalPath: "", hasDramawebben: false }
     }
-  }
+  },
+  { lazy: true }
 )
 
 const response = computed(() => (
@@ -144,7 +145,19 @@ useHead({
 
 <template>
   <div>
-    <div v-if="response?.status === 404" class="error">
+    <div
+      v-if="!response"
+      class="searching"
+      role="status"
+      aria-live="polite"
+      aria-label="Laddar författarsidan"
+    >
+      <div class="preloader">
+        <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
+        <span class="sr-only">Laddar författarsidan</span>
+      </div>
+    </div>
+    <div v-else-if="response.status === 404" class="error">
       Ett fel har inträffat: författarid <code>{{ authorId }}</code> kan inte hittas. Kontrollera adressen.
     </div>
     <div v-else-if="response && response.status !== 200" class="error">

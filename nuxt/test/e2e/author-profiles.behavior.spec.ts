@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page, type Route } from "@playwright/test"
 import { readFileSync } from "node:fs"
 
 import { managedHtmlRawProbes } from "../fixtures/author-profile-data.mjs"
@@ -93,6 +93,55 @@ test.beforeEach(async ({ page, request }) => {
     contentType: "image/jpeg",
     body: portraitBytes
   }))
+})
+
+test("mounts the author shell before profile data settles", async ({ page }) => {
+  await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
+
+  for (const path of [
+    "/f%C3%B6rfattare/StrindbergA/dramawebben",
+    "/f%C3%B6rfattare/StrindbergA"
+  ] as const) {
+    let releaseResponse = () => {}
+    const responseGate = new Promise<void>(resolve => {
+      releaseResponse = resolve
+    })
+    let markRequestStarted = () => {}
+    const requestStarted = new Promise<void>(resolve => {
+      markRequestStarted = resolve
+    })
+    let markResponseDelivered = () => {}
+    const responseDelivered = new Promise<void>(resolve => {
+      markResponseDelivered = resolve
+    })
+    const profileRoute = async (route: Route) => {
+      const response = await route.fetch()
+      markRequestStarted()
+      await responseGate
+      await route.fulfill({ response })
+      markResponseDelivered()
+    }
+
+    await page.route("**/api/v2/authors/**", profileRoute)
+    await page.route("**/v2/authors/**", profileRoute)
+    try {
+      await beginRouterPush(page, path)
+      await requestStarted
+
+      await expect(page).toHaveURL(path)
+      await expect(page.locator("body")).toHaveClass(/page-authorInfo/u)
+      await expect(page.getByRole("status", { name: "Laddar författarsidan" })).toHaveCount(1)
+      await expect(page.locator(".introtext")).toHaveCount(0)
+
+      releaseResponse()
+      await responseDelivered
+      await expect(page.locator("h1")).toContainText("August Strindberg")
+    } finally {
+      releaseResponse()
+      await page.unroute("**/v2/authors/**", profileRoute)
+      await page.unroute("**/api/v2/authors/**", profileRoute)
+    }
+  }
 })
 
 test("hydrates the rich profile without warnings or duplicate browser requests", async ({
