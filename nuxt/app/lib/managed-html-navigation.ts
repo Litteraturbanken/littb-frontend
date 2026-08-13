@@ -27,6 +27,8 @@ function hasUnmanagedClickBehavior(input: ManagedHtmlNavigationInput): boolean {
 function isManagedDestination(destination: URL, current: URL): boolean {
   return destination.origin === current.origin
     && ["http:", "https:"].includes(destination.protocol)
+    && !destination.username
+    && !destination.password
     && !destination.hash
     && isNuxtInternalHref(destination.pathname)
 }

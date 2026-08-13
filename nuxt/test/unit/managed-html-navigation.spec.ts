@@ -38,6 +38,10 @@ describe("managed HTML navigation", () => {
     [
       "https://litteraturbanken.se/om/rattigheter?from=managed",
       "/om/rattigheter?from=managed"
+    ],
+    [
+      "https://litteraturbanken.se/om/rattigheter?email=a%40b",
+      "/om/rattigheter?email=a%40b"
     ]
   ])("enhances the Nuxt-owned link %s", (href, expected) => {
     expect(target(href)).toBe(expected)
@@ -52,6 +56,31 @@ describe("managed HTML navigation", () => {
     ["hash anchor", "#organisation", {}],
     ["fragment-bearing route", "/om/ide#organisation", {}],
     ["external origin", "https://example.test/om/ide", {}],
+    [
+      "same-origin absolute username",
+      "https://example.test@litteraturbanken.se/om/ide?from=credential",
+      {}
+    ],
+    [
+      "same-origin absolute password",
+      "https://:secret@litteraturbanken.se/om/ide?from=credential",
+      {}
+    ],
+    [
+      "same-origin absolute username and password",
+      "https://user:secret@litteraturbanken.se/om/ide?from=credential",
+      {}
+    ],
+    [
+      "same-origin encoded credentials",
+      "https://user%40example.test:secret@litteraturbanken.se/om/ide",
+      {}
+    ],
+    [
+      "same-origin protocol-relative username",
+      "//user@litteraturbanken.se/om/ide",
+      {}
+    ],
     ["mailto", "mailto:info@litteraturbanken.se", {}],
     ["deployment handoff", "/skolan/lararsida/", {}],
     ["external project", "/diktensmuseum/utstallning/", {}],
