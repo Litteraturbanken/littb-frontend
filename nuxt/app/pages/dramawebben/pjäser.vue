@@ -156,7 +156,13 @@ function safeCatalogReaderUrl(mediaType: string, url: string): boolean {
     [segments[4] ?? "", 200],
     [segments[6] ?? "", 512]
   ]
-  return variableSegments.every(([segment, maximum]) => validRouteSegment(segment, maximum))
+  return variableSegments.every(([segment, maximum]) => {
+    try {
+      return validRouteSegment(decodeURIComponent(segment), maximum)
+    } catch {
+      return false
+    }
+  })
 }
 
 function isSafeCatalogMediaUrl(mediaType: string, url: string, downloadable: boolean): boolean {

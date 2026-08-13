@@ -384,6 +384,21 @@ test("SSR rejects a structurally valid catalog with an unsafe media URL", async 
   await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
 })
 
+test("SSR accepts a canonical encoded Unicode segment in a Reader media URL", async ({
+  request
+}) => {
+  await setCatalogFailure(request, "encoded-reader-media-url-200")
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector(
+    'a[href="/f%C3%B6rfattare/AgrellA/titlar/Aff%C3%A4rer/sida/I/etext#dw"]'
+  )).not.toBeNull()
+  expect(await catalogRequests(request)).toHaveLength(1)
+  await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
+
 test("SSR rejects a catalog media URL that browsers normalize at a backslash", async ({
   request
 }) => {

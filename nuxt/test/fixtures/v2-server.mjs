@@ -3688,6 +3688,7 @@ const server = createServer(async (request, response) => {
       "status-503",
       "malformed-200",
       "unsafe-media-url-200",
+      "encoded-reader-media-url-200",
       "backslash-media-url-200",
       "dot-segment-media-url-200",
       "dot-segment-infopost-url-200",
@@ -4909,6 +4910,11 @@ const server = createServer(async (request, response) => {
     if (dramawebbenCatalogFailure === "unsafe-media-url-200") {
       const catalog = dramawebbenCatalogFixture()
       catalog.works[0].media[0].url = "javascript:alert('unsafe-media-url-probe')"
+      return sendJson(response, 200, catalog)
+    }
+    if (dramawebbenCatalogFailure === "encoded-reader-media-url-200") {
+      const catalog = dramawebbenCatalogFixture()
+      catalog.works[0].media[0].url = "/författare/AgrellA/titlar/Aff%C3%A4rer/sida/I/etext"
       return sendJson(response, 200, catalog)
     }
     if (dramawebbenCatalogFailure === "backslash-media-url-200") {
