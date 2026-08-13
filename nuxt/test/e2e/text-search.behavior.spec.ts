@@ -266,6 +266,7 @@ test("mounts Search before advanced options settle", async ({ page, request }) =
   await expect(search).toBeVisible({ timeout: 1500 })
   await expect(search.getByRole("heading", { name: "Sök i texterna" })).toBeVisible()
   await expect(search.locator(".submit_form")).toBeVisible()
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
   await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(1)
   await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toHaveCount(0)
   await expect(search.locator("#results .results tr")).toHaveCount(0)

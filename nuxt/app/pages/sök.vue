@@ -213,7 +213,7 @@ const chronologyAsyncData = useAsyncData<ChronologyEnvelope>(
   },
   {
     default: () => ({ bounds: null }),
-    immediate: !state.value.advanced,
+    immediate: import.meta.server && !state.value.advanced,
     lazy: true
   }
 )
