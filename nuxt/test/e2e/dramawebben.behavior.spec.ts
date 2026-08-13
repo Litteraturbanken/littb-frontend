@@ -416,6 +416,105 @@ test("mounts the catalog shell before the catalog request settles", async ({ pag
   }
 })
 
+test("leaving a pending catalog request keeps its later settlement inert", async ({ page }) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+
+  await page.evaluate(() => {
+    const nativeFetch = window.fetch.bind(window)
+    let releaseFirstCatalog = () => {}
+    const firstCatalogGate = new Promise<void>(resolve => { releaseFirstCatalog = resolve })
+    let releaseSecondCatalog = () => {}
+    const secondCatalogGate = new Promise<void>(resolve => { releaseSecondCatalog = resolve })
+    const gate = {
+      requests: 0,
+      firstStarted: false,
+      firstReleased: false,
+      firstAbortedWhenReleased: false,
+      releaseFirst: releaseFirstCatalog,
+      releaseSecond: releaseSecondCatalog,
+      restore: () => { window.fetch = nativeFetch }
+    }
+    ;(window as typeof window & { __dramawebbenCatalogGate?: typeof gate })
+      .__dramawebbenCatalogGate = gate
+    window.fetch = async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      if (new URL(request.url).pathname !== "/api/v2/dramawebben/catalog") {
+        return nativeFetch(input, init)
+      }
+      gate.requests += 1
+      const response = await nativeFetch(input, init)
+      if (gate.requests === 1) {
+        gate.firstStarted = true
+        await firstCatalogGate
+        gate.firstReleased = true
+        gate.firstAbortedWhenReleased = request.signal.aborted
+      } else {
+        await secondCatalogGate
+      }
+      return response
+    }
+  })
+  try {
+    void routerPush(page, "/dramawebben/pj%C3%A4ser")
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __dramawebbenCatalogGate?: { firstStarted: boolean }
+      }).__dramawebbenCatalogGate?.firstStarted ?? false
+    ))).toBe(true)
+    await expect(page.locator(".page_content > [role='status']")).toHaveText(
+      "Laddar Dramawebbens katalog"
+    )
+
+    await routerPush(page, "/om/ide")
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+    await page.evaluate(() => (
+      (window as typeof window & {
+        __dramawebbenCatalogGate?: { releaseFirst: () => void }
+      }).__dramawebbenCatalogGate?.releaseFirst()
+    ))
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __dramawebbenCatalogGate?: {
+          firstReleased: boolean
+          firstAbortedWhenReleased: boolean
+        }
+      }).__dramawebbenCatalogGate
+    ))).toMatchObject({ firstReleased: true, firstAbortedWhenReleased: true })
+
+    void routerPush(page, "/dramawebben/pj%C3%A4ser")
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __dramawebbenCatalogGate?: { requests: number }
+      }).__dramawebbenCatalogGate?.requests ?? 0
+    )), { timeout: 2_000 }).toBe(2)
+    await expect(page.locator("table.contenttable")).toHaveCount(0)
+    await expect(page.locator(".page_content > [role='status']")).toHaveText(
+      "Laddar Dramawebbens katalog"
+    )
+
+    await page.evaluate(() => (
+      (window as typeof window & {
+        __dramawebbenCatalogGate?: { releaseSecond: () => void }
+      }).__dramawebbenCatalogGate?.releaseSecond()
+    ))
+    await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+  } finally {
+    await page.evaluate(() => {
+      const gate = (window as typeof window & {
+        __dramawebbenCatalogGate?: {
+          releaseFirst: () => void
+          releaseSecond: () => void
+          restore: () => void
+        }
+      }).__dramawebbenCatalogGate
+      gate?.releaseFirst()
+      gate?.releaseSecond()
+      gate?.restore()
+    })
+  }
+})
+
 test("source information does not suspend the catalog after it settles", async ({ page }) => {
   let releaseCatalog = () => {}
   const catalogGate = new Promise<void>(resolve => { releaseCatalog = resolve })

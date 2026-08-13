@@ -452,17 +452,34 @@ async function closeCatalogSourceInfo(): Promise<void> {
   sourceInfoTrigger = null
 }
 
-const { data, status } = await useAsyncData<CatalogResult>(
+let catalogController: AbortController | null = null
+const catalogAsyncData = await useAsyncData<CatalogResult>(
   "dramawebben-catalog",
-  async () => {
+  async (_nuxtApp, { signal }) => {
+    catalogController?.abort()
+    const controller = new AbortController()
+    catalogController = controller
+    const requestSignal = AbortSignal.any([signal, controller.signal])
     try {
       const { data: response, error, response: rawResponse } = await client.GET(
-        "/dramawebben/catalog"
+        "/dramawebben/catalog",
+        { signal: requestSignal }
       )
+      if (requestSignal.aborted) {
+        throw requestSignal.reason ?? new DOMException("Catalog request aborted", "AbortError")
+      }
       if (!error && isCatalog(response)) return { status: 200, catalog: response }
       return { status: rawResponse.status >= 500 && error ? 503 : 502, catalog: null }
-    } catch {
+    } catch (error) {
+      if (
+        requestSignal.aborted
+        || (error instanceof DOMException && error.name === "AbortError")
+      ) {
+        throw error
+      }
       return { status: 503, catalog: null }
+    } finally {
+      if (catalogController === controller) catalogController = null
     }
   },
   {
@@ -470,7 +487,14 @@ const { data, status } = await useAsyncData<CatalogResult>(
     getCachedData: (key, nuxtApp) => nuxtApp.payload.data[key] as CatalogResult | undefined
   }
 )
+function cancelCatalog(): void {
+  catalogController?.abort()
+  catalogAsyncData.clear()
+}
+onBeforeRouteLeave(cancelCatalog)
+onBeforeUnmount(cancelCatalog)
 
+const { data, status } = catalogAsyncData
 const result = computed<CatalogResult>(() => data.value ?? { status: 503, catalog: null })
 if (import.meta.server && result.value.status !== 200) setResponseStatus(result.value.status)
 
