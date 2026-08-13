@@ -605,6 +605,27 @@ test("SSR renders EPUB immediately with a null inactive PDF count", async ({ req
   expect(await legacyQueryRequests(request)).toEqual([])
 })
 
+test("SSR omits unsafe tooltip attributes and preserves valid astral text", async ({ request }) => {
+  const response = await request.get("/bibliotek?visa=epub&filter=unsafe-tooltip-text")
+  expect(response.status()).toBe(200)
+  const document = parseHTML(await response.text()).document
+  const rows = document.querySelectorAll("[data-library-epub-row]")
+  expect(rows).toHaveLength(3)
+
+  expect(rows[0]?.textContent).toContain("C1-titel")
+  expect(rows[0]?.querySelector('[data-library-tooltip-kind="title"]')
+    ?.hasAttribute("data-library-tooltip-content")).toBe(false)
+  expect(rows[1]?.textContent).toContain("Surrogatförfattare")
+  expect(rows[1]?.querySelector('[data-library-tooltip-kind="author"]')
+    ?.hasAttribute("data-library-tooltip-content")).toBe(false)
+  expect(rows[2]?.querySelector('[data-library-tooltip-kind="title"]')
+    ?.getAttribute("data-library-tooltip-content")).toBe("Astraltitel 😀")
+
+  const html = document.documentElement.outerHTML
+  expect(html).not.toContain("\u0085")
+  expect(html).not.toContain("\ud800")
+})
+
 test("SSR renders PDF immediately with a null inactive EPUB count", async ({ request }) => {
   const document = parseHTML(await (await request.get(
     "/bibliotek?visa=pdf&sort=kronologi&sida=2"

@@ -21,6 +21,30 @@ describe("library tooltip metadata", () => {
     expect(safeLibraryTooltipText("x".repeat(MAX_LIBRARY_TOOLTIP_LENGTH + 1))).toBe("")
   })
 
+  it.each([
+    "unsafe\u0080text",
+    "unsafe\u009ftext",
+    "unsafe\ud800text",
+    "unsafe\udffftext",
+    "unsafe\ud800X\udc00text"
+  ])("rejects C1 controls and malformed Unicode: %j", value => {
+    expect(safeLibraryTooltipText(value)).toBe("")
+    expect(usefulLibraryTooltipText(value, "visible text")).toBe("")
+  })
+
+  it("preserves a valid astral pair byte-for-byte", () => {
+    expect(safeLibraryTooltipText("Titel 😀")).toBe("Titel 😀")
+    expect(usefulLibraryTooltipText("Titel 😀", "Titel")).toBe("Titel 😀")
+  })
+
+  it("rejects an unsafe author name before composing its tooltip", () => {
+    expect(libraryAuthorTooltipText({
+      full_name: "Författare\u0085Namn",
+      birth_year: "1900",
+      death_year: null
+    }, "Författare")).toBe("")
+  })
+
   it("builds the legacy complete author label and ignores placeholder years", () => {
     expect(libraryAuthorTooltipText({
       full_name: "Hjalmar Söderberg",

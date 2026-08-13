@@ -1,3 +1,5 @@
+import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
+
 type UnknownRecord = Record<string, unknown>
 
 export interface NormalizedLibraryTooltipAuthor {
@@ -24,10 +26,8 @@ function asRecord(value: unknown): UnknownRecord | null {
 export function safeLibraryTooltipText(value: unknown): string {
   if (typeof value !== "string" || value !== value.trim()
     || value.length > MAX_LIBRARY_TOOLTIP_LENGTH
-    || [...value].some(character => {
-      const code = character.charCodeAt(0)
-      return code <= 31 || code === 127
-    })) return ""
+    || hasC0OrC1Control(value)
+    || hasLoneSurrogate(value)) return ""
   return value
 }
 

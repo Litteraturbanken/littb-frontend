@@ -1749,6 +1749,17 @@ function libraryDownloadResponse(body) {
   const query = body.filters.query
   if (query === "inga") return { mode: body.mode, total_hits: 0, total_works: 0, items: [] }
   if (body.mode === "epub") {
+    if (query === "unsafe-tooltip-text") {
+      return { mode: "epub", total_hits: 3, total_works: 3, items: [
+        { ...doktorEpub, title: "C1-titel", full_title: "C1-titel\u0085Roman" },
+        {
+          ...folkvisorEpub,
+          title: "Surrogatförfattare",
+          author: { ...folkvisorEpub.author, full_name: "Erik\ud800Geijer" }
+        },
+        { ...gostaEpub, title: "Astraltitel", full_title: "Astraltitel 😀" }
+      ] }
+    }
     if (query === "unsafe-download-href") {
       return { mode: "epub", total_hits: 1, total_works: 1, items: [{
         ...doktorEpub,
