@@ -16,7 +16,6 @@ export class CorrelationTokenStore {
   readonly #entries = new Map<string, StoredCorrelation>()
   readonly #maxTokens: number
   readonly #ttlMs: number
-  #lastExpiresAt = 0
 
   constructor(maxTokens = MAX_TOKENS, ttlMs = TOKEN_TTL_MS) {
     this.#maxTokens = maxTokens
@@ -24,12 +23,8 @@ export class CorrelationTokenStore {
   }
 
   #pruneExpired(now: number): void {
-    while (this.#entries.size > 0) {
-      const oldest = this.#entries.entries().next().value as
-        | [string, StoredCorrelation]
-        | undefined
-      if (!oldest || oldest[1].expiresAt > now) break
-      this.#entries.delete(oldest[0])
+    for (const [token, stored] of this.#entries) {
+      if (stored.expiresAt <= now) this.#entries.delete(token)
     }
   }
 
@@ -41,11 +36,9 @@ export class CorrelationTokenStore {
       this.#entries.delete(oldest)
     }
     const token = randomUUID()
-    const expiresAt = Math.max(now + this.#ttlMs, this.#lastExpiresAt)
-    this.#lastExpiresAt = expiresAt
     this.#entries.set(token, {
       context: { ...context },
-      expiresAt
+      expiresAt: now + this.#ttlMs
     })
     return token
   }
@@ -62,7 +55,6 @@ export class CorrelationTokenStore {
 
   reset(): void {
     this.#entries.clear()
-    this.#lastExpiresAt = 0
   }
 }
 
