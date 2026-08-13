@@ -16,6 +16,26 @@ describe("production shortcuts", () => {
     expect(urnResolverUrl(null)).toBeNull()
     expect(urnResolverUrl("bad urn")).toBeNull()
     expect(urnResolverUrl("urn:nbn:se:lb-\u0080")).toBeNull()
+    expect(urnResolverUrl("urn:nbn:se:lb-\ud800")).toBeNull()
+    expect(urnResolverUrl("urn:nbn:se:lb-\udc00")).toBeNull()
+  })
+
+  it.each([
+    "urn:nbn:se:lb-work&extra=1",
+    "urn:nbn:se:lb-work#fragment",
+    "urn:nbn:se:lb-work=edition",
+    "urn:nbn:se:lb-work+supplement",
+    "urn:nbn:se:lb-work%",
+    "urn:nbn:se:lb-Röda-😀"
+  ])("encodes %j as exactly one resolver query value", urn => {
+    const result = urnResolverUrl(urn)
+    expect(result).not.toBeNull()
+
+    const parsed = new URL(result!)
+    expect(parsed.origin + parsed.pathname).toBe("https://urn.kb.se/resolve")
+    expect(parsed.searchParams.getAll("urn")).toEqual([urn])
+    expect([...parsed.searchParams.keys()]).toEqual(["urn"])
+    expect(parsed.hash).toBe("")
   })
 
   it("guards modifiers, composition, editable targets, and open dialogs", () => {

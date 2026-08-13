@@ -2,7 +2,11 @@ import {
   isCanonicalPastedWorkId,
   libraryWorkIdFilterHref
 } from "./library-navigation"
-import { hasC0OrC1Control, hasEcmaWhitespace } from "#shared/utils/text-safety"
+import {
+  hasC0OrC1Control,
+  hasEcmaWhitespace,
+  hasLoneSurrogate
+} from "#shared/utils/text-safety"
 
 const pastedLbId = /(?<![A-Za-z0-9_])lb[A-Za-z0-9_]+(?![A-Za-z0-9_])/giu
 const maximumPasteLength = 65_536
@@ -99,6 +103,12 @@ export function pastedLbNavigationDestination(text: string): string | null {
   return `/editor/${encodeURIComponent(ids[0]!)}/ix/0/f`
 }
 
+export function encodedUrnResolverUrl(urn: string): string | null {
+  if (hasLoneSurrogate(urn)) return null
+  const queryValue = encodeURIComponent(urn).replaceAll("%3A", ":")
+  return `https://urn.kb.se/resolve?urn=${queryValue}`
+}
+
 export function urnResolverUrl(urn: string | null): string | null {
   if (
     !urn
@@ -106,8 +116,9 @@ export function urnResolverUrl(urn: string | null): string | null {
     || urn.trim() !== urn
     || hasEcmaWhitespace(urn)
     || hasC0OrC1Control(urn)
+    || hasLoneSurrogate(urn)
   ) return null
-  return `https://urn.kb.se/resolve?urn=${urn}`
+  return encodedUrnResolverUrl(urn)
 }
 
 export async function copyProductionValue(value: string): Promise<boolean> {

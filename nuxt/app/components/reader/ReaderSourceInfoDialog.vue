@@ -13,6 +13,7 @@ import {
 } from "#shared/utils/renderable-html"
 import type { components } from "~/lib/api/generated/lbapi"
 import { canonicalNuxtHref } from "~/lib/internal-navigation"
+import { encodedUrnResolverUrl } from "~/lib/production-shortcuts"
 
 type SimilarWork = components["schemas"]["SimilarWork"]
 
@@ -36,6 +37,10 @@ const emptyErrataCell = emptyRenderableHtml<SanitizedHtml<"reader-source-info">>
 const visibleErrata = computed(() => {
   const errata = props.sourceInfo?.errata ?? []
   return errataOpen.value ? errata : errata.slice(0, defaultErrataLimit)
+})
+const sourceInfoUrnResolverUrl = computed(() => {
+  const urn = props.sourceInfo?.urn
+  return urn ? encodedUrnResolverUrl(urn) : null
 })
 
 const dramaLabels: Record<ReaderSourceInfoDramaFact["key"], string> = {
@@ -232,13 +237,13 @@ onMounted(() => {
                   >Libris</a>
                 </div>
 
-                <div v-if="sourceInfo.urn">
+                <div v-if="sourceInfoUrnResolverUrl">
                   <details class="urn mt-2 text-sm cursor-pointer">
                     <summary>Hänvisa till detta verk</summary>
                     <div class="cursor-auto ml-4 border-l pl-4 mt-2">
                       <p>URN är en permanent länk till ett digitalt objekt. Denna
                         {{ sourceInfo.mediaType }}s URN är:
-                        <code class="text-xs">https://urn.kb.se/resolve?urn={{ sourceInfo.urn }}</code>
+                        <code class="text-xs">{{ sourceInfoUrnResolverUrl }}</code>
                       </p>
                       <p class="mt-2">Använd denna länk när du hänvisar till verket
                         så hittar du till fram även om det skulle flyttas i framtiden.</p>

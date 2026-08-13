@@ -41,6 +41,11 @@ describe("ReaderSourceInfoDialog provenance projection", () => {
       { provenance: sourceInfoProvenance, licenses: sourceInfoLicenses },
       async () => []
     )
+    const delimiterUrn = `urn:nbn:se:lb-${"x".repeat(110)}&part=1#fragment`
+    const sourceInfoWithDelimiterUrn = {
+      ...sourceInfo,
+      urn: delimiterUrn
+    }
     const target = document.createElement("div")
     document.body.append(target)
     const NuxtLink = defineComponent({
@@ -52,7 +57,7 @@ describe("ReaderSourceInfoDialog provenance projection", () => {
         open: true,
         loading: false,
         failed: false,
-        sourceInfo
+        sourceInfo: sourceInfoWithDelimiterUrn
       })
     })
     app.component("NuxtLink", NuxtLink)
@@ -73,6 +78,9 @@ describe("ReaderSourceInfoDialog provenance projection", () => {
     expect(target.textContent).not.toContain("Det avbildade manuskriptet")
     expect(target.querySelector(".license")?.textContent).toContain(
       "Kungl. biblioteket – Dramawebben"
+    )
+    expect(target.querySelector(".urn code")?.textContent).toBe(
+      `https://urn.kb.se/resolve?urn=urn:nbn:se:lb-${"x".repeat(110)}%26part%3D1%23fragment`
     )
   })
 })
