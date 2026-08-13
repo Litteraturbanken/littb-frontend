@@ -99,6 +99,82 @@ function mechanicallyOwnedStyles(legacy: string): string {
     [
       'background-image: url("../img/dramawebben_fade.jpg") !important;',
       "background-image: var(--dramawebben-subpage-background-image, none) !important;"
+    ],
+    [
+      `.page-biblinfo {
+
+    #mainview {
+        & > * {
+            margin-bottom : 1em;
+        }
+        li {
+            margin-bottom : 0.5em;
+        }
+
+        .search {
+            margin-bottom: 1em;
+            input {
+                width : 300px;
+                margin-right : 2px;
+            }
+        }
+
+    }
+    #toolkit {
+        .num_hits {
+            margin-bottom : 1em;
+            height : 1em;
+        }
+    }
+    .results {
+
+        & > div {
+            margin-bottom : 2em;
+            padding: 1em;
+            &.even {
+                background-color : #E3E3E3;
+            }
+        }
+        h4 {
+            text-transform: uppercase;
+            color : #666;
+            font-weight: normal;
+
+        }
+        .col {
+            display: inline-block;
+            width: 49%;
+        }
+    }
+}
+
+`,
+      ""
+    ],
+    [
+      ".page-id {",
+      `#toolkit-biblinfo .biblinfo_action {
+    appearance: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #333;
+    cursor: pointer;
+    font: inherit;
+    line-height: inherit;
+    text-align: left;
+    &:hover,
+    &:focus {
+        color: $primarycolor;
+    }
+}
+
+.biblinfo_work_filter:disabled {
+    color: inherit;
+    opacity: 1;
+}
+
+.page-id {`
     ]
   ]
 
