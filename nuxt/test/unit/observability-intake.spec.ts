@@ -91,6 +91,55 @@ describe("observability intake guard", () => {
     })
   })
 
+  test("rejects an oversized chunk before copying it and closes the iterator", async () => {
+    const oversized = new Uint8Array(1_000)
+    let returned = false
+    let yielded = false
+    const uncopiable = new Proxy(oversized, {
+      get(target, property) {
+        if (property === "byteLength") return target.byteLength
+        throw new Error("oversized chunk must not be copied")
+      }
+    })
+    const request = {
+      [Symbol.asyncIterator]() {
+        return {
+          async next() {
+            if (yielded) return { done: true as const, value: undefined }
+            yielded = true
+            return { done: false as const, value: uncopiable }
+          },
+          async return() {
+            returned = true
+            return { done: true as const, value: undefined }
+          }
+        }
+      }
+    }
+    const event = { node: { req: request } } as unknown as H3Event
+
+    await expect(readBoundedRequestBody(event, 16)).rejects.toMatchObject({
+      statusCode: 413
+    })
+    expect(returned).toBe(true)
+  })
+
+  test("counts multibyte strings by UTF-8 bytes before copying", async () => {
+    const rejected = {
+      node: { req: { async *[Symbol.asyncIterator]() { yield "å" } } }
+    } as unknown as H3Event
+    const accepted = {
+      node: { req: { async *[Symbol.asyncIterator]() { yield "å" } } }
+    } as unknown as H3Event
+
+    await expect(readBoundedRequestBody(rejected, 1)).rejects.toMatchObject({
+      statusCode: 413
+    })
+    await expect(readBoundedRequestBody(accepted, 2)).resolves.toEqual(
+      Buffer.from("å")
+    )
+  })
+
   test("accepts a streamed request exactly at the configured limit", async () => {
     const request = Readable.from([Buffer.from("12345678"), Buffer.from("abcdefgh")])
     const event = { node: { req: request } } as unknown as H3Event

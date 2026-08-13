@@ -371,13 +371,16 @@ export async function readBoundedRequestBody(
   const chunks: Buffer[] = []
   let bytesRead = 0
   for await (const value of event.node.req) {
+    const chunkLength = typeof value === "string"
+      ? Buffer.byteLength(value)
+      : value.byteLength
+    if (chunkLength > maxBytes - bytesRead) {
+      throw createError({ statusCode: 413, statusMessage: "Event batch too large" })
+    }
     const chunk = typeof value === "string"
       ? Buffer.from(value)
       : Buffer.from(value as Uint8Array)
-    bytesRead += chunk.byteLength
-    if (bytesRead > maxBytes) {
-      throw createError({ statusCode: 413, statusMessage: "Event batch too large" })
-    }
+    bytesRead += chunkLength
     chunks.push(chunk)
   }
   return Buffer.concat(chunks, bytesRead)
