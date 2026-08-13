@@ -2,7 +2,7 @@
 
 ## Context
 
-The Nuxt staging site currently applies the site-wide keyboard focus treatment introduced in commit `0115f935`: a two-tone ring built from a 2px white outline and dark outer edge. The first colleague demo should instead match the current production presentation so the migration can be evaluated without a conspicuous new visual treatment.
+The Nuxt staging site currently applies the keyboard focus treatment introduced in commit `2892d1b6` and expanded site-wide in `0115f935`: a two-tone ring built from a 2px white outline and dark outer edge. The first colleague demo should instead match the current production presentation so the migration can be evaluated without a conspicuous new visual treatment.
 
 A live browser comparison on the Library page established the concrete authority. After keyboard navigation to “Visa utökad sökning,” production keeps the control focused and matching `:focus-visible` while computing no visible outline; staging renders the new 2px white outline with a 2px offset.
 
@@ -20,14 +20,16 @@ Restore production-equivalent focus visuals across the migrated default and Read
 
 ## Design
 
-The current production site is the visual authority. Revert only the production CSS changes from the site-wide focus-ring packet:
+The current production site is the visual authority. Restore the legacy production focus cascade from before the Nuxt focus-ring work:
 
 - stop importing the shared focus override into the default and Reader style bundles;
-- restore the previous default-layout and Reader focus selectors whose cascade matches production;
+- restore the legacy blanket focus suppression and the original default-layout and Reader selectors;
+- restore the original active-button, Library input, and Dramawebben control styling that was changed specifically to expose the shared ring;
+- remove the two-tone proxy ring from the transparent Library gender select while keeping the select keyboard-focusable;
 - restore the previous Dramawebben filter-control focus styling; and
 - remove the now-unused shared focus partial.
 
-This is preferable to a new global `outline: none` override because it restores the established cascade instead of layering another broad exception on top. It is preferable to a demo feature flag because no second visual mode or deployment configuration is required.
+This is preferable to adding a new override because it restores the established production cascade instead of layering another exception on top. It is preferable to a demo feature flag because no second visual mode or deployment configuration is required. The Reader slider's separate component-specific indicator is not part of the shared two-tone treatment and remains unchanged.
 
 No template, component behavior, route, data, or API code changes. Native controls remain in the same tab sequence and `document.activeElement` continues to move as before. Existing screen-reader semantics therefore remain unchanged.
 
@@ -35,7 +37,7 @@ No template, component behavior, route, data, or API code changes. Native contro
 
 Use test-driven development for the behavior change.
 
-1. Update the focused browser authority first and verify it fails against the current staging CSS. Representative default-layout, Reader, and Dramawebben controls must still be reached by keyboard navigation, but their computed visual focus styling must match the established production values rather than the new shared ring.
+1. Update the focused browser authority first and verify it fails against the current staging CSS. Representative default-layout, Library, Reader, and Dramawebben controls must still be reached by keyboard navigation, but must not render the two-tone shared ring. The transparent Library gender select must remain focused while its proxy remains visually unchanged.
 2. Apply the minimal CSS parity change and rerun the focused browser tests.
 3. Run the relevant foundation/style ownership tests to ensure the restored cascade is intentional and tracked.
 4. Run scoped lint, typecheck, the relevant browser suites, and a production build.
@@ -46,4 +48,3 @@ Tests must continue to assert actual keyboard reachability; they must not merely
 ## Rollout and reversal
 
 Ship as a normal frontend change and deploy to staging for the colleague demo. The change is intentionally a visual rollback, not removal of the accessibility work from project history. The stronger focus treatment can be reintroduced later with a less distracting design after the demo.
-
