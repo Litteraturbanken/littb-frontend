@@ -301,6 +301,7 @@ let similarWorkFailure = false
 let similarWorkMalformed = false
 let authorProfileRequests = []
 let authorProfileFailure = false
+let malformedAuthorProfileIdentity = false
 let bibliographyRequests = []
 let dictionaryRequests = []
 let bibliographyFailure = false
@@ -3101,6 +3102,14 @@ const server = createServer(async (request, response) => {
     authorProfileFailure = false
     return sendJson(response, 200, { failure: authorProfileFailure })
   }
+  if (url.pathname === "/_author_profile_malformed_identity" && request.method === "PUT") {
+    malformedAuthorProfileIdentity = true
+    return sendJson(response, 200, { malformed: malformedAuthorProfileIdentity })
+  }
+  if (url.pathname === "/_author_profile_malformed_identity" && request.method === "DELETE") {
+    malformedAuthorProfileIdentity = false
+    return sendJson(response, 200, { malformed: malformedAuthorProfileIdentity })
+  }
   if (url.pathname === "/_bibliography_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: bibliographyRequests })
   }
@@ -5746,7 +5755,11 @@ const server = createServer(async (request, response) => {
     }
 
     const profile = authorProfiles.get(profileAuthorId.authorId)
-    if (profile) return sendJson(response, 200, profile)
+    if (profile) {
+      const body = structuredClone(profile)
+      if (malformedAuthorProfileIdentity) body.author_id = ".."
+      return sendJson(response, 200, body)
+    }
     return sendJson(response, 404, {
       error: { code: "not_found", message: "Resource not found", details: null }
     })
@@ -5765,9 +5778,18 @@ const server = createServer(async (request, response) => {
     const limit = Number(url.searchParams.get("limit") || 30)
     if (resource === "stats") return sendJson(response, 200, stats)
     if (resource === "works") {
-      return sendJson(response, 200, { items: popularWorks.slice(0, limit) })
+      const items = structuredClone(popularWorks.slice(0, limit))
+      if (failure === "malformed-stat-paths" && items[0]) {
+        items[0].author.author_id = ".."
+      }
+      if (failure === "malformed-stat-paths" && items[2]) {
+        items[2].representation.media_type = ["etext"]
+      }
+      return sendJson(response, 200, { items })
     }
-    return sendJson(response, 200, { items: popularEpubs.slice(0, limit) })
+    const items = structuredClone(popularEpubs.slice(0, limit))
+    if (failure === "malformed-stat-paths" && items[0]) items[0].title_id = "."
+    return sendJson(response, 200, { items })
   }
 
   if (dramawebbenExcludedDataPaths.has(rawPathname)) {

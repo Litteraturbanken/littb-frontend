@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { request as makeHttpRequest } from "node:http"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 const resolveBase = "/api/reader/resolve/S%C3%B6derbergH"
@@ -58,6 +59,23 @@ async function sourceInfoRequests(request: APIRequestContext) {
 
 async function sourceInfoStaticRequests(request: APIRequestContext): Promise<string[]> {
   return (await (await request.get(`${fixture}/_source_info_static_requests`)).json()).requests
+}
+
+async function rawStatus(path: string): Promise<number> {
+  const base = new URL(process.env.PLAYWRIGHT_TEST_BASE_URL || "http://127.0.0.1:3000")
+  return await new Promise((resolve, reject) => {
+    const request = makeHttpRequest({
+      hostname: base.hostname,
+      port: base.port,
+      method: "GET",
+      path
+    }, response => {
+      response.resume()
+      response.once("end", () => resolve(response.statusCode ?? 0))
+    })
+    request.once("error", reject)
+    request.end()
+  })
 }
 
 async function navigateClient(page: Page, rawPath: string): Promise<void> {
@@ -293,6 +311,23 @@ test("shorthand rejects unknown media before upstream IO", async ({ request }) =
     maxRedirects: 0
   })
   expect(response.status()).toBe(404)
+  expect(await readerManifestRequests(request)).toEqual([])
+  expect(await readerRequests(request)).toEqual([])
+})
+
+test("shorthand rejects raw dot identities before resolver IO", async ({ request }) => {
+  for (const path of [
+    "/f%C3%B6rfattare/%2E/titlar/DoktorGlas/etext",
+    `${shorthandBase}/%2E%2E/etext`
+  ]) {
+    expect([400, 404]).toContain(await rawStatus(path))
+  }
+  for (const path of [
+    "/f%C3%B6rfattare/%252E/titlar/DoktorGlas/etext",
+    `${shorthandBase}/%252E%252E/etext`
+  ]) {
+    expect([400, 404]).toContain(await rawStatus(path))
+  }
   expect(await readerManifestRequests(request)).toEqual([])
   expect(await readerRequests(request)).toEqual([])
 })

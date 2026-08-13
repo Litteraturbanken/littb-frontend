@@ -3,6 +3,7 @@ import AboutPageShell from "../../components/about/AboutPageShell.vue"
 import { useLbApiClient } from "../../composables/useLbApiClient"
 import type { components } from "../../lib/api/generated/lbapi"
 import { authorProfilePath, encodeRfc3986Segment } from "../../lib/author-profile"
+import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 
 type PopularWork = components["schemas"]["PopularWork"]
 type PopularEpub = components["schemas"]["PopularEpub"]
@@ -73,8 +74,45 @@ const [statsAsync, worksAsync, epubsAsync] = await Promise.all([
 ])
 
 const statsData = computed(() => statsAsync.data.value?.value ?? null)
-const popularWorks = computed(() => worksAsync.data.value?.value?.items ?? [])
-const popularEpubs = computed(() => epubsAsync.data.value?.value?.items ?? [])
+const popularWorks = computed(() => (
+  worksAsync.data.value?.value?.items ?? []
+).filter(isSafePopularWork))
+const popularEpubs = computed(() => (
+  epubsAsync.data.value?.value?.items ?? []
+).filter(isSafePopularEpub))
+
+function isSafePathIdentity(value: unknown, maximum: number): value is string {
+  return typeof value === "string"
+    && value.length > 0
+    && value.length <= maximum
+    && value === value.trim()
+    && value !== "."
+    && value !== ".."
+    && !hasC0OrC1Control(value)
+    && !hasLoneSurrogate(value)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isSafePopularWork(item: unknown): item is PopularWork {
+  if (!isRecord(item) || !isRecord(item.author) || !isRecord(item.representation)) return false
+  const representation = item.representation
+  return isSafePathIdentity(item.author.author_id, 100)
+    && isSafePathIdentity(representation.work_id, 100)
+    && isSafePathIdentity(item.title_path, 200)
+    && typeof representation.media_type === "string"
+    && ["etext", "faksimil", "pdf"].includes(representation.media_type)
+    && (representation.start_page_name === null
+      || isSafePathIdentity(representation.start_page_name, 512))
+}
+
+function isSafePopularEpub(item: unknown): item is PopularEpub {
+  return isRecord(item) && isRecord(item.author)
+    && isSafePathIdentity(item.author.author_id, 100)
+    && isSafePathIdentity(item.title_id, 200)
+}
 
 function numberFmt(value: number): string {
   const digits = String(value)

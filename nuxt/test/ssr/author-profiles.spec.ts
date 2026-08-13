@@ -8,7 +8,8 @@ const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 async function reset(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_author_profile_requests`),
-    request.delete(`${fixture}/_author_profile_failure`)
+    request.delete(`${fixture}/_author_profile_failure`),
+    request.delete(`${fixture}/_author_profile_malformed_identity`)
   ])
 }
 
@@ -113,6 +114,15 @@ test("SSR renders the complete ordinary author profile from one private request"
   expect(document.body.textContent).not.toContain("<p>")
   expect(document.documentElement.outerHTML).not.toContain("javascript:")
   expect(await profileRequests(request)).toEqual(["/private-v2/authors/StrindbergA"])
+})
+
+test("SSR maps a malformed backend author identity to the unavailable profile", async ({
+  request
+}) => {
+  await request.put(`${fixture}/_author_profile_malformed_identity`)
+  const response = await request.get("/författare/StrindbergA")
+  expect(response.status()).toBe(503)
+  expect(await response.text()).not.toContain('href="/f%C3%B6rfattare/"')
 })
 
 test("SSR omits an unsafe backend author search URL", async ({ request }) => {

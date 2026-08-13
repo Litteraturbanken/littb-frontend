@@ -92,7 +92,12 @@ async function loadInitial(author: string, identity: string): Promise<InitialRes
       items: []
     }
   }
-  const profile = createAuthorProfileView(profileResult.data, "ordinary")
+  let profile: AuthorProfileView
+  try {
+    profile = createAuthorProfileView(profileResult.data, "ordinary")
+  } catch {
+    return { identity, status: "author-unavailable", profile: null, items: [] }
+  }
   try {
     const bibliographyResult = await client.GET("/bibliography/entries")
     const items = bibliographyItems(bibliographyResult.data)

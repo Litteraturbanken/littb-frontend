@@ -45,6 +45,9 @@ export function validRouteSegment(value: string, maximumLength: number): boolean
 }
 
 export function encodeRfc3986Segment(value: string): string {
+  if (value === "." || value === "..") {
+    throw new TypeError("URL dot segments cannot be encoded as path data")
+  }
   const scalar = hasLoneSurrogate(value) ? value.toWellFormed() : value
   return encodeURIComponent(scalar).replace(
     /[!'()*]/g,
@@ -161,6 +164,8 @@ function isIdRouteSegment(value: string): boolean {
   return value.length > 0
     && value.length <= 200
     && value === value.trim()
+    && value !== "."
+    && value !== ".."
     && !value.includes("\\")
     && !value.includes("/")
     && !hasC0OrC1Control(value)

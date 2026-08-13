@@ -7,6 +7,7 @@ async function reset(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_author_profile_requests`),
     request.delete(`${fixture}/_author_profile_failure`),
+    request.delete(`${fixture}/_author_profile_malformed_identity`),
     request.delete(`${fixture}/_bibliography_requests`),
     request.delete(`${fixture}/_bibliography_failure`),
     request.delete(`${fixture}/_bibliography_disconnect`),
@@ -43,6 +44,14 @@ test("SSR renders the author bibliographic database from typed private requests"
     .toEqual({ requests: ["/private-v2/authors/StrindbergA"] })
   expect(await (await request.get(`${fixture}/_bibliography_requests`)).json())
     .toEqual({ requests: ["/private-v2/bibliography/entries"] })
+})
+
+test("SSR rejects a malformed profile identity before bibliography IO", async ({ request }) => {
+  await request.put(`${fixture}/_author_profile_malformed_identity`)
+  const response = await request.get("/författare/StrindbergA/biblinfo")
+  expect(response.status()).toBe(503)
+  expect(await (await request.get(`${fixture}/_bibliography_requests`)).json())
+    .toEqual({ requests: [] })
 })
 
 test("bibliography fixture rejects overlong whole-text queries", async ({ request }) => {

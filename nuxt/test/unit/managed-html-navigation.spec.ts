@@ -33,6 +33,7 @@ describe("managed HTML navigation", () => {
     ["/sök?fras=röd%20sol&prefix", "/s%C3%B6k?fras=röd%20sol&prefix"],
     ["/editor/lb123/ix/4/e", "/editor/lb123/ix/4/e"],
     ["/id/Title%2520Percent", "/id/Title%2520Percent"],
+    ["/id/%252E%252E", "/id/%252E%252E"],
     ["/om/ide/", "/om/ide/"],
     [
       "https://litteraturbanken.se/om/rattigheter?from=managed",
@@ -65,6 +66,14 @@ describe("managed HTML navigation", () => {
     ["unsupported reader media", "/författare/Test/titlar/Book/pdf", {}],
     ["invalid Nuxt depth", "/id/lb123/extra", {}],
     ["unsafe ID lookup segment", "/id/a%2Fb", {}],
+    ["ID lookup dot segment", "/id/%2E%2E", {}],
+    ["relative dot segment", "../", {}],
+    ["encoded relative dot segment", "%2E%2E/", {}],
+    [
+      "absolute ID lookup dot segment",
+      "https://litteraturbanken.se/id/%2E%2E",
+      {}
+    ],
     ["invalid Editor work ID", "/editor/bad%2Fid/ix/1/e", {}]
   ])("leaves %s to native browser behavior", (_label, href, overrides) => {
     expect(target(href, overrides)).toBeNull()

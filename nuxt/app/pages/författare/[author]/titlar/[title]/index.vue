@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import type { ReaderMediaType, ReaderRouteResolution } from "#shared/types/reader"
-import { encodeRfc3986Segment } from "~/lib/internal-navigation"
+import { encodeRfc3986Segment, validRouteSegment } from "~/lib/internal-navigation"
 
 const props = defineProps<{ mediaType?: ReaderMediaType }>()
 
 definePageMeta({
   key: route => route.fullPath,
   validate: route => typeof route.params.author === "string"
-    && route.params.author.length > 0
+    && validRouteSegment(route.params.author, 100)
     && typeof route.params.title === "string"
-    && route.params.title.length > 0
+    && validRouteSegment(route.params.title, 200)
 })
 
 type UnknownRecord = Record<string, unknown>

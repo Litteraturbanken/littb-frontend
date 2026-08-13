@@ -348,10 +348,15 @@ export function safeAuthorPortraitAssetUrl(value: string): string | null {
   return href
 }
 
+function assertValidAuthorProfileIdentity(authorId: unknown): asserts authorId is string {
+  if (!validateAuthorRouteParam(authorId)) throw new TypeError("Invalid author profile identity")
+}
+
 export function createAuthorProfileView(
   profile: AuthorProfile,
   variant: AuthorProfileVariant
 ): AuthorProfileView {
+  assertValidAuthorProfileIdentity(profile.author_id)
   const dramawebben = profile.dramawebben
   const ordinaryIntroductionHtml = sanitizeAuthorHtml(profile.introduction_html)
   const dramaIntroductionHtml = sanitizeAuthorHtml(dramawebben?.introduction_html)

@@ -55,6 +55,28 @@ describe("author route validation", () => {
 })
 
 describe("author profile paths", () => {
+  test.each([".", ".."]) (
+    "rejects the URL dot segment %s instead of constructing an alternate endpoint",
+    value => {
+      expect(() => encodeRfc3986Segment(value)).toThrow(TypeError)
+      expect(() => new URL(
+        `/api/reader/resolve/Test/${encodeRfc3986Segment(value)}`,
+        "https://example.test"
+      )).toThrow(TypeError)
+    }
+  )
+
+  test.each(["version.1", "%2E", "part/name", "query?value"])(
+    "preserves the non-dot segment identity %s",
+    value => {
+      const encoded = encodeRfc3986Segment(value)
+      expect(new URL(
+        `/api/reader/resolve/Test/${encoded}`,
+        "https://example.test"
+      ).pathname).toBe(`/api/reader/resolve/Test/${encoded}`)
+    }
+  )
+
   test("uses uppercase RFC3986 escapes for every encodeURIComponent exception", () => {
     expect(authorProfilePath("O'Neil!()*A"))
       .toBe("/f%C3%B6rfattare/O%27Neil%21%28%29%2AA")
@@ -70,6 +92,12 @@ describe("author profile paths", () => {
     expect(authorProfilePath("\udfff", "titlar", "\ud800"))
       .toBe("/f%C3%B6rfattare/%EF%BF%BD/titlar/%EF%BF%BD")
   })
+})
+
+test("rejects a backend profile whose author identity is a URL dot segment", () => {
+  const profile = structuredClone(strindbergAuthorProfile) as AuthorProfile
+  profile.author_id = ".."
+  expect(() => createAuthorProfileView(profile, "ordinary")).toThrow(TypeError)
 })
 
 describe("author lifespan formatting", () => {
@@ -506,7 +534,11 @@ describe("safe author profile view model", () => {
     profile.author_id = authorId
     profile.search_url = searchUrl
 
-    expect(createAuthorProfileView(profile, "ordinary").searchUrl).toBe(expected)
+    if (validateAuthorRouteParam(authorId)) {
+      expect(createAuthorProfileView(profile, "ordinary").searchUrl).toBe(expected)
+    } else {
+      expect(() => createAuthorProfileView(profile, "ordinary")).toThrow(TypeError)
+    }
     expect(safeAuthorSearchHref(searchUrl, authorId)).toBe(expected)
   })
 

@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import type { ReaderRouteResolution } from "#shared/types/reader"
 import { isNavigationFailure } from "vue-router"
-import { encodeRfc3986Segment } from "~/lib/internal-navigation"
+import { encodeRfc3986Segment, validRouteSegment } from "~/lib/internal-navigation"
 
 definePageMeta({
   key: route => route.fullPath,
   validate: route => {
     const author = route.params.author
     const title = route.params.title
-    return typeof author === "string" && author.length > 0 &&
-      typeof title === "string" && title.length > 0 &&
+    return typeof author === "string" && validRouteSegment(author, 100) &&
+      typeof title === "string" && validRouteSegment(title, 200) &&
       (route.params.mediatype === "etext" || route.params.mediatype === "faksimil")
   }
 })
