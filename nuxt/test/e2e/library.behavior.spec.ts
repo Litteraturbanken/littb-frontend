@@ -182,13 +182,40 @@ async function legacyLibraryRequests(request: APIRequestContext) {
   }
 }
 
+function isNavigationContextDestroyed(error: unknown) {
+  return error instanceof Error && error.message.includes("Execution context was destroyed")
+}
+
 async function pushRoute(page: import("@playwright/test").Page, path: string) {
-  await page.evaluate(async nextPath => {
+  const navigationStarted = await page.evaluate(nextPath => {
     const root = document.querySelector("#__nuxt") as HTMLElement & {
       __vue_app__?: { config: { globalProperties: { $router: { push: (path: string) => Promise<void> } } } }
     }
-    await root.__vue_app__?.config.globalProperties.$router.push(nextPath)
-  }, path)
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    const navigationWindow = window as typeof window & {
+      __libraryPendingPush?: Promise<void>
+    }
+    navigationWindow.__libraryPendingPush = router.push(nextPath)
+    return true
+  }, path).catch(error => {
+    if (isNavigationContextDestroyed(error)) return false
+    throw error
+  })
+  if (!navigationStarted) return
+
+  await page.evaluate(async () => {
+    const navigationWindow = window as typeof window & {
+      __libraryPendingPush?: Promise<void>
+    }
+    if (!navigationWindow.__libraryPendingPush) {
+      throw new Error("Library router push did not start")
+    }
+    await navigationWindow.__libraryPendingPush
+  }).catch(error => {
+    if (isNavigationContextDestroyed(error)) return
+    throw error
+  })
 }
 
 function createRequestGate() {
@@ -365,12 +392,7 @@ test("client-side Library entry uses public runtime config without private-key w
 
   await page.goto("/", { waitUntil: "networkidle" })
   await reset(request)
-  await page.evaluate(async () => {
-    const root = document.querySelector("#__nuxt") as HTMLElement & {
-      __vue_app__?: { config: { globalProperties: { $router: { push: (path: string) => Promise<void> } } } }
-    }
-    await root.__vue_app__?.config.globalProperties.$router.push("/bibliotek")
-  })
+  await pushRoute(page, "/bibliotek")
   await page.locator("[data-library-result], [data-library-error]").first().waitFor()
 
   expect(warnings).toEqual([])
@@ -1539,14 +1561,7 @@ test("Back and Forward restore filter, sort, and results without client duplicat
   request
 }) => {
   await page.goto("/bibliotek?filter=Selma&sort=titlar", { waitUntil: "networkidle" })
-  await page.evaluate(async () => {
-    const root = document.querySelector("#__nuxt") as HTMLElement & {
-      __vue_app__?: { config: { globalProperties: { $router: { push: (path: string) => Promise<void> } } } }
-    }
-    await root.__vue_app__?.config.globalProperties.$router.push(
-      "/bibliotek?filter=Senaste&sort=forfattare"
-    )
-  })
+  await pushRoute(page, "/bibliotek?filter=Senaste&sort=forfattare")
   await expect(page.locator("[data-library-filter]")).toHaveValue("Senaste")
   await expect(page.getByRole("link", { name: "Senaste träffen" })).toBeVisible()
   await reset(request)
@@ -2028,6 +2043,14 @@ test("all-results canonicalizes raw page-one aliases without requesting or retai
   page,
   request
 }) => {
+  const expectCanonicalUrl = () => expect.poll(() => {
+    const url = new URL(page.url())
+    return {
+      hasPage: url.searchParams.has("sida"),
+      keep: url.searchParams.getAll("keep")
+    }
+  }).toEqual({ hasPage: false, keep: ["", "ja"] })
+
   await page.goto("/bibliotek?keep&keep=ja&filter=all-pagination", {
     waitUntil: "networkidle"
   })
@@ -2039,14 +2062,13 @@ test("all-results canonicalizes raw page-one aliases without requesting or retai
       page,
       `/bibliotek?keep&keep=ja&filter=all-pagination&${pageQuery}`
     )
-    await expect.poll(() => new URL(page.url()).searchParams.has("sida")).toBe(false)
-    expect(new URL(page.url()).searchParams.getAll("keep")).toEqual(["", "ja"])
+    await expectCanonicalUrl()
     await expect(page.locator("[data-library-result]")).toHaveCount(100)
 
     await page.goBack()
-    expect(new URL(page.url()).searchParams.has("sida")).toBe(false)
+    await expectCanonicalUrl()
     await page.goForward()
-    expect(new URL(page.url()).searchParams.has("sida")).toBe(false)
+    await expectCanonicalUrl()
   }
 
   expect(await requests(request)).toEqual([])
