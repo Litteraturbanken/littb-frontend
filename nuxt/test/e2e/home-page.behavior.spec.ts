@@ -6,7 +6,8 @@ async function resetHome(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_home_requests`),
     request.delete(`${fixture}/_home_failure`),
-    request.delete(`${fixture}/_home_hostile_background`)
+    request.delete(`${fixture}/_home_hostile_background`),
+    request.delete(`${fixture}/_home_redirect`)
   ])
 }
 
@@ -164,6 +165,21 @@ test("a public /red failure during client navigation leaves the normal empty Hom
     "/red/om/start/startsida-ny.html?"
   ))).toHaveLength(1)
   expect(problems.filter(problem => /hydration|pageerror/.test(problem))).toEqual([])
+})
+
+test("client-managed Home content refuses a redirect instead of following it", async ({
+  page,
+  request
+}) => {
+  await page.goto("/definitely-not-a-route", { waitUntil: "networkidle" })
+  await request.put(`${fixture}/_home_redirect`)
+
+  await navigateClient(page, "/")
+  await expect(page).toHaveURL("/")
+  await expect(page.locator("#client-redirect-target")).toHaveCount(0)
+  expect(await homeRequests(request)).toEqual([
+    expect.stringMatching(/^\/red\/om\/start\/startsida-ny\.html\?/)
+  ])
 })
 
 test("Home to 404 to Home cleans and restores stylesheet, background, and body state", async ({ page, request }) => {

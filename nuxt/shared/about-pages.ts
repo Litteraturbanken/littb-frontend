@@ -39,6 +39,8 @@ export const aboutPages = {
   }
 } as const
 
+export const aboutContentPaths = Object.values(aboutPages).map(page => page.contentPath)
+
 export type AboutPageKey = keyof typeof aboutPages
 export type AboutContent = ManagedAssetHtml<"about-editorial">
 

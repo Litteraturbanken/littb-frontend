@@ -313,6 +313,7 @@ let authorWorksDelays = {}
 let homeRequests = []
 let homeFailure = false
 let homeHostileBackground = false
+let homeRedirect = false
 let presentationRequests = []
 let presentationFailures = new Set()
 let presentationProductionShape = false
@@ -3261,6 +3262,14 @@ const server = createServer(async (request, response) => {
     homeHostileBackground = false
     return sendJson(response, 200, { hostileBackground: homeHostileBackground })
   }
+  if (url.pathname === "/_home_redirect" && request.method === "PUT") {
+    homeRedirect = true
+    return sendJson(response, 200, { redirect: homeRedirect })
+  }
+  if (url.pathname === "/_home_redirect" && request.method === "DELETE") {
+    homeRedirect = false
+    return sendJson(response, 200, { redirect: homeRedirect })
+  }
   if (url.pathname === "/_presentation_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: presentationRequests })
   }
@@ -4027,6 +4036,12 @@ const server = createServer(async (request, response) => {
   const home = homeContent.get(url.pathname)
   if (request.method === "GET" && home) {
     homeRequests.push(`${url.pathname}${url.search}`)
+    if (homeRedirect && url.pathname === "/red/om/start/startsida-ny.html") {
+      response.writeHead(302, {
+        location: "/red/om/start/client-redirect-target.html"
+      })
+      return response.end("redirect")
+    }
     if (homeFailure && url.pathname === "/red/om/start/startsida-ny.html") {
       return sendBody(response, 503, "text/plain; charset=utf-8", "content unavailable")
     }
@@ -4040,6 +4055,15 @@ const server = createServer(async (request, response) => {
       )
     }
     return sendBody(response, 200, home[0], home[1])
+  }
+  if (request.method === "GET" && url.pathname === "/red/om/start/client-redirect-target.html") {
+    homeRequests.push(`${url.pathname}${url.search}`)
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      '<p id="client-redirect-target">Must not render</p>'
+    )
   }
 
   const dramawebbenDocumentBody = dramawebbenDocumentContent.get(rawPathname)

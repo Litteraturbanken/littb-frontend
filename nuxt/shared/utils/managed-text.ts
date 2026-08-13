@@ -1,3 +1,5 @@
+import { aboutContentPaths } from "../about-pages"
+
 export type ManagedTextRules = Readonly<{
   authorityOrigin: string
   allowedPaths?: readonly string[]
@@ -12,17 +14,6 @@ export const maximumPresentationEditorialBytes = 96 * 1_024
 export const maximumPresentationBackgroundBytes = 8 * 1_024
 
 const homeEditorialPath = "/red/om/start/startsida-ny.html"
-const aboutEditorialPaths = [
-  "/red/om/ide/omlitteraturbanken.html",
-  "/red/om/ide/organisation.html",
-  "/red/om/rattigheter/rattigheter.html",
-  "/red/om/tack.html",
-  "/red/om/hjalp/hjalp.html",
-  "/red/om/visioner/visioner.html",
-  "/red/om/ide/english.html",
-  "/red/om/ide/deutsch.html",
-  "/red/om/ide/francais.html"
-] as const
 const presentationIndexPath = "/red/presentationer/presentationerForfattare.html"
 const presentationBackgroundPath = "/red/bilder/bakgrundsbilder/backgrounds.xml"
 
@@ -39,7 +30,7 @@ export function managedHomeTextRules(authorityOrigin: string): ManagedTextRules 
 export function managedAboutTextRules(authorityOrigin: string): ManagedTextRules {
   return {
     authorityOrigin,
-    allowedPaths: aboutEditorialPaths,
+    allowedPaths: aboutContentPaths,
     allowedPathPrefixes: [],
     allowedContentTypes: ["text/html"],
     maximumBytes: maximumAboutEditorialBytes
@@ -388,7 +379,10 @@ export async function fetchManagedText(
   const initialUrl = validatedManagedInitialUrl(url, authority, rules)
   let response: Response
   if (import.meta.client) {
-    response = await fetcher(initialUrl.href, { redirect: "follow" })
+    if (!url.startsWith("/") || url.startsWith("//") || url.startsWith("/\\")) {
+      throw new Error("Managed text client URL is not allowed")
+    }
+    response = await fetcher(url, { redirect: "error" })
   } else {
     let currentUrl = initialUrl
     let redirectCount = 0

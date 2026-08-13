@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url"
 import { describe, expect, test, vi } from "vitest"
 
 import { extractAboutBody } from "../../server/utils/about-content"
+import { aboutContentPaths } from "../../shared/about-pages"
 import {
   fetchManagedText,
   managedAboutTextRules
@@ -125,17 +126,9 @@ describe("About content authority fixtures", () => {
     expect(createHash("sha256").update(content).digest("hex")).toBe(sha256)
   })
 
-  test.each([
-    "/red/om/ide/omlitteraturbanken.html",
-    "/red/om/ide/organisation.html",
-    "/red/om/rattigheter/rattigheter.html",
-    "/red/om/tack.html",
-    "/red/om/hjalp/hjalp.html",
-    "/red/om/visioner/visioner.html",
-    "/red/om/ide/english.html",
-    "/red/om/ide/deutsch.html",
-    "/red/om/ide/francais.html"
-  ])("the named About rule accepts the declared HTML path %s", async path => {
+  test.each(aboutContentPaths)(
+    "the named About rule accepts the canonical HTML path %s",
+    async path => {
     const response = new Response("<body>Editorial</body>", {
       headers: { "content-type": "text/html; charset=utf-8" }
     })
@@ -147,6 +140,12 @@ describe("About content authority fixtures", () => {
       managedAboutTextRules("https://assets.test"),
       fetcher
     )).resolves.toBe("<body>Editorial</body>")
+    }
+  )
+
+  test("the About managed-text allowlist is exactly the canonical page registry", () => {
+    expect(managedAboutTextRules("https://assets.test").allowedPaths)
+      .toBe(aboutContentPaths)
   })
 
   test("the named About rule rejects an undeclared sibling path", async () => {
