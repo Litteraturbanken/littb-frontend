@@ -2443,6 +2443,23 @@ test("leaving a fresh Library entry aborts its pending result request without st
   }, 1_200)
   await page.goto("/om/ide", { waitUntil: "networkidle" })
 
+  await page.evaluate(() => {
+    const scope = window as typeof window & {
+      __libraryAbortControllers?: AbortController[]
+      __libraryResultAbortController?: AbortController
+    }
+    const NativeAbortController = globalThis.AbortController
+    scope.__libraryAbortControllers = []
+    Object.defineProperty(globalThis, "AbortController", {
+      configurable: true,
+      value: class TrackingAbortController extends NativeAbortController {
+        constructor() {
+          super()
+          scope.__libraryAbortControllers?.push(this)
+        }
+      }
+    })
+  })
   await page.locator(".mainnav")
     .getByRole("link", { name: "Biblioteket", exact: true })
     .click()
@@ -2451,9 +2468,24 @@ test("leaving a fresh Library entry aborts its pending result request without st
     name: "Botanisera i biblioteket"
   })).toBeVisible({ timeout: 1_000 })
   await expect(page.locator('[data-library-loading][role="status"]')).toHaveCount(1)
+  await expect.poll(async () => (
+    await libraryV2Requests(request)
+  ).search.filter(entry => entry.body.mode === "all")).toHaveLength(1)
+  expect(await page.evaluate(() => {
+    const scope = window as typeof window & {
+      __libraryAbortControllers?: AbortController[]
+      __libraryResultAbortController?: AbortController
+    }
+    const controller = scope.__libraryAbortControllers?.at(-1)
+    scope.__libraryResultAbortController = controller
+    return controller?.signal.aborted
+  })).toBe(false)
 
   await page.locator(".mainnav").getByRole("link", { name: "Om LB", exact: true }).click()
   await expect(page).toHaveURL("/om/ide")
+  await expect.poll(() => page.evaluate(() => (
+    window as typeof window & { __libraryResultAbortController?: AbortController }
+  ).__libraryResultAbortController?.signal.aborted)).toBe(true)
   await request.delete(`${fixture}/_library_v2/delays`)
   await page.waitForTimeout(1_300)
   expect(problems).toEqual([])

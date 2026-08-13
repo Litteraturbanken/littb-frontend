@@ -72,3 +72,44 @@ The requested temporary mutation changed `if (import.meta.server) await optionsA
 ## Concerns
 
 The specified mutation check did not fail in this Nuxt/runtime configuration for the reason recorded above. No other concerns found.
+
+## Fix Round 1: active teardown ownership
+
+### Change
+
+- Strengthened `leaving a fresh Library entry aborts its pending result request without stale UI`.
+- It now waits until the fixture ledger records the delayed `all` search before navigating away, proving the result request is already in flight.
+- The test replaces the page-global `AbortController` constructor after the About page has mounted, snapshots the last controller only after the in-flight search is recorded, asserts it is initially not aborted, and requires that exact result-request controller to be aborted after leaving Library.
+- The existing assertions continue to check no browser errors or stale result UI and that a return visit makes fresh options/search requests.
+
+### Mutation RED evidence
+
+Temporary production mutation: removed `disposeLibraryRequest()` from the Library `onUnmounted` hook.
+
+```sh
+PATH=/Users/johan/.nvm/versions/node/v22.22.0/bin:/opt/homebrew/bin:/usr/bin:/bin /opt/homebrew/bin/yarn playwright test test/e2e/library.behavior.spec.ts --project=desktop-chromium --grep "leaving a fresh Library entry aborts" --workers=1 --reporter=line
+```
+
+Result: `1 failed`. After the test had confirmed the delayed search ledger entry, the exact owned result controller remained `signal.aborted === false` after unmount; the assertion timed out expecting `true`. The production hook was restored immediately after this run.
+
+### GREEN evidence
+
+Restored single test:
+
+```sh
+PATH=/Users/johan/.nvm/versions/node/v22.22.0/bin:/opt/homebrew/bin:/usr/bin:/bin /opt/homebrew/bin/yarn playwright test test/e2e/library.behavior.spec.ts --project=desktop-chromium --grep "leaving a fresh Library entry aborts" --workers=1 --reporter=line
+```
+
+Result: `1 passed`.
+
+Covering focused suite after restoration:
+
+```sh
+PATH=/Users/johan/.nvm/versions/node/v22.22.0/bin:/opt/homebrew/bin:/usr/bin:/bin /opt/homebrew/bin/yarn playwright test test/e2e/library.behavior.spec.ts --project=desktop-chromium --grep "fresh (SPA Library entry|advanced Library SPA entry|Library entry aborts)" --workers=1 --reporter=line
+```
+
+Result: `3 passed`. One first attempt had a transient Playwright `page.evaluate` execution-context-destroyed failure in the pre-existing `pushRoute` helper; an immediate identical rerun passed all three tests.
+
+### Concern
+
+The test observes the owned request controller through a narrowly scoped browser instrumentation because this client binds its fetch transport before the test can replace it, and Chromium did not surface `requestfailed` for this abort path. The fixture ledger establishes that the delayed search is genuinely in flight before the controller assertion.
