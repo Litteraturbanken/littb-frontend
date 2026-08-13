@@ -4,7 +4,8 @@ import { expect, test } from "vitest"
 
 const projectRoot = resolve(import.meta.dirname, "../..")
 const repositoryRoot = resolve(projectRoot, "..")
-const nodeImage = "node:22.22.0-alpine@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34"
+const buildNodeImage = "node:22.22.0-bookworm-slim@sha256:dd9d21971ec4395903fa6143c2b9267d048ae01ca6d3ea96f16cb30df6187d94"
+const runtimeNodeImage = "node:22.22.0-alpine@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34"
 const readBuildFile = (name: string) => {
   const path = resolve(projectRoot, name)
   return existsSync(path) ? readFileSync(path, "utf8") : ""
@@ -14,23 +15,27 @@ const readRepositoryFile = (name: string) => {
   return existsSync(path) ? readFileSync(path, "utf8") : ""
 }
 
-test("staging image builds Nuxt and starts its runtime as the node user", () => {
+test("staging image uses the GNU build toolchain and starts its Alpine runtime as the node user", () => {
   const dockerfile = readBuildFile("Dockerfile")
-  const packageManifest = JSON.parse(readBuildFile("package.json")) as { packageManager: string }
+  const packageManifest = JSON.parse(readBuildFile("package.json")) as {
+    packageManager: string
+    devDependencies: Record<string, string>
+  }
 
   expect(packageManifest.packageManager).toBe("yarn@1.22.22")
-  expect(dockerfile).toContain(`FROM ${nodeImage} AS build`)
-  expect(dockerfile).toContain(`FROM ${nodeImage} AS runtime`)
+  expect(packageManifest.devDependencies["@ast-grep/cli"]).toBe("0.45.1")
+  expect(dockerfile).toContain(`FROM ${buildNodeImage} AS build`)
+  expect(dockerfile).toContain(`FROM ${runtimeNodeImage} AS runtime`)
   expect(dockerfile).toContain("RUN corepack enable && corepack prepare yarn@1.22.22 --activate")
   expect(dockerfile).toContain("RUN yarn --version && yarn install --frozen-lockfile --non-interactive")
   expect(dockerfile).toContain("RUN yarn build")
-  expect(dockerfile).toContain(`FROM ${nodeImage} AS runtime`)
+  expect(dockerfile).toContain(`FROM ${runtimeNodeImage} AS runtime`)
   expect(dockerfile).toContain("ENV NODE_ENV=production HOST=0.0.0.0 PORT=3020")
   expect(dockerfile).toContain("COPY --from=build --chown=node:node /app/.output ./.output")
   expect(dockerfile).toContain("USER node")
   expect(dockerfile).toContain("CMD [\"node\", \".output/server/index.mjs\"]")
 
-  const runtimeStage = dockerfile.split(`FROM ${nodeImage} AS runtime\n`)[1]
+  const runtimeStage = dockerfile.split(`FROM ${runtimeNodeImage} AS runtime\n`)[1]
   expect(runtimeStage.match(/^COPY .+$/gmu)).toEqual([
     "COPY --from=build --chown=node:node /app/.output ./.output"
   ])
