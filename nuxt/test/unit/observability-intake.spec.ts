@@ -39,6 +39,22 @@ function intakeRequest(): H3Event {
   } as unknown as H3Event
 }
 
+const intakeConfig = {
+  apiBase: "http://localhost:4100",
+  allowedOrigins: "",
+  deploymentEnvironment: "stage",
+  deploymentGitSha: "a".repeat(40),
+  hmacSecret: "test-observability-secret-material-0123456789",
+  hmacSecretFile: ""
+}
+
+function acceptedResponse(accepted = 1): Response {
+  return new Response(JSON.stringify({ accepted }), {
+    status: 202,
+    headers: { "content-type": "application/json" }
+  })
+}
+
 function intakeRequestWithBody(
   body: string,
   request: Readable = Readable.from([Buffer.from(body)])
@@ -173,9 +189,14 @@ describe("observability intake guard", () => {
     const firstOwner = Symbol("first request")
 
     expect(guard.reserveNewEvents([event], 1_000, firstOwner)).toEqual([event])
-    expect(guard.reserveNewEvents([event], 2_000, Symbol("duplicate"))).toEqual([])
+    expect(() => guard.reserveNewEvents([event], 2_000, Symbol("pending duplicate")))
+      .toThrowError(expect.objectContaining({ statusCode: 409 }))
     guard.release([event.event_id], firstOwner)
-    expect(guard.reserveNewEvents([event], 3_000, Symbol("retry"))).toEqual([event])
+    const retryOwner = Symbol("retry")
+    expect(guard.reserveNewEvents([event], 3_000, retryOwner)).toEqual([event])
+    guard.accept([event.event_id], retryOwner)
+    expect(guard.reserveNewEvents([event], 4_000, Symbol("accepted duplicate")))
+      .toEqual([])
     expect(guard.reserveNewEvents([event], 303_001, Symbol("expired")))
       .toEqual([event])
   })
@@ -187,11 +208,173 @@ describe("observability intake guard", () => {
     const newOwner = Symbol("new request")
 
     expect(guard.reserveNewEvents([event], 1_000, oldOwner)).toEqual([event])
+    guard.accept([event.event_id], oldOwner)
     expect(guard.reserveNewEvents([event], 301_001, newOwner)).toEqual([event])
     guard.release([event.event_id], oldOwner)
+    guard.accept([event.event_id], oldOwner)
 
-    expect(guard.reserveNewEvents([event], 301_002, Symbol("third request")))
-      .toEqual([])
+    expect(() => guard.reserveNewEvents(
+      [event],
+      301_002,
+      Symbol("third request")
+    )).toThrowError(expect.objectContaining({ statusCode: 409 }))
+  })
+
+  test("keeps mixed pending overlaps atomic and capacity owner-safe", () => {
+    const guard = new ObservabilityIntakeGuard(3)
+    const first = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd81" }
+    const second = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd82" }
+    const third = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd83" }
+    const firstOwner = Symbol("first")
+    const secondOwner = Symbol("second")
+
+    expect(guard.reserveNewEvents([first], 1_000, firstOwner)).toEqual([first])
+    guard.accept([first.event_id], firstOwner)
+    expect(guard.reserveNewEvents([second], 1_001, secondOwner)).toEqual([second])
+    expect(() => guard.reserveNewEvents(
+      [first, second, third],
+      1_002,
+      Symbol("mixed request")
+    )).toThrowError(expect.objectContaining({ statusCode: 409 }))
+    const thirdOwner = Symbol("third")
+    expect(guard.reserveNewEvents([third], 1_003, thirdOwner)).toEqual([third])
+    const fourth = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd84" }
+    expect(guard.reserveNewEvents(
+      [fourth],
+      1_004,
+      Symbol("accepted eviction")
+    )).toEqual([fourth])
+    expect(() => guard.reserveNewEvents(
+      [{ event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd85" }],
+      1_005,
+      Symbol("all pending capacity")
+    )).toThrowError(expect.objectContaining({ statusCode: 409 }))
+
+    guard.release([first.event_id], firstOwner)
+    expect(() => guard.reserveNewEvents(
+      [third],
+      1_006,
+      Symbol("third overlap")
+    )).toThrowError(expect.objectContaining({ statusCode: 409 }))
+  })
+
+  test("makes overlapping delivery retryable until the exact owner settles", async () => {
+    const guard = new ObservabilityIntakeGuard()
+    let settleFirst: ((response: Response) => void) | undefined
+    const firstResponse = new Promise<Response>(resolve => {
+      settleFirst = resolve
+    })
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>()
+      .mockReturnValueOnce(firstResponse)
+      .mockResolvedValueOnce(acceptedResponse())
+    const options = {
+      fetch: fetchImplementation,
+      guard,
+      now: () => 1_000
+    }
+
+    const firstDelivery = handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )
+    await vi.waitFor(() => expect(fetchImplementation).toHaveBeenCalledOnce())
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).rejects.toMatchObject({ statusCode: 409 })
+    expect(fetchImplementation).toHaveBeenCalledOnce()
+
+    settleFirst?.(new Response(null, { status: 503 }))
+    await expect(firstDelivery).rejects.toMatchObject({ statusCode: 502 })
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 1 })
+    expect(fetchImplementation).toHaveBeenCalledTimes(2)
+  })
+
+  test("suppresses later duplicates only after the pending owner succeeds", async () => {
+    const guard = new ObservabilityIntakeGuard()
+    let settleFirst: ((response: Response) => void) | undefined
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>()
+      .mockReturnValueOnce(new Promise<Response>(resolve => {
+        settleFirst = resolve
+      }))
+    const options = {
+      fetch: fetchImplementation,
+      guard,
+      now: () => 1_000
+    }
+
+    const firstDelivery = handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )
+    await vi.waitFor(() => expect(fetchImplementation).toHaveBeenCalledOnce())
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).rejects.toMatchObject({ statusCode: 409 })
+    settleFirst?.(acceptedResponse())
+    await expect(firstDelivery).resolves.toEqual({ accepted: 1 })
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 0 })
+    expect(fetchImplementation).toHaveBeenCalledOnce()
+  })
+
+  test("commits an upstream conflict as accepted without another delivery", async () => {
+    const guard = new ObservabilityIntakeGuard()
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 409 }))
+    const options = {
+      fetch: fetchImplementation,
+      guard,
+      now: () => 1_000
+    }
+
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 0 })
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 0 })
+    expect(fetchImplementation).toHaveBeenCalledOnce()
+  })
+
+  test("commits a successful owner before parsing its response", async () => {
+    const guard = new ObservabilityIntakeGuard()
+    const malformedSuccess = new Response("not-json", { status: 202 })
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(malformedSuccess)
+    const options = {
+      fetch: fetchImplementation,
+      guard,
+      now: () => 1_000
+    }
+
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).rejects.toMatchObject({ statusCode: 502 })
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 0 })
+    expect(fetchImplementation).toHaveBeenCalledOnce()
   })
 
   test("releases event IDs when signing preparation fails before delivery", async () => {

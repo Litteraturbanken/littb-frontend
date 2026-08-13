@@ -86,12 +86,23 @@ interface RateEntry {
   count: number
 }
 
+type EventReservation = Readonly<{
+  owner: symbol
+  reservedAt: number
+  state: "pending"
+} | {
+  acceptedAt: number
+  state: "accepted"
+}>
+
 export class ObservabilityIntakeGuard {
   readonly #clients = new Map<string, RateEntry>()
-  readonly #eventIds = new Map<string, Readonly<{
-    acceptedAt: number
-    owner: symbol
-  }>>()
+  readonly #eventIds = new Map<string, EventReservation>()
+  readonly #maxEventIds: number
+
+  constructor(maxEventIds = MAX_EVENT_IDS) {
+    this.#maxEventIds = maxEventIds
+  }
 
   enforceRate(clientKey: string, now = Date.now()): void {
     for (const [key, entry] of this.#clients) {
@@ -113,39 +124,80 @@ export class ObservabilityIntakeGuard {
     }
   }
 
+  #pruneEventIds(now: number): void {
+    for (const [eventId, reservation] of this.#eventIds) {
+      const storedAt = reservation.state === "pending"
+        ? reservation.reservedAt
+        : reservation.acceptedAt
+      if (now - storedAt >= REPLAY_WINDOW_MS) this.#eventIds.delete(eventId)
+    }
+  }
+
+  #evictAccepted(eventCount: number): void {
+    let acceptedToEvict = this.#eventIds.size + eventCount - this.#maxEventIds
+    for (const [eventId, reservation] of this.#eventIds) {
+      if (acceptedToEvict <= 0) return
+      if (reservation.state === "accepted") {
+        this.#eventIds.delete(eventId)
+        acceptedToEvict -= 1
+      }
+    }
+  }
+
   reserveNewEvents<T extends { event_id: string }>(
     events: T[],
     now: number,
     owner: symbol
   ): T[] {
-    for (const [eventId, reservation] of this.#eventIds) {
-      if (now - reservation.acceptedAt >= REPLAY_WINDOW_MS) {
-        this.#eventIds.delete(eventId)
-      }
-    }
-    const unseen: T[] = []
     const batchIds = new Set<string>()
     for (const event of events) {
       if (batchIds.has(event.event_id)) {
         throw createError({ statusCode: 422, statusMessage: "Duplicate event ID" })
       }
       batchIds.add(event.event_id)
-      if (!this.#eventIds.has(event.event_id)) unseen.push(event)
     }
+    this.#pruneEventIds(now)
+    const unseen: T[] = []
+    for (const event of events) {
+      const reservation = this.#eventIds.get(event.event_id)
+      if (reservation?.state === "pending") {
+        throw createError({ statusCode: 409, statusMessage: "Event delivery pending" })
+      }
+      if (!reservation) unseen.push(event)
+    }
+    const pendingCount = [...this.#eventIds.values()]
+      .filter(reservation => reservation.state === "pending")
+      .length
+    if (pendingCount + unseen.length > this.#maxEventIds) {
+      throw createError({ statusCode: 409, statusMessage: "Event intake busy" })
+    }
+    this.#evictAccepted(unseen.length)
     for (const event of unseen) {
-      this.#eventIds.set(event.event_id, { acceptedAt: now, owner })
-    }
-    while (this.#eventIds.size > MAX_EVENT_IDS) {
-      const oldest = this.#eventIds.keys().next().value
-      if (oldest === undefined) break
-      this.#eventIds.delete(oldest)
+      this.#eventIds.set(event.event_id, {
+        owner,
+        reservedAt: now,
+        state: "pending"
+      })
     }
     return unseen
   }
 
+  accept(eventIds: string[], owner: symbol): void {
+    for (const eventId of eventIds) {
+      const reservation = this.#eventIds.get(eventId)
+      if (reservation?.state === "pending" && reservation.owner === owner) {
+        this.#eventIds.set(eventId, {
+          acceptedAt: reservation.reservedAt,
+          state: "accepted"
+        })
+      }
+    }
+  }
+
   release(eventIds: string[], owner: symbol): void {
     for (const eventId of eventIds) {
-      if (this.#eventIds.get(eventId)?.owner === owner) {
+      const reservation = this.#eventIds.get(eventId)
+      if (reservation?.state === "pending" && reservation.owner === owner) {
         this.#eventIds.delete(eventId)
       }
     }
@@ -471,13 +523,20 @@ export async function handleObservabilityIntake(
     options.fetch ?? globalThis.fetch
   )
   if (response.status === 409) {
+    guard.accept(intakeEvents.map(item => item.event_id), reservationOwner)
     setResponseStatus(event, 202)
     return { accepted: 0 }
   }
   if (!response.ok) {
     rejectFailedForward(response, intakeEvents, guard, reservationOwner)
   }
-  const result = await response.json() as { accepted?: unknown }
+  guard.accept(intakeEvents.map(item => item.event_id), reservationOwner)
+  let result: { accepted?: unknown }
+  try {
+    result = await response.json() as { accepted?: unknown }
+  } catch {
+    throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
+  }
   const accepted = typeof result.accepted === "number"
     ? result.accepted
     : events.length
