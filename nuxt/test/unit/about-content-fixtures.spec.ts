@@ -143,9 +143,20 @@ describe("About content authority fixtures", () => {
     }
   )
 
-  test("the About managed-text allowlist is exactly the canonical page registry", () => {
-    expect(managedAboutTextRules("https://assets.test").allowedPaths)
-      .toBe(aboutContentPaths)
+  test("the About managed-text allowlist copies the immutable canonical page registry", () => {
+    const first = managedAboutTextRules("https://assets.test")
+    const second = managedAboutTextRules("https://assets.test")
+
+    expect(first.allowedPaths).toEqual(aboutContentPaths)
+    expect(first.allowedPaths).not.toBe(aboutContentPaths)
+    expect(first.allowedPaths).not.toBe(second.allowedPaths)
+    expect(Object.isFrozen(aboutContentPaths)).toBe(true)
+    expect(() => (aboutContentPaths as string[]).push("/red/om/unsafe.html"))
+      .toThrow(TypeError)
+
+    ;(first.allowedPaths as string[]).push("/red/om/local-only.html")
+    expect(second.allowedPaths).toEqual(aboutContentPaths)
+    expect(aboutContentPaths).not.toContain("/red/om/local-only.html")
   })
 
   test("the named About rule rejects an undeclared sibling path", async () => {

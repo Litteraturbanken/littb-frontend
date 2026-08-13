@@ -30,7 +30,7 @@ export function managedHomeTextRules(authorityOrigin: string): ManagedTextRules 
 export function managedAboutTextRules(authorityOrigin: string): ManagedTextRules {
   return {
     authorityOrigin,
-    allowedPaths: aboutContentPaths,
+    allowedPaths: [...aboutContentPaths],
     allowedPathPrefixes: [],
     allowedContentTypes: ["text/html"],
     maximumBytes: maximumAboutEditorialBytes
