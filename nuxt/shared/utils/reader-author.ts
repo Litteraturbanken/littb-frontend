@@ -29,5 +29,5 @@ export function readerManifestPartAuthorLabel(
 ): string {
   return preferSurname
     ? author.surname ?? author.full_name ?? author.author_id
-    : author.full_name ?? author.author_id
+    : author.full_name ?? author.surname ?? author.author_id
 }

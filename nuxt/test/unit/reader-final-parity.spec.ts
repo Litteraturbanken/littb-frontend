@@ -23,6 +23,29 @@ afterEach(() => {
 })
 
 describe("Reader final normal-parity assets", () => {
+  test("uses a readable part-author name before the opaque identity", () => {
+    const author = {
+      author_id: "OpaqueAuthorIdentity",
+      full_name: null,
+      surname: "Readable"
+    }
+
+    expect(readerManifestPartAuthorLabel(author, false)).toBe("Readable")
+    expect(readerManifestPartAuthorLabel({
+      ...author,
+      full_name: "Readable Full Name"
+    }, false)).toBe("Readable Full Name")
+    expect(readerManifestPartAuthorLabel({
+      ...author,
+      full_name: "Readable Full Name"
+    }, true)).toBe("Readable")
+    expect(author).toEqual({
+      author_id: "OpaqueAuthorIdentity",
+      full_name: null,
+      surname: "Readable"
+    })
+  })
+
   test("uses generated nullable part-author names as display fallbacks only", () => {
     const author = {
       author_id: "MissingSummaryAuthor",
