@@ -149,6 +149,96 @@ async function settleTransportLookup(
 
 test.beforeEach(async ({ request }) => reset(request))
 
+test("manual lookup keeps ownership when the initial route response settles late", async ({
+  page
+}) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+
+  await page.evaluate(() => {
+    const nativeFetch = window.fetch.bind(window)
+    let releaseInitial = () => {}
+    const initialGate = new Promise<void>(resolve => { releaseInitial = resolve })
+    let releaseManual = () => {}
+    const manualGate = new Promise<void>(resolve => { releaseManual = resolve })
+    const gate = {
+      requests: 0,
+      initialStarted: false,
+      manualStarted: false,
+      releaseInitial,
+      releaseManual,
+      restore: () => { window.fetch = nativeFetch }
+    }
+    ;(window as typeof window & { __manualIdLookupGate?: typeof gate })
+      .__manualIdLookupGate = gate
+    window.fetch = async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      if (new URL(request.url).pathname !== "/api/v2/works/lookup") {
+        return nativeFetch(input, init)
+      }
+      gate.requests += 1
+      const response = await nativeFetch(input, init)
+      if (gate.requests === 1) {
+        gate.initialStarted = true
+        await initialGate
+      } else {
+        gate.manualStarted = true
+        await manualGate
+      }
+      return response
+    }
+  })
+  try {
+    void pushRoute(page, "/id/lb238704")
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __manualIdLookupGate?: { initialStarted: boolean }
+      }).__manualIdLookupGate?.initialStarted ?? false
+    ))).toBe(true)
+
+    const idInput = page.getByPlaceholder("lbid")
+    const rows = page.locator(".table-striped tbody tr")
+    const mainview = page.locator("#mainview > div")
+    await idInput.fill("lb278171")
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __manualIdLookupGate?: { manualStarted: boolean }
+      }).__manualIdLookupGate?.manualStarted ?? false
+    ))).toBe(true)
+    await expect(rows).toHaveCount(0)
+    await expect(mainview).toHaveClass(/\bsearching\b/)
+
+    await page.evaluate(() => (
+      (window as typeof window & {
+        __manualIdLookupGate?: { releaseInitial: () => void }
+      }).__manualIdLookupGate?.releaseInitial()
+    ))
+    await expect(rows).toHaveCount(0)
+    await expect(mainview).toHaveClass(/\bsearching\b/)
+
+    await page.evaluate(() => (
+      (window as typeof window & {
+        __manualIdLookupGate?: { releaseManual: () => void }
+      }).__manualIdLookupGate?.releaseManual()
+    ))
+    await expect(rows.locator("td").first()).toHaveText("lb278171")
+    await expect(mainview).not.toHaveClass(/\bsearching\b/)
+  } finally {
+    await page.evaluate(() => {
+      const gate = (window as typeof window & {
+        __manualIdLookupGate?: {
+          releaseInitial: () => void
+          releaseManual: () => void
+          restore: () => void
+        }
+      }).__manualIdLookupGate
+      gate?.releaseInitial()
+      gate?.releaseManual()
+      gate?.restore()
+    })
+  }
+})
+
 test("mounts ID lookup before the route lookup settles", async ({ page, request }) => {
   const body = { work_id: "lb123", titles: [] }
   await request.put(`${fixture}/_work_lookup_delays`, {

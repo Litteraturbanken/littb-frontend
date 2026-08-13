@@ -169,6 +169,7 @@ async function runLookup(body: LookupBody, signal?: AbortSignal) {
 }
 
 function startLookup(body: LookupBody) {
+  cancelInitialLookup()
   cancelTimer()
   controller?.abort()
   controller = new AbortController()
@@ -176,6 +177,7 @@ function startLookup(body: LookupBody) {
 }
 
 function scheduleTitleLookup(clearRows: boolean) {
+  cancelInitialLookup()
   cancelTimer()
   invalidateRequest(clearRows)
   const body = bodyForTitles(titles.value)
@@ -199,7 +201,10 @@ function onWorkIdInput(event: Event) {
   titles.value = []
   const body = bodyForWorkId(requestWorkId(workId.value))
   if (body) startLookup(body)
-  else clearLookup()
+  else {
+    cancelInitialLookup()
+    clearLookup()
+  }
 }
 
 function onTitleInput(event: Event) {
