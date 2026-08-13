@@ -63,15 +63,27 @@ async function requestPopularEpubs() {
   }
 }
 
-const [statsAsync, worksAsync, epubsAsync] = await Promise.all([
-  useAsyncData("statistics-summary", async () => ({ value: await requestStats() })),
-  useAsyncData("statistics-popular-works", async () => ({
+const statsAsync = useAsyncData(
+  "statistics-summary",
+  async () => ({ value: await requestStats() }),
+  { lazy: true }
+)
+const worksAsync = useAsyncData(
+  "statistics-popular-works",
+  async () => ({
     value: await requestPopularWorks()
-  })),
-  useAsyncData("statistics-popular-epubs", async () => ({
+  }),
+  { lazy: true }
+)
+const epubsAsync = useAsyncData(
+  "statistics-popular-epubs",
+  async () => ({
     value: await requestPopularEpubs()
-  }))
-])
+  }),
+  { lazy: true }
+)
+
+if (import.meta.server) await Promise.all([statsAsync, worksAsync, epubsAsync])
 
 const statsData = computed(() => statsAsync.data.value?.value ?? null)
 const popularWorks = computed(() => (
@@ -80,6 +92,9 @@ const popularWorks = computed(() => (
 const popularEpubs = computed(() => (
   epubsAsync.data.value?.value?.items ?? []
 ).filter(isSafePopularEpub))
+const statisticsPending = computed(() => [statsAsync, worksAsync, epubsAsync]
+  .some(resource => resource.status.value === "idle" || resource.status.value === "pending"))
+const statisticsReady = computed(() => !statisticsPending.value)
 
 function isSafePathIdentity(value: unknown, maximum: number): value is string {
   return typeof value === "string"
@@ -150,7 +165,15 @@ function epubHref(item: PopularEpub): string {
 
 <template>
   <AboutPageShell active-page="statistik">
-  <div v-if="statsData" class="content stats unbox">
+  <div
+    v-if="statisticsPending"
+    role="status"
+    aria-live="polite"
+    aria-label="Laddar statistik"
+  >
+    Laddar statistik
+  </div>
+  <div v-else-if="statisticsReady && statsData" class="content stats unbox">
     <h3>Litteraturbanken innehåller just nu</h3>
     <ul>
       <li>{{ numberFmt(statsData.works) }} verk</li>

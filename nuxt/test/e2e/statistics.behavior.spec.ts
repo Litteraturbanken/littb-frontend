@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page, type Route } from "@playwright/test"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 const allRequests = [
@@ -36,7 +36,75 @@ async function openReadyPage(page: Page) {
   return problems
 }
 
+async function beginRouterPush(page: Page, path: string) {
+  await page.evaluate(target => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: {
+        config: { globalProperties: { $router: { push: (path: string) => Promise<void> } } }
+      }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    void router.push(target)
+  }, path)
+}
+
 test.beforeEach(async ({ request }) => resetFixture(request))
+
+test("mounts Statistics before all resources settle", async ({ page }) => {
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  await expect(page.getByRole("heading", { name: "Botanisera i biblioteket" })).toBeVisible()
+
+  const expectedResources = new Set([
+    "/api/v2/stats",
+    "/api/v2/works/popular",
+    "/api/v2/epubs/popular"
+  ])
+  const startedResources = new Set<string>()
+  let releaseRequests = () => {}
+  const requestGate = new Promise<void>(resolve => {
+    releaseRequests = resolve
+  })
+  let markAllRequestsStarted = () => {}
+  const allRequestsStarted = new Promise<void>(resolve => {
+    markAllRequestsStarted = resolve
+  })
+  const gateResponse = async (route: Route) => {
+    const response = await route.fetch()
+    const pathname = new URL(route.request().url()).pathname
+    startedResources.add(pathname)
+    if ([...expectedResources].every(resource => startedResources.has(resource))) {
+      markAllRequestsStarted()
+    }
+    await requestGate
+    await route.fulfill({ response })
+  }
+
+  await page.route("**/api/v2/stats", gateResponse)
+  await page.route("**/api/v2/works/popular**", gateResponse)
+  await page.route("**/api/v2/epubs/popular**", gateResponse)
+  try {
+    await beginRouterPush(page, "/om/statistik")
+    await allRequestsStarted
+
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toHaveCount(1)
+    await expect(page.getByRole("status", { name: "Laddar statistik" })).toHaveCount(1)
+    await expect(page.getByRole("heading", { name: "Botanisera i biblioteket" })).toHaveCount(0)
+    await expect(page.locator(".content.stats")).toHaveCount(0)
+    expect(startedResources).toEqual(expectedResources)
+
+    releaseRequests()
+    const lists = page.locator(".content.stats > ul")
+    await expect(lists.nth(0).locator("li")).toHaveCount(6)
+    await expect(lists.nth(1).locator("li")).toHaveCount(30)
+    await expect(lists.nth(2).locator("li")).toHaveCount(30)
+  } finally {
+    releaseRequests()
+    await page.unroute("**/api/v2/epubs/popular**", gateResponse)
+    await page.unroute("**/api/v2/works/popular**", gateResponse)
+    await page.unroute("**/api/v2/stats", gateResponse)
+  }
+})
 
 test("renders exact copy, order, URLs, metadata, and no hydration errors", async ({
   page,
