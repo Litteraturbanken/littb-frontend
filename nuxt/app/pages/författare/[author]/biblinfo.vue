@@ -115,7 +115,8 @@ const { data } = await useAsyncData<InitialResult>(
   async () => {
     const identity = currentIdentity.value
     return await loadInitial(authorId.value, identity)
-  }
+  },
+  { lazy: true }
 )
 
 const accepted = computed(() => data.value?.identity === currentIdentity.value ? data.value : null)
@@ -269,7 +270,13 @@ useHead({
 
 <template>
   <div>
-    <div v-if="!accepted" class="searching" aria-live="polite">
+    <div
+      v-if="!accepted"
+      class="searching"
+      role="status"
+      aria-live="polite"
+      aria-label="Laddar bibliografisk databas"
+    >
       <div class="preloader">
         <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
         <span class="sr-only">Laddar bibliografisk databas</span>

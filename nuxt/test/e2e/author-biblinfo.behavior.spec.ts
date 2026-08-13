@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page, type Route } from "@playwright/test"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 
@@ -31,6 +31,38 @@ function collectProblems(page: Page): string[] {
   return problems
 }
 
+async function beginRouterPush(page: Page, path: string) {
+  await page.evaluate(target => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: {
+        config: {
+          globalProperties: {
+            $router: { push: (path: string) => Promise<void> }
+          }
+        }
+      }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    void router?.push(target)
+  }, path)
+}
+
+async function routerPush(page: Page, path: string) {
+  await page.evaluate(async target => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: {
+        config: {
+          globalProperties: {
+            $router: { push: (path: string) => Promise<void> }
+          }
+        }
+      }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    await router?.push(target)
+  }, path)
+}
+
 test.beforeAll(async ({ baseURL, browser, request }) => {
   await reset(request)
   const context = await browser.newContext()
@@ -45,6 +77,80 @@ test.beforeAll(async ({ baseURL, browser, request }) => {
   }
 })
 test.beforeEach(async ({ request }) => reset(request))
+
+test("mounts Biblinfo while its initial pipeline is pending", async ({ page }) => {
+  await page.goto("/f%C3%B6rfattare/StrindbergA/biblinfo", { waitUntil: "networkidle" })
+  await routerPush(page, "/f%C3%B6rfattare/DramaOnly/dramawebben")
+  await expect(page.getByRole("heading", { name: "Dramatikern" })).toHaveCount(1)
+
+  let releaseAuthor = () => {}
+  const authorGate = new Promise<void>(resolve => {
+    releaseAuthor = resolve
+  })
+  let markAuthorStarted = () => {}
+  const authorStarted = new Promise<void>(resolve => {
+    markAuthorStarted = resolve
+  })
+  let markAuthorDelivered = () => {}
+  const authorDelivered = new Promise<void>(resolve => {
+    markAuthorDelivered = resolve
+  })
+  const authorRoute = async (route: Route) => {
+    const response = await route.fetch()
+    markAuthorStarted()
+    await authorGate
+    await route.fulfill({ response })
+    markAuthorDelivered()
+  }
+
+  let releaseBibliography = () => {}
+  const bibliographyGate = new Promise<void>(resolve => {
+    releaseBibliography = resolve
+  })
+  let markBibliographyStarted = () => {}
+  const bibliographyStarted = new Promise<void>(resolve => {
+    markBibliographyStarted = resolve
+  })
+  let markBibliographyDelivered = () => {}
+  const bibliographyDelivered = new Promise<void>(resolve => {
+    markBibliographyDelivered = resolve
+  })
+  const bibliographyRoute = async (route: Route) => {
+    const response = await route.fetch()
+    markBibliographyStarted()
+    await bibliographyGate
+    await route.fulfill({ response })
+    markBibliographyDelivered()
+  }
+
+  await page.route("**/api/v2/authors/**", authorRoute)
+  await page.route("**/api/v2/bibliography/entries**", bibliographyRoute)
+  try {
+    await beginRouterPush(page, "/f%C3%B6rfattare/NoIntro/biblinfo")
+    await authorStarted
+
+    await expect(page).toHaveURL("/f%C3%B6rfattare/NoIntro/biblinfo")
+    await expect(page.locator("body")).toHaveClass(/page-authorInfo/u)
+    await expect(page.getByRole("status", { name: "Laddar bibliografisk databas" })).toHaveCount(1)
+    await expect(page.getByRole("heading", { name: "Dramatikern" })).toHaveCount(0)
+
+    releaseAuthor()
+    await authorDelivered
+    await bibliographyStarted
+
+    await expect(page.getByRole("status", { name: "Laddar bibliografisk databas" })).toHaveCount(1)
+
+    releaseBibliography()
+    await bibliographyDelivered
+    await expect(page.getByRole("heading", { name: "Författare utan introduktion" })).toHaveCount(1)
+    await expect(page.locator(".num_hits")).toHaveText("3 träffar")
+  } finally {
+    releaseAuthor()
+    releaseBibliography()
+    await page.unroute("**/api/v2/bibliography/entries**", bibliographyRoute)
+    await page.unroute("**/api/v2/authors/**", authorRoute)
+  }
+})
 
 test("hydrates once and preserves the legacy one-hit, next, previous, and all controls", async ({
   page,
