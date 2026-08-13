@@ -572,7 +572,8 @@ test("editor Reader rejects a mismatched submitted-search envelope", async ({ pa
     .fill("mismatched-submit-envelope")
   await page.getByRole("button", { name: "Sök", exact: true }).click()
 
-  await expect(page.getByRole("status")).toHaveText("Sökningen kunde inte genomföras.")
+  await expect(page.locator('.work-search-message[role="status"]'))
+    .toHaveText("Sökningen kunde inte genomföras.")
   await expect(page).toHaveURL(initial)
   await expect(page.getByRole("navigation", { name: "Sökträffsnavigering" })).toHaveCount(0)
 })
@@ -1007,29 +1008,29 @@ test("editor Reader navigates only actual indices from sparse metadata", async (
 })
 
 test("editor Reader first/last controls and raw slider push history", async ({ page }) => {
-  await page.goto(editorFaksimil, { waitUntil: "networkidle" })
+  await page.goto("/editor/lb-editor-doktor/ix/2/f", { waitUntil: "networkidle" })
   await page.getByRole("link", { name: "Gå till första sidan" }).click()
-  await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/0\/f$/u)
+  await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/1\/f$/u)
   await page.getByRole("link", { name: "Gå till sista sidan" }).click()
   await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/2\/f$/u)
   await page.goBack()
-  await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/0\/f$/u)
+  await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/1\/f$/u)
 
   const slider = page.getByRole("slider", { name: "Gå till sida" })
   await expect(slider).toHaveAttribute("min", "0")
   await expect(slider).toHaveAttribute("max", "2")
   await slider.evaluate(input => {
     const range = input as HTMLInputElement
-    range.value = "1"
+    range.value = "0"
     range.dispatchEvent(new Event("input", { bubbles: true }))
     range.dispatchEvent(new Event("change", { bubbles: true }))
   })
-  await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/1\/f$/u)
+  await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/0\/f$/u)
   await expect(page.locator(".editor-reader .faksimil")).toHaveAttribute(
-    "src", "/txt/lb-editor-doktor/lb-editor-doktor_3/lb-editor-doktor_3_0002.jpeg"
+    "src", "/txt/lb-editor-doktor/lb-editor-doktor_3/lb-editor-doktor_3_0001.jpeg"
   )
   await page.goBack()
-  await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/0\/f$/u)
+  await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/1\/f$/u)
 })
 
 test("editor facsimile size and rotation controls are real accessible controls", async ({

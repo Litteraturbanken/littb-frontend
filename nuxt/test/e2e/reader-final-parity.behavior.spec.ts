@@ -83,9 +83,11 @@ test("Läsfokus replaces its query state and exposes text, night, and page contr
   const transformAfter = await reader.evaluate(element => getComputedStyle(element).transform)
   expect(transformAfter).not.toBe(transformBefore)
 
-  await textMenu.getByRole("button", { name: "Nattläge" }).click()
+  const nightMode = textMenu.getByRole("button", { name: "Nattläge" })
+  await nightMode.click()
   await expect(page.locator("body")).toHaveClass(/\bnight\b/u)
-  await expect(textMenu.getByRole("button", { name: "Ljust läge" })).toBeVisible()
+  await expect(nightMode).toHaveAttribute("aria-pressed", "true")
+  await expect(nightMode).toContainText("Ljust läge")
 
   const nextHref =
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext" +

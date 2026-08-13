@@ -331,7 +331,7 @@ test("same-mode replacements clear old rows while loading and latest response wi
   await titleInput.fill("Gösta Berlings saga")
   await expect.poll(async () => (await lookupBodies(request)).length).toBe(2)
   await expect(page.locator(".table-striped tbody tr")).toHaveCount(0)
-  await expect(page.getByRole("status")).toContainText("Hämtar resultat")
+  await expect(page.locator('.preloader[role="status"]')).toContainText("Hämtar resultat")
   await expect(page.locator("#mainview > div")).toHaveClass(/\bsearching\b/)
   await expect(page.locator(".preloader")).toBeVisible()
 

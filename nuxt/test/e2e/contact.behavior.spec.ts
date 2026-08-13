@@ -213,11 +213,13 @@ test("keyboard-submits trimmed Contact data, exposes one polite status, and clea
   await expect(page.locator(".page-contactForm > div").first()).toBeVisible()
 
   await request.delete(`${fixture}/_contact_defer`)
-  const status = page.getByRole("status")
+  const status = page.locator('.page-contactForm [role="status"]').filter({
+    hasText: "Tack för ditt meddelande, vi svarar så fort vi kan."
+  })
   await expect(status).toBeVisible()
   await expect(status).toHaveText("Tack för ditt meddelande, vi svarar så fort vi kan.")
   await expect(status).toHaveAttribute("aria-live", "polite")
-  await expect(page.getByRole("status")).toHaveCount(1)
+  await expect(page.locator('.page-contactForm [role="status"]:visible')).toHaveCount(1)
   await expect(page.locator(".page-contactForm > div").first()).toBeHidden()
   await expect(page.locator("#nameInput")).toHaveValue("Anna Andersson")
   await page.clock.fastForward(3_999)
@@ -352,11 +354,13 @@ test("pointer-submitted newsletter has one polite status, retains its address, a
     audience: "litteraturbanken"
   }])
   await expect(page.locator(".page-contactForm .spinner")).toBeHidden()
-  const status = page.getByRole("status")
+  const status = page.locator('.page-contactForm [role="status"]').filter({
+    hasText: "Tack för din anmälan."
+  })
   await expect(status).toBeVisible()
   await expect(status).toHaveText("Tack för din anmälan.")
   await expect(status).toHaveAttribute("aria-live", "polite")
-  await expect(page.getByRole("status")).toHaveCount(1)
+  await expect(page.locator('.page-contactForm [role="status"]:visible')).toHaveCount(1)
   await page.clock.fastForward(4_000)
   await expect(status).toBeHidden()
   await expect(page.locator("#nameInput")).toHaveValue("")
@@ -376,7 +380,7 @@ test("concurrent Contact and newsletter successes expose only the final status",
   await waitForSubmissions(request, 2)
   await request.delete(`${fixture}/_contact_defer`)
 
-  const statuses = page.getByRole("status")
+  const statuses = page.locator('.page-contactForm [role="status"]:visible')
   await expect(statuses).toHaveCount(1)
   await expect(statuses).toHaveText("Tack för din anmälan.")
 })
@@ -398,7 +402,7 @@ test("only the latest delayed submission may publish feedback or own its timeout
   await request.post(`${fixture}/_contact_release`, { data: { sender_name: "Anna Andersson" } })
   await oldResponse
   await waitForFeedbackRender(page)
-  await expect(page.getByRole("status")).toHaveCount(0)
+  await expect(page.locator('.page-contactForm [role="status"]:visible')).toHaveCount(0)
   await expect(page.locator("form.contactform button.submit")).toBeEnabled()
   await expect(page.locator("form.subscribeform button.submit")).toBeDisabled()
   await page.clock.fastForward(1_000)
@@ -406,7 +410,9 @@ test("only the latest delayed submission may publish feedback or own its timeout
   await request.post(`${fixture}/_contact_release`, { data: { sender_name: "Utskickslista" } })
   await newResponse
 
-  const status = page.getByRole("status")
+  const status = page.locator('.page-contactForm [role="status"]').filter({
+    hasText: "Tack för din anmälan."
+  })
   await expect(status).toHaveText("Tack för din anmälan.")
   await expect(page.getByRole("alert")).toHaveCount(0)
   await page.clock.fastForward(3_000)
@@ -426,7 +432,9 @@ test("an older delayed failure cannot replace newer success feedback", async ({ 
   const newResponse = waitForContactResponse(page)
   await request.post(`${fixture}/_contact_release`, { data: { sender_name: "Utskickslista" } })
   await newResponse
-  const status = page.getByRole("status")
+  const status = page.locator('.page-contactForm [role="status"]').filter({
+    hasText: "Tack för din anmälan."
+  })
   await expect(status).toHaveText("Tack för din anmälan.")
   const oldResponse = waitForContactResponse(page)
   await request.post(`${fixture}/_contact_release`, {

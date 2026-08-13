@@ -95,6 +95,7 @@ const aboutContent = computed(() =>
 )
 const helpSubmenu = computed(() => pageKey.value === "hjalp" ? extractHelpSubmenu(aboutContent.value) : [])
 const navigateManagedHtml = useManagedHtmlNavigation()
+const helpContentComponent = useTemplateRef<{ $el: HTMLElement }>("help-content")
 
 async function scrollToHelpAnchor(value: unknown): Promise<boolean> {
   if (
@@ -135,13 +136,35 @@ watch(
 const removePageLoadingHook = useNuxtApp().hook("page:loading:end", () => {
   void scrollToHelpAnchor(route.query.ankare)
 })
-onBeforeUnmount(() => removePageLoadingHook())
+let helpResizeObserver: ResizeObserver | null = null
+onMounted(() => {
+  if (!helpContentComponent.value) return
+  let observedHeight: number | null = null
+  helpResizeObserver = new ResizeObserver(entries => {
+    const height = entries[0]?.contentRect.height
+    if (height === undefined) return
+    if (observedHeight === null) {
+      observedHeight = height
+      return
+    }
+    if (height === observedHeight) return
+    helpResizeObserver?.disconnect()
+    helpResizeObserver = null
+    void scrollToHelpAnchor(route.query.ankare)
+  })
+  helpResizeObserver.observe(helpContentComponent.value.$el)
+})
+onBeforeUnmount(() => {
+  helpResizeObserver?.disconnect()
+  removePageLoadingHook()
+})
 </script>
 
 <template>
   <AboutPageShell :active-page="selectedPage.activePage">
     <RenderableHtmlContent
       v-if="pageKey === 'hjalp'"
+      ref="help-content"
       as="div"
       :html="aboutContent"
       class="help_content content unbox page-help"

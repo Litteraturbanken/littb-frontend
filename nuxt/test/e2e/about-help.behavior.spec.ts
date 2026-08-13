@@ -240,8 +240,68 @@ test("client navigation retries help anchor scrolling after delayed content rend
 
   await expect(page).toHaveURL("/om/hjalp?ankare=Epub")
   await expectAnchorOffset(page, "Epub")
-  expect(await loggedContentRequests(request)).toEqual([contentPath])
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => {
+    requestAnimationFrame(() => resolve())
+  })))
+  await page.locator(".help_content").evaluate(element => {
+    const lateLayout = document.createElement("div")
+    lateLayout.dataset.testLateHelpLayout = ""
+    lateLayout.style.height = "200px"
+    element.prepend(lateLayout)
+  })
+  await expectAnchorOffset(page, "Epub")
+
+  await navigateClient(page, "/om/ide")
+  await expect(page).toHaveURL("/om/ide")
+  await navigateClient(page, "/om/hjalp?ankare=Etext")
+  await expect(page).toHaveURL("/om/hjalp?ankare=Etext")
+  await expectAnchorOffset(page, "Etext")
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => {
+    requestAnimationFrame(() => resolve())
+  })))
+  await page.locator(".help_content").evaluate(element => {
+    const laterLayout = document.createElement("div")
+    laterLayout.dataset.testLaterHelpLayout = ""
+    laterLayout.style.height = "100px"
+    element.prepend(laterLayout)
+  })
+  await expectAnchorOffset(page, "Etext")
+  expect(await loggedContentRequests(request)).toEqual(Array(2).fill(contentPath))
   expect(problems).toEqual([])
+})
+
+test("client Help navigation corrects one late content resize and rearms after returning", async ({
+  page
+}) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+
+  for (let visit = 0; visit < 2; visit += 1) {
+    await navigateClient(page, "/om/hjalp?ankare=Epub")
+    await expect(page).toHaveURL("/om/hjalp?ankare=Epub")
+    await expectAnchorOffset(page, "Epub")
+
+    await page.locator(".help_content").evaluate((element, marker) => {
+      document.documentElement.style.overflowAnchor = "none"
+      document.body.style.overflowAnchor = "none"
+      ;(element as HTMLElement).style.overflowAnchor = "none"
+      const spacer = document.createElement("div")
+      spacer.dataset.helpResize = marker
+      spacer.style.height = "200px"
+      element.prepend(spacer)
+    }, `visit-${visit}`)
+    await expectAnchorOffset(page, "Epub")
+
+    const retainedScroll = await page.evaluate(() => window.scrollY)
+    await page.locator(".help_content").evaluate(element => {
+      const spacer = document.createElement("div")
+      spacer.style.height = "100px"
+      element.prepend(spacer)
+    })
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(retainedScroll)
+
+    await navigateClient(page, "/om/ide")
+    await expect(page).toHaveURL("/om/ide")
+  }
 })
 
 test("client navigation to a missing help anchor keeps the cross-page top reset", async ({

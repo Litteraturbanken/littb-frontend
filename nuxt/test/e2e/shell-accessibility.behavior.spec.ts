@@ -10,8 +10,13 @@ async function expectMinimumTargetHeight(locator: Locator, minimum = 24) {
     const target = locator.nth(index)
     if (!await target.isVisible()) continue
     const box = await target.boundingBox()
-    expect(box, `target ${index} should have layout geometry`).not.toBeNull()
-    expect(box!.height, `target ${index} should be at least ${minimum}px high`)
+    const identity = await target.evaluate(element => ({
+      className: element.className,
+      tagName: element.tagName,
+      text: element.textContent?.trim()
+    }))
+    expect(box, `target ${index} ${JSON.stringify(identity)} should have layout geometry`).not.toBeNull()
+    expect(box!.height, `target ${index} ${JSON.stringify(identity)} should be at least ${minimum}px high`)
       .toBeGreaterThanOrEqual(minimum)
   }
 }

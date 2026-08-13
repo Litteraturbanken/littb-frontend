@@ -279,7 +279,7 @@ test("public shell shortcuts preserve guards, remembered Library queries, and hi
   await page.goForward()
   await expectRememberedLibrary()
 
-  const search = page.getByRole("textbox", { name: "Skriv författarnamn eller titel" })
+  const search = page.getByRole("textbox", { name: "Sök i biblioteket" })
   await search.focus()
   await page.keyboard.press("h")
   await expect(search).toHaveValue("h")
