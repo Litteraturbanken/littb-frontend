@@ -1,6 +1,62 @@
 import { describe, expect, onTestFinished, test, vi } from "vitest"
 
 describe("ReaderFocusControls link ownership", () => {
+  test("anchors controls to the visual viewport and releases viewport listeners", async () => {
+    const [{ createApp, h, nextTick, ref, watch }, { default: ReaderFocusControls }] =
+      await Promise.all([
+        import("vue"),
+        import("../../app/components/reader/ReaderFocusControls.vue")
+      ])
+    vi.stubGlobal("ref", ref)
+    vi.stubGlobal("watch", watch)
+    const viewport = Object.assign(new EventTarget(), {
+      height: 664,
+      offsetLeft: 4,
+      offsetTop: 6,
+      width: 390
+    })
+    vi.stubGlobal("visualViewport", viewport)
+    vi.stubGlobal("innerHeight", 780)
+    vi.stubGlobal("innerWidth", 458)
+    const removeViewportListener = vi.spyOn(viewport, "removeEventListener")
+    onTestFinished(() => vi.unstubAllGlobals())
+    const target = document.createElement("div")
+    document.body.append(target)
+    const app = createApp({
+      setup: () => () => h(ReaderFocusControls, {
+        barVisible: true,
+        largerSizeEnabled: false,
+        mediaType: "faksimil",
+        nextHref: null,
+        nightMode: false,
+        parts: [],
+        previousHref: null,
+        smallerSizeEnabled: false,
+        startHref: null
+      })
+    })
+    app.mount(target)
+    await nextTick()
+
+    const layer = document.querySelector<HTMLElement>(".reader-focus-layer")!
+    expect(layer.style.getPropertyValue("--reader-focus-bottom")).toBe("110px")
+    expect(layer.style.getPropertyValue("--reader-focus-center")).toBe("199px")
+    expect(layer.style.getPropertyValue("--reader-focus-left")).toBe("4px")
+    expect(layer.style.getPropertyValue("--reader-focus-right")).toBe("64px")
+    expect(layer.style.getPropertyValue("--reader-focus-top")).toBe("6px")
+    expect(layer.style.getPropertyValue("--reader-focus-width")).toBe("390px")
+
+    viewport.height = 600
+    viewport.dispatchEvent(new Event("resize"))
+    await nextTick()
+    expect(layer.style.getPropertyValue("--reader-focus-bottom")).toBe("174px")
+
+    app.unmount()
+    target.remove()
+    expect(removeViewportListener).toHaveBeenCalledWith("resize", expect.any(Function))
+    expect(removeViewportListener).toHaveBeenCalledWith("scroll", expect.any(Function))
+  })
+
   test("intercepts only unmodified primary page-link clicks", async () => {
     const [{ createApp, h, nextTick, ref, watch }, { default: ReaderFocusControls }] =
       await Promise.all([

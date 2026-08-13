@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted, shallowRef, type CSSProperties } from "vue"
+
 type FocusPart = Readonly<{
   href: string
   label: string
@@ -27,10 +29,58 @@ const emit = defineEmits<{
 
 const settingsOpen = ref(false)
 const partsOpen = ref(false)
+type FocusViewportStyle = CSSProperties & Record<`--reader-focus-${string}`, string>
+const focusViewportStyle = shallowRef<FocusViewportStyle>({})
+let focusViewportFrame: number | null = null
+
+function syncFocusViewport(): void {
+  const viewport = window.visualViewport
+  if (!viewport) {
+    focusViewportStyle.value = {}
+    return
+  }
+  focusViewportStyle.value = {
+    "--reader-focus-bottom": `${Math.max(0, window.innerHeight - viewport.offsetTop - viewport.height)}px`,
+    "--reader-focus-center": `${viewport.offsetLeft + viewport.width / 2}px`,
+    "--reader-focus-left": `${viewport.offsetLeft}px`,
+    "--reader-focus-right": `${Math.max(0, window.innerWidth - viewport.offsetLeft - viewport.width)}px`,
+    "--reader-focus-top": `${viewport.offsetTop}px`,
+    "--reader-focus-width": `${viewport.width}px`
+  }
+}
+
+function scheduleFocusViewportSync(): void {
+  if (focusViewportFrame !== null) cancelAnimationFrame(focusViewportFrame)
+  focusViewportFrame = requestAnimationFrame(() => {
+    focusViewportFrame = null
+    syncFocusViewport()
+  })
+}
+
+onMounted(() => {
+  syncFocusViewport()
+  document.addEventListener("load", syncFocusViewport, true)
+  window.addEventListener("resize", syncFocusViewport)
+  window.visualViewport?.addEventListener("resize", syncFocusViewport)
+  window.visualViewport?.addEventListener("scroll", syncFocusViewport)
+})
+
+onBeforeUnmount(() => {
+  if (focusViewportFrame !== null) cancelAnimationFrame(focusViewportFrame)
+  document.removeEventListener("load", syncFocusViewport, true)
+  window.removeEventListener("resize", syncFocusViewport)
+  window.visualViewport?.removeEventListener("resize", syncFocusViewport)
+  window.visualViewport?.removeEventListener("scroll", syncFocusViewport)
+})
 
 watch(() => props.mediaType, () => {
   settingsOpen.value = false
 })
+watch(
+  [() => props.smallerSizeEnabled, () => props.largerSizeEnabled],
+  scheduleFocusViewportSync,
+  { flush: "post" }
+)
 
 function navigatePage(event: MouseEvent, href: string): void {
   if (
@@ -49,7 +99,7 @@ function navigatePage(event: MouseEvent, href: string): void {
 
 <template>
   <Teleport to="body">
-    <div class="reader-focus-layer" @click.stop>
+    <div class="reader-focus-layer" :style="focusViewportStyle" @click.stop>
       <button
         type="button"
         class="focus-bar-toggle"

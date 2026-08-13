@@ -655,12 +655,12 @@
         background: white;
         border: 1px solid #999;
         border-bottom: 0;
-        bottom: 0;
+        bottom: var(--reader-focus-bottom, 0);
         color: #333;
         cursor: pointer;
         font-size: 20px;
         height: 28px;
-        left: 50%;
+        left: var(--reader-focus-center, 50%);
         padding: 0;
         position: fixed;
         transform: translateX(-50%);
@@ -668,42 +668,44 @@
         z-index: 251;
 
         &.bar-visible {
-            bottom: 76px;
+            bottom: calc(var(--reader-focus-bottom, 0px) + 76px);
         }
     }
 
     .leftCover,
     .rightCover {
-        bottom: 0;
+        bottom: var(--reader-focus-bottom, 0);
         position: fixed;
-        top: 0;
+        top: var(--reader-focus-top, 0);
         width: 10%;
         z-index: 240;
     }
 
     .leftCover {
-        left: 0;
+        left: var(--reader-focus-left, 0);
     }
 
     .rightCover {
-        right: 0;
+        right: var(--reader-focus-right, 0);
     }
 
     .bottomBar {
         background-color: white;
         border-radius: 0;
         border-top: 1px solid #999;
-        bottom: 0;
+        bottom: var(--reader-focus-bottom, 0);
         box-shadow: 1px 1px 9px 1px #666;
         box-sizing: border-box;
         font-size: 34px;
-        left: 0;
-        margin: 0 auto;
+        left: var(--reader-focus-center, 50%);
+        margin: 0;
         max-height: 100px;
         padding: 1%;
         position: fixed;
-        right: 0;
+        max-width: var(--reader-focus-width, 100%);
+        right: auto;
         text-align: center;
+        transform: translateX(-50%);
         width: 380px;
         z-index: 250;
 
