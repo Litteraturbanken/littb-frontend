@@ -1,4 +1,4 @@
-import { hasC0OrDelete } from "#shared/utils/text-safety"
+import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 
 export const DEFAULT_LIBRARY_HREF = "/bibliotek"
 
@@ -29,7 +29,11 @@ export function rememberedLibraryHref(value: string): string | null {
 
   try {
     const decoded = decodeURIComponent(href)
-    if (decoded.includes("\\") || hasC0OrDelete(decoded)) return null
+    if (
+      decoded.includes("\\")
+      || hasC0OrC1Control(decoded)
+      || hasLoneSurrogate(decoded)
+    ) return null
   }
   catch {
     return null

@@ -3691,6 +3691,7 @@ const server = createServer(async (request, response) => {
       "backslash-media-url-200",
       "dot-segment-media-url-200",
       "dot-segment-infopost-url-200",
+      "lone-surrogate-infopost-url-200",
       "reordered-infopost-query-200",
       "additive-catalog-fields-200",
       "array-media-type-200",
@@ -4927,6 +4928,15 @@ const server = createServer(async (request, response) => {
         .find(media => media.media_type === "infopost")
       infopost.url = "/dramawebben/%2e%2e/dramawebben/pj%C3%A4ser?om-boken"
         + "&authorid=Alml%C3%B6fN&titlepath=Affarer"
+      return sendJson(response, 200, catalog)
+    }
+    if (dramawebbenCatalogFailure === "lone-surrogate-infopost-url-200") {
+      const catalog = dramawebbenCatalogFixture()
+      const infopost = catalog.works
+        .flatMap(work => work.media)
+        .find(media => media.media_type === "infopost")
+      infopost.url = "/dramawebben/pj%C3%A4ser?om-boken"
+        + "&authorid=Unsafe\ud800Marker&titlepath=Affarer"
       return sendJson(response, 200, catalog)
     }
     if (dramawebbenCatalogFailure === "reordered-infopost-query-200") {

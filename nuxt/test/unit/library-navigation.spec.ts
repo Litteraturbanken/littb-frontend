@@ -12,7 +12,9 @@ describe("rememberedLibraryHref", () => {
 
     expect(rememberedLibraryHref(href)).toBe(href)
     expect(rememberedLibraryHref(DEFAULT_LIBRARY_HREF)).toBe(DEFAULT_LIBRARY_HREF)
-    expect(rememberedLibraryHref("/bibliotek?c1=\u0080")).toBe("/bibliotek?c1=\u0080")
+    expect(rememberedLibraryHref("/bibliotek?emoji=😀")).toBe("/bibliotek?emoji=😀")
+    expect(rememberedLibraryHref("/bibliotek?emoji=%F0%9F%98%80"))
+      .toBe("/bibliotek?emoji=%F0%9F%98%80")
   })
 
   it("removes fragments while retaining the canonical query", () => {
@@ -30,7 +32,11 @@ describe("rememberedLibraryHref", () => {
     "//example.test/bibliotek",
     "/bibliotek?broken=%ZZ",
     "/bibliotek?unsafe=%00",
-    "/bibliotek?unsafe=%5C"
+    "/bibliotek?unsafe=%5C",
+    "/bibliotek?unsafe=\u0080",
+    "/bibliotek?unsafe=%C2%80",
+    "/bibliotek?unsafe=\ud800",
+    "/bibliotek?unsafe=\udc00"
   ])("rejects non-canonical or unsafe href %s", href => {
     expect(rememberedLibraryHref(href)).toBeNull()
   })

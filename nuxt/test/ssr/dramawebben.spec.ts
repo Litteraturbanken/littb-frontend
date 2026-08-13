@@ -426,6 +426,22 @@ test("SSR rejects infopost paths containing URL-normalized dot segments", async 
   await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
 })
 
+test("SSR rejects an infopost URL before a lone surrogate is normalized", async ({
+  request
+}) => {
+  await setCatalogFailure(request, "lone-surrogate-infopost-url-200")
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(502)
+  const html = await response.text()
+  expectManagedShell(html, "pjäser", neutralError)
+  expect(html).not.toContain("Unsafe")
+  expect(html).not.toContain("%EF%BF%BD")
+  expect(html).not.toContain("\uFFFD")
+  expect(await catalogRequests(request)).toHaveLength(1)
+  await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
+
 test("SSR accepts safe infopost query keys in any order", async ({ request }) => {
   await setCatalogFailure(request, "reordered-infopost-query-200")
   const response = await request.get("/dramawebben/pjäser")

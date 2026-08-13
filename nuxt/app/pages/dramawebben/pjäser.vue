@@ -30,8 +30,9 @@ import { readerSourceInfoIsOpen } from "~/lib/reader-routes"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 import { validRouteSegment } from "#shared/utils/route-segment"
 import {
-  hasC0OrDelete,
-  hasEcmaWhitespace
+  hasC0OrC1Control,
+  hasEcmaWhitespace,
+  hasLoneSurrogate
 } from "#shared/utils/text-safety"
 
 type Catalog = components["schemas"]["DramawebbenCatalogResponse"]
@@ -105,7 +106,8 @@ function safeCatalogUrlShape(url: string): boolean {
   return url.startsWith("/")
     && !url.startsWith("//")
     && !url.includes("\\")
-    && !hasC0OrDelete(url)
+    && !hasC0OrC1Control(url)
+    && !hasLoneSurrogate(url)
     && !hasEcmaWhitespace(url)
 }
 
