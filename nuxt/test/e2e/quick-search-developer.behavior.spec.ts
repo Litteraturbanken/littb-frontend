@@ -158,6 +158,28 @@ test("lb lookup offers Editor and bounded FTP actions with inline success and fa
   await expect(page.getByRole("dialog", { name: "Snabbsökning" })).toBeVisible()
 })
 
+test("a dotted typed FTP identity never exposes or navigates to an invalid Editor route", async ({
+  page
+}) => {
+  await page.route("**/api/dev/red-ftp?**", route => route.fulfill({
+    status: 200,
+    contentType: "application/json; charset=utf-8",
+    body: JSON.stringify({ entries: [] })
+  }))
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  const initialUrl = page.url()
+  await openQuickSearch(page)
+  await page.locator("#autocomplete").fill("lb123.foo")
+
+  const options = page.locator('.quick-search-options [role="option"]')
+  await expect(options.filter({ hasText: "Gå till faksimileditorn" })).toHaveCount(0)
+  await expect(options.filter({ hasText: "Sök i ftp" })).toHaveCount(1)
+  await page.keyboard.press("Enter")
+
+  await expect(page).toHaveURL(initialUrl)
+  await expect(page.getByRole("dialog", { name: "Snabbsökning" })).toBeVisible()
+})
+
 test("hydrated Reader Dramawebben navigation stays inside the SPA", async ({ page }, testInfo) => {
   await page.goto(dramaReaderPath, { waitUntil: "networkidle" })
   await page.evaluate(() => {

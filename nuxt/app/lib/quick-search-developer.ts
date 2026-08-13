@@ -1,4 +1,5 @@
-import { hasC0OrC1Control } from "#shared/utils/text-safety"
+import { isEditorRouteIdentity } from "#shared/utils/editor-route-identity"
+import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 
 export type DeveloperJsonValue =
   | null
@@ -128,10 +129,7 @@ export function editorDestination(
   pageIndex: number,
   mediaType: "etext" | "faksimil"
 ): string | null {
-  if (!safeWorkId.test(workId)
-    || !Number.isSafeInteger(pageIndex)
-    || pageIndex < 0
-    || pageIndex > 1_000_000) return null
+  if (!isEditorRouteIdentity(workId, String(pageIndex), mediaType[0])) return null
   return `/editor/${encodeURIComponent(workId)}/ix/${pageIndex}/${mediaType[0]}`
 }
 
@@ -181,13 +179,15 @@ export function developerQuickSearchCommands(
   )
   if (safeWorkId.test(query.trim())) {
     const workId = query.trim()
-    output.push({
+    const editorUrl = editorDestination(workId, 0, "faksimil")
+    if (editorUrl) output.push({
       id: `developer-editor-${workId}`,
       label: workId,
       typeLabel: "[Red.] Gå till faksimileditorn",
-      url: editorDestination(workId, 0, "faksimil"),
+      url: editorUrl,
       action: null
-    }, {
+    })
+    output.push({
       id: `developer-ftp-${workId}`,
       label: workId,
       typeLabel: "[Red.] Sök i ftp",
@@ -196,6 +196,25 @@ export function developerQuickSearchCommands(
     })
   }
   return output
+}
+
+function decodedFtpSegment(value: string): string | null {
+  try {
+    const decoded = decodeURIComponent(value)
+    if (decoded === "."
+      || decoded === ".."
+      || decoded.includes("/")
+      || decoded.includes("\\")
+      || hasC0OrC1Control(decoded)
+      || hasLoneSurrogate(decoded)) return null
+    return decoded
+  } catch {
+    return null
+  }
+}
+
+function encodedFtpPath(segments: readonly string[]): string {
+  return `//${segments.map(encodeURIComponent).join("/")}`
 }
 
 export function isRedFtpQuery(value: unknown): value is string {
@@ -212,13 +231,14 @@ export function parseRedFtpResponse(source: string): RedFtpEntry[] | null {
   const entries: RedFtpEntry[] = []
   for (const line of lines) {
     if (line.length > maximumFtpPathLength || !line.startsWith("/mnt/")) return null
-    const segments = line.split("/")
-    if (segments.some(segment => segment === "." || segment === "..")) return null
-    const url = line.replace(/^\/mnt/u, "//mnt")
-    const urlSegments = url.split("/")
-    const breadcrumbs = urlSegments.slice(5).map((label, index) => ({
+    const rawSegments = line.slice(1).split("/")
+    const segments = rawSegments.map(decodedFtpSegment)
+    if (segments.some(segment => segment === null)) return null
+    const safeSegments = segments as string[]
+    const url = encodedFtpPath(safeSegments)
+    const breadcrumbs = safeSegments.slice(3).map((label, index) => ({
       label,
-      url: urlSegments.slice(0, index + 6).join("/")
+      url: encodedFtpPath(safeSegments.slice(0, index + 4))
     })).slice(0, -1)
     entries.push({ url, breadcrumbs })
   }
