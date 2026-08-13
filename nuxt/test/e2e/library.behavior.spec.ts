@@ -8,9 +8,8 @@ type LibrarySearchRequest = operations["v2_post_library_search"]["requestBody"][
 type LibraryCountRequest = operations["v2_post_library_counts"]["requestBody"]["content"]["application/json"]
 type LibraryFilters = LibraryCountRequest["filters"]
 
-async function expectFocusRingNotClipped(locator: Locator) {
+async function expectFocusTargetNotClipped(locator: Locator) {
   expect(await locator.evaluate((element) => {
-    const ringOutset = 4
     const ring = element.getBoundingClientRect()
     const clippedBy: string[] = []
 
@@ -20,10 +19,10 @@ async function expectFocusRingNotClipped(locator: Locator) {
 
       const boundary = ancestor.getBoundingClientRect()
       if (
-        ring.left - ringOutset < boundary.left ||
-        ring.top - ringOutset < boundary.top ||
-        ring.right + ringOutset > boundary.right ||
-        ring.bottom + ringOutset > boundary.bottom
+        ring.left < boundary.left ||
+        ring.top < boundary.top ||
+        ring.right > boundary.right ||
+        ring.bottom > boundary.bottom
       ) {
         clippedBy.push(ancestor.className)
       }
@@ -33,22 +32,20 @@ async function expectFocusRingNotClipped(locator: Locator) {
   })).toEqual([])
 }
 
-async function expectKeyboardFocusRing(locator: Locator) {
+async function expectKeyboardFocusWithoutSharedRing(locator: Locator) {
   expect(await locator.evaluate((element) => {
     const style = getComputedStyle(element)
     return {
-      boxShadow: style.boxShadow,
-      outlineColor: style.outlineColor,
-      outlineOffset: style.outlineOffset,
-      outlineStyle: style.outlineStyle,
-      outlineWidth: style.outlineWidth
+      focusVisible: element.matches(":focus-visible"),
+      sharedOutline: style.outlineStyle === "solid"
+        && style.outlineWidth === "2px"
+        && style.outlineOffset === "2px",
+      sharedShadow: style.boxShadow.includes("0px 0px 0px 4px")
     }
   })).toEqual({
-    boxShadow: "rgb(51, 51, 51) 0px 0px 0px 4px",
-    outlineColor: "rgb(255, 255, 255)",
-    outlineOffset: "2px",
-    outlineStyle: "solid",
-    outlineWidth: "2px"
+    focusVisible: true,
+    sharedOutline: false,
+    sharedShadow: false
   })
 }
 
@@ -1040,20 +1037,20 @@ test("Works titles are black keyboard disclosures linked to their representation
   await page.locator("[data-library-sort]").last().focus()
   await page.keyboard.press("Tab")
   await expect(toggle).toBeFocused()
-  await expectKeyboardFocusRing(toggle)
-  await expectFocusRingNotClipped(toggle)
+  await expectKeyboardFocusWithoutSharedRing(toggle)
+  await expectFocusTargetNotClipped(toggle)
 
   await page.keyboard.press("Tab")
   const year = work.getByRole("link", { name: "1905", exact: true })
   await expect(year).toBeFocused()
-  await expectKeyboardFocusRing(year)
-  await expectFocusRingNotClipped(year)
+  await expectKeyboardFocusWithoutSharedRing(year)
+  await expectFocusTargetNotClipped(year)
 
   await page.keyboard.press("Tab")
   const author = work.getByRole("link", { name: "Söderberg", exact: true })
   await expect(author).toBeFocused()
-  await expectKeyboardFocusRing(author)
-  await expectFocusRingNotClipped(author)
+  await expectKeyboardFocusWithoutSharedRing(author)
+  await expectFocusTargetNotClipped(author)
   await page.keyboard.press("Shift+Tab")
   await expect(year).toBeFocused()
   await page.keyboard.press("Shift+Tab")

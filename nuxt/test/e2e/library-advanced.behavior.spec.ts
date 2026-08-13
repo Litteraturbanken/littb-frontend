@@ -88,14 +88,15 @@ test("inert Library tooltip hosts join keyboard order and reveal their full text
   await expect(title).toBeFocused()
   await expect(page.getByRole("tooltip")).toHaveText("Doktor Glas. Roman")
   await expect(title).toHaveAttribute("aria-describedby", await page.getByRole("tooltip").getAttribute("id"))
-  await expect(title).toHaveCSS("outline-style", "solid")
-  await expect(title).toHaveCSS("outline-width", "2px")
+  await expect(title).toHaveCSS("outline-style", "none")
+  await expect(title).toHaveCSS("box-shadow", "none")
 
   await tabTo(page, author, 10)
   await expect(author).toBeFocused()
   await expect(page.getByRole("tooltip")).toHaveText("Hjalmar Söderberg (1869-1941)")
   await expect(author).toHaveAttribute("aria-describedby", await page.getByRole("tooltip").getAttribute("id"))
-  await expect(author).toHaveCSS("outline-style", "solid")
+  await expect(author).toHaveCSS("outline-style", "none")
+  await expect(author).toHaveCSS("box-shadow", "none")
   await page.keyboard.press("Tab")
   await expect(page.getByRole("tooltip")).toHaveCount(0)
   await expect(title).not.toHaveAttribute("aria-describedby", /library-tooltip-/)
@@ -184,7 +185,7 @@ test("advanced disclosure and controls use push history and restore from the URL
   }
 })
 
-test("keyboard focus on the transparent gender select is visible on its proxy", async ({
+test("keyboard focus on the transparent gender select matches the production proxy", async ({
   page
 }) => {
   await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })
@@ -196,10 +197,10 @@ test("keyboard focus on the transparent gender select is visible on its proxy", 
   const gender = page.locator("[data-library-gender]")
   await expect(gender).toBeFocused()
   const visual = page.locator("[data-library-gender-visual]")
-  await expect(visual).toHaveCSS("outline-style", "solid")
-  await expect(visual).toHaveCSS("outline-width", "2px")
-  await expect(visual).toHaveCSS("outline-offset", "2px")
-  await expect(visual).toHaveCSS("box-shadow", "rgb(51, 51, 51) 0px 0px 0px 4px")
+  expect(await visual.evaluate(element => {
+    const style = getComputedStyle(element)
+    return { outlineStyle: style.outlineStyle, boxShadow: style.boxShadow }
+  })).toEqual({ outlineStyle: "none", boxShadow: "none" })
 })
 
 test("multi facets and chronology compose exact safe predicates and commit once per change", async ({

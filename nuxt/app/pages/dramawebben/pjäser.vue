@@ -974,8 +974,6 @@ useHead(() => ({
   background: transparent;
   font-family: inherit;
   font-size: inherit;
-}
-.catalog_select input.select2-selection__rendered:not(:focus-visible) {
   outline: 0;
 }
 .catalog_select .select2-selection__arrow {
@@ -1112,9 +1110,9 @@ useHead(() => ({
   background-image: none !important;
   background-size: auto !important;
 }
-.controls .filter_btn:focus:not(:focus-visible) {
-  outline: 0;
-  box-shadow: none;
+:deep(.controls .filter_btn:focus) {
+  outline: 0 !important;
+  box-shadow: none !important;
 }
 @media (max-width: 639px) {
   .catalog_page.catalog_plays::after {

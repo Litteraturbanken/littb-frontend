@@ -365,27 +365,6 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
     opacity: 0;
 }
 
-[data-library-advanced-panel]
-    .library-gender-control
-    select[data-library-gender]:focus-visible
-    + .selection
-    [data-library-gender-visual] {
-    outline: 2px solid #fff;
-    outline-offset: 2px;
-    box-shadow: 0 0 0 4px #333;
-}
-
-@media (forced-colors: active) {
-    [data-library-advanced-panel]
-        .library-gender-control
-        select[data-library-gender]:focus-visible
-        + .selection
-        [data-library-gender-visual] {
-        outline-color: Highlight;
-        box-shadow: none;
-    }
-}
-
 .library-gender-control .selection {
     display: block;
     height: 31px;

@@ -21,30 +21,30 @@ async function expectMinimumTargetHeight(locator: Locator, minimum = 24) {
   }
 }
 
-async function expectKeyboardFocusRing(page: import("@playwright/test").Page, target: Locator) {
+async function expectKeyboardFocusWithoutSharedRing(
+  page: import("@playwright/test").Page,
+  target: Locator
+) {
   await expect(target).toHaveCount(1)
 
   for (let tab = 0; tab < 80; tab += 1) {
     await page.keyboard.press("Tab")
-    if (await target.evaluate((element) => element === document.activeElement)) {
-      await expect.poll(async () => target.evaluate((element) => (
-        getComputedStyle(element).outlineOffset
-      ))).toBe("2px")
-
-      const style = await target.evaluate((element) => {
-        const computed = getComputedStyle(element)
+    if (await target.evaluate(element => element === document.activeElement)) {
+      await expect(target).toBeFocused()
+      expect(await target.evaluate(element => {
+        const style = getComputedStyle(element)
         return {
-          outlineStyle: computed.outlineStyle,
-          outlineWidth: computed.outlineWidth,
-          outlineOffset: computed.outlineOffset,
-          boxShadow: computed.boxShadow
+          focusVisible: element.matches(":focus-visible"),
+          sharedOutline: style.outlineStyle === "solid"
+            && style.outlineWidth === "2px"
+            && style.outlineOffset === "2px",
+          sharedShadow: style.boxShadow.includes("0px 0px 0px 4px")
         }
+      })).toEqual({
+        focusVisible: true,
+        sharedOutline: false,
+        sharedShadow: false
       })
-
-      expect(style.outlineStyle).toBe("solid")
-      expect(Number.parseFloat(style.outlineWidth)).toBeGreaterThanOrEqual(2)
-      expect(style.outlineOffset).toBe("2px")
-      expect(style.boxShadow).toContain("4px")
       return
     }
   }
@@ -70,7 +70,7 @@ test("audited shell and reader links meet the 24px touch-target floor", async ({
   await expectMinimumTargetHeight(page.locator(".subnav > ul > li > a"))
 })
 
-test("keyboard focus remains visibly identifiable outside the Library", async ({ page }) => {
+test("keyboard focus matches production outside the Library", async ({ page }) => {
   await page.goto("/om/ide", { waitUntil: "networkidle" })
 
   await page.keyboard.press("Tab")
@@ -81,46 +81,55 @@ test("keyboard focus remains visibly identifiable outside the Library", async ({
   const style = await focused.evaluate((element) => {
     const computed = getComputedStyle(element)
     return {
-      outlineStyle: computed.outlineStyle,
-      outlineWidth: computed.outlineWidth,
-      outlineOffset: computed.outlineOffset
+      focusVisible: element.matches(":focus-visible"),
+      sharedOutline: computed.outlineStyle === "solid"
+        && computed.outlineWidth === "2px"
+        && computed.outlineOffset === "2px",
+      sharedShadow: computed.boxShadow.includes("0px 0px 0px 4px")
     }
   })
 
-  expect(style.outlineStyle).toBe("solid")
-  expect(Number.parseFloat(style.outlineWidth)).toBeGreaterThan(0)
-  expect(Number.parseFloat(style.outlineOffset)).toBeGreaterThanOrEqual(2)
+  expect(style).toEqual({ focusVisible: true, sharedOutline: false, sharedShadow: false })
 })
 
-test("keyboard focus remains visibly identifiable in the Reader layout", async ({ page }) => {
+test("keyboard focus matches production in the Reader layout", async ({ page }) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
 
-  await expectKeyboardFocusRing(page, page.locator('nav[aria-label="Huvudnavigation"] a').first())
+  await expectKeyboardFocusWithoutSharedRing(
+    page,
+    page.locator('nav[aria-label="Huvudnavigation"] a').first()
+  )
 })
 
-test("keyboard focus preserves the shared ring on default-layout inputs", async ({ page }) => {
+test("keyboard focus matches production on default-layout inputs", async ({ page }) => {
   await page.goto("/om/kontakt", { waitUntil: "networkidle" })
 
-  await expectKeyboardFocusRing(page, page.locator('input[type="email"]').first())
+  await expectKeyboardFocusWithoutSharedRing(page, page.locator('input[type="email"]').first())
 })
 
-test("keyboard focus preserves the shared ring on Dramawebben filter controls", async ({ page }) => {
+test("keyboard focus matches production on Dramawebben filter controls", async ({ page }) => {
   await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
 
-  await expectKeyboardFocusRing(page, page.locator(".controls .filter_btn"))
+  await expectKeyboardFocusWithoutSharedRing(page, page.locator(".controls .filter_btn"))
 })
 
-test("keyboard focus preserves the shared ring on the active Library tab", async ({ page }) => {
+test("keyboard focus matches production on the active Library tab", async ({ page }) => {
   await page.goto("/bibliotek?visa=works", { waitUntil: "networkidle" })
 
-  await expectKeyboardFocusRing(page, page.locator('[data-library-tab="works"]'))
+  await expectKeyboardFocusWithoutSharedRing(page, page.locator('[data-library-tab="works"]'))
 })
 
-test("keyboard focus preserves the shared ring on both Dramawebben text inputs", async ({
+test("keyboard focus matches production on both Dramawebben text inputs", async ({
   page
 }) => {
   await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
 
-  await expectKeyboardFocusRing(page, page.getByRole("combobox", { name: "Författare" }))
-  await expectKeyboardFocusRing(page, page.getByRole("textbox", { name: "Sök", exact: true }))
+  await expectKeyboardFocusWithoutSharedRing(
+    page,
+    page.getByRole("combobox", { name: "Författare" })
+  )
+  await expectKeyboardFocusWithoutSharedRing(
+    page,
+    page.getByRole("textbox", { name: "Sök", exact: true })
+  )
 })
