@@ -31,7 +31,7 @@ test("History renders the exact SSR shell without reading browser history", asyn
   expect(document.querySelector("#leftCorridor .lb-logo")).not.toBeNull()
   expect(document.querySelector("#rightCorridor")).not.toBeNull()
 
-  const wrapper = document.querySelector("#mainview > div")
+  const wrapper = document.querySelector("#mainview h1")?.parentElement ?? null
   expect(wrapper).not.toBeNull()
   expect(wrapper?.querySelector(":scope > h1")?.textContent).toBe("Senast lästa verk")
   expect(wrapper?.querySelector(":scope > ul")).toBeNull()
