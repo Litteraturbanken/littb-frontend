@@ -372,7 +372,8 @@ const sourceInfoFetch = await useAsyncData<CatalogSourceInfoResult>(
     } finally {
       if (sourceInfoController === controller) sourceInfoController = null
     }
-  }
+  },
+  { lazy: true }
 )
 if (sourceInfoFetch.data.value?.status === "success") {
   retainedSourceInfo.value = sourceInfoFetch.data.value
@@ -451,7 +452,7 @@ async function closeCatalogSourceInfo(): Promise<void> {
   sourceInfoTrigger = null
 }
 
-const { data } = await useAsyncData<CatalogResult>(
+const { data, status } = await useAsyncData<CatalogResult>(
   "dramawebben-catalog",
   async () => {
     try {
@@ -464,13 +465,17 @@ const { data } = await useAsyncData<CatalogResult>(
       return { status: 503, catalog: null }
     }
   },
-  { getCachedData: (key, nuxtApp) => nuxtApp.payload.data[key] as CatalogResult | undefined }
+  {
+    lazy: true,
+    getCachedData: (key, nuxtApp) => nuxtApp.payload.data[key] as CatalogResult | undefined
+  }
 )
 
 const result = computed<CatalogResult>(() => data.value ?? { status: 503, catalog: null })
 if (import.meta.server && result.value.status !== 200) setResponseStatus(result.value.status)
 
 const catalog = computed(() => result.value.catalog)
+const catalogPending = computed(() => status.value === "idle" || status.value === "pending")
 const listType = computed<"pjäser" | "författare">(() => (
   oneQuery(route.query.visa) === "författare" ? "författare" : "pjäser"
 ))
@@ -711,7 +716,13 @@ useHead(() => ({
   <component :is="Fragment">
     <span id="dw" class="drama_hash_target" aria-hidden="true" />
     <DramawebbenShell page="pjäser">
-    <div v-if="catalog" class="catalog_page" :class="{ catalog_plays: listType === 'pjäser' }">
+    <div v-if="catalogPending" class="searching" role="status" aria-live="polite">
+      <div class="preloader">
+        <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
+        <span class="sr-only">Laddar Dramawebbens katalog</span>
+      </div>
+    </div>
+    <div v-else-if="catalog" class="catalog_page" :class="{ catalog_plays: listType === 'pjäser' }">
       <p class="max-w-prose mb-8">
         I Dramawebben hittar du pjäser som har mer metadata, till exempel information om
         hur många roller det är. Det finns många fler pjäser i Litteraturbanken som du

@@ -373,6 +373,120 @@ test("the catalog hydrates once from SSR without a browser or legacy data reques
   expect(problems).toEqual([])
 })
 
+test("mounts the catalog shell before the catalog request settles", async ({ page }) => {
+  let releaseCatalog = () => {}
+  const catalogGate = new Promise<void>(resolve => { releaseCatalog = resolve })
+  let catalogStarted = () => {}
+  const catalogRequestStarted = new Promise<void>(resolve => { catalogStarted = resolve })
+  let gateCatalog = false
+  const catalogRoute = async (route: import("@playwright/test").Route) => {
+    if (!gateCatalog) {
+      await route.abort()
+      return
+    }
+    const response = await route.fetch()
+    catalogStarted()
+    await catalogGate
+    await route.fulfill({ response })
+  }
+
+  await page.route("**/api/v2/dramawebben/catalog", catalogRoute)
+  let navigation: Promise<void> | null = null
+  try {
+    await page.goto("/om/ide", { waitUntil: "networkidle" })
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+
+    gateCatalog = true
+    navigation = routerPush(page, "/dramawebben/pj%C3%A4ser")
+    await catalogRequestStarted
+
+    await expect(page.locator("#mainview > .subpage")).toHaveCount(1)
+    const catalogStatus = page.locator(".page_content > [role='status']")
+    await expect(catalogStatus).toHaveCount(1)
+    await expect(catalogStatus).toHaveText("Laddar Dramawebbens katalog")
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toHaveCount(0)
+    await expect(page.locator("table.contenttable")).toHaveCount(0)
+
+    releaseCatalog()
+    await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+  } finally {
+    releaseCatalog()
+    await navigation?.catch(() => undefined)
+    await page.unroute("**/api/v2/dramawebben/catalog", catalogRoute)
+  }
+})
+
+test("source information does not suspend the catalog after it settles", async ({ page }) => {
+  let releaseCatalog = () => {}
+  const catalogGate = new Promise<void>(resolve => { releaseCatalog = resolve })
+  let releaseSourceInfo = () => {}
+  const sourceInfoGate = new Promise<void>(resolve => { releaseSourceInfo = resolve })
+  const startedResources = new Set<string>()
+  let gateCatalog = false
+  const markStarted = (resource: string) => {
+    startedResources.add(resource)
+  }
+  const catalogRoute = async (route: import("@playwright/test").Route) => {
+    if (!gateCatalog) {
+      await route.abort()
+      return
+    }
+    const response = await route.fetch()
+    markStarted("catalog")
+    await catalogGate
+    await route.fulfill({ response })
+  }
+  const sourceInfoRoute = async (route: import("@playwright/test").Route) => {
+    const response = await route.fetch()
+    markStarted("source-info")
+    await sourceInfoGate
+    await route.fulfill({ response })
+  }
+
+  await page.route("**/api/v2/dramawebben/catalog", catalogRoute)
+  await page.route(
+    "**/nuxt-api/reader/source-info/Alml%C3%B6fN/Affarer",
+    sourceInfoRoute
+  )
+  let navigation: Promise<void> | null = null
+  try {
+    await page.goto("/om/ide", { waitUntil: "networkidle" })
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+
+    gateCatalog = true
+    navigation = routerPush(
+      page,
+      "/dramawebben/pj%C3%A4ser?om-boken&authorid=Alml%C3%B6fN&titlepath=Affarer"
+    )
+    await expect.poll(() => [...startedResources].sort(), { timeout: 2_000 })
+      .toEqual(["catalog", "source-info"])
+
+    await expect(page.locator("#mainview > .subpage")).toHaveCount(1)
+    const catalogStatus = page.locator(".page_content > [role='status']")
+    await expect(catalogStatus).toHaveCount(1)
+    await expect(catalogStatus).toHaveText("Laddar Dramawebbens katalog")
+    expect(startedResources).toEqual(new Set(["catalog", "source-info"]))
+
+    releaseCatalog()
+    await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+    const dialog = page.getByRole("dialog", { name: "Om boken", exact: true })
+    await expect(dialog).toBeVisible()
+    await expect(dialog.locator(".preloader")).toContainText("Hämtar")
+
+    releaseSourceInfo()
+    await expect(dialog).toContainText("Affärer")
+  } finally {
+    releaseCatalog()
+    releaseSourceInfo()
+    await navigation?.catch(() => undefined)
+    await page.unroute(
+      "**/nuxt-api/reader/source-info/Alml%C3%B6fN/Affarer",
+      sourceInfoRoute
+    )
+    await page.unroute("**/api/v2/dramawebben/catalog", catalogRoute)
+  }
+})
+
 test("a visible infopost link owns only its query keys and close restores catalog filters", async ({
   page,
   request
