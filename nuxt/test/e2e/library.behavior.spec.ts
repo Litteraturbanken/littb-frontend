@@ -186,7 +186,61 @@ function isNavigationContextDestroyed(error: unknown) {
   return error instanceof Error && error.message.includes("Execution context was destroyed")
 }
 
-async function pushRoute(page: import("@playwright/test").Page, path: string) {
+type RouteDestination = {
+  description: string
+  matches: (url: URL) => boolean
+}
+
+function requestedRoute(path: string): RouteDestination {
+  const expected = new URL(path, "http://localhost")
+  return {
+    description: path,
+    matches: url => url.pathname === expected.pathname &&
+      url.searchParams.toString() === expected.searchParams.toString()
+  }
+}
+
+function hasExactQueryParameters(url: URL, expected: Array<[string, string]>) {
+  const sort = ([leftKey, leftValue]: [string, string], [rightKey, rightValue]: [string, string]) =>
+    leftKey.localeCompare(rightKey) || leftValue.localeCompare(rightValue)
+  const actual = [...url.searchParams.entries()].sort(sort)
+  const wanted = [...expected].sort(sort)
+  return actual.length === wanted.length && actual.every(([key, value], index) =>
+    key === wanted[index]?.[0] && value === wanted[index]?.[1]
+  )
+}
+
+function canonicalAllResultsRoute(
+  filter: string,
+  keep: string[],
+  page: string | null
+): RouteDestination {
+  const expected: Array<[string, string]> = [
+    ["filter", filter],
+    ...keep.map(value => ["keep", value] as [string, string]),
+    ...(page === null ? [] : [["sida", page] as [string, string]])
+  ]
+  return {
+    description: `canonical all-results route for ${filter}`,
+    matches: url => url.pathname === "/bibliotek" && hasExactQueryParameters(url, expected)
+  }
+}
+
+async function waitForRouteDestination(
+  page: import("@playwright/test").Page,
+  destination: RouteDestination,
+  timeout?: number
+) {
+  if (destination.matches(new URL(page.url()))) return
+  await page.waitForURL(url => destination.matches(url), { timeout })
+}
+
+async function pushRoute(
+  page: import("@playwright/test").Page,
+  path: string,
+  destination = requestedRoute(path),
+  timeout?: number
+) {
   const navigationStarted = await page.evaluate(nextPath => {
     const root = document.querySelector("#__nuxt") as HTMLElement & {
       __vue_app__?: { config: { globalProperties: { $router: { push: (path: string) => Promise<void> } } } }
@@ -202,7 +256,10 @@ async function pushRoute(page: import("@playwright/test").Page, path: string) {
     if (isNavigationContextDestroyed(error)) return false
     throw error
   })
-  if (!navigationStarted) return
+  if (!navigationStarted) {
+    await waitForRouteDestination(page, destination, timeout)
+    return
+  }
 
   await page.evaluate(async () => {
     const navigationWindow = window as typeof window & {
@@ -213,9 +270,10 @@ async function pushRoute(page: import("@playwright/test").Page, path: string) {
     }
     await navigationWindow.__libraryPendingPush
   }).catch(error => {
-    if (isNavigationContextDestroyed(error)) return
+    if (isNavigationContextDestroyed(error)) return false
     throw error
   })
+  await waitForRouteDestination(page, destination, timeout)
 }
 
 function createRequestGate() {
@@ -400,6 +458,37 @@ test("client-side Library entry uses public runtime config without private-key w
   const ledger = await requests(request)
   expect(ledger).toHaveLength(1)
   expect(ledger[0]).toMatchObject({ path: "/v2/library/search", scope: "public" })
+})
+
+test("Library router helper rejects a destination the router did not reach", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" })
+
+  await expect(pushRoute(
+    page,
+    "/bibliotek",
+    {
+      description: "/presentationer",
+      matches: url => url.pathname === "/presentationer"
+    },
+    250
+  )).rejects.toThrow()
+
+  await expect(page).toHaveURL("/bibliotek")
+  await expect(page.locator("[data-library-result]")).toHaveCount(3)
+})
+
+test("canonical all-results route matcher rejects extra query state", () => {
+  const canonicalPageTwo = canonicalAllResultsRoute("all-pagination", ["", "ja"], "2")
+
+  expect(canonicalPageTwo.matches(new URL(
+    "http://localhost/bibliotek?keep&keep=ja&filter=all-pagination&sida=2"
+  ))).toBe(true)
+  expect(canonicalPageTwo.matches(new URL(
+    "http://localhost/bibliotek?keep&keep=ja&filter=all-pagination&sida=2&unexpected=1"
+  ))).toBe(false)
+  expect(canonicalPageTwo.matches(new URL(
+    "http://localhost/bibliotek?keep&keep=ja&filter=all-pagination&filter=wrong&sida=2"
+  ))).toBe(false)
 })
 
 test("debounces Library input, preserves the URL, and uses the public proxy once", async ({
@@ -2018,7 +2107,11 @@ test("all-results replaces response-invalid pages without history or request loo
   })
   await reset(request)
 
-  await pushRoute(page, "/bibliotek?keep&keep=ja&filter=all-pagination&sida=100")
+  await pushRoute(
+    page,
+    "/bibliotek?keep&keep=ja&filter=all-pagination&sida=100",
+    canonicalAllResultsRoute("all-pagination", ["", "ja"], "2")
+  )
   await expect(page.getByRole("link", { name: "Den unika träffen på sida två" })).toBeVisible()
   await expect.poll(() => new URL(page.url()).searchParams.get("sida")).toBe("2")
   await page.waitForTimeout(250)
@@ -2032,7 +2125,11 @@ test("all-results replaces response-invalid pages without history or request loo
   expect(new URL(page.url()).searchParams.get("sida")).toBe("2")
 
   await reset(request)
-  await pushRoute(page, "/bibliotek?keep=ja&filter=inga&sida=2")
+  await pushRoute(
+    page,
+    "/bibliotek?keep=ja&filter=inga&sida=2",
+    canonicalAllResultsRoute("inga", ["ja"], null)
+  )
   await expect(page.locator("[data-library-empty]")).toBeVisible()
   await expect.poll(() => new URL(page.url()).searchParams.has("sida")).toBe(false)
   await page.waitForTimeout(250)
@@ -2060,7 +2157,8 @@ test("all-results canonicalizes raw page-one aliases without requesting or retai
   for (const pageQuery of ["sida", "sida=1", "sida=0", "sida=101", "sida=malformed"]) {
     await pushRoute(
       page,
-      `/bibliotek?keep&keep=ja&filter=all-pagination&${pageQuery}`
+      `/bibliotek?keep&keep=ja&filter=all-pagination&${pageQuery}`,
+      canonicalAllResultsRoute("all-pagination", ["", "ja"], null)
     )
     await expectCanonicalUrl()
     await expect(page.locator("[data-library-result]")).toHaveCount(100)
