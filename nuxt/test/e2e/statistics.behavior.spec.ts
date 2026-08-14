@@ -311,20 +311,26 @@ test("client navigation omits malformed EPUB display fields", async ({ page, req
   expect(linkLabels.every(label => label.trim().length > 0)).toBe(true)
 })
 
-test("client navigation omits malformed work display fields", async ({ page, request }) => {
+test("client navigation omits malformed work fields", async ({ page, request }) => {
   await page.goto("/om/ide", { waitUntil: "networkidle" })
   await failResource(request, "malformed-stat-work-fields")
   await beginRouterPush(page, "/om/statistik")
 
   const works = page.locator(".content.stats > ul").nth(1).locator("li")
-  await expect(works).toHaveCount(2)
-  await expect(works.nth(0)).toContainText("Valid nullable work fields")
-  await expect(works.nth(0)).toContainText("Valid Nullable Work Author")
-  await expect(works.nth(1)).toContainText("Valid populated work fields")
-  await expect(works.nth(1)).toContainText("Populated")
+  await expect(works).toHaveCount(3)
+  await expect(works.nth(0)).toContainText("Valid percent work title identity")
+  await expect(works.nth(1)).toContainText("Valid nullable work fields")
+  await expect(works.nth(1)).toContainText("Valid Nullable Work Author")
+  await expect(works.nth(2)).toContainText("Valid populated work fields")
+  await expect(works.nth(2)).toContainText("Populated")
+  await expect(works.nth(0).getByRole("link", { name: "Valid percent work title identity" }))
+    .toHaveAttribute(
+      "href",
+      "/f%C3%B6rfattare/ValidPercentWorkAuthor/titlar/ValidPercentWorkTitleIdentity/sida/1/etext"
+    )
   await expect(page.locator(".content.stats")).not.toContainText("undefined")
 
   const linkLabels = await works.locator("a").allTextContents()
-  expect(linkLabels).toHaveLength(4)
+  expect(linkLabels).toHaveLength(6)
   expect(linkLabels.every(label => label.trim().length > 0)).toBe(true)
 })

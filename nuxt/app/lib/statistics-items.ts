@@ -60,6 +60,7 @@ function hasSafePopularWorkIdentity(
 ): boolean {
   return isSafeRouteIdentity(author.author_id, 100)
     && isSafeDownloadFileIdentity(representation.work_id, 100)
+    && isSafeDownloadFileIdentity(item.title_id, 200)
     && isSafeRouteIdentity(item.title_path, 200)
     && typeof representation.media_type === "string"
     && ["etext", "faksimil", "pdf"].includes(representation.media_type)

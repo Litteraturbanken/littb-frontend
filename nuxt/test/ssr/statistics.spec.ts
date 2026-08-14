@@ -132,7 +132,7 @@ test("malformed EPUB display fields drop only their rows before hydration", asyn
   }
 })
 
-test("malformed work display fields drop only their rows before hydration", async ({ request }) => {
+test("malformed work fields drop only their rows before hydration", async ({ request }) => {
   await resetFixture(request)
   await request.put(`${fixture}/_failure`, {
     data: { resource: "malformed-stat-work-fields" }
@@ -144,11 +144,15 @@ test("malformed work display fields drop only their rows before hydration", asyn
   const { document } = parseHTML(html)
   const workRows = document.querySelectorAll(".content.stats > ul:nth-of-type(2) > li")
 
-  expect(workRows).toHaveLength(2)
-  expect(workRows[0]?.textContent).toContain("Valid nullable work fields")
-  expect(workRows[0]?.textContent).toContain("Valid Nullable Work Author")
-  expect(workRows[1]?.textContent).toContain("Valid populated work fields")
-  expect(workRows[1]?.textContent).toContain("Populated")
+  expect(workRows).toHaveLength(3)
+  expect(workRows[0]?.textContent).toContain("Valid percent work title identity")
+  expect(workRows[1]?.textContent).toContain("Valid nullable work fields")
+  expect(workRows[1]?.textContent).toContain("Valid Nullable Work Author")
+  expect(workRows[2]?.textContent).toContain("Valid populated work fields")
+  expect(workRows[2]?.textContent).toContain("Populated")
+  expect(workRows[0]?.querySelector("a")?.getAttribute("href")).toBe(
+    "/f%C3%B6rfattare/ValidPercentWorkAuthor/titlar/ValidPercentWorkTitleIdentity/sida/1/etext"
+  )
   expect(html).not.toContain("undefined")
   for (const row of workRows) {
     const links = row.querySelectorAll("a")

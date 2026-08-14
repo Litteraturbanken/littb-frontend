@@ -11,6 +11,7 @@ import {
   malformedStatisticsWorkFields,
   validStatisticsPercentEpub,
   validStatisticsPercentPdf,
+  validStatisticsPercentWorkTitleId,
   validStatisticsNullableEpub,
   validStatisticsNullableWork,
   validStatisticsPopulatedEpub,
@@ -50,6 +51,7 @@ describe("Statistics ranking identities", () => {
   test("retains valid route siblings and percent-bearing encoded filenames", () => {
     expect(isSafePopularWork(validStatisticsRouteWork)).toBe(true)
     expect(isSafePopularWork(validStatisticsPercentPdf)).toBe(true)
+    expect(isSafePopularWork(validStatisticsPercentWorkTitleId)).toBe(true)
     expect(isSafePopularWork(validStatisticsNullableWork)).toBe(true)
     expect(isSafePopularWork(validStatisticsPopulatedWork)).toBe(true)
     expect(isSafePopularEpub(validStatisticsPercentEpub)).toBe(true)
@@ -95,5 +97,14 @@ describe("Statistics ranking identities", () => {
       mutate(overlong)
       expect(isSafePopularWork(overlong)).toBe(false)
     }
+  })
+
+  test("accepts the exact work title identity bound and rejects the next character", () => {
+    const work = structuredClone(validStatisticsPercentWorkTitleId)
+    work.title_id = "I".repeat(200)
+    expect(isSafePopularWork(work)).toBe(true)
+
+    work.title_id += "I"
+    expect(isSafePopularWork(work)).toBe(false)
   })
 })

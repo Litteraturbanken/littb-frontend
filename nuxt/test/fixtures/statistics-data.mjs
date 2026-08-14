@@ -179,6 +179,19 @@ export const validStatisticsPercentPdf = {
   }
 }
 
+export const validStatisticsPercentWorkTitleId = {
+  title_id: "Valid%StatisticsWorkTitleId",
+  title_path: "ValidPercentWorkTitleIdentity",
+  title: "Valid percent work title identity",
+  short_title: null,
+  author: author("ValidPercentWorkAuthor", "Valid Percent Work Author", "Valid"),
+  representation: {
+    work_id: "valid-percent-work-title-identity",
+    media_type: "etext",
+    start_page_name: "1"
+  }
+}
+
 export const validStatisticsNullableWork = {
   title_id: "ValidStatisticsNullableWork",
   title_path: "ValidStatisticsNullableWork",
@@ -227,6 +240,15 @@ function statisticsWorkField(field, problem, value, omit = false) {
 }
 
 export const malformedStatisticsWorkFields = [
+  statisticsWorkField("title_id", "missing", undefined, true),
+  statisticsWorkField("title_id", "null", null),
+  statisticsWorkField("title_id", "wrong-type", 17),
+  statisticsWorkField("title_id", "blank", " "),
+  statisticsWorkField("title_id", "control", "Unsafe\u0000Title"),
+  statisticsWorkField("title_id", "lone-surrogate", "Unsafe\uD800Title"),
+  statisticsWorkField("title_id", "dot", "."),
+  statisticsWorkField("title_id", "dot-dot", ".."),
+  statisticsWorkField("title_id", "overlong", "I".repeat(201)),
   statisticsWorkField("title", "missing", undefined, true),
   statisticsWorkField("title", "null", null),
   statisticsWorkField("title", "wrong-type", 17),

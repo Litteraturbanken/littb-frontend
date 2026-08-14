@@ -68,6 +68,7 @@ import {
   stats,
   validStatisticsPercentEpub,
   validStatisticsPercentPdf,
+  validStatisticsPercentWorkTitleId,
   validStatisticsNullableEpub,
   validStatisticsNullableWork,
   validStatisticsPopulatedEpub,
@@ -5907,6 +5908,7 @@ const server = createServer(async (request, response) => {
     if (resource === "works") {
       if (failure === "malformed-stat-work-fields") {
         const items = [
+          validStatisticsPercentWorkTitleId,
           validStatisticsNullableWork,
           validStatisticsPopulatedWork,
           ...malformedStatisticsWorkFields.map(entry => entry.item)
