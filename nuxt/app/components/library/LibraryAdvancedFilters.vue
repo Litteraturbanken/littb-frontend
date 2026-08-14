@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, ref } from "vue"
 import type {
     LibraryAdvancedChange,
     LibraryAdvancedControlsModel
@@ -20,6 +20,7 @@ const emit = defineEmits<{
     "select-visible-source-works": []
     "deselect-visible-source-works": []
 }>()
+const genderPointerFocused = ref(false)
 
 const narrowingSelectGroups = computed(() =>
     props.model.collectionSelectGroups.map(group => ({
@@ -108,14 +109,23 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
         class="more_container show_more mt-2 mb-4"
     >
         <div class="title_select_container">
-            <label class="library-gender-control select2-container select2-container--default">
+            <label
+                class="library-gender-control select2-container select2-container--default"
+                @keydown.capture="genderPointerFocused = false"
+                @mousedown.capture="genderPointerFocused = true"
+                @touchstart.capture="genderPointerFocused = true"
+            >
                 <span class="sr-only">Författarkön</span>
                 <select
                     :value="model.gender"
                     data-library-gender
                     class="gender_select"
-                    :class="{ 'library-select-placeholder': !model.gender }"
+                    :class="{
+                        'library-select-placeholder': !model.gender,
+                        'library-gender-pointer-focused': genderPointerFocused
+                    }"
                     aria-label="Författarkön"
+                    @blur="genderPointerFocused = false"
                     @change="emitGender"
                 >
                     <option value="" :selected="model.gender === ''">
@@ -365,6 +375,26 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
     opacity: 0;
 }
 
+[data-library-advanced-panel]
+    .library-gender-control
+    select[data-library-gender]:focus-visible:not(.library-gender-pointer-focused)
+    + .selection
+    [data-library-gender-visual] {
+    outline: 1px solid #7a1400;
+    outline-offset: 0;
+    box-shadow: none;
+}
+
+@media (forced-colors: active) {
+    [data-library-advanced-panel]
+        .library-gender-control
+        select[data-library-gender]:focus-visible:not(.library-gender-pointer-focused)
+        + .selection
+        [data-library-gender-visual] {
+        outline-color: Highlight;
+    }
+}
+
 .library-gender-control .selection {
     display: block;
     height: 31px;
@@ -425,10 +455,6 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
 
 [data-library-advanced-panel] :deep(.select2-selection__arrow.multiselect__select::before) {
     display: none;
-}
-
-[data-library-advanced-panel] option[data-library-placeholder] {
-    color: #666;
 }
 
 [data-library-chronology-range] .rzslider {

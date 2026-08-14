@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Locator } from "@playwright/test"
 
 import type { operations } from "../../app/lib/api/generated/lbapi"
 
@@ -185,22 +185,70 @@ test("advanced disclosure and controls use push history and restore from the URL
   }
 })
 
-test("keyboard focus on the transparent gender select matches the production proxy", async ({
+test("gender proxy shows its narrow focus indicator only for keyboard use", async ({
   page
 }) => {
   await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })
   await waitForHydration(page)
 
+  const gender = page.locator("[data-library-gender]")
+  const visual = page.locator("[data-library-gender-visual]")
+  const layoutBox = (locator: Locator) => locator.evaluate(element => {
+    const box = element.getBoundingClientRect()
+    return {
+      height: box.height,
+      left: box.left + window.scrollX,
+      top: box.top + window.scrollY,
+      width: box.width
+    }
+  })
+  const initialGenderBox = await layoutBox(gender)
+  const initialVisualBox = await layoutBox(visual)
+  const focusTreatment = () => visual.evaluate(element => {
+    const style = getComputedStyle(element)
+    return {
+      boxShadow: style.boxShadow,
+      outlineColor: style.outlineColor,
+      outlineOffset: style.outlineOffset,
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth
+    }
+  })
+
   await page.locator("[data-library-advanced]").focus()
   await page.keyboard.press("Tab")
-
-  const gender = page.locator("[data-library-gender]")
   await expect(gender).toBeFocused()
-  const visual = page.locator("[data-library-gender-visual]")
-  expect(await visual.evaluate(element => {
-    const style = getComputedStyle(element)
-    return { outlineStyle: style.outlineStyle, boxShadow: style.boxShadow }
-  })).toEqual({ outlineStyle: "none", boxShadow: "none" })
+  expect(await focusTreatment()).toEqual({
+    boxShadow: "none",
+    outlineColor: "rgb(122, 20, 0)",
+    outlineOffset: "0px",
+    outlineStyle: "solid",
+    outlineWidth: "1px"
+  })
+  expect(await layoutBox(gender)).toEqual(initialGenderBox)
+  expect(await layoutBox(visual)).toEqual(initialVisualBox)
+
+  await page.getByRole("heading", { name: "Botanisera i biblioteket" }).click()
+  await gender.click()
+  await expect(gender).toBeFocused()
+  expect(await focusTreatment()).toMatchObject({
+    boxShadow: "none",
+    outlineStyle: "none"
+  })
+  expect(await layoutBox(gender)).toEqual(initialGenderBox)
+  expect(await layoutBox(visual)).toEqual(initialVisualBox)
+
+  await page.keyboard.press("Escape")
+  await expect(gender).toBeFocused()
+  expect(await focusTreatment()).toEqual({
+    boxShadow: "none",
+    outlineColor: "rgb(122, 20, 0)",
+    outlineOffset: "0px",
+    outlineStyle: "solid",
+    outlineWidth: "1px"
+  })
+  expect(await layoutBox(gender)).toEqual(initialGenderBox)
+  expect(await layoutBox(visual)).toEqual(initialVisualBox)
 })
 
 test("multi facets and chronology compose exact safe predicates and commit once per change", async ({
