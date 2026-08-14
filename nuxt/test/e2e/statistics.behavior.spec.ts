@@ -292,3 +292,21 @@ test("client navigation omits malformed reader segments but retains file identit
     expect(hrefs.some(href => href.includes(`Unsafe${escaped}`))).toBe(false)
   }
 })
+
+test("client navigation omits malformed EPUB display fields", async ({ page, request }) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await failResource(request, "malformed-stat-epub-fields")
+  await beginRouterPush(page, "/om/statistik")
+
+  const epubs = page.locator(".content.stats > ul").nth(2).locator("li")
+  await expect(epubs).toHaveCount(2)
+  await expect(epubs.nth(0)).toContainText("Valid nullable EPUB fields")
+  await expect(epubs.nth(0)).toContainText("Valid Nullable EPUB Author")
+  await expect(epubs.nth(1)).toContainText("Valid populated EPUB fields")
+  await expect(epubs.nth(1)).toContainText("Populated")
+  await expect(page.locator(".content.stats")).not.toContainText("undefined")
+
+  const linkLabels = await epubs.locator("a").allTextContents()
+  expect(linkLabels).toHaveLength(4)
+  expect(linkLabels.every(label => label.trim().length > 0)).toBe(true)
+})

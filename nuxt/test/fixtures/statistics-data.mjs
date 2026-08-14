@@ -186,6 +186,56 @@ export const validStatisticsPercentEpub = {
   author: author("ValidEpubAuthor", "Valid EPUB Author", "Valid")
 }
 
+export const validStatisticsNullableEpub = {
+  title_id: "ValidStatisticsNullableEpub",
+  title: "Valid nullable EPUB fields",
+  short_title: null,
+  author: author("ValidNullableEpubAuthor", "Valid Nullable EPUB Author", null)
+}
+
+export const validStatisticsPopulatedEpub = {
+  title_id: "ValidStatisticsPopulatedEpub",
+  title: "Valid populated EPUB title",
+  short_title: "Valid populated EPUB fields",
+  author: author("ValidPopulatedEpubAuthor", "Valid Populated EPUB Author", "Populated")
+}
+
+function statisticsEpubField(field, problem, value, omit = false) {
+  const suffix = `${field.replace("author.", "author-")}-${problem}`
+  const item = {
+    title_id: `Malformed-${suffix}`,
+    title: `Malformed ${field} ${problem} EPUB field`,
+    short_title: null,
+    author: author(`Malformed-${suffix}-author`, `Malformed ${suffix} Author`, "Malformed")
+  }
+  const target = field.startsWith("author.") ? item.author : item
+  const key = field.replace("author.", "")
+  if (omit) delete target[key]
+  else target[key] = value
+  return { field, problem, item }
+}
+
+export const malformedStatisticsEpubFields = [
+  statisticsEpubField("title", "missing", undefined, true),
+  statisticsEpubField("title", "null", null),
+  statisticsEpubField("title", "wrong-type", 17),
+  statisticsEpubField("title", "blank", " "),
+  statisticsEpubField("title", "overlong", "T".repeat(20_001)),
+  statisticsEpubField("short_title", "missing", undefined, true),
+  statisticsEpubField("short_title", "wrong-type", 17),
+  statisticsEpubField("short_title", "blank", " "),
+  statisticsEpubField("short_title", "overlong", "S".repeat(20_001)),
+  statisticsEpubField("author.full_name", "missing", undefined, true),
+  statisticsEpubField("author.full_name", "null", null),
+  statisticsEpubField("author.full_name", "wrong-type", 17),
+  statisticsEpubField("author.full_name", "blank", " "),
+  statisticsEpubField("author.full_name", "overlong", "F".repeat(2_001)),
+  statisticsEpubField("author.surname", "missing", undefined, true),
+  statisticsEpubField("author.surname", "wrong-type", 17),
+  statisticsEpubField("author.surname", "blank", " "),
+  statisticsEpubField("author.surname", "overlong", "N".repeat(2_001))
+]
+
 const legacyAuthor = item => ({
   authorid: item.author.author_id,
   full_name: item.author.full_name,

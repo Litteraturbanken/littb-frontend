@@ -5,6 +5,9 @@ import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 type PopularWork = components["schemas"]["PopularWork"]
 type PopularEpub = components["schemas"]["PopularEpub"]
 
+const maximumStatisticsTitleLength = 20_000
+const maximumStatisticsAuthorNameLength = 2_000
+
 function isSafeRouteIdentity(value: unknown, maximum: number): value is string {
   return typeof value === "string" && validRouteSegment(value, maximum)
 }
@@ -24,6 +27,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
+function isSafeDisplayText(value: unknown, maximum: number): value is string {
+  return typeof value === "string"
+    && value.length > 0
+    && value.length <= maximum
+    && value === value.trim()
+    && !hasC0OrC1Control(value)
+    && !hasLoneSurrogate(value)
+}
+
+function isSafeNullableDisplayText(
+  value: unknown,
+  maximum: number
+): value is string | null {
+  return value === null || isSafeDisplayText(value, maximum)
+}
+
 export function isSafePopularWork(item: unknown): item is PopularWork {
   if (!isRecord(item) || !isRecord(item.author) || !isRecord(item.representation)) return false
   const representation = item.representation
@@ -37,7 +56,12 @@ export function isSafePopularWork(item: unknown): item is PopularWork {
 }
 
 export function isSafePopularEpub(item: unknown): item is PopularEpub {
-  return isRecord(item) && isRecord(item.author)
-    && isSafeRouteIdentity(item.author.author_id, 100)
+  if (!isRecord(item) || !isRecord(item.author)) return false
+  const author = item.author
+  return isSafeRouteIdentity(author.author_id, 100)
     && isSafeDownloadFileIdentity(item.title_id, 200)
+    && isSafeDisplayText(item.title, maximumStatisticsTitleLength)
+    && isSafeNullableDisplayText(item.short_title, maximumStatisticsTitleLength)
+    && isSafeDisplayText(author.full_name, maximumStatisticsAuthorNameLength)
+    && isSafeNullableDisplayText(author.surname, maximumStatisticsAuthorNameLength)
 }

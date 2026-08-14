@@ -59,6 +59,7 @@ import {
   sourceInfoProvenance
 } from "./reader-source-info-data.mjs"
 import {
+  malformedStatisticsEpubFields,
   malformedStatisticsRouteEpubs,
   malformedStatisticsRouteWorks,
   popularEpubs,
@@ -66,6 +67,8 @@ import {
   stats,
   validStatisticsPercentEpub,
   validStatisticsPercentPdf,
+  validStatisticsNullableEpub,
+  validStatisticsPopulatedEpub,
   validStatisticsRouteWork
 } from "./statistics-data.mjs"
 import {
@@ -5920,6 +5923,14 @@ const server = createServer(async (request, response) => {
       const items = [
         validStatisticsPercentEpub,
         ...malformedStatisticsRouteEpubs.map(entry => entry.item)
+      ]
+      return sendJson(response, 200, { items: structuredClone(items.slice(0, limit)) })
+    }
+    if (failure === "malformed-stat-epub-fields") {
+      const items = [
+        validStatisticsNullableEpub,
+        validStatisticsPopulatedEpub,
+        ...malformedStatisticsEpubFields.map(entry => entry.item)
       ]
       return sendJson(response, 200, { items: structuredClone(items.slice(0, limit)) })
     }

@@ -106,3 +106,28 @@ test("malformed reader segments drop only their rows before hydration", async ({
     expect(html).not.toContain(`Unsafe${escaped}`)
   }
 })
+
+test("malformed EPUB display fields drop only their rows before hydration", async ({ request }) => {
+  await resetFixture(request)
+  await request.put(`${fixture}/_failure`, {
+    data: { resource: "malformed-stat-epub-fields" }
+  })
+
+  const response = await request.get("/om/statistik")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+  const epubRows = document.querySelectorAll(".content.stats > ul:nth-of-type(3) > li")
+
+  expect(epubRows).toHaveLength(2)
+  expect(epubRows[0]?.textContent).toContain("Valid nullable EPUB fields")
+  expect(epubRows[0]?.textContent).toContain("Valid Nullable EPUB Author")
+  expect(epubRows[1]?.textContent).toContain("Valid populated EPUB fields")
+  expect(epubRows[1]?.textContent).toContain("Populated")
+  expect(html).not.toContain("undefined")
+  for (const row of epubRows) {
+    const links = row.querySelectorAll("a")
+    expect(links).toHaveLength(2)
+    for (const link of links) expect(link.textContent?.trim()).not.toBe("")
+  }
+})
