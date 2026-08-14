@@ -43,10 +43,21 @@ function isSafeNullableDisplayText(
   return value === null || isSafeDisplayText(value, maximum)
 }
 
-export function isSafePopularWork(item: unknown): item is PopularWork {
-  if (!isRecord(item) || !isRecord(item.author) || !isRecord(item.representation)) return false
-  const author = item.author
-  const representation = item.representation
+function hasSafeStatisticsDisplayFields(
+  item: Record<string, unknown>,
+  author: Record<string, unknown>
+): boolean {
+  return isSafeDisplayText(item.title, maximumStatisticsTitleLength)
+    && isSafeNullableDisplayText(item.short_title, maximumStatisticsTitleLength)
+    && isSafeDisplayText(author.full_name, maximumStatisticsAuthorNameLength)
+    && isSafeNullableDisplayText(author.surname, maximumStatisticsAuthorNameLength)
+}
+
+function hasSafePopularWorkIdentity(
+  item: Record<string, unknown>,
+  author: Record<string, unknown>,
+  representation: Record<string, unknown>
+): boolean {
   return isSafeRouteIdentity(author.author_id, 100)
     && isSafeDownloadFileIdentity(representation.work_id, 100)
     && isSafeRouteIdentity(item.title_path, 200)
@@ -54,10 +65,14 @@ export function isSafePopularWork(item: unknown): item is PopularWork {
     && ["etext", "faksimil", "pdf"].includes(representation.media_type)
     && (representation.start_page_name === null
       || isSafeRouteIdentity(representation.start_page_name, 512))
-    && isSafeDisplayText(item.title, maximumStatisticsTitleLength)
-    && isSafeNullableDisplayText(item.short_title, maximumStatisticsTitleLength)
-    && isSafeDisplayText(author.full_name, maximumStatisticsAuthorNameLength)
-    && isSafeNullableDisplayText(author.surname, maximumStatisticsAuthorNameLength)
+}
+
+export function isSafePopularWork(item: unknown): item is PopularWork {
+  if (!isRecord(item) || !isRecord(item.author) || !isRecord(item.representation)) return false
+  const author = item.author
+  const representation = item.representation
+  return hasSafePopularWorkIdentity(item, author, representation)
+    && hasSafeStatisticsDisplayFields(item, author)
 }
 
 export function isSafePopularEpub(item: unknown): item is PopularEpub {
@@ -65,8 +80,5 @@ export function isSafePopularEpub(item: unknown): item is PopularEpub {
   const author = item.author
   return isSafeRouteIdentity(author.author_id, 100)
     && isSafeDownloadFileIdentity(item.title_id, 200)
-    && isSafeDisplayText(item.title, maximumStatisticsTitleLength)
-    && isSafeNullableDisplayText(item.short_title, maximumStatisticsTitleLength)
-    && isSafeDisplayText(author.full_name, maximumStatisticsAuthorNameLength)
-    && isSafeNullableDisplayText(author.surname, maximumStatisticsAuthorNameLength)
+    && hasSafeStatisticsDisplayFields(item, author)
 }
