@@ -533,6 +533,7 @@ const catalogFiltersActive = computed(() => (
   Object.keys(route.query).some(key => catalogFilterKeys.has(key))
 ))
 const authorSearch = ref("")
+const authorPointerFocused = ref(false)
 
 const mediaAuthorIds = computed<ReadonlySet<string>>(() => {
   if (mediaType.value === "all") return new Set()
@@ -774,13 +775,19 @@ useHead(() => ({
 
         <div v-show="listType === 'pjäser'" class="auth_select_container">
           <Combobox :model-value="selectedAuthor" nullable @update:model-value="chooseAuthor">
-            <div class="catalog_select select2 select2-container select2-container--default">
+            <div
+              class="catalog_select select2 select2-container select2-container--default"
+              @keydown.capture="authorPointerFocused = false"
+              @pointerdown.capture="authorPointerFocused = true"
+            >
               <div class="select2-selection select2-selection--single">
                 <ComboboxInput
                   class="select2-selection__rendered"
+                  :class="{ author_pointer_focused: authorPointerFocused }"
                   aria-label="Författare"
                   placeholder="Välj författare"
                   :display-value="selectedAuthorLabel"
+                  @blur="authorPointerFocused = false"
                   @change="authorSearch = ($event.target as HTMLInputElement).value"
                 />
                 <ComboboxButton class="select2-selection__arrow" aria-label="Visa författare"><b /></ComboboxButton>
@@ -1016,6 +1023,11 @@ useHead(() => ({
   font-family: inherit;
   font-size: inherit;
   outline: 0;
+}
+.catalog_select input.select2-selection__rendered:focus-visible:not(.author_pointer_focused) {
+  outline: 1px solid #7A1400;
+  outline-offset: 0;
+  box-shadow: none;
 }
 .catalog_select .select2-selection__arrow {
   position: absolute;

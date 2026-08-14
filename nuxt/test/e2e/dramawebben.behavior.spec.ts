@@ -1412,6 +1412,86 @@ test("drama range capture loss prevents a later stale pointer commit", async ({ 
   expect(new URL(page.url()).searchParams.get("keep")).toBe("capture")
 })
 
+test("author combobox shows its narrow focus indicator only for keyboard use", async ({
+  page
+}) => {
+  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+
+  const authorInput = page.getByRole("combobox", { name: "Visa författare", exact: true })
+  const authorSelection = authorInput.locator("xpath=..")
+  const initialInputBox = await authorInput.boundingBox()
+  const initialSelectionBox = await authorSelection.boundingBox()
+  expect(initialInputBox).not.toBeNull()
+  expect(initialSelectionBox).not.toBeNull()
+  const focusTreatment = () => authorInput.evaluate(element => {
+    const style = getComputedStyle(element)
+    return {
+      boxShadow: style.boxShadow,
+      outlineColor: style.outlineColor,
+      outlineOffset: style.outlineOffset,
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth
+    }
+  })
+
+  await page.getByRole("button", { name: "Författare", exact: true }).focus()
+  await page.keyboard.press("Tab")
+  await expect(authorInput).toBeFocused()
+  expect(await focusTreatment()).toEqual({
+    boxShadow: "none",
+    outlineColor: "rgb(122, 20, 0)",
+    outlineOffset: "0px",
+    outlineStyle: "solid",
+    outlineWidth: "1px"
+  })
+  expect(await authorInput.boundingBox()).toEqual(initialInputBox)
+  expect(await authorSelection.boundingBox()).toEqual(initialSelectionBox)
+
+  await page.locator(".page_content p").first().click()
+  await authorInput.click()
+  await expect(authorInput).toBeFocused()
+  expect(await focusTreatment()).toMatchObject({
+    boxShadow: "none",
+    outlineStyle: "none",
+    outlineWidth: "0px"
+  })
+  expect(await authorInput.boundingBox()).toEqual(initialInputBox)
+  expect(await authorSelection.boundingBox()).toEqual(initialSelectionBox)
+
+  await page.locator(".page_content p").first().click()
+  await page.getByRole("button", { name: "Visa författare", exact: true }).click()
+  await expect(authorInput).toBeFocused()
+  expect(await focusTreatment()).toMatchObject({
+    boxShadow: "none",
+    outlineStyle: "none",
+    outlineWidth: "0px"
+  })
+  expect(await authorInput.boundingBox()).toEqual(initialInputBox)
+  expect(await authorSelection.boundingBox()).toEqual(initialSelectionBox)
+
+  await page.keyboard.press("ArrowDown")
+  expect(await focusTreatment()).toEqual({
+    boxShadow: "none",
+    outlineColor: "rgb(122, 20, 0)",
+    outlineOffset: "0px",
+    outlineStyle: "solid",
+    outlineWidth: "1px"
+  })
+  expect(await authorInput.boundingBox()).toEqual(initialInputBox)
+  expect(await authorSelection.boundingBox()).toEqual(initialSelectionBox)
+
+  await page.getByRole("option", { name: "Strindberg, August 1849-1912" }).click()
+  await expectQuery(page, "author", "StrindbergA")
+  await expect(authorInput).toBeFocused()
+  expect(await focusTreatment()).toMatchObject({
+    boxShadow: "none",
+    outlineStyle: "none",
+    outlineWidth: "0px"
+  })
+  expect(await authorInput.boundingBox()).toEqual(initialInputBox)
+  expect(await authorSelection.boundingBox()).toEqual(initialSelectionBox)
+})
+
 test("Headless UI catalog controls support keyboard, Escape, outside close, and focus return", async ({
   page,
   request
