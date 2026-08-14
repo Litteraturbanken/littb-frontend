@@ -674,6 +674,118 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
   await expect(hitNavigation).toHaveCount(0)
 })
 
+test("late generic failure from a superseded Editor work search is inert", async ({ page }) => {
+  await page.addInitScript(() => {
+    const nativeFetch = window.fetch.bind(window)
+    let releaseFirst = () => {}
+    const firstGate = new Promise<void>(resolve => { releaseFirst = resolve })
+    const state = {
+      firstStarted: false,
+      firstAborted: false,
+      firstReleased: false,
+      releaseFirst,
+      restore: () => { window.fetch = nativeFetch }
+    }
+    Object.defineProperty(window, "__editorSubmitSearchGate", { value: state })
+    window.fetch = async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      const url = new URL(request.url)
+      if (
+        !url.pathname.endsWith("/works/lb8345227/search-hits")
+        || url.searchParams.get("query") !== "stale-first"
+        || url.searchParams.get("limit") !== "1"
+      ) return nativeFetch(input, init)
+
+      const response = await nativeFetch(input, init)
+      await response.arrayBuffer()
+      request.signal.addEventListener("abort", () => { state.firstAborted = true }, {
+        once: true
+      })
+      state.firstStarted = true
+      await firstGate
+      state.firstReleased = true
+      throw new Error("late non-abort work search failure")
+    }
+  })
+
+  try {
+    await page.goto("/editor/lb8345227/ix/4/f", { waitUntil: "networkidle" })
+    await page.getByRole("button", { name: "Sök i verket", exact: true }).click()
+    const input = page.getByRole("searchbox", { name: "Sök i verket" })
+    await input.fill("stale-first")
+    await page.getByRole("button", { name: "Sök", exact: true }).click()
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __editorSubmitSearchGate?: { firstStarted: boolean }
+      }).__editorSubmitSearchGate?.firstStarted ?? false
+    ))).toBe(true)
+
+    await input.fill("brev")
+    await page.getByRole("button", { name: "Sök", exact: true }).click()
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __editorSubmitSearchGate?: { firstAborted: boolean }
+      }).__editorSubmitSearchGate?.firstAborted ?? false
+    ))).toBe(true)
+    await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/4\/f.*s_query=brev/u)
+    const navigation = page.getByRole("navigation", { name: "Sökträffsnavigering" })
+    await expect(navigation).toContainText("237 sökträffar")
+
+    await page.evaluate(() => (
+      window as typeof window & {
+        __editorSubmitSearchGate?: { releaseFirst: () => void }
+      }
+    ).__editorSubmitSearchGate?.releaseFirst())
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __editorSubmitSearchGate?: { firstReleased: boolean }
+      }).__editorSubmitSearchGate?.firstReleased ?? false
+    ))).toBe(true)
+    await page.evaluate(() => new Promise<void>(resolve => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+    }))
+
+    await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/4\/f.*s_query=brev/u)
+    await expect(navigation).toContainText("237 sökträffar")
+    await expect(page.locator('.work-search-message[role="status"]')).toHaveCount(0)
+  } finally {
+    await page.evaluate(() => {
+      const state = (window as typeof window & {
+        __editorSubmitSearchGate?: { releaseFirst: () => void, restore: () => void }
+      }).__editorSubmitSearchGate
+      state?.releaseFirst()
+      state?.restore()
+    }).catch(() => {})
+  }
+})
+
+test("active Editor work search generic failure shows its exact error", async ({ page }) => {
+  await page.addInitScript(() => {
+    const nativeFetch = window.fetch.bind(window)
+    window.fetch = async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      const url = new URL(request.url)
+      if (
+        !url.pathname.endsWith("/works/lb8345227/search-hits")
+        || url.searchParams.get("query") !== "active-generic-failure"
+        || url.searchParams.get("limit") !== "1"
+      ) return nativeFetch(input, init)
+
+      const response = await nativeFetch(input, init)
+      await response.arrayBuffer()
+      throw new Error("current work search failure")
+    }
+  })
+
+  await page.goto("/editor/lb8345227/ix/4/f", { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Sök i verket", exact: true }).click()
+  await page.getByRole("searchbox", { name: "Sök i verket" }).fill("active-generic-failure")
+  await page.getByRole("button", { name: "Sök", exact: true }).click()
+
+  await expect(page.locator('.work-search-message[role="status"]'))
+    .toHaveText("Sökningen kunde inte genomföras.")
+})
+
 test("editor Reader search navigation exposes native local controls", async ({ page }) => {
   const initial = `${editorSearchHit}&keep=%2f&keep=%2F`
   await page.goto(initial, { waitUntil: "networkidle" })

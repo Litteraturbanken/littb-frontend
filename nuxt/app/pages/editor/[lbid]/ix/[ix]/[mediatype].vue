@@ -1057,7 +1057,7 @@ async function submitWorkSearch(): Promise<void> {
     }
     await navigateRawFullPath(workSearchHitHref(response.hit, submission))
   } catch (searchError) {
-    if (!isAbortError(searchError)) {
+    if (isCurrentWorkSearch(generation, controller) && !isAbortError(searchError)) {
       workSearchMessage.value = "Sökningen kunde inte genomföras."
     }
   } finally {
