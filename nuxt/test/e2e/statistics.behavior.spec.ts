@@ -244,3 +244,51 @@ test("popular-EPUB failure leaves that ranking empty", async ({ page, request })
   await expect(lists.nth(2).locator("li")).toHaveCount(0)
   expect(await recordedRequests(request)).toEqual(allRequests)
 })
+
+test("client navigation omits malformed reader segments but retains file identities", async ({
+  page,
+  request
+}) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await failResource(request, "malformed-stat-route-segments")
+  await beginRouterPush(page, "/om/statistik")
+
+  const lists = page.locator(".content.stats > ul")
+  await expect(lists.nth(0).locator("li")).toHaveCount(6)
+  await expect(lists.nth(1).locator("li")).toHaveCount(2)
+  await expect(lists.nth(2).locator("li")).toHaveCount(1)
+  await expect(lists.nth(1)).toContainText("Valid statistics work sibling")
+  await expect(lists.nth(1)).toContainText("Valid percent PDF filename")
+  await expect(lists.nth(2)).toContainText("Valid percent EPUB filename")
+
+  for (const text of [
+    "Malformed slash author statistics work",
+    "Malformed backslash author statistics work",
+    "Malformed percent author statistics work",
+    "Malformed slash title statistics work",
+    "Malformed backslash title statistics work",
+    "Malformed percent title statistics work",
+    "Malformed slash page statistics work",
+    "Malformed backslash page statistics work",
+    "Malformed percent page statistics work",
+    "Malformed slash EPUB author",
+    "Malformed backslash EPUB author",
+    "Malformed percent EPUB author"
+  ]) await expect(page.getByText(text, { exact: true })).toHaveCount(0)
+
+  await expect(lists.nth(1).getByRole("link", { name: "Valid statistics work sibling" }))
+    .toHaveAttribute(
+      "href",
+      "/f%C3%B6rfattare/ValidStatisticsAuthor/titlar/ValidStatisticsWork/sida/1/etext"
+    )
+  await expect(lists.nth(1).getByRole("link", { name: "Valid percent PDF filename" }))
+    .toHaveAttribute("href", "/txt/valid%25statistics-pdf/valid%25statistics-pdf.pdf")
+  await expect(lists.nth(2).getByRole("link", { name: "Valid percent EPUB filename" }))
+    .toHaveAttribute("href", "/txt/epub/ValidEpubAuthor_Valid%25StatisticsEpub.epub")
+  const hrefs = await page.locator(".content.stats a").evaluateAll(links => (
+    links.map(link => link.getAttribute("href") ?? "")
+  ))
+  for (const escaped of ["%2F", "%5C", "%25"]) {
+    expect(hrefs.some(href => href.includes(`Unsafe${escaped}`))).toBe(false)
+  }
+})

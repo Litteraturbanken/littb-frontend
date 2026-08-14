@@ -64,3 +64,45 @@ test("malformed dot identities drop only their ranking rows", async ({ request }
   expect(html).not.toContain('href="/f%C3%B6rfattare/"')
   expect(html).not.toContain('href="/txt/epub/"')
 })
+
+test("malformed reader segments drop only their rows before hydration", async ({ request }) => {
+  await resetFixture(request)
+  await request.put(`${fixture}/_failure`, {
+    data: { resource: "malformed-stat-route-segments" }
+  })
+
+  const response = await request.get("/om/statistik")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+  const lists = document.querySelectorAll(".content.stats > ul")
+  const renderedRankings = [...lists].map(list => list.textContent ?? "").join("\n")
+
+  expect(lists[0]?.textContent).toContain("16 237 verk")
+  expect(lists[1]?.textContent).toContain("Valid statistics work sibling")
+  expect(lists[1]?.textContent).toContain("Valid percent PDF filename")
+  expect(lists[2]?.textContent).toContain("Valid percent EPUB filename")
+  for (const text of [
+    "Malformed slash author statistics work",
+    "Malformed backslash author statistics work",
+    "Malformed percent author statistics work",
+    "Malformed slash title statistics work",
+    "Malformed backslash title statistics work",
+    "Malformed percent title statistics work",
+    "Malformed slash page statistics work",
+    "Malformed backslash page statistics work",
+    "Malformed percent page statistics work",
+    "Malformed slash EPUB author",
+    "Malformed backslash EPUB author",
+    "Malformed percent EPUB author"
+  ]) expect(renderedRankings).not.toContain(text)
+
+  expect(html).toContain(
+    'href="/f%C3%B6rfattare/ValidStatisticsAuthor/titlar/ValidStatisticsWork/sida/1/etext"'
+  )
+  expect(html).toContain('href="/txt/valid%25statistics-pdf/valid%25statistics-pdf.pdf"')
+  expect(html).toContain('href="/txt/epub/ValidEpubAuthor_Valid%25StatisticsEpub.epub"')
+  for (const escaped of ["%2F", "%5C", "%25"]) {
+    expect(html).not.toContain(`Unsafe${escaped}`)
+  }
+})
