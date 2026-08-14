@@ -440,17 +440,27 @@ test("untrusted lookup URLs never become executable links", async ({ page }) => 
         author: { label: "Farlig författarlänk", url: "javascript:alert(1)" },
         title: { label: "Farlig titellänk", url: "data:text/html,unsafe" },
         media: [{ label: "etext", url: "//evil.example/unsafe" }]
+      }, {
+        work_id: "lb-dot-segment",
+        author: { label: "Kodad punktlänk", url: "/%2e%2e/admin" },
+        title: { label: "Säker text", url: "javascript:alert(1)" },
+        media: []
       }]
     }
   }))
   await openIdPage(page)
   await page.getByLabel("LB-ID", { exact: true }).fill("lb-hostile")
 
-  const row = page.locator(".table-striped tbody tr")
-  await expect(row).toContainText("Farlig författarlänk")
-  await expect(row).toContainText("Farlig titellänk")
-  await expect(row).toContainText("etext")
-  await expect(row.locator("a")).toHaveCount(0)
+  const rows = page.locator(".table-striped tbody tr")
+  await expect(rows).toHaveCount(2)
+  const hostile = rows.filter({ hasText: "lb-hostile" })
+  await expect(hostile).toContainText("Farlig författarlänk")
+  await expect(hostile).toContainText("Farlig titellänk")
+  await expect(hostile).toContainText("etext")
+  await expect(hostile.locator("a")).toHaveCount(0)
+  const dotSegment = rows.filter({ hasText: "lb-dot-segment" })
+  await expect(dotSegment).toContainText("Kodad punktlänk")
+  await expect(dotSegment.locator("a")).toHaveCount(0)
 })
 
 test("manual ID is immediate and keeps raw display while clearing only title state", async ({

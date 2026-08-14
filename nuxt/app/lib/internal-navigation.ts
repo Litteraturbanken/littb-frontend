@@ -1,7 +1,11 @@
 import { validatePresentationSegments } from "./presentation-routes"
 import { isSlaArticleId } from "#shared/types/sla-article"
 import { isEditorRouteIdentity } from "#shared/utils/editor-route-identity"
+import { validRouteSegment } from "#shared/utils/route-segment"
 import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
+import { rawUrlParts } from "#shared/utils/url-safety"
+
+export { validRouteSegment }
 
 const authorPrefixes = ["/forfattare", "/författare", "/f%C3%B6rfattare"] as const
 const searchPrefixes = ["/sok", "/sök", "/s%C3%B6k"] as const
@@ -31,18 +35,6 @@ const dramawebbenPages = new Set(["pjäser", "om", "kringtexter"])
 const authorPages = new Set(["titlar", "dramawebben", "biblinfo", "mer"])
 const authorDocuments = new Set(["presentation", "bibliografi", "semer"])
 const readerMedia = new Set(["etext", "faksimil"])
-export function validRouteSegment(value: string, maximumLength: number): boolean {
-  return value.length > 0
-    && value.length <= maximumLength
-    && value === value.trim()
-    && value !== "."
-    && value !== ".."
-    && !value.includes("\\")
-    && !value.includes("/")
-    && !value.includes("%")
-    && !hasC0OrC1Control(value)
-    && !hasLoneSurrogate(value)
-}
 
 export function encodeRfc3986Segment(value: string): string {
   if (value === "." || value === "..") {
@@ -120,8 +112,21 @@ function decodedSafeHref(value: string): string | null {
   }
 }
 
+function hasRawDotPathSegment(value: string): boolean {
+  const { rawPath } = rawUrlParts(value)
+  try {
+    return rawPath.split("/").some(segment => {
+      const decoded = decodeURIComponent(segment)
+      return decoded === "." || decoded === ".."
+    })
+  } catch {
+    return true
+  }
+}
+
 export function safeNativeHref(value: string): string | null {
-  if (!value || value !== value.trim() || decodedSafeHref(value) === null) return null
+  if (!value || value !== value.trim() || decodedSafeHref(value) === null
+    || hasRawDotPathSegment(value)) return null
   if (value.startsWith("/")) return value.startsWith("//") ? null : value
 
   try {

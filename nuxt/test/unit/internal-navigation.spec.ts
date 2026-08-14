@@ -165,19 +165,46 @@ describe("safe native navigation hrefs", () => {
   test.each([
     ["/verk/legacy-only", "/verk/legacy-only"],
     ["/export/faksimil/Test.pdf?download=1#page=2", "/export/faksimil/Test.pdf?download=1#page=2"],
+    ["/safe%2Fname/%252e%252e/%255c", "/safe%2Fname/%252e%252e/%255c"],
+    [
+      "/safe?next=/%2e%2e/admin#/%2e",
+      "/safe?next=/%2e%2e/admin#/%2e"
+    ],
     ["https://example.test/book", "https://example.test/book"],
     ["http://example.test/book", "http://example.test/book"],
+    [
+      "https://example.test/safe/%252E%252e?next=/%2e%2e#/%2e",
+      "https://example.test/safe/%252E%252e?next=/%2e%2e#/%2e"
+    ],
     ["javascript:alert(1)", null],
     ["data:text/html,unsafe", null],
     ["//evil.example/unsafe", null],
     ["/\\evil.example/unsafe", null],
     ["/%5Cevil.example/unsafe", null],
+    ["/safe\u0080name", null],
+    ["/safe%C2%9Fname", null],
+    ["/safe\ud800name", null],
+    ["/safe\udfffname", null],
+    ["/safe%name", null],
     [" https://example.test/book", null],
     ["https://user:secret@example.test/book", null],
     ["mailto:test@example.test", null],
     ["", null]
   ])("bounds %s to %s", (value, expected) => {
     expect(safeNativeHref(value)).toBe(expected)
+  })
+
+  test.each([
+    ["/./admin", "/admin"],
+    ["/../admin", "/admin"],
+    ["/%2e/admin", "/admin"],
+    ["/%2E%2e/admin", "/admin"],
+    ["/.%2e/admin", "/admin"],
+    ["/%2e./admin", "/admin"],
+    ["https://example.test/safe/%2e%2E/admin", "/admin"]
+  ])("rejects %s before WHATWG normalizes its pathname to %s", (value, pathname) => {
+    expect(new URL(value, "https://litteraturbanken.se/current/page").pathname).toBe(pathname)
+    expect(safeNativeHref(value)).toBeNull()
   })
 })
 
