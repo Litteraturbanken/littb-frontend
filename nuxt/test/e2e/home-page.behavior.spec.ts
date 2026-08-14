@@ -39,6 +39,19 @@ async function navigateClient(page: Page, path: string) {
   }, path)
 }
 
+async function startClientNavigation(page: Page, path: string) {
+  await page.evaluate(target => {
+    type Router = { push: (path: string) => Promise<unknown> }
+    type VueRoot = HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router?: Router } } }
+    }
+    const router = (document.querySelector("#__nuxt") as VueRoot | null)
+      ?.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt router is unavailable")
+    void router.push(target)
+  }, path)
+}
+
 const homeOnlyLinks = [
   ["Lärare", "/skolan/lararsida/"],
   ["Bibliotekarier", "/bibliotekariesidor/"],
@@ -58,6 +71,87 @@ async function assertHomeOnlyLinks(page: Page, visible: boolean) {
 }
 
 test.beforeEach(async ({ request }) => resetHome(request))
+
+test("mounts Home shell before managed content", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await expect(page.getByRole("heading", { name: "Introduktion", exact: true })).toBeVisible()
+
+  let releaseResponse!: () => void
+  const responseReleased = new Promise<void>(resolve => { releaseResponse = resolve })
+  let markRequestStarted!: () => void
+  const requestStarted = new Promise<void>(resolve => { markRequestStarted = resolve })
+  await page.route("**/red/om/start/startsida-ny.html?*", async route => {
+    markRequestStarted()
+    await responseReleased
+    await route.fulfill({ response: await route.fetch() })
+  })
+
+  const navigation = page.getByRole("link", { name: "Litteraturbanken", exact: true }).click()
+  await requestStarted
+  try {
+    await expect(page).toHaveURL("/")
+    await expect(page.getByRole("heading", { name: "Litteraturbanken", exact: true })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Nytt & anmärkningsvärt", exact: true })).toBeVisible()
+    const loadingStatus = page.locator('.searching[role="status"]')
+    await expect(loadingStatus).toHaveCount(1)
+    await expect(loadingStatus).toHaveText("Laddar startsidan")
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken", exact: true })).toHaveCount(0)
+    await expect(page.getByRole("heading", { name: "Introduktion", exact: true })).toHaveCount(0)
+    await expect(page.getByText("Månadens tema", { exact: true })).toHaveCount(0)
+  } finally {
+    releaseResponse()
+    await navigation
+  }
+
+  await expect(page.getByText("Månadens tema", { exact: true })).toBeVisible()
+  await expect(page.locator('.searching[role="status"]')).toHaveCount(0)
+  expect(problems).toEqual([])
+})
+
+test("late Home content cannot populate a fresh revisit", async ({ page }) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+
+  let releaseFirstResponse!: () => void
+  const firstResponseReleased = new Promise<void>(resolve => { releaseFirstResponse = resolve })
+  let markFirstRequestStarted!: () => void
+  const firstRequestStarted = new Promise<void>(resolve => { markFirstRequestStarted = resolve })
+  let markSecondRequestStarted!: () => void
+  const secondRequestStarted = new Promise<void>(resolve => { markSecondRequestStarted = resolve })
+  let requests = 0
+  await page.route("**/red/om/start/startsida-ny.html?*", async route => {
+    requests += 1
+    if (requests === 1) {
+      markFirstRequestStarted()
+      await firstResponseReleased
+      const response = await route.fetch()
+      const body = await response.text()
+      await route.fulfill({
+        response,
+        body: body.replace("Månadens tema", "Försenat gammalt Home-innehåll")
+      })
+      return
+    }
+    markSecondRequestStarted()
+    await route.fulfill({ response: await route.fetch() })
+  })
+
+  const firstNavigation = page.getByRole("link", { name: "Litteraturbanken", exact: true }).click()
+  await firstRequestStarted
+  await startClientNavigation(page, "/bibliotek")
+  await expect(page.getByRole("heading", { name: "Botanisera i biblioteket", exact: true })).toBeVisible()
+
+  await startClientNavigation(page, "/")
+  await secondRequestStarted
+  await expect(page.locator('.searching[role="status"]')).toHaveText("Laddar startsidan")
+  await expect(page.getByText("Månadens tema", { exact: true })).toHaveCount(0)
+  releaseFirstResponse()
+
+  await expect(page.getByText("Månadens tema", { exact: true })).toBeVisible()
+  await expect(page.getByText("Försenat gammalt Home-innehåll", { exact: true })).toHaveCount(0)
+  await firstNavigation.catch(() => undefined)
+  expect(requests).toBe(2)
+})
 
 test("hydrates the SSR Home payload without refetching its editorial fragment", async ({ page, request }) => {
   const problems = captureBrowserProblems(page)

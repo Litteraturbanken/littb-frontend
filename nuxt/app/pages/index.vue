@@ -24,21 +24,33 @@ const cacheBuster = useState<string>("home-cache-buster", () => {
 })
 const config = useRuntimeConfig()
 
-const { data: content } = await useAsyncData<HomeContent>("home-content", async () => {
+const homeContentAsyncData = await useAsyncData<HomeContent>("home-content", async (_nuxtApp, { signal }) => {
   const base = import.meta.server ? config.contentBase : config.public.contentBase
   const url = `${base.replace(/\/$/, "")}${contentPath}?${cacheBuster.value}`
   try {
     const authorityOrigin = base || window.location.origin
-    const source = await fetchManagedText(url, managedHomeTextRules(authorityOrigin))
+    const source = await fetchManagedText(url, managedHomeTextRules(authorityOrigin), (input, init) =>
+      fetch(input, { ...init, signal })
+    )
+    if (signal.aborted) throw signal.reason
     return parseHomeContent(source)
-  } catch {
+  } catch (error) {
+    if (signal.aborted) throw error
     return emptyHomeContent()
   }
 }, {
-  default: () => emptyHomeContent()
+  lazy: true
 })
+const { data: content, pending: homeContentPending } = homeContentAsyncData
 
 const homeContent = computed(() => content.value ?? emptyHomeContent())
+
+function cancelHomeContent(): void {
+  homeContentAsyncData.clear()
+}
+
+onBeforeRouteLeave(cancelHomeContent)
+onBeforeUnmount(cancelHomeContent)
 
 useHead(() => {
   const parsed = homeContent.value
@@ -63,7 +75,14 @@ useHead(() => {
   <div class="center_col">
     <h1>Litteraturbanken</h1>
     <h2 class="caps">Nytt <i class="no-caps">&amp;</i> anmärkningsvärt</h2>
+    <div v-if="homeContentPending && !content" class="searching" role="status" aria-live="polite">
+      <div class="preloader">
+        <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
+        <span class="sr-only">Laddar startsidan</span>
+      </div>
+    </div>
     <RenderableHtmlContent
+      v-else
       as="div"
       :html="homeContent.bodyHtml"
       class="home-editorial"
