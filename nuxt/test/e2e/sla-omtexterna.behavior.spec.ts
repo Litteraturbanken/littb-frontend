@@ -264,7 +264,7 @@ test("a late SLA result cannot replace a newer adjacent author document", async 
   const gate = new Promise<void>(resolve => { releaseSla = resolve })
   let slaStarted!: () => void
   const started = new Promise<void>(resolve => { slaStarted = resolve })
-  await page.route(/\/api\/author-documents\/Lagerl(?:%C3%B6|ö)fS\/omtexterna$/iu, async route => {
+  await page.route(/\/nuxt-api\/author-documents\/Lagerl(?:%C3%B6|ö)fS\/omtexterna$/iu, async route => {
     slaStarted()
     await gate
     await route.fulfill({
