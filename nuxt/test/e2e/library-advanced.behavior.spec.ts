@@ -671,7 +671,24 @@ test("category, publisher, about-author, and narrowing collections restore throu
   await expect.poll(() => new URL(page.url()).searchParams.get("about_authors"))
     .toBe("LagerlofS")
 
-  await chooseMultiOptions(page, page.locator("[data-library-narrowing]"), ["Brev", "Humoristiska verk"])
+  const narrowing = page.locator("[data-library-narrowing]")
+  await narrowing.evaluate(element => {
+    const trigger = element.querySelector(".multiselect")!
+    window.scrollBy(0, trigger.getBoundingClientRect().top - window.innerHeight * 0.75)
+  })
+  await narrowing.click()
+  const brev = narrowing.getByText("Brev", { exact: true })
+  await expect.poll(() => brev.evaluate(element => {
+    const rect = element.getBoundingClientRect()
+    const target = document.elementFromPoint(
+      rect.x + rect.width / 2,
+      rect.y + rect.height / 2
+    )
+    return target === element || element.contains(target)
+  })).toBe(true)
+  await brev.click()
+  await narrowing.getByText("Humoristiska verk", { exact: true }).click()
+  await page.keyboard.press("Escape")
   await expect.poll(() => new URL(page.url()).searchParams.get("keywords_aux"))
     .toBe("texttype:brev;brevsamling,keyword:Humor")
   await expect.poll(async () => (await relevanceQueries(request)).length).toBe(5)

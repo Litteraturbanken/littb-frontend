@@ -384,6 +384,11 @@
     }
 }
 
+.page-library #mainview form:has([data-library-narrowing] .multiselect--active),
+.page-epub #mainview form:has([data-library-narrowing] .multiselect--active) {
+    overflow: visible;
+}
+
 [data-library-advanced-panel] [data-library-narrowing] .search-multiselect__input-row {
     padding-top: 4px;
     padding-bottom: 6px;
