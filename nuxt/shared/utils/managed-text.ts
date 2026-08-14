@@ -370,6 +370,51 @@ function validateManagedResponse(response: Response, rules: ManagedTextRules): v
   }
 }
 
+async function fetchManagedClientResponse(
+  url: string,
+  fetcher: typeof fetch
+): Promise<Response> {
+  if (!url.startsWith("/") || url.startsWith("//") || url.startsWith("/\\")) {
+    throw new Error("Managed text client URL is not allowed")
+  }
+  return fetcher(url, { redirect: "error" })
+}
+
+async function fetchManagedServerResponse(
+  initialUrl: URL,
+  authority: ConfiguredAuthority,
+  rules: ManagedTextRules,
+  fetcher: typeof fetch
+): Promise<Response> {
+  let currentUrl = initialUrl
+  let redirectCount = 0
+  while (true) {
+    const response = await fetcher(currentUrl.href, { redirect: "manual" })
+    if (!managedRedirectStatuses.has(response.status)) return response
+    if (redirectCount >= maximumManagedRedirects) {
+      return rejectUnreadBody(
+        response,
+        new Error("Managed text redirect limit exceeded")
+      )
+    }
+
+    let nextUrl: URL
+    try {
+      nextUrl = validatedManagedRedirectUrl(
+        response.headers.get("location"),
+        currentUrl,
+        authority,
+        rules
+      )
+    } catch (error) {
+      return rejectUnreadBody(response, error)
+    }
+    await cancelManagedRedirectBody(response)
+    currentUrl = nextUrl
+    redirectCount += 1
+  }
+}
+
 export async function fetchManagedText(
   url: string,
   rules: ManagedTextRules,
@@ -377,41 +422,9 @@ export async function fetchManagedText(
 ): Promise<string> {
   const authority = configuredAuthority(rules.authorityOrigin)
   const initialUrl = validatedManagedInitialUrl(url, authority, rules)
-  let response: Response
-  if (import.meta.client) {
-    if (!url.startsWith("/") || url.startsWith("//") || url.startsWith("/\\")) {
-      throw new Error("Managed text client URL is not allowed")
-    }
-    response = await fetcher(url, { redirect: "error" })
-  } else {
-    let currentUrl = initialUrl
-    let redirectCount = 0
-    while (true) {
-      response = await fetcher(currentUrl.href, { redirect: "manual" })
-      if (!managedRedirectStatuses.has(response.status)) break
-      if (redirectCount >= maximumManagedRedirects) {
-        return rejectUnreadBody(
-          response,
-          new Error("Managed text redirect limit exceeded")
-        )
-      }
-
-      let nextUrl: URL
-      try {
-        nextUrl = validatedManagedRedirectUrl(
-          response.headers.get("location"),
-          currentUrl,
-          authority,
-          rules
-        )
-      } catch (error) {
-        return rejectUnreadBody(response, error)
-      }
-      await cancelManagedRedirectBody(response)
-      currentUrl = nextUrl
-      redirectCount += 1
-    }
-  }
+  const response = import.meta.client
+    ? await fetchManagedClientResponse(url, fetcher)
+    : await fetchManagedServerResponse(initialUrl, authority, rules, fetcher)
   try {
     validatedManagedFinalUrl(response.url, authority, rules)
     validateManagedResponse(response, rules)
