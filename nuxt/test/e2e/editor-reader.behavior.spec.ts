@@ -22,6 +22,204 @@ async function navigateClient(page: import("@playwright/test").Page, path: strin
   }, path)
 }
 
+test("mounts Editor before its initial page request settles", async ({ page }) => {
+  let releasePage = () => {}
+  const pageGate = new Promise<void>(resolve => { releasePage = resolve })
+  let notePageStarted = () => {}
+  const pageStarted = new Promise<void>(resolve => { notePageStarted = resolve })
+  const pageRoute = async (route: import("@playwright/test").Route) => {
+    const response = await route.fetch()
+    notePageStarted()
+    await pageGate
+    try {
+      await route.fulfill({ response })
+    } catch (error) {
+      if (!String(error).includes("Route is already handled")) throw error
+    }
+  }
+
+  await page.route("**/nuxt-api/editor/**", pageRoute)
+  try {
+    await page.goto("/bibliotek", { waitUntil: "networkidle" })
+    await expect(page.getByRole("heading", { name: "Botanisera i biblioteket" })).toBeVisible()
+
+    void navigateClient(page, editorFaksimil)
+    await pageStarted
+
+    const editor = page.locator(".editor-reader")
+    await expect(editor).toHaveCount(1)
+    await expect(editor.locator('[role="status"]')).toHaveCount(1)
+    await expect(editor.locator('[role="status"] .sr-only')).toHaveText("Laddar editorsidan")
+    await expect(page.getByRole("heading", { name: "Botanisera i biblioteket" })).toHaveCount(0)
+    await expect(editor.locator(".reader_main")).toHaveCount(0)
+
+    releasePage()
+    await expect(editor.locator(".reader_main")).toHaveCount(1)
+  } finally {
+    releasePage()
+    await page.unroute("**/nuxt-api/editor/**", pageRoute)
+  }
+})
+
+test("requested Editor source information starts once after its page is accepted", async ({ page }) => {
+  let releasePage = () => {}
+  const pageGate = new Promise<void>(resolve => { releasePage = resolve })
+  let releaseSourceInfo = () => {}
+  const sourceInfoGate = new Promise<void>(resolve => { releaseSourceInfo = resolve })
+  let noteSourceInfoStarted = () => {}
+  const sourceInfoStarted = new Promise<void>(resolve => { noteSourceInfoStarted = resolve })
+  let sourceInfoRequests = 0
+  const pageRoute = async (route: import("@playwright/test").Route) => {
+    const response = await route.fetch()
+    await pageGate
+    try {
+      await route.fulfill({ response })
+    } catch (error) {
+      if (!String(error).includes("Route is already handled")) throw error
+    }
+  }
+  const sourceInfoRoute = async (route: import("@playwright/test").Route) => {
+    sourceInfoRequests += 1
+    noteSourceInfoStarted()
+    const response = await route.fetch()
+    await sourceInfoGate
+    try {
+      await route.fulfill({ response })
+    } catch (error) {
+      if (!String(error).includes("Route is already handled")) throw error
+    }
+  }
+
+  await page.route("**/nuxt-api/editor/**", pageRoute)
+  await page.route("**/nuxt-api/reader/source-info/**", sourceInfoRoute)
+  try {
+    await page.goto("/bibliotek", { waitUntil: "networkidle" })
+    void navigateClient(page, `${editorFaksimil}?om-boken`)
+    await expect(page.locator('.editor-reader [role="status"]')).toHaveCount(1)
+    expect(sourceInfoRequests).toBe(0)
+
+    releasePage()
+    await sourceInfoStarted
+    expect(sourceInfoRequests).toBe(1)
+    await expect(page.getByRole("dialog", { name: "Om boken" })).toBeVisible()
+
+    releaseSourceInfo()
+    await expect(page.getByRole("dialog", { name: "Om boken" }))
+      .toContainText("Doktor Glas. Roman")
+    expect(sourceInfoRequests).toBe(1)
+  } finally {
+    releasePage()
+    releaseSourceInfo()
+    await page.unroute("**/nuxt-api/reader/source-info/**", sourceInfoRoute)
+    await page.unroute("**/nuxt-api/editor/**", pageRoute)
+  }
+})
+
+test("late initial Editor settlement is inert after route exit", async ({ page }) => {
+  await page.addInitScript(() => {
+    const nativeFetch = window.fetch.bind(window)
+    let releaseFirstPage = () => {}
+    const firstPageGate = new Promise<void>(resolve => { releaseFirstPage = resolve })
+    let releaseSecondPage = () => {}
+    const secondPageGate = new Promise<void>(resolve => { releaseSecondPage = resolve })
+    const gate = {
+      requests: 0,
+      firstStarted: false,
+      firstReleased: false,
+      firstAbortedWhenReleased: false,
+      releaseFirst: releaseFirstPage,
+      releaseSecond: releaseSecondPage,
+      restore: () => { window.fetch = nativeFetch }
+    }
+    Object.defineProperty(window, "__initialEditorPageGate", { value: gate })
+    window.fetch = async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      if (!new URL(request.url).pathname.startsWith("/nuxt-api/editor/")) {
+        return nativeFetch(input, init)
+      }
+      gate.requests += 1
+      const response = await nativeFetch(input, init)
+      if (gate.requests === 1) {
+        gate.firstStarted = true
+        await firstPageGate
+        gate.firstReleased = true
+        gate.firstAbortedWhenReleased = request.signal.aborted
+      } else {
+        await secondPageGate
+      }
+      return response
+    }
+  })
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  await expect(page.getByRole("heading", { name: "Botanisera i biblioteket" })).toBeVisible()
+
+  const problems: string[] = []
+  page.on("console", message => {
+    if (message.type() === "error" || /hydration|unhandledrejection/i.test(message.text())) {
+      problems.push(`console: ${message.text()}`)
+    }
+  })
+  page.on("pageerror", error => problems.push(`pageerror: ${error.message}`))
+
+  try {
+    void navigateClient(page, editorFaksimil)
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __initialEditorPageGate?: { firstStarted: boolean }
+      }).__initialEditorPageGate?.firstStarted ?? false
+    ))).toBe(true)
+    await expect(page.locator('.editor-reader [role="status"]')).toHaveCount(1)
+    await expect(page.locator('.editor-reader [role="status"] .sr-only'))
+      .toHaveText("Laddar editorsidan")
+
+    await navigateClient(page, "/om/ide")
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+    await page.evaluate(() => (
+      (window as typeof window & {
+        __initialEditorPageGate?: { releaseFirst: () => void }
+      }).__initialEditorPageGate?.releaseFirst()
+    ))
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __initialEditorPageGate?: {
+          firstReleased: boolean
+          firstAbortedWhenReleased: boolean
+        }
+      }).__initialEditorPageGate
+    ))).toMatchObject({ firstReleased: true, firstAbortedWhenReleased: true })
+    await expect(page.locator(".editor-reader")).toHaveCount(0)
+    expect(problems).toEqual([])
+
+    void navigateClient(page, editorFaksimil)
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __initialEditorPageGate?: { requests: number }
+      }).__initialEditorPageGate?.requests ?? 0
+    ))).toBe(2)
+    await expect(page.locator('.editor-reader [role="status"]')).toHaveCount(1)
+    await page.evaluate(() => (
+      (window as typeof window & {
+        __initialEditorPageGate?: { releaseSecond: () => void }
+      }).__initialEditorPageGate?.releaseSecond()
+    ))
+    await expect(page.locator(".editor-reader .reader_main")).toHaveCount(1)
+    expect(problems).toEqual([])
+  } finally {
+    await page.evaluate(() => {
+      const gate = (window as typeof window & {
+        __initialEditorPageGate?: {
+          releaseFirst: () => void
+          releaseSecond: () => void
+          restore: () => void
+        }
+      }).__initialEditorPageGate
+      gate?.releaseFirst()
+      gate?.releaseSecond()
+      gate?.restore()
+    })
+  }
+})
+
 test("editor Reader resolves compact media aliases with legacy asset URLs and raw-index navigation", async ({ page }) => {
   await page.goto(editorFaksimil, { waitUntil: "networkidle" })
   await expect(page.locator(".editor-reader")).toBeVisible()

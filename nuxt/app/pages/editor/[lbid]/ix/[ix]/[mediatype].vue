@@ -72,17 +72,41 @@ const requestIdentity = computed(() => JSON.stringify([
 ]))
 const requestFetch = useRequestFetch()
 const runtimeClient = useLbApiClient()
-function requestPage(): Promise<EditorReaderPage> {
+function requestPage(signal?: AbortSignal): Promise<EditorReaderPage> {
   return requestFetch<EditorReaderPage>(
     `/nuxt-api/editor/${encodeURIComponent(workId.value)}/${index.value}/${alias.value}`,
-    { retry: 0 }
+    { retry: 0, signal }
   )
 }
 const initialIdentity = requestIdentity.value
-const { data: loadedPage, error } = await useAsyncData(
+let pageRequestController: AbortController | null = null
+const editorPageAsyncData = await useAsyncData(
   `editor-reader:${initialIdentity}`,
-  requestPage
+  async (_nuxtApp, { signal }) => {
+    pageRequestController?.abort()
+    const controller = new AbortController()
+    pageRequestController = controller
+    const requestSignal = AbortSignal.any([signal, controller.signal])
+    try {
+      const nextPage = await requestPage(requestSignal)
+      if (requestSignal.aborted) {
+        throw requestSignal.reason ?? new DOMException("Editor page request aborted", "AbortError")
+      }
+      return nextPage
+    } finally {
+      if (pageRequestController === controller) pageRequestController = null
+    }
+  },
+  { lazy: true }
 )
+const {
+  data: loadedPage,
+  error,
+  pending: editorPageAsyncPending
+} = editorPageAsyncData
+const editorPagePending = computed(() => editorPageAsyncPending.value
+  || editorPageAsyncData.status.value === "idle"
+  || editorPageAsyncData.status.value === "pending")
 if (import.meta.server && error.value) {
   throw createError({
     statusCode: error.value.statusCode ?? 500,
@@ -92,28 +116,72 @@ if (import.meta.server && error.value) {
 if (import.meta.server && !loadedPage.value) {
   throw createError({ statusCode: 502, statusMessage: "Editor page unavailable" })
 }
-const loadedIdentity = ref(initialIdentity)
-const page = computed(() => loadedIdentity.value === requestIdentity.value
-  ? loadedPage.value
-  : null)
+type AcceptedEditorPage = { identity: string, page: EditorReaderPage }
+const acceptedPage = useState<AcceptedEditorPage | null>(
+  `editor-reader-accepted-page:${workId.value}:${alias.value}`,
+  () => null
+)
+const loadedIdentity = ref<string | null>(loadedPage.value
+  ? initialIdentity
+  : acceptedPage.value?.identity ?? null)
+watch(loadedPage, candidate => {
+  if (candidate && requestIdentity.value === initialIdentity) {
+    acceptedPage.value = { identity: initialIdentity, page: candidate }
+    loadedIdentity.value = initialIdentity
+  }
+}, { immediate: true, flush: "sync" })
+const page = computed(() => acceptedPage.value?.page ?? null)
 const ocrMode = computed(() => route.query.ocr !== undefined && Boolean(page.value?.overlayHtml))
 const authorSearchHref = computed(() => page.value?.authorId
   ? `/s%C3%B6k?avancerad&forfattare=${encodeURIComponent(page.value.authorId)}`
   : null)
 const clientRequestFailed = ref(import.meta.client && Boolean(error.value))
+watch(error, value => {
+  if (import.meta.client && value) {
+    acceptedPage.value = null
+    loadedIdentity.value = null
+    clientRequestFailed.value = true
+  }
+})
 let requestGeneration = 0
 watch(requestIdentity, async identity => {
   const generation = ++requestGeneration
   clientRequestFailed.value = false
   sliderDraft.value = null
+  pageRequestController?.abort()
+  const controller = new AbortController()
+  pageRequestController = controller
   try {
-    const nextPage = await requestPage()
-    if (generation !== requestGeneration) return
+    const nextPage = await requestPage(controller.signal)
+    if (controller.signal.aborted || generation !== requestGeneration) return
     loadedPage.value = nextPage
+    acceptedPage.value = { identity, page: nextPage }
     loadedIdentity.value = identity
     clientRequestFailed.value = false
   } catch {
-    if (generation === requestGeneration) clientRequestFailed.value = true
+    if (!controller.signal.aborted && generation === requestGeneration) {
+      acceptedPage.value = null
+      loadedIdentity.value = null
+      clientRequestFailed.value = true
+    }
+  } finally {
+    if (pageRequestController === controller) pageRequestController = null
+  }
+})
+function cancelEditorPageRequest(): void {
+  requestGeneration += 1
+  pageRequestController?.abort()
+  editorPageAsyncData.clear()
+  acceptedPage.value = null
+}
+onBeforeRouteLeave(to => {
+  if (!isEditorRouteIdentity(to.params.lbid, to.params.ix, to.params.mediatype)) {
+    cancelEditorPageRequest()
+  }
+})
+onBeforeUnmount(() => {
+  if (!isEditorRouteIdentity(route.params.lbid, route.params.ix, route.params.mediatype)) {
+    cancelEditorPageRequest()
   }
 })
 function rawSuffix(fullPath: string): string {
@@ -358,6 +426,7 @@ type EditorSourceInfoState =
   | { status: "error", identity: string }
 const initialSourceInfoRequested = sourceInfoRequested.value
 let sourceInfoController: AbortController | null = null
+let sourceInfoControllerIdentity: string | null = null
 const sourceInfoFetch = await useAsyncData<EditorSourceInfoState>(
   computed(() => `editor-source-info:${sourceInfoIdentity.value}`),
   async (_nuxtApp, { signal }) => {
@@ -369,6 +438,7 @@ const sourceInfoFetch = await useAsyncData<EditorSourceInfoState>(
     }
     const controller = new AbortController()
     sourceInfoController = controller
+    sourceInfoControllerIdentity = identity
     try {
       const sourceInfo = await requestFetch<ReaderSourceInfo>([
         "/nuxt-api/reader/source-info",
@@ -383,10 +453,13 @@ const sourceInfoFetch = await useAsyncData<EditorSourceInfoState>(
     } catch {
       return { status: "error" as const, identity }
     } finally {
-      if (sourceInfoController === controller) sourceInfoController = null
+      if (sourceInfoController === controller) {
+        sourceInfoController = null
+        sourceInfoControllerIdentity = null
+      }
     }
   },
-  { immediate: initialSourceInfoRequested }
+  { immediate: initialSourceInfoRequested, lazy: true }
 )
 const sourceInfo = computed(() => {
   const current = sourceInfoFetch.data.value
@@ -409,7 +482,9 @@ watch(sourceInfoRequested, open => {
     void sourceInfoFetch.execute()
   }
 })
-watch(sourceInfoIdentity, () => sourceInfoController?.abort())
+watch(sourceInfoIdentity, identity => {
+  if (sourceInfoControllerIdentity !== identity) sourceInfoController?.abort()
+})
 onBeforeUnmount(() => sourceInfoController?.abort())
 
 function openSourceInfo(): void {
@@ -745,7 +820,7 @@ const hitFetch = await useAsyncData(
       if (hitFetchController === controller) hitFetchController = null
     }
   },
-  { watch: [searchRequestIdentity] }
+  { lazy: true, watch: [searchRequestIdentity] }
 )
 onBeforeUnmount(() => hitFetchController?.abort())
 const hitResponse = computed(() => {
@@ -1164,6 +1239,12 @@ useHead(() => ({
 
 <template>
   <div class="editor-reader reader-page">
+    <div v-if="editorPagePending && !page" class="searching" role="status" aria-live="polite">
+      <div class="preloader">
+        <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
+        <span class="sr-only">Laddar editorsidan</span>
+      </div>
+    </div>
     <p v-if="clientRequestFailed" class="reader-error" role="alert">Ett fel inträffade vid sidhämtningen.</p>
     <section v-if="page" class="reader_main state-not-parallel relative" :class="{ 'type-faksimil': page.mediaType === 'faksimil', focus: focusMode, night: focusMode && focusNightMode, ocr: ocrMode }" :style="focusReaderStyle" @click="toggleFocusBar">
       <RenderableHtmlContent
