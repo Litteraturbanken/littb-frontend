@@ -1873,6 +1873,7 @@ v-for="item in [
   background: none;
   color: #333;
   font: inherit;
+  text-transform: inherit;
   cursor: pointer;
 }
 
@@ -1982,16 +1983,6 @@ v-for="item in [
 .littb_pager .ctrl a[aria-disabled="true"] {
   color: grey !important;
   cursor: default;
-}
-
-.navigator button {
-  display: inline;
-  color: #333;
-  white-space: nowrap;
-}
-
-.navigator button.selected {
-  color: #7a1400;
 }
 
 @media (max-width: 767px) {

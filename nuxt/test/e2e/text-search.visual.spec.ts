@@ -139,3 +139,37 @@ for (const visualCase of visualCases) {
     expect(problems).toEqual([])
   })
 }
+
+test("keeps mobile chronology controls inside the viewport and keyboard reachable", async ({
+  page
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-chromium", "mobile geometry coverage")
+
+  const visualCase = visualCases[0]
+  const response = await page.goto(visualCase.route, { waitUntil: "domcontentloaded" })
+  expect(response?.status()).toBe(200)
+  await expectReady(page, visualCase)
+
+  const controls = [
+    page.getByRole("slider", { name: "Från år reglage" }),
+    page.getByRole("slider", { name: "Till år reglage" }),
+    page.getByRole("textbox", { name: "Från år" }),
+    page.getByRole("textbox", { name: "Till år" })
+  ]
+  const viewportWidth = await page.evaluate(() => window.innerWidth)
+  expect(viewportWidth).toBe(390)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewportWidth)
+
+  for (const control of controls) {
+    await expect(control).toBeVisible()
+    const box = await control.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) throw new Error("Chronology control has no rendered geometry")
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(viewportWidth)
+    expect(await control.evaluate(element => (element as HTMLElement).tabIndex))
+      .toBeGreaterThanOrEqual(0)
+    await control.focus()
+    await expect(control).toBeFocused()
+  }
+})
