@@ -173,6 +173,170 @@ test("mounts Presentation before document and background settle", async ({ page 
   }
 })
 
+test("Presentation article navigation removes prior state while the next aggregate is pending", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  const productionRequests = await routeFixtureAssetsAndBlockProduction(page)
+  const nextDocumentPath = "/red/presentationer/specialomraden/Censur.html"
+  await page.goto("/presentationer/specialomraden/Rostratt.html", {
+    waitUntil: "networkidle"
+  })
+
+  const priorStylesheet = page.locator(
+    'link[rel="stylesheet"][href="/red/presentationer/specialomraden/Rostratt.css"]'
+  )
+  await expect(page.getByRole("heading", { name: "Rösträtt 1919", exact: true })).toBeVisible()
+  await expect(page).toHaveTitle("Rösträtt 1919 | Litteraturbanken")
+  await expect(descriptionMeta(page)).toHaveAttribute("content", "Rösträtt 1919")
+  await expect(priorStylesheet).toHaveCount(1)
+  expect(await documentStyleText(page)).toContain("html { background-color: #382a32; }")
+  await expect(page.locator("html")).toHaveAttribute("style", /rostratt_a\.jpg/u)
+  await expect(page.locator("body")).toHaveClass(/\bbkg-add-border\b/u)
+  await expect(page.locator("body")).toHaveClass(/\bbkg-paper\b/u)
+
+  await page.evaluate(documentPath => {
+    type TrackedWindow = Window & typeof globalThis & {
+      __presentationDocumentConsumption?: {
+        consumed: boolean
+        restore: () => void
+      }
+    }
+    const trackedWindow = window as TrackedWindow
+    const originalFetch = window.fetch
+    const nativeFetch = originalFetch.bind(window)
+    const tracking = {
+      consumed: false,
+      restore: () => { window.fetch = originalFetch }
+    }
+    trackedWindow.__presentationDocumentConsumption = tracking
+    window.fetch = async (input, init) => {
+      const response = await nativeFetch(input, init)
+      const requestUrl = input instanceof Request ? input.url : input.toString()
+      if (new URL(requestUrl, window.location.href).pathname !== documentPath || !response.body) {
+        return response
+      }
+
+      const responseBody = response.body
+      const originalGetReader = responseBody.getReader.bind(responseBody)
+      Object.defineProperty(responseBody, "getReader", {
+        value: () => {
+          const reader = originalGetReader()
+          const originalRead = reader.read.bind(reader)
+          reader.read = async () => {
+            const result = await originalRead()
+            if (result.done) tracking.consumed = true
+            return result
+          }
+          return reader
+        }
+      })
+      return response
+    }
+  }, nextDocumentPath)
+
+  let releaseDocument!: () => void
+  const documentReleased = new Promise<void>(resolve => { releaseDocument = resolve })
+  let markDocumentStarted!: () => void
+  const documentStarted = new Promise<void>(resolve => { markDocumentStarted = resolve })
+  let markDocumentHandled!: () => void
+  const documentHandled = new Promise<void>(resolve => { markDocumentHandled = resolve })
+  let releaseBackground!: () => void
+  const backgroundReleased = new Promise<void>(resolve => { releaseBackground = resolve })
+  let markBackgroundStarted!: () => void
+  const backgroundStarted = new Promise<void>(resolve => { markBackgroundStarted = resolve })
+  await page.route(`**${nextDocumentPath}`, async route => {
+    markDocumentStarted()
+    await documentReleased
+    await route.fulfill({ response: await route.fetch() })
+    markDocumentHandled()
+  })
+  await page.route(`**${backgroundsPath}`, async route => {
+    markBackgroundStarted()
+    await backgroundReleased
+    await route.fulfill({ response: await route.fetch() })
+  })
+
+  try {
+    await startClientNavigation(page, "/presentationer/specialomraden/Censur.html")
+    await Promise.all([documentStarted, backgroundStarted])
+
+    await expect(page).toHaveURL("/presentationer/specialomraden/Censur.html")
+    await expect(page).toHaveTitle("Presentationer | Litteraturbanken")
+    await expect(page.locator(
+      'meta[name="description"][content="Rösträtt 1919"]'
+    )).toHaveCount(0)
+    await expect(page.locator(
+      'meta[name="description"][content="Censur och liknande ingrepp mot"]'
+    )).toHaveCount(0)
+    const loadingStatus = page.locator('.searching[role="status"]')
+    await expect(loadingStatus).toHaveCount(1)
+    await expect(loadingStatus).toHaveText("Laddar presentationen")
+    await expect(page.getByRole("heading", { name: "Rösträtt 1919", exact: true })).toHaveCount(0)
+    await expect(page.getByText("Kvinnlig rösträtt: en digital utställning", { exact: true }))
+      .toHaveCount(0)
+    await expect(page.getByRole("heading", {
+      name: "Censur och liknande ingrepp mot tryckta skrifter",
+      exact: true
+    })).toHaveCount(0)
+    await expect(page.locator(".content")).toHaveCount(0)
+    await expect(priorStylesheet).toHaveCount(0)
+    expect(await documentStyleText(page)).not.toContain("html { background-color: #382a32; }")
+    await expect(page.locator("html")).not.toHaveAttribute("style", /rostratt_[ab]\.jpg/u)
+    await expect(page.locator("body")).not.toHaveClass(/\bbkg-add-border\b/u)
+    await expect(page.locator("body")).not.toHaveClass(/\bbkg-paper\b/u)
+    await expect(page.locator("body")).not.toHaveClass(/\bbkg-folder-fallback\b/u)
+
+    releaseDocument()
+    await documentHandled
+    await expect.poll(() => page.evaluate(() => (
+      (window as Window & typeof globalThis & {
+        __presentationDocumentConsumption?: { consumed: boolean }
+      }).__presentationDocumentConsumption?.consumed ?? false
+    ))).toBe(true)
+    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())))
+    await expect(loadingStatus).toHaveCount(1)
+    await expect(page).toHaveTitle("Presentationer | Litteraturbanken")
+    await expect(page.locator(
+      'meta[name="description"][content="Rösträtt 1919"]'
+    )).toHaveCount(0)
+    await expect(page.locator(
+      'meta[name="description"][content="Censur och liknande ingrepp mot"]'
+    )).toHaveCount(0)
+    await expect(page.getByRole("heading", {
+      name: "Censur och liknande ingrepp mot tryckta skrifter",
+      exact: true
+    })).toHaveCount(0)
+    await expect(page.locator(".content")).toHaveCount(0)
+    await expect(page.locator("html")).not.toHaveAttribute("style", /rostratt_b\.jpg/u)
+    await expect(page.locator("body")).not.toHaveClass(/\bbkg-folder-fallback\b/u)
+
+    releaseBackground()
+    await expect(page.getByRole("heading", {
+      name: "Censur och liknande ingrepp mot tryckta skrifter",
+      exact: true
+    })).toBeVisible()
+    await expect(page).toHaveTitle("Censur och liknande ingrepp mot | Litteraturbanken")
+    await expect(descriptionMeta(page)).toHaveAttribute(
+      "content",
+      "Censur och liknande ingrepp mot"
+    )
+    await expect(page.locator("html")).toHaveAttribute("style", /rostratt_b\.jpg/u)
+    await expect(page.locator("body")).toHaveClass(/\bbkg-folder-fallback\b/u)
+    await expect(priorStylesheet).toHaveCount(0)
+    expect(productionRequests).toEqual([])
+    expect(problems).toEqual([])
+  } finally {
+    releaseDocument()
+    releaseBackground()
+    await page.evaluate(() => {
+      (window as Window & typeof globalThis & {
+        __presentationDocumentConsumption?: { restore: () => void }
+      }).__presentationDocumentConsumption?.restore()
+    }).catch(() => {})
+  }
+})
+
 test("late Presentation content cannot populate a fresh revisit", async ({ page }) => {
   const problems = captureBrowserProblems(page)
   const documentPath = "/red/presentationer/specialomraden/Censur.html"
