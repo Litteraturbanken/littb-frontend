@@ -534,6 +534,7 @@ const catalogFiltersActive = computed(() => (
 ))
 const authorSearch = ref("")
 const authorPointerFocused = ref(false)
+const filterPointerFocused = ref(false)
 
 const mediaAuthorIds = computed<ReadonlySet<string>>(() => {
   if (mediaType.value === "all") return new Set()
@@ -849,7 +850,14 @@ useHead(() => ({
         <div class="auth_select_container">
           <Popover v-if="listType === 'pjäser'" v-slot="{ open: isOpen }">
             <div class="btn-group" :class="{ open: isOpen }">
-              <PopoverButton type="button" class="btn btn-primary filter_btn">
+              <PopoverButton
+                type="button"
+                class="btn btn-primary filter_btn"
+                :class="{ filter_pointer_focused: filterPointerFocused }"
+                @blur="filterPointerFocused = false"
+                @keydown="filterPointerFocused = false"
+                @pointerdown="filterPointerFocused = true"
+              >
                 Akter och roller <span class="caret" />
               </PopoverButton>
               <PopoverPanel as="ul" class="dropdown-menu" role="group">
@@ -1088,12 +1096,14 @@ useHead(() => ({
   display: inline-block;
   vertical-align: middle;
 }
-.catalog_select .select2-selection__rendered,
-.catalog_select .select2-selection__rendered::placeholder {
-  color: #999;
+.catalog_select .select2-selection__rendered {
+  color: #555;
   font-family: "Requiem Text SC A", "Requiem Text SC B";
   font-variant: normal;
   text-transform: lowercase !important;
+}
+.catalog_select input.select2-selection__rendered::placeholder {
+  color: #767676;
   opacity: 1;
 }
 .controls .dropdown-menu > li:not(:last-child) { min-height: 54px; }
@@ -1163,8 +1173,13 @@ useHead(() => ({
   background-image: none !important;
   background-size: auto !important;
 }
-:deep(.controls .filter_btn:focus) {
+.controls :deep(.filter_btn:focus) {
   outline: 0 !important;
+  box-shadow: none !important;
+}
+.controls :deep(.filter_btn:focus-visible:not(.filter_pointer_focused)) {
+  outline: 1px solid #7A1400 !important;
+  outline-offset: 0;
   box-shadow: none !important;
 }
 @media (max-width: 639px) {

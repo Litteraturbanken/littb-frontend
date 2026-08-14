@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test"
 
 import { dramawebbenCatalogExpected } from "../fixtures/dramawebben-catalog-data.mjs"
 
@@ -125,6 +125,70 @@ function collectProblems(page: Page) {
     }
   })
   return problems
+}
+
+async function resolvedTextContrast(locator: Locator, pseudo?: "::placeholder") {
+  return locator.evaluate((element, pseudoSelector) => {
+    type Color = { alpha: number, blue: number, green: number, red: number }
+
+    const parseColor = (value: string): Color => {
+      if (value === "transparent") return { red: 0, green: 0, blue: 0, alpha: 0 }
+      const channels = value.match(/[\d.]+/gu)?.map(Number)
+      if (!channels || channels.length < 3) throw new Error(`Unsupported color: ${value}`)
+      return {
+        red: channels[0]!,
+        green: channels[1]!,
+        blue: channels[2]!,
+        alpha: channels[3] ?? 1
+      }
+    }
+    const composite = (foreground: Color, background: Color): Color => {
+      const alpha = foreground.alpha + background.alpha * (1 - foreground.alpha)
+      if (alpha === 0) return { red: 0, green: 0, blue: 0, alpha: 0 }
+      return {
+        red: (foreground.red * foreground.alpha
+          + background.red * background.alpha * (1 - foreground.alpha)) / alpha,
+        green: (foreground.green * foreground.alpha
+          + background.green * background.alpha * (1 - foreground.alpha)) / alpha,
+        blue: (foreground.blue * foreground.alpha
+          + background.blue * background.alpha * (1 - foreground.alpha)) / alpha,
+        alpha
+      }
+    }
+    const ancestry: Element[] = []
+    for (let current: Element | null = element; current; current = current.parentElement) {
+      ancestry.push(current)
+    }
+    let background: Color = { red: 255, green: 255, blue: 255, alpha: 1 }
+    for (const ancestor of ancestry.reverse()) {
+      background = composite(parseColor(getComputedStyle(ancestor).backgroundColor), background)
+    }
+
+    const style = getComputedStyle(element, pseudoSelector)
+    const foreground = parseColor(style.color)
+    foreground.alpha *= Number.parseFloat(style.opacity || "1")
+    const renderedForeground = composite(foreground, background)
+    const luminance = (color: Color) => {
+      const linear = (channel: number) => {
+        const normalized = channel / 255
+        return normalized <= 0.04045
+          ? normalized / 12.92
+          : ((normalized + 0.055) / 1.055) ** 2.4
+      }
+      return 0.2126 * linear(color.red)
+        + 0.7152 * linear(color.green)
+        + 0.0722 * linear(color.blue)
+    }
+    const foregroundLuminance = luminance(renderedForeground)
+    const backgroundLuminance = luminance(background)
+
+    return {
+      background: [background.red, background.green, background.blue].map(Math.round),
+      foregroundCss: style.color,
+      ratio: (Math.max(foregroundLuminance, backgroundLuminance) + 0.05)
+        / (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
+    }
+  }, pseudo)
 }
 
 async function expectExactLinks(page: Page, kind: "pjäser" | "om" | "kringtexter") {
@@ -1410,6 +1474,104 @@ test("drama range capture loss prevents a later stale pointer commit", async ({ 
   await page.waitForTimeout(100)
   await expectQuery(page, "number_of_pages", "24,120")
   expect(new URL(page.url()).searchParams.get("keep")).toBe("capture")
+})
+
+test("catalog selected values and author placeholder meet normal-text contrast", async ({
+  page
+}) => {
+  await page.goto(
+    "/dramawebben/pjäser?author=StrindbergA&gender=female&mediatype=pdf",
+    { waitUntil: "networkidle" }
+  )
+
+  const authorInput = page.getByRole("combobox", { name: "Visa författare", exact: true })
+  await expect(authorInput).toHaveValue("Strindberg")
+  const selectedValues = [
+    authorInput,
+    page.getByRole("button", { name: "Kön: Kvinnliga författare", exact: true })
+      .locator(".select2-selection__rendered"),
+    page.getByRole("button", { name: "Utgivningsformat: PDF", exact: true })
+      .locator(".select2-selection__rendered")
+  ]
+  for (const selectedValue of selectedValues) {
+    const contrast = await resolvedTextContrast(selectedValue)
+    expect(contrast.foregroundCss).toBe("rgb(85, 85, 85)")
+    expect(contrast.background).toEqual([255, 255, 255])
+    expect(contrast.ratio).toBeGreaterThanOrEqual(4.5)
+  }
+
+  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+  const defaultAuthorInput = page.getByRole("combobox", {
+    name: "Visa författare",
+    exact: true
+  })
+  await expect(defaultAuthorInput).toHaveValue("Välj författare")
+  const defaultValueContrast = await resolvedTextContrast(defaultAuthorInput)
+  expect(defaultValueContrast.foregroundCss).toBe("rgb(85, 85, 85)")
+  expect(defaultValueContrast.background).toEqual([255, 255, 255])
+  expect(defaultValueContrast.ratio).toBeGreaterThanOrEqual(4.5)
+  await defaultAuthorInput.fill("")
+  await expect(defaultAuthorInput).toHaveValue("")
+  const placeholderContrast = await resolvedTextContrast(defaultAuthorInput, "::placeholder")
+  expect(placeholderContrast.foregroundCss).toBe("rgb(118, 118, 118)")
+  expect(placeholderContrast.background).toEqual([255, 255, 255])
+  expect(placeholderContrast.ratio).toBeGreaterThanOrEqual(4.5)
+})
+
+test("range filter button shows its narrow focus indicator only for keyboard use", async ({
+  page
+}) => {
+  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+
+  const filterButton = page.getByRole("button", { name: "Akter och roller", exact: true })
+  const initialBox = await filterButton.boundingBox()
+  expect(initialBox).not.toBeNull()
+  const focusTreatment = () => filterButton.evaluate(element => {
+    const style = getComputedStyle(element)
+    return {
+      boxShadow: style.boxShadow,
+      outlineColor: style.outlineColor,
+      outlineOffset: style.outlineOffset,
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth
+    }
+  })
+
+  await page.getByRole("button", { name: /^Utgivningsformat(?:$|:)/u }).focus()
+  await page.keyboard.press("Tab")
+  await expect(filterButton).toBeFocused()
+  await expect.poll(focusTreatment).toEqual({
+    boxShadow: "none",
+    outlineColor: "rgb(122, 20, 0)",
+    outlineOffset: "0px",
+    outlineStyle: "solid",
+    outlineWidth: "1px"
+  })
+  expect(await filterButton.boundingBox()).toEqual(initialBox)
+
+  await page.locator(".page_content p").first().click()
+  await filterButton.click()
+  await expect(filterButton).toBeFocused()
+  await expect.poll(async () => {
+    const treatment = await focusTreatment()
+    return {
+      boxShadow: treatment.boxShadow,
+      outlineStyle: treatment.outlineStyle,
+      outlineWidth: treatment.outlineWidth
+    }
+  }).toEqual({ boxShadow: "none", outlineStyle: "none", outlineWidth: "0px" })
+  expect(await filterButton.boundingBox()).toEqual(initialBox)
+
+  await page.keyboard.press("Escape")
+  await expect(filterButton).toBeFocused()
+  await expect.poll(focusTreatment).toEqual({
+    boxShadow: "none",
+    outlineColor: "rgb(122, 20, 0)",
+    outlineOffset: "0px",
+    outlineStyle: "solid",
+    outlineWidth: "1px"
+  })
+  expect(await filterButton.boundingBox()).toEqual(initialBox)
 })
 
 test("author combobox shows its narrow focus indicator only for keyboard use", async ({
