@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page, type Route } from "@playwright/test"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 
@@ -270,6 +270,162 @@ test("mounts Search before advanced options settle", async ({ page, request }) =
   await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(1)
   await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toHaveCount(0)
   await expect(search.locator("#results .results tr")).toHaveCount(0)
+})
+
+test("waits for accepted advanced options before sending route-owned result filters", async ({
+  page,
+  request
+}) => {
+  await page.goto("/om/ide", { waitUntil: "domcontentloaded" })
+  await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+
+  let releaseOptions = () => {}
+  const optionsGate = new Promise<void>(resolve => { releaseOptions = resolve })
+  let optionsHandled = Promise.resolve()
+  const holdOptions = async (route: Route) => {
+    const response = await route.fetch()
+    optionsHandled = optionsGate.then(() => route.fulfill({ response }))
+    await optionsHandled
+  }
+  await page.route("**/api/v2/text-search/options", holdOptions)
+
+  try {
+    void pushRoute(
+      page,
+      "/s%C3%B6k?avancerad&fras=frihet&forfattare=Lagerl%C3%B6fS"
+    ).catch(() => undefined)
+
+    const search = page.locator("[data-search-root]")
+    await expect(search).toBeVisible({ timeout: 1500 })
+    await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+    await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(1)
+    await page.waitForTimeout(200)
+    expect(await requests(request, "results")).toEqual([])
+
+    releaseOptions()
+    await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
+    expect((await requests(request, "results"))[0]?.body).toMatchObject({
+      query: "frihet",
+      author_ids: ["LagerlöfS"]
+    })
+  } finally {
+    releaseOptions()
+    await optionsHandled.catch(() => undefined)
+    await page.unroute("**/api/v2/text-search/options", holdOptions)
+  }
+})
+
+test("revisiting Search refetches after an abandoned noncooperative primary success", async ({
+  page
+}) => {
+  await page.goto("/om/ide", { waitUntil: "domcontentloaded" })
+  await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+  await page.evaluate(() => {
+    const nativeFetch = window.fetch.bind(window)
+    let requests = 0
+    let releaseFirst: (() => void) | null = null
+    let releaseSecond: (() => void) | null = null
+    Object.assign(window, {
+      __searchPrimaryGate: {
+        requests: 0,
+        firstStarted: false,
+        firstReleased: false,
+        firstAbortedWhenReleased: false,
+        releaseFirst: () => releaseFirst?.(),
+        releaseSecond: () => releaseSecond?.(),
+        restore: () => { window.fetch = nativeFetch }
+      }
+    })
+    window.fetch = async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      if (request.method !== "POST"
+        || !new URL(request.url).pathname.endsWith("/text-search/results")) {
+        return nativeFetch(input, init)
+      }
+      const response = await nativeFetch(input, init)
+      const responseBody = await response.arrayBuffer()
+      const responseInit = {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers
+      }
+      requests += 1
+      const gate = (window as typeof window & {
+        __searchPrimaryGate: {
+          requests: number
+          firstStarted: boolean
+          firstReleased: boolean
+          firstAbortedWhenReleased: boolean
+        }
+      }).__searchPrimaryGate
+      gate.requests = requests
+      if (requests === 1) {
+        gate.firstStarted = true
+        await new Promise<void>(resolve => { releaseFirst = resolve })
+        gate.firstAbortedWhenReleased = request.signal.aborted
+        gate.firstReleased = true
+      } else if (requests === 2) {
+        await new Promise<void>(resolve => { releaseSecond = resolve })
+      }
+      return new Response(responseBody, responseInit)
+    }
+  })
+
+  type Gate = {
+    requests: number
+    firstStarted: boolean
+    firstReleased: boolean
+    firstAbortedWhenReleased: boolean
+    releaseFirst: () => void
+    releaseSecond: () => void
+    restore: () => void
+  }
+  const gate = () => page.evaluate(() => (
+    window as typeof window & { __searchPrimaryGate: Gate }
+  ).__searchPrimaryGate)
+
+  try {
+    void pushRoute(page, "/s%C3%B6k?fras=frihet").catch(() => undefined)
+    await expect.poll(async () => (await gate()).firstStarted).toBe(true)
+
+    await pushRoute(page, "/om/ide")
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+    await page.evaluate(() => (
+      window as typeof window & { __searchPrimaryGate: Gate }
+    ).__searchPrimaryGate.releaseFirst())
+    await expect.poll(async () => {
+      const current = await gate()
+      return {
+        firstReleased: current.firstReleased,
+        firstAbortedWhenReleased: current.firstAbortedWhenReleased
+      }
+    }).toEqual({ firstReleased: true, firstAbortedWhenReleased: true })
+    await page.waitForTimeout(200)
+
+    void pushRoute(page, "/s%C3%B6k?fras=frihet").catch(() => undefined)
+    await expect(page.locator("[data-search-root]")).toBeVisible({ timeout: 1500 })
+    await expect(page.locator("#results .results tr")).toHaveCount(0)
+    await expect.poll(async () => (await gate()).requests).toBe(2)
+
+    await page.evaluate(() => (
+      window as typeof window & { __searchPrimaryGate: Gate }
+    ).__searchPrimaryGate.releaseSecond())
+    await expect(page.getByRole("link", { name: "Röda rummet" }).first()).toBeVisible()
+  } finally {
+    await page.evaluate(() => {
+      type CleanupGate = {
+        releaseFirst: () => void
+        releaseSecond: () => void
+        restore: () => void
+      }
+      const current = (window as typeof window & {
+        __searchPrimaryGate?: CleanupGate
+      }).__searchPrimaryGate
+      current?.releaseFirst()
+      current?.releaseSecond()
+      current?.restore()
+    })
+  }
 })
 
 test("reset is absent when pristine, clears every query key, and restores search focus", async ({

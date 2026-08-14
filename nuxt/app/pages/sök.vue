@@ -173,7 +173,10 @@ const routeIdentity = computed(() => textSearchRouteIdentity(state.value))
 const primaryIdentity = computed(() => state.value.phrase
   ? textSearchResultsRequestIdentity(buildTextSearchResultsRequest(state.value))
   : "empty")
-const primaryKey = computed(() => `text-search-primary:${primaryIdentity.value}`)
+function primaryDataKey(identity: string): string {
+  return `text-search-primary:${identity}`
+}
+const primaryKey = computed(() => primaryDataKey(primaryIdentity.value))
 
 function isChronologyEndpoint(value: unknown): value is number | null {
   return value === null || (Number.isSafeInteger(value) && (value as number) >= 1000
@@ -225,7 +228,17 @@ watch(() => state.value.advanced, advanced => {
 }, { flush: "sync" })
 
 const primaryRequestOwner = createTextSearchRequestOwner()
-watch(primaryIdentity, primaryRequestOwner.cancel, { flush: "sync" })
+const primaryExecutionIdentity = shallowRef<string | null>(null)
+const primaryInFlightIdentity = shallowRef<string | null>(null)
+const primaryClientMounted = ref(false)
+watch(primaryIdentity, (_identity, previousIdentity) => {
+  primaryRequestOwner.cancel()
+  primaryExecutionIdentity.value = null
+  if (primaryInFlightIdentity.value === previousIdentity) {
+    clearNuxtData(primaryDataKey(previousIdentity))
+    primaryInFlightIdentity.value = null
+  }
+}, { flush: "sync" })
 const queryInput = ref(state.value.phrase ?? "")
 const searchInputElement = ref<HTMLInputElement | null>(null)
 watch(() => state.value.phrase, phrase => { queryInput.value = phrase ?? "" })
@@ -288,6 +301,13 @@ const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
     const requestSignal = AbortSignal.any([signal, request.signal])
     try {
       const result = await client.POST("/text-search/results", { body, signal: requestSignal })
+      if (
+        requestSignal.aborted
+        || !primaryRequestOwner.isCurrent(request, primaryIdentity.value)
+      ) {
+        throw requestSignal.reason
+          ?? new DOMException("Search request aborted", "AbortError")
+      }
       const accepted = result.response.status === 200
         ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
         : null
@@ -305,7 +325,10 @@ const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
   },
   {
     server: false,
+    immediate: false,
     lazy: true,
+    // Nuxt's reactive-key default may execute before route prerequisites are accepted.
+    ...{ _keyTriggersExecute: false },
     getCachedData: (key, nuxtApp) => {
       const cached = nuxtApp.payload.data[key] as PrimaryEnvelope | undefined
       return cached?.identity === primaryIdentity.value && cached.status !== 502
@@ -322,7 +345,10 @@ const { data: primaryData, pending: primaryPending } = primaryAsyncData
 
 const acceptedPrimary = shallowRef<PrimaryEnvelope | null>(null)
 const displayPrimary = shallowRef<PrimaryEnvelope | null>(null)
-watch(primaryIdentity, () => { acceptedPrimary.value = null }, { flush: "sync" })
+watch(primaryIdentity, () => {
+  acceptedPrimary.value = null
+  if (!state.value.phrase) displayPrimary.value = null
+}, { flush: "sync" })
 watch([primaryData, primaryIdentity], ([candidate, identity]) => {
   if (candidate?.identity !== identity) return
   acceptedPrimary.value = candidate
@@ -582,9 +608,32 @@ async function loadInitialOptions(): Promise<void> {
 if (import.meta.server) await loadInitialOptions()
 else void loadInitialOptions()
 const options = computed(() => optionsCache.value[optionsIdentity.value] ?? null)
-const initialPrerequisitesPending = computed(() => (
-  state.value.advanced ? initialOptionsPending.value : chronologyPending.value
+const primaryPrerequisitesReady = computed(() => (
+  state.value.advanced
+    ? !initialOptionsPending.value && options.value?.staticComplete === true
+    : !chronologyPending.value
 ))
+const initialPrerequisitesPending = computed(() => !primaryPrerequisitesReady.value)
+watch(
+  [primaryIdentity, primaryPrerequisitesReady, primaryClientMounted],
+  ([identity, prerequisitesReady, mounted]) => {
+    if (
+      !mounted
+      || !prerequisitesReady
+      || !state.value.phrase
+      || primaryExecutionIdentity.value === identity
+      || acceptedPrimary.value?.identity === identity
+    ) return
+    primaryExecutionIdentity.value = identity
+    primaryInFlightIdentity.value = identity
+    void primaryAsyncData.execute({ cause: "initial" }).finally(() => {
+      if (primaryInFlightIdentity.value === identity) {
+        primaryInFlightIdentity.value = null
+      }
+    })
+  },
+  { immediate: true, flush: "post" }
+)
 const lastAcceptedAdvancedChronologyBounds = shallowRef({
   yearFrom: options.value?.yearFrom ?? DEFAULT_CHRONOLOGY_FLOOR,
   yearTo: options.value?.yearTo ?? DEFAULT_CHRONOLOGY_CEILING
@@ -1171,12 +1220,16 @@ function setFacet(authorId: string | null) {
 
 const toolkitMounted = ref(false)
 onMounted(() => {
+  primaryClientMounted.value = true
   toolkitMounted.value = true
   document.addEventListener("keydown", handlePaginationKeydown)
 })
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", handlePaginationKeydown)
   primaryRequestOwner.cancel()
+  primaryAsyncData.clear()
+  primaryExecutionIdentity.value = null
+  primaryInFlightIdentity.value = null
   cancelNavigatorSnapshot()
   countRequestOwner.cancel()
   countInFlight.clear()
