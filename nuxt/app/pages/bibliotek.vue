@@ -70,8 +70,6 @@ import {
 } from "~/lib/library/page-results"
 import { toLibrarySearchView, type BrowseResult } from "~/lib/library/view-model"
 
-definePageMeta({ alias: ["/epub"] })
-
 type LibraryGender = LibraryAdvancedFilters["gender"]
 
 const {
@@ -407,7 +405,7 @@ function browseSortForState(state: LibraryRouteState): BrowseSortKey {
 }
 
 const initialState = Object.freeze(routeState(route.path, route.query))
-const standalone = initialState.standalone
+const standalone = computed(() => route.path === "/epub")
 const mode = initialState.mode
 const initialFilter = initialState.filter
 const initialSort =
@@ -548,7 +546,7 @@ const advancedControls = computed<LibraryAdvancedControlsModel>(() => ({
             to: chronologyToDraft.value
         }
         : null,
-    standalone,
+    standalone: standalone.value,
     downloadMode: downloadMode.value,
     allVisibleSourceWorksSelected: allVisibleSourceWorksSelected.value
 }))
@@ -675,13 +673,13 @@ function selectedSortForCurrentMode(): QueryState["sort"] {
 
 function currentState(): QueryState {
     return {
-        standalone: route.path === "/epub",
+        standalone: standalone.value,
         mode: currentMode.value,
         filter: filter.value,
         sort: selectedSortForCurrentMode(),
         page: currentPage.value,
         hide1800: currentMode.value === "latest" && hide1800.value,
-        downloadMode: !standalone && downloadMode.value,
+        downloadMode: !standalone.value && downloadMode.value,
         advancedFilters: {
             gender: selectedGender.value,
             keywords: [...selectedKeywords.value],
@@ -728,7 +726,7 @@ function downloadCountIdentity(filterValue: string, advanced: LibraryAdvancedFil
 }
 
 function invalidateDownloadCounts(filterValue: string, advanced: LibraryAdvancedFilters) {
-    if (!standalone) return
+    if (!standalone.value) return
     const identity = downloadCountIdentity(filterValue, advanced)
     if (downloadCounts.value.identity === identity) return
     downloadCountVersion += 1
@@ -767,7 +765,7 @@ async function refreshInactiveDownloadCount(
     advanced: LibraryAdvancedFilters,
     activeMode: "epub" | "pdf"
 ) {
-    if (!standalone) return
+    if (!standalone.value) return
     const identity = downloadCountIdentity(filterValue, advanced)
     if (identity !== downloadCountIdentity(filter.value, currentState().advancedFilters)) return
     if (downloadCounts.value.identity !== identity) invalidateDownloadCounts(filterValue, advanced)
@@ -802,7 +800,7 @@ function invalidateLibrarySummary(filterValue: string, advanced: LibraryAdvanced
 }
 
 function canUpdateLibrarySummary(state: QueryState, pageData: LibraryPageState): boolean {
-    if (standalone || state.downloadMode || pageData.response.failed) return false
+    if (standalone.value || state.downloadMode || pageData.response.failed) return false
     const identity = librarySummaryIdentity(state.filter, state.advancedFilters)
     return librarySummary.value.identity === identity
         && identity === librarySummaryIdentity(filter.value, currentState().advancedFilters)
@@ -903,7 +901,7 @@ async function refreshLibrarySummary(
     sourceDownloadMode = false
 ) {
     const identity = librarySummaryIdentity(filterValue, advanced)
-    if (standalone || sourceDownloadMode || !isActiveLibrarySummaryIdentity(identity)) return
+    if (standalone.value || sourceDownloadMode || !isActiveLibrarySummaryIdentity(identity)) return
     if (librarySummary.value.identity !== identity) {
         invalidateLibrarySummary(filterValue, advanced)
     }
@@ -962,7 +960,7 @@ function isCurrentLibraryPageRequest(
 
 function updatePageModeState(state: QueryState, pageData: LibraryPageState): void {
     if (pageData.mode === "epub" || pageData.mode === "pdf") {
-        if (standalone && !pageData.response.failed) {
+        if (standalone.value && !pageData.response.failed) {
             updateDownloadCount(
                 state.filter,
                 state.advancedFilters,
@@ -1622,7 +1620,7 @@ const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
         sort: "popularitet"
     })
 
-    if (standalone) {
+    if (standalone.value) {
         return [
             libraryModeTab("epub", "Epub", epubTabCount.value || null, epubHref, false, false, false),
             libraryModeTab(
@@ -1763,10 +1761,10 @@ const downloadDistinctHits = computed(() =>
     currentMode.value === "pdf" ? pdfResults.value.distinctHits : epubResults.value.distinctHits
 )
 const epubTabCount = computed(() =>
-    standalone ? downloadCounts.value.epub : librarySummary.value.epub
+    standalone.value ? downloadCounts.value.epub : librarySummary.value.epub
 )
 const pdfTabCount = computed(() =>
-    standalone ? downloadCounts.value.pdf : librarySummary.value.pdf
+    standalone.value ? downloadCounts.value.pdf : librarySummary.value.pdf
 )
 
 function currentResultHitCount(): number {
@@ -1873,19 +1871,23 @@ function disposeLibraryRequest() {
 }
 
 useSeoMeta({
-    title: standalone
+    title: () => standalone.value
         ? "E-böcker för nedladdning | Litteraturbanken"
         : "Biblioteket – Titlar och författare | Litteraturbanken",
     description
 })
-useHead({
+useHead(() => ({
     htmlAttrs: {
-        style: standalone
-            ? "background-image: none; background-color: unset;"
-            : `background: url('${backgroundPath}') no-repeat;`
+        style: {
+            "background-image": standalone.value ? "none" : `url('${backgroundPath}')`,
+            "background-repeat": standalone.value ? "initial" : "no-repeat",
+            "background-color": standalone.value ? "unset" : "initial"
+        }
     },
-    bodyAttrs: { class: standalone ? "focus page-epub ready" : "focus page-library ready" }
-})
+    bodyAttrs: {
+        class: standalone.value ? "focus page-epub ready" : "focus page-library ready"
+    }
+}))
 
 async function loadInitialClientState(): Promise<void> {
     const version = ++requestVersion

@@ -2418,15 +2418,39 @@ test("standalone EPUB and PDF tabs retain their shell during SPA switching", asy
   expect(publicOnlyEpubRequests(ledger)).toHaveLength(1)
 })
 
-test("SPA navigation between Library and its EPUB alias updates the complete shell", async ({
+test("SPA navigation between Library and its EPUB route updates the complete shell", async ({
   page,
   request
 }) => {
-  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  await page.goto("/epub", { waitUntil: "networkidle" })
   await reset(request)
   await page.evaluate(() => {
     ;(window as typeof window & { __librarySpa?: string }).__librarySpa = "alive"
   })
+  await page.locator("[data-library-mounted]").evaluate(element => {
+    element.setAttribute("data-library-instance-probe", "epub")
+  })
+
+  await page.locator(".mainnav").getByRole("link", { name: "Biblioteket", exact: true })
+    .press("Enter")
+  await expect(page).toHaveURL("/bibliotek")
+  await expect(page.locator("[data-library-instance-probe]")).toHaveCount(0)
+  await expect(page).toHaveTitle("Biblioteket – Titlar och författare | Litteraturbanken")
+  await expect.poll(() => page.locator("html").evaluate(element =>
+    getComputedStyle(element).backgroundImage
+  )).toContain("/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg")
+  await expect.poll(() => page.locator("html").evaluate(element =>
+    getComputedStyle(element).backgroundRepeat
+  )).toBe("no-repeat")
+  await expect(page.locator("body")).toHaveClass(/page-library/u)
+  await expect(page.locator("body")).not.toHaveClass(/page-epub/u)
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Botanisera i biblioteket")
+  await expect(page.locator("[data-library-tab]")).toHaveCount(7)
+  await expect(page.locator('[data-library-tab="authors"]')).toBeVisible()
+  await page.locator("[data-library-advanced]").click()
+  await expect(page.locator("[data-library-download-mode]")).toBeVisible()
+
+  await expect(page.locator("[data-library-result]")).toHaveCount(3)
   await page.locator("[data-library-mounted]").evaluate(element => {
     element.setAttribute("data-library-instance-probe", "library")
   })
@@ -2434,14 +2458,20 @@ test("SPA navigation between Library and its EPUB alias updates the complete she
   await page.locator(".mainnav").getByRole("link", { name: "Hämta e-böcker" }).click()
   await expect(page).toHaveURL("/epub?visa=epub&sort=popularitet")
   await expect(page.locator("[data-library-instance-probe]")).toHaveCount(0)
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hämta e-böcker")
+  await expect(page).toHaveTitle("E-böcker för nedladdning | Litteraturbanken")
+  await expect.poll(() => page.locator("html").evaluate(element => ({
+    color: getComputedStyle(element).backgroundColor,
+    image: getComputedStyle(element).backgroundImage
+  }))).toEqual({ color: "rgba(0, 0, 0, 0)", image: "none" })
   await expect(page.locator("body")).toHaveClass(/page-epub/u)
-  await expect(page.locator("[data-library-epub-row]")).toHaveCount(3)
+  await expect(page.locator("body")).not.toHaveClass(/page-library/u)
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hämta e-böcker")
+  await expect(page.locator("[data-library-tab]")).toHaveCount(2)
+  await expect(page.locator('[data-library-tab="authors"]')).toHaveCount(0)
+  await page.locator("[data-library-advanced]").click()
+  await expect(page.locator("[data-library-download-mode]")).toHaveCount(0)
 
-  await page.locator(".mainnav").getByRole("link", { name: "Biblioteket", exact: true }).click()
-  await expect(page).toHaveURL("/bibliotek")
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Botanisera i biblioteket")
-  await expect(page.locator("body")).toHaveClass(/page-library/u)
+  await expect(page.locator("[data-library-epub-row]")).toHaveCount(3)
   expect(await page.evaluate(() =>
     (window as typeof window & { __librarySpa?: string }).__librarySpa
   )).toBe("alive")

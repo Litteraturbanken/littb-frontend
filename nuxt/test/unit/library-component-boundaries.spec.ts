@@ -87,6 +87,22 @@ function sourceResponse(
 }
 
 describe("Library component ownership", () => {
+  test("keeps the standalone Library route distinct and owned by the live route", async () => {
+    const [page, epubPage] = await Promise.all([
+      source("app/pages/bibliotek.vue"),
+      source("app/pages/epub.vue")
+    ])
+
+    expect(page).toContain('const standalone = computed(() => route.path === "/epub")')
+    expect(page).not.toContain("const standalone = initialState.standalone")
+    expect(page).not.toContain('definePageMeta({ alias: ["/epub"] })')
+    expect(page).toContain("standalone: standalone.value")
+    expect(page).toContain("title: () => standalone.value")
+    expect(page).toContain("useHead(() => ({")
+    expect(epubPage).toContain('import LibraryPage from "./bibliotek.vue"')
+    expect(epubPage).toContain("<LibraryPage />")
+  })
+
   test("keeps component ownership bounded and capability-free", async () => {
     const componentPaths = [
       "app/components/library/LibrarySearchControls.vue",
