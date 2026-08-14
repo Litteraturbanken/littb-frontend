@@ -1,1 +1,20 @@
-{"version":1,"packetId":"app/lib/statistics-items.ts::packet::module-isSafeRouteIdentity","packetFingerprint":"f26b119311b3a30ebee9791d7ca1a45df7f454ee85c9a65bffb189a4ca04aaf2","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[{"id":"f9e76302-minor-dup-route-segment-policy","severity":"minor","category":"duplication","path":"app/lib/statistics-items.ts","unitId":"app/lib/statistics-items.ts::function::isSafeRouteIdentity","line":12,"summary":"Statistics item validation depends on the app navigation module for a route segment policy that already exists in shared utilities.","consequence":"This couples backend response validation to the broader internal-navigation module and leaves the same route-segment rule maintained in two places, increasing drift risk if one copy changes.","evidence":"Line 12 calls validRouteSegment imported from app/lib/internal-navigation.ts. The same policy is also implemented and tested in shared/utils/route-segment.ts: length, trim, dot segment, slash, percent, control, and lone-surrogate checks match the internal-navigation implementation.","recommendation":"Import validRouteSegment from #shared/utils/route-segment, or have internal-navigation re-export that shared implementation, so statistics validation and route validation use one policy source.","status":"unresolved","resolution":null,"resolutionCommit":null,"verification":["Read app/lib/statistics-items.ts lines 1-67.","Compared app/lib/internal-navigation.ts lines 34-45 with shared/utils/route-segment.ts lines 3-14.","Inspected direct caller app/pages/om/statistik.vue lines 1-184.","Inspected generated API schemas in app/lib/api/generated/lbapi.ts lines 624-632, 2227-2258, and 3674-3685.","Inspected relevant tests test/unit/statistics-items.spec.ts, test/ssr/statistics.spec.ts, and test/e2e/statistics.behavior.spec.ts."]}],"verification":["Read quality/semantic-review-contract.md.","Read packet .quality/semantic-review/packets/f9e763021428683a142587fce7f76b3923ba324be07dfe021fc7757ba90a1539.json.","Used read-only inspection commands only.","Reviewed owned units app/lib/statistics-items.ts lines 11-44 and cited only an owned physical line."]}
+{
+  "version": 1,
+  "packetId": "app/lib/statistics-items.ts::packet::module-isSafeRouteIdentity",
+  "packetFingerprint": "68874c428291a07f22eaaef3095f528e7286780c2259b4eeddd6b52a909b8482",
+  "author": "implementation-agent",
+  "reviewer": "independent-codex-review",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [],
+  "verification": [
+    "Read quality/semantic-review-contract.md and exactly one packet JSON at .quality/semantic-review/packets/f9e763021428683a142587fce7f76b3923ba324be07dfe021fc7757ba90a1539.json.",
+    "Verified immutable commit 52830065cb6ff78346f2b52d837efdfc80bcc9fd has exact parent 526004b6e941cbfeb943c76dc76b2d49a9b7102d and changes only seven intended Statistics source, fixture, unit, SSR, and browser files; git show --check is clean.",
+    "Inspected the owned download identity helpers, direct Statistics URL construction caller, generated API types, and every changed fixture and test.",
+    "Confirmed raw and repeatedly encoded slash and backslash identities are rejected, exact raw or encoded dot segments are rejected, and decoding depth fails closed when path-significant encodings remain.",
+    "Confirmed valid percent-bearing and embedded encoded-dot filenames remain accepted and retain exact canonical href bytes in SSR and browser assertions.",
+    "Confirmed malformed coverage exercises work representation IDs, work title IDs, and EPUB title IDs across raw, encoded, double-encoded, and over-depth path characters.",
+    "Ran the focused Statistics unit suite under Node 22: test/unit/statistics-items.spec.ts passed 106/106.",
+    "No unresolved critical or important findings were identified; no production or test files were modified during this review."
+  ]
+}
