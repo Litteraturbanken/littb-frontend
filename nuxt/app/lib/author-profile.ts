@@ -107,6 +107,22 @@ export function authorProfilePath(authorId: string, ...segments: string[]): stri
   return `/f%C3%B6rfattare/${[authorId, ...segments].map(encodeRfc3986Segment).join("/")}`
 }
 
+export function safeAuthorCanonicalPath(
+  value: string,
+  authorId: string,
+  hasDramawebben: boolean
+): string | null {
+  if (!validateAuthorRouteParam(authorId)) return null
+  const canonical = canonicalNuxtHref(value)
+  const rootPath = authorProfilePath(authorId)
+  if (canonical === rootPath || canonical === authorProfilePath(authorId, "titlar")) {
+    return canonical
+  }
+  return hasDramawebben && canonical === authorProfilePath(authorId, "dramawebben")
+    ? canonical
+    : null
+}
+
 function repeatedlyDecode(value: string, maximumLength?: number): string | null {
   let decoded = value
   try {

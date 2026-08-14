@@ -4,6 +4,7 @@ import { useLbApiClient } from "~/composables/useLbApiClient"
 import {
   authorProfilePath,
   createAuthorProfileView,
+  safeAuthorCanonicalPath,
   type AuthorProfileView,
   validateAuthorRouteParam
 } from "~/lib/author-profile"
@@ -65,13 +66,19 @@ const { data } = await useAsyncData<ProfileResponse>(
         params: { path: { author_id: requestedAuthor } }
       })
       const hasDramawebben = Boolean(profile?.dramawebben)
+      const canonicalPath = profile
+        ? safeAuthorCanonicalPath(profile.canonical_path, requestedAuthor, hasDramawebben)
+        : ""
+      if (canonicalPath === null) {
+        return { identity, view: null, status: 503, canonicalPath: "", hasDramawebben: false }
+      }
       return {
         identity,
         view: profile
           ? createAuthorProfileView(profile, hasDramawebben ? "dramawebben" : "ordinary")
           : null,
         status: profile ? 200 : response.status === 404 ? 404 : 503,
-        canonicalPath: profile?.canonical_path ?? "",
+        canonicalPath,
         hasDramawebben
       }
     } catch {

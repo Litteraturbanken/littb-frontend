@@ -4,6 +4,7 @@ import { useLbApiClient } from "~/composables/useLbApiClient"
 import {
   authorProfilePath,
   createAuthorProfileView,
+  safeAuthorCanonicalPath,
   type AuthorProfileView,
   validateAuthorRouteParam
 } from "~/lib/author-profile"
@@ -48,10 +49,6 @@ const profileHandoffs = useState<Partial<Record<string, ProfileResponse>>>(
   () => ({})
 )
 
-function clientAuthorPath(path: string): string {
-  return path.replace(/^\/författare(?=\/|$)/u, "/f%C3%B6rfattare")
-}
-
 const { data } = await useAsyncData<ProfileResponse>(
   asyncKey,
   async () => {
@@ -68,9 +65,15 @@ const { data } = await useAsyncData<ProfileResponse>(
       const { data: profile, response } = await client.GET("/authors/{author_id}", {
         params: { path: { author_id: requestedAuthor } }
       })
-      const canonicalPath = profile?.canonical_path ?? ""
-      const isDramawebbenCanonical = Boolean(profile?.dramawebben)
-        && clientAuthorPath(canonicalPath) === authorProfilePath(requestedAuthor, "dramawebben")
+      const hasDramawebben = Boolean(profile?.dramawebben)
+      const canonicalPath = profile
+        ? safeAuthorCanonicalPath(profile.canonical_path, requestedAuthor, hasDramawebben)
+        : ""
+      if (canonicalPath === null) {
+        return { identity, view: null, status: 503, canonicalPath: "", hasDramawebben: false }
+      }
+      const isDramawebbenCanonical = hasDramawebben
+        && canonicalPath === authorProfilePath(requestedAuthor, "dramawebben")
       return {
         identity,
         view: profile
@@ -78,7 +81,7 @@ const { data } = await useAsyncData<ProfileResponse>(
           : null,
         status: profile ? 200 : response.status === 404 ? 404 : 503,
         canonicalPath,
-        hasDramawebben: Boolean(profile?.dramawebben)
+        hasDramawebben
       }
     } catch {
       return { identity, view: null, status: 503, canonicalPath: "", hasDramawebben: false }
@@ -100,7 +103,7 @@ async function redirectToCanonical(candidate: ProfileResponse | null, identity: 
   if (!candidate || candidate.identity !== identity || !candidate.canonicalPath) return
   const requestedAuthor = identity.slice("ordinary:".length)
   const rootPath = authorProfilePath(requestedAuthor)
-  const canonicalPath = clientAuthorPath(candidate.canonicalPath)
+  const canonicalPath = candidate.canonicalPath
   if (canonicalPath !== rootPath) {
     const redirectIdentity = `${identity}:${canonicalPath}:${route.fullPath}`
     if (redirectedIdentity.value === redirectIdentity) return

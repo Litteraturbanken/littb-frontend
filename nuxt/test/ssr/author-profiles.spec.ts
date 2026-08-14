@@ -9,7 +9,8 @@ async function reset(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_author_profile_requests`),
     request.delete(`${fixture}/_author_profile_failure`),
-    request.delete(`${fixture}/_author_profile_malformed_identity`)
+    request.delete(`${fixture}/_author_profile_malformed_identity`),
+    request.delete(`${fixture}/_author_profile_canonical_path`)
   ])
 }
 
@@ -366,6 +367,48 @@ test("SSR returns page-local non-leaking 404 and 503 author errors", async ({ re
   expect(failedDocument.querySelector("h1, ul.links, .page_content")).toBeNull()
   expect(failedHtml).not.toContain("author_profile_unavailable")
   expect(failedHtml).not.toContain("Unable to load author profile")
+})
+
+for (const [label, author, canonicalPath] of [
+  ["external URL", "StrindbergA", "https://evil.invalid/författare/StrindbergA"],
+  ["protocol-relative URL", "StrindbergA", "//evil.invalid/författare/StrindbergA"],
+  ["unrelated internal route", "StrindbergA", "/bibliotek"],
+  ["cross-author route", "StrindbergA", "/författare/Lagerl%C3%B6fS"],
+  ["query-bearing route", "StrindbergA", "/författare/StrindbergA?visning=kort"],
+  ["encoded traversal route", "StrindbergA", "/författare/StrindbergA/%2e%2e/bibliotek"],
+  ["Drama route without Drama content", "Lagerl%C3%B6fS", "/författare/Lagerl%C3%B6fS/dramawebben"]
+] as const) {
+  test(`SSR maps a backend ${label} canonical path to the unavailable profile`, async ({
+    request
+  }) => {
+    await request.put(`${fixture}/_author_profile_canonical_path`, {
+      data: { canonicalPath }
+    })
+    const response = await request.get(`/författare/${author}`, { maxRedirects: 0 })
+    expect(response.status()).toBe(503)
+    expect(response.headers().location).toBeUndefined()
+    const html = await response.text()
+    const { document } = parseHTML(html)
+    expect(compactText(document.querySelector(".error")?.textContent))
+      .toBe("Ett fel har inträffat. Författarprofilen kan inte visas just nu.")
+    expect(document.querySelector("h1, ul.links, .page_content")).toBeNull()
+    expect(html).not.toContain("evil.invalid")
+  })
+}
+
+test("SSR rejects a malicious canonical path before Dramawebben handoff", async ({ request }) => {
+  await request.put(`${fixture}/_author_profile_canonical_path`, {
+    data: { canonicalPath: "/författare/Lagerl%C3%B6fS" }
+  })
+  const response = await request.get("/författare/StrindbergA/dramawebben", {
+    maxRedirects: 0
+  })
+  expect(response.status()).toBe(503)
+  expect(response.headers().location).toBeUndefined()
+  const { document } = parseHTML(await response.text())
+  expect(compactText(document.querySelector(".error")?.textContent))
+    .toBe("Ett fel har inträffat. Författarprofilen kan inte visas just nu.")
+  expect(document.querySelector("h1, ul.links, .page_content")).toBeNull()
 })
 
 for (const [author, expectedPath] of [

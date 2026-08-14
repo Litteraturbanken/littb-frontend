@@ -510,6 +510,7 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_source_info_static_failure`, { method: "DELETE" }),
       fetch(`${origin}/_author_profile_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_profile_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_author_profile_canonical_path`, { method: "DELETE" }),
       fetch(`${origin}/_author_works_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_works_failures`, { method: "DELETE" }),
       fetch(`${origin}/_author_works_delays`, { method: "DELETE" }),
@@ -2071,6 +2072,28 @@ describe("v2 fixture server operations", () => {
     }
 
     expect(await authorProfileRequests()).toEqual({ requests: paths })
+  })
+
+  test("author profile canonical override is isolated and resettable", async () => {
+    const override = "/författare/Lagerl%C3%B6fS"
+    const configured = await fetch(`${origin}/_author_profile_canonical_path`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ canonicalPath: override })
+    })
+    expect(configured.status).toBe(200)
+    expect(await configured.json()).toEqual({ canonicalPath: override })
+
+    const overridden = await fetch(`${origin}/v2/authors/StrindbergA`)
+    expect(overridden.status).toBe(200)
+    expect((await overridden.json() as { canonical_path: string }).canonical_path).toBe(override)
+
+    const cleared = await fetch(`${origin}/_author_profile_canonical_path`, { method: "DELETE" })
+    expect(cleared.status).toBe(200)
+    expect(await cleared.json()).toEqual({ canonicalPath: null })
+    expect((await (await fetch(`${origin}/v2/authors/StrindbergA`)).json() as {
+      canonical_path: string
+    }).canonical_path).toBe("/författare/StrindbergA")
   })
 
   test("author profiles reject malformed encoded IDs with typed validation errors", async () => {

@@ -9,7 +9,8 @@ const portraitBytes = readFileSync(new URL("../../app/assets/img/lagerlof_portra
 async function reset(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_author_profile_requests`),
-    request.delete(`${fixture}/_author_profile_failure`)
+    request.delete(`${fixture}/_author_profile_failure`),
+    request.delete(`${fixture}/_author_profile_canonical_path`)
   ])
 }
 
@@ -382,6 +383,41 @@ test("a late obsolete canonical response cannot redirect or hand off over the cu
   await expect(page).toHaveURL(/\/f%C3%B6rfattare\/Lagerl%C3%B6fS$/u)
   await expect(page.locator("h1")).toContainText("Selma Lagerlöf")
   await expect(page.locator("body")).not.toContainText("Dramatikern")
+  expect(problems).toEqual([])
+})
+
+test("rejects a cross-author canonical response without navigation or stale profile content", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/Lagerl%C3%B6fS", { waitUntil: "networkidle" })
+  await reset(request)
+  await request.put(`${fixture}/_author_profile_canonical_path`, {
+    data: { canonicalPath: "/författare/Lagerl%C3%B6fS" }
+  })
+
+  await routerPush(page, "/f%C3%B6rfattare/StrindbergA?fran=angripare")
+  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/StrindbergA\?fran=angripare$/u)
+  await expect(page.locator(".error"))
+    .toContainText("Författarprofilen kan inte visas just nu.")
+  await expect(page.locator("h1, .introtext")).toHaveCount(0)
+  await expect(page.locator("body")).not.toContainText("August Strindberg")
+  await expect(page.locator("body")).not.toContainText("Selma Lagerlöf")
+  expect(await profileRequests(request)).toEqual(["/v2/authors/StrindbergA"])
+
+  await reset(request)
+  await request.put(`${fixture}/_author_profile_canonical_path`, {
+    data: { canonicalPath: "/författare/Lagerl%C3%B6fS" }
+  })
+  await routerPush(page, "/f%C3%B6rfattare/StrindbergA/dramawebben?fran=angripare")
+  await expect(page).toHaveURL(
+    /\/f%C3%B6rfattare\/StrindbergA\/dramawebben\?fran=angripare$/u
+  )
+  await expect(page.locator(".error"))
+    .toContainText("Författarprofilen kan inte visas just nu.")
+  await expect(page.locator("h1, .introtext")).toHaveCount(0)
+  expect(await profileRequests(request)).toEqual(["/v2/authors/StrindbergA"])
   expect(problems).toEqual([])
 })
 

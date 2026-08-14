@@ -311,6 +311,7 @@ let similarWorkMalformed = false
 let authorProfileRequests = []
 let authorProfileFailure = false
 let malformedAuthorProfileIdentity = false
+let authorProfileCanonicalPath = null
 let bibliographyRequests = []
 let dictionaryRequests = []
 let bibliographyFailure = false
@@ -3176,6 +3177,17 @@ const server = createServer(async (request, response) => {
     malformedAuthorProfileIdentity = false
     return sendJson(response, 200, { malformed: malformedAuthorProfileIdentity })
   }
+  if (url.pathname === "/_author_profile_canonical_path" && request.method === "PUT") {
+    const body = await readJson(request)
+    authorProfileCanonicalPath = typeof body.canonicalPath === "string"
+      ? body.canonicalPath
+      : null
+    return sendJson(response, 200, { canonicalPath: authorProfileCanonicalPath })
+  }
+  if (url.pathname === "/_author_profile_canonical_path" && request.method === "DELETE") {
+    authorProfileCanonicalPath = null
+    return sendJson(response, 200, { canonicalPath: authorProfileCanonicalPath })
+  }
   if (url.pathname === "/_bibliography_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: bibliographyRequests })
   }
@@ -5866,6 +5878,7 @@ const server = createServer(async (request, response) => {
     if (profile) {
       const body = structuredClone(profile)
       if (malformedAuthorProfileIdentity) body.author_id = ".."
+      if (authorProfileCanonicalPath !== null) body.canonical_path = authorProfileCanonicalPath
       return sendJson(response, 200, body)
     }
     return sendJson(response, 404, {

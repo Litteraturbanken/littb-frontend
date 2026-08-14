@@ -7,6 +7,7 @@ import {
   createAuthorProfileView,
   encodeRfc3986Segment,
   formatAuthorYears,
+  safeAuthorCanonicalPath,
   safeAuthorSearchHref,
   sanitizeAuthorHtml,
   validateAuthorRouteParam
@@ -91,6 +92,46 @@ describe("author profile paths", () => {
     expect(encodeRfc3986Segment("A\ud800B")).toBe("A%EF%BF%BDB")
     expect(authorProfilePath("\udfff", "titlar", "\ud800"))
       .toBe("/f%C3%B6rfattare/%EF%BF%BD/titlar/%EF%BF%BD")
+  })
+
+  test.each([
+    ["/författare/StrindbergA", "StrindbergA", true, "/f%C3%B6rfattare/StrindbergA"],
+    ["/f%C3%B6rfattare/StrindbergA", "StrindbergA", true, "/f%C3%B6rfattare/StrindbergA"],
+    ["/författare/StrindbergA/titlar", "StrindbergA", true, "/f%C3%B6rfattare/StrindbergA/titlar"],
+    ["/författare/StrindbergA/dramawebben", "StrindbergA", true, "/f%C3%B6rfattare/StrindbergA/dramawebben"],
+    ["/författare/O%27Neil%28A", "O'Neil(A", true, "/f%C3%B6rfattare/O%27Neil%28A"]
+  ])("accepts the authorized backend canonical path %s", (
+    value,
+    authorId,
+    hasDramawebben,
+    expected
+  ) => {
+    expect(safeAuthorCanonicalPath(value, authorId, hasDramawebben)).toBe(expected)
+  })
+
+  test.each([
+    "https://evil.invalid/författare/StrindbergA",
+    "//evil.invalid/författare/StrindbergA",
+    "/bibliotek",
+    "/författare/Lagerl%C3%B6fS",
+    "/författare/StrindbergA/mer",
+    "/författare/StrindbergA/dramawebben?visning=kort",
+    "/författare/StrindbergA#profil",
+    "/författare/StrindbergA/",
+    "/författare/StrindbergA/%2e%2e/bibliotek",
+    "/författare/StrindbergA%2Fdramawebben",
+    "/f%25C3%25B6rfattare/StrindbergA",
+    "/författare/%ZZ"
+  ])("rejects an unauthorized backend canonical path %#", value => {
+    expect(safeAuthorCanonicalPath(value, "StrindbergA", true)).toBeNull()
+  })
+
+  test("rejects the Dramawebben canonical target without an accepted Drama block", () => {
+    expect(safeAuthorCanonicalPath(
+      "/författare/Lagerl%C3%B6fS/dramawebben",
+      "LagerlöfS",
+      false
+    )).toBeNull()
   })
 })
 
