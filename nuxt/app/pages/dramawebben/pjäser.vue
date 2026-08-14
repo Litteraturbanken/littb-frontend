@@ -39,6 +39,7 @@ type Catalog = components["schemas"]["DramawebbenCatalogResponse"]
 type CatalogAuthor = components["schemas"]["DramawebbenCatalogAuthor"]
 type CatalogMedia = components["schemas"]["DramawebbenCatalogMedia"]
 type CatalogWork = components["schemas"]["DramawebbenCatalogWork"]
+type VisibleWorkRow = { work: CatalogWork, primaryMedia: CatalogMedia }
 type RangeKey = "female_roles" | "male_roles" | "other_roles" | "number_of_acts"
   | "number_of_pages" | "number_of_roles"
 type CatalogResult = { status: 200 | 502 | 503, catalog: Catalog | null }
@@ -634,6 +635,16 @@ const filteredWorks = computed(() => {
   })
 })
 
+const visibleWorkRows = computed<VisibleWorkRow[]>(() => {
+  const acceptedMediaType = mediaType.value
+  return filteredWorks.value.map(work => ({
+    work,
+    primaryMedia: acceptedMediaType === "all"
+      ? work.media[0]!
+      : work.media.find(media => media.media_type === acceptedMediaType) ?? work.media[0]!
+  }))
+})
+
 async function setQuery(key: string, value: string | null, push = false): Promise<void> {
   const baseQuery = latestRouteQuery()
   const query = value === null || value === ""
@@ -924,7 +935,7 @@ useHead(() => ({
           </tr>
         </thead>
         <tbody>
-          <tr v-for="work in filteredWorks" :key="work.work_id">
+          <tr v-for="{ work, primaryMedia } in visibleWorkRows" :key="work.work_id">
             <td class="author">
               <template v-for="(author, authorIndex) in work.authors" :key="author.author_id">
                 <span v-if="authorIndex > 0" class="author-separator"> &amp; </span><NuxtLink
@@ -935,12 +946,12 @@ useHead(() => ({
               </template>
             </td>{{ " " }}
             <td class="title"><a
-              v-if="work.media[0]!.downloadable"
-              :href="titleHref(work.media[0]!)"
+              v-if="primaryMedia.downloadable"
+              :href="titleHref(primaryMedia)"
             >{{ work.short_title || work.title }}</a><NuxtLink
               v-else
-              :to="titleHref(work.media[0]!)"
-              @click="work.media[0]!.media_type === 'infopost' && openCatalogSourceInfo($event, work.media[0]!)"
+              :to="titleHref(primaryMedia)"
+              @click="primaryMedia.media_type === 'infopost' && openCatalogSourceInfo($event, primaryMedia)"
             >{{ work.short_title || work.title }}</NuxtLink></td>{{ " " }}
             <td>
               <ul class="mediatypes">

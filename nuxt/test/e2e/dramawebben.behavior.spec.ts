@@ -963,6 +963,62 @@ test("a PDF-primary Drama title remains a native static handoff", async ({
   )).toBeUndefined()
 })
 
+test("the title action follows the active media filter without reordering formats", async ({
+  page,
+  request
+}) => {
+  await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "networkidle" })
+  const doomedRow = page.locator("table.contenttable:not(.authors) tbody tr").filter({
+    hasText: "Dömd"
+  })
+  const doomedTitle = doomedRow.locator("td.title a")
+  await expect(doomedTitle).toHaveAttribute(
+    "href",
+    "/f%C3%B6rfattare/AgrellA/titlar/Domd/sida/1/etext#dw"
+  )
+
+  await page.getByRole("button", { name: "Utgivningsformat", exact: true }).click()
+  await page.getByRole("option", { name: "PDF", exact: true }).click()
+  await expectQuery(page, "mediatype", "pdf")
+  await expect(doomedRow.locator(".mediatypes a")).toHaveText(["etext", "faksimil", "pdf"])
+  await expect(doomedTitle).toHaveAttribute(
+    "href",
+    "/txt/lb-dramat-001/lb-dramat-001.pdf#dw"
+  )
+  await page.evaluate(() => {
+    ;(window as typeof window & { __spaSentinel?: string }).__spaSentinel = "drama-spa"
+  })
+
+  await doomedTitle.click()
+  await expect(page).toHaveURL(/\/txt\/lb-dramat-001\/lb-dramat-001\.pdf#dw$/u)
+  expect(await page.evaluate(() =>
+    (window as typeof window & { __spaSentinel?: string }).__spaSentinel
+  )).toBeUndefined()
+
+  await setCatalogFailure(request, "long-mixed-media-author-200")
+  await page.goto("/dramawebben/pj%C3%A4ser?mediatype=infopost", {
+    waitUntil: "networkidle"
+  })
+  const mixedRow = page.locator("table.contenttable:not(.authors) tbody tr").filter({
+    hasText: "Barnens teater"
+  })
+  const mixedTitle = mixedRow.locator("td.title a")
+  await expect(mixedRow.locator(".mediatypes a")).toHaveText(["faksimil", "infopost"])
+  await expect(mixedTitle).toHaveAttribute(
+    "href",
+    "/dramawebben/pj%C3%A4ser?om-boken&authorid=Anonym&titlepath=BarnensTeater#dw"
+  )
+
+  await mixedTitle.click()
+  await expect(page.getByRole("dialog", { name: "Om boken", exact: true }))
+    .toContainText("Barnens teater")
+  await expect.poll(async () => sourceInfoRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/Anonym/BarnensTeater/source-info",
+    query: ""
+  }])
+})
+
 test("the list toggle pushes query-owned history and Back/Forward restores each table", async ({
   page,
   request
