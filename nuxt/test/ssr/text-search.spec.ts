@@ -153,6 +153,31 @@ test("hydrated result sends the exact generated body and renders the legacy rows
   }
 })
 
+test("empty-highlight headers have no broken destination and keep normal first-hit links", async ({
+  page
+}) => {
+  const response = await page.goto("/s%C3%B6k?fras=empty-highlights")
+  expect(response?.status()).toBe(200)
+  await expect(page.getByRole("link", {
+    name: "Gösta Berlings saga",
+    exact: true
+  })).toBeVisible()
+  const { document } = parseHTML(await page.content())
+  const headers = [...document.querySelectorAll("#results td.header .title")]
+  const emptyTitle = headers.find(header => compactText(header.textContent) === "Röda rummet")
+  const normalTitle = headers.find(
+    header => compactText(header.textContent) === "Gösta Berlings saga"
+  )
+
+  expect(emptyTitle).toBeDefined()
+  expect(emptyTitle?.querySelector("a")).toBeNull()
+  const href = normalTitle?.querySelector("a")?.getAttribute("href")
+  expect(href).toContain(
+    "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/3/faksimil?"
+  )
+  expect(href).toContain("s_return=%2Fs%25C3%25B6k%3Ffras%3Dempty-highlights")
+})
+
 test("hydration preserves the no-hit copy and toolkit", async ({ page }) => {
   const response = await page.goto("/s%C3%B6k?fras=inga")
   expect(response?.status()).toBe(200)
@@ -806,7 +831,9 @@ test("result and overflow rows keep flattened Angular parity and media classes",
     ["is_faksimil", "odd", "sentence"],
     ["even", "is_faksimil", "sentence"]
   ])
-  expect(rows[4]?.querySelector(".overflow .more")?.textContent?.trim()).toBe("Visa fler")
+  const more = rows[4]?.querySelector(".overflow .more")
+  expect(more?.tagName).toBe("BUTTON")
+  expect(more?.textContent?.trim()).toBe("Visa fler")
 })
 
 test("zero count preserves hits_info but hides zero hit labels", async ({ page }) => {

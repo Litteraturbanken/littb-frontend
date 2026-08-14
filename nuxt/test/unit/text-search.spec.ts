@@ -496,6 +496,17 @@ describe("text search route state", () => {
 
   })
 
+  test("accepts a backend-valid work with no highlights", () => {
+    const request = buildTextSearchResultsRequest(
+      parseTextSearchRouteQuery({ fras: "frihet" })
+    )
+    const identity = textSearchResultsRequestIdentity(request)
+    const response = resultsResponse()
+    response.works[0]!.highlights = []
+
+    expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
+  })
+
   test.each([
     { name: "extra root key", mutate: (copy: JsonRecord) => { copy.raw = true } },
     {

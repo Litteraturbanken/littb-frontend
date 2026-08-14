@@ -2391,6 +2391,10 @@ function textSearchResultsResponse(body) {
     }
   }
   const rich = richTextSearchResponse(body)
+  if (body.query === "empty-highlights") {
+    rich.works[0].highlights = []
+    rich.works[1].highlights[0].match[0].word = body.query
+  }
   if (body.query === "frihet" && body.page > 1 && hasExactFields(body, [
     "query", "page", "page_size", "highlight_limit", "prefix", "suffix",
     "word_form_only", "include_modernized"

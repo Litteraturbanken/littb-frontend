@@ -1920,12 +1920,13 @@ test("Visa fler ignores duplicate activation while the same work is loading", as
   })
 
   const more = page.locator("#results .overflow .more").last()
+  await expect(more).toHaveJSProperty("tagName", "BUTTON")
   await more.dispatchEvent("click")
-  await expect(more).toHaveAttribute("aria-disabled", "true")
+  await expect(more).toBeDisabled()
   await more.dispatchEvent("click")
 
   await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
-  await expect(more).not.toHaveAttribute("aria-disabled", "true")
+  await expect(more).toBeEnabled()
 })
 
 test("static options are lazy and cached while title search is exact 250 ms latest-wins", async ({
@@ -2316,6 +2317,40 @@ test("SSR hydration is single-fetch and Reader hit destination is navigable", as
   await expect(page.locator("body")).toHaveClass(/page-reading/)
   await expect(page.locator("#w1_11.markee")).toHaveCount(1)
   expect(problems).toEqual([])
+})
+
+test("empty-highlight work titles stay plain while normal titles keep their first hit", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=empty-highlights")
+
+  const emptyTitle = page.locator("#results td.header .title")
+    .filter({ hasText: "Röda rummet" })
+  await expect(emptyTitle).toHaveText("Röda rummet")
+  await expect(emptyTitle.locator("a")).toHaveCount(0)
+
+  const normalTitle = page.getByRole("link", { name: "Gösta Berlings saga", exact: true })
+  await expect(normalTitle).toBeVisible()
+  const reader = new URL(
+    (await normalTitle.getAttribute("href"))!,
+    "http://litteraturbanken.test"
+  )
+  expect(reader.pathname)
+    .toBe("/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/3/faksimil")
+  expect(reader.searchParams.get("hit")).toBe("0")
+  expect(reader.searchParams.get("s_return")).toBe("/s%C3%B6k?fras=empty-highlights")
+
+  await page.locator("#results .overflow .more").last().click()
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
+  expect((await requests(request, "results"))[1]?.body).toMatchObject({
+    query: "empty-highlights",
+    page: 1,
+    highlight_limit: 100,
+    work_ids: ["lb278171"]
+  })
+  await expect(page.locator("tr.is_faksimil.sentence .match a")).toHaveCount(2)
+  await expect(normalTitle).toHaveAttribute("href", reader.pathname + reader.search)
 })
 
 test("renders all five authoritative right-context tokens without truncation", async ({ page }) => {

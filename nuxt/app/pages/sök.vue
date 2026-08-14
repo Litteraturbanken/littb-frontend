@@ -162,8 +162,8 @@ function currentSearchFullPath(): string {
   return searchOriginFullPath.value
 }
 
-function readerHrefWithReturn(href: string | undefined): string | undefined {
-  return href === undefined ? undefined : attachTextSearchReturnHref(href, currentSearchFullPath())
+function readerHrefWithReturn(href: string): string {
+  return attachTextSearchReturnHref(href, currentSearchFullPath())
 }
 
 watch(() => route.fullPath, () => {
@@ -1123,15 +1123,21 @@ function visibleHits(work: SearchWorkView): readonly SearchHitView[] {
 }
 
 type ResultRowView = Readonly<
-  | { key: string, kind: "header", work: SearchWorkView }
+  | { key: string, kind: "header", work: SearchWorkView, titleHref: string | null }
   | { key: string, kind: "hit", work: SearchWorkView, hit: SearchHitView }
   | { key: string, kind: "overflow", work: SearchWorkView }
 >
 const resultRows = computed<readonly ResultRowView[]>(() => {
   const rows: ResultRowView[] = []
   for (const work of results.value?.works ?? []) {
-    rows.push({ key: `${work.key}:header`, kind: "header", work })
-    visibleHits(work).forEach((hit, index) => {
+    const hits = visibleHits(work)
+    rows.push({
+      key: `${work.key}:header`,
+      kind: "header",
+      work,
+      titleHref: hits[0]?.href ?? null
+    })
+    hits.forEach((hit, index) => {
       rows.push({ key: `${work.key}:hit:${index}`, kind: "hit", work, hit })
     })
     if (work.hasMore && !moreHits.value[work.key]) {
@@ -1659,7 +1665,8 @@ v-for="item in [
                   <div class="header_content" :title="row.work.title">
                     <span class="author">{{ row.work.authorName }}</span>{{ " " }}
                     <span class="title">
-                      <NuxtLink :to="readerHrefWithReturn(visibleHits(row.work)[0]?.href)">{{ row.work.title }}</NuxtLink>
+                      <NuxtLink v-if="row.titleHref" :to="readerHrefWithReturn(row.titleHref)">{{ row.work.title }}</NuxtLink>
+                      <template v-else>{{ row.work.title }}</template>
                     </span>
                   </div>
                 </td>
@@ -1692,15 +1699,12 @@ v-for="item in [
                 <td>
                   <div class="overflow sc">
                     <hr>{{ " " }}
-                    <a
-                      role="button"
-                      tabindex="0"
+                    <button
+                      type="button"
                       class="more"
-                      :aria-disabled="moreLoadingKey === row.work.key"
+                      :disabled="moreLoadingKey === row.work.key"
                       @click="showMore(row.work.key)"
-                      @keydown.enter.prevent="showMore(row.work.key)"
-                      @keydown.space.prevent="showMore(row.work.key)"
-                    >Visa fler</a>{{ " " }}
+                    >Visa fler</button>{{ " " }}
                     <hr>
                   </div>
                 </td>
@@ -1840,6 +1844,26 @@ v-for="item in [
 
 .reset {
   color: #616161;
+}
+
+.overflow .more {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #333;
+  font: inherit;
+  cursor: pointer;
+}
+
+.overflow .more:hover,
+.overflow .more:focus {
+  color: #7a1400;
+}
+
+.overflow .more:disabled {
+  color: #333;
+  cursor: default;
 }
 
 .gender_select {
