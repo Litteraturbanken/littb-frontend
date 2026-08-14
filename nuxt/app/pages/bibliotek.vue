@@ -34,7 +34,6 @@ import {
     authorSortKey,
     epubSortKey,
     libraryPageMaximum,
-    parseLibraryRouteState,
     partSortKey,
     relevanceSortKey,
     type AuthorSortKey,
@@ -42,11 +41,22 @@ import {
     type EpubSortKey,
     type LatestSortKey,
     type LibraryMode,
-    type LibraryRouteState as ParsedLibraryRouteState,
     type PartSortKey,
     type RelevanceSortKey
 } from "~/lib/library/navigation"
 import { canonicalLibraryResultPage } from "~/lib/library/result-pagination"
+import {
+    libraryQueryValue as queryValue,
+    libraryRequestState as requestState,
+    libraryStateKey as stateKey,
+    orderedLibraryValues,
+    parseLibraryPageRouteState,
+    parseLibraryYearRange,
+    type ImprintBounds,
+    type LibraryAdvancedFilters,
+    type LibraryRequestState as QueryState,
+    type LibraryRouteState
+} from "~/lib/library/route-state"
 import {
     assignLibraryPageResult,
     type AuthorBrowseResponse,
@@ -62,21 +72,7 @@ import { toLibrarySearchView, type BrowseResult } from "~/lib/library/view-model
 
 definePageMeta({ alias: ["/epub"] })
 
-type LibraryGender = LibraryAdvancedControlsModel["gender"]
-
-type LibraryAdvancedFilters = {
-    gender: LibraryGender
-    keywords: LibraryCategory[]
-    narrowingKeywords: LibraryCategory[]
-    aboutAuthorIds: string[]
-    media: LibraryMedia[]
-    languages: LibraryLanguage[]
-    yearRange: [number, number] | null
-}
-
-type ImprintBounds = { from: number; to: number }
-
-type LibraryRouteState = ParsedLibraryRouteState<LibraryAdvancedFilters>
+type LibraryGender = LibraryAdvancedFilters["gender"]
 
 const {
     collectionSelectGroups,
@@ -161,62 +157,18 @@ watch(
     { immediate: true }
 )
 
-function orderedLibraryValues<T extends string>(
-    values: readonly string[],
-    options: readonly { value: T }[]
-): T[] {
-    const selected = new Set(values)
-    return options.filter(option => selected.has(option.value)).map(option => option.value)
-}
-
-function queryValue(value: unknown): string {
-    return typeof value === "string" ? value : ""
-}
-
-function queryList<T extends string>(value: unknown, allowed: ReadonlySet<T>): T[] {
-    if (typeof value !== "string" || !value) return []
-    const items = value.split(",")
-    if (items.some(item => !allowed.has(item as T)) || new Set(items).size !== items.length)
-        return []
-    const output: T[] = []
-    for (const item of items) {
-        output.push(item as T)
-    }
-    return output
-}
-
 function queryYearRange(value: unknown): [number, number] | null {
-    const bounds = chronologyBounds.value
-    if (!bounds) return null
-    if (typeof value !== "string" || !/^\d{4},\d{4}$/.test(value)) return null
-    const [from, to] = value.split(",").map(Number)
-    if (
-        !Number.isSafeInteger(from) ||
-        !Number.isSafeInteger(to) ||
-        from! < bounds.from ||
-        to! > bounds.to ||
-        from! > to!
-    )
-        return null
-    if (from === bounds.from && to === bounds.to) return null
-    return [from!, to!]
-}
-
-function advancedFilters(query: LocationQuery): LibraryAdvancedFilters {
-    const gender = queryValue(query.kön)
-    return {
-        gender: gender === "female" || gender === "male" ? gender : "",
-        keywords: queryList(query.keywords, collectionValues),
-        narrowingKeywords: queryList(query.keywords_aux, collectionValues),
-        aboutAuthorIds: queryList(query.about_authors, aboutAuthorIdSet.value),
-        media: queryList(query.mediatypes, mediaValues),
-        languages: queryList(query.languages, languageValues),
-        yearRange: queryYearRange(query.intervall)
-    }
+    return parseLibraryYearRange(value, chronologyBounds.value)
 }
 
 function routeState(path: string, query: LocationQuery): LibraryRouteState {
-    return parseLibraryRouteState(path, query, advancedFilters(query))
+    return parseLibraryPageRouteState(path, query, {
+        chronologyBounds: chronologyBounds.value,
+        collectionValues,
+        aboutAuthorIds: aboutAuthorIdSet.value,
+        mediaValues,
+        languageValues
+    })
 }
 
 function emptyAuthorBrowseResponse(failed = false): AuthorBrowseResponse {
@@ -711,43 +663,6 @@ let summaryController: AbortController | null = null
 let downloadCountVersion = 0
 let downloadCountController: AbortController | null = null
 let ownedNavigation: { key: string; version: number } | null = null
-
-type QueryState = {
-    standalone: boolean
-    mode: LibraryMode
-    filter: string
-    sort: RelevanceSortKey | BrowseSortKey | LatestSortKey
-    page: number
-    hide1800: boolean
-    downloadMode: boolean
-    advancedFilters: LibraryAdvancedFilters
-}
-
-function stateKey(state: QueryState): string {
-    return JSON.stringify([
-        state.standalone,
-        state.mode,
-        state.filter,
-        state.sort,
-        state.page,
-        state.hide1800,
-        state.downloadMode,
-        state.advancedFilters
-    ])
-}
-
-function requestState(state: LibraryRouteState): QueryState {
-    return {
-        standalone: state.standalone,
-        mode: state.mode,
-        filter: state.filter,
-        sort: state.sort,
-        page: state.mode === "authors" ? 1 : state.page,
-        hide1800: state.hide1800,
-        downloadMode: state.downloadMode,
-        advancedFilters: state.advancedFilters
-    }
-}
 
 function selectedSortForCurrentMode(): QueryState["sort"] {
     if (currentMode.value === "all") return selectedSort.value
