@@ -511,6 +511,7 @@ const chronologyToDraft = ref(
     String(initialState.advancedFilters.yearRange?.[1] ?? chronologyBounds.value?.to ?? "")
 )
 const chronologyDraftDirty = ref(false)
+let chronologyDraftRevision = 0
 const mounted = ref(false)
 const hasActiveFilters = computed(() =>
     Boolean(
@@ -1113,6 +1114,7 @@ function resetSearch() {
     if (parsed.media.length) delete query.mediatypes
     if (parsed.languages.length) delete query.languages
     if (parsed.yearRange) delete query.intervall
+    chronologyDraftRevision += 1
     chronologyDraftDirty.value = false
     chronologyFromDraft.value = String(chronologyBounds.value?.from ?? "")
     chronologyToDraft.value = String(chronologyBounds.value?.to ?? "")
@@ -1300,12 +1302,14 @@ function commitLanguages(values: readonly string[]) {
 }
 
 function setChronologyDraft(from: string, to: string) {
+    chronologyDraftRevision += 1
     chronologyDraftDirty.value = true
     chronologyFromDraft.value = from
     chronologyToDraft.value = to
 }
 
 function resetChronologyDraft() {
+    chronologyDraftRevision += 1
     chronologyDraftDirty.value = false
     const range = routeState(route.path, route.query).advancedFilters.yearRange
     chronologyFromDraft.value = String(range?.[0] ?? chronologyBounds.value?.from ?? "")
@@ -1340,7 +1344,9 @@ async function commitChronologyRange(value: readonly [number, number]) {
         return
     }
     const valueToPersist = from === bounds.from && to === bounds.to ? "" : `${from},${to}`
+    const revision = chronologyDraftRevision
     await pushAdvancedQuery("intervall", valueToPersist)
+    if (chronologyDraftRevision !== revision) return
     chronologyDraftDirty.value = false
 }
 

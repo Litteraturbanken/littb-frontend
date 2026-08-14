@@ -520,6 +520,81 @@ test("chronology text inputs preserve empty and partial drafts until commit", as
   expect(new URL(page.url()).searchParams.get("intervall")).toBe("1900,1910")
 })
 
+test("a completed chronology navigation does not overwrite a newer draft", async ({ page }) => {
+  await page.goto("/bibliotek?avancerat=1&intervall=1800,1900", {
+    waitUntil: "networkidle"
+  })
+  await waitForHydration(page)
+  await page.evaluate(() => {
+    const scope = window as typeof window & {
+      __libraryChronologyPushPending?: boolean
+      __releaseLibraryChronologyPush?: () => void
+      useNuxtApp?: () => {
+        $router: { push: (target: unknown) => Promise<unknown> }
+      }
+    }
+    const router = scope.useNuxtApp?.().$router
+    if (!router) throw new Error("Nuxt router is unavailable")
+    const push = router.push.bind(router)
+    router.push = async target => {
+      router.push = push
+      scope.__libraryChronologyPushPending = true
+      await new Promise<void>(resolve => {
+        scope.__releaseLibraryChronologyPush = resolve
+      })
+      return push(target)
+    }
+  })
+
+  const from = page.getByLabel("Från tryckår", { exact: true })
+  const to = page.getByLabel("Till tryckår", { exact: true })
+  await from.fill("1850")
+  await from.dispatchEvent("change")
+  await expect.poll(() => page.evaluate(() => Boolean((window as typeof window & {
+    __libraryChronologyPushPending?: boolean
+  }).__libraryChronologyPushPending))).toBe(true)
+
+  await page.evaluate(() => {
+    const fromInput = document.querySelector<HTMLInputElement>("[aria-label='Från tryckår']")!
+    fromInput.value = "1860"
+    fromInput.dispatchEvent(new Event("input", { bubbles: true }))
+  })
+  await expect(from).toHaveValue("1860")
+  await page.evaluate(() => {
+    const toInput = document.querySelector<HTMLInputElement>("[aria-label='Till tryckår']")!
+    toInput.value = "1890"
+    toInput.dispatchEvent(new Event("input", { bubbles: true }))
+  })
+  await expect(to).toHaveValue("1890")
+  await page.evaluate(() => (
+    window as typeof window & { __releaseLibraryChronologyPush?: () => void }
+  ).__releaseLibraryChronologyPush?.())
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1850,1900")
+  await expect(from).toHaveValue("1860")
+  await expect(to).toHaveValue("1890")
+
+  await page.evaluate(async () => {
+    const scope = window as typeof window & {
+      useNuxtApp?: () => {
+        $router: { replace: (target: unknown) => Promise<unknown> }
+      }
+    }
+    const nuxt = scope.useNuxtApp?.()
+    if (!nuxt) throw new Error("Nuxt app is unavailable")
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+    const target = new URL(window.location.href)
+    target.searchParams.set("avancerat", "2")
+    await nuxt.$router.replace(`${target.pathname}${target.search}`)
+  })
+  await expect(from).toHaveValue("1860")
+  await expect(to).toHaveValue("1890")
+
+  await to.dispatchEvent("change")
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1860,1890")
+})
+
 test("category, publisher, about-author, and narrowing collections restore through history", async ({
   page,
   request
