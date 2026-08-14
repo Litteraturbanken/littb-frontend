@@ -59,6 +59,19 @@ async function navigateClient(page: Page, path: string) {
   }, path)
 }
 
+async function startClientNavigation(page: Page, path: string) {
+  await page.evaluate(target => {
+    type Router = { push: (path: string) => Promise<unknown> }
+    type VueRoot = HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router?: Router } } }
+    }
+    const router = (document.querySelector("#__nuxt") as VueRoot | null)
+      ?.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt router is unavailable")
+    void router.push(target)
+  }, path)
+}
+
 async function expectAnchorAtViewportTop(page: Page, id: string) {
   await expect.poll(async () => page.locator(`#${id}`).evaluate(element =>
     Math.abs(element.getBoundingClientRect().top)
@@ -86,6 +99,151 @@ function contentRequests(requests: string[]) {
 
 test.beforeEach(async ({ request }) => resetPresentation(request))
 test.afterEach(async ({ request }) => resetPresentation(request))
+
+test("mounts Presentation before document and background settle", async ({ page }) => {
+  const documentPath = "/red/presentationer/specialomraden/Censur.html"
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  await expect(page.getByRole("heading", { name: "Botanisera i biblioteket", exact: true }))
+    .toBeVisible()
+
+  let releaseDocument!: () => void
+  const documentReleased = new Promise<void>(resolve => { releaseDocument = resolve })
+  let markDocumentStarted!: () => void
+  const documentStarted = new Promise<void>(resolve => { markDocumentStarted = resolve })
+  let releaseBackground!: () => void
+  const backgroundReleased = new Promise<void>(resolve => { releaseBackground = resolve })
+  let markBackgroundStarted!: () => void
+  const backgroundStarted = new Promise<void>(resolve => { markBackgroundStarted = resolve })
+  await page.route(`**${documentPath}`, async route => {
+    markDocumentStarted()
+    await documentReleased
+    await route.fulfill({ response: await route.fetch() })
+  })
+  await page.route(`**${backgroundsPath}`, async route => {
+    markBackgroundStarted()
+    await backgroundReleased
+    await route.fulfill({ response: await route.fetch() })
+  })
+
+  try {
+    await startClientNavigation(page, "/presentationer/specialomraden/Censur.html")
+    await Promise.all([documentStarted, backgroundStarted])
+
+    await expect(page).toHaveURL("/presentationer/specialomraden/Censur.html")
+    await expect(page.locator("body")).toHaveClass(/\bpage-presentation\b/u)
+    const loadingStatus = page.locator('.searching[role="status"]')
+    await expect(loadingStatus).toHaveCount(1)
+    await expect(loadingStatus).toHaveText("Laddar presentationen")
+    await expect(page.getByRole("heading", {
+      name: "Botanisera i biblioteket",
+      exact: true
+    })).toHaveCount(0)
+    await expect(page.getByRole("heading", {
+      name: "Censur och liknande ingrepp mot tryckta skrifter",
+      exact: true
+    })).toHaveCount(0)
+    await expect(page.locator("html")).not.toHaveAttribute("style", /rostratt_b\.jpg/u)
+    await expect(page.locator("body")).not.toHaveClass(/\bbkg-folder-fallback\b/u)
+
+    releaseDocument()
+    await expect(page.locator('.searching[role="status"]')).toHaveCount(1)
+    await expect(page.getByRole("heading", {
+      name: "Censur och liknande ingrepp mot tryckta skrifter",
+      exact: true
+    })).toHaveCount(0)
+    await expect(page.locator("html")).not.toHaveAttribute("style", /rostratt_b\.jpg/u)
+
+    releaseBackground()
+    await expect(page.getByRole("heading", {
+      name: "Censur och liknande ingrepp mot tryckta skrifter",
+      exact: true
+    })).toBeVisible()
+    await expect(page.locator("html")).toHaveAttribute("style", /rostratt_b\.jpg/u)
+    await expect(page.locator("body")).toHaveClass(/\bbkg-folder-fallback\b/u)
+  } finally {
+    releaseDocument()
+    releaseBackground()
+  }
+})
+
+test("late Presentation content cannot populate a fresh revisit", async ({ page }) => {
+  const documentPath = "/red/presentationer/specialomraden/Censur.html"
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+
+  let releaseFirstDocument!: () => void
+  const firstDocumentReleased = new Promise<void>(resolve => { releaseFirstDocument = resolve })
+  let releaseFirstBackground!: () => void
+  const firstBackgroundReleased = new Promise<void>(resolve => { releaseFirstBackground = resolve })
+  let releaseSecondDocument!: () => void
+  const secondDocumentReleased = new Promise<void>(resolve => { releaseSecondDocument = resolve })
+  let releaseSecondBackground!: () => void
+  const secondBackgroundReleased = new Promise<void>(resolve => { releaseSecondBackground = resolve })
+  let documentRequests = 0
+  let backgroundRequests = 0
+  await page.route(`**${documentPath}`, async route => {
+    documentRequests += 1
+    if (documentRequests === 1) {
+      await firstDocumentReleased
+      const response = await route.fetch()
+      const body = await response.text()
+      await route.fulfill({
+        response,
+        body: body.replaceAll(
+          "Censur och liknande ingrepp mot tryckta skrifter",
+          "Försenad gammal Presentation"
+        )
+      })
+      return
+    }
+    await secondDocumentReleased
+    await route.fulfill({ response: await route.fetch() })
+  })
+  await page.route(`**${backgroundsPath}`, async route => {
+    backgroundRequests += 1
+    if (backgroundRequests === 1) {
+      await firstBackgroundReleased
+      await route.fulfill({ response: await route.fetch() })
+      return
+    }
+    await secondBackgroundReleased
+    await route.fulfill({ response: await route.fetch() })
+  })
+
+  try {
+    await startClientNavigation(page, "/presentationer/specialomraden/Censur.html")
+    await expect.poll(() => ({ documentRequests, backgroundRequests }))
+      .toEqual({ documentRequests: 1, backgroundRequests: 1 })
+    await expect(page.locator('.searching[role="status"]')).toHaveText("Laddar presentationen")
+
+    await startClientNavigation(page, "/bibliotek")
+    await expect(page.getByRole("heading", { name: "Botanisera i biblioteket", exact: true }))
+      .toBeVisible()
+
+    await startClientNavigation(page, "/presentationer/specialomraden/Censur.html")
+    await expect.poll(() => ({ documentRequests, backgroundRequests }))
+      .toEqual({ documentRequests: 2, backgroundRequests: 2 })
+    await expect(page.locator('.searching[role="status"]')).toHaveText("Laddar presentationen")
+    await expect(page.getByText("Försenad gammal Presentation", { exact: true })).toHaveCount(0)
+
+    releaseFirstDocument()
+    releaseFirstBackground()
+    await expect(page.locator('.searching[role="status"]')).toHaveText("Laddar presentationen")
+    await expect(page.getByText("Försenad gammal Presentation", { exact: true })).toHaveCount(0)
+
+    releaseSecondDocument()
+    releaseSecondBackground()
+    await expect(page.getByRole("heading", {
+      name: "Censur och liknande ingrepp mot tryckta skrifter",
+      exact: true
+    })).toBeVisible()
+    await expect(page.getByText("Försenad gammal Presentation", { exact: true })).toHaveCount(0)
+  } finally {
+    releaseFirstDocument()
+    releaseFirstBackground()
+    releaseSecondDocument()
+    releaseSecondBackground()
+  }
+})
 
 test("production-sized Presentation XHTML and text/xml background hydrate intact", async ({
   page,

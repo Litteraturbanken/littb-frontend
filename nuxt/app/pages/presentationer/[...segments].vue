@@ -59,51 +59,65 @@ function contentLocation(path: string) {
   }
 }
 
-async function fetchDocument(path: string): Promise<PresentationDocument> {
+async function fetchDocument(path: string, signal: AbortSignal): Promise<PresentationDocument> {
   try {
     const location = contentLocation(path)
     const source = await fetchManagedText(
       location.url,
-      managedPresentationDocumentTextRules(location.authorityOrigin)
+      managedPresentationDocumentTextRules(location.authorityOrigin),
+      (input, init) => fetch(input, { ...init, signal })
     )
+    if (signal.aborted) throw signal.reason
     return parsePresentationDocument(source)
-  } catch {
+  } catch (error) {
+    if (signal.aborted) throw error
     return emptyPresentationDocument()
   }
 }
 
-async function fetchBackground(path: string): Promise<BackgroundRule | null> {
+async function fetchBackground(path: string, signal: AbortSignal): Promise<BackgroundRule | null> {
   try {
     const location = contentLocation("/red/bilder/bakgrundsbilder/backgrounds.xml")
     const source = await fetchManagedText(
       location.url,
-      managedPresentationBackgroundTextRules(location.authorityOrigin)
+      managedPresentationBackgroundTextRules(location.authorityOrigin),
+      (input, init) => fetch(input, { ...init, signal })
     )
+    if (signal.aborted) throw signal.reason
     return selectBackgroundRule(parseBackgroundRules(source), path)
-  } catch {
+  } catch (error) {
+    if (signal.aborted) throw error
     return null
   }
 }
 
-const { data } = await useAsyncData<PresentationPageData>(asyncKey, async () => {
+const presentationAsyncData = await useAsyncData<PresentationPageData>(asyncKey, async (_nuxtApp, { signal }) => {
   if (isIndex.value) {
     return {
-      document: await fetchDocument(contentPath.value),
+      document: await fetchDocument(contentPath.value, signal),
       background: null
     }
   }
 
   const [document, background] = await Promise.all([
-    fetchDocument(contentPath.value),
-    fetchBackground(canonicalPath.value)
+    fetchDocument(contentPath.value, signal),
+    fetchBackground(canonicalPath.value, signal)
   ])
   return { document, background }
 }, {
-  default: emptyPageData
+  lazy: true
 })
+const { data, pending: presentationPending } = presentationAsyncData
 
 const pageData = computed(() => data.value ?? emptyPageData())
 const navigateManagedHtml = useManagedHtmlNavigation()
+
+function cancelPresentationContent(): void {
+  presentationAsyncData.clear()
+}
+
+onBeforeRouteLeave(cancelPresentationContent)
+onBeforeUnmount(cancelPresentationContent)
 const metadata = computed(() => isIndex.value
   ? {
       title: "Presentationer | Litteraturbanken",
@@ -200,8 +214,19 @@ useHead(() => {
 </script>
 
 <template>
+  <div
+    v-if="presentationPending && !data"
+    class="searching"
+    role="status"
+    aria-live="polite"
+  >
+    <div class="preloader">
+      <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
+      <span class="sr-only">Laddar presentationen</span>
+    </div>
+  </div>
   <RenderableHtmlContent
-    v-if="isIndex"
+    v-else-if="isIndex"
     as="div"
     :html="pageData.document.bodyHtml"
     class="doc main"
