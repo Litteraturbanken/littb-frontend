@@ -2438,7 +2438,13 @@ function textSearchResultsResponse(body) {
   if (body.highlight_limit === 100) {
     for (const work of rich.works) {
       work.has_more_highlights = false
-      if (work.lbworkid === "lb278171") {
+      if (work.lbworkid === "lb238704") {
+        work.highlights.push({
+          left_context: [{ word: "svarade", word_id: "w2_20", page_name: "2" }],
+          match: [{ word: body.query, word_id: "w2_21", page_name: "2" }],
+          right_context: [{ word: "lugnt", word_id: "w2_22", page_name: "2" }]
+        })
+      } else if (work.lbworkid === "lb278171") {
         work.highlights.push({
           left_context: [{ word: "drömde", word_id: "w4_30", page_name: "4" }],
           match: [{ word: body.query, word_id: "w4_31", page_name: "4" }],

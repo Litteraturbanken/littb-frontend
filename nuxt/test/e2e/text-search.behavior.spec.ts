@@ -37,6 +37,80 @@ function browserProblems(page: Page) {
   return problems
 }
 
+type MoreResponseGate = {
+  requests: number
+  settled: number
+  aborted: boolean[]
+  workIds: string[]
+  release: (index: number) => void
+  releaseWork: (workId: string) => void
+  releaseAll: () => void
+  restore: () => void
+}
+
+async function installMoreResponseGate(page: Page) {
+  await page.evaluate(() => {
+    const nativeFetch = window.fetch.bind(window)
+    const releases: Array<() => void> = []
+    const aborted: boolean[] = []
+    const workIds: string[] = []
+    let requests = 0
+    let settled = 0
+    let releaseEverything = false
+    Object.assign(window, {
+      __searchMoreGate: {
+        get requests() { return requests },
+        get settled() { return settled },
+        aborted,
+        workIds,
+        release: (index: number) => releases[index]?.(),
+        releaseWork: (workId: string) => releases[workIds.indexOf(workId)]?.(),
+        releaseAll: () => {
+          releaseEverything = true
+          releases.forEach(release => release())
+        },
+        restore: () => { window.fetch = nativeFetch }
+      }
+    })
+    window.fetch = async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      const body = request.method === "POST"
+        && new URL(request.url).pathname.endsWith("/text-search/results")
+        ? await request.clone().json()
+        : null
+      if (body?.highlight_limit !== 100
+        || !Array.isArray(body.work_ids)
+        || body.work_ids.length !== 1
+        || typeof body.work_ids[0] !== "string") {
+        return nativeFetch(input, init)
+      }
+      const response = await nativeFetch(input, init)
+      const responseBody = await response.arrayBuffer()
+      const responseInit = {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers
+      }
+      const index = requests
+      requests += 1
+      workIds[index] = body.work_ids[0]
+      await new Promise<void>(resolve => {
+        releases[index] = resolve
+        if (releaseEverything) resolve()
+      })
+      aborted[index] = request.signal.aborted
+      settled += 1
+      return new Response(responseBody, responseInit)
+    }
+  })
+}
+
+function moreResponseGate(page: Page) {
+  return page.evaluate(() => (
+    window as typeof window & { __searchMoreGate: MoreResponseGate }
+  ).__searchMoreGate)
+}
+
 function observeUnfilteredResults(page: Page) {
   const failed: string[] = []
   const completed: number[] = []
@@ -1927,6 +2001,101 @@ test("Visa fler ignores duplicate activation while the same work is loading", as
 
   await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
   await expect(more).toBeEnabled()
+})
+
+test("Visa fler expands two different works concurrently and publishes both", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow")
+  await installMoreResponseGate(page)
+
+  try {
+    const more = page.locator("#results .overflow .more")
+    await expect(more).toHaveCount(2)
+    await more.evaluateAll(
+      buttons => buttons.forEach(button => (button as HTMLButtonElement).click())
+    )
+
+    await expect.poll(async () => (await moreResponseGate(page)).workIds.slice().sort())
+      .toEqual(["lb238704", "lb278171"])
+    await expect(more.nth(0)).toBeDisabled()
+    await expect(more.nth(1)).toBeDisabled()
+
+    await page.evaluate(() => (
+      window as typeof window & { __searchMoreGate: MoreResponseGate }
+    ).__searchMoreGate.releaseWork("lb238704"))
+    await expect.poll(async () => (await moreResponseGate(page)).settled).toBe(1)
+    await expect(page.locator("#results tr.sentence .match")).toHaveCount(3)
+    await expect(more).toHaveCount(1)
+    await expect(more).toBeDisabled()
+
+    await page.evaluate(() => (
+      window as typeof window & { __searchMoreGate: MoreResponseGate }
+    ).__searchMoreGate.releaseWork("lb278171"))
+    await expect.poll(async () => (await moreResponseGate(page)).settled).toBe(2)
+    await expect(page.locator("#results tr.sentence .match")).toHaveCount(4)
+    await expect(more).toHaveCount(0)
+  } finally {
+    await page.evaluate(() => {
+      const current = (window as typeof window & { __searchMoreGate?: MoreResponseGate })
+        .__searchMoreGate
+      current?.releaseAll()
+      current?.restore()
+    })
+  }
+})
+
+test("route changes cancel every expansion without letting late owners erase a retry", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow")
+  await installMoreResponseGate(page)
+
+  try {
+    const firstRouteMore = page.locator("#results .overflow .more")
+    await firstRouteMore.evaluateAll(
+      buttons => buttons.forEach(button => (button as HTMLButtonElement).click())
+    )
+    await expect.poll(async () => (await moreResponseGate(page)).requests).toBe(2)
+
+    await page.getByRole("button", { name: "Nästa träffsida" }).click()
+    await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+    const currentMore = page.locator("#results .overflow .more")
+    await expect(currentMore).toHaveCount(2)
+    await expect(page.locator("#results tr.sentence .match")).toHaveCount(2)
+
+    await currentMore.first().click()
+    await expect.poll(async () => (await moreResponseGate(page)).requests).toBe(3)
+    await expect(currentMore.first()).toBeDisabled()
+
+    await page.evaluate(() => {
+      const current = (window as typeof window & { __searchMoreGate: MoreResponseGate })
+        .__searchMoreGate
+      current.release(0)
+      current.release(1)
+    })
+    await expect.poll(async () => {
+      const current = await moreResponseGate(page)
+      return { settled: current.settled, aborted: current.aborted.slice(0, 2) }
+    }).toEqual({ settled: 2, aborted: [true, true] })
+    await expect(currentMore.first()).toBeDisabled()
+    await expect(page.locator("#results tr.sentence .match")).toHaveCount(2)
+
+    await page.evaluate(() => (
+      window as typeof window & { __searchMoreGate: MoreResponseGate }
+    ).__searchMoreGate.release(2))
+    await expect.poll(async () => (await moreResponseGate(page)).settled).toBe(3)
+    await expect(page.locator("#results tr.sentence .match")).toHaveCount(3)
+    await expect(currentMore).toHaveCount(1)
+    await expect(currentMore).toBeEnabled()
+  } finally {
+    await page.evaluate(() => {
+      const current = (window as typeof window & { __searchMoreGate?: MoreResponseGate })
+        .__searchMoreGate
+      current?.releaseAll()
+      current?.restore()
+    })
+  }
 })
 
 test("static options are lazy and cached while title search is exact 250 ms latest-wins", async ({

@@ -10,7 +10,8 @@ import SearchMultiSelect from "~/components/search/SearchMultiSelect.vue"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import {
   createTextSearchRequestOwner,
-  type TextSearchOwnedRequest
+  type TextSearchOwnedRequest,
+  type TextSearchRequestOwner
 } from "~/lib/text-search-request-owner"
 import {
   acceptTextSearchCountResponse,
@@ -1075,20 +1076,30 @@ watch([optionsIdentity, () => state.value.advanced], ([identity, advanced], [pre
 }, { flush: "post" })
 
 const moreHits = shallowRef<Record<string, readonly SearchHitView[]>>({})
-const moreRequestOwner = createTextSearchRequestOwner()
-const moreLoadingKey = ref<string | null>(null)
-watch(routeIdentity, () => {
-  moreRequestOwner.cancel()
+const moreRequestOwners = new Map<string, TextSearchRequestOwner>()
+const moreLoadingKeys = shallowRef<ReadonlySet<string>>(new Set())
+function setMoreLoading(workKey: string, loading: boolean) {
+  const next = new Set(moreLoadingKeys.value)
+  if (loading) next.add(workKey)
+  else next.delete(workKey)
+  moreLoadingKeys.value = next
+}
+function cancelAllMore() {
+  for (const owner of moreRequestOwners.values()) owner.cancel()
+  moreRequestOwners.clear()
   moreHits.value = {}
-  moreLoadingKey.value = null
-}, { flush: "sync" })
+  moreLoadingKeys.value = new Set()
+}
+watch(routeIdentity, cancelAllMore, { flush: "sync" })
 async function showMore(workKey: string) {
-  if (moreLoadingKey.value === workKey) return
+  if (moreRequestOwners.has(workKey)) return
   const requestedState = state.value
   if (!requestedState.phrase) return
   const identity = textSearchRouteIdentity(requestedState)
-  const request = moreRequestOwner.start(identity)
-  moreLoadingKey.value = workKey
+  const owner = createTextSearchRequestOwner()
+  moreRequestOwners.set(workKey, owner)
+  const request = owner.start(identity)
+  setMoreLoading(workKey, true)
   const requestState: TextSearchRouteState = {
     ...requestedState,
     page: 1,
@@ -1104,7 +1115,7 @@ async function showMore(workKey: string) {
     const accepted = result.response.status === 200
       ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
       : null
-    if (moreRequestOwner.isCurrent(request, routeIdentity.value) && accepted
+    if (owner.isCurrent(request, routeIdentity.value) && accepted
       && accepted.works.length === 1 && accepted.works[0]?.lbworkid === workKey) {
       const expanded = resultsView(accepted, requestedState).works.find(work => work.key === workKey)
       if (expanded) moreHits.value = { ...moreHits.value, [workKey]: expanded.hits }
@@ -1114,7 +1125,11 @@ async function showMore(workKey: string) {
       // Keep the accepted primary rows when expansion fails.
     }
   } finally {
-    if (moreRequestOwner.finish(request)) moreLoadingKey.value = null
+    const finished = owner.finish(request)
+    if (finished && moreRequestOwners.get(workKey) === owner) {
+      moreRequestOwners.delete(workKey)
+      setMoreLoading(workKey, false)
+    }
   }
 }
 
@@ -1297,7 +1312,7 @@ onBeforeUnmount(() => {
   optionsRequestOwner.cancel()
   optionsInFlight.clear()
   cancelTitleOptions()
-  moreRequestOwner.cancel()
+  cancelAllMore()
 })
 
 useSeoMeta({
@@ -1702,7 +1717,7 @@ v-for="item in [
                     <button
                       type="button"
                       class="more"
-                      :disabled="moreLoadingKey === row.work.key"
+                      :disabled="moreLoadingKeys.has(row.work.key)"
                       @click="showMore(row.work.key)"
                     >Visa fler</button>{{ " " }}
                     <hr>
