@@ -7,9 +7,37 @@ type PopularEpub = components["schemas"]["PopularEpub"]
 
 const maximumStatisticsTitleLength = 20_000
 const maximumStatisticsAuthorNameLength = 2_000
+const maximumDownloadIdentityDecodeLayers = 5
 
 function isSafeRouteIdentity(value: unknown, maximum: number): value is string {
   return typeof value === "string" && validRouteSegment(value, maximum)
+}
+
+function decodeDownloadPathCharacters(value: string): string {
+  return value.replace(/%(?:25|2e|2f|5c)/giu, encoded => {
+    switch (encoded.toLowerCase()) {
+      case "%25": return "%"
+      case "%2e": return "."
+      case "%2f": return "/"
+      default: return "\\"
+    }
+  })
+}
+
+function isUnsafeDownloadPathIdentity(value: string): boolean {
+  return value === "." || value === ".." || /[\\/]/u.test(value)
+}
+
+function hasUnsafeDownloadPathIdentity(value: string): boolean {
+  let decoded = value
+  for (let layer = 0; layer < maximumDownloadIdentityDecodeLayers; layer += 1) {
+    if (isUnsafeDownloadPathIdentity(decoded)) return true
+    const next = decodeDownloadPathCharacters(decoded)
+    if (next === decoded) return false
+    decoded = next
+  }
+  return isUnsafeDownloadPathIdentity(decoded)
+    || /%(?:25|2e|2f|5c)/iu.test(decoded)
 }
 
 function isSafeDownloadFileIdentity(value: unknown, maximum: number): value is string {
@@ -17,8 +45,7 @@ function isSafeDownloadFileIdentity(value: unknown, maximum: number): value is s
     && value.length > 0
     && value.length <= maximum
     && value === value.trim()
-    && value !== "."
-    && value !== ".."
+    && !hasUnsafeDownloadPathIdentity(value)
     && !hasC0OrC1Control(value)
     && !hasLoneSurrogate(value)
 }

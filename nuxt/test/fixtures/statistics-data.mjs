@@ -92,7 +92,7 @@ function epubAt(rank) {
     }
   }
   return {
-    title_id: rank === 30 ? "Epub/Work?30" : `EpubWork${rank}`,
+    title_id: rank === 30 ? "Epub.Work?30" : `EpubWork${rank}`,
     title: `EPUB Work ${rank}`,
     short_title: rank === 5 ? "EPUB Five" : null,
     author: author(
@@ -192,6 +192,19 @@ export const validStatisticsPercentWorkTitleId = {
   }
 }
 
+export const validStatisticsEncodedPdf = {
+  title_id: "Valid%2EStatistics%252EWorkTitle",
+  title_path: "ValidEncodedStatisticsPdf",
+  title: "Valid encoded PDF filename",
+  short_title: null,
+  author: author("ValidEncodedPdfAuthor", "Valid Encoded PDF Author", "Valid"),
+  representation: {
+    work_id: "valid%2Estatistics%252Epdf",
+    media_type: "pdf",
+    start_page_name: null
+  }
+}
+
 export const validStatisticsNullableWork = {
   title_id: "ValidStatisticsNullableWork",
   title_path: "ValidStatisticsNullableWork",
@@ -275,6 +288,74 @@ export const validStatisticsPercentEpub = {
   short_title: null,
   author: author("ValidEpubAuthor", "Valid EPUB Author", "Valid")
 }
+
+export const validStatisticsEncodedEpub = {
+  title_id: "Valid%2EStatistics%252EEpub",
+  title: "Valid encoded EPUB filename",
+  short_title: null,
+  author: author("ValidEncodedEpubAuthor", "Valid Encoded EPUB Author", "Valid")
+}
+
+const unsafeStatisticsDownloadIdentities = [
+  { problem: "raw-dot", value: "." },
+  { problem: "raw-dot-dot", value: ".." },
+  { problem: "raw-parent-path", value: "../secret" },
+  { problem: "raw-slash", value: "dir/file" },
+  { problem: "raw-parent-backslash", value: "..\\secret" },
+  { problem: "raw-backslash", value: "dir\\file" },
+  { problem: "encoded-dot", value: "%2E" },
+  { problem: "encoded-dot-dot", value: "%2E%2E" },
+  { problem: "double-encoded-dot", value: "%252E" },
+  { problem: "double-encoded-dot-dot", value: "%252E%252E" },
+  { problem: "encoded-slash", value: "dir%2Ffile" },
+  { problem: "double-encoded-slash", value: "dir%252Ffile" },
+  { problem: "encoded-backslash", value: "dir%5Cfile" },
+  { problem: "double-encoded-backslash", value: "dir%255Cfile" },
+  { problem: "over-depth-slash", value: "dir%25252525252Ffile" }
+]
+
+function statisticsDownloadWork(field, problem, value) {
+  const suffix = `${field.replace("representation.", "")}-${problem}`
+  const item = {
+    title_id: `UnsafeDownloadTitle-${suffix}`,
+    title_path: `UnsafeDownloadPath-${suffix}`,
+    title: `Unsafe download identity ${field} ${problem}`,
+    short_title: null,
+    author: author(`UnsafeDownloadAuthor-${suffix}`, "Unsafe Download Author", "Unsafe"),
+    representation: {
+      work_id: `unsafe-download-work-${suffix}`,
+      media_type: "pdf",
+      start_page_name: null
+    }
+  }
+  if (field === "representation.work_id") item.representation.work_id = value
+  else item.title_id = value
+  return { field, problem, item }
+}
+
+export const malformedStatisticsDownloadWorks = unsafeStatisticsDownloadIdentities.flatMap(
+  ({ problem, value }) => [
+    statisticsDownloadWork("representation.work_id", problem, value),
+    statisticsDownloadWork("title_id", problem, value)
+  ]
+)
+
+export const malformedStatisticsDownloadEpubs = unsafeStatisticsDownloadIdentities.map(
+  ({ problem, value }) => ({
+    field: "title_id",
+    problem,
+    item: {
+      title_id: value,
+      title: `Unsafe download identity EPUB title_id ${problem}`,
+      short_title: null,
+      author: author(
+        `UnsafeDownloadEpubAuthor-${problem}`,
+        "Unsafe Download EPUB Author",
+        "Unsafe"
+      )
+    }
+  })
+)
 
 export const validStatisticsNullableEpub = {
   title_id: "ValidStatisticsNullableEpub",

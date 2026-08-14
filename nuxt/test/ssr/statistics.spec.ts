@@ -160,3 +160,37 @@ test("malformed work fields drop only their rows before hydration", async ({ req
     for (const link of links) expect(link.textContent?.trim()).not.toBe("")
   }
 })
+
+test("malformed download identities produce no unsafe hrefs before hydration", async ({
+  request
+}) => {
+  await resetFixture(request)
+  await request.put(`${fixture}/_failure`, {
+    data: { resource: "malformed-stat-download-identities" }
+  })
+
+  const response = await request.get("/om/statistik")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+  const lists = document.querySelectorAll(".content.stats > ul")
+  const workRows = lists[1]?.querySelectorAll("li") ?? []
+  const epubRows = lists[2]?.querySelectorAll("li") ?? []
+
+  expect(workRows).toHaveLength(2)
+  expect(epubRows).toHaveLength(2)
+  expect(workRows[0]?.querySelector("a")?.getAttribute("href")).toBe(
+    "/txt/valid%25statistics-pdf/valid%25statistics-pdf.pdf"
+  )
+  expect(workRows[1]?.querySelector("a")?.getAttribute("href")).toBe(
+    "/txt/valid%252Estatistics%25252Epdf/valid%252Estatistics%25252Epdf.pdf"
+  )
+  expect(epubRows[0]?.querySelector("a")?.getAttribute("href")).toBe(
+    "/txt/epub/ValidEpubAuthor_Valid%25StatisticsEpub.epub"
+  )
+  expect(epubRows[1]?.querySelector("a")?.getAttribute("href")).toBe(
+    "/txt/epub/ValidEncodedEpubAuthor_Valid%252EStatistics%25252EEpub.epub"
+  )
+  expect(document.querySelector(".content.stats")?.textContent)
+    .not.toContain("Unsafe download identity")
+})

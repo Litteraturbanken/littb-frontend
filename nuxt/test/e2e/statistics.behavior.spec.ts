@@ -164,7 +164,7 @@ test("renders exact copy, order, URLs, metadata, and no hydration errors", async
   await expect(epubs.first().locator("a").first()).toHaveAttribute("target", "_self")
   await expect(epubs.last().locator("a").first()).toHaveAttribute(
     "href",
-    "/txt/epub/EpubAuthor%2330_Epub%2FWork%3F30.epub"
+    "/txt/epub/EpubAuthor%2330_Epub.Work%3F30.epub"
   )
 
   expect(await recordedRequests(request)).toEqual(allRequests)
@@ -333,4 +333,31 @@ test("client navigation omits malformed work fields", async ({ page, request }) 
   const linkLabels = await works.locator("a").allTextContents()
   expect(linkLabels).toHaveLength(6)
   expect(linkLabels.every(label => label.trim().length > 0)).toBe(true)
+})
+
+test("client navigation omits unsafe download identities", async ({ page, request }) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await failResource(request, "malformed-stat-download-identities")
+  await beginRouterPush(page, "/om/statistik")
+
+  const lists = page.locator(".content.stats > ul")
+  const works = lists.nth(1).locator("li")
+  const epubs = lists.nth(2).locator("li")
+  await expect(works).toHaveCount(2)
+  await expect(epubs).toHaveCount(2)
+  await expect(works.nth(0).getByRole("link", { name: "Valid percent PDF filename" }))
+    .toHaveAttribute("href", "/txt/valid%25statistics-pdf/valid%25statistics-pdf.pdf")
+  await expect(works.nth(1).getByRole("link", { name: "Valid encoded PDF filename" }))
+    .toHaveAttribute(
+      "href",
+      "/txt/valid%252Estatistics%25252Epdf/valid%252Estatistics%25252Epdf.pdf"
+    )
+  await expect(epubs.nth(0).getByRole("link", { name: "Valid percent EPUB filename" }))
+    .toHaveAttribute("href", "/txt/epub/ValidEpubAuthor_Valid%25StatisticsEpub.epub")
+  await expect(epubs.nth(1).getByRole("link", { name: "Valid encoded EPUB filename" }))
+    .toHaveAttribute(
+      "href",
+      "/txt/epub/ValidEncodedEpubAuthor_Valid%252EStatistics%25252EEpub.epub"
+    )
+  await expect(page.getByText(/Unsafe download identity/u)).toHaveCount(0)
 })

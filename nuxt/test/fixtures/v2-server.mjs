@@ -59,6 +59,8 @@ import {
   sourceInfoProvenance
 } from "./reader-source-info-data.mjs"
 import {
+  malformedStatisticsDownloadEpubs,
+  malformedStatisticsDownloadWorks,
   malformedStatisticsEpubFields,
   malformedStatisticsRouteEpubs,
   malformedStatisticsRouteWorks,
@@ -69,6 +71,8 @@ import {
   validStatisticsPercentEpub,
   validStatisticsPercentPdf,
   validStatisticsPercentWorkTitleId,
+  validStatisticsEncodedEpub,
+  validStatisticsEncodedPdf,
   validStatisticsNullableEpub,
   validStatisticsNullableWork,
   validStatisticsPopulatedEpub,
@@ -5906,6 +5910,16 @@ const server = createServer(async (request, response) => {
     const limit = Number(url.searchParams.get("limit") || 30)
     if (resource === "stats") return sendJson(response, 200, stats)
     if (resource === "works") {
+      if (failure === "malformed-stat-download-identities") {
+        const items = [
+          validStatisticsPercentPdf,
+          validStatisticsEncodedPdf,
+          ...malformedStatisticsDownloadWorks
+            .filter(entry => entry.field === "representation.work_id")
+            .map(entry => entry.item)
+        ]
+        return sendJson(response, 200, { items: structuredClone(items.slice(0, limit)) })
+      }
       if (failure === "malformed-stat-work-fields") {
         const items = [
           validStatisticsPercentWorkTitleId,
@@ -5931,6 +5945,14 @@ const server = createServer(async (request, response) => {
         items[2].representation.media_type = ["etext"]
       }
       return sendJson(response, 200, { items })
+    }
+    if (failure === "malformed-stat-download-identities") {
+      const items = [
+        validStatisticsPercentEpub,
+        validStatisticsEncodedEpub,
+        ...malformedStatisticsDownloadEpubs.map(entry => entry.item)
+      ]
+      return sendJson(response, 200, { items: structuredClone(items.slice(0, limit)) })
     }
     if (failure === "malformed-stat-route-segments") {
       const items = [

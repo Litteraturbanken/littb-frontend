@@ -5,6 +5,8 @@ import {
   isSafePopularWork
 } from "../../app/lib/statistics-items"
 import {
+  malformedStatisticsDownloadEpubs,
+  malformedStatisticsDownloadWorks,
   malformedStatisticsEpubFields,
   malformedStatisticsRouteEpubs,
   malformedStatisticsRouteWorks,
@@ -12,6 +14,8 @@ import {
   validStatisticsPercentEpub,
   validStatisticsPercentPdf,
   validStatisticsPercentWorkTitleId,
+  validStatisticsEncodedEpub,
+  validStatisticsEncodedPdf,
   validStatisticsNullableEpub,
   validStatisticsNullableWork,
   validStatisticsPopulatedEpub,
@@ -48,13 +52,29 @@ describe("Statistics ranking identities", () => {
     }
   )
 
+  test.each(malformedStatisticsDownloadWorks)(
+    "drops a work whose $field has a $problem download identity",
+    ({ item }) => {
+      expect(isSafePopularWork(item)).toBe(false)
+    }
+  )
+
+  test.each(malformedStatisticsDownloadEpubs)(
+    "drops an EPUB whose $field has a $problem download identity",
+    ({ item }) => {
+      expect(isSafePopularEpub(item)).toBe(false)
+    }
+  )
+
   test("retains valid route siblings and percent-bearing encoded filenames", () => {
     expect(isSafePopularWork(validStatisticsRouteWork)).toBe(true)
     expect(isSafePopularWork(validStatisticsPercentPdf)).toBe(true)
     expect(isSafePopularWork(validStatisticsPercentWorkTitleId)).toBe(true)
+    expect(isSafePopularWork(validStatisticsEncodedPdf)).toBe(true)
     expect(isSafePopularWork(validStatisticsNullableWork)).toBe(true)
     expect(isSafePopularWork(validStatisticsPopulatedWork)).toBe(true)
     expect(isSafePopularEpub(validStatisticsPercentEpub)).toBe(true)
+    expect(isSafePopularEpub(validStatisticsEncodedEpub)).toBe(true)
     expect(isSafePopularEpub(validStatisticsNullableEpub)).toBe(true)
     expect(isSafePopularEpub(validStatisticsPopulatedEpub)).toBe(true)
   })
