@@ -434,10 +434,16 @@ type EditorSourceInfoState =
 const initialSourceInfoRequested = sourceInfoRequested.value
 let sourceInfoController: AbortController | null = null
 let sourceInfoControllerIdentity: string | null = null
+function abortSourceInfoRequest(): void {
+  const controller = sourceInfoController
+  sourceInfoController = null
+  sourceInfoControllerIdentity = null
+  controller?.abort()
+}
 const sourceInfoFetch = await useAsyncData<EditorSourceInfoState>(
   computed(() => `editor-source-info:${sourceInfoIdentity.value}`),
   async (_nuxtApp, { signal }) => {
-    sourceInfoController?.abort()
+    abortSourceInfoRequest()
     const identity = sourceInfoIdentity.value
     const current = page.value
     if (!current?.metadataAvailable || !current.authorId || !current.titlePath) {
@@ -446,6 +452,7 @@ const sourceInfoFetch = await useAsyncData<EditorSourceInfoState>(
     const controller = new AbortController()
     sourceInfoController = controller
     sourceInfoControllerIdentity = identity
+    const requestSignal = AbortSignal.any([signal, controller.signal])
     try {
       const sourceInfo = await requestFetch<ReaderSourceInfo>([
         "/nuxt-api/reader/source-info",
@@ -454,10 +461,17 @@ const sourceInfoFetch = await useAsyncData<EditorSourceInfoState>(
       ].join("/"), {
         query: { media_type: current.mediaType },
         retry: 0,
-        signal: AbortSignal.any([signal, controller.signal])
+        signal: requestSignal
       })
+      if (requestSignal.aborted || sourceInfoController !== controller) {
+        throw requestSignal.reason ?? new DOMException(
+          "Editor source information request superseded",
+          "AbortError"
+        )
+      }
       return { status: "success" as const, identity, sourceInfo }
-    } catch {
+    } catch (requestError) {
+      if (requestSignal.aborted || sourceInfoController !== controller) throw requestError
       return { status: "error" as const, identity }
     } finally {
       if (sourceInfoController === controller) {
@@ -483,16 +497,20 @@ const sourceInfoLoading = computed(() => sourceInfoOpen.value && !sourceInfo.val
     sourceInfoFetch.status.value === "idle" || sourceInfoFetch.status.value === "pending"
   ))
 watch(sourceInfoRequested, open => {
-  if (!open || (import.meta.client && nuxtApp.isHydrating)) return
+  if (!open) {
+    abortSourceInfoRequest()
+    return
+  }
+  if (import.meta.client && nuxtApp.isHydrating) return
   const current = sourceInfoFetch.data.value
   if (!current || current.identity !== sourceInfoIdentity.value || current.status === "error") {
     void sourceInfoFetch.execute()
   }
 })
 watch(sourceInfoIdentity, identity => {
-  if (sourceInfoControllerIdentity !== identity) sourceInfoController?.abort()
+  if (sourceInfoControllerIdentity !== identity) abortSourceInfoRequest()
 })
-onBeforeUnmount(() => sourceInfoController?.abort())
+onBeforeUnmount(abortSourceInfoRequest)
 
 function openSourceInfo(): void {
   if (!sourceInfoOpen.value) void navigateRawFullPath(sourceInfoHref.value, true)

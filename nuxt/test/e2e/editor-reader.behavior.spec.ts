@@ -115,6 +115,134 @@ test("requested Editor source information starts once after its page is accepted
   }
 })
 
+for (const lateFirstResult of ["success", "error"] as const) {
+  test(`closing Editor source information aborts a late ${lateFirstResult} before reopen`, async ({
+    page
+  }) => {
+    await page.addInitScript(({ lateFirstResult }) => {
+      const nativeFetch = window.fetch.bind(window)
+      let releaseFirst = () => {}
+      const firstGate = new Promise<void>(resolve => { releaseFirst = resolve })
+      let releaseSecond = () => {}
+      const secondGate = new Promise<void>(resolve => { releaseSecond = resolve })
+      const state = {
+        requests: 0,
+        firstStarted: false,
+        firstAborted: false,
+        firstReleased: false,
+        secondStarted: false,
+        releaseFirst,
+        releaseSecond,
+        restore: () => { window.fetch = nativeFetch }
+      }
+      Object.defineProperty(window, "__editorSourceInfoGate", { value: state })
+      window.fetch = async (input, init) => {
+        const request = input instanceof Request ? input : new Request(input, init)
+        if (!new URL(request.url).pathname.startsWith("/nuxt-api/reader/source-info/")) {
+          return nativeFetch(input, init)
+        }
+        state.requests += 1
+        const requestNumber = state.requests
+        const response = await nativeFetch(input, init)
+        const body = await response.json() as Record<string, unknown>
+        const bufferedResponse = new Response(JSON.stringify({
+          ...body,
+          title: requestNumber === 1 ? "Första svaret" : "Andra svaret"
+        }), {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers
+        })
+        if (requestNumber === 1) {
+          state.firstStarted = true
+          request.signal.addEventListener("abort", () => { state.firstAborted = true }, {
+            once: true
+          })
+          await firstGate
+          state.firstReleased = true
+          if (lateFirstResult === "error") throw new Error("late source information failure")
+          return bufferedResponse
+        }
+        if (requestNumber === 2) {
+          state.secondStarted = true
+          await secondGate
+        }
+        return bufferedResponse
+      }
+    }, { lateFirstResult })
+
+    try {
+      await page.goto(editorFaksimil, { waitUntil: "networkidle" })
+      const sourceTrigger = page.getByRole("link", { name: "Mer om boken" })
+      await sourceTrigger.click()
+      await expect.poll(() => page.evaluate(() => (
+        (window as typeof window & {
+          __editorSourceInfoGate?: { firstStarted: boolean }
+        }).__editorSourceInfoGate?.firstStarted ?? false
+      ))).toBe(true)
+
+      const source = page.getByRole("dialog", { name: "Om boken" })
+      await expect(source.locator(".preloader")).toContainText("Hämtar")
+      await source.getByRole("button", { name: "Stäng" }).click()
+      await expect(source).toHaveCount(0)
+      await expect.poll(() => page.evaluate(() => (
+        (window as typeof window & {
+          __editorSourceInfoGate?: { firstAborted: boolean }
+        }).__editorSourceInfoGate?.firstAborted ?? false
+      ))).toBe(true)
+
+      await sourceTrigger.click()
+      await expect.poll(() => page.evaluate(() => (
+        (window as typeof window & {
+          __editorSourceInfoGate?: { secondStarted: boolean }
+        }).__editorSourceInfoGate?.secondStarted ?? false
+      ))).toBe(true)
+      await expect(source.locator(".preloader")).toContainText("Hämtar")
+      expect(await page.evaluate(() => (
+        window as typeof window & {
+          __editorSourceInfoGate?: { requests: number }
+        }
+      ).__editorSourceInfoGate?.requests)).toBe(2)
+
+      await page.evaluate(() => (
+        window as typeof window & {
+          __editorSourceInfoGate?: { releaseSecond: () => void }
+        }
+      ).__editorSourceInfoGate?.releaseSecond())
+      await expect(source).toContainText("Andra svaret")
+
+      await page.evaluate(() => (
+        window as typeof window & {
+          __editorSourceInfoGate?: { releaseFirst: () => void }
+        }
+      ).__editorSourceInfoGate?.releaseFirst())
+      await expect.poll(() => page.evaluate(() => (
+        (window as typeof window & {
+          __editorSourceInfoGate?: { firstReleased: boolean }
+        }).__editorSourceInfoGate?.firstReleased ?? false
+      ))).toBe(true)
+      await page.evaluate(() => new Promise<void>(resolve => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      }))
+      await expect(source).toContainText("Andra svaret")
+      await expect(source.getByRole("alert")).toHaveCount(0)
+    } finally {
+      await page.evaluate(() => {
+        const state = (window as typeof window & {
+          __editorSourceInfoGate?: {
+            releaseFirst: () => void
+            releaseSecond: () => void
+            restore: () => void
+          }
+        }).__editorSourceInfoGate
+        state?.releaseFirst()
+        state?.releaseSecond()
+        state?.restore()
+      }).catch(() => {})
+    }
+  })
+}
+
 test("late initial Editor settlement is inert after route exit", async ({ page }) => {
   await page.addInitScript(() => {
     const nativeFetch = window.fetch.bind(window)
