@@ -104,9 +104,11 @@ const {
   error,
   pending: editorPageAsyncPending
 } = editorPageAsyncData
+const routePagePending = ref(false)
 const editorPagePending = computed(() => editorPageAsyncPending.value
   || editorPageAsyncData.status.value === "idle"
-  || editorPageAsyncData.status.value === "pending")
+  || editorPageAsyncData.status.value === "pending"
+  || routePagePending.value)
 if (import.meta.server && error.value) {
   throw createError({
     statusCode: error.value.statusCode ?? 500,
@@ -130,7 +132,9 @@ watch(loadedPage, candidate => {
     loadedIdentity.value = initialIdentity
   }
 }, { immediate: true, flush: "sync" })
-const page = computed(() => acceptedPage.value?.page ?? null)
+const page = computed(() => acceptedPage.value?.identity === requestIdentity.value
+  ? acceptedPage.value.page
+  : null)
 const ocrMode = computed(() => route.query.ocr !== undefined && Boolean(page.value?.overlayHtml))
 const authorSearchHref = computed(() => page.value?.authorId
   ? `/s%C3%B6k?avancerad&forfattare=${encodeURIComponent(page.value.authorId)}`
@@ -146,6 +150,7 @@ watch(error, value => {
 let requestGeneration = 0
 watch(requestIdentity, async identity => {
   const generation = ++requestGeneration
+  routePagePending.value = true
   clientRequestFailed.value = false
   sliderDraft.value = null
   pageRequestController?.abort()
@@ -165,11 +170,13 @@ watch(requestIdentity, async identity => {
       clientRequestFailed.value = true
     }
   } finally {
+    if (generation === requestGeneration) routePagePending.value = false
     if (pageRequestController === controller) pageRequestController = null
   }
 })
 function cancelEditorPageRequest(): void {
   requestGeneration += 1
+  routePagePending.value = false
   pageRequestController?.abort()
   editorPageAsyncData.clear()
   acceptedPage.value = null

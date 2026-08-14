@@ -647,7 +647,7 @@ for (const state of ["loading", "failed"] as const) {
   })
 }
 
-test("editor Reader keeps a serialized work-search panel open while its page changes", async ({
+test("editor Reader withholds its serialized panel until the target page is accepted", async ({
   page
 }) => {
   let releasePageRequest = () => {}
@@ -659,9 +659,14 @@ test("editor Reader keeps a serialized work-search panel open while its page cha
     releasePageRequest = resolve
   })
   await page.route("**/nuxt-api/editor/lb8345227/5/f", async route => {
+    const response = await route.fetch()
     notePageRequest()
     await pageRequestReleased
-    await route.continue()
+    try {
+      await route.fulfill({ response })
+    } catch (error) {
+      if (!String(error).includes("Route is already handled")) throw error
+    }
   })
   await page.goto(editorSearchHit, { waitUntil: "networkidle" })
   const input = page.getByRole("searchbox", { name: "Sök i verket" })
@@ -671,12 +676,89 @@ test("editor Reader keeps a serialized work-search panel open while its page cha
     await page.getByRole("navigation", { name: "Sökträffsnavigering" })
       .getByRole("link", { name: "Nästa sökträff" }).click()
     await pageRequestStarted
-    await expect(input).toBeVisible()
+    await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/5\/f/u)
+    const editor = page.locator(".editor-reader")
+    await expect(editor).toHaveCount(1)
+    await expect(editor.locator('[role="status"]')).toHaveCount(1)
+    await expect(editor.locator('[role="status"] .sr-only')).toHaveText("Laddar editorsidan")
+    await expect(editor.locator(".reader_main")).toHaveCount(0)
+    await expect(input).toHaveCount(0)
   } finally {
     releasePageRequest()
   }
   await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/5\/f/u)
   await expect(input).toBeVisible()
+})
+
+test("late same-work Editor settlement cannot replace the newer accepted page", async ({ page }) => {
+  await page.addInitScript(() => {
+    const nativeFetch = window.fetch.bind(window)
+    let release = () => {}
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const state = {
+      started: false,
+      released: false,
+      release,
+      restore: () => { window.fetch = nativeFetch }
+    }
+    Object.defineProperty(window, "__sameWorkEditorPageGate", { value: state })
+    window.fetch = async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      if (new URL(request.url).pathname !== "/nuxt-api/editor/lb-editor-doktor/2/f") {
+        return nativeFetch(input, init)
+      }
+      const response = await nativeFetch(input, init)
+      state.started = true
+      await gate
+      state.released = true
+      return response
+    }
+  })
+
+  try {
+    await page.goto(editorFaksimil, { waitUntil: "networkidle" })
+    await page.getByRole("link", { name: "Nästa sida" }).click()
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __sameWorkEditorPageGate?: { started: boolean }
+      }).__sameWorkEditorPageGate?.started ?? false
+    ))).toBe(true)
+    await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/2\/f$/u)
+    await expect(page.locator('.editor-reader [role="status"]')).toHaveCount(1)
+    await expect(page.locator(".editor-reader .reader_main")).toHaveCount(0)
+
+    await navigateClient(page, "/editor/lb-editor-doktor/ix/0/f")
+    await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/0\/f$/u)
+    await expect(page.locator(".editor-reader .faksimil")).toHaveAttribute(
+      "src", "/txt/lb-editor-doktor/lb-editor-doktor_3/lb-editor-doktor_3_0001.jpeg"
+    )
+
+    await page.evaluate(() => (
+      window as typeof window & {
+        __sameWorkEditorPageGate?: { release: () => void }
+      }
+    ).__sameWorkEditorPageGate?.release())
+    await expect.poll(() => page.evaluate(() => (
+      (window as typeof window & {
+        __sameWorkEditorPageGate?: { released: boolean }
+      }).__sameWorkEditorPageGate?.released ?? false
+    ))).toBe(true)
+    await page.evaluate(() => new Promise<void>(resolve => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+    }))
+    await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/0\/f$/u)
+    await expect(page.locator(".editor-reader .faksimil")).toHaveAttribute(
+      "src", "/txt/lb-editor-doktor/lb-editor-doktor_3/lb-editor-doktor_3_0001.jpeg"
+    )
+  } finally {
+    await page.evaluate(() => {
+      const state = (window as typeof window & {
+        __sameWorkEditorPageGate?: { release: () => void, restore: () => void }
+      }).__sameWorkEditorPageGate
+      state?.release()
+      state?.restore()
+    }).catch(() => {})
+  }
 })
 
 test("editor Reader does not push history for the already-active search hit", async ({ page }) => {
