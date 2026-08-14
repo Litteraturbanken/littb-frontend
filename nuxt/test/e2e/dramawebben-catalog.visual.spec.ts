@@ -24,9 +24,10 @@ const catalogCases: CatalogCase[] = [
 
 // The legacy Select2/rzSlider widgets and their accessible Headless UI/native replacements use
 // different paint primitives. Their boxes and typography are exact; keep narrow raster budgets.
+// Mobile plays also retains the intentional #555/#767676 contrast correction over Angular's #999.
 const visualDiffBudgets = {
   desktop: { plays: 3200, authors: 2500, ranges: 19000 },
-  mobile: { plays: 3200, authors: 2500, ranges: 0 }
+  mobile: { plays: 3300, authors: 2500, ranges: 0 }
 } as const
 
 
