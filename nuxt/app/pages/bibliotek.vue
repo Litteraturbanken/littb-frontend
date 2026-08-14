@@ -46,6 +46,7 @@ import {
 } from "~/lib/library/navigation"
 import { canonicalLibraryResultPage } from "~/lib/library/result-pagination"
 import {
+    canonicalLibraryNarrowingKeywords,
     libraryQueryValue as queryValue,
     libraryRequestState as requestState,
     libraryStateKey as stateKey,
@@ -1105,13 +1106,19 @@ function submitSearch() {
 
 function resetSearch() {
     const parsed = routeState(route.path, route.query).advancedFilters
+    const queryWithoutPrimaryKeywords: LocationQuery = { ...route.query }
+    delete queryWithoutPrimaryKeywords.keywords
+    const independentlyParsedNarrowing = routeState(
+        route.path,
+        queryWithoutPrimaryKeywords
+    ).advancedFilters.narrowingKeywords
     const query: LocationQuery = { ...route.query }
     delete query.filter
     delete query.sida
     if (currentMode.value === "latest") delete query.hide1800
     if (parsed.gender) delete query.kön
     if (parsed.keywords.length) delete query.keywords
-    if (parsed.narrowingKeywords.length) delete query.keywords_aux
+    if (independentlyParsedNarrowing.length) delete query.keywords_aux
     if (parsed.aboutAuthorIds.length) delete query.about_authors
     if (parsed.media.length) delete query.mediatypes
     if (parsed.languages.length) delete query.languages
@@ -1282,11 +1289,18 @@ function commitMedia(values: readonly string[]) {
 
 function commitKeywords(values: readonly string[]) {
     selectedKeywords.value = orderedLibraryValues(values, collectionSelectOptions)
+    selectedNarrowingKeywords.value = canonicalLibraryNarrowingKeywords(
+        selectedKeywords.value,
+        selectedNarrowingKeywords.value
+    )
     void pushAdvancedQuery("keywords", selectedKeywords.value.join(","))
 }
 
 function commitNarrowingKeywords(values: readonly string[]) {
-    selectedNarrowingKeywords.value = orderedLibraryValues(values, collectionSelectOptions)
+    selectedNarrowingKeywords.value = canonicalLibraryNarrowingKeywords(
+        selectedKeywords.value,
+        orderedLibraryValues(values, collectionSelectOptions)
+    )
     void pushAdvancedQuery("keywords_aux", selectedNarrowingKeywords.value.join(","))
 }
 

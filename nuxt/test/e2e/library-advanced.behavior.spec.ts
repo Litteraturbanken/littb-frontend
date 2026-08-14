@@ -695,6 +695,71 @@ test("category, publisher, about-author, and narrowing collections restore throu
     .toContainText("Selma Lagerlöf")
 })
 
+test("selecting a primary category atomically removes the same narrowing category", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+
+  const keywords = page.locator("[data-library-keywords]")
+  const narrowing = page.locator("[data-library-narrowing]")
+  await chooseMultiOptions(page, narrowing, ["Brev"])
+  await expect.poll(() => new URL(page.url()).searchParams.get("keywords_aux"))
+    .toBe("texttype:brev;brevsamling")
+  await expect.poll(async () => (await relevanceQueries(request)).at(-1)?.body.filters)
+    .toEqual(libraryFilters({ narrowing_categories: ["texttype:brev;brevsamling"] }))
+
+  await resetRequests(request)
+  await chooseMultiOptions(page, keywords, ["Brev"])
+  await expect(keywords.locator(".select2-selection__choice")).toContainText("Brev")
+  await expect(narrowing.locator(".select2-selection__choice")).toHaveCount(0)
+  await expect.poll(() => {
+    const query = new URL(page.url()).searchParams
+    return { keywords: query.get("keywords"), narrowing: query.get("keywords_aux") }
+  }).toEqual({ keywords: "texttype:brev;brevsamling", narrowing: null })
+  await expect.poll(async () => (await relevanceQueries(request)).at(-1)?.body.filters)
+    .toEqual(libraryFilters({ categories: ["texttype:brev;brevsamling"] }))
+  expect((await relevanceQueries(request)).every(entry => (
+    entry.body.filters.categories.includes("texttype:brev;brevsamling")
+    && !entry.body.filters.narrowing_categories.includes("texttype:brev;brevsamling")
+  ))).toBe(true)
+
+  await page.goBack()
+  await expect.poll(() => new URL(page.url()).searchParams.get("keywords_aux"))
+    .toBe("texttype:brev;brevsamling")
+  await expect(keywords.locator(".select2-selection__choice")).toHaveCount(0)
+  await expect(narrowing.locator(".select2-selection__choice")).toContainText("Brev")
+
+  await page.goForward()
+  await expect.poll(() => new URL(page.url()).searchParams.has("keywords_aux")).toBe(false)
+  await expect(keywords.locator(".select2-selection__choice")).toContainText("Brev")
+  await expect(narrowing.locator(".select2-selection__choice")).toHaveCount(0)
+  await page.reload({ waitUntil: "networkidle" })
+  await expect(keywords.locator(".select2-selection__choice")).toContainText("Brev")
+  await expect(narrowing.locator(".select2-selection__choice")).toHaveCount(0)
+
+  await page.goto(
+    "/bibliotek?avancerat=1" +
+    "&keywords=texttype%3Abrev%3Bbrevsamling" +
+    "&keywords_aux=texttype%3Abrev%3Bbrevsamling",
+    { waitUntil: "networkidle" }
+  )
+  await waitForHydration(page)
+  await expect(keywords.locator(".select2-selection__choice")).toContainText("Brev")
+  await expect(narrowing.locator(".select2-selection__choice")).toHaveCount(0)
+  await resetRequests(request)
+  await page.locator("[data-library-reset]").click()
+  await expect.poll(() => {
+    const query = new URL(page.url()).searchParams
+    return { keywords: query.has("keywords"), narrowing: query.has("keywords_aux") }
+  }).toEqual({ keywords: false, narrowing: false })
+  await expect(keywords.locator(".select2-selection__choice")).toHaveCount(0)
+  await expect(narrowing.locator(".select2-selection__choice")).toHaveCount(0)
+  await expect.poll(async () => (await relevanceQueries(request)).at(-1)?.body.filters)
+    .toEqual(libraryFilters())
+})
+
 test("source-material selection remains operable at the project viewport", async ({ page }) => {
   await page.goto("/bibliotek?avancerat=1&nedladdning=1", { waitUntil: "networkidle" })
   await waitForHydration(page)

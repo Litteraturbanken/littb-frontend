@@ -279,6 +279,33 @@ test("SSR sends advanced Library filters as one exact typed body", async ({ requ
   })
 })
 
+test("SSR removes primary categories from a hostile narrowing query", async ({ request }) => {
+  const response = await request.get(
+    "/bibliotek?avancerat=1" +
+    "&keywords=texttype%3Abrev%3Bbrevsamling" +
+    "&keywords_aux=texttype%3Abrev%3Bbrevsamling%2Ckeyword%3AHumor"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  expect(selectedChipTitles(document, "[data-library-keywords]")).toEqual(["Brev"])
+  expect(selectedChipTitles(document, "[data-library-narrowing]")).toEqual([
+    "Humoristiska verk"
+  ])
+  const requests = (await libraryV2Requests(request)).search
+  expect(requests).toHaveLength(2)
+  expect(requests.map(entry => entry.body.filters)).toEqual([
+    filters({
+      categories: ["texttype:brev;brevsamling"],
+      narrowing_categories: ["keyword:Humor"]
+    }),
+    filters({
+      categories: ["texttype:brev;brevsamling"],
+      narrowing_categories: ["keyword:Humor"]
+    })
+  ])
+})
+
 test("SSR keeps chronology available when only about-author options fail", async ({ request }) => {
   await request.put(`${fixture}/_library_v2/failures`, {
     data: { operation: "options", section: "about_authors" }

@@ -48,19 +48,21 @@ describe("parseLibraryRouteState", () => {
     })
   })
 
-  it("normalizes advanced route fields against the accepted option authority", () => {
+  it("normalizes advanced route fields and removes primary categories from narrowing", () => {
     expect(parseLibraryPageRouteState("/bibliotek", {
       visa: "works",
       kön: "female",
       keywords: "keyword:one,keyword:two",
-      keywords_aux: "keyword:two",
+      keywords_aux: "keyword:two,keyword:three,keyword:four",
       about_authors: "author-1",
       mediatypes: "mediatype:etext",
       languages: "language:swe",
       intervall: "1850,1900"
     }, {
       chronologyBounds: { from: 1800, to: 2000 },
-      collectionValues: new Set(["keyword:one", "keyword:two"]),
+      collectionValues: new Set([
+        "keyword:one", "keyword:two", "keyword:three", "keyword:four"
+      ]),
       aboutAuthorIds: new Set(["author-1"]),
       mediaValues: new Set(["mediatype:etext"]),
       languageValues: new Set(["language:swe"])
@@ -69,7 +71,7 @@ describe("parseLibraryRouteState", () => {
       advancedFilters: {
         gender: "female",
         keywords: ["keyword:one", "keyword:two"],
-        narrowingKeywords: ["keyword:two"],
+        narrowingKeywords: ["keyword:three", "keyword:four"],
         aboutAuthorIds: ["author-1"],
         media: ["mediatype:etext"],
         languages: ["language:swe"],

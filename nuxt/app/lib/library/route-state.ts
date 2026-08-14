@@ -50,6 +50,14 @@ export function orderedLibraryValues<T extends string>(
   return options.filter(option => selected.has(option.value)).map(option => option.value)
 }
 
+export function canonicalLibraryNarrowingKeywords(
+  keywords: readonly LibraryCategory[],
+  narrowingKeywords: readonly LibraryCategory[]
+): LibraryCategory[] {
+  const primary = new Set(keywords)
+  return narrowingKeywords.filter(value => !primary.has(value))
+}
+
 export function libraryQueryValue(value: unknown): string {
   return typeof value === "string" ? value : ""
 }
@@ -86,10 +94,15 @@ export function parseLibraryPageRouteState(
   authority: LibraryRouteAuthority
 ): LibraryRouteState {
   const gender = libraryQueryValue(query.kön)
+  const keywords = queryList(query.keywords, authority.collectionValues)
+  const narrowingKeywords = canonicalLibraryNarrowingKeywords(
+    keywords,
+    queryList(query.keywords_aux, authority.collectionValues)
+  )
   return parseLibraryRouteState(path, query, {
     gender: gender === "female" || gender === "male" ? gender : "",
-    keywords: queryList(query.keywords, authority.collectionValues),
-    narrowingKeywords: queryList(query.keywords_aux, authority.collectionValues),
+    keywords,
+    narrowingKeywords,
     aboutAuthorIds: queryList(query.about_authors, authority.aboutAuthorIds),
     media: queryList(query.mediatypes, authority.mediaValues),
     languages: queryList(query.languages, authority.languageValues),
