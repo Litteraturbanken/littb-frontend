@@ -583,7 +583,7 @@ const sourceInfoFetch = await useAsyncData<CurrentReaderSourceInfo>(
       if (sourceInfoController === controller) sourceInfoController = null
     }
   },
-  { immediate: initialSourceInfoRequested }
+  { immediate: initialSourceInfoRequested, lazy: true }
 )
 
 const sourceInfo = computed(() => {

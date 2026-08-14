@@ -1729,6 +1729,44 @@ test("source-info alias mounts before resolution", async ({ page }) => {
   }
 })
 
+test("Reader shell mounts before source information", async ({ page }) => {
+  let releaseSourceInfo = () => {}
+  const sourceInfoGate = new Promise<void>(resolve => { releaseSourceInfo = resolve })
+  let markSourceInfoStarted = () => {}
+  const sourceInfoStarted = new Promise<void>(resolve => { markSourceInfoStarted = resolve })
+  const sourceInfoRoute = async (route: import("@playwright/test").Route) => {
+    const response = await route.fetch()
+    markSourceInfoStarted()
+    await sourceInfoGate
+    try {
+      await route.fulfill({ response })
+    } catch (error) {
+      if (!String(error).includes("Route is already handled")) throw error
+    }
+  }
+
+  await page.route("**/nuxt-api/reader/source-info/**", sourceInfoRoute)
+  try {
+    await page.goto("/bibliotek", { waitUntil: "networkidle" })
+    await expect(page.getByRole("heading", { name: "Botanisera i biblioteket" })).toBeVisible()
+
+    void navigateClient(page, `${readerEncodedPath}?om-boken`)
+    await sourceInfoStarted
+
+    await expect(page).toHaveURL(`${readerPath}?om-boken`)
+    await expect(page.locator(".reader-page")).toBeAttached()
+    const dialog = page.getByRole("dialog", { name: "Om boken" })
+    await expect(dialog.locator(".maincontent.searching .preloader")).toContainText("Hämtar")
+    await expect(page.getByRole("heading", { name: "Botanisera i biblioteket" })).toHaveCount(0)
+
+    releaseSourceInfo()
+    await expect(dialog).toContainText("Doktor Glas. Roman")
+  } finally {
+    releaseSourceInfo()
+    await page.unroute("**/nuxt-api/reader/source-info/**", sourceInfoRoute)
+  }
+})
+
 test("late alias resolution cannot redirect the route that replaced it", async ({ page }) => {
   const problems = captureBrowserProblems(page)
   let releaseResolver = () => {}
