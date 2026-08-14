@@ -1090,6 +1090,15 @@ function cancelAllMore() {
   moreHits.value = {}
   moreLoadingKeys.value = new Set()
 }
+function finishMoreRequest(
+  workKey: string,
+  owner: TextSearchRequestOwner,
+  request: TextSearchOwnedRequest
+) {
+  if (!owner.finish(request) || moreRequestOwners.get(workKey) !== owner) return
+  moreRequestOwners.delete(workKey)
+  setMoreLoading(workKey, false)
+}
 watch(routeIdentity, cancelAllMore, { flush: "sync" })
 async function showMore(workKey: string) {
   if (moreRequestOwners.has(workKey)) return
@@ -1125,11 +1134,7 @@ async function showMore(workKey: string) {
       // Keep the accepted primary rows when expansion fails.
     }
   } finally {
-    const finished = owner.finish(request)
-    if (finished && moreRequestOwners.get(workKey) === owner) {
-      moreRequestOwners.delete(workKey)
-      setMoreLoading(workKey, false)
-    }
+    finishMoreRequest(workKey, owner, request)
   }
 }
 
