@@ -1716,7 +1716,7 @@ test("source-info alias mounts before resolution", async ({ page }) => {
     await resolverStarted
 
     await expect(page).toHaveURL(sourceInfoAliasPath)
-    const pending = page.locator(".searching[aria-live='polite']")
+    const pending = page.getByRole("status").filter({ hasText: "Hämtar läsarsidan" })
     await expect(pending).toHaveCount(1)
     await expect(pending.getByText("Hämtar läsarsidan", { exact: true })).toHaveCount(1)
     await expect(page.getByRole("heading", { name: "Botanisera i biblioteket" })).toHaveCount(0)
@@ -1769,42 +1769,77 @@ test("Reader shell mounts before source information", async ({ page }) => {
 
 test("late alias resolution cannot redirect the route that replaced it", async ({ page }) => {
   const problems = captureBrowserProblems(page)
-  let releaseResolver = () => {}
-  const resolverGate = new Promise<void>(resolve => { releaseResolver = resolve })
-  let markResolverStarted = () => {}
-  const resolverStarted = new Promise<void>(resolve => { markResolverStarted = resolve })
-  let resolverReleased = false
+  let markResolverHandlerCompleted = () => {}
+  const resolverHandlerCompleted = new Promise<void>(resolve => {
+    markResolverHandlerCompleted = resolve
+  })
   const resolverRoute = async (route: import("@playwright/test").Route) => {
     const response = await route.fetch()
-    markResolverStarted()
-    await resolverGate
-    resolverReleased = true
-    try {
-      await route.fulfill({ response })
-    } catch (error) {
-      if (!String(error).includes("Route is already handled")) throw error
-    }
+    await route.fulfill({ response })
+    markResolverHandlerCompleted()
   }
 
+  await page.addInitScript(() => {
+    const nativeFetch = window.fetch.bind(window)
+    let releaseResolver = () => {}
+    const resolverGate = new Promise<void>(resolve => { releaseResolver = resolve })
+    const state = {
+      released: false,
+      release: releaseResolver,
+      restore: () => { window.fetch = nativeFetch },
+      started: false
+    }
+    Object.defineProperty(window, "__sourceInfoAliasResolverGate", { value: state })
+    window.fetch = async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      const response = await nativeFetch(request)
+      if (!new URL(request.url).pathname.endsWith(
+        "/nuxt-api/reader/resolve/S%C3%B6derbergH/DoktorGlas"
+      )) return response
+      state.started = true
+      await resolverGate
+      state.released = true
+      return response
+    }
+  })
   await page.route("**/nuxt-api/reader/resolve/**", resolverRoute)
   try {
     await page.goto("/bibliotek", { waitUntil: "networkidle" })
     void navigateClient(page, sourceInfoAliasRouterPath)
-    await resolverStarted
+    await expect.poll(() => page.evaluate(() => (
+      window as typeof window & {
+        __sourceInfoAliasResolverGate?: { started: boolean }
+      }
+    ).__sourceInfoAliasResolverGate?.started ?? false)).toBe(true)
     await expect(page.locator(".searching[aria-live='polite']")).toHaveCount(1)
 
     await navigateClient(page, "/om/ide")
     await expect(page).toHaveURL("/om/ide")
     await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
 
-    releaseResolver()
-    await expect.poll(() => resolverReleased).toBe(true)
-    await page.waitForTimeout(200)
+    await page.evaluate(() => (
+      window as typeof window & {
+        __sourceInfoAliasResolverGate?: { release: () => void }
+      }
+    ).__sourceInfoAliasResolverGate?.release())
+    await resolverHandlerCompleted
+    await expect.poll(() => page.evaluate(() => (
+      window as typeof window & {
+        __sourceInfoAliasResolverGate?: { released: boolean }
+      }
+    ).__sourceInfoAliasResolverGate?.released ?? false)).toBe(true)
+    await page.evaluate(() => new Promise<void>(resolve => setTimeout(resolve, 0)))
     await expect(page).toHaveURL("/om/ide")
     await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
     expect(problems).toEqual([])
   } finally {
-    releaseResolver()
+    await page.evaluate(() => {
+      const gate = (window as typeof window & {
+        __sourceInfoAliasResolverGate?: { release: () => void, restore: () => void }
+      }).__sourceInfoAliasResolverGate
+      gate?.release()
+      gate?.restore()
+    })
     await page.unroute("**/nuxt-api/reader/resolve/**", resolverRoute)
   }
 })

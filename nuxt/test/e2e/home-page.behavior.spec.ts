@@ -110,6 +110,21 @@ test("mounts Home shell before managed content", async ({ page }) => {
 })
 
 test("late Home content cannot populate a fresh revisit", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  await page.addInitScript(() => {
+    const nativeFetch = window.fetch.bind(window)
+    let matchingRequests = 0
+    window.fetch = (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      if (new URL(request.url).pathname !== "/red/om/start/startsida-ny.html") {
+        return nativeFetch(request)
+      }
+      matchingRequests += 1
+      return nativeFetch(matchingRequests === 1
+        ? new Request(request, { signal: new AbortController().signal })
+        : request)
+    }
+  })
   await page.goto("/om/ide", { waitUntil: "networkidle" })
 
   let releaseFirstResponse!: () => void
@@ -118,6 +133,8 @@ test("late Home content cannot populate a fresh revisit", async ({ page }) => {
   const firstRequestStarted = new Promise<void>(resolve => { markFirstRequestStarted = resolve })
   let markSecondRequestStarted!: () => void
   const secondRequestStarted = new Promise<void>(resolve => { markSecondRequestStarted = resolve })
+  let markFirstHandlerCompleted!: () => void
+  const firstHandlerCompleted = new Promise<void>(resolve => { markFirstHandlerCompleted = resolve })
   let requests = 0
   await page.route("**/red/om/start/startsida-ny.html?*", async route => {
     requests += 1
@@ -130,6 +147,7 @@ test("late Home content cannot populate a fresh revisit", async ({ page }) => {
         response,
         body: body.replace("Månadens tema", "Försenat gammalt Home-innehåll")
       })
+      markFirstHandlerCompleted()
       return
     }
     markSecondRequestStarted()
@@ -146,11 +164,14 @@ test("late Home content cannot populate a fresh revisit", async ({ page }) => {
   await expect(page.locator('.searching[role="status"]')).toHaveText("Laddar startsidan")
   await expect(page.getByText("Månadens tema", { exact: true })).toHaveCount(0)
   releaseFirstResponse()
+  await firstHandlerCompleted
+  await page.evaluate(() => new Promise<void>(resolve => setTimeout(resolve, 0)))
 
   await expect(page.getByText("Månadens tema", { exact: true })).toBeVisible()
   await expect(page.getByText("Försenat gammalt Home-innehåll", { exact: true })).toHaveCount(0)
   await firstNavigation.catch(() => undefined)
   expect(requests).toBe(2)
+  expect(problems).toEqual([])
 })
 
 test("hydrates the SSR Home payload without refetching its editorial fragment", async ({ page, request }) => {

@@ -121,7 +121,7 @@ if (import.meta.server) {
 </script>
 
 <template>
-  <div class="searching" aria-live="polite">
+  <div class="searching" role="status" aria-live="polite">
     <div class="preloader">
       <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
       <span class="sr-only">Hämtar läsarsidan</span>

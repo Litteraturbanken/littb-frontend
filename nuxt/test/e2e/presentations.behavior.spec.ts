@@ -174,7 +174,27 @@ test("mounts Presentation before document and background settle", async ({ page 
 })
 
 test("late Presentation content cannot populate a fresh revisit", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
   const documentPath = "/red/presentationer/specialomraden/Censur.html"
+  await page.addInitScript(({ delayedBackgroundPath, delayedDocumentPath }) => {
+    const nativeFetch = window.fetch.bind(window)
+    const matchingRequests = new Map<string, number>()
+    window.fetch = (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      const path = new URL(request.url).pathname
+      if (path !== delayedDocumentPath && path !== delayedBackgroundPath) {
+        return nativeFetch(request)
+      }
+      const requests = (matchingRequests.get(path) ?? 0) + 1
+      matchingRequests.set(path, requests)
+      return nativeFetch(requests === 1
+        ? new Request(request, { signal: new AbortController().signal })
+        : request)
+    }
+  }, {
+    delayedBackgroundPath: backgroundsPath,
+    delayedDocumentPath: documentPath
+  })
   await page.goto("/bibliotek", { waitUntil: "networkidle" })
 
   let releaseFirstDocument!: () => void
@@ -185,6 +205,14 @@ test("late Presentation content cannot populate a fresh revisit", async ({ page 
   const secondDocumentReleased = new Promise<void>(resolve => { releaseSecondDocument = resolve })
   let releaseSecondBackground!: () => void
   const secondBackgroundReleased = new Promise<void>(resolve => { releaseSecondBackground = resolve })
+  let markFirstDocumentHandlerCompleted!: () => void
+  const firstDocumentHandlerCompleted = new Promise<void>(resolve => {
+    markFirstDocumentHandlerCompleted = resolve
+  })
+  let markFirstBackgroundHandlerCompleted!: () => void
+  const firstBackgroundHandlerCompleted = new Promise<void>(resolve => {
+    markFirstBackgroundHandlerCompleted = resolve
+  })
   let documentRequests = 0
   let backgroundRequests = 0
   await page.route(`**${documentPath}`, async route => {
@@ -200,6 +228,7 @@ test("late Presentation content cannot populate a fresh revisit", async ({ page 
           "Försenad gammal Presentation"
         )
       })
+      markFirstDocumentHandlerCompleted()
       return
     }
     await secondDocumentReleased
@@ -210,6 +239,7 @@ test("late Presentation content cannot populate a fresh revisit", async ({ page 
     if (backgroundRequests === 1) {
       await firstBackgroundReleased
       await route.fulfill({ response: await route.fetch() })
+      markFirstBackgroundHandlerCompleted()
       return
     }
     await secondBackgroundReleased
@@ -234,6 +264,8 @@ test("late Presentation content cannot populate a fresh revisit", async ({ page 
 
     releaseFirstDocument()
     releaseFirstBackground()
+    await Promise.all([firstDocumentHandlerCompleted, firstBackgroundHandlerCompleted])
+    await page.evaluate(() => new Promise<void>(resolve => setTimeout(resolve, 0)))
     await expect(page.locator('.searching[role="status"]')).toHaveText("Laddar presentationen")
     await expect(page.getByText("Försenad gammal Presentation", { exact: true })).toHaveCount(0)
 
@@ -244,6 +276,7 @@ test("late Presentation content cannot populate a fresh revisit", async ({ page 
       exact: true
     })).toBeVisible()
     await expect(page.getByText("Försenad gammal Presentation", { exact: true })).toHaveCount(0)
+    expect(problems).toEqual([])
   } finally {
     releaseFirstDocument()
     releaseFirstBackground()
