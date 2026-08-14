@@ -1773,6 +1773,7 @@ describe("Library component ownership", () => {
       failed: false
     })
     const loading = ref(false)
+    const showAllTarget = ref(4)
     const selectedSorts: string[] = []
     let showAllCount = 0
     const NuxtLink = {
@@ -1793,6 +1794,7 @@ describe("Library component ownership", () => {
         sortReversed: false,
         loading: loading.value,
         showAll: true,
+        showAllTarget: showAllTarget.value,
         onSelectSort: (sort: string) => selectedSorts.push(sort),
         onShowAll: () => { showAllCount += 1 }
       })
@@ -1808,6 +1810,11 @@ describe("Library component ownership", () => {
       .toBe("Strindberg, August")
     expect(target.querySelector("[data-library-authors-show-all]")?.textContent?.trim())
       .toBe("Visa alla 4 träffar")
+    response.value = { ...response.value, hits: 10_001 }
+    showAllTarget.value = 10_000
+    await nextTick()
+    expect(target.querySelector("[data-library-authors-show-all]")?.textContent?.trim())
+      .toBe("Visa de första 10 000 av 10 001 träffar")
     expect(target.querySelector('[data-library-sort="popularitet"]')?.getAttribute("aria-current"))
       .toBe("true")
     expect(sortDescription(target, "popularitet")?.textContent)
@@ -1860,7 +1867,8 @@ describe("Library component ownership", () => {
           sortOptions: [{ key: "namn", label: "Namn", to: "/bibliotek?visa=authors&sort=namn", active: true }],
           sortReversed: false,
           loading: false,
-          showAll: false
+          showAll: false,
+          showAllTarget: 0
         }),
         h(LibraryDownloadResults, {
           mode: "pdf",

@@ -14,12 +14,17 @@ defineProps<{
     sortReversed: boolean
     loading: boolean
     showAll: boolean
+    showAllTarget: number
 }>()
 const emit = defineEmits<{
     selectSort: [sort: AuthorSortKey]
     showAll: []
 }>()
 const sortDirectionId = `library-author-sort-direction-${useId()}`
+
+function formattedCount(value: number): string {
+    return value.toLocaleString("sv-SE").replaceAll("\u00a0", " ")
+}
 </script>
 
 <template>
@@ -92,9 +97,15 @@ const sortDirectionId = `library-author-sort-direction-${useId()}`
                             :disabled="loading"
                             @click="emit('showAll')"
                         >
-                            Visa alla
-                            <span class="num">{{ response.hits }}</span>
-                            träffar
+                            <template v-if="showAllTarget < response.hits">
+                                Visa de första {{ formattedCount(showAllTarget) }} av
+                                {{ formattedCount(response.hits) }} träffar
+                            </template>
+                            <template v-else>
+                                Visa alla
+                                <span class="num">{{ response.hits }}</span>
+                                träffar
+                            </template>
                         </button>
                     </td>
                 </tr>

@@ -1693,7 +1693,9 @@ function libraryAuthorsResponse(query, limit) {
   if (query.includes("Selma")) {
     return { mode: "authors", total_authors: 1, total_works: 1, total_parts: 0, items: [libraryAllAuthor("LagerlofS", "Lagerlöf, Selma", 1858, 1940)] }
   }
-  const total = query === "många-författare" ? 151 : 156
+  const total = query === "många-författare"
+    ? 151
+    : query === "över-tio-tusen-författare" ? 10_001 : 156
   const seed = [
     libraryAllAuthor("SöderbergH", "Söderberg, Hjalmar", 1869, 1941, 11),
     libraryAllAuthor("BauerJ", "Bauer, John", 1882, 1918, 10),
@@ -1701,9 +1703,12 @@ function libraryAuthorsResponse(query, limit) {
     libraryAllAuthor("LagerlofS", "Lagerlöf, Selma", 1858, 1940, 8),
     libraryAllAuthor("StrindbergA", "Strindberg, August", 1849, 1912, 7)
   ]
-  const items = [...seed, ...Array.from({ length: Math.max(0, total - seed.length) }, (_, index) => (
+  const visibleTotal = Math.min(total, limit)
+  const items = [...seed.slice(0, visibleTotal), ...Array.from({
+    length: Math.max(0, visibleTotal - seed.length)
+  }, (_, index) => (
     libraryAllAuthor(`FixtureAuthor${index}`, `Författare, ${String(index + 1).padStart(3, "0")}`)
-  ))].slice(0, limit)
+  ))]
   return { mode: "authors", total_authors: total, total_works: 3, total_parts: 201, items }
 }
 

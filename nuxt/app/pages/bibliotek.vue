@@ -197,6 +197,8 @@ type LibraryPrimaryState = Pick<
     "mode" | "filter" | "sort" | "page" | "hide1800" | "downloadMode" | "advancedFilters"
 >
 
+const AUTHOR_EXPANSION_LIMIT = 10_000
+
 function librarySearchState(
     state: LibraryPrimaryState,
     reverse: boolean,
@@ -1138,7 +1140,7 @@ async function loadAllAuthors() {
     if (
         state.mode !== "authors" ||
         authorResults.value.failed ||
-        authorResults.value.data.length >= authorResults.value.hits
+        authorResults.value.data.length >= authorShowAllTarget.value
     )
         return
     const version = invalidateIntent()
@@ -1149,7 +1151,7 @@ async function loadAllAuthors() {
         state,
         activeController.signal,
         isSortReversed(state.mode, state.sort),
-        Math.min(10_000, Math.max(150, authorResults.value.hits))
+        authorShowAllTarget.value
     ).catch(() => null)
     if (version !== requestVersion || activeController.signal.aborted) return
     if (pageData?.mode === "authors" && !pageData.response.failed) {
@@ -1246,9 +1248,9 @@ function queryFromLiveAdvancedControls(): LocationQuery {
     replaceQueryValue(query, "languages", state.advancedFilters.languages.join(","))
     const bounds = chronologyBounds.value
     const range = bounds ? chronologyDraftRange(bounds) : null
-    if (bounds && range) {
-        const isFullRange = range[0] === bounds.from && range[1] === bounds.to
-        replaceQueryValue(query, "intervall", isFullRange ? "" : range.join(","))
+    if (bounds) {
+        const isFullRange = range?.[0] === bounds.from && range?.[1] === bounds.to
+        replaceQueryValue(query, "intervall", range && !isFullRange ? range.join(",") : "")
     }
     return query
 }
@@ -1741,7 +1743,12 @@ const browseImprintYearTargets = computed<readonly LibraryImprintYearTarget[]>((
     )
 )
 
-const authorShowAll = computed(() => authorResults.value.data.length < authorResults.value.hits)
+const authorShowAllTarget = computed(() =>
+    Math.min(AUTHOR_EXPANSION_LIMIT, authorResults.value.hits)
+)
+const authorShowAll = computed(() =>
+    authorResults.value.data.length < authorShowAllTarget.value
+)
 const downloadResultMode = computed<"epub" | "pdf">(() =>
     currentMode.value === "pdf" ? "pdf" : "epub"
 )
@@ -1999,6 +2006,7 @@ onUnmounted(() => {
                         :sort-reversed="authorSortReversed"
                         :loading="loading"
                         :show-all="authorShowAll"
+                        :show-all-target="authorShowAllTarget"
                         @select-sort="selectSort"
                         @show-all="loadAllAuthors"
                     />

@@ -1157,6 +1157,30 @@ test("Författare hydrates 150 rows and expands the legacy Visa alla disclosure"
   expect(visibleRequests[0]?.body).toMatchObject({ mode: "authors", limit: 151 })
 })
 
+test("Författare truthfully caps and completes a show-all request at the backend limit", async ({
+  page,
+  request
+}) => {
+  await page.goto(
+    "/bibliotek?visa=authors&sort=namn&filter=över-tio-tusen-författare",
+    { waitUntil: "networkidle" }
+  )
+
+  await expect(page.locator("[data-library-author-row]")).toHaveCount(150)
+  const showAll = page.locator("[data-library-authors-show-all]")
+  await expect(showAll).toHaveText(/Visa de första 10 000 av 10 001 träffar/)
+
+  await reset(request)
+  await showAll.click()
+  await expect(page.locator("[data-library-author-row]")).toHaveCount(10_000)
+  await expect(showAll).toHaveCount(0)
+  const visibleRequests = (await allRelevanceRequests(request)).filter(
+    entry => entry.body.mode === "authors"
+  )
+  expect(visibleRequests).toHaveLength(1)
+  expect(visibleRequests[0]?.body).toMatchObject({ mode: "authors", limit: 10_000 })
+})
+
 test("Works titles are black keyboard disclosures linked to their representation actions", async ({
   page
 }) => {

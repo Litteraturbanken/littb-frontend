@@ -473,32 +473,41 @@ test("unavailable option sections retain their routed advanced values", async ({
   })
 })
 
-test("an invalid chronology draft cannot erase the committed range through another facet", async ({
-  page
-}) => {
-  await page.goto("/bibliotek?avancerat=1&intervall=1900,1910&keep=ja", {
-    waitUntil: "networkidle"
-  })
-  await waitForHydration(page)
+for (const { label, draft } of [
+  { label: "a cleared", draft: "" },
+  { label: "an invalid", draft: "inte ett år" }
+]) {
+  test(`${label} chronology draft removes the stale committed range through another facet`, async ({
+    page,
+    request
+  }) => {
+    await page.goto("/bibliotek?avancerat=1&intervall=1900,1910&keep=ja", {
+      waitUntil: "networkidle"
+    })
+    await waitForHydration(page)
+    await resetRequests(request)
 
-  await page.evaluate(() => {
-    const from = document.querySelector<HTMLInputElement>("[aria-label='Från tryckår']")!
-    from.value = "inte ett år"
-    from.dispatchEvent(new Event("input", { bubbles: true }))
-    const gender = document.querySelector<HTMLSelectElement>("[data-library-gender]")!
-    gender.value = "female"
-    gender.dispatchEvent(new Event("change", { bubbles: true }))
-  })
+    await page.evaluate(value => {
+      const from = document.querySelector<HTMLInputElement>("[aria-label='Från tryckår']")!
+      from.value = value
+      from.dispatchEvent(new Event("input", { bubbles: true }))
+      const gender = document.querySelector<HTMLSelectElement>("[data-library-gender]")!
+      gender.value = "female"
+      gender.dispatchEvent(new Event("change", { bubbles: true }))
+    }, draft)
 
-  await expect.poll(() => {
-    const params = new URL(page.url()).searchParams
-    return {
-      gender: params.get("kön"),
-      interval: params.get("intervall"),
-      keep: params.get("keep")
-    }
-  }).toEqual({ gender: "female", interval: "1900,1910", keep: "ja" })
-})
+    await expect.poll(() => {
+      const params = new URL(page.url()).searchParams
+      return {
+        gender: params.get("kön"),
+        interval: params.get("intervall"),
+        keep: params.get("keep")
+      }
+    }).toEqual({ gender: "female", interval: null, keep: "ja" })
+    await expect.poll(async () => (await relevanceQueries(request)).at(-1)?.body.filters)
+      .toEqual(libraryFilters({ gender: "female" }))
+  })
+}
 
 test("chronology text inputs preserve empty and partial drafts until commit", async ({
   page
