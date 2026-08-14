@@ -310,3 +310,21 @@ test("client navigation omits malformed EPUB display fields", async ({ page, req
   expect(linkLabels).toHaveLength(4)
   expect(linkLabels.every(label => label.trim().length > 0)).toBe(true)
 })
+
+test("client navigation omits malformed work display fields", async ({ page, request }) => {
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await failResource(request, "malformed-stat-work-fields")
+  await beginRouterPush(page, "/om/statistik")
+
+  const works = page.locator(".content.stats > ul").nth(1).locator("li")
+  await expect(works).toHaveCount(2)
+  await expect(works.nth(0)).toContainText("Valid nullable work fields")
+  await expect(works.nth(0)).toContainText("Valid Nullable Work Author")
+  await expect(works.nth(1)).toContainText("Valid populated work fields")
+  await expect(works.nth(1)).toContainText("Populated")
+  await expect(page.locator(".content.stats")).not.toContainText("undefined")
+
+  const linkLabels = await works.locator("a").allTextContents()
+  expect(linkLabels).toHaveLength(4)
+  expect(linkLabels.every(label => label.trim().length > 0)).toBe(true)
+})

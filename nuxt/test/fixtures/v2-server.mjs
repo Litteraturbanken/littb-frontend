@@ -62,13 +62,16 @@ import {
   malformedStatisticsEpubFields,
   malformedStatisticsRouteEpubs,
   malformedStatisticsRouteWorks,
+  malformedStatisticsWorkFields,
   popularEpubs,
   popularWorks,
   stats,
   validStatisticsPercentEpub,
   validStatisticsPercentPdf,
   validStatisticsNullableEpub,
+  validStatisticsNullableWork,
   validStatisticsPopulatedEpub,
+  validStatisticsPopulatedWork,
   validStatisticsRouteWork
 } from "./statistics-data.mjs"
 import {
@@ -5902,6 +5905,14 @@ const server = createServer(async (request, response) => {
     const limit = Number(url.searchParams.get("limit") || 30)
     if (resource === "stats") return sendJson(response, 200, stats)
     if (resource === "works") {
+      if (failure === "malformed-stat-work-fields") {
+        const items = [
+          validStatisticsNullableWork,
+          validStatisticsPopulatedWork,
+          ...malformedStatisticsWorkFields.map(entry => entry.item)
+        ]
+        return sendJson(response, 200, { items: structuredClone(items.slice(0, limit)) })
+      }
       if (failure === "malformed-stat-route-segments") {
         const items = [
           validStatisticsRouteWork,

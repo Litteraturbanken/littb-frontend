@@ -15,6 +15,13 @@ export const malformedStatisticsRouteEpubs: readonly {
 }[]
 export const validStatisticsRouteWork: components["schemas"]["PopularWork"]
 export const validStatisticsPercentPdf: components["schemas"]["PopularWork"]
+export const validStatisticsNullableWork: components["schemas"]["PopularWork"]
+export const validStatisticsPopulatedWork: components["schemas"]["PopularWork"]
+export const malformedStatisticsWorkFields: readonly {
+  field: "title" | "short_title" | "author.full_name" | "author.surname"
+  problem: "missing" | "null" | "wrong-type" | "blank" | "overlong"
+  item: Record<string, unknown>
+}[]
 export const validStatisticsPercentEpub: components["schemas"]["PopularEpub"]
 export const validStatisticsNullableEpub: components["schemas"]["PopularEpub"]
 export const validStatisticsPopulatedEpub: components["schemas"]["PopularEpub"]

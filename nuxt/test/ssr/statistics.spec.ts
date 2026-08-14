@@ -131,3 +131,28 @@ test("malformed EPUB display fields drop only their rows before hydration", asyn
     for (const link of links) expect(link.textContent?.trim()).not.toBe("")
   }
 })
+
+test("malformed work display fields drop only their rows before hydration", async ({ request }) => {
+  await resetFixture(request)
+  await request.put(`${fixture}/_failure`, {
+    data: { resource: "malformed-stat-work-fields" }
+  })
+
+  const response = await request.get("/om/statistik")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+  const workRows = document.querySelectorAll(".content.stats > ul:nth-of-type(2) > li")
+
+  expect(workRows).toHaveLength(2)
+  expect(workRows[0]?.textContent).toContain("Valid nullable work fields")
+  expect(workRows[0]?.textContent).toContain("Valid Nullable Work Author")
+  expect(workRows[1]?.textContent).toContain("Valid populated work fields")
+  expect(workRows[1]?.textContent).toContain("Populated")
+  expect(html).not.toContain("undefined")
+  for (const row of workRows) {
+    const links = row.querySelectorAll("a")
+    expect(links).toHaveLength(2)
+    for (const link of links) expect(link.textContent?.trim()).not.toBe("")
+  }
+})

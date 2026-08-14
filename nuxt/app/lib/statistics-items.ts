@@ -45,14 +45,19 @@ function isSafeNullableDisplayText(
 
 export function isSafePopularWork(item: unknown): item is PopularWork {
   if (!isRecord(item) || !isRecord(item.author) || !isRecord(item.representation)) return false
+  const author = item.author
   const representation = item.representation
-  return isSafeRouteIdentity(item.author.author_id, 100)
+  return isSafeRouteIdentity(author.author_id, 100)
     && isSafeDownloadFileIdentity(representation.work_id, 100)
     && isSafeRouteIdentity(item.title_path, 200)
     && typeof representation.media_type === "string"
     && ["etext", "faksimil", "pdf"].includes(representation.media_type)
     && (representation.start_page_name === null
       || isSafeRouteIdentity(representation.start_page_name, 512))
+    && isSafeDisplayText(item.title, maximumStatisticsTitleLength)
+    && isSafeNullableDisplayText(item.short_title, maximumStatisticsTitleLength)
+    && isSafeDisplayText(author.full_name, maximumStatisticsAuthorNameLength)
+    && isSafeNullableDisplayText(author.surname, maximumStatisticsAuthorNameLength)
 }
 
 export function isSafePopularEpub(item: unknown): item is PopularEpub {

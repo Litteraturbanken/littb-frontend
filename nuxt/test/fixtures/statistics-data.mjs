@@ -179,6 +179,74 @@ export const validStatisticsPercentPdf = {
   }
 }
 
+export const validStatisticsNullableWork = {
+  title_id: "ValidStatisticsNullableWork",
+  title_path: "ValidStatisticsNullableWork",
+  title: "Valid nullable work fields",
+  short_title: null,
+  author: author("ValidNullableWorkAuthor", "Valid Nullable Work Author", null),
+  representation: {
+    work_id: "valid-statistics-nullable-work",
+    media_type: "etext",
+    start_page_name: "1"
+  }
+}
+
+export const validStatisticsPopulatedWork = {
+  title_id: "ValidStatisticsPopulatedWork",
+  title_path: "ValidStatisticsPopulatedWork",
+  title: "Valid populated work title",
+  short_title: "Valid populated work fields",
+  author: author("ValidPopulatedWorkAuthor", "Valid Populated Work Author", "Populated"),
+  representation: {
+    work_id: "valid-statistics-populated-work",
+    media_type: "faksimil",
+    start_page_name: null
+  }
+}
+
+function statisticsWorkField(field, problem, value, omit = false) {
+  const suffix = `${field.replace("author.", "author-")}-${problem}`
+  const item = {
+    title_id: `Malformed-${suffix}`,
+    title_path: `Malformed-${suffix}`,
+    title: `Malformed ${field} ${problem} work field`,
+    short_title: null,
+    author: author(`Malformed-${suffix}-author`, `Malformed ${suffix} Author`, "Malformed"),
+    representation: {
+      work_id: `malformed-${suffix}-work`,
+      media_type: "etext",
+      start_page_name: "1"
+    }
+  }
+  const target = field.startsWith("author.") ? item.author : item
+  const key = field.replace("author.", "")
+  if (omit) delete target[key]
+  else target[key] = value
+  return { field, problem, item }
+}
+
+export const malformedStatisticsWorkFields = [
+  statisticsWorkField("title", "missing", undefined, true),
+  statisticsWorkField("title", "null", null),
+  statisticsWorkField("title", "wrong-type", 17),
+  statisticsWorkField("title", "blank", " "),
+  statisticsWorkField("title", "overlong", "T".repeat(20_001)),
+  statisticsWorkField("short_title", "missing", undefined, true),
+  statisticsWorkField("short_title", "wrong-type", 17),
+  statisticsWorkField("short_title", "blank", " "),
+  statisticsWorkField("short_title", "overlong", "S".repeat(20_001)),
+  statisticsWorkField("author.full_name", "missing", undefined, true),
+  statisticsWorkField("author.full_name", "null", null),
+  statisticsWorkField("author.full_name", "wrong-type", 17),
+  statisticsWorkField("author.full_name", "blank", " "),
+  statisticsWorkField("author.full_name", "overlong", "F".repeat(2_001)),
+  statisticsWorkField("author.surname", "missing", undefined, true),
+  statisticsWorkField("author.surname", "wrong-type", 17),
+  statisticsWorkField("author.surname", "blank", " "),
+  statisticsWorkField("author.surname", "overlong", "N".repeat(2_001))
+]
+
 export const validStatisticsPercentEpub = {
   title_id: "Valid%StatisticsEpub",
   title: "Valid percent EPUB filename",
