@@ -428,6 +428,87 @@ test("revisiting Search refetches after an abandoned noncooperative primary succ
   }
 })
 
+test("failed advanced options settle to a retryable owner error without forwarding results", async ({
+  page,
+  request
+}) => {
+  await page.goto("/om/ide", { waitUntil: "domcontentloaded" })
+  await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+  await request.put(`${fixture}/_text_search/failures`, {
+    data: { operation: "options" }
+  })
+
+  void pushRoute(
+    page,
+    "/s%C3%B6k?avancerad&fras=frihet&forfattare=Lagerl%C3%B6fS"
+  ).catch(() => undefined)
+
+  const search = page.locator("[data-search-root]")
+  await expect(search).toBeVisible({ timeout: 1500 })
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+  const error = search.locator('[data-search-options-error][role="alert"]')
+  await expect(error).toContainText("Sökfiltren kan inte hämtas just nu.")
+  await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(0)
+  await expect(search).not.toHaveClass(/searching/)
+  await expect(search.locator("#results")).not.toHaveClass(/searching/)
+  await expect(search.locator(".submit_form .top_row .spinner")).toBeHidden()
+  expect(await requests(request, "results")).toEqual([])
+  expect(await requests(request, "count")).toEqual([])
+
+  await request.delete(`${fixture}/_text_search/failures/options`)
+  await error.getByRole("button", { name: "Försök igen" }).click()
+
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(2)
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
+  expect((await requests(request, "results"))[0]?.body).toMatchObject({
+    query: "frihet",
+    author_ids: ["LagerlöfS"]
+  })
+  await expect(page.getByRole("link", { name: "Röda rummet" }).first()).toBeVisible()
+  await expect(error).toHaveCount(0)
+})
+
+test("keeps one named status through the delayed initial primary result", async ({
+  page,
+  request
+}) => {
+  await page.goto("/om/ide", { waitUntil: "domcontentloaded" })
+  await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+
+  let releaseResult = () => {}
+  const resultGate = new Promise<void>(resolve => { releaseResult = resolve })
+  let resultHandled = Promise.resolve()
+  const holdResult = async (route: Route) => {
+    const response = await route.fetch()
+    resultHandled = resultGate.then(() => route.fulfill({ response }))
+    await resultHandled
+  }
+  await page.route("**/api/v2/text-search/results", holdResult)
+
+  try {
+    void pushRoute(page, "/s%C3%B6k?fras=frihet").catch(() => undefined)
+
+    const search = page.locator("[data-search-root]")
+    await expect(search).toBeVisible({ timeout: 1500 })
+    await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
+    const status = search.getByRole("status", { name: "Laddar sökdata" })
+    await expect(status).toHaveCount(1)
+    await expect(status).toBeVisible()
+    await expect(search.locator('[aria-live="polite"]')).toHaveCount(1)
+    await expect(search.locator(".submit_form .top_row .spinner"))
+      .toHaveAttribute("aria-hidden", "true")
+    await expect(search.locator("#results .results tr")).toHaveCount(0)
+
+    releaseResult()
+    await expect(page.getByRole("link", { name: "Röda rummet" }).first()).toBeVisible()
+    await expect(status).toHaveCount(0)
+  } finally {
+    releaseResult()
+    await resultHandled.catch(() => undefined)
+    await page.unroute("**/api/v2/text-search/results", holdResult)
+  }
+})
+
 test("reset is absent when pristine, clears every query key, and restores search focus", async ({
   page
 }) => {

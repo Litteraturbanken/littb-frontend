@@ -79,6 +79,10 @@ type OptionsView = Readonly<{
   yearTo: number | null
   staticComplete: boolean
 }>
+type OptionsLoadState = Readonly<{
+  identity: string
+  status: "idle" | "pending" | "failed" | "accepted"
+}>
 
 const languageOptions = [
   ["modernized:true", "Moderniserat språk"],
@@ -474,6 +478,7 @@ const currentPrimaryFacets = computed(() => (
 ))
 const primaryFailed = computed(() => acceptedPrimary.value?.status === 502)
 const primaryLoading = computed(() => Boolean(state.value.phrase)
+  && !optionsFailed.value
   && (primaryPending.value || acceptedPrimary.value === null))
 
 const countCache = useState<Record<string, CountView>>(
@@ -569,14 +574,32 @@ const optionsRequestOwner = createTextSearchRequestOwner()
 const optionsIdentity = computed(() => textSearchOptionsRequestIdentity(
   buildTextSearchOptionsRequest(state.value)
 ))
+const optionsLoadState = shallowRef<OptionsLoadState>({
+  identity: optionsIdentity.value,
+  status: optionsCache.value[optionsIdentity.value]?.staticComplete
+    ? "accepted"
+    : state.value.advanced ? "pending" : "idle"
+})
+
+function setOptionsLoadState(
+  identity: string,
+  status: OptionsLoadState["status"]
+): void {
+  if (identity === optionsIdentity.value) optionsLoadState.value = { identity, status }
+}
 
 async function loadOptions() {
   const requestedState = state.value
   const body = buildTextSearchOptionsRequest(requestedState)
   const identity = textSearchOptionsRequestIdentity(body)
-  if (optionsCache.value[identity]?.staticComplete || optionsInFlight.has(identity)) return
+  if (optionsCache.value[identity]?.staticComplete) {
+    setOptionsLoadState(identity, "accepted")
+    return
+  }
+  if (optionsInFlight.has(identity)) return
   const request = optionsRequestOwner.start(identity)
   optionsInFlight.set(identity, request)
+  setOptionsLoadState(identity, "pending")
   try {
     const result = await client.POST("/text-search/options", {
       body,
@@ -587,9 +610,14 @@ async function loadOptions() {
       : null
     if (optionsRequestOwner.isCurrent(request, optionsIdentity.value) && accepted) {
       optionsCache.value[identity] = optionsView(accepted)
+      setOptionsLoadState(identity, "accepted")
+    } else if (optionsRequestOwner.isCurrent(request, optionsIdentity.value)) {
+      setOptionsLoadState(identity, "failed")
     }
   } catch {
-    // Failed and aborted requests remain retryable on identity re-entry.
+    if (optionsRequestOwner.isCurrent(request, optionsIdentity.value)) {
+      setOptionsLoadState(identity, "failed")
+    }
   } finally {
     if (optionsInFlight.get(identity) === request) optionsInFlight.delete(identity)
     optionsRequestOwner.finish(request)
@@ -608,12 +636,36 @@ async function loadInitialOptions(): Promise<void> {
 if (import.meta.server) await loadInitialOptions()
 else void loadInitialOptions()
 const options = computed(() => optionsCache.value[optionsIdentity.value] ?? null)
+const optionsFailed = computed(() => (
+  state.value.advanced
+  && optionsLoadState.value.identity === optionsIdentity.value
+  && optionsLoadState.value.status === "failed"
+  && options.value?.staticComplete !== true
+))
 const primaryPrerequisitesReady = computed(() => (
   state.value.advanced
     ? !initialOptionsPending.value && options.value?.staticComplete === true
     : !chronologyPending.value
 ))
-const initialPrerequisitesPending = computed(() => !primaryPrerequisitesReady.value)
+const initialPrerequisitesPending = computed(() => (
+  !primaryPrerequisitesReady.value
+  && !optionsFailed.value
+))
+const initialPipelinePending = computed(() => (
+  initialPrerequisitesPending.value
+  || (
+    Boolean(state.value.phrase)
+    && displayPrimary.value === null
+    && acceptedPrimary.value?.identity !== primaryIdentity.value
+    && !primaryFailed.value
+    && !optionsFailed.value
+  )
+))
+
+function retryOptions(): void {
+  if (!optionsFailed.value) return
+  void loadOptions()
+}
 watch(
   [primaryIdentity, primaryPrerequisitesReady, primaryClientMounted],
   ([identity, prerequisitesReady, mounted]) => {
@@ -1015,6 +1067,12 @@ watch([optionsIdentity, () => state.value.advanced], ([identity, advanced], [pre
   if (identity !== previousIdentity || !advanced) {
     optionsRequestOwner.cancel()
     optionsInFlight.clear()
+    optionsLoadState.value = {
+      identity,
+      status: advanced && optionsCache.value[identity]?.staticComplete
+        ? "accepted"
+        : "idle"
+    }
   }
   if (advanced) void loadOptions()
 }, { flush: "post" })
@@ -1357,7 +1415,11 @@ useHead({
           </button>
         </div>
         <div class="w-4">
-          <i v-show="primaryLoading" class="spinner fa fa-spinner fa-pulse mt-2" />
+          <i
+            v-show="primaryLoading && !optionsFailed"
+            class="spinner fa fa-spinner fa-pulse mt-2"
+            aria-hidden="true"
+          />
         </div>
       </div>
 
@@ -1564,7 +1626,7 @@ v-for="item in [
       :class="{ searching: primaryLoading }"
     >
       <div
-        v-if="initialPrerequisitesPending"
+        v-if="initialPipelinePending"
         class="searching"
         role="status"
         aria-live="polite"
@@ -1574,6 +1636,10 @@ v-for="item in [
           <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
           <span class="sr-only">Laddar sökdata</span>
         </div>
+      </div>
+      <div v-else-if="optionsFailed" data-search-options-error class="error" role="alert">
+        Sökfiltren kan inte hämtas just nu.
+        <button type="button" @click="retryOptions">Försök igen</button>
       </div>
       <div v-else-if="displayPrimary?.status === 200" class="table_viewport">
         <div class="table_container">
