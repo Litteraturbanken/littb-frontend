@@ -75,22 +75,28 @@ function extractHelpSubmenu(html: string): Array<{ id: string; label: string }> 
   }))
 }
 
-const { data: contentPayload } = await useAsyncData<AboutContentPayload>(asyncKey, async () => {
+const aboutContentAsyncData = await useAsyncData<AboutContentPayload>(asyncKey, async (_nuxtApp, { signal }) => {
   const requestedPage = pageKey.value
-  try {
-    return {
-      page: requestedPage,
-      html: await requestFetch<AboutContent>(`/nuxt-api/about/${encodeURIComponent(requestedPage)}`)
-    }
-  } catch (error) {
-    if (import.meta.dev) console.error(`About content request failed for ${requestedPage}`, error)
-    return { page: requestedPage, html: emptyAboutContent() }
+  return {
+    page: requestedPage,
+    html: await requestFetch<AboutContent>(`/nuxt-api/about/${encodeURIComponent(requestedPage)}`, { signal })
   }
-})
+}, { lazy: true })
+const {
+  data: contentPayload,
+  error: aboutContentError,
+  pending: asyncDataPending
+} = aboutContentAsyncData
+const currentContentPayload = computed(() =>
+  contentPayload.value?.page === displayedPageKey.value ? contentPayload.value : null
+)
+const aboutContentPending = computed(() =>
+  asyncDataPending.value || (!currentContentPayload.value && !aboutContentError.value)
+)
 
 const aboutContent = computed(() =>
-  contentPayload.value?.page === displayedPageKey.value
-    ? contentPayload.value.html
+  currentContentPayload.value
+    ? currentContentPayload.value.html
     : emptyAboutContent()
 )
 const helpSubmenu = computed(() => pageKey.value === "hjalp" ? extractHelpSubmenu(aboutContent.value) : [])
@@ -166,19 +172,41 @@ watch(
   { flush: "post", immediate: true }
 )
 onBeforeUnmount(() => {
+  aboutContentAsyncData.clear()
   helpResizeObserver?.disconnect()
   removePageLoadingHook()
+})
+onBeforeRouteLeave(to => {
+  const nextPage = Array.isArray(to.params.page) ? to.params.page[0] : to.params.page
+  if (!isAboutPageKey(nextPage)) aboutContentAsyncData.clear()
 })
 </script>
 
 <template>
   <AboutPageShell :active-page="selectedPage.activePage">
+    <div
+      v-if="aboutContentPending && !currentContentPayload && !aboutContentError"
+      class="searching"
+      role="status"
+      aria-live="polite"
+    >
+      <div class="preloader">
+        <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
+        <span class="sr-only">Laddar sidan</span>
+      </div>
+    </div>
     <RenderableHtmlContent
-      v-if="pageKey === 'hjalp'"
+      v-else-if="currentContentPayload && pageKey === 'hjalp'"
       ref="help-content"
       as="div"
       :html="aboutContent"
       class="help_content content unbox page-help"
+      @click="navigateManagedHtml"
+    />
+    <RenderableHtmlContent
+      v-else-if="currentContentPayload"
+      as="section"
+      :html="aboutContent"
       @click="navigateManagedHtml"
     />
     <RenderableHtmlContent
