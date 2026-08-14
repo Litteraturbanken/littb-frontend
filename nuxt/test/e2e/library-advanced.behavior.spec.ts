@@ -695,6 +695,76 @@ test("category, publisher, about-author, and narrowing collections restore throu
     .toContainText("Selma Lagerlöf")
 })
 
+test("repeated advanced filters hydrate in order and canonicalize on the next history entry", async ({
+  page,
+  request
+}) => {
+  await page.goto(
+    "/bibliotek?avancerat=1" +
+    "&keywords=texttype%3Aroman" +
+    "&keywords=provenance.library%3ASA%2Ckeyword%3AHumor" +
+    "&keywords=" +
+    "&keywords_aux=keyword%3AHumor" +
+    "&keywords_aux=texttype%3Abrev%3Bbrevsamling" +
+    "&about_authors=LagerlofS&about_authors" +
+    "&mediatypes=mediatype%3Aetext&mediatypes=has_epub%3Atrue" +
+    "&languages=language%3Aswe%2Cproofread%3Afalse&languages",
+    { waitUntil: "networkidle" }
+  )
+  await waitForHydration(page)
+
+  const keywords = page.locator("[data-library-keywords] .select2-selection__choice")
+  const narrowing = page.locator("[data-library-narrowing] .select2-selection__choice")
+  await expect(keywords).toHaveCount(3)
+  await expect(keywords.nth(0)).toContainText("Romaner")
+  await expect(keywords.nth(1)).toContainText("Svenska Akademien")
+  await expect(keywords.nth(2)).toContainText("Humoristiska verk")
+  await expect(narrowing).toHaveCount(1)
+  await expect(narrowing).toContainText("Brev")
+  await expect.poll(async () => (await relevanceQueries(request)).at(-1)?.body.filters)
+    .toEqual(libraryFilters({
+      categories: ["texttype:roman", "provenance.library:SA", "keyword:Humor"],
+      narrowing_categories: ["texttype:brev;brevsamling"],
+      about_author_ids: ["LagerlofS"],
+      media: ["mediatype:etext", "has_epub:true"],
+      languages: ["language:swe", "proofread:false"]
+    }))
+
+  await resetRequests(request)
+  await page.locator("[data-library-gender]").selectOption("female")
+  await expect.poll(() => {
+    const query = new URL(page.url()).searchParams
+    return {
+      keywords: query.getAll("keywords"),
+      narrowing: query.getAll("keywords_aux"),
+      aboutAuthors: query.getAll("about_authors"),
+      media: query.getAll("mediatypes"),
+      languages: query.getAll("languages")
+    }
+  }).toEqual({
+    keywords: ["texttype:roman,provenance.library:SA,keyword:Humor"],
+    narrowing: ["texttype:brev;brevsamling"],
+    aboutAuthors: ["LagerlofS"],
+    media: ["mediatype:etext,has_epub:true"],
+    languages: ["language:swe,proofread:false"]
+  })
+  await expect.poll(async () => (await relevanceQueries(request)).at(-1)?.body.filters.gender)
+    .toBe("female")
+
+  await page.goBack()
+  await expect.poll(() => new URL(page.url()).searchParams.getAll("keywords")).toEqual([
+    "texttype:roman", "provenance.library:SA,keyword:Humor", ""
+  ])
+  await expect(page.locator("[data-library-gender]")).toHaveValue("")
+  await expect(keywords).toHaveCount(3)
+  await page.goForward()
+  await expect.poll(() => new URL(page.url()).searchParams.getAll("keywords")).toEqual([
+    "texttype:roman,provenance.library:SA,keyword:Humor"
+  ])
+  await expect(page.locator("[data-library-gender]")).toHaveValue("female")
+  await expect(narrowing).toContainText("Brev")
+})
+
 test("selecting a primary category atomically removes the same narrowing category", async ({
   page,
   request

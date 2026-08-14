@@ -279,6 +279,52 @@ test("SSR sends advanced Library filters as one exact typed body", async ({ requ
   })
 })
 
+test("SSR preserves repeated and comma-mixed advanced filters in route order", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/bibliotek?avancerat=1" +
+    "&keywords=texttype%3Aroman" +
+    "&keywords=provenance.library%3ASA%2Ckeyword%3AHumor" +
+    "&keywords=" +
+    "&keywords_aux=keyword%3AHumor" +
+    "&keywords_aux=texttype%3Abrev%3Bbrevsamling" +
+    "&about_authors=LagerlofS&about_authors" +
+    "&mediatypes=mediatype%3Aetext&mediatypes=has_epub%3Atrue" +
+    "&languages=language%3Aswe%2Cproofread%3Afalse&languages"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  expect(selectedChipTitles(document, "[data-library-keywords]")).toEqual([
+    "Romaner", "Svenska Akademien", "Humoristiska verk"
+  ])
+  expect(selectedChipTitles(document, "[data-library-narrowing]")).toEqual(["Brev"])
+  expect(selectedChipTitles(document, "[data-library-about-authors]")).toEqual([
+    "Selma Lagerlöf"
+  ])
+  expect(selectedChipTitles(document, "[data-library-media]")).toEqual(["Etext", "Epub"])
+  expect(selectedChipTitles(document, "[data-library-languages]")).toEqual([
+    "Svenska", "Ej korrekturläst"
+  ])
+  expect((await libraryV2Requests(request)).search.map(entry => entry.body.filters)).toEqual([
+    filters({
+      categories: ["texttype:roman", "provenance.library:SA", "keyword:Humor"],
+      narrowing_categories: ["texttype:brev;brevsamling"],
+      about_author_ids: ["LagerlofS"],
+      media: ["mediatype:etext", "has_epub:true"],
+      languages: ["language:swe", "proofread:false"]
+    }),
+    filters({
+      categories: ["texttype:roman", "provenance.library:SA", "keyword:Humor"],
+      narrowing_categories: ["texttype:brev;brevsamling"],
+      about_author_ids: ["LagerlofS"],
+      media: ["mediatype:etext", "has_epub:true"],
+      languages: ["language:swe", "proofread:false"]
+    })
+  ])
+})
+
 test("SSR removes primary categories from a hostile narrowing query", async ({ request }) => {
   const response = await request.get(
     "/bibliotek?avancerat=1" +

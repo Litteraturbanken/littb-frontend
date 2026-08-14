@@ -80,6 +80,61 @@ describe("parseLibraryRouteState", () => {
     })
   })
 
+  it("normalizes repeated and comma-separated advanced route fields in route order", () => {
+    expect(parseLibraryPageRouteState("/bibliotek", {
+      keywords: ["keyword:one,keyword:two", null, "", "keyword:three"],
+      keywords_aux: ["keyword:two", "keyword:four"],
+      about_authors: ["author-1,author-2", null, "", "author-3"],
+      mediatypes: ["mediatype:etext", "has_epub:true"],
+      languages: ["language:swe,language:eng", null, "proofread:false"]
+    }, {
+      chronologyBounds: null,
+      collectionValues: new Set([
+        "keyword:one", "keyword:two", "keyword:three", "keyword:four"
+      ]),
+      aboutAuthorIds: new Set(["author-1", "author-2", "author-3"]),
+      mediaValues: new Set(["mediatype:etext", "has_epub:true"]),
+      languageValues: new Set(["language:swe", "language:eng", "proofread:false"])
+    }).advancedFilters).toEqual({
+      gender: "",
+      keywords: ["keyword:one", "keyword:two", "keyword:three"],
+      narrowingKeywords: ["keyword:four"],
+      aboutAuthorIds: ["author-1", "author-2", "author-3"],
+      media: ["mediatype:etext", "has_epub:true"],
+      languages: ["language:swe", "language:eng", "proofread:false"],
+      yearRange: null
+    })
+  })
+
+  it("rejects malformed, duplicate, unavailable, empty-component, and overbound lists atomically", () => {
+    const authors = Array.from({ length: 51 }, (_, index) => `author-${index + 1}`)
+    const authority = {
+      chronologyBounds: null,
+      collectionValues: new Set(["keyword:one", "keyword:two"]),
+      aboutAuthorIds: new Set(authors),
+      mediaValues: new Set(["mediatype:etext"]),
+      languageValues: new Set(["language:swe"])
+    }
+    const parsed = parseLibraryPageRouteState("/bibliotek", {
+      keywords: ["keyword:one,keyword:two", "keyword:one"],
+      keywords_aux: ["keyword:one", "keyword:missing"],
+      about_authors: authors,
+      mediatypes: ["mediatype:etext", 1] as unknown as string[],
+      languages: "language:swe,"
+    }, authority).advancedFilters
+
+    expect(parsed).toMatchObject({
+      keywords: [],
+      narrowingKeywords: [],
+      aboutAuthorIds: [],
+      media: [],
+      languages: []
+    })
+    expect(parseLibraryPageRouteState("/bibliotek", {
+      about_authors: authors.slice(0, 50)
+    }, authority).advancedFilters.aboutAuthorIds).toEqual(authors.slice(0, 50))
+  })
+
   it("drops duplicate, unavailable, and full-bound advanced route values atomically", () => {
     expect(parseLibraryPageRouteState("/bibliotek", {
       kön: "other",

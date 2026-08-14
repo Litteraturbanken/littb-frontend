@@ -42,6 +42,11 @@ type LibraryRouteAuthority = {
   languageValues: ReadonlySet<LibraryLanguage>
 }
 
+const maximumLibraryCategories = 38
+const maximumLibraryAboutAuthors = 50
+const maximumLibraryMedia = 4
+const maximumLibraryLanguages = 13
+
 export function orderedLibraryValues<T extends string>(
   values: readonly string[],
   options: readonly { value: T }[]
@@ -62,10 +67,23 @@ export function libraryQueryValue(value: unknown): string {
   return typeof value === "string" ? value : ""
 }
 
-function queryList<T extends string>(value: unknown, allowed: ReadonlySet<T>): T[] {
-  if (typeof value !== "string" || !value) return []
-  const items = value.split(",")
-  if (items.some(item => !allowed.has(item as T)) || new Set(items).size !== items.length) {
+function queryList<T extends string>(
+  value: unknown,
+  allowed: ReadonlySet<T>,
+  maximum: number
+): T[] {
+  const entries = typeof value === "string"
+    ? [value]
+    : Array.isArray(value) && value.every(item => typeof item === "string" || item === null)
+      ? value.filter((item): item is string => item !== null && item !== "")
+      : null
+  if (!entries) return []
+  const items = entries.flatMap(item => item.split(","))
+  if (
+    items.length > maximum
+    || items.some(item => !item || !allowed.has(item as T))
+    || new Set(items).size !== items.length
+  ) {
     return []
   }
   return items as T[]
@@ -94,18 +112,34 @@ export function parseLibraryPageRouteState(
   authority: LibraryRouteAuthority
 ): LibraryRouteState {
   const gender = libraryQueryValue(query.kön)
-  const keywords = queryList(query.keywords, authority.collectionValues)
+  const keywords = queryList(
+    query.keywords,
+    authority.collectionValues,
+    maximumLibraryCategories
+  )
   const narrowingKeywords = canonicalLibraryNarrowingKeywords(
     keywords,
-    queryList(query.keywords_aux, authority.collectionValues)
+    queryList(
+      query.keywords_aux,
+      authority.collectionValues,
+      maximumLibraryCategories
+    )
   )
   return parseLibraryRouteState(path, query, {
     gender: gender === "female" || gender === "male" ? gender : "",
     keywords,
     narrowingKeywords,
-    aboutAuthorIds: queryList(query.about_authors, authority.aboutAuthorIds),
-    media: queryList(query.mediatypes, authority.mediaValues),
-    languages: queryList(query.languages, authority.languageValues),
+    aboutAuthorIds: queryList(
+      query.about_authors,
+      authority.aboutAuthorIds,
+      maximumLibraryAboutAuthors
+    ),
+    media: queryList(query.mediatypes, authority.mediaValues, maximumLibraryMedia),
+    languages: queryList(
+      query.languages,
+      authority.languageValues,
+      maximumLibraryLanguages
+    ),
     yearRange: parseLibraryYearRange(query.intervall, authority.chronologyBounds)
   })
 }
