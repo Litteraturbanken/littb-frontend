@@ -110,6 +110,8 @@ test("mounts Presentation before document and background settle", async ({ page 
   const documentReleased = new Promise<void>(resolve => { releaseDocument = resolve })
   let markDocumentStarted!: () => void
   const documentStarted = new Promise<void>(resolve => { markDocumentStarted = resolve })
+  let markDocumentHandled!: () => void
+  const documentHandled = new Promise<void>(resolve => { markDocumentHandled = resolve })
   let releaseBackground!: () => void
   const backgroundReleased = new Promise<void>(resolve => { releaseBackground = resolve })
   let markBackgroundStarted!: () => void
@@ -118,6 +120,7 @@ test("mounts Presentation before document and background settle", async ({ page 
     markDocumentStarted()
     await documentReleased
     await route.fulfill({ response: await route.fetch() })
+    markDocumentHandled()
   })
   await page.route(`**${backgroundsPath}`, async route => {
     markBackgroundStarted()
@@ -146,12 +149,16 @@ test("mounts Presentation before document and background settle", async ({ page 
     await expect(page.locator("body")).not.toHaveClass(/\bbkg-folder-fallback\b/u)
 
     releaseDocument()
-    await expect(page.locator('.searching[role="status"]')).toHaveCount(1)
+    await documentHandled
+    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())))
+    await expect(loadingStatus).toHaveCount(1)
     await expect(page.getByRole("heading", {
       name: "Censur och liknande ingrepp mot tryckta skrifter",
       exact: true
     })).toHaveCount(0)
+    await expect(page.locator(".content")).toHaveCount(0)
     await expect(page.locator("html")).not.toHaveAttribute("style", /rostratt_b\.jpg/u)
+    await expect(page.locator("body")).not.toHaveClass(/\bbkg-folder-fallback\b/u)
 
     releaseBackground()
     await expect(page.getByRole("heading", {
