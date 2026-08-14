@@ -15,6 +15,7 @@ definePageMeta({
 type UnknownRecord = Record<string, unknown>
 
 const route = useRoute()
+const nuxtApp = useNuxtApp()
 const requestFetch = useRequestFetch()
 const requestedFullPath = route.fullPath
 const requestedAuthor = scalarParam("author")
@@ -81,19 +82,20 @@ onBeforeUnmount(() => {
   resolutionController.abort()
 })
 
-let resolution: ReaderRouteResolution | null = null
-try {
-  const result = await requestFetch<unknown>(resolverPath, {
-    retry: 0,
-    signal: resolutionController.signal,
-    query: props.mediaType === undefined ? undefined : { media_type: props.mediaType }
-  })
-  if (!isExpectedResolution(result)) {
-    throw createError({ statusCode: 502, statusMessage: "Reader page unavailable" })
-  }
-  resolution = result
-} catch (error) {
-  if (isCurrentIdentity()) {
+async function resolveReaderSourceInfoAlias(): Promise<void> {
+  let resolution: ReaderRouteResolution
+  try {
+    const result = await requestFetch<unknown>(resolverPath, {
+      retry: 0,
+      signal: resolutionController.signal,
+      query: props.mediaType === undefined ? undefined : { media_type: props.mediaType }
+    })
+    if (!isExpectedResolution(result)) {
+      throw createError({ statusCode: 502, statusMessage: "Reader page unavailable" })
+    }
+    resolution = result
+  } catch (error) {
+    if (!isCurrentIdentity()) return
     const statusCode = requestStatus(error)
     throw createError({
       statusCode,
@@ -102,12 +104,18 @@ try {
         : "Reader page unavailable"
     })
   }
-}
-
-if (resolution !== null && isCurrentIdentity()) {
-  await navigateTo(`${resolution.canonicalPath}?om-boken`, {
+  if (!isCurrentIdentity()) return
+  await nuxtApp.runWithContext(() => navigateTo(`${resolution.canonicalPath}?om-boken`, {
     redirectCode: 307,
     replace: true
+  }))
+}
+
+if (import.meta.server) {
+  onServerPrefetch(resolveReaderSourceInfoAlias)
+} else {
+  void resolveReaderSourceInfoAlias().catch(error => {
+    if (isCurrentIdentity()) nuxtApp.runWithContext(() => showError(error))
   })
 }
 </script>

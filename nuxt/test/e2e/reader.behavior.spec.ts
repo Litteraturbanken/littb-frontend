@@ -14,6 +14,8 @@ const readerEncodedPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/si
 const readerPublicCanonicalPath = "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
 const readerShorthandPath = "/författare/SöderbergH/titlar/DoktorGlas/etext"
 const readerShorthandRouterPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/etext"
+const sourceInfoAliasPath = "/författare/SöderbergH/titlar/DoktorGlas"
+const sourceInfoAliasRouterPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas"
 const dramaReaderPath = "/författare/AlmlöfN/titlar/Affarer/sida/-2/faksimil"
 const sparseReaderPath = "/författare/SparseA/titlar/SparseTitle/sida/-2/etext"
 const sparseSliderReaderPath = "/författare/SöderbergH/titlar/SparseKeyboardReader/sida/2/etext"
@@ -1687,6 +1689,86 @@ test("Library EPUB shorthand navigation shows only its preloader and replaces Hi
   await expect(page.locator('[data-library-sort="popularitet"]')).toHaveClass(/active/)
   await expect(page.getByRole("link", { name: "Doktor Glas" })).toBeVisible()
   expect(problems).toEqual([])
+})
+
+test("source-info alias mounts before resolution", async ({ page }) => {
+  let releaseResolver = () => {}
+  const resolverGate = new Promise<void>(resolve => { releaseResolver = resolve })
+  let markResolverStarted = () => {}
+  const resolverStarted = new Promise<void>(resolve => { markResolverStarted = resolve })
+  const resolverRoute = async (route: import("@playwright/test").Route) => {
+    const response = await route.fetch()
+    markResolverStarted()
+    await resolverGate
+    try {
+      await route.fulfill({ response })
+    } catch (error) {
+      if (!String(error).includes("Route is already handled")) throw error
+    }
+  }
+
+  await page.route("**/nuxt-api/reader/resolve/**", resolverRoute)
+  try {
+    await page.goto("/bibliotek", { waitUntil: "networkidle" })
+    await expect(page.getByRole("heading", { name: "Botanisera i biblioteket" })).toBeVisible()
+
+    void navigateClient(page, sourceInfoAliasRouterPath)
+    await resolverStarted
+
+    await expect(page).toHaveURL(sourceInfoAliasPath)
+    const pending = page.locator(".searching[aria-live='polite']")
+    await expect(pending).toHaveCount(1)
+    await expect(pending.getByText("Hämtar läsarsidan", { exact: true })).toHaveCount(1)
+    await expect(page.getByRole("heading", { name: "Botanisera i biblioteket" })).toHaveCount(0)
+
+    releaseResolver()
+    await expect(page).toHaveURL(`${readerPath}?om-boken`)
+  } finally {
+    releaseResolver()
+    await page.unroute("**/nuxt-api/reader/resolve/**", resolverRoute)
+  }
+})
+
+test("late alias resolution cannot redirect the route that replaced it", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  let releaseResolver = () => {}
+  const resolverGate = new Promise<void>(resolve => { releaseResolver = resolve })
+  let markResolverStarted = () => {}
+  const resolverStarted = new Promise<void>(resolve => { markResolverStarted = resolve })
+  let resolverReleased = false
+  const resolverRoute = async (route: import("@playwright/test").Route) => {
+    const response = await route.fetch()
+    markResolverStarted()
+    await resolverGate
+    resolverReleased = true
+    try {
+      await route.fulfill({ response })
+    } catch (error) {
+      if (!String(error).includes("Route is already handled")) throw error
+    }
+  }
+
+  await page.route("**/nuxt-api/reader/resolve/**", resolverRoute)
+  try {
+    await page.goto("/bibliotek", { waitUntil: "networkidle" })
+    void navigateClient(page, sourceInfoAliasRouterPath)
+    await resolverStarted
+    await expect(page.locator(".searching[aria-live='polite']")).toHaveCount(1)
+
+    await navigateClient(page, "/om/ide")
+    await expect(page).toHaveURL("/om/ide")
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+
+    releaseResolver()
+    await expect.poll(() => resolverReleased).toBe(true)
+    await page.waitForTimeout(200)
+    await expect(page).toHaveURL("/om/ide")
+    await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+    expect(problems).toEqual([])
+  } finally {
+    releaseResolver()
+    await page.unroute("**/nuxt-api/reader/resolve/**", resolverRoute)
+  }
 })
 
 test("client shorthand navigation preserves the raw route fullPath query", async ({
