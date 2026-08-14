@@ -578,7 +578,7 @@ const optionsLoadState = shallowRef<OptionsLoadState>({
   identity: optionsIdentity.value,
   status: optionsCache.value[optionsIdentity.value]?.staticComplete
     ? "accepted"
-    : state.value.advanced ? "pending" : "idle"
+    : "idle"
 })
 
 function setOptionsLoadState(
@@ -624,14 +624,9 @@ async function loadOptions() {
   }
 }
 
-const initialOptionsPending = ref(state.value.advanced)
 async function loadInitialOptions(): Promise<void> {
   if (!state.value.advanced) return
-  try {
-    await loadOptions()
-  } finally {
-    initialOptionsPending.value = false
-  }
+  await loadOptions()
 }
 if (import.meta.server) await loadInitialOptions()
 else void loadInitialOptions()
@@ -644,7 +639,9 @@ const optionsFailed = computed(() => (
 ))
 const primaryPrerequisitesReady = computed(() => (
   state.value.advanced
-    ? !initialOptionsPending.value && options.value?.staticComplete === true
+    ? optionsLoadState.value.identity === optionsIdentity.value
+      && optionsLoadState.value.status === "accepted"
+      && options.value?.staticComplete === true
     : !chronologyPending.value
 ))
 const initialPrerequisitesPending = computed(() => (

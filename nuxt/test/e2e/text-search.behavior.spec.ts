@@ -315,6 +315,129 @@ test("waits for accepted advanced options before sending route-owned result filt
   }
 })
 
+test("advanced route B settles while noncooperative route A options remain held", async ({
+  page,
+  request
+}) => {
+  await page.goto("/om/ide", { waitUntil: "domcontentloaded" })
+  await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toBeVisible()
+  await page.evaluate(() => {
+    const nativeFetch = window.fetch.bind(window)
+    let releaseA = () => {}
+    const aGate = new Promise<void>(resolve => { releaseA = resolve })
+    Object.assign(window, {
+      __searchOptionsGate: {
+        aStarted: false,
+        aReleased: false,
+        aAbortedWhenReleased: false,
+        releaseA,
+        restore: () => { window.fetch = nativeFetch }
+      }
+    })
+    window.fetch = async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      if (request.method !== "POST"
+        || !new URL(request.url).pathname.endsWith("/text-search/options")) {
+        return nativeFetch(input, init)
+      }
+      const body = await request.clone().json() as { query?: string }
+      if (body.query !== "frihet") return nativeFetch(input, init)
+
+      const response = await nativeFetch(input, init)
+      const responseBody = await response.arrayBuffer()
+      const responseInit = {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers
+      }
+      const gate = (window as typeof window & {
+        __searchOptionsGate: {
+          aStarted: boolean
+          aReleased: boolean
+          aAbortedWhenReleased: boolean
+        }
+      }).__searchOptionsGate
+      gate.aStarted = true
+      await aGate
+      gate.aAbortedWhenReleased = request.signal.aborted
+      gate.aReleased = true
+      return new Response(responseBody, responseInit)
+    }
+  })
+
+  type Gate = {
+    aStarted: boolean
+    aReleased: boolean
+    aAbortedWhenReleased: boolean
+    releaseA: () => void
+    restore: () => void
+  }
+  const gate = () => page.evaluate(() => {
+    const current = (window as typeof window & {
+      __searchOptionsGate: Gate
+    }).__searchOptionsGate
+    return {
+      aStarted: current.aStarted,
+      aReleased: current.aReleased,
+      aAbortedWhenReleased: current.aAbortedWhenReleased
+    }
+  })
+
+  try {
+    void pushRoute(
+      page,
+      "/s%C3%B6k?avancerad&fras=frihet&forfattare=StrindbergA"
+    ).catch(() => undefined)
+    await expect(page.locator("[data-search-root]")).toBeVisible({ timeout: 1500 })
+    await expect.poll(async () => (await gate()).aStarted).toBe(true)
+    await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+    expect(await requests(request, "results")).toEqual([])
+
+    void pushRoute(
+      page,
+      "/s%C3%B6k?avancerad&fras=glas&forfattare=Lagerl%C3%B6fS"
+    ).catch(() => undefined)
+    await expect.poll(async () => (await requests(request, "options")).length).toBe(2)
+    expect((await requests(request, "options"))[1]?.body).toMatchObject({
+      query: "glas",
+      author_ids: ["LagerlöfS"]
+    })
+    await expect.poll(async () => (await requests(request, "results")).length, {
+      timeout: 1500
+    }).toBe(1)
+    expect((await requests(request, "results"))[0]?.body).toMatchObject({
+      query: "glas",
+      author_ids: ["LagerlöfS"]
+    })
+    await expect(page.getByRole("link", { name: "Röda rummet" }).first()).toBeVisible()
+    await expect(page.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(0)
+    await expect.poll(async () => (await gate()).aReleased).toBe(false)
+
+    await page.evaluate(() => (
+      window as typeof window & { __searchOptionsGate: Gate }
+    ).__searchOptionsGate.releaseA())
+    await expect.poll(async () => await gate()).toEqual({
+      aStarted: true,
+      aReleased: true,
+      aAbortedWhenReleased: true
+    })
+    await page.waitForTimeout(200)
+    await expect(page).toHaveURL(/fras=glas/)
+    await expect(page.getByRole("link", { name: "Röda rummet" }).first()).toBeVisible()
+    await expect(page.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(0)
+    expect(await requests(request, "results")).toHaveLength(1)
+  } finally {
+    await page.evaluate(() => {
+      type CleanupGate = { releaseA: () => void, restore: () => void }
+      const current = (window as typeof window & {
+        __searchOptionsGate?: CleanupGate
+      }).__searchOptionsGate
+      current?.releaseA()
+      current?.restore()
+    })
+  }
+})
+
 test("revisiting Search refetches after an abandoned noncooperative primary success", async ({
   page
 }) => {
