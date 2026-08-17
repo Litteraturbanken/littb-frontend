@@ -63,10 +63,15 @@ payload = {
     "IdempotencyToken": f"lb-frontend-stage-{git_sha}",
 }
 
+headers = {"Content-Type": "application/json"}
+nomad_token = os.environ.get("NOMAD_TOKEN")
+if nomad_token:
+    headers["X-Nomad-Token"] = nomad_token
+
 request = urllib.request.Request(
     f"{base}/v1/job/{builder_job}/dispatch",
     data=json.dumps(payload).encode("utf-8"),
-    headers={"Content-Type": "application/json"},
+    headers=headers,
     method="POST",
 )
 
