@@ -209,10 +209,10 @@ test.describe("Nuxt whole-site staging smoke", () => {
             name: "Tillgängliga verk",
             exact: true
         })).toBeVisible()
-        await expect(page.getByRole("link", {
-            name: "Abu Casems tofflor",
-            exact: true
-        })).toBeVisible()
+        await expect(page.locator(
+            'a[href="/f%C3%B6rfattare/StrindbergA/titlar/'
+                + 'AbuCasemsTofflor/sida/7/etext?om-boken"]'
+        )).toContainText("Abu Casems tofflor")
     })
 
     test("loads etext Reader content and navigates to the next page", async ({ page }) => {
