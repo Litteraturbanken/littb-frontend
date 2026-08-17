@@ -128,11 +128,24 @@ describe("Author Works runtime contract", () => {
     expect(isAuthorWorksResponse(mismatchedMedium)).toBe(false)
   })
 
+  test("validates Reader routes against title_id when title_path identifies a nested part", () => {
+    const body = structuredClone(sparseAuthorWorks) as AuthorWorksResponse
+    const work = body.authored_sections[0]!.items[0]!
+    work.title_path = "GostaBerlingsSaga/GostaBerlingsSaga"
+
+    expect(isAuthorWorksResponse(body)).toBe(true)
+
+    work.actions[0]!.url
+      = "/författare/Lagerl%C3%B6fS/titlar/AnnanTitel/sida/3/faksimil"
+    work.title_url = `${work.actions[0]!.url}?om-boken`
+    expect(isAuthorWorksResponse(body)).toBe(false)
+  })
+
   test("preserves encoded reserved characters inside validated route segments", () => {
     const body = structuredClone(sparseAuthorWorks) as AuthorWorksResponse
     const work = body.authored_sections[0]!.items[0]!
     const read = work.actions[0]!
-    work.title_path = "Gosta?Berlings#Saga"
+    work.title_id = "Gosta?Berlings#Saga"
     read.url = "/författare/Lagerl%C3%B6fS/titlar/Gosta%3FBerlings%23Saga/sida/3/faksimil"
     work.title_url = `${read.url}?om-boken`
     expect(isAuthorWorksResponse(body)).toBe(true)

@@ -122,12 +122,12 @@ function isSafePersonUrl(url: string, authorId: string): boolean {
     && isNuxtInternalHref(canonicalNuxtHref(url))
 }
 
-function safeReaderActionUrl(value: string, mediaType: string, titlePath: string): boolean {
+function safeReaderActionUrl(value: string, mediaType: string, titleId: string): boolean {
   const safe = safeRootHref(value)
   if (!safe || safe.decodedQuery || safe.hasFragment) return false
   const match = /^\/författare\/([^/]+)\/titlar\/([^/]+)\/sida\/([^/]+)\/(etext|faksimil)$/u
     .exec(safe.decodedPath)
-  if (!match || match[4] !== mediaType || match[2] !== titlePath) return false
+  if (!match || match[4] !== mediaType || match[2] !== titleId) return false
   const segments: readonly [string, number][] = [
     [match[1] ?? "", 100],
     [match[2] ?? "", 200],
@@ -210,7 +210,7 @@ function isContainingWork(value: unknown): boolean {
   )
 }
 
-function isAction(value: unknown, titlePath: string): boolean {
+function isAction(value: unknown, titleId: string, titlePath: string): boolean {
   if (
     !isRecord(value)
     || !hasExactKeys(value, ["media_type", "kind", "url", "download_filename"])
@@ -218,7 +218,7 @@ function isAction(value: unknown, titlePath: string): boolean {
   ) return false
 
   if (value.kind === "read") {
-    return isSafeReadAction(value, titlePath)
+    return isSafeReadAction(value, titleId, titlePath)
   }
   if (value.kind === "download") {
     return isSafeDownloadAction(value)
@@ -226,13 +226,17 @@ function isAction(value: unknown, titlePath: string): boolean {
   return false
 }
 
-function isSafeReadAction(value: Record<string, unknown>, titlePath: string): boolean {
+function isSafeReadAction(
+  value: Record<string, unknown>,
+  titleId: string,
+  titlePath: string
+): boolean {
   if (!isString(value.media_type) || !isString(value.url) || value.download_filename !== null) {
     return false
   }
   if (value.media_type === "infopost") return safeInfoPostActionUrl(value.url, titlePath)
   return ["etext", "faksimil"].includes(value.media_type)
-    && safeReaderActionUrl(value.url, value.media_type, titlePath)
+    && safeReaderActionUrl(value.url, value.media_type, titleId)
 }
 
 function isSafeDownloadAction(value: Record<string, unknown>): boolean {
@@ -284,7 +288,11 @@ function isWork(value: unknown, requireDisplayAuthor: boolean): boolean {
     && displayAuthorIsValid(value.display_author, requireDisplayAuthor)
     && isContainingWork(value.containing_work)
   )) return false
-  if (!value.actions.every(action => isAction(action, value.title_path as string))) return false
+  if (!value.actions.every(action => isAction(
+    action,
+    value.title_id as string,
+    value.title_path as string
+  ))) return false
   const actions = value.actions as Array<{ kind: string, media_type: string, url: string }>
   return actions.some(action => (
     ((action.kind === "download" || action.media_type === "infopost")

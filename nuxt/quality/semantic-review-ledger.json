@@ -2585,98 +2585,94 @@
     },
     {
       "packetId": "app/lib/author-works.ts::packet::hasAuthorWorksAboutContent",
-      "fingerprint": "d9bcee30bdd67cb40d3d19efff95af98e7f2660aa43f2ca221b28ddfab59b6bf",
+      "fingerprint": "cd0e7205620dfbaf28bc2bdf2ae5be51eed18e254453771381c672b603616a3d",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/31b39abfc3f6888b5b239d8f72e428f027741546c77075f6990614a41c33491b.json",
-      "evidenceHash": "6daa4f8f4aae762cabcb2ca59291c5961df1596244fd4df79c1156f28c22c20c",
-      "findingIds": [],
+      "evidenceHash": "9ddf78e240dfefaeff88d22832ea37381a4e8b7ab8dd9f546392c8a0caf611f1",
+      "findingIds": [
+        "SR-31b39abf-001"
+      ],
       "verification": [
-        "Attempted ./node_modules/.bin/vitest run test/unit/author-works.spec.ts, but the read-only sandbox blocked Vite config temp-file creation under node_modules/.vite-temp with EPERM.",
-        "Attempted yarn vitest run test/unit/author-works.spec.ts, but Yarn could not find a writable cache folder under the read-only sandbox.",
-        "Inspected direct callers app/components/author/AuthorWorksContent.vue, app/pages/författare/[author]/mer.vue, and app/pages/författare/[author]/titlar/index.vue.",
-        "Inspected direct imports app/lib/author-profile.ts and app/lib/internal-navigation.ts.",
-        "Inspected generated type boundary app/lib/api/generated/lbapi.ts#components AuthorWorksResponse and AuthorWorkSection.",
-        "Inspected listed tests test/unit/author-works.spec.ts, test/ssr/author-works.spec.ts, and test/ssr/author-works-export-proxy.spec.ts.",
-        "Inspected owned lines 404-406 in app/lib/author-works.ts, including callback on line 405.",
-        "Read packet .quality/semantic-review/packets/31b39abfc3f6888b5b239d8f72e428f027741546c77075f6990614a41c33491b.json.",
-        "Read review contract at quality/semantic-review-contract.md.",
-        "Searched app and test for hasAuthorWorksAboutContent and about_sections usages with rg."
+        "git diff -- app/lib/author-works.ts and git diff -- test/unit/author-works.spec.ts were inspected read-only.",
+        "git status --short completed with filesystem cache warnings caused by the read-only sandbox; working tree is dirty.",
+        "No critical or important semantic defects were found in the owned unit."
       ]
     },
     {
       "packetId": "app/lib/author-works.ts::packet::isAuthorWorksResponse",
-      "fingerprint": "b1a4b592e74e135c59114a39b18be7a060ce7e25d07f3bdf684bf48b9adbb1fc",
+      "fingerprint": "32d7d43d56bd68265ffeab3bb7d6c0a565f8fdf7ee1394d2bf89863bf4456164",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/50d62a3c032ea1f23aaf7b43e3171fa66e71429d0886d905e18e090bd3d1d605.json",
-      "evidenceHash": "6005517bca570fc240a0c9a411b23185190d9670c79ad5f0ad1cdefb3a52a319",
-      "findingIds": [
-        "F1",
-        "F2"
-      ],
+      "evidenceHash": "9b6736a6040e6cbd5f4bfb4d74375c68688f3511c6fbd1494b26e522f2e810b8",
+      "findingIds": [],
       "verification": [
-        "Did not run the test suite because the review requested read-only commands and this sandbox has read-only filesystem access.",
-        "Inspected owned unit, direct imports, direct callers, generated API schema types, fixtures, and packet-listed tests.",
-        "Read-only review only; no repository files were modified."
+        "Inspected direct callers app/components/author/AuthorWorksContent.vue, app/pages/författare/[author]/mer.vue, and app/pages/författare/[author]/titlar/index.vue.",
+        "Inspected direct dependencies app/lib/author-profile.ts and app/lib/internal-navigation.ts.",
+        "Inspected generated type boundary app/lib/api/generated/lbapi.ts lines 633-748 for AuthorWorksResponse and related schemas.",
+        "Inspected listed tests test/unit/author-works.spec.ts, test/ssr/author-works.spec.ts, and test/ssr/author-works-export-proxy.spec.ts, plus fixture data used by those tests.",
+        "Inspected owned lines 366-394 in app/lib/author-works.ts, including nested callbacks at lines 376-383 and 386-393.",
+        "No unresolved critical or important semantic findings were identified on the packet-owned physical lines.",
+        "Read quality/semantic-review-contract.md and the specified packet JSON only.",
+        "Used rg to check references to isAuthorWorksResponse and AuthorWorksResponse under app and test."
       ]
     },
     {
       "packetId": "app/lib/author-works.ts::packet::isInfopostTitle",
-      "fingerprint": "a27b9fa22332992e5319ca85ecafe4691b59da9fd45195eb7f2f5dd5a06d85be",
+      "fingerprint": "57321ee4afcfbc57267a45a669fefa764b9315bf0cece4b64a12ae7b38cdec69",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/f4ae8424eee09e15e534f82d79b476faf130ad5cadbf25c553882602945ce74e.json",
-      "evidenceHash": "eb36f3da2f60947ff370345de5bd13a5fcb1c2d72301da770379291fb4c832c7",
+      "evidenceHash": "248890ed5e65f4b2addc9b02398a2b2e2c352e6635a29ce8ec69241950ad27e0",
       "findingIds": [],
       "verification": [
-        "Inspected direct callers app/components/author/AuthorWorksContent.vue, app/pages/författare/[author]/mer.vue, and app/pages/författare/[author]/titlar/index.vue.",
-        "Inspected direct imports app/lib/author-profile.ts and app/lib/internal-navigation.ts relevant to AuthorWork URL boundaries.",
-        "Inspected generated type boundary app/lib/api/generated/lbapi.ts AuthorWork and AuthorWorkReadAction definitions.",
-        "Inspected listed tests test/unit/author-works.spec.ts, test/ssr/author-works.spec.ts, and test/ssr/author-works-export-proxy.spec.ts. No test commands were run because the review requested read-only commands only.",
-        "Inspected owned lines app/lib/author-works.ts:408-414 plus surrounding AuthorWorks validation and action ordering logic.",
-        "Read quality/semantic-review-contract.md and the target packet JSON."
+        "Inspected owned physical lines app/lib/author-works.ts:416-422.",
+        "Inspected surrounding author works validation, generated AuthorWork/AuthorWorkReadAction/AuthorWorkDownloadAction type boundaries in app/lib/api/generated/lbapi.ts, direct Vue callers, route consumers, fixtures, and named tests test/unit/author-works.spec.ts, test/ssr/author-works.spec.ts, and test/ssr/author-works-export-proxy.spec.ts.",
+        "Read packet .quality/semantic-review/packets/f4ae8424eee09e15e534f82d79b476faf130ad5cadbf25c553882602945ce74e.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Used read-only inspection commands only; did not run test commands because the contract requested read-only commands and this workspace is read-only."
       ]
     },
     {
       "packetId": "app/lib/author-works.ts::packet::module-aboutSections.label@424ecba304a2",
-      "fingerprint": "7779f37db13b8507e99a2a6d71236cb9a90efa2ee5a4e815f85c4d3f9cc32c60",
+      "fingerprint": "7cda959c5fbc70299a2497a1d52fe179f86227f61727f4b626bd4dc0dd3bfafa",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/82762f1519f815a8ce6ede6bc040444fedc3195c33b55063616109224eb3a3e7.json",
-      "evidenceHash": "d653c82d06442c411aaff63a0a751b21e658729b2585b4f9f0327d3f50bc735b",
+      "evidenceHash": "f9c41e79603757bf6ab0edb8b327feb2f06d99a50a5c78c9ec169ba744908bc0",
       "findingIds": [],
       "verification": [
-        "Inspected direct callers app/components/author/AuthorWorksContent.vue, app/pages/författare/[author]/titlar/index.vue, and app/pages/författare/[author]/mer.vue.",
-        "Inspected direct imports app/lib/author-profile.ts and app/lib/internal-navigation.ts.",
-        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for AuthorWorksResponse, AuthorWork, actions, sections, shell, person, portrait, and ProfileLink schemas.",
-        "Inspected listed tests test/unit/author-works.spec.ts, test/ssr/author-works.spec.ts, and test/ssr/author-works-export-proxy.spec.ts.",
-        "Inspected owned physical lines in app/lib/author-works.ts, including lines 34-356 and adjacent exported consumers.",
+        "Inspected direct callers app/components/author/AuthorWorksContent.vue, app/pages/författare/[author]/mer.vue, and app/pages/författare/[author]/titlar/index.vue.",
+        "Inspected direct dependencies app/lib/author-profile.ts, app/lib/internal-navigation.ts, shared/utils/route-segment.ts, and shared/utils/url-safety.ts.",
+        "Inspected generated type boundary app/lib/api/generated/lbapi.ts#components AuthorWorks schemas.",
+        "Inspected owned source lines in app/lib/author-works.ts.",
+        "Inspected relevant tests test/unit/author-works.spec.ts, test/ssr/author-works.spec.ts, test/ssr/author-works-export-proxy.spec.ts, and test fixtures.",
         "Read packet .quality/semantic-review/packets/82762f1519f815a8ce6ede6bc040444fedc3195c33b55063616109224eb3a3e7.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Used read-only commands only; no tests were executed because the review request was read-only and the repository sandbox is read-only."
+        "Read quality/semantic-review-contract.md."
       ]
     },
     {
       "packetId": "app/lib/author-works.ts::packet::orderedAuthorWorkActions",
-      "fingerprint": "7816bb483065521400865cab5b971869d3d80beab04414fce3c28320dee53748",
+      "fingerprint": "cdcb9e7d6e02478adb5e7713fc4fb65e90f0fcb268e3e4599d4d4fbfcee8657d",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/b4dc37cbb9b1f328a76d23c8e17e81cf2f70e3932fcbded0b608ff1197d0b0f9.json",
-      "evidenceHash": "f8f74607f8dc7a50d11468cbfce97ba2f6534aebb365e98dbe9bf4540eaa3ff5",
+      "evidenceHash": "bf89db6d8e316ea4ad94926abb7e8df7e853085788075305c0a4fea771766a3d",
       "findingIds": [],
       "verification": [
+        "Did not run tests because the requested review was constrained to read-only commands.",
         "Inspected direct callers app/components/author/AuthorWorksContent.vue, app/pages/författare/[author]/mer.vue, and app/pages/författare/[author]/titlar/index.vue.",
-        "Inspected direct imports app/lib/author-profile.ts and app/lib/internal-navigation.ts for route and URL boundary behavior relevant to AuthorWorkAction consumers.",
-        "Inspected generated API boundary app/lib/api/generated/lbapi.ts:633-689 confirming AuthorWorkAction media_type union is fully covered by actionOrder.",
-        "Inspected named tests test/unit/author-works.spec.ts, test/ssr/author-works.spec.ts, and test/ssr/author-works-export-proxy.spec.ts. Tests were not executed because the review requested read-only commands only.",
-        "Inspected owned lines app/lib/author-works.ts:396-402 plus adjacent actionOrder type mapping at lines 388-394.",
-        "Read review contract at quality/semantic-review-contract.md and reviewed exactly the specified packet JSON."
+        "Inspected direct imports app/lib/author-profile.ts and app/lib/internal-navigation.ts for URL/type boundary context.",
+        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for AuthorWorkAction media_type coverage.",
+        "Inspected listed tests test/unit/author-works.spec.ts, test/ssr/author-works.spec.ts, and test/ssr/author-works-export-proxy.spec.ts.",
+        "Inspected owned lines app/lib/author-works.ts:404-410 plus local actionOrder/type definitions.",
+        "Read quality/semantic-review-contract.md and the specified packet JSON."
       ]
     },
     {

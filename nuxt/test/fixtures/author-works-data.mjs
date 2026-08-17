@@ -138,7 +138,7 @@ export const richAuthorWorks = {
         {
           work_id: "lb-photo-1",
           title_id: "BlandFranskaBonder",
-          title_path: "BlandFranskaBonder",
+          title_path: "BlandFranskaBonder/BlandFranskaBonder",
           title: "Bland franska bönder",
           short_title: "Bland franska bönder",
           title_tooltip: null,

@@ -199,6 +199,22 @@ test.describe("Nuxt whole-site staging smoke", () => {
             .toBeVisible()
     })
 
+    test("loads Strindberg's production author works payload", async ({ page }) => {
+        await openNuxtRoute(page, "/författare/StrindbergA/titlar")
+
+        await expect(page.getByRole("heading", { level: 1 })).toContainText(
+            "August Strindberg"
+        )
+        await expect(page.getByRole("heading", {
+            name: "Tillgängliga verk",
+            exact: true
+        })).toBeVisible()
+        await expect(page.getByRole("link", {
+            name: "Abu Casems tofflor",
+            exact: true
+        })).toBeVisible()
+    })
+
     test("loads etext Reader content and navigates to the next page", async ({ page }) => {
         await openNuxtRoute(
             page,
