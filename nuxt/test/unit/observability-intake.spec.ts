@@ -481,6 +481,55 @@ describe("observability intake guard", () => {
     }
   })
 
+  test("times out a stalled upstream response body and releases its owner", async () => {
+    vi.useFakeTimers()
+    try {
+      const signals: AbortSignal[] = []
+      const fetchImplementation = vi.fn<typeof globalThis.fetch>()
+        .mockImplementationOnce((_target, init) => {
+          if (init?.signal) signals.push(init.signal)
+          return Promise.resolve(new Response(new ReadableStream({
+            start(controller) {
+              setTimeout(() => {
+                controller.enqueue(new TextEncoder().encode(JSON.stringify({ accepted: 1 })))
+                controller.close()
+              }, 51)
+            }
+          }), {
+            status: 202,
+            headers: { "content-type": "application/json" }
+          }))
+        })
+        .mockResolvedValueOnce(acceptedResponse())
+      const options = {
+        fetch: fetchImplementation,
+        fetchTimeoutMs: 50,
+        guard: new ObservabilityIntakeGuard(),
+        now: () => 1_000
+      }
+
+      const stalled = handleObservabilityIntake(
+        intakeRequest(),
+        intakeConfig,
+        options
+      )
+      const timeoutFailure = expect(stalled).rejects.toMatchObject({ statusCode: 502 })
+      await vi.advanceTimersByTimeAsync(51)
+      await timeoutFailure
+      expect(signals[0]?.aborted).toBe(true)
+
+      await expect(handleObservabilityIntake(
+        intakeRequest(),
+        intakeConfig,
+        options
+      )).resolves.toEqual({ accepted: 1 })
+      expect(fetchImplementation).toHaveBeenCalledTimes(2)
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   test("suppresses later duplicates only after the pending owner succeeds", async () => {
     const guard = new ObservabilityIntakeGuard()
     let settleFirst: ((response: Response) => void) | undefined

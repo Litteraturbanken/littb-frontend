@@ -495,17 +495,23 @@ async function forwardEvents(
   reservationOwner: symbol,
   fetchImplementation: typeof globalThis.fetch,
   timeoutMs: number
-): Promise<Response> {
+): Promise<Readonly<{ accepted: number | null, response: Response }>> {
   const controller = new AbortController()
   let timeout: ReturnType<typeof setTimeout> | undefined
   try {
     const observedRequest = fetchImplementation(request.target, {
       ...request.init,
       signal: controller.signal
-    }).then(
-      response => response,
-      error => Promise.reject(error)
-    )
+    }).then(async (response) => {
+      if (!response.ok) return { accepted: null, response }
+      let accepted: number | null
+      try {
+        accepted = acceptedCount(await response.json(), intakeEvents.length)
+      } catch {
+        accepted = null
+      }
+      return { accepted, response }
+    })
     const deadline = new Promise<never>((_resolve, reject) => {
       timeout = setTimeout(() => {
         controller.abort()
@@ -577,7 +583,7 @@ export async function handleObservabilityIntake(
     guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
     throw error
   }
-  const response = await forwardEvents(
+  const { accepted, response } = await forwardEvents(
     request,
     intakeEvents,
     guard,
@@ -600,12 +606,6 @@ export async function handleObservabilityIntake(
   }
   if (!response.ok) {
     rejectFailedForward(response, intakeEvents, guard, reservationOwner)
-  }
-  let accepted: number | null
-  try {
-    accepted = acceptedCount(await response.json(), events.length)
-  } catch {
-    accepted = null
   }
   if (accepted === null || accepted !== events.length) {
     guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
