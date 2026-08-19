@@ -1,16 +1,10 @@
-import type { EventEnvironment } from "../lib/observability/events"
 import { BrowserObservabilityReporter } from "../lib/observability/browser"
 import {
   installHydrationObserver,
   scheduleInitialHydrationCleanup
 } from "../lib/observability/hydration"
 import { observeApiFailures } from "../lib/api/client"
-
-function environment(value: unknown): EventEnvironment {
-  if (value === "stage" || value === "staging") return "stage"
-  if (value === "production") return "production"
-  return "development"
-}
+import { normalizeDeploymentEnvironment } from "../../shared/utils/deployment-environment"
 
 function resourceKind(target: EventTarget | null):
   "document" | "script" | "style" | "image" | "unknown" {
@@ -29,7 +23,9 @@ export default defineNuxtPlugin({
     const router = useRouter()
     const reporter = new BrowserObservabilityReporter({
       endpoint: "/_observability/events",
-      environment: environment(config.public.observabilityEnvironment),
+      environment: normalizeDeploymentEnvironment(
+        String(config.public.observabilityEnvironment || "")
+      ) ?? "development",
       deploymentGitSha: String(config.public.observabilityGitSha || ""),
       route: () => router.currentRoute.value.matched.at(-1)?.path ?? null
     })

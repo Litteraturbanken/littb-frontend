@@ -13,9 +13,9 @@ import {
 
 import type {
   BrowserEvent,
-  BrowserEventName,
-  EventEnvironment
+  BrowserEventName
 } from "../../app/lib/observability/events"
+import { normalizeDeploymentEnvironment } from "../../shared/utils/deployment-environment"
 import { resolveCorrelationToken } from "./observability-correlation"
 import { correlationHeaders } from "./observability"
 
@@ -315,12 +315,6 @@ function parseBatch(body: Buffer): BrowserIntakeBatch {
   return value as BrowserIntakeBatch
 }
 
-function normalizeEnvironment(value: string): EventEnvironment {
-  if (value === "stage" || value === "staging") return "stage"
-  if (value === "production") return "production"
-  return "development"
-}
-
 function nonZeroSpanId(): string {
   const value = randomBytes(8).toString("hex")
   return /^0+$/u.test(value) ? `1${value.slice(1)}` : value
@@ -348,7 +342,8 @@ function trustedBrowserEvent(
     severity: "error" as const,
     service: "lb-frontend" as const,
     producer: "browser" as const,
-    environment: normalizeEnvironment(config.deploymentEnvironment),
+    environment: normalizeDeploymentEnvironment(config.deploymentEnvironment)
+      ?? "development",
     deployment_git_sha: GIT_SHA_PATTERN.test(config.deploymentGitSha)
       ? config.deploymentGitSha
       : ZERO_GIT_SHA,

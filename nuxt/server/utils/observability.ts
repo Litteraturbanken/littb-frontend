@@ -8,6 +8,7 @@ import {
 } from "h3"
 
 import type { components } from "../../app/lib/api/generated/lbapi"
+import { normalizeDeploymentEnvironment } from "../../shared/utils/deployment-environment"
 import { issueCorrelationToken } from "./observability-correlation"
 
 type RequestCompletedEvent
@@ -94,12 +95,6 @@ export function createObservabilityContext(incoming: {
   }
 }
 
-function normalizeEnvironment(value: string): EventEnvironment {
-  if (value === "stage" || value === "staging") return "stage"
-  if (value === "production") return "production"
-  return "development"
-}
-
 function routeTemplate(event: H3Event): string {
   const matchedRoute = event.context.matchedRoute as RouteNode | undefined
   const route = matchedRoute?.path
@@ -132,7 +127,8 @@ function buildRequestEvent(
   statusCode: number
 ): ObservabilityRequestEvent {
   const failed = statusCode >= 400
-  const environment = normalizeEnvironment(options.environment)
+  const environment: EventEnvironment
+    = normalizeDeploymentEnvironment(options.environment) ?? "development"
   const deploymentGitSha = GIT_SHA_PATTERN.test(options.deploymentGitSha)
     ? options.deploymentGitSha
     : ZERO_GIT_SHA

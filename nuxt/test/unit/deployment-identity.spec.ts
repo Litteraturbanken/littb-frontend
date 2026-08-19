@@ -41,6 +41,17 @@ describe("deployment identity", () => {
     })).toThrow(expect.objectContaining({ statusCode: 503 }))
   })
 
+  test.each([undefined, "", "prodution"])(
+    "rejects unknown deployment environment %s instead of guessing production",
+    (deploymentEnvironment) => {
+      expect(() => deploymentIdentity({
+        deploymentEnvironment,
+        deploymentGitSha: gitSha,
+        deploymentImageDigest: imageDigest
+      })).toThrow(expect.objectContaining({ statusCode: 503 }))
+    }
+  )
+
   test.each(["stage", "production"])("rejects zero sentinels in %s", (environment) => {
     expect(() => deploymentIdentity({
       deploymentEnvironment: environment,
