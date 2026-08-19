@@ -210,6 +210,23 @@ describe("observability intake guard", () => {
     expect(() => guard.enforceRate("hashed-client", 61_001)).not.toThrow()
   })
 
+  test("preserves live client quotas when rate-limit capacity is full", () => {
+    const guard = new ObservabilityIntakeGuard()
+    for (let request = 0; request < 60; request += 1) {
+      guard.enforceRate("existing-client", 1_000)
+    }
+    for (let client = 0; client < 9_999; client += 1) {
+      guard.enforceRate(`client-${client}`, 1_000)
+    }
+
+    expect(() => guard.enforceRate("overflow-client", 1_000)).toThrowError(
+      expect.objectContaining({ statusCode: 429 })
+    )
+    expect(() => guard.enforceRate("existing-client", 1_000)).toThrowError(
+      expect.objectContaining({ statusCode: 429 })
+    )
+  })
+
   test("rate limits malformed bodies before reading the exhausted request", async () => {
     const guard = new ObservabilityIntakeGuard()
     const fetchImplementation = vi.fn<typeof globalThis.fetch>()

@@ -113,17 +113,15 @@ export class ObservabilityIntakeGuard {
     }
     const current = this.#clients.get(clientKey)
     if (!current || now - current.startedAt >= RATE_WINDOW_MS) {
+      if (!current && this.#clients.size >= MAX_CLIENTS) {
+        throw createError({ statusCode: 429, statusMessage: "Rate limit exceeded" })
+      }
       this.#clients.set(clientKey, { startedAt: now, count: 1 })
     } else {
       current.count += 1
       if (current.count > RATE_LIMIT) {
         throw createError({ statusCode: 429, statusMessage: "Rate limit exceeded" })
       }
-    }
-    while (this.#clients.size > MAX_CLIENTS) {
-      const oldest = this.#clients.keys().next().value
-      if (oldest === undefined) break
-      this.#clients.delete(oldest)
     }
   }
 
