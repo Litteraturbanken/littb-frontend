@@ -51,14 +51,61 @@ async function readerOrigin(label: string): Promise<{
         url: request.url ?? ""
       })
       response.writeHead(207, "Multi-Status", {
+        "accept-ranges": "bytes",
+        "access-control-allow-origin": "https://origin.invalid",
         "cache-control": "private, max-age=17",
+        "clear-site-data": "\"cookies\"",
+        connection: "expires, x-reader-hop",
+        "content-disposition": "inline; filename=reader.bin",
+        "content-language": "sv",
+        "content-range": "bytes 0-3/4",
+        "content-security-policy": "default-src https://origin.invalid",
         "content-type": "application/octet-stream",
+        etag: '"reader-v1"',
+        expires: "Wed, 21 Oct 2037 07:28:00 GMT",
+        "last-modified": "Wed, 21 Oct 2015 07:28:00 GMT",
+        "permissions-policy": "camera=*",
+        "proxy-authenticate": "Basic realm=origin",
+        refresh: "0; url=https://origin.invalid/private",
+        "set-cookie": [
+          "reader_session=secret; Path=/; HttpOnly",
+          "reader_preference=secret; Path=/"
+        ],
+        vary: "Accept, Range",
+        "www-authenticate": "Bearer realm=origin",
+        "x-reader-hop": "origin-hop-secret",
+        "x-reader-private": "origin-private",
         "x-reader-origin": label
       })
       response.end(Buffer.from([0, 255, label.charCodeAt(0), 10]))
     })
   })
   return { origin: await listen(server), requests }
+}
+
+async function redirectingReaderOrigin(): Promise<{
+  origin: string
+  requests: string[]
+}> {
+  const requests: string[] = []
+  let origin = ""
+  const server = createServer((request, response) => {
+    const url = request.url ?? ""
+    requests.push(url)
+    const locations: Record<string, string> = {
+      "/txt/redirect-external": "https://private-origin.invalid/secret",
+      "/txt/redirect-local": `${origin}/bilder/redirected%20cover.jpg?size=2`,
+      "/txt/redirect-private": `${origin}/private-network-target`
+    }
+    response.writeHead(307, "Temporary Redirect", {
+      location: locations[url],
+      "set-cookie": "redirect_session=secret; Path=/; HttpOnly",
+      "x-reader-private": "redirect-private"
+    })
+    response.end("redirect body")
+  })
+  origin = await listen(server)
+  return { origin, requests }
 }
 
 async function waitForNuxt(child: ChildProcess, origin: string): Promise<void> {
@@ -136,7 +183,29 @@ describe("built Reader runtime proxy", () => {
     const [firstResponse, secondResponse] = await Promise.all([
       fetch(`${firstNuxt}${path}`, {
         body,
-        headers: { "content-type": "application/octet-stream", "x-reader-test": "first" },
+        headers: {
+          accept: "application/octet-stream",
+          authorization: "Bearer browser-secret",
+          "cache-control": "max-age=0",
+          cookie: "reader_session=browser-secret",
+          "content-type": "application/octet-stream",
+          forwarded: "for=private.internal;proto=https",
+          "if-match": '"reader-v1"',
+          "if-modified-since": "Wed, 21 Oct 2015 07:28:00 GMT",
+          "if-none-match": '"reader-v1"',
+          "if-range": '"reader-v1"',
+          "if-unmodified-since": "Thu, 22 Oct 2015 07:28:00 GMT",
+          origin: "https://private-client.invalid",
+          pragma: "client-no-cache",
+          "proxy-authorization": "Basic browser-secret",
+          range: "bytes=0-3",
+          referer: "https://private-client.invalid/account",
+          "x-forwarded-for": "10.0.0.8",
+          "x-forwarded-host": "private.internal",
+          "x-forwarded-proto": "https",
+          "x-reader-private": "browser-private",
+          "x-reader-test": "first"
+        },
         method: "POST"
       }),
       fetch(`${secondNuxt}${path}`, {
@@ -150,9 +219,40 @@ describe("built Reader runtime proxy", () => {
     expect(firstResponse.statusText).toBe("Multi-Status")
     expect(firstResponse.headers.get("cache-control")).toBe("private, max-age=17")
     expect(firstResponse.headers.get("content-type")).toBe("application/octet-stream")
-    expect(firstResponse.headers.get("x-reader-origin")).toBe("A")
+    expect(Object.fromEntries([
+      "accept-ranges",
+      "content-disposition",
+      "content-language",
+      "content-range",
+      "etag",
+      "last-modified",
+      "vary"
+    ].map(name => [name, firstResponse.headers.get(name)]))).toEqual({
+      "accept-ranges": "bytes",
+      "content-disposition": "inline; filename=reader.bin",
+      "content-language": "sv",
+      "content-range": "bytes 0-3/4",
+      etag: '"reader-v1"',
+      "last-modified": "Wed, 21 Oct 2015 07:28:00 GMT",
+      vary: "Accept, Range"
+    })
+    for (const name of [
+      "access-control-allow-origin",
+      "clear-site-data",
+      "content-security-policy",
+      "expires",
+      "permissions-policy",
+      "proxy-authenticate",
+      "refresh",
+      "set-cookie",
+      "www-authenticate",
+      "x-reader-hop",
+      "x-reader-origin",
+      "x-reader-private"
+    ]) {
+      expect(firstResponse.headers.get(name), name).toBeNull()
+    }
     expect(Buffer.from(await firstResponse.arrayBuffer())).toEqual(Buffer.from([0, 255, 65, 10]))
-    expect(secondResponse.headers.get("x-reader-origin")).toBe("B")
     expect(Buffer.from(await secondResponse.arrayBuffer())).toEqual(Buffer.from([0, 255, 66, 10]))
     expect(firstReader.requests).toHaveLength(1)
     expect(secondReader.requests).toHaveLength(1)
@@ -164,7 +264,44 @@ describe("built Reader runtime proxy", () => {
       expect(request.url).toBe(path)
       expect(request.body).toEqual(Buffer.from(body))
       expect(request.headers.get("content-type")).toBe("application/octet-stream")
-      expect(request.headers.get("x-reader-test")).toBe(marker)
+      if (marker === "first") {
+        expect(Object.fromEntries([
+          "accept",
+          "cache-control",
+          "if-match",
+          "if-modified-since",
+          "if-none-match",
+          "if-range",
+          "if-unmodified-since",
+          "pragma",
+          "range"
+        ].map(name => [name, request.headers.get(name)]))).toEqual({
+          accept: "application/octet-stream",
+          "cache-control": "max-age=0",
+          "if-match": '"reader-v1"',
+          "if-modified-since": "Wed, 21 Oct 2015 07:28:00 GMT",
+          "if-none-match": '"reader-v1"',
+          "if-range": '"reader-v1"',
+          "if-unmodified-since": "Thu, 22 Oct 2015 07:28:00 GMT",
+          pragma: "client-no-cache",
+          range: "bytes=0-3"
+        })
+        for (const name of [
+          "authorization",
+          "cookie",
+          "forwarded",
+          "origin",
+          "proxy-authorization",
+          "referer",
+          "x-forwarded-for",
+          "x-forwarded-host",
+          "x-forwarded-proto",
+          "x-reader-private",
+          "x-reader-test"
+        ]) {
+          expect(request.headers.get(name), name).toBeNull()
+        }
+      }
     }
   })
 
@@ -179,8 +316,36 @@ describe("built Reader runtime proxy", () => {
     const response = await fetch(`${nuxt}${path}`)
 
     expect(response.status).toBe(207)
-    expect(response.headers.get("x-reader-origin")).toBe("R")
+    expect(Buffer.from(await response.arrayBuffer())).toEqual(Buffer.from([0, 255, 82, 10]))
+    expect(response.headers.get("x-reader-origin")).toBeNull()
     expect(reader.requests.map(request => request.url)).toEqual([path])
+  })
+
+  test("rewrites only same-source redirects that stay inside Reader proxy namespaces", async () => {
+    const reader = await redirectingReaderOrigin()
+    const nuxt = await startBuiltNuxt({ readerSourceBase: reader.origin })
+
+    const local = await fetch(`${nuxt}/txt/redirect-local`, { redirect: "manual" })
+    const external = await fetch(`${nuxt}/txt/redirect-external`, { redirect: "manual" })
+    const privatePath = await fetch(`${nuxt}/txt/redirect-private`, { redirect: "manual" })
+
+    expect(local.status).toBe(307)
+    expect(local.statusText).toBe("Temporary Redirect")
+    expect(local.headers.get("location")).toBe("/bilder/redirected%20cover.jpg?size=2")
+    expect(await local.text()).toBe("redirect body")
+    expect(external.status).toBe(307)
+    expect(external.headers.get("location")).toBeNull()
+    expect(privatePath.status).toBe(307)
+    expect(privatePath.headers.get("location")).toBeNull()
+    for (const response of [local, external, privatePath]) {
+      expect(response.headers.get("set-cookie")).toBeNull()
+      expect(response.headers.get("x-reader-private")).toBeNull()
+    }
+    expect(reader.requests).toEqual([
+      "/txt/redirect-local",
+      "/txt/redirect-external",
+      "/txt/redirect-private"
+    ])
   })
 
   test.each([

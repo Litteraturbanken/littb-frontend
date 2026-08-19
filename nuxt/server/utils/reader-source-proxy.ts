@@ -1,10 +1,56 @@
-import { createError, proxyRequest, type H3Event } from "h3"
+import {
+  createError,
+  getRequestHeader,
+  readRawBody,
+  removeResponseHeader,
+  sendProxy,
+  setResponseHeader,
+  type H3Event
+} from "h3"
 
 import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
 import { rawUrlParts } from "../../shared/utils/url-safety"
 
 const MAX_DECODE_PASSES = 16
 const PRODUCTION_PUBLIC_HOST = "litteraturbanken.se"
+const payloadMethods = new Set(["DELETE", "PATCH", "POST", "PUT"])
+const readerPrefixes = ["/txt", "/bilder", "/export/faksimil"] as const
+type ReaderPrefix = typeof readerPrefixes[number]
+
+const readerRequestHeaderNames = [
+  "accept",
+  "cache-control",
+  "if-match",
+  "if-modified-since",
+  "if-none-match",
+  "if-range",
+  "if-unmodified-since",
+  "pragma",
+  "range"
+] as const
+
+const readerResponseHeaderNames = [
+  "accept-ranges",
+  "cache-control",
+  "content-disposition",
+  "content-language",
+  "content-range",
+  "content-type",
+  "etag",
+  "expires",
+  "last-modified",
+  "vary"
+] as const
+
+const readerResponseHeaders = new Set<string>(readerResponseHeaderNames)
+const redirectStatuses = new Set([300, 301, 302, 303, 307, 308])
+
+function connectionHeaderNames(value: string | null | undefined): Set<string> {
+  return new Set((value ?? "")
+    .split(",")
+    .map(name => name.trim().toLowerCase())
+    .filter(Boolean))
+}
 
 function invalidReaderConfiguration(): never {
   throw createError({
@@ -106,6 +152,23 @@ function assertSafeRawSegment(rawSegment: string): void {
   invalidReaderPath()
 }
 
+function readerPrefixForPath(rawPath: string): ReaderPrefix | undefined {
+  return readerPrefixes.find(prefix => rawPath.startsWith(`${prefix}/`))
+}
+
+function isSafeReaderPath(rawPath: string): boolean {
+  const prefix = readerPrefixForPath(rawPath)
+  if (!prefix) return false
+  try {
+    for (const segment of rawPath.slice(prefix.length + 1).split("/")) {
+      assertSafeRawSegment(segment)
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
 function readerRequestTarget(event: H3Event, prefix: string, base: URL): string {
   const { rawPath, rawQuery, hasFragment, hasQuery } = rawUrlParts(
     event.node.req.url ?? ""
@@ -118,9 +181,92 @@ function readerRequestTarget(event: H3Event, prefix: string, base: URL): string 
   return `${base.origin}${rawPath}${hasQuery ? `?${rawQuery}` : ""}`
 }
 
+function readerRequestHeaders(event: H3Event): Headers {
+  const headers = new Headers()
+  const hopByHopHeaders = connectionHeaderNames(getRequestHeader(event, "connection"))
+  for (const name of readerRequestHeaderNames) {
+    if (hopByHopHeaders.has(name)) continue
+    const value = getRequestHeader(event, name)
+    if (value !== undefined) headers.set(name, value)
+  }
+  if (payloadMethods.has(event.method)) {
+    const contentType = getRequestHeader(event, "content-type")
+    if (contentType !== undefined) headers.set("content-type", contentType)
+  }
+  return headers
+}
+
+async function readerRequestBody(event: H3Event): Promise<ArrayBuffer | undefined> {
+  if (!payloadMethods.has(event.method)) return undefined
+  const body = await readRawBody(event, false)
+  return body === undefined ? undefined : Uint8Array.from(body).buffer
+}
+
+function localReaderRedirect(
+  location: string | null,
+  target: string,
+  base: URL
+): string | null {
+  if (
+    location === null
+    || location === ""
+    || location !== location.trim()
+    || hasC0OrC1Control(location)
+    || hasLoneSurrogate(location)
+  ) return null
+
+  let resolved: URL
+  try {
+    resolved = new URL(location, target)
+  } catch {
+    return null
+  }
+  if (
+    resolved.origin !== base.origin
+    || resolved.username
+    || resolved.password
+    || !isSafeReaderPath(resolved.pathname)
+  ) return null
+  return `${resolved.pathname}${resolved.search}${resolved.hash}`
+}
+
+function allowReaderResponseHeaders(
+  event: H3Event,
+  response: Response,
+  target: string,
+  base: URL
+): void {
+  const hopByHopHeaders = connectionHeaderNames(response.headers.get("connection"))
+  for (const name of response.headers.keys()) {
+    const normalizedName = name.toLowerCase()
+    if (
+      !readerResponseHeaders.has(normalizedName)
+      || hopByHopHeaders.has(normalizedName)
+    ) {
+      removeResponseHeader(event, name)
+    }
+  }
+  if (!redirectStatuses.has(response.status)) return
+  const location = localReaderRedirect(response.headers.get("location"), target, base)
+  if (location !== null) setResponseHeader(event, "location", location)
+}
+
+function abortOnDisconnect(event: H3Event, controller: AbortController): () => void {
+  const abort = () => controller.abort()
+  const abortUnfinishedResponse = () => {
+    if (!event.node.res.writableEnded) abort()
+  }
+  event.node.req.once("aborted", abort)
+  event.node.res.once("close", abortUnfinishedResponse)
+  return () => {
+    event.node.req.off("aborted", abort)
+    event.node.res.off("close", abortUnfinishedResponse)
+  }
+}
+
 export async function proxyReaderSourceRequest(
   event: H3Event,
-  prefix: "/txt" | "/bilder" | "/export/faksimil"
+  prefix: ReaderPrefix
 ): Promise<unknown> {
   const config = useRuntimeConfig(event)
   const base = readerSourceOrigin(
@@ -128,8 +274,26 @@ export async function proxyReaderSourceRequest(
     config.deploymentEnvironment
   )
   const target = readerRequestTarget(event, prefix, base)
-  return await proxyRequest(event, target, {
-    headers: { "x-forwarded-host": base.host },
-    fetchOptions: { redirect: "manual" }
-  })
+  const body = await readerRequestBody(event)
+  const controller = new AbortController()
+  const removeAbortListeners = abortOnDisconnect(event, controller)
+  try {
+    return await sendProxy(event, target, {
+      headers: readerRequestHeaders(event),
+      fetchOptions: {
+        body,
+        method: event.method,
+        redirect: "manual",
+        signal: controller.signal
+      },
+      onResponse: (proxyEvent, response) => {
+        allowReaderResponseHeaders(proxyEvent, response, target, base)
+      }
+    })
+  } catch (error) {
+    if (controller.signal.aborted) return
+    throw error
+  } finally {
+    removeAbortListeners()
+  }
 }
