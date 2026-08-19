@@ -14,6 +14,7 @@ const nuxtPidFile = process.env.LITTB_NUXT_PID_FILE || resolve(
   "node_modules/.cache/littb-playwright/default-nuxt.pid"
 )
 const excludeStatefulSsr = process.env.LITTB_SSR_EXCLUDE_STATEFUL === "1"
+const configuredRetries = process.env.LITTB_PLAYWRIGHT_RETRIES
 const ownedServer = (pidFile: string, command: string) => (
   `node scripts/run-owned-webserver.mjs ${pidFile} ${command}`
 )
@@ -24,7 +25,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 2 : 0,
+  retries: configuredRetries === undefined
+    ? (process.env.CI ? 2 : 0)
+    : Number(configuredRetries),
   reporter: "list",
   timeout: 60_000,
   expect: { timeout: 10_000 },

@@ -47,6 +47,7 @@ describe("isolated Playwright shard runner", () => {
         LBAPI_FIXTURE_PORT: "4200",
         LITTB_NUXT_TEST_PORT: "3100",
         LITTB_DISABLE_VITE_HMR: "1",
+        LITTB_PLAYWRIGHT_RETRIES: "1",
         LITTB_VITE_SERVER_HMR_PORT: "24678",
         NUXT_IGNORE_LOCK: "1",
         LITTB_FIXTURE_PID_FILE: join(runRoot, "shard-1", "fixture.pid"),
@@ -60,6 +61,7 @@ describe("isolated Playwright shard runner", () => {
       LBAPI_FIXTURE_PORT: "4202",
       LITTB_NUXT_TEST_PORT: "3101",
       LITTB_DISABLE_VITE_HMR: "1",
+      LITTB_PLAYWRIGHT_RETRIES: "1",
       LITTB_VITE_SERVER_HMR_PORT: "24679",
       LITTB_FIXTURE_PID_FILE: join(runRoot, "shard-2", "fixture.pid"),
       LITTB_NUXT_PID_FILE: join(runRoot, "shard-2", "nuxt.pid"),
@@ -81,6 +83,7 @@ describe("isolated Playwright shard runner", () => {
 
     expect(plan?.env).toMatchObject({
       LITTB_DISABLE_VITE_HMR: "0",
+      LITTB_PLAYWRIGHT_RETRIES: "0",
       LITTB_VITE_SERVER_HMR_PORT: "0"
     })
   })

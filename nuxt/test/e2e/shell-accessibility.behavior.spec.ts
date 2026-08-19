@@ -1,6 +1,19 @@
 import { expect, test, type Locator } from "@playwright/test"
 
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
+
+async function resetLibraryControls(request: import("@playwright/test").APIRequestContext) {
+  await Promise.all([
+    request.delete(`${fixture}/_library_v2/failures`),
+    request.delete(`${fixture}/_library_v2/delays`),
+    request.delete(`${fixture}/_library_relevance_failure`),
+    request.delete(`${fixture}/_library_relevance_delays`),
+    request.delete(`${fixture}/_library_query_failure`),
+    request.delete(`${fixture}/_library_query_delays`),
+    request.delete(`${fixture}/_library_imprint_failure`)
+  ])
+}
 
 async function expectMinimumTargetHeight(locator: Locator, minimum = 24) {
   const count = await locator.count()
@@ -113,7 +126,8 @@ test("keyboard focus matches production on Dramawebben filter controls", async (
   await expectKeyboardFocusWithoutSharedRing(page, page.locator(".controls .filter_btn"))
 })
 
-test("keyboard focus matches production on the active Library tab", async ({ page }) => {
+test("keyboard focus matches production on the active Library tab", async ({ page, request }) => {
+  await resetLibraryControls(request)
   await page.goto("/bibliotek?visa=works", { waitUntil: "networkidle" })
 
   await expectKeyboardFocusWithoutSharedRing(page, page.locator('[data-library-tab="works"]'))

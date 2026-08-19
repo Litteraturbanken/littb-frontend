@@ -47,4 +47,12 @@ describe("Playwright shard output isolation", () => {
     expect(servers[1]?.url).toBe("http://127.0.0.1:3000/_nuxt/@vite/client")
   })
 
+  test("honors an explicit retry budget for isolated shards", async () => {
+    vi.stubEnv("LITTB_PLAYWRIGHT_RETRIES", "1")
+
+    const config = (await import("../../playwright.config")).default
+
+    expect(config.retries).toBe(1)
+  })
+
 })

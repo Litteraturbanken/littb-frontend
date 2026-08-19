@@ -50,6 +50,7 @@ export function createShardPlan({
         LBAPI_FIXTURE_PORT: String(fixturePort),
         LITTB_NUXT_TEST_PORT: String(nuxtPort),
         LITTB_DISABLE_VITE_HMR: shardCount > 1 ? "1" : "0",
+        LITTB_PLAYWRIGHT_RETRIES: shardCount > 1 ? "1" : "0",
         LITTB_VITE_SERVER_HMR_PORT: shardCount > 1
           ? String(viteServerHmrPort)
           : "0",
