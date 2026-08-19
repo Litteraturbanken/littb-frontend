@@ -1,6 +1,6 @@
 # Litteraturbanken staging Nuxt frontend.
 #
-# Deploy an image tagged with the exact Git commit SHA via:
+# Deploy an image resolved from the exact Git commit SHA to its registry digest via:
 #
 #   scripts/deploy-stage.sh
 #
@@ -17,6 +17,10 @@ variable "image" {
 }
 
 variable "git_sha" {
+  type = string
+}
+
+variable "image_digest" {
   type = string
 }
 
@@ -40,7 +44,8 @@ job "lb-frontend-stage" {
   datacenters = var.datacenters
 
   meta {
-    git_sha = var.git_sha
+    git_sha      = var.git_sha
+    image_digest = var.image_digest
   }
 
   group "frontend" {
@@ -104,18 +109,20 @@ job "lb-frontend-stage" {
       driver = "docker"
 
       env {
-        GIT_SHA                     = var.git_sha
-        IMAGE_REF                   = var.image
-        NUXT_DEPLOYMENT_GIT_SHA     = var.git_sha
-        NUXT_DEPLOYMENT_ENVIRONMENT = "staging"
+        GIT_SHA                               = var.git_sha
+        IMAGE_DIGEST                          = var.image_digest
+        IMAGE_REF                             = var.image
+        NUXT_DEPLOYMENT_GIT_SHA               = var.git_sha
+        NUXT_DEPLOYMENT_IMAGE_DIGEST          = var.image_digest
+        NUXT_DEPLOYMENT_ENVIRONMENT           = "staging"
         NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT = "stage"
         NUXT_PUBLIC_OBSERVABILITY_GIT_SHA     = var.git_sha
         NUXT_OBSERVABILITY_ALLOWED_ORIGINS    = "https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se"
         NUXT_OBSERVABILITY_HMAC_SECRET_FILE   = "/secrets/lb_observability_hmac_secret"
-        NUXT_API_BASE               = "http://lb-backend-stage.service.consul:5003/v2"
-        NUXT_LIBRARY_API_BASE       = "http://lb-backend-stage.service.consul:5003"
-        NUXT_CONTENT_BASE           = "https://red.litteraturbanken.se"
-        NUXT_READER_SOURCE_BASE     = "https://litteraturbanken.se"
+        NUXT_API_BASE                         = "http://lb-backend-stage.service.consul:5003/v2"
+        NUXT_LIBRARY_API_BASE                 = "http://lb-backend-stage.service.consul:5003"
+        NUXT_CONTENT_BASE                     = "https://red.litteraturbanken.se"
+        NUXT_READER_SOURCE_BASE               = "https://litteraturbanken.se"
       }
 
       config {
@@ -135,6 +142,10 @@ job "lb-frontend-stage" {
           fi
           if [ -z "$${IMAGE_REF}" ]; then
             echo "missing IMAGE_REF" >&2
+            exit 1
+          fi
+          if ! printf '%s\n' "$${IMAGE_DIGEST}" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+            echo "invalid IMAGE_DIGEST" >&2
             exit 1
           fi
           export HOST=0.0.0.0 PORT="$${NOMAD_PORT_http}"

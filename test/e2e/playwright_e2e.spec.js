@@ -1,6 +1,16 @@
 const { test, expect } = require("@playwright/test")
 
 const browserErrors = new WeakMap()
+const expectedGitSha = process.env.LITTB_EXPECTED_GIT_SHA
+const expectedImageDigest = process.env.LITTB_EXPECTED_IMAGE_DIGEST
+const expectedDeploymentIdentity = expectedGitSha && expectedImageDigest
+    ? {
+        schema_version: "lb.frontend.deployment.v1",
+        environment: "stage",
+        git_sha: expectedGitSha,
+        image_digest: expectedImageDigest
+    }
+    : null
 
 async function waitForNuxt(page) {
     await page.locator("#__nuxt").waitFor({ state: "attached" })
@@ -389,5 +399,19 @@ test.describe("Nuxt whole-site staging smoke", () => {
         await waitForNuxt(page)
         await expect(reader).toHaveAttribute("aria-label", initialState)
         await expect(reader.locator(".etext")).toBeVisible()
+    })
+
+    test("retains the expected deployment identity after hydrated journeys", async ({
+        page,
+        request
+    }) => {
+        test.skip(!expectedDeploymentIdentity, "expected deployment identity is not configured")
+
+        await openNuxtRoute(page, "/")
+        await openNuxtRoute(page, "/om/ide")
+
+        const response = await request.get("/_deployment")
+        expect(response.status()).toBe(200)
+        expect(await response.json()).toEqual(expectedDeploymentIdentity)
     })
 })

@@ -1,6 +1,16 @@
+const { isDeepStrictEqual } = require("node:util")
+
 const nuxtOrigin = (process.env.LITTB_NUXT_LIVE_ORIGIN || "http://127.0.0.1:3020")
     .replace(/\/$/, "")
 const configuredBackendOrigin = process.env.LITTB_BACKEND_ORIGIN?.replace(/\/$/, "")
+const expectedGitSha = process.env.LITTB_EXPECTED_GIT_SHA
+const expectedImageDigest = process.env.LITTB_EXPECTED_IMAGE_DIGEST
+
+if (Boolean(expectedGitSha) !== Boolean(expectedImageDigest)) {
+    throw new Error(
+        "LITTB_EXPECTED_GIT_SHA and LITTB_EXPECTED_IMAGE_DIGEST must be set together"
+    )
+}
 
 async function getResponse(label, url) {
     let response
@@ -35,6 +45,30 @@ async function requireBackend() {
     }
 }
 
+async function requireDeploymentIdentity() {
+    if (!expectedGitSha || !expectedImageDigest) return
+
+    const url = `${nuxtOrigin}/_deployment`
+    const response = await getResponse("Nuxt deployment identity", url)
+    let identity
+    try {
+        identity = await response.json()
+    } catch (error) {
+        throw new Error(
+            `Nuxt deployment identity preflight failed: ${url} (${error.message})`
+        )
+    }
+    const expectedIdentity = {
+        schema_version: "lb.frontend.deployment.v1",
+        environment: "stage",
+        git_sha: expectedGitSha,
+        image_digest: expectedImageDigest
+    }
+    if (!isDeepStrictEqual(identity, expectedIdentity)) {
+        throw new Error(`Nuxt deployment identity mismatch: ${url}`)
+    }
+}
+
 async function requireNuxt() {
     const url = `${nuxtOrigin}/`
     const response = await getResponse("Nuxt", url)
@@ -46,6 +80,7 @@ async function requireNuxt() {
 }
 
 module.exports = async function nuxtLivePreflight() {
+    await requireDeploymentIdentity()
     await requireBackend()
     await requireNuxt()
 }

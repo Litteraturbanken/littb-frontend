@@ -32,7 +32,131 @@ image_name="${IMAGE_NAME:-lb-frontend}"
 builder_job="${BUILDER_JOB:-docker-builder-multiarch}"
 image_ref="${registry_host}/${image_name}:${git_sha}"
 
-nomad job validate -var "image=$image_ref" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad
+resolve_registry_digest() {
+  RESOLVE_IMAGE_REF="$1" \
+  RESOLVE_REGISTRY_SCHEME="${REGISTRY_SCHEME:-http}" \
+  python3 - <<'PY'
+import os
+import re
+import urllib.error
+import urllib.parse
+import urllib.request
+
+
+class RegistryDigestError(Exception):
+    pass
+
+
+def authority(url):
+    parts = urllib.parse.urlsplit(url)
+    if parts.scheme not in {"http", "https"}:
+        raise RegistryDigestError("registry URL must use HTTP or HTTPS")
+    if parts.username is not None or parts.password is not None:
+        raise RegistryDigestError("registry credentials are not accepted in the image reference")
+    if not parts.hostname:
+        raise RegistryDigestError("registry authority is missing")
+    try:
+        port = parts.port
+    except ValueError as error:
+        raise RegistryDigestError("registry port is invalid") from error
+    return parts.hostname.lower(), port or (443 if parts.scheme == "https" else 80)
+
+
+class SameAuthorityRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def __init__(self, expected_authority, expected_scheme):
+        super().__init__()
+        self.expected_authority = expected_authority
+        self.expected_scheme = expected_scheme
+
+    def redirect_request(self, request, file_pointer, code, message, headers, new_url):
+        parts = urllib.parse.urlsplit(new_url)
+        if authority(new_url) != self.expected_authority:
+            raise RegistryDigestError("registry redirect changed authority")
+        if parts.scheme != self.expected_scheme:
+            raise RegistryDigestError("registry redirect changed scheme")
+        redirected = super().redirect_request(
+            request, file_pointer, code, message, headers, new_url
+        )
+        redirected.method = request.get_method()
+        return redirected
+
+
+def resolve():
+    image_ref = os.environ["RESOLVE_IMAGE_REF"]
+    scheme = os.environ["RESOLVE_REGISTRY_SCHEME"]
+    if scheme not in {"http", "https"}:
+        raise RegistryDigestError("REGISTRY_SCHEME must be http or https")
+    if "@" in image_ref:
+        raise RegistryDigestError("registry image reference must use a tag")
+
+    registry, separator, repository_tag = image_ref.partition("/")
+    repository, tag_separator, tag = repository_tag.rpartition(":")
+    if not separator or not repository or not tag_separator or not tag:
+        raise RegistryDigestError("registry image reference must include repository and tag")
+    if not re.fullmatch(r"[0-9a-f]{40}", tag):
+        raise RegistryDigestError("registry image tag must be a lowercase Git SHA")
+    if not re.fullmatch(
+        r"[a-z0-9]+(?:[._-][a-z0-9]+)*(?:/[a-z0-9]+(?:[._-][a-z0-9]+)*)*",
+        repository,
+    ):
+        raise RegistryDigestError("registry repository is invalid")
+
+    base_url = f"{scheme}://{registry}"
+    parts = urllib.parse.urlsplit(base_url)
+    expected_authority = authority(base_url)
+    if parts.path or parts.query or parts.fragment:
+        raise RegistryDigestError("registry authority is invalid")
+
+    manifest_url = (
+        f"{base_url}/v2/{urllib.parse.quote(repository, safe='/')}"
+        f"/manifests/{urllib.parse.quote(tag, safe='')}"
+    )
+    request = urllib.request.Request(
+        manifest_url,
+        headers={
+            "Accept": ", ".join((
+                "application/vnd.oci.image.manifest.v1+json",
+                "application/vnd.oci.image.index.v1+json",
+                "application/vnd.docker.distribution.manifest.v2+json",
+                "application/vnd.docker.distribution.manifest.list.v2+json",
+            )),
+        },
+        method="HEAD",
+    )
+    opener = urllib.request.build_opener(
+        SameAuthorityRedirectHandler(expected_authority, scheme)
+    )
+    try:
+        with opener.open(request, timeout=30) as response:
+            if authority(response.geturl()) != expected_authority:
+                raise RegistryDigestError("registry response changed authority")
+            digest = response.headers.get("Docker-Content-Digest")
+    except RegistryDigestError:
+        raise
+    except urllib.error.HTTPError as error:
+        if error.code in {401, 403}:
+            raise RegistryDigestError("registry authentication failed") from None
+        raise RegistryDigestError(
+            f"registry digest request failed with HTTP {error.code}"
+        ) from None
+    except (OSError, urllib.error.URLError):
+        raise RegistryDigestError("registry digest request failed") from None
+
+    if digest is None:
+        raise RegistryDigestError("registry response is missing Docker-Content-Digest")
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
+        raise RegistryDigestError("registry returned a malformed Docker-Content-Digest")
+    print(digest)
+
+
+try:
+    resolve()
+except RegistryDigestError as error:
+    raise SystemExit(f"Cannot resolve registry digest: {error}") from None
+except Exception:
+    raise SystemExit("Cannot resolve registry digest: registry request failed") from None
+PY
+}
 
 dispatch_output="$(
   DISPATCH_BUILDER_JOB="$builder_job" \
@@ -114,7 +238,7 @@ else:
         ;;
       failed)
         nomad job status "$dispatch_id" || true
-        echo "Image build failed for $image_ref" >&2
+        echo "Image build failed for requested staging image" >&2
         exit 1
         ;;
       *)
@@ -130,10 +254,14 @@ else:
   fi
 fi
 
-nomad run -detach -var "image=$image_ref" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad
+image_digest="$(resolve_registry_digest "$image_ref")"
+immutable_image_ref="${registry_host}/${image_name}@${image_digest}"
+
+nomad job validate -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad
+nomad run -detach -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad
 
 echo
 echo "Deployed lb-frontend-stage from git_sha=$git_sha"
-echo "Image: $image_ref"
+echo "Image: $immutable_image_ref"
 echo "Route: https://lb-frontend.pub.lb.se/"
 nomad job status lb-frontend-stage

@@ -207,7 +207,7 @@ class NuxtLivePlaywrightTest(unittest.TestCase):
         result = run_live_playwright("--list")
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Total: 16 tests in 1 file", result.stdout)
+        self.assertIn("Total: 17 tests in 1 file", result.stdout)
         for title in (
             "loads and hydrates the home page",
             "loads the advanced Library route and exercises its controls",
@@ -225,6 +225,7 @@ class NuxtLivePlaywrightTest(unittest.TestCase):
             "loads and hydrates the Dramawebben landing page",
             "retains About content during client-side tab navigation",
             "restores Reader route and state after NuxtLink history navigation",
+            "retains the expected deployment identity after hydrated journeys",
         ):
             self.assertIn(title, result.stdout)
 
