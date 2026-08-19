@@ -50,7 +50,10 @@ describe("Playwright project boundaries", () => {
     const servers = Array.isArray(config.webServer) ? config.webServer : [config.webServer]
     const nuxtServer = servers.find(server => server?.command.includes("yarn dev"))
 
-    expect(nuxtServer?.command).toContain("NUXT_IGNORE_LOCK=1 yarn dev")
+    expect(nuxtServer?.command).toContain(
+      "NUXT_IGNORE_LOCK=1 node scripts/run-owned-webserver.mjs"
+    )
+    expect(nuxtServer?.command).toContain("yarn dev --port 3000")
     expect(nuxtServer?.reuseExistingServer).toBe(false)
     expect(servers.every(server => server?.reuseExistingServer === false)).toBe(true)
   })
