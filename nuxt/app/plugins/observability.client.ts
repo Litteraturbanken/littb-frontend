@@ -39,7 +39,9 @@ export default defineNuxtPlugin({
         eventName: "browser.hydration_error",
         resourceKind: "document"
       }),
-      onMounted: cleanup => nuxtApp.hooks.hookOnce("app:suspense:resolve", cleanup)
+      onMounted: cleanup => nuxtApp.hooks.hookOnce("app:mounted", () => {
+        requestAnimationFrame(() => requestAnimationFrame(cleanup))
+      })
     })
 
     observeApiFailures(failure => {

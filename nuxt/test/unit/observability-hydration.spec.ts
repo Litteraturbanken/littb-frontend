@@ -109,34 +109,51 @@ describe("initial hydration observer", () => {
     expect(onHydration).not.toHaveBeenCalled()
   })
 
-  test("keeps interception through the mount turn before restoring it", async () => {
+  test("uses app-mounted two-frame cleanup without suspense resolution", () => {
     const previousWarnHandler = vi.fn()
     const previousConsoleError = vi.fn()
     const vueConfig: Pick<AppConfig, "warnHandler"> = { warnHandler: previousWarnHandler }
     const consoleObject = { error: previousConsoleError } as Pick<Console, "error">
     const onHydration = vi.fn()
-    let mountedCleanup: (() => void) | undefined
-    installHydrationObserver({
-      vueConfig,
-      consoleObject,
-      onHydration,
-      onMounted: callback => {
-        mountedCleanup = callback
-      }
-    })
+    let registeredCleanup: (() => void) | undefined
+    let mounted: (() => void) | undefined
+    const animationFrames: FrameRequestCallback[] = []
 
-    mountedCleanup?.()
+    try {
+      vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+        animationFrames.push(callback)
+        return animationFrames.length
+      })
+      const cleanup = installHydrationObserver({
+        vueConfig,
+        consoleObject,
+        onHydration,
+        onMounted: callback => {
+          registeredCleanup = callback
+          mounted = () => requestAnimationFrame(() => requestAnimationFrame(callback))
+        }
+      })
 
-    expect(vueConfig.warnHandler).not.toBe(previousWarnHandler)
-    expect(consoleObject.error).not.toBe(previousConsoleError)
-    consoleObject.error("Hydration completed but contains mismatches.")
-    expect(onHydration).toHaveBeenCalledExactlyOnceWith()
+      expect(registeredCleanup).toBe(cleanup)
+      mounted?.()
 
-    await Promise.resolve()
-    expect(vueConfig.warnHandler).toBe(previousWarnHandler)
-    expect(consoleObject.error).toBe(previousConsoleError)
-    consoleObject.error("Hydration node mismatch:")
-    expect(onHydration).toHaveBeenCalledExactlyOnceWith()
+      expect(vueConfig.warnHandler).not.toBe(previousWarnHandler)
+      expect(consoleObject.error).not.toBe(previousConsoleError)
+      consoleObject.error("Hydration completed but contains mismatches.")
+      consoleObject.error("Hydration completed but contains mismatches.")
+      expect(onHydration).toHaveBeenCalledExactlyOnceWith()
+
+      animationFrames.shift()?.(0)
+      expect(vueConfig.warnHandler).not.toBe(previousWarnHandler)
+      expect(consoleObject.error).not.toBe(previousConsoleError)
+      animationFrames.shift()?.(16)
+      expect(vueConfig.warnHandler).toBe(previousWarnHandler)
+      expect(consoleObject.error).toBe(previousConsoleError)
+      consoleObject.error("Hydration node mismatch:")
+      expect(onHydration).toHaveBeenCalledExactlyOnceWith()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   test("allows explicit cleanup to run more than once", () => {
