@@ -15,7 +15,7 @@ export function boundedParallelism(cap, available = availableParallelism()) {
 }
 
 export function configuredShardCount(raw, available = availableParallelism()) {
-  const requested = raw === undefined ? 4 : Number(raw)
+  const requested = raw === undefined ? 3 : Number(raw)
   return boundedParallelism(
     positiveInteger(requested, "LITTB_PLAYWRIGHT_SHARDS"),
     available

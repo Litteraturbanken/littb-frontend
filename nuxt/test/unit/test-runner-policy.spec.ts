@@ -22,8 +22,8 @@ describe("test runner parallelism policy", () => {
     }
   )
 
-  test("defaults browser execution to four bounded shards", () => {
-    expect(configuredShardCount(undefined, 18)).toBe(4)
+  test("defaults browser execution to three measured-stable shards", () => {
+    expect(configuredShardCount(undefined, 18)).toBe(3)
     expect(configuredShardCount(undefined, 2)).toBe(2)
   })
 
