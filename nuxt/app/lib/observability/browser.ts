@@ -62,6 +62,20 @@ function validHydrationClassification(
   return errorType !== "HydrationMismatch"
 }
 
+function normalizeBrowserClassification(
+  eventName: BrowserEventName,
+  errorType: string,
+  resourceKind: NonNullable<BrowserEvent["attributes"]["resource_kind"]>
+): Readonly<{ eventName: BrowserEventName, errorType: string }> {
+  if (validHydrationClassification(eventName, errorType, resourceKind)) {
+    return { eventName, errorType }
+  }
+  return {
+    eventName: eventName === "browser.hydration_error" ? "browser.error" : eventName,
+    errorType: errorType === "HydrationMismatch" ? "OtherError" : errorType
+  }
+}
+
 interface CreateBrowserErrorEventOptions {
   eventName: BrowserEventName
   error: unknown
@@ -201,15 +215,15 @@ export function classifyBrowserError(error: unknown): BrowserEventName {
 export async function createBrowserErrorEvent(
   options: CreateBrowserErrorEventOptions
 ): Promise<BrowserEvent> {
-  let eventName = safeBrowserEventName(options.eventName)
-  let type = errorType(options.error)
   const component = safeLabel(options.component)
   const route = safeRoute(options.route)
   const resourceKind = safeBrowserResourceKind(options.resourceKind)
-  if (!validHydrationClassification(eventName, type, resourceKind)) {
-    if (eventName === "browser.hydration_error") eventName = "browser.error"
-    if (type === "HydrationMismatch") type = "OtherError"
-  }
+  const classification = normalizeBrowserClassification(
+    safeBrowserEventName(options.eventName),
+    errorType(options.error),
+    resourceKind
+  )
+  const { eventName, errorType: type } = classification
   const fingerprint = await sha256([
     eventName,
     type,

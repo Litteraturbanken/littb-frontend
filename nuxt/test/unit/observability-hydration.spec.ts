@@ -109,16 +109,17 @@ describe("initial hydration observer", () => {
     expect(onHydration).not.toHaveBeenCalled()
   })
 
-  test("restores the exact prior interception after app mounted", () => {
+  test("keeps interception through the mount turn before restoring it", async () => {
     const previousWarnHandler = vi.fn()
     const previousConsoleError = vi.fn()
     const vueConfig: Pick<AppConfig, "warnHandler"> = { warnHandler: previousWarnHandler }
     const consoleObject = { error: previousConsoleError } as Pick<Console, "error">
+    const onHydration = vi.fn()
     let mountedCleanup: (() => void) | undefined
-    const cleanup = installHydrationObserver({
+    installHydrationObserver({
       vueConfig,
       consoleObject,
-      onHydration: () => {},
+      onHydration,
       onMounted: callback => {
         mountedCleanup = callback
       }
@@ -126,9 +127,16 @@ describe("initial hydration observer", () => {
 
     mountedCleanup?.()
 
+    expect(vueConfig.warnHandler).not.toBe(previousWarnHandler)
+    expect(consoleObject.error).not.toBe(previousConsoleError)
+    consoleObject.error("Hydration completed but contains mismatches.")
+    expect(onHydration).toHaveBeenCalledExactlyOnceWith()
+
+    await Promise.resolve()
     expect(vueConfig.warnHandler).toBe(previousWarnHandler)
     expect(consoleObject.error).toBe(previousConsoleError)
-    cleanup()
+    consoleObject.error("Hydration node mismatch:")
+    expect(onHydration).toHaveBeenCalledExactlyOnceWith()
   })
 
   test("allows explicit cleanup to run more than once", () => {

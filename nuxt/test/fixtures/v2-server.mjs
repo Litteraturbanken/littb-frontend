@@ -2704,16 +2704,18 @@ const server = createServer(async (request, response) => {
     && apiPathname === "/v2/internal/observability/events"
   ) {
     const body = await readText(request)
-    observabilityRequests.push({
-      body,
-      headers: request.headers
-    })
     let parsed
     try {
       parsed = JSON.parse(body)
     } catch {
+      observabilityRequests.push({ body, headers: request.headers, events: [] })
       return sendJson(response, 422, { accepted: 0 })
     }
+    observabilityRequests.push({
+      body,
+      headers: request.headers,
+      events: Array.isArray(parsed.events) ? parsed.events : []
+    })
     const accepted = Array.isArray(parsed.events) ? parsed.events.length : 0
     return sendJson(response, 202, { accepted })
   }

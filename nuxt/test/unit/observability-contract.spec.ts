@@ -12,6 +12,28 @@ type HydrationEvent = Extract<
   ObservabilityEvent,
   { event_name: "browser.hydration_error" }
 >
+type Equal<Left, Right> =
+  (<Value>() => Value extends Left ? 1 : 2) extends
+  (<Value>() => Value extends Right ? 1 : 2)
+    ? true
+    : false
+type Expect<Value extends true> = Value
+type RawBrowserDiagnosticKeys =
+  | "console"
+  | "diagnostic"
+  | "dom"
+  | "html"
+  | "ip"
+  | "props"
+  | "query"
+  | "selected_text"
+  | "stack"
+  | "url"
+  | "user_agent"
+type _HydrationEventExcludesRawDiagnostics = Expect<Equal<
+  Extract<keyof HydrationEvent, RawBrowserDiagnosticKeys>,
+  never
+>>
 
 const validReaderPageEvent = {
   schema_version: "lb.observability.v1",
@@ -67,12 +89,6 @@ const validHydrationEvent = {
   }
 } satisfies HydrationEvent
 
-const hydrationEventWithRawDiagnostic = {
-  ...validHydrationEvent,
-  // @ts-expect-error Hydration events retain no raw browser diagnostic.
-  diagnostic: "private browser text"
-} satisfies HydrationEvent
-
 describe("generated observability contract", () => {
   test("narrows attributes using event_name", () => {
     const event: ObservabilityEvent = validReaderPageEvent
@@ -85,7 +101,5 @@ describe("generated observability contract", () => {
 
   test("narrows hydration events to their generated browser contract", () => {
     expect(validHydrationEvent.attributes.resource_kind).toBe("document")
-    expect(hydrationEventWithRawDiagnostic.event_name)
-      .toBe("browser.hydration_error")
   })
 })

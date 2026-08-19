@@ -55,6 +55,6 @@ export function installHydrationObserver(options: HydrationObserverOptions): () 
 
   options.vueConfig.warnHandler = warnHandler
   options.consoleObject.error = consoleError
-  options.onMounted(cleanup)
+  options.onMounted(() => queueMicrotask(cleanup))
   return cleanup
 }
