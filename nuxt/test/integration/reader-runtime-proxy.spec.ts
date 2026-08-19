@@ -172,17 +172,15 @@ afterEach(async () => {
 })
 
 describe("built Reader runtime proxy", () => {
-  test("the same build selects either runtime origin and preserves proxy semantics", async () => {
+  test("the same build selects either runtime origin and preserves read proxy semantics", async () => {
     const firstReader = await readerOrigin("A")
     const secondReader = await readerOrigin("B")
     const firstNuxt = await startBuiltNuxt({ readerSourceBase: firstReader.origin })
     const secondNuxt = await startBuiltNuxt({ readerSourceBase: secondReader.origin })
     const path = "/txt/S%C3%B6derbergH/file%20one.bin?download=a%2Fb&empty="
-    const body = Uint8Array.from([0, 255, 195, 40, 10])
 
     const [firstResponse, secondResponse] = await Promise.all([
       fetch(`${firstNuxt}${path}`, {
-        body,
         headers: {
           accept: "application/octet-stream",
           authorization: "Bearer browser-secret",
@@ -205,13 +203,10 @@ describe("built Reader runtime proxy", () => {
           "x-forwarded-proto": "https",
           "x-reader-private": "browser-private",
           "x-reader-test": "first"
-        },
-        method: "POST"
+        }
       }),
       fetch(`${secondNuxt}${path}`, {
-        body,
-        headers: { "content-type": "application/octet-stream", "x-reader-test": "second" },
-        method: "POST"
+        headers: { "content-type": "application/octet-stream", "x-reader-test": "second" }
       })
     ])
 
@@ -260,10 +255,10 @@ describe("built Reader runtime proxy", () => {
       [firstReader.requests[0], "first"],
       [secondReader.requests[0], "second"]
     ] as const) {
-      expect(request.method).toBe("POST")
+      expect(request.method).toBe("GET")
       expect(request.url).toBe(path)
-      expect(request.body).toEqual(Buffer.from(body))
-      expect(request.headers.get("content-type")).toBe("application/octet-stream")
+      expect(request.body).toEqual(Buffer.alloc(0))
+      expect(request.headers.get("content-type")).toBeNull()
       if (marker === "first") {
         expect(Object.fromEntries([
           "accept",
@@ -304,6 +299,24 @@ describe("built Reader runtime proxy", () => {
       }
     }
   })
+
+  test.each(["DELETE", "PATCH", "POST", "PUT"])(
+    "rejects %s without reaching the Reader origin",
+    async (method) => {
+      const reader = await readerOrigin("R")
+      const nuxt = await startBuiltNuxt({ readerSourceBase: reader.origin })
+
+      const response = await fetch(`${nuxt}/txt/work/file.txt`, {
+        body: "must not be forwarded",
+        headers: { "content-type": "text/plain" },
+        method
+      })
+
+      expect(response.status).toBe(405)
+      expect(response.headers.get("allow")).toBe("GET, HEAD")
+      expect(reader.requests).toEqual([])
+    }
+  )
 
   test.each([
     "/txt/work/file.txt?raw=one%2Ftwo",

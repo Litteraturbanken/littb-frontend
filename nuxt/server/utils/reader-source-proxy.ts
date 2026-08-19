@@ -1,7 +1,6 @@
 import {
   createError,
   getRequestHeader,
-  readRawBody,
   removeResponseHeader,
   sendProxy,
   setResponseHeader,
@@ -10,10 +9,10 @@ import {
 
 import { hasC0OrC1Control, hasLoneSurrogate } from "../../shared/utils/text-safety"
 import { rawUrlParts } from "../../shared/utils/url-safety"
+import { assertProxyMethod } from "./backend-proxy"
 
 const MAX_DECODE_PASSES = 16
 const PRODUCTION_PUBLIC_HOST = "litteraturbanken.se"
-const payloadMethods = new Set(["DELETE", "PATCH", "POST", "PUT"])
 const readerPrefixes = ["/txt", "/bilder", "/export/faksimil"] as const
 type ReaderPrefix = typeof readerPrefixes[number]
 
@@ -189,17 +188,7 @@ function readerRequestHeaders(event: H3Event): Headers {
     const value = getRequestHeader(event, name)
     if (value !== undefined) headers.set(name, value)
   }
-  if (payloadMethods.has(event.method)) {
-    const contentType = getRequestHeader(event, "content-type")
-    if (contentType !== undefined) headers.set("content-type", contentType)
-  }
   return headers
-}
-
-async function readerRequestBody(event: H3Event): Promise<ArrayBuffer | undefined> {
-  if (!payloadMethods.has(event.method)) return undefined
-  const body = await readRawBody(event, false)
-  return body === undefined ? undefined : Uint8Array.from(body).buffer
 }
 
 function localReaderRedirect(
@@ -268,20 +257,19 @@ export async function proxyReaderSourceRequest(
   event: H3Event,
   prefix: ReaderPrefix
 ): Promise<unknown> {
+  assertProxyMethod(event, ["GET", "HEAD"])
   const config = useRuntimeConfig(event)
   const base = readerSourceOrigin(
     config.readerSourceBase,
     config.deploymentEnvironment
   )
   const target = readerRequestTarget(event, prefix, base)
-  const body = await readerRequestBody(event)
   const controller = new AbortController()
   const removeAbortListeners = abortOnDisconnect(event, controller)
   try {
     return await sendProxy(event, target, {
       headers: readerRequestHeaders(event),
       fetchOptions: {
-        body,
         method: event.method,
         redirect: "manual",
         signal: controller.signal
