@@ -10,6 +10,27 @@
 
 **Spec:** docs/superpowers/specs/2026-08-19-fast-test-runner-production-readiness-design.md
 
+## Completion record — 2026-08-19
+
+The implementation is complete through Task 6 and the production-readiness
+audit is recorded in
+`docs/superpowers/2026-08-19-production-readiness-audit.md`.
+
+Two evidence-driven amendments supersede the original estimates below:
+
+- Full runs showed that four simultaneous cold Nuxt compilers are unstable on
+  this laptop. The measured default is therefore three isolated browser/SSR
+  shards; callers may still override it explicitly.
+- Multi-shard browser runs allow one retry for cold Vite startup failures and
+  expose those retries in the reporter. The serial lane retains zero retries.
+  The final three-shard full browser run passed 1,003 tests with 9 intentional
+  skips and two recovered cold-start attempts in 505.75 seconds.
+
+The final public `yarn test:ssr` command passed all 611 tests with the
+three-shard default plus the serial stateful Reader lane in 60.15 seconds.
+No application behavior, deployment, infrastructure, DNS, or credentials were
+changed by this plan.
+
 ## Global Constraints
 
 - Do not change application behavior or authored production source.
