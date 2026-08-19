@@ -128,6 +128,30 @@ describe("browser event normalization", () => {
 })
 
 describe("browser event delivery", () => {
+  test("sends hydration diagnostics only as the compact classification", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+    const error = new Error("Hydration text mismatch in private document content")
+    error.name = "HydrationMismatch"
+
+    await reporter.capture(error, {
+      eventName: "browser.hydration_error",
+      resourceKind: "document"
+    })
+    await reporter.flush()
+
+    const sent = String(fetchMock.mock.calls[0]?.[1]?.body)
+    expect(JSON.parse(sent).events).toEqual([{
+      event_id: expect.stringMatching(/^[0-9a-f-]{36}$/u),
+      event_name: "browser.hydration_error",
+      error_type: "HydrationMismatch",
+      resource_kind: "document",
+      correlation_token: null
+    }])
+    expect(sent).not.toContain("Hydration text mismatch")
+    expect(sent).not.toContain("private document content")
+  })
+
   test("enqueues only the exact compact hydration classification", async () => {
     const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
     const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))

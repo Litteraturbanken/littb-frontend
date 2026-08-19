@@ -1,5 +1,6 @@
 import type { EventEnvironment } from "../lib/observability/events"
 import { BrowserObservabilityReporter } from "../lib/observability/browser"
+import { installHydrationObserver } from "../lib/observability/hydration"
 import { observeApiFailures } from "../lib/api/client"
 
 function environment(value: unknown): EventEnvironment {
@@ -28,6 +29,17 @@ export default defineNuxtPlugin({
       environment: environment(config.public.observabilityEnvironment),
       deploymentGitSha: String(config.public.observabilityGitSha || ""),
       route: () => router.currentRoute.value.matched.at(-1)?.path ?? null
+    })
+    const hydrationError = new Error()
+    hydrationError.name = "HydrationMismatch"
+    installHydrationObserver({
+      vueConfig: nuxtApp.vueApp.config,
+      consoleObject: console,
+      onHydration: () => void reporter.capture(hydrationError, {
+        eventName: "browser.hydration_error",
+        resourceKind: "document"
+      }),
+      onMounted: cleanup => nuxtApp.hooks.hookOnce("app:mounted", cleanup)
     })
 
     observeApiFailures(failure => {
