@@ -2,189 +2,122 @@
 
 ## Executive verdict
 
-The Nuxt rewrite at application revision `7b4d81f8369c` is a locally verified
-release candidate, but the repository and platform are **not yet ready for a
-production cutover**.
+The frontend application, application observability, Stage artifact identity,
+infrastructure observability, release approval, and production promotion tooling
+are **ready in local code and test evidence**. Production promotion is still a
+**NO-GO** because the required live operator sequence has not started.
 
-Application confidence is high: the complete unit, SSR, desktop/mobile browser,
-static-analysis, semantic-review, production-build, and live-stage smoke gates
-passed. The accelerated browser suite completes in 8.4 minutes with three
-isolated shards, down from 18.4 minutes in the prior serial run.
+CI is advisory for this release candidate. The authoritative evidence is the
+complete local backend, infrastructure, and frontend matrix recorded below,
+including an independently refreshed semantic-review ledger with no remaining
+work. The local frontend implementation and generated review evidence were
+verified through `008d0dab7af6`; the later readiness-audit commit is documentation
+only. Matching dependency revisions were backend `5f2866e911aa` and infrastructure
+`b3cae8ecfb0e` before this runbook-only closeout.
 
-Production readiness remains blocked by release engineering and operations:
+No Stage or production deployment occurred. No image was built or pushed, no
+registry or Nomad write was issued, and no DNS, secret, alert, or other live
+infrastructure mutation was performed. `yarn build` created only the local Nuxt
+build output used by the verification matrix.
 
-- the checked-in GitHub Actions workflow uses unsupported Node 18, installs
-  before checkout, and runs the obsolete Angular `serve-dist` path;
-- only a staging Nomad jobspec and staging deploy script exist;
-- no reviewed production hostname, routing, secrets, capacity, health-check,
-  rollout, monitoring, or rollback configuration exists in this repository;
-- the current candidate has not been built, attested, or deployed as one
-  immutable production image;
-- no production-origin smoke or cutover rehearsal has been performed.
+## Authoritative local evidence
 
-No deployment, infrastructure mutation, DNS change, or credential access was
-performed as part of this audit.
+### Backend
 
-## Scope and evidence classes
+| Gate | Result | Wall time |
+| --- | --- | ---: |
+| `pytest -q test_lbapi/v2` | 1,954 passed | 3.16 s |
+| OpenAPI snapshot check | passed | 1.07 s |
+| Blocking Ruff subset `E4,E7,E9,F,S` | passed | 0.03 s |
+| Literal all-rule Ruff inventory from the task brief | 4,725 existing diagnostics; advisory by committed backend policy | 0.06 s |
 
-This audit covers the Nuxt frontend repository and the evidence locally
-available at the audited revision. It distinguishes three evidence classes:
+The backend's committed `docs/v2-quality.md` defines the production Ruff subset
+as blocking and the stable-plus-preview all-rule inventory as advisory. The
+literal `ruff check lbapi/v2 test_lbapi/v2` command therefore remains noisy and
+is recorded as a tooling-command mismatch rather than hidden or weakened.
 
-1. **Repository evidence** — committed source, tests, jobspecs, scripts, and
-   documentation.
-2. **Observed evidence** — commands run locally or against the public staging
-   origin on 2026-08-19.
-3. **Operator confirmation required** — infrastructure, secrets, capacity,
-   routing, alerting, and release controls that cannot be established from this
-   repository alone.
+### Infrastructure and promotion tooling
 
-The historical staging deployment recorded in
-`docs/superpowers/2026-08-14-stage-deployment-handover.md` used revision
-`7b41bf014f97`. The current live smoke proves staging behavior and availability,
-but its preflight does not expose or assert the deployed Git SHA. It must not be
-interpreted as proof that staging runs the audited revision.
+| Gate | Result | Wall time |
+| --- | --- | ---: |
+| Seven-file observability/live-job/release/promotion pytest matrix | 232 passed | 6.54 s |
+| Nomad secret mapping validation | 23 mappings validated | 0.16 s |
+| Observability verifier dry run | passed; read-only Stage plan printed | 0.06 s |
 
-## Verification evidence
+The passing matrix covers application log ingestion, dashboards, alerts,
+read-only verification, the production frontend job, release approval, and the
+promotion CLI. It proves the checked-in tooling behavior; it is not evidence that
+the tooling has been run against a live candidate.
 
-| Gate | Parallelism | Result | Elapsed | Evidence class |
-| --- | ---: | --- | ---: | --- |
-| Unit | up to 12 Vitest workers | 102 files, 2,861 passed | 85.72 s | Observed locally |
-| SSR | 3 isolated shards plus serial stateful Reader lane | 611 passed | 60.15 s | Observed locally |
-| Desktop/mobile E2E | 3 isolated shards, 1 Playwright worker each | 1,003 passed, 9 skipped, 0 final failures | 505.75 s | Observed locally |
-| Live staging smoke | 4 read-only workers | 16 passed | 19.22 s | Observed against `https://stage.litteraturbanken.se` |
-| ESLint | n/a | passed, zero warnings | n/a | Observed locally |
-| Typecheck | n/a | passed | n/a | Observed locally |
-| Architecture policy | n/a | passed, 491 files | n/a | Observed locally |
-| Maintainability | n/a | passed: `new=0 known=3 resolved=127` | n/a | Observed locally |
-| Semantic review | n/a | 664 approved; 0 unreviewed, stale, changes-requested, or oversized | n/a | Repository and observed locally |
-| Production build | n/a | passed | n/a | Observed locally |
+### Frontend
 
-The browser default is deliberately three shards. A measured four-shard full
-run was unstable under concurrent cold Nuxt compilation on this laptop, while
-the three-shard run completed successfully and cut wall time by about 54% from
-the previous 1,107.25-second serial run. Two cold Vite startup attempts were
-recovered by the single retry allowed only in multi-shard mode. The serial lane
-retains zero retries. This is a test-infrastructure accommodation, not evidence
-of an application assertion failure, but CI should track retry counts and fail
-if they trend upward.
+| Gate | Parallelism | Result | Wall time |
+| --- | --- | --- | ---: |
+| Unit | repository-configured parallel Vitest projects | 104 files, 2,922 passed | 83.29 s |
+| SSR | three concurrent one-worker shards, then one isolated fixed-port worker | 613 passed; 0 skipped; 0 retries | 50.11 s |
+| Desktop/mobile E2E | three concurrent Playwright shards, one worker each | 1,013 collected: 1,002 ordinary passes, 2 flaky passes after one retry each, 9 skipped | 506.77 s |
+| ESLint | default | passed, zero warnings | 8.41 s |
+| Typecheck | default | passed | 6.95 s |
+| Architecture policy | default | passed, 505 files | 2.37 s |
+| Maintainability | default | `new=0 known=3 resolved=127` | 6.71 s |
+| Semantic review check | default | 681 approved; 0 unreviewed, stale, changes-requested, or oversized | 5.93 s |
+| Semantic review queue | default | no work remains | 5.76 s |
+| Production build | default | passed | 16.49 s |
+
+The SSR shards completed 193, 185, and 170 tests before the isolated 65-test
+lane. E2E shard results were 401 ordinary passes plus one flaky pass and one
+skip; 347 passes; and 254 ordinary passes plus one flaky pass and eight skips.
+No whole-command retry was needed. The two recovered tests were the authored
+document navigation URL wait and the Text Search mounted-root visual wait; both
+remain visible release-observation concerns rather than final failures.
+
+Independent semantic review was refreshed until the runner reported `No
+independent semantic review work remains`. Eleven Important findings were
+reproduced with focused failing tests and remediated before the final matrix;
+there were no unresolved Critical or Important findings. Generated review
+evidence was committed separately in `008d0dab`.
 
 ## Readiness matrix
 
 | Area | Status | Evidence and remaining requirement |
 | --- | --- | --- |
-| Application behavior and parity | Ready | Full unit, SSR, browser, visual, and live-stage suites passed. |
-| Static, architectural, and semantic quality | Ready | Lint, typecheck, policy, maintainability, build, and the 664-packet semantic ledger are green. |
-| Test runtime and isolation | Ready with monitoring | Three private-port/build/output shards are stable and materially faster. Multi-shard cold starts permit one retry; CI must retain retry reporting. |
-| Staging behavior | Conditional | Live 16/16 passed, but the smoke preflight does not prove the deployed SHA. Add a deployment identity endpoint/header and assert it. |
-| Immutable candidate image | Blocked | No SHA-pinned image for `7b4d81f8369c` was built, pushed, signed/attested, or scanned in this audit. |
-| CI enforcement | Blocked | `.github/workflows/e2e.yml` is obsolete: Node 18.17.1, checkout after an install step, Angular `serve-dist`, and no Nuxt release matrix. |
-| Production topology and deploy path | Blocked | Only `jobs/lb-frontend-stage.nomad` and `scripts/deploy-stage.sh` exist. A reviewed production jobspec and promotion/deploy procedure are absent. |
-| Production hostname, TLS, and ingress | Blocked | The production hostname and Caddy/DNS/TLS ownership are not defined here. Staging documentation also disagrees between `stage.litteraturbanken.se` and `lb-frontend.pub.lb.se`. |
-| Production config and secrets | Blocked | Production backend/content origins, observability secret path, allowed origins, registry access, and Nomad policy require operator definition and validation. |
-| Backend/content compatibility | Conditional | Staging live tests exercise the current public backend contract. Production backend/data version and content reachability must be pinned and checked before cutover. |
-| Security and privacy | Conditional | Application boundary tests and policy are strong. Production headers, CSP, origin policy, robots behavior, image provenance, and secret delivery require an environment-level review. |
-| Health checks and capacity | Blocked | Staging has one 500 MHz/768 MiB allocation and checks only `/robots.txt`. Production replicas, resource limits, readiness semantics, failure domains, and load evidence are undefined. |
-| Observability and alerting | Blocked | Application observability code exists, but this repository does not prove deployed dashboards, alerts, ingestion health, on-call ownership, or tested notification delivery for production. |
-| Production smoke and performance | Blocked | The live suite is origin-parameterized, but no production-candidate origin exists. Lighthouse/load testing and dependency failure drills remain unexecuted for the candidate. |
-| Rollback | Blocked | Staging history guidance exists, but no production job history, last-known-good image, rollback command, decision threshold, owner, or rehearsal evidence exists. |
-| Cutover and post-cutover operations | Blocked | No approved traffic-switch plan, maintenance window, stakeholder sign-off, monitoring period, or rollback threshold is recorded. |
+| Application behavior, parity, and local build | Ready | Complete unit, SSR, desktop/mobile browser, static, architecture, maintainability, and local production-build gates passed. |
+| Application observability | Ready | Browser delivery, intake, replay, timeout, rate-limit, correlation, identity, and server-event code passed focused tests, full tests, and independent semantic review. |
+| Backend hydration and generated contract | Ready | 1,954 backend v2 tests and the exact OpenAPI snapshot check passed; the documented blocking Ruff subset is clean. |
+| Infrastructure observability | Ready | Log pipeline, dashboard, alert, verifier, and secret-mapping tests passed; live Stage alert delivery is still pending. |
+| Release approval and promotion tooling | Ready | Production job, approval, and promotion suites passed locally; the CLI has not been applied or used to mutate Nomad. |
+| CI | Advisory | CI does not block this release candidate; the recorded complete local matrices are authoritative. |
+| Reader production dependency origin | Pending operator action | Confirm a separately verified, non-public-looping `READER_SOURCE_BASE`; do not infer it from the public route. |
+| Stage candidate | Pending operator action | Build the immutable image through the authorized release path and deploy that exact SHA/digest to Stage. |
+| Automated live acceptance | Pending operator action | Run identity-bound live tests against the deployed Stage candidate. |
+| Controlled Stage alert verification | Pending operator action | Exercise the approved controlled alert procedure with staffed operators and capture notification evidence. |
+| Editorial acceptance | Pending operator action | Complete and commit the exact `lb.frontend.release.v1` approval for the accepted Stage SHA/digest/allocation. |
+| Production promotion | Pending operator action | Validate/plan, review the rollback target, then apply only with separate explicit authorization and the interactive confirmation. |
+| Staffed production observation | Pending operator action | Keep release and rollback operators present, run production smoke, observe candidate-scoped dashboards/alerts, and record the final decision. |
 
-## Required path to production
+## Required operator sequence
 
-### 1. Establish the production contract
-
-- Name the production hostname and owners for DNS, TLS, Caddy/Consul, Nomad,
-  backend, content, observability, and release approval.
-- Pin the production backend and content endpoints and validate their contracts
-  against this frontend.
-- Define expected traffic, availability target, replica count, CPU/memory,
-  failure-domain placement, and acceptable startup/response latency.
-
-Exit evidence: an approved production configuration record with owners,
-hostnames, dependencies, capacity assumptions, and secret references—never raw
-secret values.
-
-### 2. Create the production release path
-
-- Add a production Nomad jobspec rather than parameterizing staging implicitly.
-- Add a production promotion/deploy command that requires a clean, reachable,
-  approved commit and an existing immutable SHA-pinned image.
-- Replace `/robots.txt` as the sole health signal with a lightweight readiness
-  endpoint that verifies the Nuxt server is ready without placing load on
-  external dependencies; keep an independent end-to-end dependency probe.
-- Require at least two allocations or document and approve the single-instance
-  availability risk.
-
-Exit evidence: reviewed jobspec, dry-run/validation output, exact image digest,
-secret mounts, service registration, health checks, and rollback target.
-
-### 3. Make CI an actual release gate
-
-- Replace the obsolete workflow with checkout first, Node 22.22 (or another
-  engine-compatible pinned version), frozen installs, cached Playwright
-  browsers, and the Nuxt commands documented in `docs/quality.md`.
-- Enforce unit, SSR, lint, typecheck, architecture policy, maintainability,
-  semantic-ledger integrity, production build, and desktop/mobile E2E.
-- Keep the measured three-shard browser default, publish shard reports/traces,
-  and surface retry counts. Do not increase to four without another full-run
-  stability measurement.
-- Protect the production branch so a green release workflow and required review
-  are mandatory.
-
-Exit evidence: a pull request and main-branch run green on the exact candidate
-SHA, with retained test reports and no hidden continue-on-error behavior.
-
-### 4. Build and qualify one immutable candidate
-
-- Build once from the approved Git SHA using the digest-pinned Node 22 Dockerfile.
-- Push by immutable digest/SHA, generate provenance/SBOM as required by the
-  platform, and perform the approved vulnerability scan.
-- Deploy that exact image to a no-traffic or staging slot and expose the running
-  Git SHA so automation can reject revision drift.
-
-Exit evidence: Git SHA, image tag and digest, build job, scan/attestation, Nomad
-job version/allocation, and a successful runtime identity assertion.
-
-### 5. Run production-shaped acceptance
-
-- Run the 16-test live smoke against the candidate origin with four workers and
-  zero retries.
-- Exercise the Strindberg author-works route, Library, Search, Reader,
-  Dramawebben, Statistics, managed content, downloads, and same-origin backend
-  proxies against production-shaped data.
-- Run accessibility, representative visual, Lighthouse, security-header,
-  robots, TLS, and dependency-failure checks.
-- Run a load/capacity test sufficient to validate replica and resource choices.
-
-Exit evidence: timestamped reports tied to the candidate SHA/image digest and
-an explicit list of accepted skips or thresholds.
-
-### 6. Rehearse rollback before traffic
-
-- Identify and verify the last-known-good production image and Nomad version.
-- Rehearse rollback in the no-traffic/staging environment, including config and
-  secret compatibility.
-- Define measurable rollback triggers: elevated 5xx, failed health checks,
-  latency, browser error rate, backend saturation, or critical user-flow smoke
-  failure.
-
-Exit evidence: successful rehearsal, exact commands, elapsed recovery time,
-decision owner, and rollback thresholds.
-
-### 7. Cut over with bounded risk
-
-- Confirm TLS and DNS before traffic, then use a canary or otherwise bounded
-  traffic transition if the platform supports it.
-- Run the production-origin smoke immediately after each traffic increment.
-- Watch application, proxy, backend, and infrastructure signals through an
-  agreed observation window; keep the rollback operator present.
-- Record the deployed SHA/image digest, job version, allocations, route, smoke
-  result, dashboards, incidents, and final go/no-go decision.
+1. Confirm the internal Reader dependency origin and operator access without
+   printing or copying credentials into command arguments or logs.
+2. Build and publish one immutable candidate through the authorized release
+   mechanism, then deploy that exact SHA and digest to Stage.
+3. Run the automated live Stage suite and confirm runtime identity, allocation
+   health, dependency behavior, main user flows, and zero unacceptable skips.
+4. Perform the controlled Stage alert verification and retain alert-routing and
+   notification evidence.
+5. Obtain editorial acceptance and commit the closed release approval tied to
+   the exact Stage allocation, SHA, image reference, and digest.
+6. Run the production promotion CLI in validation/plan mode, review the current
+   production rollback identity, and stop if any Stage or production snapshot
+   changes.
+7. With separate authorization and staffed rollback coverage, run interactive
+   production promotion, production identity verification, automated and manual
+   smoke checks, and the agreed observation window.
 
 ## Go/no-go rule
 
-Production cutover is **NO-GO** until every Blocked row above has concrete,
-reviewed evidence and every Conditional row is closed against the exact
-candidate image. Passing local and staging application tests is necessary but
-does not substitute for a production release system, immutable candidate
-identity, capacity evidence, monitoring, or rehearsed rollback.
+Local code and tooling are ready to begin the operator-controlled Stage sequence.
+Production remains **NO-GO** until every pending operator action above has exact,
+timestamped evidence tied to the same immutable frontend SHA and digest. Any
+identity drift, unhealthy allocation, failed live test, uncontrolled alert,
+editorial rejection, or loss of trustworthy telemetry stops promotion.
