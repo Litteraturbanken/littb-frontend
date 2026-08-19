@@ -2,8 +2,10 @@ import type { AppConfig } from "vue"
 import { describe, expect, test, vi } from "vitest"
 
 import {
+  INITIAL_HYDRATION_MAX_LIFETIME_MS,
   installHydrationObserver,
-  isHydrationDiagnostic
+  isHydrationDiagnostic,
+  scheduleInitialHydrationCleanup
 } from "../../app/lib/observability/hydration"
 
 const HYDRATION_DIAGNOSTICS = [
@@ -110,6 +112,7 @@ describe("initial hydration observer", () => {
   })
 
   test("uses app-mounted two-frame cleanup without suspense resolution", () => {
+    vi.useFakeTimers()
     const previousWarnHandler = vi.fn()
     const previousConsoleError = vi.fn()
     const vueConfig: Pick<AppConfig, "warnHandler"> = { warnHandler: previousWarnHandler }
@@ -117,20 +120,23 @@ describe("initial hydration observer", () => {
     const onHydration = vi.fn()
     let registeredCleanup: (() => void) | undefined
     let mounted: (() => void) | undefined
-    const animationFrames: FrameRequestCallback[] = []
+    const animationFrames = new Map<number, FrameRequestCallback>()
+    let nextFrame = 0
 
     try {
       vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-        animationFrames.push(callback)
-        return animationFrames.length
+        nextFrame += 1
+        animationFrames.set(nextFrame, callback)
+        return nextFrame
       })
+      vi.stubGlobal("cancelAnimationFrame", (frame: number) => animationFrames.delete(frame))
       const cleanup = installHydrationObserver({
         vueConfig,
         consoleObject,
         onHydration,
         onMounted: callback => {
           registeredCleanup = callback
-          mounted = () => requestAnimationFrame(() => requestAnimationFrame(callback))
+          mounted = () => scheduleInitialHydrationCleanup(callback, () => false)
         }
       })
 
@@ -143,15 +149,85 @@ describe("initial hydration observer", () => {
       consoleObject.error("Hydration completed but contains mismatches.")
       expect(onHydration).toHaveBeenCalledExactlyOnceWith()
 
-      animationFrames.shift()?.(0)
+      animationFrames.get(1)?.(0)
       expect(vueConfig.warnHandler).not.toBe(previousWarnHandler)
       expect(consoleObject.error).not.toBe(previousConsoleError)
-      animationFrames.shift()?.(16)
+      animationFrames.get(2)?.(16)
       expect(vueConfig.warnHandler).toBe(previousWarnHandler)
       expect(consoleObject.error).toBe(previousConsoleError)
       consoleObject.error("Hydration node mismatch:")
       expect(onHydration).toHaveBeenCalledExactlyOnceWith()
+      vi.advanceTimersByTime(INITIAL_HYDRATION_MAX_LIFETIME_MS)
+      expect(onHydration).toHaveBeenCalledExactlyOnceWith()
     } finally {
+      vi.useRealTimers()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  test("bounds cleanup when animation frames never execute", () => {
+    vi.useFakeTimers()
+    const previousWarnHandler = vi.fn()
+    const previousConsoleError = vi.fn()
+    const vueConfig: Pick<AppConfig, "warnHandler"> = { warnHandler: previousWarnHandler }
+    const consoleObject = { error: previousConsoleError } as Pick<Console, "error">
+    let mounted: (() => void) | undefined
+    const animationFrames = new Map<number, FrameRequestCallback>()
+
+    try {
+      vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+        animationFrames.set(1, callback)
+        return 1
+      })
+      vi.stubGlobal("cancelAnimationFrame", (frame: number) => animationFrames.delete(frame))
+      installHydrationObserver({
+        vueConfig,
+        consoleObject,
+        onHydration: () => {},
+        onMounted: callback => {
+          mounted = () => scheduleInitialHydrationCleanup(callback, () => true)
+        }
+      })
+
+      mounted?.()
+      expect(vueConfig.warnHandler).not.toBe(previousWarnHandler)
+      vi.advanceTimersByTime(INITIAL_HYDRATION_MAX_LIFETIME_MS)
+      expect(animationFrames).toEqual(new Map())
+      expect(vueConfig.warnHandler).toBe(previousWarnHandler)
+      expect(consoleObject.error).toBe(previousConsoleError)
+    } finally {
+      vi.useRealTimers()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  test("starts two-frame cleanup after initial hydration finishes", () => {
+    vi.useFakeTimers()
+    let hydrating = true
+    let nextFrame = 0
+    const animationFrames = new Map<number, FrameRequestCallback>()
+    const cleanup = vi.fn()
+
+    try {
+      vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+        nextFrame += 1
+        animationFrames.set(nextFrame, callback)
+        return nextFrame
+      })
+      vi.stubGlobal("cancelAnimationFrame", (frame: number) => animationFrames.delete(frame))
+
+      scheduleInitialHydrationCleanup(cleanup, () => hydrating)
+      animationFrames.get(1)?.(0)
+      expect(cleanup).not.toHaveBeenCalled()
+
+      hydrating = false
+      animationFrames.get(2)?.(16)
+      animationFrames.get(3)?.(32)
+      expect(cleanup).not.toHaveBeenCalled()
+      animationFrames.get(4)?.(48)
+      expect(cleanup).toHaveBeenCalledExactlyOnceWith()
+    } finally {
+      vi.useRealTimers()
       vi.unstubAllGlobals()
     }
   })

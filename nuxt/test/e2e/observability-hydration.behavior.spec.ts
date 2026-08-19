@@ -1,6 +1,6 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext } from "@playwright/test"
 
-import { fixtureOrigin } from "../helpers/test-origins"
+import { fixtureOrigin, nuxtTestOrigin } from "../helpers/test-origins"
 
 interface ForwardedRequest {
   body: string
@@ -25,14 +25,14 @@ async function resetObservabilityLedger(request: APIRequestContext): Promise<voi
   expect(response.status()).toBe(200)
 }
 
-async function warmHomeRoute(page: Page): Promise<void> {
-  const response = await page.goto("/", { waitUntil: "networkidle" })
+async function warmHomeRoute(request: APIRequestContext): Promise<void> {
+  const response = await request.get(`${nuxtTestOrigin}/`)
   expect(response?.status()).toBe(200)
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Litteraturbanken")
+  expect(await response.text()).toContain("<h1>Litteraturbanken</h1>")
 }
 
 test("reports a server-only Home mismatch through the signed intake", async ({ page, request }) => {
-  await warmHomeRoute(page)
+  await warmHomeRoute(request)
   await resetObservabilityLedger(request)
 
   const pageExceptions: Error[] = []

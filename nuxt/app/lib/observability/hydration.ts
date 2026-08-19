@@ -11,6 +11,47 @@ interface HydrationObserverOptions {
 
 const TERMINAL_HYDRATION_DIAGNOSTIC = "Hydration completed but contains mismatches."
 
+export const INITIAL_HYDRATION_MAX_LIFETIME_MS = 1_000
+
+export function scheduleInitialHydrationCleanup(
+  cleanup: () => void,
+  isHydrating: () => boolean
+): void {
+  let firstFrame: number | undefined
+  let secondFrame: number | undefined
+  let finished = false
+  const fallback = setTimeout(finish, INITIAL_HYDRATION_MAX_LIFETIME_MS)
+
+  function finish(): void {
+    if (finished) return
+    finished = true
+    if (firstFrame !== undefined) cancelAnimationFrame(firstFrame)
+    if (secondFrame !== undefined) cancelAnimationFrame(secondFrame)
+    clearTimeout(fallback)
+    cleanup()
+  }
+
+  function scheduleFrames(): void {
+    firstFrame = requestAnimationFrame(() => {
+      firstFrame = undefined
+      secondFrame = requestAnimationFrame(() => {
+        secondFrame = undefined
+        finish()
+      })
+    })
+  }
+
+  function waitForInitialHydration(): void {
+    if (!isHydrating()) {
+      scheduleFrames()
+      return
+    }
+    firstFrame = requestAnimationFrame(waitForInitialHydration)
+  }
+
+  waitForInitialHydration()
+}
+
 export function isHydrationDiagnostic(value: unknown): boolean {
   return value === TERMINAL_HYDRATION_DIAGNOSTIC
     || (typeof value === "string"

@@ -1,6 +1,9 @@
 import type { EventEnvironment } from "../lib/observability/events"
 import { BrowserObservabilityReporter } from "../lib/observability/browser"
-import { installHydrationObserver } from "../lib/observability/hydration"
+import {
+  installHydrationObserver,
+  scheduleInitialHydrationCleanup
+} from "../lib/observability/hydration"
 import { observeApiFailures } from "../lib/api/client"
 
 function environment(value: unknown): EventEnvironment {
@@ -39,9 +42,10 @@ export default defineNuxtPlugin({
         eventName: "browser.hydration_error",
         resourceKind: "document"
       }),
-      onMounted: cleanup => nuxtApp.hooks.hookOnce("app:mounted", () => {
-        requestAnimationFrame(() => requestAnimationFrame(cleanup))
-      })
+      onMounted: cleanup => nuxtApp.hooks.hookOnce(
+        "app:mounted",
+        () => scheduleInitialHydrationCleanup(cleanup, () => Boolean(nuxtApp.isHydrating))
+      )
     })
 
     observeApiFailures(failure => {
