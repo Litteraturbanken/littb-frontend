@@ -1,8 +1,11 @@
 import { resolve } from "node:path"
 import { defineConfig } from "vitest/config"
 
+import { boundedParallelism } from "./scripts/test-runner-policy.mjs"
+
 export default defineConfig({
   test: {
+    maxWorkers: boundedParallelism(12),
     projects: [
       {
         resolve: {

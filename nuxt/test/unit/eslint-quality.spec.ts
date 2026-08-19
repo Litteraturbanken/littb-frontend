@@ -21,7 +21,7 @@ describe("ESLint quality policy", () => {
       ruleId: "tailwindcss/no-contradicting-classname",
       severity: 2
     }))
-  })
+  }, 15_000)
 
   test.each([
     [
