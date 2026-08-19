@@ -78,7 +78,10 @@ Each subprocess receives:
 - one Playwright shard (`--shard=i/n`);
 - `--workers=1`, preserving serial execution inside its mutable fixture;
 - a unique `LBAPI_FIXTURE_PORT`;
-- a unique `LITTB_NUXT_TEST_PORT`; and
+- a unique `LITTB_NUXT_TEST_PORT`;
+- a unique `NUXT_BUILD_DIR` under a run-owned directory in
+  `node_modules/.cache/littb-playwright/`;
+- a unique `PLAYWRIGHT_OUTPUT_DIR`; and
 - `NUXT_IGNORE_LOCK=1` so isolated Nuxt development servers may coexist.
 
 The existing `test:ssr` command will invoke the orchestrator for the `ssr`
@@ -88,7 +91,9 @@ mobile projects. Callers keep the same public commands.
 The orchestrator will forward output, return zero only when every shard returns
 zero, and terminate remaining children when one shard fails or the parent
 receives an interrupt. It must never leave fixture, Nuxt, or Playwright
-processes behind.
+processes behind. It removes only its own run directory after success, failure,
+or interruption. `nuxt.config.ts` and `playwright.config.ts` retain their current
+defaults when the isolation variables are absent.
 
 ### Port authority
 
@@ -109,9 +114,10 @@ Unit tests will cover:
 - adaptive default shard count;
 - explicit valid and invalid overrides;
 - unique deterministic port allocation;
+- unique Nuxt build and Playwright output directories;
 - exact Playwright project/shard/worker arguments;
 - nonzero failure propagation; and
-- sibling termination on failure or signal.
+- sibling termination plus run-owned directory cleanup on failure or signal.
 
 A focused RED will first demonstrate that the current suite cannot execute two
 isolated shards because hard-coded fixture origins still point both processes at

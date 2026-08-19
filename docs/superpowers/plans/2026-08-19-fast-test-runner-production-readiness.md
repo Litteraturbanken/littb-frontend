@@ -18,6 +18,8 @@
 - Unit workers are min(12, availableParallelism()).
 - Browser shards are min(4, availableParallelism()); each shard has one worker.
 - Preserve ports 4100/3000 as single-run defaults and allocate unique shard ports.
+- Give every shard unique Nuxt build and Playwright output directories.
+- Remove only the current run's cache directory after success, failure, or interruption.
 - Keep Vitest's generic five-second timeout; only cold ESLint startup gets 15 seconds.
 - Preserve yarn test:unit, yarn test:ssr, and yarn test:e2e as public commands.
 - Browser completion requires zero failures and zero retries; intentional skips may remain.
@@ -140,15 +142,17 @@ Expected: boundary test and both concurrent runs pass; rg is empty.
 - Create: nuxt/scripts/run-playwright-shards.mjs
 - Create: nuxt/test/unit/playwright-shard-runner.spec.ts
 - Modify: nuxt/package.json
+- Modify: nuxt/nuxt.config.ts
+- Modify: nuxt/playwright.config.ts
 
 **Interfaces:**
 - Produces createShardPlan({ projects, passthrough, shardCount, fixtureBase, nuxtBase }).
 - Produces superviseShardPlans(plans, spawnShard): Promise<number>.
-- Every plan uses one worker, one i/n shard, and unique ports.
+- Every plan uses one worker, one i/n shard, unique ports, and unique build/output directories.
 
 - [ ] **Step 1: Write failing plan/supervision tests**
 
-Require a two-shard plan with --project=ssr, --workers=1, and --shard=1/2 or 2/2; ports 4200/3100 then 4201/3101; and NUXT_IGNORE_LOCK=1. Fake children expose completion: Promise<number> and terminate(). Assert all-zero returns zero, first nonzero is preserved, and unresolved siblings terminate exactly once.
+Require a two-shard plan with --project=ssr, --workers=1, and --shard=1/2 or 2/2; ports 4200/3100 then 4201/3101; NUXT_IGNORE_LOCK=1; and distinct NUXT_BUILD_DIR/PLAYWRIGHT_OUTPUT_DIR values below one run root. Fake children expose completion: Promise<number> and terminate(). Assert all-zero returns zero, first nonzero is preserved, unresolved siblings terminate exactly once, and injected cleanup removes the run root on success and failure.
 
 - [ ] **Step 2: Verify RED**
 
@@ -163,14 +167,20 @@ Use shardPorts(). Spawn all plans immediately. Resolve only after all exit zero.
 
 - [ ] **Step 4: Implement the CLI**
 
-Parse repeated --project=<name> options and forward remaining arguments. Require at least one project. Use configuredShardCount(process.env.LITTB_PLAYWRIGHT_SHARDS), the resolved local Playwright CLI, inherited stdio, and SIGINT/SIGTERM cleanup.
+Parse repeated --project=<name> options and forward remaining arguments. Require at least one project. Create a unique run root under node_modules/.cache/littb-playwright, use configuredShardCount(process.env.LITTB_PLAYWRIGHT_SHARDS), the resolved local Playwright CLI, inherited stdio, and SIGINT/SIGTERM cleanup. Remove only that run root after children settle.
 
-- [ ] **Step 5: Preserve package command names**
+- [ ] **Step 5: Make configs honor isolation directories**
+
+Set Nuxt buildDir to process.env.NUXT_BUILD_DIR || ".nuxt" and Playwright
+outputDir to process.env.PLAYWRIGHT_OUTPUT_DIR || "test-results". Extend tests
+to pin both defaults and overrides.
+
+- [ ] **Step 6: Preserve package command names**
 
 Set test:ssr to node scripts/run-playwright-shards.mjs --project=ssr.
 Set test:e2e to node scripts/run-playwright-shards.mjs --project=desktop-chromium --project=mobile-chromium.
 
-- [ ] **Step 6: Verify GREEN with real shards**
+- [ ] **Step 7: Verify GREEN with real shards**
 
     cd nuxt
     yarn vitest run test/unit/test-runner-policy.spec.ts test/unit/playwright-shard-runner.spec.ts --reporter=verbose
@@ -181,9 +191,9 @@ Set test:e2e to node scripts/run-playwright-shards.mjs --project=desktop-chromiu
 
 Expected: units and real shards pass; no owned listener remains.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
-    git add nuxt/scripts/run-playwright-shards.mjs nuxt/test/unit/playwright-shard-runner.spec.ts nuxt/package.json
+    git add nuxt/scripts/run-playwright-shards.mjs nuxt/test/unit/playwright-shard-runner.spec.ts nuxt/package.json nuxt/nuxt.config.ts nuxt/playwright.config.ts
     git commit -m "test: run Playwright in isolated shards"
 
 ### Task 4: Parallelize immutable live-stage smoke
