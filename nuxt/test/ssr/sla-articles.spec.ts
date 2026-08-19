@@ -2,8 +2,9 @@ import { expect, test, type APIRequestContext } from "@playwright/test"
 import { parseHTML } from "linkedom"
 
 import { slaArticleFixtures } from "../fixtures/sla-article-data.mjs"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = fixtureOrigin
 const routeRoot = "/författare/Lagerl%C3%B6fS/omtexterna"
 
 type ManagedRequest = { method: string, path: string }

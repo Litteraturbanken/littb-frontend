@@ -1,7 +1,8 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 import { request as makeHttpRequest } from "node:http"
+import { fixtureOrigin, nuxtTestOrigin } from "../helpers/test-origins"
 
-const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
+const fixture = fixtureOrigin
 const resolveBase = "/nuxt-api/reader/resolve/S%C3%B6derbergH"
 const resolvePath = `${resolveBase}/DoktorGlas/etext`
 const shorthandBase = "/författare/SöderbergH/titlar"
@@ -62,7 +63,7 @@ async function sourceInfoStaticRequests(request: APIRequestContext): Promise<str
 }
 
 async function rawStatus(path: string): Promise<number> {
-  const base = new URL(process.env.PLAYWRIGHT_TEST_BASE_URL || "http://127.0.0.1:3000")
+  const base = new URL(process.env.PLAYWRIGHT_TEST_BASE_URL || nuxtTestOrigin)
   return await new Promise((resolve, reject) => {
     const request = makeHttpRequest({
       hostname: base.hostname,

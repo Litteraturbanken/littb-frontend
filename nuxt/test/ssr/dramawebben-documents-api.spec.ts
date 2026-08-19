@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = fixtureOrigin
 const omApi = "/nuxt-api/dramawebben/documents/om"
 const kringtexterApi = "/nuxt-api/dramawebben/documents/kringtexter"
 

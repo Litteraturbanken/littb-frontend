@@ -6,8 +6,9 @@ import {
   quickSearchTypedResponse,
   quickSearchVisualQuery
 } from "../fixtures/quick-search-visual-data.mjs"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = fixtureOrigin
 const labels = quickSearchTypedResponse.items.map(item => item.label)
 const typeLabels = quickSearchTypedResponse.items.map(item =>
   item.media_type_label ? `${item.type_label}, ${item.media_type_label}` : item.type_label

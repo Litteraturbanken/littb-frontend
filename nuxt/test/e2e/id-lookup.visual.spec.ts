@@ -2,8 +2,9 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 
 import { workLookupResponse } from "../fixtures/work-lookup-data.mjs"
 import { waitForVisualAssets } from "../helpers/visual"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = fixtureOrigin
 const rawTextarea = "Författare – Titel\nTitel två"
 const expectedBody = { work_id: null, titles: ["Titel", "Titel två"] }
 const expectedResponse = workLookupResponse(expectedBody)

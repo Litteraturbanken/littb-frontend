@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type APIResponse } from "@playwright/test"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = fixtureOrigin
 const articleId = "PublishedWorks.html"
 const api = `/nuxt-api/author-documents/Lagerl%C3%B6fS/omtexterna/${articleId}`
 const descriptorPath

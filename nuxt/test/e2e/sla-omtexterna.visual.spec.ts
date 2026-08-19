@@ -1,8 +1,9 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
 import { waitForVisualAssets } from "../helpers/visual"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = fixtureOrigin
 const slaRoute = "/f%C3%B6rfattare/Lagerl%C3%B6fS/omtexterna"
 
 const expectedDocumentRequests = [

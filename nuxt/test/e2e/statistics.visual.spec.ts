@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test"
 
 import { waitForVisualAssets } from "../helpers/visual"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = fixtureOrigin
 
 test.beforeEach(async ({ request }) => {
   await request.delete(`${fixture}/_requests`)

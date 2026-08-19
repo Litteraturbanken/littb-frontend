@@ -1,8 +1,8 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
 
 import { waitForVisualAssets } from "../helpers/visual"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixtureOrigin = "http://127.0.0.1:4100"
 const expectedContentPaths = [
   "/red/om/start/startsida-ny.html",
   "/red/css/startsida.css",

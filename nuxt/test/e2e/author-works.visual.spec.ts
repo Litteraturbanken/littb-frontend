@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs"
 import { expect, test, type APIRequestContext } from "@playwright/test"
 
 import { waitForVisualAssets } from "../helpers/visual"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixtureOrigin = "http://127.0.0.1:4100"
 const nuxtPort = Number(process.env.LITTB_NUXT_TEST_PORT || 3000)
 const nuxtOrigin = `http://127.0.0.1:${nuxtPort}`
 const portraitBytes = readFileSync(

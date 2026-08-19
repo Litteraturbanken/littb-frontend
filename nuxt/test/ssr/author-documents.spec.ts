@@ -1,7 +1,8 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
 import { parseHTML } from "linkedom"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = fixtureOrigin
 const adjacentLedgers = [
   { path: "/_requests", field: "requests" },
   { path: "/_contact_submissions", field: "contactSubmissions" },

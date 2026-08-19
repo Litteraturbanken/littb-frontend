@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = fixtureOrigin
 const root = "/f%C3%B6rfattare/Lagerl%C3%B6fS/omtexterna"
 const published = `${root}/PublishedWorks.html`
 const scholarly = `${root}/ScholarlyEditions.html`

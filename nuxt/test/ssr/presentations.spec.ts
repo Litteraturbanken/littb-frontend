@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = fixtureOrigin
 const backgroundsPath = "/red/bilder/bakgrundsbilder/backgrounds.xml"
 function encodeLayers(value: string, layers: number) {
   for (let layer = 0; layer < layers; layer += 1) value = encodeURIComponent(value)

@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = fixtureOrigin
 const sentinel = "litteraturkartan-upstream-fixture"
 
 async function resetMapLedger(request: APIRequestContext) {

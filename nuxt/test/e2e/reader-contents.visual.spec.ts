@@ -9,8 +9,9 @@ import {
 } from "@playwright/test"
 
 import { waitForVisualAssets } from "../helpers/visual"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = fixtureOrigin
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlasParts/sida/-2/etext"
 const basePageHref = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida"
 

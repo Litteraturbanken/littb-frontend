@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs"
 import { expect, test, type APIRequestContext } from "@playwright/test"
 
 import { waitForVisualAssets } from "../helpers/visual"
+import { fixtureOrigin } from "../helpers/test-origins"
 
-const fixtureOrigin = "http://127.0.0.1:4100"
 const portraitBytes = readFileSync(new URL("../../app/assets/img/lagerlof_portrait.jpg", import.meta.url))
 
 type VisualCase = {
