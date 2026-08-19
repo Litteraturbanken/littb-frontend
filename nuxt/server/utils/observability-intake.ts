@@ -190,12 +190,12 @@ export class ObservabilityIntakeGuard {
     return unseen
   }
 
-  accept(eventIds: string[], owner: symbol): void {
+  accept(eventIds: string[], owner: symbol, acceptedAt: number): void {
     for (const eventId of eventIds) {
       const reservation = this.#eventIds.get(eventId)
       if (reservation?.state === "pending" && reservation.owner === owner) {
         this.#eventIds.set(eventId, {
-          acceptedAt: reservation.reservedAt,
+          acceptedAt,
           state: "accepted"
         })
       }
@@ -590,7 +590,11 @@ export async function handleObservabilityIntake(
       guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
       throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
     }
-    guard.accept(intakeEvents.map(item => item.event_id), reservationOwner)
+    guard.accept(
+      intakeEvents.map(item => item.event_id),
+      reservationOwner,
+      (options.now ?? Date.now)()
+    )
     setResponseStatus(event, 202)
     return { accepted: 0 }
   }
@@ -607,7 +611,11 @@ export async function handleObservabilityIntake(
     guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
     throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
   }
-  guard.accept(intakeEvents.map(item => item.event_id), reservationOwner)
+  guard.accept(
+    intakeEvents.map(item => item.event_id),
+    reservationOwner,
+    (options.now ?? Date.now)()
+  )
   setResponseStatus(event, 202)
   return { accepted }
 }

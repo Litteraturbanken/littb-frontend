@@ -292,7 +292,7 @@ describe("observability intake guard", () => {
     guard.release([event.event_id], firstOwner)
     const retryOwner = Symbol("retry")
     expect(guard.reserveNewEvents([event], 3_000, retryOwner)).toEqual([event])
-    guard.accept([event.event_id], retryOwner)
+    guard.accept([event.event_id], retryOwner, 3_000)
     expect(guard.reserveNewEvents([event], 4_000, Symbol("accepted duplicate")))
       .toEqual([])
     expect(guard.reserveNewEvents([event], 303_001, Symbol("expired")))
@@ -306,10 +306,10 @@ describe("observability intake guard", () => {
     const newOwner = Symbol("new request")
 
     expect(guard.reserveNewEvents([event], 1_000, oldOwner)).toEqual([event])
-    guard.accept([event.event_id], oldOwner)
+    guard.accept([event.event_id], oldOwner, 1_000)
     expect(guard.reserveNewEvents([event], 301_001, newOwner)).toEqual([event])
     guard.release([event.event_id], oldOwner)
-    guard.accept([event.event_id], oldOwner)
+    guard.accept([event.event_id], oldOwner, 301_001)
 
     expect(() => guard.reserveNewEvents(
       [event],
@@ -343,7 +343,7 @@ describe("observability intake guard", () => {
     const secondOwner = Symbol("second")
 
     expect(guard.reserveNewEvents([first], 1_000, firstOwner)).toEqual([first])
-    guard.accept([first.event_id], firstOwner)
+    guard.accept([first.event_id], firstOwner, 1_000)
     expect(guard.reserveNewEvents([second], 1_001, secondOwner)).toEqual([second])
     expect(() => guard.reserveNewEvents(
       [first, second, third],
@@ -381,9 +381,9 @@ describe("observability intake guard", () => {
     const secondOwner = Symbol("second")
 
     expect(guard.reserveNewEvents([first], 1_000, firstOwner)).toEqual([first])
-    guard.accept([first.event_id], firstOwner)
+    guard.accept([first.event_id], firstOwner, 1_000)
     expect(guard.reserveNewEvents([second], 1_001, secondOwner)).toEqual([second])
-    guard.accept([second.event_id], secondOwner)
+    guard.accept([second.event_id], secondOwner, 1_001)
     expect(guard.reserveNewEvents([first, third], 1_002, Symbol("mixed"))).toEqual([third])
     expect(guard.reserveNewEvents([first], 1_003, Symbol("first replay"))).toEqual([])
   })
@@ -513,6 +513,47 @@ describe("observability intake guard", () => {
       options
     )).resolves.toEqual({ accepted: 0 })
     expect(fetchImplementation).toHaveBeenCalledOnce()
+  })
+
+  test("starts the replay window when a delayed pending owner succeeds", async () => {
+    let now = 0
+    let settleFirst: ((response: Response) => void) | undefined
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>()
+      .mockReturnValueOnce(new Promise<Response>(resolve => {
+        settleFirst = resolve
+      }))
+      .mockResolvedValueOnce(acceptedResponse())
+    const options = {
+      fetch: fetchImplementation,
+      guard: new ObservabilityIntakeGuard(),
+      now: () => now
+    }
+
+    const firstDelivery = handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )
+    await vi.waitFor(() => expect(fetchImplementation).toHaveBeenCalledOnce())
+    now = 300_001
+    settleFirst?.(acceptedResponse())
+    await expect(firstDelivery).resolves.toEqual({ accepted: 1 })
+
+    now = 300_002
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 0 })
+    expect(fetchImplementation).toHaveBeenCalledOnce()
+
+    now = 600_002
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 1 })
+    expect(fetchImplementation).toHaveBeenCalledTimes(2)
   })
 
   test("commits an upstream conflict as accepted without another delivery", async () => {
