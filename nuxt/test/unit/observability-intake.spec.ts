@@ -281,6 +281,35 @@ describe("observability intake guard", () => {
     expect(now).toHaveBeenCalledTimes(62)
   })
 
+  test("does not let an untrusted forwarded address bypass the client rate limit", async () => {
+    const guard = new ObservabilityIntakeGuard()
+    const fetchImplementation = vi.fn(async () => acceptedResponse())
+    const options = {
+      fetch: fetchImplementation,
+      guard,
+      now: () => 1_000
+    }
+
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      const event = intakeRequest()
+      event.node.req.headers["x-forwarded-for"] = `203.0.113.${attempt}`
+      await expect(handleObservabilityIntake(
+        event,
+        intakeConfig,
+        options
+      )).resolves.toEqual({ accepted: attempt === 0 ? 1 : 0 })
+    }
+
+    const rejected = intakeRequest()
+    rejected.node.req.headers["x-forwarded-for"] = "198.51.100.200"
+    await expect(handleObservabilityIntake(
+      rejected,
+      intakeConfig,
+      options
+    )).rejects.toMatchObject({ statusCode: 429 })
+    expect(fetchImplementation).toHaveBeenCalledOnce()
+  })
+
   test("deduplicates event IDs temporarily and releases failed deliveries", () => {
     const guard = new ObservabilityIntakeGuard()
     const event = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d" }

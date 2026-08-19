@@ -382,7 +382,7 @@ async function readSecret(config: ObservabilityIntakeConfig): Promise<Buffer> {
 }
 
 function clientKey(event: H3Event): string {
-  const address = getRequestIP(event, { xForwardedFor: true }) ?? "unknown"
+  const address = getRequestIP(event) ?? "unknown"
   return createHash("sha256").update(address).digest("hex")
 }
 
