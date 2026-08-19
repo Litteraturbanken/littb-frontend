@@ -372,6 +372,22 @@ describe("observability intake guard", () => {
     )).toThrowError(expect.objectContaining({ statusCode: 409 }))
   })
 
+  test("protects an accepted duplicate in the current batch from capacity eviction", () => {
+    const guard = new ObservabilityIntakeGuard(2)
+    const first = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd81" }
+    const second = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd82" }
+    const third = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd83" }
+    const firstOwner = Symbol("first")
+    const secondOwner = Symbol("second")
+
+    expect(guard.reserveNewEvents([first], 1_000, firstOwner)).toEqual([first])
+    guard.accept([first.event_id], firstOwner)
+    expect(guard.reserveNewEvents([second], 1_001, secondOwner)).toEqual([second])
+    guard.accept([second.event_id], secondOwner)
+    expect(guard.reserveNewEvents([first, third], 1_002, Symbol("mixed"))).toEqual([third])
+    expect(guard.reserveNewEvents([first], 1_003, Symbol("first replay"))).toEqual([])
+  })
+
   test("makes overlapping delivery retryable until the exact owner settles", async () => {
     const guard = new ObservabilityIntakeGuard()
     let now = 0
@@ -586,8 +602,8 @@ describe("observability intake guard", () => {
     expect(fetchImplementation).toHaveBeenCalledTimes(2)
   })
 
-  test.each([0, 1])("commits a valid upstream accepted count of %i", async accepted => {
-    const fetchImplementation = vi.fn(async () => acceptedResponse(accepted))
+  test("commits a complete upstream accepted count", async () => {
+    const fetchImplementation = vi.fn(async () => acceptedResponse(1))
     const options = {
       fetch: fetchImplementation,
       guard: new ObservabilityIntakeGuard(),
@@ -597,13 +613,42 @@ describe("observability intake guard", () => {
       intakeRequest(),
       intakeConfig,
       options
-    )).resolves.toEqual({ accepted })
+    )).resolves.toEqual({ accepted: 1 })
     await expect(handleObservabilityIntake(
       intakeRequest(),
       intakeConfig,
       options
     )).resolves.toEqual({ accepted: 0 })
     expect(fetchImplementation).toHaveBeenCalledOnce()
+  })
+
+  test("releases a partially accepted batch so every event remains retryable", async () => {
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(acceptedResponse(1))
+      .mockResolvedValueOnce(acceptedResponse(2))
+    const options = {
+      fetch: fetchImplementation,
+      guard: new ObservabilityIntakeGuard(),
+      now: () => 1_000
+    }
+    const body = JSON.stringify({
+      events: [
+        hydrationIntakeEvent(),
+        hydrationIntakeEvent({ event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e" })
+      ]
+    })
+
+    await expect(handleObservabilityIntake(
+      intakeRequestWithBody(body),
+      intakeConfig,
+      options
+    )).rejects.toMatchObject({ statusCode: 502 })
+    await expect(handleObservabilityIntake(
+      intakeRequestWithBody(body),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 2 })
+    expect(fetchImplementation).toHaveBeenCalledTimes(2)
   })
 
   test("releases event IDs when signing preparation fails before delivery", async () => {

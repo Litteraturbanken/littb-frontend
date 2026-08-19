@@ -136,15 +136,20 @@ export class ObservabilityIntakeGuard {
     }
   }
 
-  #evictAccepted(eventCount: number): void {
-    let acceptedToEvict = this.#eventIds.size + eventCount - this.#maxEventIds
+  #evictAccepted(eventCount: number, protectedEventIds: Set<string>): void {
+    const acceptedToEvict = this.#eventIds.size + eventCount - this.#maxEventIds
+    if (acceptedToEvict <= 0) return
+    const candidates: string[] = []
     for (const [eventId, reservation] of this.#eventIds) {
-      if (acceptedToEvict <= 0) return
-      if (reservation.state === "accepted") {
-        this.#eventIds.delete(eventId)
-        acceptedToEvict -= 1
+      if (reservation.state === "accepted" && !protectedEventIds.has(eventId)) {
+        candidates.push(eventId)
+        if (candidates.length === acceptedToEvict) break
       }
     }
+    if (candidates.length < acceptedToEvict) {
+      throw createError({ statusCode: 409, statusMessage: "Event intake busy" })
+    }
+    for (const eventId of candidates) this.#eventIds.delete(eventId)
   }
 
   reserveNewEvents<T extends { event_id: string }>(
@@ -174,7 +179,7 @@ export class ObservabilityIntakeGuard {
     if (pendingCount + unseen.length > this.#maxEventIds) {
       throw createError({ statusCode: 409, statusMessage: "Event intake busy" })
     }
-    this.#evictAccepted(unseen.length)
+    this.#evictAccepted(unseen.length, batchIds)
     for (const event of unseen) {
       this.#eventIds.set(event.event_id, {
         owner,
@@ -598,7 +603,7 @@ export async function handleObservabilityIntake(
   } catch {
     accepted = null
   }
-  if (accepted === null) {
+  if (accepted === null || accepted !== events.length) {
     guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
     throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
   }
