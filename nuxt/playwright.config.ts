@@ -101,6 +101,7 @@ export default defineConfig({
         `NUXT_OBSERVABILITY_ALLOWED_ORIGINS=https://stage.litteraturbanken.se ` +
         `NUXT_DEPLOYMENT_ENVIRONMENT=staging ` +
         `NUXT_DEPLOYMENT_GIT_SHA=${"a".repeat(40)} ` +
+        `IMAGE_DIGEST=sha256:${"b".repeat(64)} ` +
         `READER_SOURCE_PROXY_TARGET=${fixtureOrigin} ` +
         `NUXT_IGNORE_LOCK=1 ` +
         ownedServer(nuxtPidFile, `yarn dev --port ${nuxtPort}`),

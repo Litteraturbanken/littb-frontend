@@ -103,6 +103,7 @@ export default defineNuxtConfig({
     apiBase: "http://127.0.0.1:8000/v2",
     deploymentEnvironment: "production",
     deploymentGitSha: process.env.GIT_SHA || "0000000000000000000000000000000000000000",
+    deploymentImageDigest: process.env.IMAGE_DIGEST || "",
     observabilityHmacSecret: "",
     observabilityHmacSecretFile: "",
     observabilityAllowedOrigins: "",
