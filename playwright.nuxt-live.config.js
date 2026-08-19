@@ -1,4 +1,5 @@
 const { defineConfig, devices } = require("@playwright/test")
+const { availableParallelism } = require("node:os")
 
 const nuxtOrigin = (process.env.LITTB_NUXT_LIVE_ORIGIN || "http://127.0.0.1:3020")
     .replace(/\/$/, "")
@@ -6,8 +7,8 @@ const nuxtOrigin = (process.env.LITTB_NUXT_LIVE_ORIGIN || "http://127.0.0.1:3020
 module.exports = defineConfig({
     testDir: "./test/e2e",
     testMatch: "playwright_e2e.spec.js",
-    fullyParallel: false,
-    workers: 1,
+    fullyParallel: true,
+    workers: Math.min(4, availableParallelism()),
     forbidOnly: !!process.env.CI,
     retries: 0,
     reporter: "list",

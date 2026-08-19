@@ -226,7 +226,8 @@ Require availableParallelism from node:os; set fullyParallel true and workers Ma
 
     cd nuxt
     yarn vitest run test/unit/nuxt-live-runner.spec.ts --reporter=verbose
-    yarn eslint ../playwright.nuxt-live.config.js test/unit/nuxt-live-runner.spec.ts
+    yarn eslint test/unit/nuxt-live-runner.spec.ts
+    node --check ../playwright.nuxt-live.config.js
     git diff --check -- ../playwright.nuxt-live.config.js test/unit/nuxt-live-runner.spec.ts
     git add ../playwright.nuxt-live.config.js test/unit/nuxt-live-runner.spec.ts
     git commit -m "test: parallelize live stage smoke"
