@@ -85,7 +85,7 @@ job "lb-frontend-stage" {
       check {
         name     = "http"
         type     = "http"
-        path     = "/robots.txt"
+        path     = "/_deployment"
         method   = "GET"
         interval = "10s"
         timeout  = "3s"
@@ -136,16 +136,37 @@ job "lb-frontend-stage" {
 
         entrypoint = ["/bin/sh", "-ec"]
         args = [<<-EOT
-          if [ -z "$${GIT_SHA}" ]; then
-            echo "missing GIT_SHA" >&2
+          git_sha_value="$${GIT_SHA:-}"
+          if [ "$${#git_sha_value}" -ne 40 ]; then
+            echo "invalid GIT_SHA" >&2
             exit 1
           fi
+          case "$${git_sha_value}" in
+            *[!0-9a-f]*)
+              echo "invalid GIT_SHA" >&2
+              exit 1
+              ;;
+          esac
+          image_digest_value="$${IMAGE_DIGEST:-}"
+          if [ "$${#image_digest_value}" -ne 71 ]; then
+            echo "invalid IMAGE_DIGEST" >&2
+            exit 1
+          fi
+          case "$${image_digest_value}" in
+            sha256:*) image_digest_hex="$${image_digest_value#sha256:}" ;;
+            *)
+              echo "invalid IMAGE_DIGEST" >&2
+              exit 1
+              ;;
+          esac
+          case "$${image_digest_hex}" in
+            *[!0-9a-f]*)
+              echo "invalid IMAGE_DIGEST" >&2
+              exit 1
+              ;;
+          esac
           if [ -z "$${IMAGE_REF}" ]; then
             echo "missing IMAGE_REF" >&2
-            exit 1
-          fi
-          if ! printf '%s\n' "$${IMAGE_DIGEST}" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
-            echo "invalid IMAGE_DIGEST" >&2
             exit 1
           fi
           export HOST=0.0.0.0 PORT="$${NOMAD_PORT_http}"

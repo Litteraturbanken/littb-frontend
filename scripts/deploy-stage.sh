@@ -209,14 +209,32 @@ dispatch_id="$(
   printf '%s\n' "$dispatch_output" | python3 -c 'import json, sys; print(json.load(sys.stdin)["DispatchedJobID"])'
 )"
 
-if [ "${WAIT_FOR_BUILD:-1}" = "1" ] && [ -n "$dispatch_id" ]; then
-  timeout_seconds="${BUILD_TIMEOUT_SECONDS:-1800}"
-  deadline=$((SECONDS + timeout_seconds))
-  alloc_state="pending"
+case "${WAIT_FOR_BUILD:-1}" in
+  0)
+    echo
+    echo "Dispatched image build as $dispatch_id; staging was not deployed."
+    exit 0
+    ;;
+  1)
+    ;;
+  *)
+    echo "WAIT_FOR_BUILD must be 0 or 1; staging was not deployed." >&2
+    exit 2
+    ;;
+esac
 
-  while [ "$SECONDS" -lt "$deadline" ]; do
-    alloc_state="$(
-      nomad job allocs -json "$dispatch_id" | python3 -c '
+if [ -z "$dispatch_id" ]; then
+  echo "Builder dispatch did not return a job ID; staging was not deployed." >&2
+  exit 1
+fi
+
+timeout_seconds="${BUILD_TIMEOUT_SECONDS:-1800}"
+deadline=$((SECONDS + timeout_seconds))
+alloc_state="pending"
+
+while [ "$SECONDS" -lt "$deadline" ]; do
+  alloc_state="$(
+    nomad job allocs -json "$dispatch_id" | python3 -c '
 import json
 import sys
 
@@ -230,28 +248,27 @@ elif all(alloc.get("ClientStatus") == "complete" for alloc in allocs):
 else:
     print("running")
 '
-    )"
+  )"
 
-    case "$alloc_state" in
-      complete)
-        break
-        ;;
-      failed)
-        nomad job status "$dispatch_id" || true
-        echo "Image build failed for requested staging image" >&2
-        exit 1
-        ;;
-      *)
-        sleep 10
-        ;;
-    esac
-  done
+  case "$alloc_state" in
+    complete)
+      break
+      ;;
+    failed)
+      nomad job status "$dispatch_id" || true
+      echo "Image build failed for requested staging image" >&2
+      exit 1
+      ;;
+    *)
+      sleep 10
+      ;;
+  esac
+done
 
-  if [ "$alloc_state" != "complete" ]; then
-    nomad job status "$dispatch_id" || true
-    echo "Timed out waiting for image build: $dispatch_id" >&2
-    exit 1
-  fi
+if [ "$alloc_state" != "complete" ]; then
+  nomad job status "$dispatch_id" || true
+  echo "Timed out waiting for image build: $dispatch_id" >&2
+  exit 1
 fi
 
 image_digest="$(resolve_registry_digest "$image_ref")"

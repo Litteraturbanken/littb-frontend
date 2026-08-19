@@ -1,5 +1,15 @@
-import { existsSync, readFileSync, statSync } from "node:fs"
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync
+} from "node:fs"
+import { tmpdir } from "node:os"
 import { resolve } from "node:path"
+import { spawnSync } from "node:child_process"
 import { expect, test } from "vitest"
 
 const projectRoot = resolve(import.meta.dirname, "../..")
@@ -13,6 +23,114 @@ const readBuildFile = (name: string) => {
 const readRepositoryFile = (name: string) => {
   const path = resolve(repositoryRoot, name)
   return existsSync(path) ? readFileSync(path, "utf8") : ""
+}
+
+const gitSha = "a".repeat(40)
+const imageDigest = `sha256:${"b".repeat(64)}`
+
+function writeExecutable(directory: string, name: string, source: string) {
+  const path = resolve(directory, name)
+  writeFileSync(path, source)
+  chmodSync(path, 0o755)
+}
+
+function runDeployStage(waitForBuild: string) {
+  const directory = mkdtempSync(resolve(tmpdir(), "littb-stage-deploy-"))
+  const tracePath = resolve(directory, "trace")
+  writeExecutable(directory, "git", `#!/bin/sh
+case "$1" in
+  rev-parse) printf '%s\\n' '${gitSha}' ;;
+  branch) printf '%s\\n' 'test-stage-branch' ;;
+  status|merge-base) ;;
+  push) printf '%s\\n' 'git push' >> "$TRACE_FILE" ;;
+  *) exit 64 ;;
+esac
+`)
+  writeExecutable(directory, "nomad", `#!/bin/sh
+case "$1 $2" in
+  "job allocs")
+    printf '%s\\n' 'nomad allocs' >> "$TRACE_FILE"
+    printf '%s\\n' '[]'
+    ;;
+  "job validate") printf '%s\\n' 'nomad validate' >> "$TRACE_FILE" ;;
+  "job status") printf '%s\\n' 'nomad status' >> "$TRACE_FILE" ;;
+  "run -detach") printf '%s\\n' 'nomad run' >> "$TRACE_FILE" ;;
+  *) exit 64 ;;
+esac
+`)
+  writeExecutable(directory, "python3", `#!/bin/sh
+if [ -n "\${DISPATCH_BUILDER_JOB:-}" ]; then
+  printf '%s\\n' 'dispatch' >> "$TRACE_FILE"
+  printf '%s\\n' '{"DispatchedJobID":"builder/test"}'
+elif [ -n "\${RESOLVE_IMAGE_REF:-}" ]; then
+  printf '%s\\n' 'resolve' >> "$TRACE_FILE"
+  printf '%s\\n' '${imageDigest}'
+elif printf '%s' "\${2:-}" | grep -q 'DispatchedJobID'; then
+  printf '%s\\n' 'builder/test'
+elif printf '%s' "\${2:-}" | grep -q 'allocs = json.load'; then
+  cat >/dev/null
+  printf '%s\\n' 'build complete' >> "$TRACE_FILE"
+  printf '%s\\n' 'complete'
+else
+  exit 64
+fi
+`)
+
+  try {
+    const result = spawnSync(resolve(repositoryRoot, "scripts/deploy-stage.sh"), [], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${directory}:${process.env.PATH || ""}`,
+        TRACE_FILE: tracePath,
+        WAIT_FOR_BUILD: waitForBuild,
+        BUILD_TIMEOUT_SECONDS: "5",
+        REGISTRY_HOST: "registry.test:5000"
+      }
+    })
+    const trace = existsSync(tracePath)
+      ? readFileSync(tracePath, "utf8").trim().split("\n")
+      : []
+    return { result, trace }
+  } finally {
+    rmSync(directory, { force: true, recursive: true })
+  }
+}
+
+function stageEntrypoint() {
+  const jobspec = readRepositoryFile("jobs/lb-frontend-stage.nomad")
+  const match = jobspec.match(/args = \[<<-EOT\n([\s\S]*?)\n\s*EOT\n/u)
+  if (!match) throw new Error("Stage entrypoint heredoc not found")
+  return match[1].replace(/\$\$\{/gu, "${")
+}
+
+function runStageEntrypoint(gitShaValue: string, imageDigestValue: string) {
+  const directory = mkdtempSync(resolve(tmpdir(), "littb-stage-entrypoint-"))
+  const tracePath = resolve(directory, "trace")
+  writeExecutable(directory, "node", `#!/bin/sh
+printf '%s\\n' 'started' >> "$TRACE_FILE"
+`)
+
+  try {
+    const result = spawnSync("/bin/sh", ["-ec", stageEntrypoint()], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${directory}:${process.env.PATH || ""}`,
+        TRACE_FILE: tracePath,
+        GIT_SHA: gitShaValue,
+        IMAGE_DIGEST: imageDigestValue,
+        IMAGE_REF: `registry.test:5000/lb-frontend@${imageDigest}`,
+        NOMAD_PORT_http: "3020"
+      }
+    })
+    const trace = existsSync(tracePath)
+      ? readFileSync(tracePath, "utf8").trim().split("\n")
+      : []
+    return { result, trace }
+  } finally {
+    rmSync(directory, { force: true, recursive: true })
+  }
 }
 
 test("staging image uses the GNU build toolchain and starts its Alpine runtime as the node user", () => {
@@ -66,7 +184,7 @@ test("staging Docker build context excludes development and generated files", ()
   ]))
 })
 
-test("staging Nomad service exposes the SHA-pinned Nuxt runtime through public ingress", () => {
+test("staging Nomad service exposes the digest-pinned Nuxt runtime through public ingress", () => {
   const jobspec = readRepositoryFile("jobs/lb-frontend-stage.nomad")
   const normalizedJobspec = jobspec.replace(/[ \t]+/gu, " ")
 
@@ -106,18 +224,15 @@ test("staging Nomad service exposes the SHA-pinned Nuxt runtime through public i
   expect(jobspec).toContain('"caddy-ingress=public"')
   expect(jobspec).toContain('"caddy-https=on"')
   expect(jobspec).not.toContain('"caddy-tls=internal"')
-  expect(normalizedJobspec).toContain('path = "/robots.txt"')
+  expect(normalizedJobspec).toContain('path = "/_deployment"')
+  expect(normalizedJobspec).not.toContain('path = "/robots.txt"')
   expect(normalizedJobspec).toContain('interval = "10s"')
   expect(normalizedJobspec).toContain('timeout = "3s"')
   expect(jobspec).toMatch(/check_restart\s*\{[^}]*limit\s*=\s*3[^}]*grace\s*=\s*"2m"/su)
-  expect(jobspec).toContain('if [ -z "$${GIT_SHA}" ]; then')
-  expect(jobspec).toContain('echo "missing GIT_SHA" >&2')
   expect(jobspec).toContain('if [ -z "$${IMAGE_REF}" ]; then')
   expect(jobspec).toContain('echo "missing IMAGE_REF" >&2')
   expect(normalizedJobspec).toContain('git_sha = var.git_sha')
   expect(normalizedJobspec).toContain('image_digest = var.image_digest')
-  expect(jobspec).toContain("'^sha256:[0-9a-f]{64}$'")
-  expect(jobspec).toContain('echo "invalid IMAGE_DIGEST" >&2')
   expect(jobspec).not.toContain("GIT_SHA:?")
   expect(jobspec).not.toContain("IMAGE_REF:?")
   expect(jobspec).not.toContain("dns_servers")
@@ -168,3 +283,76 @@ test("staging deploy resolves the built manifest digest before detached deployme
   expect(script).not.toContain(":latest")
   expect(existsSync(scriptPath) ? statSync(scriptPath).mode & 0o111 : 0).not.toBe(0)
 })
+
+test("staging no-wait mode dispatches the build without resolving or deploying", () => {
+  const { result, trace } = runDeployStage("0")
+
+  expect(result.status, result.stderr).toBe(0)
+  expect(trace).toEqual(["git push", "dispatch"])
+})
+
+test("staging rejects unsupported wait modes without resolving or deploying", () => {
+  const { result, trace } = runDeployStage("sometimes")
+
+  expect(result.status).toBe(2)
+  expect(trace).toEqual(["git push", "dispatch"])
+})
+
+test("staging wait mode resolves and deploys only after builder completion", () => {
+  const { result, trace } = runDeployStage("1")
+
+  expect(result.status, result.stderr).toBe(0)
+  expect(trace).toEqual([
+    "git push",
+    "dispatch",
+    "nomad allocs",
+    "build complete",
+    "resolve",
+    "nomad validate",
+    "nomad run",
+    "nomad status"
+  ])
+})
+
+test("staging entrypoint starts only with exact immutable identity values", () => {
+  const { result, trace } = runStageEntrypoint(gitSha, imageDigest)
+
+  expect(result.status, result.stderr).toBe(0)
+  expect(trace).toEqual(["started"])
+})
+
+const invalidGitShas = {
+  empty: "",
+  uppercase: "A".repeat(40),
+  short: "a".repeat(39),
+  multiline: `${gitSha}\nignored`,
+  trailing: `${gitSha}x`
+}
+
+test.each(Object.entries(invalidGitShas))(
+  "staging entrypoint rejects %s Git SHA values before starting Nuxt",
+  (_case, invalidGitSha) => {
+    const { result, trace } = runStageEntrypoint(invalidGitSha, imageDigest)
+
+    expect(result.status).not.toBe(0)
+    expect(trace).toEqual([])
+  }
+)
+
+const invalidImageDigests = {
+  empty: "",
+  uppercase: `sha256:${"B".repeat(64)}`,
+  short: `sha256:${"b".repeat(63)}`,
+  multiline: `${imageDigest}\nignored`,
+  trailing: `${imageDigest}x`
+}
+
+test.each(Object.entries(invalidImageDigests))(
+  "staging entrypoint rejects %s image digest values before starting Nuxt",
+  (_case, invalidImageDigest) => {
+    const { result, trace } = runStageEntrypoint(gitSha, invalidImageDigest)
+
+    expect(result.status).not.toBe(0)
+    expect(trace).toEqual([])
+  }
+)
