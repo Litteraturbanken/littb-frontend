@@ -473,6 +473,7 @@ export class BrowserObservabilityReporter {
     }
     if (this.#queue.length > 0) {
       await this.#deliverOnExit(remainingPageExitBytes(
+        active.bytes,
         exitDelivery.sentBytes,
         resolvedActiveDelivery.bytes
       ))

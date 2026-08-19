@@ -988,6 +988,40 @@ describe("browser event delivery", () => {
     }
   })
 
+  test("reserves an abort-ignoring active fetch throughout a continued exit drain", async () => {
+    const originalEncode = TextEncoder.prototype.encode
+    const encode = vi.spyOn(TextEncoder.prototype, "encode").mockImplementation(function (
+      this: TextEncoder,
+      value = ""
+    ) {
+      const bytes = originalEncode.call(this, value)
+      // Reach the 60 KiB branch without widening the compact production event contract.
+      return value.startsWith("{\"events\":")
+        ? new Uint8Array(bytes.byteLength * 6)
+        : bytes
+    })
+    try {
+      const fetchMock = vi.fn()
+        .mockImplementationOnce(() => new Promise<Response>(() => {}))
+        .mockResolvedValue(new Response(null, { status: 202 }))
+      const beacon = vi.fn(() => false)
+      const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock, beacon }))
+      await enqueueNumberedEvents(reporter, 50)
+
+      const normalFlush = reporter.flush()
+      const exitFlush = reporter.flush(true)
+      await Promise.all([normalFlush, exitFlush])
+
+      const initiatedBytes = fetchMock.mock.calls.reduce(
+        (total, call) => total + new TextEncoder().encode(String(call[1]?.body)).byteLength,
+        0
+      )
+      expect(initiatedBytes).toBeLessThanOrEqual(60 * 1024)
+    } finally {
+      encode.mockRestore()
+    }
+  })
+
   test.each(["abort-aware", "abort-ignoring"] as const)(
     "page exit transfers a hung %s active delivery before awaiting its settlement",
     async behavior => {
