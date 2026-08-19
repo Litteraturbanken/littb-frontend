@@ -693,20 +693,37 @@ describe("observability intake guard", () => {
     expect(fetchImplementation).toHaveBeenCalledOnce()
   })
 
-  test("releases a mixed upstream conflict for retry instead of accepting unseen events", async () => {
-    const guard = new ObservabilityIntakeGuard()
-    const fetchImplementation = vi.fn<typeof globalThis.fetch>()
-      .mockResolvedValueOnce(new Response(null, { status: 409 }))
-      .mockResolvedValueOnce(acceptedResponse(2))
+  test("recovers a multi-event batch when the accepted response was lost", async () => {
+    const secondEventId = "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e"
+    const acceptedIds = new Set<string>()
+    const emittedIds: string[] = []
+    let loseAcceptedResponse = true
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(async (_target, init) => {
+      const forwarded = (JSON.parse(String(init?.body)) as {
+        events: Array<{ event_id: string }>
+      }).events
+      if (forwarded.some(event => acceptedIds.has(event.event_id))) {
+        return new Response(null, { status: 409 })
+      }
+      for (const event of forwarded) {
+        acceptedIds.add(event.event_id)
+        emittedIds.push(event.event_id)
+      }
+      if (loseAcceptedResponse) {
+        loseAcceptedResponse = false
+        throw new Error("accepted response lost")
+      }
+      return acceptedResponse(forwarded.length)
+    })
     const options = {
       fetch: fetchImplementation,
-      guard,
+      guard: new ObservabilityIntakeGuard(),
       now: () => 1_000
     }
     const body = JSON.stringify({
       events: [
         hydrationIntakeEvent(),
-        hydrationIntakeEvent({ event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e" })
+        hydrationIntakeEvent({ event_id: secondEventId })
       ]
     })
 
@@ -719,8 +736,57 @@ describe("observability intake guard", () => {
       intakeRequestWithBody(body),
       intakeConfig,
       options
-    )).resolves.toEqual({ accepted: 2 })
-    expect(fetchImplementation).toHaveBeenCalledTimes(2)
+    )).resolves.toEqual({ accepted: 0 })
+    await expect(handleObservabilityIntake(
+      intakeRequestWithBody(body),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 0 })
+    expect(emittedIds).toEqual([intakeEventId, secondEventId])
+    expect(fetchImplementation).toHaveBeenCalledTimes(4)
+  })
+
+  test("recovers unseen events individually after a mixed replay conflict", async () => {
+    const secondEventId = "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e"
+    const acceptedIds = new Set([intakeEventId])
+    const emittedIds: string[] = []
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(async (_target, init) => {
+      const forwarded = (JSON.parse(String(init?.body)) as {
+        events: Array<{ event_id: string }>
+      }).events
+      if (forwarded.some(event => acceptedIds.has(event.event_id))) {
+        return new Response(null, { status: 409 })
+      }
+      for (const event of forwarded) {
+        acceptedIds.add(event.event_id)
+        emittedIds.push(event.event_id)
+      }
+      return acceptedResponse(forwarded.length)
+    })
+    const options = {
+      fetch: fetchImplementation,
+      guard: new ObservabilityIntakeGuard(),
+      now: () => 1_000
+    }
+    const body = JSON.stringify({
+      events: [
+        hydrationIntakeEvent(),
+        hydrationIntakeEvent({ event_id: secondEventId })
+      ]
+    })
+
+    await expect(handleObservabilityIntake(
+      intakeRequestWithBody(body),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 1 })
+    await expect(handleObservabilityIntake(
+      intakeRequestWithBody(body),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 0 })
+    expect(emittedIds).toEqual([secondEventId])
+    expect(fetchImplementation).toHaveBeenCalledTimes(3)
   })
 
   test.each([

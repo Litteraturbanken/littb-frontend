@@ -549,6 +549,71 @@ function acceptedCount(value: unknown, eventCount: number): number | null {
     : null
 }
 
+interface ReplayConflictRecoveryOptions {
+  config: ObservabilityIntakeConfig
+  event: H3Event
+  guard: ObservabilityIntakeGuard
+  intakeEvents: BrowserIntakeEvent[]
+  intakeOptions: ObservabilityIntakeOptions
+  now: number
+  reservationOwner: symbol
+  trustedEvents: BrowserEvent[]
+}
+
+async function recoverReplayConflict(
+  options: ReplayConflictRecoveryOptions
+): Promise<number> {
+  const outcomes = await Promise.all(options.intakeEvents.map(
+    async (intakeEvent, index) => {
+      const trustedEvent = options.trustedEvents[index]
+      if (!trustedEvent) {
+        return { accepted: false, acceptedCount: 0, eventId: intakeEvent.event_id }
+      }
+      try {
+        const request = await signedForwardRequest(
+          options.event,
+          options.config,
+          [trustedEvent],
+          options.now
+        )
+        const result = await forwardEvents(
+          request,
+          [intakeEvent],
+          options.guard,
+          options.reservationOwner,
+          options.intakeOptions.fetch ?? globalThis.fetch,
+          options.intakeOptions.fetchTimeoutMs ?? FORWARD_TIMEOUT_MS
+        )
+        const replayed = result.response.status === 409
+        const newlyAccepted = result.response.ok && result.accepted === 1
+        return {
+          accepted: replayed || newlyAccepted,
+          acceptedCount: newlyAccepted ? 1 : 0,
+          eventId: intakeEvent.event_id
+        }
+      } catch {
+        return { accepted: false, acceptedCount: 0, eventId: intakeEvent.event_id }
+      }
+    }
+  ))
+  const acceptedIds = outcomes
+    .filter(outcome => outcome.accepted)
+    .map(outcome => outcome.eventId)
+  const unresolvedIds = outcomes
+    .filter(outcome => !outcome.accepted)
+    .map(outcome => outcome.eventId)
+  options.guard.accept(
+    acceptedIds,
+    options.reservationOwner,
+    (options.intakeOptions.now ?? Date.now)()
+  )
+  options.guard.release(unresolvedIds, options.reservationOwner)
+  if (unresolvedIds.length > 0) {
+    throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
+  }
+  return outcomes.reduce((total, outcome) => total + outcome.acceptedCount, 0)
+}
+
 export async function handleObservabilityIntake(
   event: H3Event,
   config: ObservabilityIntakeConfig,
@@ -588,8 +653,18 @@ export async function handleObservabilityIntake(
   )
   if (response.status === 409) {
     if (intakeEvents.length > 1) {
-      guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
-      throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
+      const recovered = await recoverReplayConflict({
+        config,
+        event,
+        guard,
+        intakeEvents,
+        intakeOptions: options,
+        now,
+        reservationOwner,
+        trustedEvents: events
+      })
+      setResponseStatus(event, 202)
+      return { accepted: recovered }
     }
     guard.accept(
       intakeEvents.map(item => item.event_id),
