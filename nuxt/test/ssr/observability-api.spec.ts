@@ -16,6 +16,15 @@ function event(eventId = "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d") {
   }
 }
 
+function hydrationEvent(eventId = "018f47c0-4d5b-7a62-8f41-a04b5df3fd92") {
+  return {
+    ...event(eventId),
+    event_name: "browser.hydration_error",
+    error_type: "HydrationMismatch",
+    resource_kind: "document"
+  }
+}
+
 test.beforeEach(async ({ request }) => {
   await request.delete(`${fixtureOrigin}/_observability_requests`)
 })
@@ -67,6 +76,30 @@ test("same-origin browser events are rebuilt and signed as trusted events", asyn
   expect(ledger[0].headers.cookie).toBeUndefined()
   expect(ledger[0].body).not.toContain("private-session")
   expect(ledger[0].body).not.toContain("Private Browser Identity")
+})
+
+test("hydration intake forwards only the compact trusted event", async ({ request }) => {
+  const response = await request.post("/_observability/events", {
+    data: JSON.stringify({ events: [hydrationEvent()] }),
+    headers: { "content-type": "application/json", origin: appOrigin }
+  })
+
+  expect(response.status()).toBe(202)
+  const ledger = (await (await request.get(
+    `${fixtureOrigin}/_observability_requests`
+  )).json()).requests
+  const forwarded = JSON.parse(ledger[0].body).events[0]
+  expect(forwarded).toMatchObject({
+    event_name: "browser.hydration_error",
+    error_type: "HydrationMismatch",
+    attributes: { component: null, resource_kind: "document" }
+  })
+  for (const diagnostic of [
+    "console", "html", "dom", "props", "url", "query", "stack",
+    "user_agent", "ip", "cookie", "selected_text"
+  ]) {
+    expect(forwarded[diagnostic]).toBeUndefined()
+  }
 })
 
 test("same-origin validation accepts a configured public alias", async ({ request }) => {

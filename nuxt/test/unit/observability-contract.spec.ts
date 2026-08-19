@@ -8,6 +8,10 @@ type ReaderPageEvent = Extract<
   ObservabilityEvent,
   { event_name: "business.reader_page" }
 >
+type HydrationEvent = Extract<
+  ObservabilityEvent,
+  { event_name: "browser.hydration_error" }
+>
 
 const validReaderPageEvent = {
   schema_version: "lb.observability.v1",
@@ -37,6 +41,38 @@ const validReaderPageEvent = {
   }
 } satisfies ReaderPageEvent
 
+const validHydrationEvent = {
+  schema_version: "lb.observability.v1",
+  timestamp: "2026-07-29T12:00:00Z",
+  event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d",
+  event_name: "browser.hydration_error",
+  event_kind: "error",
+  severity: "error",
+  service: "lb-frontend",
+  producer: "browser",
+  environment: "stage",
+  deployment_git_sha: "a".repeat(40),
+  request_id: null,
+  trace_id: null,
+  span_id: null,
+  route: null,
+  http_method: null,
+  status_code: null,
+  duration_ms: null,
+  error_type: "HydrationMismatch",
+  error_fingerprint: null,
+  attributes: {
+    component: null,
+    resource_kind: "document"
+  }
+} satisfies HydrationEvent
+
+const hydrationEventWithRawDiagnostic = {
+  ...validHydrationEvent,
+  // @ts-expect-error Hydration events retain no raw browser diagnostic.
+  diagnostic: "private browser text"
+} satisfies HydrationEvent
+
 describe("generated observability contract", () => {
   test("narrows attributes using event_name", () => {
     const event: ObservabilityEvent = validReaderPageEvent
@@ -45,5 +81,11 @@ describe("generated observability contract", () => {
       throw new Error("Expected a reader-page event")
     }
     expect(event.attributes.media_type).toBe("etext")
+  })
+
+  test("narrows hydration events to their generated browser contract", () => {
+    expect(validHydrationEvent.attributes.resource_kind).toBe("document")
+    expect(hydrationEventWithRawDiagnostic.event_name)
+      .toBe("browser.hydration_error")
   })
 })

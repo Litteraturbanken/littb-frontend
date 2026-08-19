@@ -21,13 +21,15 @@ const EVENT_ID_PATTERN
 const BROWSER_EVENT_NAMES = new Set<BrowserEventName>([
   "browser.error",
   "browser.unhandled_rejection",
-  "browser.chunk_error"
+  "browser.chunk_error",
+  "browser.hydration_error"
 ])
 const BROWSER_ERROR_TYPES = new Set([
   "ApiNetworkError",
   "ApiResponseError",
   "ChunkLoadError",
   "Error",
+  "HydrationMismatch",
   "NullRejection",
   "OtherError",
   "RangeError",
@@ -47,6 +49,18 @@ const RESOURCE_KINDS = new Set([
 ] as const)
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u
 const ZERO_GIT_SHA = "0".repeat(40)
+
+function validHydrationClassification(
+  eventName: BrowserEventName,
+  errorType: string,
+  resourceKind: string
+): boolean {
+  if (eventName === "browser.hydration_error") {
+    return errorType === "HydrationMismatch" && resourceKind === "document"
+  }
+
+  return errorType !== "HydrationMismatch"
+}
 
 interface CreateBrowserErrorEventOptions {
   eventName: BrowserEventName
@@ -187,11 +201,15 @@ export function classifyBrowserError(error: unknown): BrowserEventName {
 export async function createBrowserErrorEvent(
   options: CreateBrowserErrorEventOptions
 ): Promise<BrowserEvent> {
-  const eventName = safeBrowserEventName(options.eventName)
-  const type = errorType(options.error)
+  let eventName = safeBrowserEventName(options.eventName)
+  let type = errorType(options.error)
   const component = safeLabel(options.component)
   const route = safeRoute(options.route)
   const resourceKind = safeBrowserResourceKind(options.resourceKind)
+  if (!validHydrationClassification(eventName, type, resourceKind)) {
+    if (eventName === "browser.hydration_error") eventName = "browser.error"
+    if (type === "HydrationMismatch") type = "OtherError"
+  }
   const fingerprint = await sha256([
     eventName,
     type,
@@ -232,6 +250,9 @@ export async function createBrowserErrorEvent(
     return { ...common, event_name: eventName }
   }
   if (eventName === "browser.chunk_error") {
+    return { ...common, event_name: eventName }
+  }
+  if (eventName === "browser.hydration_error") {
     return { ...common, event_name: eventName }
   }
   return { ...common, event_name: "browser.error" }
@@ -286,6 +307,9 @@ export class BrowserObservabilityReporter {
       )
       const type = errorType(error)
       const resourceKind = safeBrowserResourceKind(metadata.resourceKind)
+      if (!validHydrationClassification(eventName, type, resourceKind)) {
+        return Promise.resolve()
+      }
       const correlationToken = safeCorrelationToken(metadata.correlationToken)
       const eventId = globalThis.crypto.randomUUID()
       if (!EVENT_ID_PATTERN.test(eventId)) return Promise.resolve()
@@ -316,6 +340,7 @@ export class BrowserObservabilityReporter {
     const resourceKind = safeBrowserResourceKind(event.attributes?.resource_kind)
     const normalizedCorrelationToken = safeCorrelationToken(correlationToken)
     const type = safeBrowserErrorType(event.error_type)
+    if (!validHydrationClassification(eventName, type, resourceKind)) return
     this.#enqueueIntake({
       event_id: eventId,
       event_name: eventName,

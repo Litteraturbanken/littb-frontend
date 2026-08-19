@@ -77,7 +77,56 @@ function intakeRequestWithBody(
   } as unknown as H3Event
 }
 
+function hydrationIntakeEvent(overrides: Record<string, unknown> = {}) {
+  return {
+    event_id: intakeEventId,
+    event_name: "browser.hydration_error",
+    error_type: "HydrationMismatch",
+    resource_kind: "document",
+    correlation_token: null,
+    ...overrides
+  }
+}
+
 describe("observability intake guard", () => {
+  test("accepts only the exact compact hydration classification", async () => {
+    const fetchImplementation = vi.fn(async () => acceptedResponse())
+    const options = {
+      fetch: fetchImplementation,
+      guard: new ObservabilityIntakeGuard(),
+      now: () => 1_000
+    }
+
+    await expect(handleObservabilityIntake(
+      intakeRequestWithBody(JSON.stringify({ events: [hydrationIntakeEvent()] })),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 1 })
+    expect(JSON.parse(String(fetchImplementation.mock.calls[0]?.[1]?.body)).events)
+      .toMatchObject([{
+        event_name: "browser.hydration_error",
+        error_type: "HydrationMismatch",
+        attributes: { resource_kind: "document" }
+      }])
+
+    for (const invalid of [
+      hydrationIntakeEvent({ error_type: "TypeError" }),
+      hydrationIntakeEvent({ resource_kind: "script" }),
+      {
+        ...hydrationIntakeEvent(),
+        event_name: "browser.error",
+        resource_kind: "unknown"
+      }
+    ]) {
+      await expect(handleObservabilityIntake(
+        intakeRequestWithBody(JSON.stringify({ events: [invalid] })),
+        intakeConfig,
+        options
+      )).rejects.toMatchObject({ statusCode: 422 })
+    }
+    expect(fetchImplementation).toHaveBeenCalledOnce()
+  })
+
   test("stops buffering a streamed request at the configured limit", async () => {
     const request = Readable.from([
       Buffer.alloc(10, 1),

@@ -911,6 +911,75 @@ export interface components {
             trace_id: string | null;
         };
         /**
+         * BrowserHydrationErrorEvent
+         * @description Represent a sanitized Vue hydration mismatch.
+         */
+        BrowserHydrationErrorEvent: {
+            attributes: components["schemas"]["BrowserErrorAttributes"];
+            /** Deployment Git Sha */
+            deployment_git_sha: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "development" | "stage" | "production";
+            /** Error Fingerprint */
+            error_fingerprint: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Kind
+             * @constant
+             */
+            event_kind: "error";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_name: "browser.hydration_error";
+            /** Http Method */
+            http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
+            /**
+             * Producer
+             * @enum {string}
+             */
+            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            /** Request Id */
+            request_id: string | null;
+            /** Route */
+            route: string | null;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "lb.observability.v1";
+            /**
+             * Service
+             * @enum {string}
+             */
+            service: "lb-frontend" | "lb-backend";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "debug" | "info" | "warning" | "error" | "critical";
+            /** Span Id */
+            span_id: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Trace Id */
+            trace_id: string | null;
+        };
+        /**
          * BrowserUnhandledRejectionEvent
          * @description Represent a sanitized unhandled browser promise rejection.
          */
@@ -2222,7 +2291,7 @@ export interface components {
          */
         ObservabilityEventBatch: {
             /** Events */
-            events: (components["schemas"]["RequestCompletedEvent"] | components["schemas"]["RequestFailedEvent"] | components["schemas"]["UnhandledErrorEvent"] | components["schemas"]["HandledErrorEvent"] | components["schemas"]["BrowserErrorEvent"] | components["schemas"]["BrowserUnhandledRejectionEvent"] | components["schemas"]["BrowserChunkErrorEvent"] | components["schemas"]["UpstreamFailedEvent"] | components["schemas"]["SearchSubmittedEvent"] | components["schemas"]["QuickSearchNavigationEvent"] | components["schemas"]["LibraryFilterEvent"] | components["schemas"]["ReaderPageEvent"] | components["schemas"]["EpubDownloadEvent"] | components["schemas"]["QrOpenedEvent"] | components["schemas"]["DictionaryLookupEvent"] | components["schemas"]["EpubMissingEvent"] | components["schemas"]["VerificationEvent"])[];
+            events: (components["schemas"]["RequestCompletedEvent"] | components["schemas"]["RequestFailedEvent"] | components["schemas"]["UnhandledErrorEvent"] | components["schemas"]["HandledErrorEvent"] | components["schemas"]["BrowserErrorEvent"] | components["schemas"]["BrowserUnhandledRejectionEvent"] | components["schemas"]["BrowserChunkErrorEvent"] | components["schemas"]["BrowserHydrationErrorEvent"] | components["schemas"]["UpstreamFailedEvent"] | components["schemas"]["SearchSubmittedEvent"] | components["schemas"]["QuickSearchNavigationEvent"] | components["schemas"]["LibraryFilterEvent"] | components["schemas"]["ReaderPageEvent"] | components["schemas"]["EpubDownloadEvent"] | components["schemas"]["QrOpenedEvent"] | components["schemas"]["DictionaryLookupEvent"] | components["schemas"]["EpubMissingEvent"] | components["schemas"]["VerificationEvent"])[];
         };
         /** PopularEpub */
         PopularEpub: {

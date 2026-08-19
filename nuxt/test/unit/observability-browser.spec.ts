@@ -128,6 +128,42 @@ describe("browser event normalization", () => {
 })
 
 describe("browser event delivery", () => {
+  test("enqueues only the exact compact hydration classification", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }))
+    const reporter = new BrowserObservabilityReporter(reporterOptions({ fetch: fetchMock }))
+    const base = await createBrowserErrorEvent({
+      eventName: "browser.error",
+      error: new Error("private hydration diagnostic"),
+      environment: "stage",
+      deploymentGitSha: GIT_SHA,
+      randomUUID: () => "018f47c0-4d5b-7a62-8f41-a04b5df3fd80"
+    })
+    const hydration = {
+      ...base,
+      event_name: "browser.hydration_error",
+      error_type: "HydrationMismatch",
+      attributes: { component: null, resource_kind: "document" }
+    } as unknown as BrowserEvent
+
+    reporter.enqueue(hydration)
+    reporter.enqueue({ ...hydration, error_type: "TypeError" })
+    reporter.enqueue({
+      ...hydration,
+      event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd81",
+      attributes: { component: null, resource_kind: "script" }
+    })
+    await reporter.flush()
+
+    const sent = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))
+    expect(sent.events).toEqual([{
+      event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd80",
+      event_name: "browser.hydration_error",
+      error_type: "HydrationMismatch",
+      resource_kind: "document",
+      correlation_token: null
+    }])
+  })
+
   test("deduplicates equivalent failures inside its bounded window", async () => {
     const deliveries: string[] = []
     const reporter = new BrowserObservabilityReporter(reporterOptions({

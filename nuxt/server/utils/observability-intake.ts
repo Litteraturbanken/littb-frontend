@@ -36,13 +36,15 @@ const ZERO_GIT_SHA = "0".repeat(40)
 const BROWSER_EVENT_NAMES = new Set<BrowserEventName>([
   "browser.error",
   "browser.unhandled_rejection",
-  "browser.chunk_error"
+  "browser.chunk_error",
+  "browser.hydration_error"
 ])
 const BROWSER_ERROR_TYPES = new Set([
   "ApiNetworkError",
   "ApiResponseError",
   "ChunkLoadError",
   "Error",
+  "HydrationMismatch",
   "NullRejection",
   "OtherError",
   "RangeError",
@@ -240,11 +242,29 @@ function validBrowserEventIdentity(event: Record<string, unknown>): boolean {
     && EVENT_ID_PATTERN.test(event.event_id)
 }
 
+function validHydrationClassification(
+  eventName: BrowserEventName,
+  errorType: string,
+  resourceKind: string
+): boolean {
+  if (eventName === "browser.hydration_error") {
+    return errorType === "HydrationMismatch" && resourceKind === "document"
+  }
+
+  return errorType !== "HydrationMismatch"
+}
+
 function validBrowserEventClassification(event: Record<string, unknown>): boolean {
   return typeof event.event_name === "string"
     && BROWSER_EVENT_NAMES.has(event.event_name as BrowserEventName)
     && typeof event.error_type === "string"
     && BROWSER_ERROR_TYPES.has(event.error_type)
+    && typeof event.resource_kind === "string"
+    && validHydrationClassification(
+      event.event_name as BrowserEventName,
+      event.error_type,
+      event.resource_kind
+    )
 }
 
 function validBrowserEventResource(event: Record<string, unknown>): boolean {
