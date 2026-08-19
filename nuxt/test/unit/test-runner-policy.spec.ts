@@ -40,7 +40,15 @@ describe("test runner parallelism policy", () => {
   })
 
   test("allocates deterministic unique fixture and Nuxt ports", () => {
-    expect(shardPorts(0)).toEqual({ fixturePort: 4100, nuxtPort: 3000 })
-    expect(shardPorts(3)).toEqual({ fixturePort: 4106, nuxtPort: 3003 })
+    expect(shardPorts(0)).toEqual({
+      fixturePort: 4100,
+      nuxtPort: 3000,
+      viteServerHmrPort: 24678
+    })
+    expect(shardPorts(3)).toEqual({
+      fixturePort: 4106,
+      nuxtPort: 3003,
+      viteServerHmrPort: 24681
+    })
   })
 })

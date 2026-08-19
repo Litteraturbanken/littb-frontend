@@ -7,6 +7,16 @@ const fixtureOrigin = `http://127.0.0.1:${fixturePort}`
 const nuxtPort = Number(process.env.LITTB_NUXT_TEST_PORT || 3000)
 const nuxtOrigin = `http://127.0.0.1:${nuxtPort}`
 const dependencyRoot = realpathSync(resolve(import.meta.dirname, "node_modules"))
+const fixturePidFile = process.env.LITTB_FIXTURE_PID_FILE || resolve(
+  "node_modules/.cache/littb-playwright/default-fixture.pid"
+)
+const nuxtPidFile = process.env.LITTB_NUXT_PID_FILE || resolve(
+  "node_modules/.cache/littb-playwright/default-nuxt.pid"
+)
+const excludeStatefulSsr = process.env.LITTB_SSR_EXCLUDE_STATEFUL === "1"
+const ownedServer = (pidFile: string, command: string) => (
+  `node scripts/run-owned-webserver.mjs ${pidFile} ${command}`
+)
 
 export default defineConfig({
   outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR || "test-results",
@@ -31,6 +41,9 @@ export default defineConfig({
     {
       name: "ssr",
       testMatch: /ssr\/.*\.spec\.ts/,
+      testIgnore: excludeStatefulSsr
+        ? /ssr\/reader-shorthand\.spec\.ts/
+        : undefined,
       use: { ...devices["Desktop Chrome"] }
     },
     {
@@ -61,7 +74,10 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `LBAPI_FIXTURE_PORT=${fixturePort} node test/fixtures/v2-server.mjs`,
+      command: ownedServer(
+        fixturePidFile,
+        `node test/fixtures/v2-server.mjs`
+      ),
       url: `${fixtureOrigin}/health`,
       reuseExistingServer: false,
       timeout: 30_000
@@ -83,7 +99,8 @@ export default defineConfig({
         `NUXT_DEPLOYMENT_ENVIRONMENT=staging ` +
         `NUXT_DEPLOYMENT_GIT_SHA=${"a".repeat(40)} ` +
         `READER_SOURCE_PROXY_TARGET=${fixtureOrigin} ` +
-        `NUXT_IGNORE_LOCK=1 yarn dev --port ${nuxtPort}`,
+        `NUXT_IGNORE_LOCK=1 ` +
+        ownedServer(nuxtPidFile, `yarn dev --port ${nuxtPort}`),
       url: `${nuxtOrigin}/_nuxt/@vite/client`,
       reuseExistingServer: false,
       timeout: 120_000

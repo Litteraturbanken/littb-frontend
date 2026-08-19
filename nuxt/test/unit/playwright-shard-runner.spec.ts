@@ -5,6 +5,7 @@ import { describe, expect, test, vi } from "vitest"
 import {
   createShardPlan,
   superviseShardPlans,
+  terminateOwnedWebServers,
   terminateProcessTree
 } from "../../scripts/run-playwright-shards.mjs"
 
@@ -45,17 +46,42 @@ describe("isolated Playwright shard runner", () => {
       env: expect.objectContaining({
         LBAPI_FIXTURE_PORT: "4200",
         LITTB_NUXT_TEST_PORT: "3100",
+        LITTB_DISABLE_VITE_HMR: "1",
+        LITTB_VITE_SERVER_HMR_PORT: "24678",
         NUXT_IGNORE_LOCK: "1",
+        LITTB_FIXTURE_PID_FILE: join(runRoot, "shard-1", "fixture.pid"),
+        LITTB_NUXT_PID_FILE: join(runRoot, "shard-1", "nuxt.pid"),
         NUXT_BUILD_DIR: join(runRoot, "shard-1", "nuxt"),
         PLAYWRIGHT_OUTPUT_DIR: join(runRoot, "shard-1", "playwright")
       })
     })
     expect(plans[1]?.args).toContain("--shard=2/2")
     expect(plans[1]?.env).toMatchObject({
-        LBAPI_FIXTURE_PORT: "4202",
+      LBAPI_FIXTURE_PORT: "4202",
       LITTB_NUXT_TEST_PORT: "3101",
+      LITTB_DISABLE_VITE_HMR: "1",
+      LITTB_VITE_SERVER_HMR_PORT: "24679",
+      LITTB_FIXTURE_PID_FILE: join(runRoot, "shard-2", "fixture.pid"),
+      LITTB_NUXT_PID_FILE: join(runRoot, "shard-2", "nuxt.pid"),
       NUXT_BUILD_DIR: join(runRoot, "shard-2", "nuxt"),
       PLAYWRIGHT_OUTPUT_DIR: join(runRoot, "shard-2", "playwright")
+    })
+  })
+
+  test("keeps normal dev HMR for a single serial lane", () => {
+    const [plan] = createShardPlan({
+      projects: ["ssr"],
+      passthrough: [],
+      shardCount: 1,
+      fixtureBase: 4200,
+      nuxtBase: 3100,
+      runRoot: "/tmp/littb-playwright/run-serial",
+      playwrightCli: "/repo/node_modules/@playwright/test/cli.js"
+    })
+
+    expect(plan?.env).toMatchObject({
+      LITTB_DISABLE_VITE_HMR: "0",
+      LITTB_VITE_SERVER_HMR_PORT: "0"
     })
   })
 
@@ -77,6 +103,24 @@ describe("isolated Playwright shard runner", () => {
 
     expect(child.kill).toHaveBeenCalledWith("SIGTERM")
     expect(kill).not.toHaveBeenCalled()
+  })
+
+  test("terminates owned web-server process groups recorded by each shard", async () => {
+    const kill = vi.fn()
+    const readPid = vi.fn(async path => path.endsWith("fixture.pid") ? "1234\n" : "5678\n")
+    const plans = [{
+      env: {
+        LITTB_FIXTURE_PID_FILE: "/tmp/run/shard-1/fixture.pid",
+        LITTB_NUXT_PID_FILE: "/tmp/run/shard-1/nuxt.pid"
+      }
+    }]
+
+    const waitForExit = vi.fn(async () => undefined)
+    await terminateOwnedWebServers(plans, readPid, kill, "darwin", waitForExit)
+
+    expect(kill).toHaveBeenCalledWith(-1234, "SIGTERM")
+    expect(kill).toHaveBeenCalledWith(-5678, "SIGTERM")
+    expect(waitForExit).toHaveBeenCalledTimes(2)
   })
 
   test("waits for every successful shard and cleans the run root", async () => {

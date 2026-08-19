@@ -9,6 +9,8 @@ const forwardedHostHeaders = (target: string): Record<string, string> => ({
 const legacyApiProxyOverride = process.env.LBAPI_LEGACY_PROXY_TARGET
 const legacyApiProxyTarget = legacyApiProxyOverride || "http://127.0.0.1:8000"
 const readerSourceInfoInternalModule = /[/\\]reader-source-info-(?:definitions|projection|sanitizer|validation)\.[cm]?[jt]s$/u
+const disableViteHmr = process.env.LITTB_DISABLE_VITE_HMR === "1"
+const viteServerHmrPort = Number(process.env.LITTB_VITE_SERVER_HMR_PORT || 0)
 
 export default defineNuxtConfig({
   buildDir: process.env.NUXT_BUILD_DIR || ".nuxt",
@@ -118,6 +120,12 @@ export default defineNuxtConfig({
   typescript: {
     strict: true
   },
+  hooks: {
+    "vite:extendConfig": (config, { isClient }) => {
+      if (isClient || viteServerHmrPort < 1 || !config.server) return
+      config.server.hmr = { port: viteServerHmrPort }
+    }
+  },
   postcss: {
     plugins: {
       tailwindcss: {},
@@ -126,6 +134,7 @@ export default defineNuxtConfig({
   },
   vite: {
     server: {
+      ...(disableViteHmr ? { hmr: false } : {}),
       ...(process.env.LITTB_VITE_FS_ALLOW
         ? { fs: { allow: [process.cwd(), process.env.LITTB_VITE_FS_ALLOW] } }
         : {}),

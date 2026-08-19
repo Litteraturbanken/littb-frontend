@@ -1,7 +1,8 @@
 import { spawn } from "node:child_process"
-import { mkdir, rm } from "node:fs/promises"
+import { mkdir, readFile, rm } from "node:fs/promises"
 import { join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
+import { setTimeout as delay } from "node:timers/promises"
 
 import {
   configuredShardCount,
@@ -28,7 +29,11 @@ export function createShardPlan({
   }
 
   return Array.from({ length: shardCount }, (_, index) => {
-    const { fixturePort, nuxtPort } = shardPorts(index, fixtureBase, nuxtBase)
+    const { fixturePort, nuxtPort, viteServerHmrPort } = shardPorts(
+      index,
+      fixtureBase,
+      nuxtBase
+    )
     const shardRoot = join(runRoot, `shard-${index + 1}`)
     return {
       index,
@@ -44,6 +49,12 @@ export function createShardPlan({
       env: {
         LBAPI_FIXTURE_PORT: String(fixturePort),
         LITTB_NUXT_TEST_PORT: String(nuxtPort),
+        LITTB_DISABLE_VITE_HMR: shardCount > 1 ? "1" : "0",
+        LITTB_VITE_SERVER_HMR_PORT: shardCount > 1
+          ? String(viteServerHmrPort)
+          : "0",
+        LITTB_FIXTURE_PID_FILE: join(shardRoot, "fixture.pid"),
+        LITTB_NUXT_PID_FILE: join(shardRoot, "nuxt.pid"),
         NUXT_IGNORE_LOCK: "1",
         NUXT_BUILD_DIR: join(shardRoot, "nuxt"),
         PLAYWRIGHT_OUTPUT_DIR: join(shardRoot, "playwright")
@@ -123,6 +134,63 @@ export function terminateProcessTree(
   }
 }
 
+export async function terminateOwnedWebServers(
+  plans,
+  readPid = path => readFile(path, "utf8"),
+  kill = process.kill,
+  platform = process.platform,
+  waitForExit = async pid => {
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      try {
+        process.kill(pid, 0)
+      } catch (error) {
+        if (error instanceof Error && Reflect.has(error, "code") && error.code === "ESRCH") {
+          return
+        }
+        throw error
+      }
+      await delay(50)
+    }
+    try {
+      process.kill(platform === "win32" ? pid : -pid, "SIGKILL")
+    } catch (error) {
+      if (!(error instanceof Error) || !Reflect.has(error, "code") || error.code !== "ESRCH") {
+        throw error
+      }
+    }
+  }
+) {
+  const pidFiles = new Set(plans.flatMap(plan => [
+    plan.env.LITTB_FIXTURE_PID_FILE,
+    plan.env.LITTB_NUXT_PID_FILE
+  ]))
+  const ownedPids = []
+  await Promise.all([...pidFiles].map(async pidFile => {
+    let rawPid
+    try {
+      rawPid = await readPid(pidFile)
+    } catch (error) {
+      if (error instanceof Error && Reflect.has(error, "code") && error.code === "ENOENT") {
+        return
+      }
+      throw error
+    }
+    const pid = Number(String(rawPid).trim())
+    if (!Number.isInteger(pid) || pid < 1) {
+      throw new TypeError(`invalid owned web-server pid in ${pidFile}`)
+    }
+    ownedPids.push(pid)
+    try {
+      kill(platform === "win32" ? pid : -pid, "SIGTERM")
+    } catch (error) {
+      if (!(error instanceof Error) || !Reflect.has(error, "code") || error.code !== "ESRCH") {
+        throw error
+      }
+    }
+  }))
+  await Promise.all(ownedPids.map(pid => waitForExit(pid)))
+}
+
 function spawnPlan(plan, activeChildren) {
   const child = spawn(plan.command, plan.args, {
     cwd: process.cwd(),
@@ -191,7 +259,10 @@ async function main() {
     const code = await superviseShardPlans(
       plans,
       plan => spawnPlan(plan, activeChildren),
-      () => rm(runRoot, { recursive: true, force: true })
+      async () => {
+        await terminateOwnedWebServers(plans)
+        await rm(runRoot, { recursive: true, force: true })
+      }
     )
     process.exitCode = signalExitCode || code
   } finally {

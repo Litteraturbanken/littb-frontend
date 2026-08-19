@@ -22,12 +22,18 @@ export function configuredShardCount(raw, available = availableParallelism()) {
   )
 }
 
-export function shardPorts(index, fixtureBase = 4100, nuxtBase = 3000) {
+export function shardPorts(
+  index,
+  fixtureBase = 4100,
+  nuxtBase = 3000,
+  viteServerHmrBase = 24_678
+) {
   if (!Number.isInteger(index) || index < 0) {
     throw new TypeError("shard index must be a non-negative integer")
   }
   return {
     fixturePort: positiveInteger(fixtureBase, "fixture port") + (index * 2),
-    nuxtPort: positiveInteger(nuxtBase, "Nuxt port") + index
+    nuxtPort: positiveInteger(nuxtBase, "Nuxt port") + index,
+    viteServerHmrPort: positiveInteger(viteServerHmrBase, "Vite server HMR port") + index
   }
 }

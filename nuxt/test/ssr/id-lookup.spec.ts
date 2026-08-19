@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext } from "@playwright/test"
 import { parseHTML } from "linkedom"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
@@ -22,28 +22,23 @@ async function lookupRequests(request: APIRequestContext): Promise<LookupRequest
   return (await response.json()).requests
 }
 
-async function expectRenderedRodaRummet(page: Page) {
-  const row = page.locator(".table-striped tbody tr")
-  await expect(row).toHaveCount(1)
-  await expect(row.locator("td")).toHaveCount(4)
-  await expect(row.locator("td").nth(0)).toHaveText("lb238704")
-  await expect(row.locator("td").nth(1).locator("a")).toHaveAttribute(
-    "href",
-    "/f%C3%B6rfattare/StrindbergA"
-  )
-  await expect(row.locator("td").nth(2).locator("a")).toHaveAttribute(
-    "href",
-    "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/etext"
-  )
-  await expect(row.locator("td").nth(3).locator("a").first()).toHaveAttribute(
-    "href",
-    "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/etext"
-  )
-  await expect(row.locator("td").nth(3).locator("a").last()).toHaveAttribute(
-    "href",
+function expectRenderedRodaRummet(html: string) {
+  const { document } = parseHTML(html)
+  const row = document.querySelector(".table-striped tbody tr")
+  const cells = [...row?.querySelectorAll("td") ?? []]
+  expect(cells).toHaveLength(4)
+  expect(cells[0]?.textContent).toBe("lb238704")
+  expect(cells[1]?.querySelector("a")?.getAttribute("href"))
+    .toBe("/f%C3%B6rfattare/StrindbergA")
+  expect(cells[2]?.querySelector("a")?.getAttribute("href"))
+    .toBe("/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/etext")
+  const formatLinks = [...cells[3]?.querySelectorAll("a") ?? []]
+  expect(formatLinks.map(link => link.getAttribute("href"))).toEqual([
+    "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/etext",
     "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/faksimil"
-  )
-  await expect(row.locator("td").nth(3)).toHaveText("etext:::faksimil")
+  ])
+  expect(cells[3]?.textContent).toBe("etext:::faksimil")
+  return document
 }
 
 test.beforeEach(async ({ request }) => reset(request))
@@ -82,15 +77,13 @@ test("empty ID route renders exact authority shell without a lookup", async ({
 })
 
 test("route work ID is normalized, SSR-rendered once, and uses the private base", async ({
-  page,
   request
 }) => {
-  const response = await page.goto("/id/LB238704", { waitUntil: "networkidle" })
-  expect(response?.status()).toBe(200)
-
-  await expect(page.getByPlaceholder("lbid")).toHaveValue("lb238704")
-  await expectRenderedRodaRummet(page)
-  await page.waitForTimeout(100)
+  const response = await request.get("/id/LB238704")
+  expect(response.status()).toBe(200)
+  const document = expectRenderedRodaRummet(await response.text())
+  expect(document.querySelector('input[placeholder="lbid"]')?.getAttribute("value"))
+    .toBe("lb238704")
   expect(await lookupRequests(request)).toEqual([
     {
       path: "/private-v2/works/lookup",
@@ -100,17 +93,13 @@ test("route work ID is normalized, SSR-rendered once, and uses the private base"
 })
 
 test("route title is normalized, SSR-rendered once, and uses the private base", async ({
-  page,
   request
 }) => {
-  const response = await page.goto("/id/R%C3%B6daRummet", {
-    waitUntil: "networkidle"
-  })
-  expect(response?.status()).toBe(200)
-
-  await expect(page.getByPlaceholder("titel")).toHaveValue("rödarummet")
-  await expectRenderedRodaRummet(page)
-  await page.waitForTimeout(100)
+  const response = await request.get("/id/R%C3%B6daRummet")
+  expect(response.status()).toBe(200)
+  const document = expectRenderedRodaRummet(await response.text())
+  expect(document.querySelector('input[placeholder="titel"]')?.getAttribute("value"))
+    .toBe("rödarummet")
   const recorded = await lookupRequests(request)
   expect(recorded).toEqual([
     {

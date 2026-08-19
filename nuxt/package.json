@@ -27,7 +27,7 @@
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
     "test:unit": "vitest run",
-    "test:ssr": "node scripts/run-playwright-shards.mjs --project=ssr",
+    "test:ssr": "node scripts/run-ssr-suite.mjs",
     "test:e2e": "node scripts/run-playwright-shards.mjs --project=desktop-chromium --project=mobile-chromium",
     "test:visual:capture": "playwright test --config=playwright.angular.config.ts",
     "test:visual:home:capture": "playwright test --config=playwright.home-angular.config.ts",
