@@ -1,5 +1,32 @@
 # Stage deployment handover — 2026-08-14
 
+## Completion update — 2026-08-17
+
+The stage deployment and the production author-works regression follow-up are
+complete. The deployment-script authentication fix was committed as
+`4d8bfd566de1f415df47efc4dc7fe62473e9bd8d`, and the author-works production fix
+was committed as `317f6a7e4321c0864b45ddfed51884587302adbc`. The final
+test-inclusive deployed SHA was
+`7b41bf014f978afa908eb399f1b719e270d70639`, using image
+`registry.service.consul:5000/lb-frontend:7b41bf014f978afa908eb399f1b719e270d70639`.
+
+Nomad job `lb-frontend-stage` deployed successfully as version `33`, with
+deployment ID `64ea38a2`. At verification, allocation
+`3041fa8a-25fa-4c1e-354f-3ecd95aadaf8` was `running` with `0` restarts. The
+public route was https://stage.litteraturbanken.se/.
+
+The exact Strindberg live regression passed `1/1`, and the complete live stage
+suite passed `16/16`. At completion, the semantic review state was `664`
+approved, `0` unreviewed, `0` stale, `0` changes-requested, and `0` oversized.
+The branch and remote-tracking ref both pointed to the final SHA
+`7b41bf014f978afa908eb399f1b719e270d70639`, and the worktree was clean.
+
+The handoff's “No deployment has been performed yet,” credential blocker, and
+resume/deploy instructions are superseded completion-era history and must not
+be replayed. Later users should verify current stage health before any new
+deployment: the identifiers above are historical observations from 2026-08-17,
+not a promise about current runtime state.
+
 ## Objective
 
 Finish the verified Nuxt route-shell/loading work by deploying the exact final
