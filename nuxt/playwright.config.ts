@@ -9,6 +9,7 @@ const nuxtOrigin = `http://127.0.0.1:${nuxtPort}`
 const dependencyRoot = realpathSync(resolve(import.meta.dirname, "node_modules"))
 
 export default defineConfig({
+  outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR || "test-results",
   testDir: "./test",
   fullyParallel: false,
   workers: 1,

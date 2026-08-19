@@ -148,11 +148,13 @@ Expected: boundary test and both concurrent runs pass; rg is empty.
 **Interfaces:**
 - Produces createShardPlan({ projects, passthrough, shardCount, fixtureBase, nuxtBase }).
 - Produces superviseShardPlans(plans, spawnShard): Promise<number>.
-- Every plan uses one worker, one i/n shard, unique ports, and unique build/output directories.
+- Every plan uses one worker, one i/n shard, fixture bases spaced by two for the
+  fixture's redirect companion port, Nuxt ports spaced by one, and unique
+  build/output directories.
 
 - [ ] **Step 1: Write failing plan/supervision tests**
 
-Require a two-shard plan with --project=ssr, --workers=1, and --shard=1/2 or 2/2; ports 4200/3100 then 4201/3101; NUXT_IGNORE_LOCK=1; and distinct NUXT_BUILD_DIR/PLAYWRIGHT_OUTPUT_DIR values below one run root. Fake children expose completion: Promise<number> and terminate(). Assert all-zero returns zero, first nonzero is preserved, unresolved siblings terminate exactly once, and injected cleanup removes the run root on success and failure.
+Require a two-shard plan with --project=ssr, --workers=1, and --shard=1/2 or 2/2; ports 4200/3100 then 4202/3101; NUXT_IGNORE_LOCK=1; and distinct NUXT_BUILD_DIR/PLAYWRIGHT_OUTPUT_DIR values below one run root. Fake children expose completion: Promise<number> and terminate(). Assert all-zero returns zero, first nonzero is preserved, unresolved siblings terminate exactly once, POSIX cleanup targets the shard process group, and injected cleanup removes the run root on success and failure.
 
 - [ ] **Step 2: Verify RED**
 

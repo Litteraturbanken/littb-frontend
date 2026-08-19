@@ -11,6 +11,7 @@ const legacyApiProxyTarget = legacyApiProxyOverride || "http://127.0.0.1:8000"
 const readerSourceInfoInternalModule = /[/\\]reader-source-info-(?:definitions|projection|sanitizer|validation)\.[cm]?[jt]s$/u
 
 export default defineNuxtConfig({
+  buildDir: process.env.NUXT_BUILD_DIR || ".nuxt",
   compatibilityDate: "2025-07-15",
   ssr: true,
   modules: ["@nuxt/eslint"],

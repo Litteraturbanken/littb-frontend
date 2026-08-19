@@ -84,6 +84,10 @@ Each subprocess receives:
 - a unique `PLAYWRIGHT_OUTPUT_DIR`; and
 - `NUXT_IGNORE_LOCK=1` so isolated Nuxt development servers may coexist.
 
+The fixture owns both its configured port and the immediately following port
+for redirect-target authority. Fixture base ports therefore advance by two per
+shard, while Nuxt ports advance by one.
+
 The existing `test:ssr` command will invoke the orchestrator for the `ssr`
 project. The existing `test:e2e` command will invoke it for the desktop and
 mobile projects. Callers keep the same public commands.
@@ -93,7 +97,9 @@ zero, and terminate remaining children when one shard fails or the parent
 receives an interrupt. It must never leave fixture, Nuxt, or Playwright
 processes behind. It removes only its own run directory after success, failure,
 or interruption. `nuxt.config.ts` and `playwright.config.ts` retain their current
-defaults when the isolation variables are absent.
+defaults when the isolation variables are absent. On POSIX, each shard runs in
+its own process group so failure cleanup terminates Playwright and both web
+servers rather than orphaning grandchildren.
 
 ### Port authority
 

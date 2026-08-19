@@ -11,6 +11,10 @@ function matches(patterns: Pattern | Pattern[] | undefined, path: string): boole
 }
 
 describe("Playwright project boundaries", () => {
+  test("keeps the default output directory when no shard override is present", () => {
+    expect(config.outputDir).toBe("test-results")
+  })
+
   test("runs the mobile Editor behavior only in the mobile project", () => {
     const spec = "e2e/editor-reader.mobile.behavior.spec.ts"
     const desktop = config.projects?.find(project => project.name === "desktop-chromium")

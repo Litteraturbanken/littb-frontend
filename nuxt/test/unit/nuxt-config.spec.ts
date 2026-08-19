@@ -6,6 +6,7 @@ type ProxyRule = {
 }
 
 type NuxtConfig = {
+  buildDir: string
   nitro: {
     apiBaseURL: string
     imports: {
@@ -45,6 +46,14 @@ afterEach(() => {
 })
 
 describe("local legacy library API defaults", () => {
+  test("honors an isolated Nuxt build directory", async () => {
+    vi.stubEnv("NUXT_BUILD_DIR", "/tmp/littb-playwright/shard-1/nuxt")
+
+    const config = await loadConfig()
+
+    expect(config.buildDir).toBe("/tmp/littb-playwright/shard-1/nuxt")
+  })
+
   test("keeps frontend-owned handlers outside the backend API namespace", async () => {
     const config = await loadConfig()
 
