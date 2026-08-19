@@ -110,11 +110,15 @@ fi
   }
 }
 
-function stageEntrypoint() {
+function stageEntrypointTemplate() {
   const jobspec = readRepositoryFile("jobs/lb-frontend-stage.nomad")
   const match = jobspec.match(/args = \[<<-EOT\n([\s\S]*?)\n\s*EOT\n/u)
   if (!match) throw new Error("Stage entrypoint heredoc not found")
-  return match[1].replace(/\$\$\{/gu, "${")
+  return match[1]
+}
+
+function stageEntrypoint() {
+  return stageEntrypointTemplate().replace(/\$\$\{/gu, "${")
 }
 
 function runStageEntrypoint(gitShaValue: string, imageDigestValue: string) {
@@ -246,7 +250,7 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(normalizedJobspec).toContain('interval = "10s"')
   expect(normalizedJobspec).toContain('timeout = "3s"')
   expect(jobspec).toMatch(/check_restart\s*\{[^}]*limit\s*=\s*3[^}]*grace\s*=\s*"2m"/su)
-  expect(jobspec).toContain('if [ -z "$${IMAGE_REF}" ]; then')
+  expect(jobspec).toContain('if [ -z "$IMAGE_REF" ]; then')
   expect(jobspec).toContain('echo "missing IMAGE_REF" >&2')
   expect(normalizedJobspec).toContain('git_sha = var.git_sha')
   expect(normalizedJobspec).toContain('image_digest = var.image_digest')
@@ -339,6 +343,10 @@ test("staging entrypoint starts only with exact immutable identity values", () =
 
   expect(result.status, result.stderr).toBe(0)
   expect(trace).toEqual(["started"])
+})
+
+test("staging entrypoint avoids Nomad client interpolation syntax", () => {
+  expect(stageEntrypointTemplate()).not.toContain("${")
 })
 
 const invalidGitShas = {

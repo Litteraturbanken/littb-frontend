@@ -141,40 +141,42 @@ job "lb-frontend-stage" {
 
         entrypoint = ["/bin/sh", "-ec"]
         args = [<<-EOT
-          git_sha_value="$${GIT_SHA:-}"
-          if [ "$${#git_sha_value}" -ne 40 ]; then
+          git_sha_value="$GIT_SHA"
+          git_sha_length="$(printf '%s' "$git_sha_value" | wc -c | tr -d '[:space:]')"
+          if [ "$git_sha_length" -ne 40 ]; then
             echo "invalid GIT_SHA" >&2
             exit 1
           fi
-          case "$${git_sha_value}" in
+          case "$git_sha_value" in
             *[!0-9a-f]*)
               echo "invalid GIT_SHA" >&2
               exit 1
               ;;
           esac
-          image_digest_value="$${IMAGE_DIGEST:-}"
-          if [ "$${#image_digest_value}" -ne 71 ]; then
+          image_digest_value="$IMAGE_DIGEST"
+          image_digest_length="$(printf '%s' "$image_digest_value" | wc -c | tr -d '[:space:]')"
+          if [ "$image_digest_length" -ne 71 ]; then
             echo "invalid IMAGE_DIGEST" >&2
             exit 1
           fi
-          case "$${image_digest_value}" in
-            sha256:*) image_digest_hex="$${image_digest_value#sha256:}" ;;
+          case "$image_digest_value" in
+            sha256:*) image_digest_hex="$(printf '%s' "$image_digest_value" | cut -c8-)" ;;
             *)
               echo "invalid IMAGE_DIGEST" >&2
               exit 1
               ;;
           esac
-          case "$${image_digest_hex}" in
+          case "$image_digest_hex" in
             *[!0-9a-f]*)
               echo "invalid IMAGE_DIGEST" >&2
               exit 1
               ;;
           esac
-          if [ -z "$${IMAGE_REF}" ]; then
+          if [ -z "$IMAGE_REF" ]; then
             echo "missing IMAGE_REF" >&2
             exit 1
           fi
-          export HOST=0.0.0.0 PORT="$${NOMAD_PORT_http}"
+          export HOST=0.0.0.0 PORT="$NOMAD_PORT_http"
           exec node .output/server/index.mjs
         EOT
         ]
