@@ -99,6 +99,7 @@ test("hydration intake forwards only the compact trusted event", async ({ reques
     "user_agent", "ip", "cookie", "selected_text"
   ]) {
     expect(forwarded[diagnostic]).toBeUndefined()
+    expect(forwarded.attributes[diagnostic]).toBeUndefined()
   }
 })
 

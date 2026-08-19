@@ -267,7 +267,12 @@ export async function createBrowserErrorEvent(
     return { ...common, event_name: eventName }
   }
   if (eventName === "browser.hydration_error") {
-    return { ...common, event_name: eventName }
+    return {
+      ...common,
+      event_name: eventName,
+      error_type: "HydrationMismatch",
+      attributes: { component: null, resource_kind: "document" }
+    }
   }
   return { ...common, event_name: "browser.error" }
 }

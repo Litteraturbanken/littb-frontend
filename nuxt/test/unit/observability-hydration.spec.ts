@@ -57,6 +57,83 @@ describe("hydration diagnostics", () => {
 })
 
 describe("initial hydration observer", () => {
+  test("deactivates and restores at the install-time deadline when mount never fires", () => {
+    vi.useFakeTimers()
+    const previousWarnHandler = vi.fn()
+    const previousConsoleError = vi.fn()
+    const vueConfig: Pick<AppConfig, "warnHandler"> = { warnHandler: previousWarnHandler }
+    const consoleObject = { error: previousConsoleError } as Pick<Console, "error">
+    const onHydration = vi.fn()
+    let registeredCleanup: (() => void) | undefined
+
+    try {
+      const cleanup = installHydrationObserver({
+        vueConfig,
+        consoleObject,
+        onHydration,
+        onMounted: callback => {
+          registeredCleanup = callback
+        }
+      })
+      const retainedWarnHandler = vueConfig.warnHandler
+      const retainedConsoleError = consoleObject.error
+
+      expect(registeredCleanup).toBe(cleanup)
+      vi.advanceTimersByTime(INITIAL_HYDRATION_MAX_LIFETIME_MS)
+
+      expect(vueConfig.warnHandler).toBe(previousWarnHandler)
+      expect(consoleObject.error).toBe(previousConsoleError)
+      retainedWarnHandler?.("Hydration node mismatch:", null, "trace")
+      retainedConsoleError("Hydration completed but contains mismatches.")
+      expect(previousWarnHandler).toHaveBeenCalledOnce()
+      expect(previousConsoleError).toHaveBeenCalledOnce()
+      expect(onHydration).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  test("preserves later interposers while permanently deactivating retained wrappers", () => {
+    vi.useFakeTimers()
+    const previousWarnHandler = vi.fn()
+    const previousConsoleError = vi.fn()
+    const vueConfig: Pick<AppConfig, "warnHandler"> = { warnHandler: previousWarnHandler }
+    const consoleObject = { error: previousConsoleError } as Pick<Console, "error">
+    const onHydration = vi.fn()
+
+    try {
+      installHydrationObserver({
+        vueConfig,
+        consoleObject,
+        onHydration,
+        onMounted: () => {}
+      })
+      const retainedWarnHandler = vueConfig.warnHandler
+      const retainedConsoleError = consoleObject.error
+      const interposedWarnHandler: NonNullable<AppConfig["warnHandler"]>
+        = function(this: unknown, ...args) {
+          retainedWarnHandler?.apply(this, args)
+        }
+      const interposedConsoleError: Console["error"] = function(this: unknown, ...args) {
+        retainedConsoleError.apply(this, args)
+      }
+      vueConfig.warnHandler = interposedWarnHandler
+      consoleObject.error = interposedConsoleError
+
+      vi.advanceTimersByTime(INITIAL_HYDRATION_MAX_LIFETIME_MS)
+
+      expect(vueConfig.warnHandler).toBe(interposedWarnHandler)
+      expect(consoleObject.error).toBe(interposedConsoleError)
+      vueConfig.warnHandler?.("Hydration text mismatch in", null, "trace")
+      consoleObject.error("Hydration node mismatch:")
+      expect(previousWarnHandler).toHaveBeenCalledOnce()
+      expect(previousConsoleError).toHaveBeenCalledOnce()
+      expect(onHydration).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   test("chains the previous warning handler with its original receiver and arguments", () => {
     const receiver = { source: "vue" }
     const previousWarnHandler = vi.fn()

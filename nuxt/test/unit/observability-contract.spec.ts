@@ -34,6 +34,30 @@ type _HydrationEventExcludesRawDiagnostics = Expect<Equal<
   Extract<keyof HydrationEvent, RawBrowserDiagnosticKeys>,
   never
 >>
+type _HydrationAttributesExcludeRawDiagnostics = Expect<Equal<
+  Extract<keyof HydrationEvent["attributes"], RawBrowserDiagnosticKeys>,
+  never
+>>
+type _HydrationServiceIsExact = Expect<Equal<
+  HydrationEvent["service"],
+  "lb-frontend"
+>>
+type _HydrationProducerIsExact = Expect<Equal<
+  HydrationEvent["producer"],
+  "browser"
+>>
+type _HydrationErrorTypeIsExact = Expect<Equal<
+  HydrationEvent["error_type"],
+  "HydrationMismatch"
+>>
+type _HydrationResourceKindIsExact = Expect<Equal<
+  HydrationEvent["attributes"]["resource_kind"],
+  "document"
+>>
+type _HydrationComponentIsNullOrAbsent = Expect<Equal<
+  HydrationEvent["attributes"]["component"],
+  null | undefined
+>>
 
 const validReaderPageEvent = {
   schema_version: "lb.observability.v1",

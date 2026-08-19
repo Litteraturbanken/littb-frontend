@@ -915,7 +915,7 @@ export interface components {
          * @description Represent a sanitized Vue hydration mismatch.
          */
         BrowserHydrationErrorEvent: {
-            attributes: components["schemas"]["BrowserErrorAttributes"];
+            attributes: components["schemas"]["HydrationErrorAttributes"];
             /** Deployment Git Sha */
             deployment_git_sha: string;
             /** Duration Ms */
@@ -927,8 +927,11 @@ export interface components {
             environment: "development" | "stage" | "production";
             /** Error Fingerprint */
             error_fingerprint: string | null;
-            /** Error Type */
-            error_type: string | null;
+            /**
+             * Error Type
+             * @constant
+             */
+            error_type: "HydrationMismatch";
             /** Event Id */
             event_id: string;
             /**
@@ -945,9 +948,9 @@ export interface components {
             http_method: ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") | null;
             /**
              * Producer
-             * @enum {string}
+             * @constant
              */
-            producer: "browser" | "nuxt-server" | "fastapi" | "vector";
+            producer: "browser";
             /** Request Id */
             request_id: string | null;
             /** Route */
@@ -959,9 +962,9 @@ export interface components {
             schema_version: "lb.observability.v1";
             /**
              * Service
-             * @enum {string}
+             * @constant
              */
-            service: "lb-frontend" | "lb-backend";
+            service: "lb-frontend";
             /**
              * Severity
              * @enum {string}
@@ -1528,6 +1531,19 @@ export interface components {
             timestamp: string;
             /** Trace Id */
             trace_id: string | null;
+        };
+        /**
+         * HydrationErrorAttributes
+         * @description Identify hydration without retaining component or diagnostic content.
+         */
+        HydrationErrorAttributes: {
+            /** Component */
+            component?: null;
+            /**
+             * Resource Kind
+             * @constant
+             */
+            resource_kind: "document";
         };
         /** LegacyAuthorRouteRequest */
         LegacyAuthorRouteRequest: {

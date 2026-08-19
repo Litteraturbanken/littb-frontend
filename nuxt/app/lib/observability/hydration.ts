@@ -66,7 +66,7 @@ export function installHydrationObserver(options: HydrationObserverOptions): () 
   let cleanedUp = false
 
   function reportInitialHydration(args: unknown[]): void {
-    if (reported || !args.some(isHydrationDiagnostic)) return
+    if (cleanedUp || reported || !args.some(isHydrationDiagnostic)) return
     reported = true
     try {
       options.onHydration()
@@ -86,6 +86,7 @@ export function installHydrationObserver(options: HydrationObserverOptions): () 
   function cleanup(): void {
     if (cleanedUp) return
     cleanedUp = true
+    clearTimeout(lifetimeDeadline)
     if (options.vueConfig.warnHandler === warnHandler) {
       options.vueConfig.warnHandler = previousWarnHandler
     }
@@ -96,6 +97,7 @@ export function installHydrationObserver(options: HydrationObserverOptions): () 
 
   options.vueConfig.warnHandler = warnHandler
   options.consoleObject.error = consoleError
+  const lifetimeDeadline = setTimeout(cleanup, INITIAL_HYDRATION_MAX_LIFETIME_MS)
   options.onMounted(cleanup)
   return cleanup
 }

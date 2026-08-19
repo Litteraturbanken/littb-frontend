@@ -10,7 +10,7 @@ interface ForwardedRequest {
 interface ForwardedEvent {
   event_name: string
   error_type: string
-  attributes: { resource_kind: string }
+  attributes: Record<string, unknown> & { resource_kind: string }
 }
 
 async function forwardedEvents(request: APIRequestContext): Promise<ForwardedEvent[]> {
@@ -59,6 +59,13 @@ test("reports a server-only Home mismatch through the signed intake", async ({ p
   expect(forwarded?.event_name).toBe("browser.hydration_error")
   expect(forwarded?.error_type).toBe("HydrationMismatch")
   expect(forwarded?.attributes.resource_kind).toBe("document")
+  for (const forbidden of [
+    "console", "diagnostic", "dom", "html", "ip", "props", "query",
+    "selected_text", "stack", "url", "user_agent"
+  ]) {
+    expect(forwarded?.[forbidden as keyof ForwardedEvent]).toBeUndefined()
+    expect(forwarded?.attributes[forbidden]).toBeUndefined()
+  }
   expect(JSON.stringify(forwarded)).not.toContain("mismatch sentinel")
   expect(pageExceptions).toEqual([])
 })
