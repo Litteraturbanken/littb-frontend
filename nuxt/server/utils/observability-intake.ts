@@ -139,17 +139,19 @@ export class ObservabilityIntakeGuard {
   #evictAccepted(eventCount: number, protectedEventIds: Set<string>): void {
     const acceptedToEvict = this.#eventIds.size + eventCount - this.#maxEventIds
     if (acceptedToEvict <= 0) return
-    const candidates: string[] = []
+    const candidates: Array<{ acceptedAt: number, eventId: string }> = []
     for (const [eventId, reservation] of this.#eventIds) {
       if (reservation.state === "accepted" && !protectedEventIds.has(eventId)) {
-        candidates.push(eventId)
-        if (candidates.length === acceptedToEvict) break
+        candidates.push({ acceptedAt: reservation.acceptedAt, eventId })
       }
     }
     if (candidates.length < acceptedToEvict) {
       throw createError({ statusCode: 409, statusMessage: "Event intake busy" })
     }
-    for (const eventId of candidates) this.#eventIds.delete(eventId)
+    candidates.sort((left, right) => left.acceptedAt - right.acceptedAt)
+    for (const candidate of candidates.slice(0, acceptedToEvict)) {
+      this.#eventIds.delete(candidate.eventId)
+    }
   }
 
   reserveNewEvents<T extends { event_id: string }>(

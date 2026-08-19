@@ -388,6 +388,25 @@ describe("observability intake guard", () => {
     expect(guard.reserveNewEvents([first], 1_003, Symbol("first replay"))).toEqual([])
   })
 
+  test("evicts the oldest acceptance when a delayed owner succeeds last", () => {
+    const guard = new ObservabilityIntakeGuard(2)
+    const delayed = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd81" }
+    const older = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd82" }
+    const next = { event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd83" }
+    const delayedOwner = Symbol("delayed")
+    const olderOwner = Symbol("older")
+
+    expect(guard.reserveNewEvents([delayed], 0, delayedOwner)).toEqual([delayed])
+    expect(guard.reserveNewEvents([older], 1, olderOwner)).toEqual([older])
+    guard.accept([older.event_id], olderOwner, 1)
+    guard.accept([delayed.event_id], delayedOwner, 100)
+
+    expect(guard.reserveNewEvents([next], 101, Symbol("capacity pressure")))
+      .toEqual([next])
+    expect(guard.reserveNewEvents([delayed], 102, Symbol("fresh replay")))
+      .toEqual([])
+  })
+
   test("makes overlapping delivery retryable until the exact owner settles", async () => {
     const guard = new ObservabilityIntakeGuard()
     let now = 0
