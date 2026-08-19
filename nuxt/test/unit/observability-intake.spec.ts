@@ -522,6 +522,36 @@ describe("observability intake guard", () => {
     expect(fetchImplementation).toHaveBeenCalledOnce()
   })
 
+  test("releases a mixed upstream conflict for retry instead of accepting unseen events", async () => {
+    const guard = new ObservabilityIntakeGuard()
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 409 }))
+      .mockResolvedValueOnce(acceptedResponse(2))
+    const options = {
+      fetch: fetchImplementation,
+      guard,
+      now: () => 1_000
+    }
+    const body = JSON.stringify({
+      events: [
+        hydrationIntakeEvent(),
+        hydrationIntakeEvent({ event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e" })
+      ]
+    })
+
+    await expect(handleObservabilityIntake(
+      intakeRequestWithBody(body),
+      intakeConfig,
+      options
+    )).rejects.toMatchObject({ statusCode: 502 })
+    await expect(handleObservabilityIntake(
+      intakeRequestWithBody(body),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 2 })
+    expect(fetchImplementation).toHaveBeenCalledTimes(2)
+  })
+
   test.each([
     ["invalid JSON", "not-json"],
     ["null body", "null"],

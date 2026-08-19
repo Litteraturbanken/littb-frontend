@@ -581,6 +581,10 @@ export async function handleObservabilityIntake(
     options.fetchTimeoutMs ?? FORWARD_TIMEOUT_MS
   )
   if (response.status === 409) {
+    if (intakeEvents.length > 1) {
+      guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
+      throw createError({ statusCode: 502, statusMessage: "Event intake unavailable" })
+    }
     guard.accept(intakeEvents.map(item => item.event_id), reservationOwner)
     setResponseStatus(event, 202)
     return { accepted: 0 }
