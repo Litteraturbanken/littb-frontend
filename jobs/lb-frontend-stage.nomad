@@ -24,6 +24,11 @@ variable "image_digest" {
   type = string
 }
 
+variable "reader_source_base" {
+  type    = string
+  default = "https://litteraturbanken.se"
+}
+
 variable "caddy_host" {
   type    = string
   default = "lb-frontend.pub.lb.se"
@@ -122,7 +127,7 @@ job "lb-frontend-stage" {
         NUXT_API_BASE                         = "http://lb-backend-stage.service.consul:5003/v2"
         NUXT_LIBRARY_API_BASE                 = "http://lb-backend-stage.service.consul:5003"
         NUXT_CONTENT_BASE                     = "https://red.litteraturbanken.se"
-        NUXT_READER_SOURCE_BASE               = "https://litteraturbanken.se"
+        NUXT_READER_SOURCE_BASE               = var.reader_source_base
       }
 
       config {

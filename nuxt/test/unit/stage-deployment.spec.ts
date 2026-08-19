@@ -52,9 +52,21 @@ case "$1 $2" in
     printf '%s\\n' 'nomad allocs' >> "$TRACE_FILE"
     printf '%s\\n' '[]'
     ;;
-  "job validate") printf '%s\\n' 'nomad validate' >> "$TRACE_FILE" ;;
+  "job validate")
+    case " $* " in
+      *" -var reader_source_base=https://reader-stage.test "*) ;;
+      *) exit 65 ;;
+    esac
+    printf '%s\\n' 'nomad validate' >> "$TRACE_FILE"
+    ;;
   "job status") printf '%s\\n' 'nomad status' >> "$TRACE_FILE" ;;
-  "run -detach") printf '%s\\n' 'nomad run' >> "$TRACE_FILE" ;;
+  "run -detach")
+    case " $* " in
+      *" -var reader_source_base=https://reader-stage.test "*) ;;
+      *) exit 65 ;;
+    esac
+    printf '%s\\n' 'nomad run' >> "$TRACE_FILE"
+    ;;
   *) exit 64 ;;
 esac
 `)
@@ -85,7 +97,8 @@ fi
         TRACE_FILE: tracePath,
         WAIT_FOR_BUILD: waitForBuild,
         BUILD_TIMEOUT_SECONDS: "5",
-        REGISTRY_HOST: "registry.test:5000"
+        REGISTRY_HOST: "registry.test:5000",
+        READER_SOURCE_BASE: "https://reader-stage.test"
       }
     })
     const trace = existsSync(tracePath)
@@ -192,10 +205,14 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(jobspec).toContain("variable \"image\"")
   expect(jobspec).toContain("variable \"git_sha\"")
   expect(jobspec).toContain("variable \"image_digest\"")
+  expect(jobspec).toContain("variable \"reader_source_base\"")
   expect(jobspec).toContain("variable \"caddy_host\"")
   expect(jobspec).toContain("variable \"http_port\"")
   expect(jobspec).toContain("variable \"observability_hmac_secret_path\"")
   expect(jobspec).toMatch(/variable\s+"http_port"\s*\{[^}]*default\s*=\s*3020/su)
+  expect(jobspec).toMatch(
+    /variable\s+"reader_source_base"\s*\{[^}]*default\s*=\s*"https:\/\/litteraturbanken\.se"/su
+  )
   expect(normalizedJobspec).toContain('mode = "host"')
   expect(normalizedJobspec).toContain('network_mode = "host"')
   expect(jobspec).toMatch(/static\s*=\s*var\.http_port/u)
@@ -219,7 +236,7 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(normalizedJobspec).toContain('NUXT_API_BASE = "http://lb-backend-stage.service.consul:5003/v2"')
   expect(normalizedJobspec).toContain('NUXT_LIBRARY_API_BASE = "http://lb-backend-stage.service.consul:5003"')
   expect(normalizedJobspec).toContain('NUXT_CONTENT_BASE = "https://red.litteraturbanken.se"')
-  expect(normalizedJobspec).toContain('NUXT_READER_SOURCE_BASE = "https://litteraturbanken.se"')
+  expect(normalizedJobspec).toContain('NUXT_READER_SOURCE_BASE = var.reader_source_base')
   expect(jobspec).toContain('"caddy-host=${var.caddy_host}"')
   expect(jobspec).toContain('"caddy-ingress=public"')
   expect(jobspec).toContain('"caddy-https=on"')
@@ -245,6 +262,9 @@ test("staging deploy resolves the built manifest digest before detached deployme
   expect(script).toContain('git_sha="$(git rev-parse --verify "${requested_ref}^{commit}")"')
   expect(script).toContain('git_url="${GIT_URL:-https://github.com/Litteraturbanken/littb-frontend.git}"')
   expect(script).toContain('image_name="${IMAGE_NAME:-lb-frontend}"')
+  expect(script).toContain(
+    'reader_source_base="${READER_SOURCE_BASE:-https://litteraturbanken.se}"'
+  )
   expect(script).toContain('image_ref="${registry_host}/${image_name}:${git_sha}"')
   expect(script).toContain("resolve_registry_digest()")
   expect(script).toContain('method="HEAD"')
@@ -271,8 +291,8 @@ test("staging deploy resolves the built manifest digest before detached deployme
   expect(script).not.toContain('"NOMAD_TOKEN":')
   expect(script).toContain('image_digest="$(resolve_registry_digest "$image_ref")"')
   expect(script).toContain('immutable_image_ref="${registry_host}/${image_name}@${image_digest}"')
-  const validateCommand = 'nomad job validate -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad'
-  const runCommand = 'nomad run -detach -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad'
+  const validateCommand = 'nomad job validate -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad'
+  const runCommand = 'nomad run -detach -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad'
   expect(script).toContain(validateCommand)
   expect(script).toContain(runCommand)
   expect(script.indexOf('re.fullmatch(r"sha256:[0-9a-f]{64}", digest)'))

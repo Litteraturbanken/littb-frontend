@@ -23,6 +23,7 @@ type NuxtConfig = {
   }>
   runtimeConfig: {
     libraryApiBase: string
+    readerSourceBase: string
   }
   vite: {
     server: {
@@ -86,17 +87,17 @@ describe("local legacy library API defaults", () => {
 })
 
 describe("external reader source proxy", () => {
-  test("replaces inbound forwarded hosts with each external upstream host", async () => {
-    vi.stubEnv("READER_SOURCE_PROXY_TARGET", "https://reader.example.test")
+  test("reserves Reader source paths for private runtime-owned handlers", async () => {
     vi.stubEnv("LITTERATURKARTAN_PROXY_TARGET", "https://map.example.test")
 
     const config = await loadConfig()
 
     for (const path of ["/txt/**", "/bilder/**", "/export/faksimil/**"]) {
-      expect(config.routeRules[path]?.proxy).toMatchObject({
-        headers: { "x-forwarded-host": "reader.example.test" }
-      })
+      expect(config.routeRules[path]).toBeUndefined()
     }
+    expect(config.runtimeConfig.readerSourceBase).toBe("")
+    expect(config.vite.server.proxy).not.toHaveProperty("^/(?:txt|bilder)(?:/|$)")
+    expect(config.vite.server.proxy).not.toHaveProperty("^/export/faksimil(?:/|$)")
     expect(config.routeRules["/litteraturkartan/**"]?.proxy).toMatchObject({
       headers: { "x-forwarded-host": "map.example.test" }
     })

@@ -2,7 +2,6 @@ import { resolve } from "node:path"
 
 const apiProxyTarget = process.env.LBAPI_PROXY_TARGET || "http://127.0.0.1:8000"
 const litteraturkartanProxyTarget = process.env.LITTERATURKARTAN_PROXY_TARGET || "https://litteraturbanken.se"
-const readerSourceProxyTarget = process.env.READER_SOURCE_PROXY_TARGET || "https://litteraturbanken.se"
 const forwardedHostHeaders = (target: string): Record<string, string> => ({
   "x-forwarded-host": new URL(target).host
 })
@@ -54,24 +53,6 @@ export default defineNuxtConfig({
     "~/assets/styles/nuxt.scss"
   ],
   routeRules: {
-    "/txt/**": {
-      proxy: {
-        to: `${readerSourceProxyTarget}/txt/**`,
-        headers: forwardedHostHeaders(readerSourceProxyTarget)
-      }
-    },
-    "/bilder/**": {
-      proxy: {
-        to: `${readerSourceProxyTarget}/bilder/**`,
-        headers: forwardedHostHeaders(readerSourceProxyTarget)
-      }
-    },
-    "/export/faksimil/**": {
-      proxy: {
-        to: `${readerSourceProxyTarget}/export/faksimil/**`,
-        headers: forwardedHostHeaders(readerSourceProxyTarget)
-      }
-    },
     "/litteraturkartan/**": {
       proxy: {
         to: `${litteraturkartanProxyTarget}/litteraturkartan/**`,
@@ -109,7 +90,7 @@ export default defineNuxtConfig({
     observabilityAllowedOrigins: "",
     libraryApiBase: "http://127.0.0.1:8000",
     contentBase: "https://red.litteraturbanken.se",
-    readerSourceBase: "https://litteraturbanken.se",
+    readerSourceBase: "",
     public: {
       apiBase: "/api/v2",
       libraryApiBase: "/api",
@@ -151,14 +132,6 @@ export default defineNuxtConfig({
           ...(legacyApiProxyOverride
             ? {}
             : { rewrite: path => path.replace(/^\/api(?=\/|$)/, "") })
-        },
-        "^/(?:txt|bilder)(?:/|$)": {
-          target: readerSourceProxyTarget,
-          changeOrigin: true
-        },
-        "^/export/faksimil(?:/|$)": {
-          target: readerSourceProxyTarget,
-          changeOrigin: true
         },
         "^/litteraturkartan(?:[/?]|$)": {
           target: litteraturkartanProxyTarget,

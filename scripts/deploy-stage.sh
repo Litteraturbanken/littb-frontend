@@ -31,6 +31,7 @@ registry_host="${REGISTRY_HOST:-registry.service.consul:5000}"
 image_name="${IMAGE_NAME:-lb-frontend}"
 builder_job="${BUILDER_JOB:-docker-builder-multiarch}"
 image_ref="${registry_host}/${image_name}:${git_sha}"
+reader_source_base="${READER_SOURCE_BASE:-https://litteraturbanken.se}"
 
 resolve_registry_digest() {
   RESOLVE_IMAGE_REF="$1" \
@@ -274,8 +275,8 @@ fi
 image_digest="$(resolve_registry_digest "$image_ref")"
 immutable_image_ref="${registry_host}/${image_name}@${image_digest}"
 
-nomad job validate -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad
-nomad run -detach -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad
+nomad job validate -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad
+nomad run -detach -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad
 
 echo
 echo "Deployed lb-frontend-stage from git_sha=$git_sha"
