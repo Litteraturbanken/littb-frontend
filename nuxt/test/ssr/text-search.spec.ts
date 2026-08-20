@@ -324,6 +324,7 @@ test("primary failure keeps the shell 200 and renders a redacted local error", a
   const response = await page.goto("/s%C3%B6k?fras=frihet")
   expect(response?.status()).toBe(200)
   await expect(page.locator("[data-search-error]")).toBeVisible()
+  await expect(page.locator("[data-search-error]")).toHaveAttribute("role", "alert")
   const html = await page.content()
   const { document } = parseHTML(html)
 

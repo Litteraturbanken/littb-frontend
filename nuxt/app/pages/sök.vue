@@ -1735,7 +1735,7 @@ v-for="item in [
           </table>
         </div>
       </div>
-      <div v-else-if="primaryFailed" data-search-error class="error">
+      <div v-else-if="primaryFailed" data-search-error class="error" role="alert">
         Sökresultatet kan inte visas just nu.
       </div>
     </div>
