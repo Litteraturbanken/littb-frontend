@@ -516,6 +516,9 @@ const chronologyToDraft = ref(
 )
 const chronologyDraftDirty = ref(false)
 let chronologyDraftRevision = 0
+let latestChronologyDraft: { revision: number; from: string; to: string } | null = null
+let chronologyRouteRevision = 0
+let lastChronologyRoute = route.fullPath
 const mounted = ref(false)
 const hasActiveFilters = computed(() =>
     Boolean(
@@ -1125,6 +1128,7 @@ function resetSearch() {
     if (parsed.languages.length) delete query.languages
     if (parsed.yearRange) delete query.intervall
     chronologyDraftRevision += 1
+    latestChronologyDraft = null
     chronologyDraftDirty.value = false
     chronologyFromDraft.value = String(chronologyBounds.value?.from ?? "")
     chronologyToDraft.value = String(chronologyBounds.value?.to ?? "")
@@ -1194,14 +1198,17 @@ function syncAdvancedControls(state: LibraryRouteState) {
     selectedAboutAuthorIds.value = [...state.advancedFilters.aboutAuthorIds]
     selectedMedia.value = [...state.advancedFilters.media]
     selectedLanguages.value = [...state.advancedFilters.languages]
-    if (!chronologyDraftDirty.value) {
-        chronologyFromDraft.value = String(
-            state.advancedFilters.yearRange?.[0] ?? chronologyBounds.value?.from ?? ""
-        )
-        chronologyToDraft.value = String(
-            state.advancedFilters.yearRange?.[1] ?? chronologyBounds.value?.to ?? ""
-        )
+    if (lastChronologyRoute !== route.fullPath) {
+        lastChronologyRoute = route.fullPath
+        chronologyRouteRevision += 1
     }
+    chronologyDraftDirty.value = false
+    chronologyFromDraft.value = String(
+        state.advancedFilters.yearRange?.[0] ?? chronologyBounds.value?.from ?? ""
+    )
+    chronologyToDraft.value = String(
+        state.advancedFilters.yearRange?.[1] ?? chronologyBounds.value?.to ?? ""
+    )
 }
 
 function syncRouteState(parsedRoute: LibraryRouteState): QueryState {
@@ -1263,12 +1270,20 @@ function queryFromLiveAdvancedControls(): LocationQuery {
     return query
 }
 
-async function pushAdvancedQuery(key: AdvancedQueryKey, value: string) {
+function advancedQueryTarget(key: AdvancedQueryKey, value: string): RouteLocationRaw {
     const query = queryFromLiveAdvancedControls()
-    invalidateIntent()
     delete query.sida
     replaceQueryValue(query, key, value)
-    await router.push({ path: route.path, query })
+    return { path: route.path, query }
+}
+
+async function pushAdvancedTarget(target: RouteLocationRaw) {
+    invalidateIntent()
+    return await router.push(target)
+}
+
+async function pushAdvancedQuery(key: AdvancedQueryKey, value: string) {
+    await pushAdvancedTarget(advancedQueryTarget(key, value))
 }
 
 async function toggleAdvanced() {
@@ -1323,10 +1338,12 @@ function setChronologyDraft(from: string, to: string) {
     chronologyDraftDirty.value = true
     chronologyFromDraft.value = from
     chronologyToDraft.value = to
+    latestChronologyDraft = { revision: chronologyDraftRevision, from, to }
 }
 
 function resetChronologyDraft() {
     chronologyDraftRevision += 1
+    latestChronologyDraft = null
     chronologyDraftDirty.value = false
     const range = routeState(route.path, route.query).advancedFilters.yearRange
     chronologyFromDraft.value = String(range?.[0] ?? chronologyBounds.value?.from ?? "")
@@ -1340,6 +1357,20 @@ function chronologyDraftRange(bounds: ImprintBounds): [number, number] | null {
     const to = Number(chronologyToDraft.value)
     if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to)) return null
     return from >= bounds.from && to <= bounds.to && from <= to ? [from, to] : null
+}
+
+function restorableChronologyDraft(
+    revision: number,
+    targetFullPath: string,
+    routeRevision: number,
+    navigationFailure: unknown
+) {
+    const newerDraft = latestChronologyDraft
+    if (navigationFailure) return null
+    if (route.fullPath !== targetFullPath) return null
+    if (chronologyRouteRevision !== routeRevision + 1) return null
+    if (newerDraft?.revision !== chronologyDraftRevision) return null
+    return newerDraft.revision > revision ? newerDraft : null
 }
 
 async function commitChronologyRange(value: readonly [number, number]) {
@@ -1357,13 +1388,29 @@ async function commitChronologyRange(value: readonly [number, number]) {
     const [from, to] = range
     const current = routeState(route.path, route.query).advancedFilters.yearRange
     if ((current?.[0] ?? bounds.from) === from && (current?.[1] ?? bounds.to) === to) {
+        latestChronologyDraft = null
         chronologyDraftDirty.value = false
         return
     }
     const valueToPersist = from === bounds.from && to === bounds.to ? "" : `${from},${to}`
     const revision = chronologyDraftRevision
-    await pushAdvancedQuery("intervall", valueToPersist)
-    if (chronologyDraftRevision !== revision) return
+    const target = advancedQueryTarget("intervall", valueToPersist)
+    const targetFullPath = router.resolve(target).fullPath
+    const routeRevision = chronologyRouteRevision
+    const navigationFailure = await pushAdvancedTarget(target)
+    const newerDraft = restorableChronologyDraft(
+        revision,
+        targetFullPath,
+        routeRevision,
+        navigationFailure
+    )
+    if (newerDraft) {
+        chronologyDraftDirty.value = true
+        chronologyFromDraft.value = newerDraft.from
+        chronologyToDraft.value = newerDraft.to
+        return
+    }
+    latestChronologyDraft = null
     chronologyDraftDirty.value = false
 }
 

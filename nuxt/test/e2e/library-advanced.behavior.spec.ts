@@ -577,6 +577,91 @@ test("chronology text inputs preserve empty and partial drafts until commit", as
   expect(new URL(page.url()).searchParams.get("intervall")).toBe("1900,1910")
 })
 
+test("chronology drafts reset to the route range through Back and Forward", async ({ page }) => {
+  await page.goto("/bibliotek?avancerat=1&intervall=1800,1900", {
+    waitUntil: "networkidle"
+  })
+  await waitForHydration(page)
+
+  const from = page.getByLabel("Från tryckår", { exact: true })
+  await from.fill("1850")
+  await from.dispatchEvent("change")
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1850,1900")
+
+  await from.fill("1860")
+  await expect(from).toHaveValue("1860")
+  await page.goBack()
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1800,1900")
+  await expect(from).toHaveValue("1800")
+
+  await page.goForward()
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1850,1900")
+  await expect(from).toHaveValue("1850")
+})
+
+test("an unrelated same-destination route change resets a newer draft while a commit waits", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?avancerat=1&intervall=1800,1900", {
+    waitUntil: "networkidle"
+  })
+  await waitForHydration(page)
+  await page.evaluate(() => {
+    const scope = window as typeof window & {
+      __releaseLibraryChronologyPush?: () => void
+      __libraryChronologyPushSettled?: boolean
+      useNuxtApp?: () => {
+        $router: { push: (target: unknown) => Promise<unknown> }
+      }
+    }
+    const router = scope.useNuxtApp?.().$router
+    if (!router) throw new Error("Nuxt router is unavailable")
+    const push = router.push.bind(router)
+    scope.__libraryChronologyPushSettled = false
+    router.push = async target => {
+      router.push = push
+      await new Promise<void>(resolve => {
+        scope.__releaseLibraryChronologyPush = resolve
+      })
+      const result = await push(target)
+      scope.__libraryChronologyPushSettled = true
+      return result
+    }
+  })
+
+  const from = page.getByLabel("Från tryckår", { exact: true })
+  await from.fill("1850")
+  await from.dispatchEvent("change")
+  await from.fill("1860")
+  await expect(from).toHaveValue("1860")
+
+  await page.evaluate(async () => {
+    const scope = window as typeof window & {
+      useNuxtApp?: () => {
+        $router: { replace: (target: unknown) => Promise<unknown> }
+      }
+    }
+    const router = scope.useNuxtApp?.().$router
+    if (!router) throw new Error("Nuxt router is unavailable")
+    await router.replace("/bibliotek?avancerat=1&intervall=1850,1900")
+  })
+  try {
+    await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+      .toBe("1850,1900")
+    await expect(from).toHaveValue("1850")
+  } finally {
+    await page.evaluate(() => (
+      window as typeof window & { __releaseLibraryChronologyPush?: () => void }
+    ).__releaseLibraryChronologyPush?.())
+    await expect.poll(() => page.evaluate(() => Boolean((
+      window as typeof window & { __libraryChronologyPushSettled?: boolean }
+    ).__libraryChronologyPushSettled))).toBe(true)
+  }
+})
+
 test("a completed chronology navigation does not overwrite a newer draft", async ({ page }) => {
   await page.goto("/bibliotek?avancerat=1&intervall=1800,1900", {
     waitUntil: "networkidle"
@@ -628,22 +713,6 @@ test("a completed chronology navigation does not overwrite a newer draft", async
   ).__releaseLibraryChronologyPush?.())
   await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
     .toBe("1850,1900")
-  await expect(from).toHaveValue("1860")
-  await expect(to).toHaveValue("1890")
-
-  await page.evaluate(async () => {
-    const scope = window as typeof window & {
-      useNuxtApp?: () => {
-        $router: { replace: (target: unknown) => Promise<unknown> }
-      }
-    }
-    const nuxt = scope.useNuxtApp?.()
-    if (!nuxt) throw new Error("Nuxt app is unavailable")
-    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
-    const target = new URL(window.location.href)
-    target.searchParams.set("avancerat", "2")
-    await nuxt.$router.replace(`${target.pathname}${target.search}`)
-  })
   await expect(from).toHaveValue("1860")
   await expect(to).toHaveValue("1890")
 
