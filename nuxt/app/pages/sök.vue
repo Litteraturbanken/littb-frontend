@@ -2,6 +2,7 @@
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/vue"
 import type { LocationQueryRaw } from "vue-router"
 
+import searchBackground from "~/assets/img/sok_bkg.jpg"
 import type {
   SearchMultiSelectOption,
   SearchMultiSelectOptionGroup
@@ -1328,7 +1329,7 @@ useSeoMeta({
 })
 useHead({
   htmlAttrs: {
-    style: "background: url('/red/bilder/bakgrundsbilder/sok_bkg.jpg') no-repeat;"
+    style: `background: url('${searchBackground}') no-repeat;`
   },
   bodyAttrs: { class: "focus page-search ready" }
 })

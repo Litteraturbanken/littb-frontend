@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LocationQuery, RouteLocationRaw } from "vue-router"
+import libraryBackground from "~/assets/img/biblioteket_bakgrund.jpg"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import { legacyPaginationItems, type LegacyPaginationItem } from "~/lib/legacy-pagination"
 import type {
@@ -117,7 +118,6 @@ function emptyPdfResponse(failed = false): PdfResponse {
     return { data: [], hits: 0, distinctHits: 0, suggest: [], failed }
 }
 
-const backgroundPath = "/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg"
 const description = "Blädda bland Litteraturbankens författare och titlar."
 
 const sorts: Array<{ key: RelevanceSortKey; label: string }> = [
@@ -1906,7 +1906,7 @@ useSeoMeta({
 useHead(() => ({
     htmlAttrs: {
         style: {
-            "background-image": standalone.value ? "none" : `url('${backgroundPath}')`,
+            "background-image": standalone.value ? "none" : `url('${libraryBackground}')`,
             "background-repeat": standalone.value ? "initial" : "no-repeat",
             "background-color": standalone.value ? "unset" : "initial"
         }

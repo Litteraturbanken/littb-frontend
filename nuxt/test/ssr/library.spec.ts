@@ -100,7 +100,7 @@ test("SSR renders the default Library slice from typed private options and searc
     .toBe("Blädda bland Litteraturbankens författare och titlar.")
   expect(document.body.className).toBe("focus page-library ready")
   expect(document.documentElement.getAttribute("style"))
-    .toContain("/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg")
+    .toContain("/_nuxt/assets/img/biblioteket_bakgrund.jpg")
   expect(document.querySelector("h1")?.textContent?.trim()).toBe("Botanisera i biblioteket")
   expect(document.querySelector<HTMLInputElement>("[data-library-filter]")?.value)
     .toBe("Röda rummet")

@@ -64,7 +64,7 @@ test("SSR renders the pristine full form without requesting search results", asy
     .toBe("Sök i Litteraturbankens verk")
   expect(document.body.className).toBe("focus page-search ready")
   expect(document.documentElement.getAttribute("style"))
-    .toContain("/red/bilder/bakgrundsbilder/sok_bkg.jpg")
+    .toContain("/_nuxt/assets/img/sok_bkg.jpg")
   expect(document.querySelector("h1")?.textContent?.trim()).toBe("Sök i texterna")
   expect(document.querySelector<HTMLInputElement>(".submit_form input")?.value).toBe("")
   expect(document.querySelector(".search_opts_widget")?.textContent)

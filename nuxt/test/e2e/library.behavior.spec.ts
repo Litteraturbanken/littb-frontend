@@ -1,4 +1,11 @@
-import { expect, test, type APIRequestContext, type Locator, type Route } from "@playwright/test"
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Locator,
+  type Page,
+  type Route
+} from "@playwright/test"
 
 import type { operations } from "../../app/lib/api/generated/lbapi"
 import { libraryImprintYearCases } from "../helpers/library-imprint-year-cases"
@@ -7,6 +14,23 @@ const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 type LibrarySearchRequest = operations["v2_post_library_search"]["requestBody"]["content"]["application/json"]
 type LibraryCountRequest = operations["v2_post_library_counts"]["requestBody"]["content"]["application/json"]
 type LibraryFilters = LibraryCountRequest["filters"]
+
+async function htmlBackgroundDimensions(page: Page) {
+  return await page.locator("html").evaluate(async (element) => {
+    const value = (element as HTMLElement).style.backgroundImage
+    const match = /^url\(["']?(.*?)["']?\)$/u.exec(value)
+    if (!match?.[1]) return { height: 0, width: 0 }
+
+    const image = new Image()
+    image.src = new URL(match[1], window.location.href).href
+    try {
+      await image.decode()
+    } catch {
+      return { height: 0, width: 0 }
+    }
+    return { height: image.naturalHeight, width: image.naturalWidth }
+  })
+}
 
 async function expectFocusTargetNotClipped(locator: Locator) {
   expect(await locator.evaluate((element) => {
@@ -88,6 +112,44 @@ async function reset(request: APIRequestContext) {
     request.delete(`${fixture}/_library_v2/delays`)
   ])
 }
+
+test("Library background remains available without the legacy content image route", async ({
+  page
+}) => {
+  await page.route("**/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg", route => (
+    route.abort("failed")
+  ))
+
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+
+  expect(await htmlBackgroundDimensions(page)).toEqual({ height: 1593, width: 2000 })
+})
+
+test("Search background remains available after SPA navigation without its legacy image route", async ({
+  page
+}) => {
+  await page.route("**/red/bilder/bakgrundsbilder/sok_bkg.jpg", route => (
+    route.abort("failed")
+  ))
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await expect.poll(() => page.locator("#__nuxt").evaluate(element => (
+    Boolean((element as HTMLElement & { __vue_app__?: unknown }).__vue_app__)
+  ))).toBe(true)
+  await page.evaluate(() => {
+    ;(window as typeof window & { __searchBackgroundSpa?: string }).__searchBackgroundSpa = "alive"
+  })
+
+  await page.locator(".mainnav").getByRole("link", {
+    name: "Sök i texterna",
+    exact: true
+  }).click()
+  await expect(page).toHaveURL("/s%C3%B6k")
+  expect(await page.evaluate(() => (
+    (window as typeof window & { __searchBackgroundSpa?: string }).__searchBackgroundSpa
+  ))).toBe("alive")
+
+  expect(await htmlBackgroundDimensions(page)).toEqual({ height: 1512, width: 2000 })
+})
 
 for (const legacyPath of ["/om/aktuellt", "/nytt"] as const) {
   test(`${legacyPath} redirects into Latest with one browser-history entry`, async ({ page }) => {
@@ -2462,7 +2524,7 @@ test("SPA navigation between Library and its EPUB route updates the complete she
   await expect(page).toHaveTitle("Biblioteket – Titlar och författare | Litteraturbanken")
   await expect.poll(() => page.locator("html").evaluate(element =>
     getComputedStyle(element).backgroundImage
-  )).toContain("/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg")
+  )).toContain("/_nuxt/assets/img/biblioteket_bakgrund.jpg")
   await expect.poll(() => page.locator("html").evaluate(element =>
     getComputedStyle(element).backgroundRepeat
   )).toBe("no-repeat")
