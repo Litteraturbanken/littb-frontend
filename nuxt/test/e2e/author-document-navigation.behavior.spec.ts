@@ -14,10 +14,24 @@ async function expectSpaSentinel(page: Page): Promise<void> {
   ).__authorDocumentSpaSentinel)).toBe("preserved")
 }
 
+async function waitForHydration(page: Page): Promise<void> {
+  await page.waitForFunction(() => Boolean((document.querySelector("#__nuxt") as (
+    HTMLElement & { __vue_app__?: unknown }
+  ) | null)?.__vue_app__))
+}
+
+test.beforeAll(async ({ baseURL, browser }) => {
+  const warmupPage = await browser.newPage({ baseURL })
+  const response = await warmupPage.goto("/sök", { waitUntil: "networkidle" })
+  expect(response?.status()).toBe(200)
+  await warmupPage.close()
+})
+
 test("authored document search navigation is canonical and stays inside the SPA", async ({
   page
 }) => {
   await page.goto("/författare/S%C3%B6derbergH/presentation", { waitUntil: "networkidle" })
+  await waitForHydration(page)
   await installSpaSentinel(page)
 
   const search = page.getByLabel("Författarsidor")

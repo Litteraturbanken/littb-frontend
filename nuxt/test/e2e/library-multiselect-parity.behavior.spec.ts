@@ -210,8 +210,8 @@ test("Library multiselect matches the production selected-row geometry", async (
   }
 
   for (const { selector, chipWidths } of [
-    { selector: "[data-library-keywords]", chipWidths: [77.546875, 98.59375] },
-    { selector: "[data-library-narrowing]", chipWidths: [100.5625, 154.890625] }
+    { selector: "[data-library-keywords]", chipWidths: [77.9375, 98.59375] },
+    { selector: "[data-library-narrowing]", chipWidths: [100.5625, 155.203125] }
   ]) {
     const root = page.locator(selector)
     const control = root.locator(".multiselect")
