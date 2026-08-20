@@ -5747,20 +5747,22 @@
     },
     {
       "packetId": "app/pages/bibliotek.vue::packet::component",
-      "fingerprint": "2f221a9063c9d4fabd444f5e53a3bc4e455a661cca5000a2ea873de2e3768957",
+      "fingerprint": "831c79a10268ae75b4f72f9d1f14b02f52b59c17995e170b26e1c11280df5488",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/ce0c75255a87b3fcb9dd84eef3b498f6a9644942bfb7ab19ee77b5a8054ebb9b.json",
-      "evidenceHash": "96e82ca589cba800ce4c3f6526e0b88c9659e6a4ff20b1400bd3e3e36c787047",
+      "evidenceHash": "748e685580dbcd43b14347fb7b17894f8f96d0bc9c277859b3f438874fba0101",
       "findingIds": [],
       "verification": [
-        "Inspected direct caller app/pages/epub.vue",
-        "Inspected direct dependencies app/lib/library/index.ts, app/lib/library/navigation.ts, app/lib/library/route-state.ts, app/lib/library/page-results.ts",
-        "Inspected owned source ranges in app/pages/bibliotek.vue with nl/sed",
-        "Inspected relevant library tests discovered under test/ssr, test/e2e, and test/unit using read-only commands",
-        "Read packet JSON: .quality/semantic-review/packets/ce0c75255a87b3fcb9dd84eef3b498f6a9644942bfb7ab19ee77b5a8054ebb9b.json",
-        "Read review contract: quality/semantic-review-contract.md"
+        "Checked git status and git diff for the reviewed paths with read-only commands.",
+        "Inspected direct caller app/pages/epub.vue.",
+        "Inspected direct imports app/composables/useLbApiClient.ts, app/lib/library/index.ts, app/lib/library/navigation.ts, app/lib/library/route-state.ts, app/lib/library/page-results.ts, app/lib/library/view-model.ts, app/lib/library/component-models.ts, and app/lib/library/filter-options.ts.",
+        "Inspected owned unit app/pages/bibliotek.vue with line numbers, including script state, request/version handling, route synchronization, query construction, SSR/client hydration, and template integration.",
+        "Inspected related rendered child component contracts for LibraryModeTabs, LibrarySearchControls, and LibraryAdvancedFilters as dependencies of the owned component.",
+        "Inspected relevant existing e2e coverage discovered by search in test/e2e/library.behavior.spec.ts and test/e2e/library-advanced.behavior.spec.ts; packet itself listed no tests.",
+        "Read packet .quality/semantic-review/packets/ce0c75255a87b3fcb9dd84eef3b498f6a9644942bfb7ab19ee77b5a8054ebb9b.json.",
+        "Read quality/semantic-review-contract.md."
       ]
     },
     {
@@ -5836,41 +5838,38 @@
     },
     {
       "packetId": "app/pages/bibliotek.vue::packet::script-ordinaryLibraryModeTabs",
-      "fingerprint": "c82c3bab9e38272ee161302e4ea28efe91f801f5d5290d9956195368ee0e69ea",
+      "fingerprint": "4d6c590a0791dfea6d4600b8667a0c4900bb2585295d821ae1c17e819ccb9d3a",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/09180cbb1f2d0ffeddcf6f28a0d3613ffb6b952a6706cb16690d2063092e6f3b.json",
-      "evidenceHash": "6188675e6f745791e6ae7d042c9030737221d97fa437fe83d50bb3734ead09bc",
+      "evidenceHash": "021e0b45fa56cbf7d22f2ef14aa81f3d9939051dd1eff7b7f0292f763d95f1a3",
       "findingIds": [],
       "verification": [
-        "Inspected direct caller app/pages/epub.vue.",
-        "Inspected owned physical line ranges in app/pages/bibliotek.vue:1553-1946.",
-        "Inspected packet imports and type boundaries in app/lib/library/component-models.ts, app/lib/library/page-results.ts, app/lib/library/navigation.ts, app/lib/library/index.ts, app/lib/library/view-model.ts, app/lib/library/result-pagination.ts, and app/lib/legacy-pagination.ts.",
-        "Inspected relevant consumer components LibraryModeTabs.vue and LibraryPagination.vue, plus component usage references for result components.",
-        "Inspected relevant tests in test/unit/library-component-boundaries.spec.ts, test/ssr/library-sort-hrefs.spec.ts, and test/unit/library-result-pagination.spec.ts.",
-        "Inspected surrounding setup, request, route synchronization, state, and template usage in app/pages/bibliotek.vue.",
-        "Read packet .quality/semantic-review/packets/09180cbb1f2d0ffeddcf6f28a0d3613ffb6b952a6706cb16690d2063092e6f3b.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Used read-only commands only; git status emitted macOS cache warnings under the read-only sandbox but no repository writes were performed."
+        "Inspected consuming components LibraryModeTabs.vue, LibraryPagination.vue, LibraryAllResults.vue, LibraryBrowseResults.vue, and LibraryDownloadResults.vue for accessibility, routing, and typed prop boundaries.",
+        "Inspected direct caller app/pages/epub.vue and dependency contracts in app/lib/library/component-models.ts, navigation.ts, route-state.ts, page-results.ts, index.ts, and view-model.ts.",
+        "Inspected owned lines in app/pages/bibliotek.vue:1553-1944 plus surrounding state, routing, request, and template bindings.",
+        "Inspected relevant SSR/e2e/unit coverage in test/ssr/library.spec.ts, test/ssr/library-sort-hrefs.spec.ts, test/e2e/library.behavior.spec.ts, test/e2e/library-advanced.behavior.spec.ts, test/unit/library-component-boundaries.spec.ts, and test/unit/library-page-results.spec.ts.",
+        "Ran read-only repository inspection commands only; no tests were executed because the review request was read-only and the packet listed no tests.",
+        "Read quality/semantic-review-contract.md and packet 09180cbb1f2d0ffeddcf6f28a0d3613ffb6b952a6706cb16690d2063092e6f3b.json."
       ]
     },
     {
       "packetId": "app/pages/bibliotek.vue::packet::template-1",
-      "fingerprint": "ec26e4aac693da108783b0e8ef8187d10d12b2573ff9687c5546ce5da4f36297",
+      "fingerprint": "f7ffbf7ac695ab0b1b5780eedcd61d71c58382d57858a7c300fcc911171c349d",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/8bab4f06ae9241297eda54b2447167b029b7669c5fedf065b8aa93e0c40e62a2.json",
-      "evidenceHash": "e0fb40d5f64a5e7290bd762e1eba728c8b28a69f964461bbed766e4f7855bd88",
+      "evidenceHash": "f9c323b4eb714fb44e18c5f08b61d53d7fdc7041fae9c3f6d5649f61287e7830",
       "findingIds": [],
       "verification": [
-        "Inspected direct caller app/pages/epub.vue and confirmed the shared page component is mounted for the standalone /epub route.",
-        "Inspected direct dependencies and component contracts used by the owned template: useLbApiClient, library route/navigation/result helpers, component-model types, LibrarySearchControls, LibraryAdvancedFilters, LibraryModeTabs, LibraryAllResults, LibraryLatestResults, LibraryAuthorResults, LibraryBrowseResults, LibraryDownloadResults, LibraryPagination, and LibrarySourceDownloadWorkspace.",
-        "Inspected owned unit app/pages/bibliotek.vue template lines 1950-2056 plus surrounding setup state, route synchronization, request concurrency, pagination, summary, and teardown logic.",
-        "Inspected relevant Library tests discovered in test/e2e/library.behavior.spec.ts, test/e2e/library-advanced.behavior.spec.ts, test/e2e/library-multiselect-parity.behavior.spec.ts, test/ssr/library-sort-hrefs.spec.ts, test/unit/library-filter-options.spec.ts, and test/visual/capture-library-epub-angular.spec.ts. The packet itself listed no tests.",
-        "Read quality/semantic-review-contract.md and packet .quality/semantic-review/packets/8bab4f06ae9241297eda54b2447167b029b7669c5fedf065b8aa93e0c40e62a2.json.",
-        "Used read-only inspection commands only; did not run test commands because the task required read-only commands and this workspace is read-only."
+        "Inspected owned template lines 1948-2054 in app/pages/bibliotek.vue.",
+        "Inspected relevant library tests under test/e2e/library.behavior.spec.ts and test/unit/library-component-boundaries.spec.ts.",
+        "Inspected surrounding page state, SSR/client request flow, direct caller app/pages/epub.vue, imported library helpers, component prop contracts, and related library result components.",
+        "Read packet .quality/semantic-review/packets/8bab4f06ae9241297eda54b2447167b029b7669c5fedf065b8aa93e0c40e62a2.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Used read-only commands only; no repository files were modified."
       ]
     },
     {
