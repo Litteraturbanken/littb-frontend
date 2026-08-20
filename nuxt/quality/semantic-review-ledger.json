@@ -5747,39 +5747,37 @@
     },
     {
       "packetId": "app/pages/bibliotek.vue::packet::component",
-      "fingerprint": "4abb83a690b2a39fbe75205420408c17953b287dd53be3f5ea19b86d972c4b39",
+      "fingerprint": "2f221a9063c9d4fabd444f5e53a3bc4e455a661cca5000a2ea873de2e3768957",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/ce0c75255a87b3fcb9dd84eef3b498f6a9644942bfb7ab19ee77b5a8054ebb9b.json",
-      "evidenceHash": "ef32ab77bcee628a8147b16d6355d2e1b729d49e75089caf8082f035e80ffc7e",
+      "evidenceHash": "96e82ca589cba800ce4c3f6526e0b88c9659e6a4ff20b1400bd3e3e36c787047",
       "findingIds": [],
       "verification": [
-        "Inspected current source for app/pages/bibliotek.vue, direct caller app/pages/epub.vue, listed imports under app/composables and app/lib/library, and related component/test references.",
-        "Packet listed no tests; read-only review located related library route/component/e2e coverage but did not execute tests.",
-        "Read packet .quality/semantic-review/packets/ce0c75255a87b3fcb9dd84eef3b498f6a9644942bfb7ab19ee77b5a8054ebb9b.json and verified the owned unit and physical line ranges.",
-        "Read quality/semantic-review-contract.md."
+        "Inspected direct caller app/pages/epub.vue",
+        "Inspected direct dependencies app/lib/library/index.ts, app/lib/library/navigation.ts, app/lib/library/route-state.ts, app/lib/library/page-results.ts",
+        "Inspected owned source ranges in app/pages/bibliotek.vue with nl/sed",
+        "Inspected relevant library tests discovered under test/ssr, test/e2e, and test/unit using read-only commands",
+        "Read packet JSON: .quality/semantic-review/packets/ce0c75255a87b3fcb9dd84eef3b498f6a9644942bfb7ab19ee77b5a8054ebb9b.json",
+        "Read review contract: quality/semantic-review-contract.md"
       ]
     },
     {
       "packetId": "app/pages/bibliotek.vue::packet::script-emptyLibraryResponse",
-      "fingerprint": "7107f4ad55ce27daabfd6175e3de7948d9d1163b0f223b0da6a58c515473ecca",
+      "fingerprint": "946badf6565ac2deb252909ee82e64c6aa0176f51bb0b78ba347f23c08fe323f",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/e8497def0767c90fe647230b3b0e6f413065547dca2dd99099751d12651fbeaa.json",
-      "evidenceHash": "3652a2e882af947c9cc7591a751bdf22de1ba07ade28776348e609c4148a979f",
+      "evidenceHash": "2a00f97ad1b778988edfc79772df120826b1e7cf8efa95d6ba70537cdb10c77d",
       "findingIds": [],
       "verification": [
-        "Checked git diff for the owned page, direct caller, key dependencies, and relevant tests; no local diffs were present in those files.",
-        "Inspected direct caller app/pages/epub.vue.",
-        "Inspected generated API type boundaries in app/lib/api/generated/lbapi.ts for library search, count, and options request/response schemas.",
-        "Inspected owned units in app/pages/bibliotek.vue lines 100-720 in full page context through the template and later direct consumers in the same component.",
-        "Inspected packet-listed dependencies: app/composables/useLbApiClient.ts, app/lib/legacy-pagination.ts, app/lib/library/component-models.ts, app/lib/library/filter-options.ts, app/lib/library/index.ts, app/lib/library/navigation.ts, app/lib/library/page-results.ts, app/lib/library/result-pagination.ts, app/lib/library/route-state.ts, and app/lib/library/view-model.ts.",
-        "Read packet JSON .quality/semantic-review/packets/e8497def0767c90fe647230b3b0e6f413065547dca2dd99099751d12651fbeaa.json.",
-        "Read review contract at quality/semantic-review-contract.md.",
-        "Searched for relevant library tests and inspected test/unit/library-page-results.spec.ts, test/unit/library-contract.spec.ts, test/unit/library-route-state.spec.ts, test/ssr/library.spec.ts, and targeted e2e library race/abort/count coverage in test/e2e/library.behavior.spec.ts.",
-        "Used read-only commands only; no repository files were modified and no test commands were executed."
+        "Inspected direct dependencies app/lib/library/index.ts, app/lib/library/page-results.ts, app/lib/library/route-state.ts, app/lib/library/navigation.ts, app/lib/library/result-pagination.ts, and app/lib/library/view-model.ts.",
+        "Inspected owned physical ranges in app/pages/bibliotek.vue, plus direct caller app/pages/epub.vue.",
+        "Inspected relevant library test coverage discovery across test/unit, test/ssr, and test/e2e using read-only ripgrep and selected file reads.",
+        "No executable tests were run because the review contract required read-only inspection commands; git status also could not complete because the sandbox prevented xcrun cache writes.",
+        "Read quality/semantic-review-contract.md and packet .quality/semantic-review/packets/e8497def0767c90fe647230b3b0e6f413065547dca2dd99099751d12651fbeaa.json."
       ]
     },
     {
@@ -5838,20 +5836,23 @@
     },
     {
       "packetId": "app/pages/bibliotek.vue::packet::script-ordinaryLibraryModeTabs",
-      "fingerprint": "410bc0a54c0b85799b67b7f7193bdb713e8690a77ac2f6a60571160a916d150d",
+      "fingerprint": "c82c3bab9e38272ee161302e4ea28efe91f801f5d5290d9956195368ee0e69ea",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/09180cbb1f2d0ffeddcf6f28a0d3613ffb6b952a6706cb16690d2063092e6f3b.json",
-      "evidenceHash": "a95d738de64b9d802a404b8abe05c422775fa87233e23d3c00856b93599cc5fd",
+      "evidenceHash": "6188675e6f745791e6ae7d042c9030737221d97fa437fe83d50bb3734ead09bc",
       "findingIds": [],
       "verification": [
-        "Inspected component consumers for tab, sort, pagination, imprint-year, and toggle models under app/components/library.",
-        "Inspected direct dependencies app/lib/library/component-models.ts, app/lib/library/navigation.ts, app/lib/library/page-results.ts, and caller app/pages/epub.vue.",
-        "Inspected owned physical ranges in app/pages/bibliotek.vue:1553-1946 plus surrounding state/request/navigation context in the same file.",
-        "Inspected relevant coverage in test/ssr/library.spec.ts, test/ssr/library-sort-hrefs.spec.ts, test/e2e/library.behavior.spec.ts, and test/unit/library-component-boundaries.spec.ts.",
-        "Ran read-only searches with rg for owned unit references and relevant test files; no unresolved critical or important semantic issues found.",
-        "Read quality/semantic-review-contract.md and packet .quality/semantic-review/packets/09180cbb1f2d0ffeddcf6f28a0d3613ffb6b952a6706cb16690d2063092e6f3b.json."
+        "Inspected direct caller app/pages/epub.vue.",
+        "Inspected owned physical line ranges in app/pages/bibliotek.vue:1553-1946.",
+        "Inspected packet imports and type boundaries in app/lib/library/component-models.ts, app/lib/library/page-results.ts, app/lib/library/navigation.ts, app/lib/library/index.ts, app/lib/library/view-model.ts, app/lib/library/result-pagination.ts, and app/lib/legacy-pagination.ts.",
+        "Inspected relevant consumer components LibraryModeTabs.vue and LibraryPagination.vue, plus component usage references for result components.",
+        "Inspected relevant tests in test/unit/library-component-boundaries.spec.ts, test/ssr/library-sort-hrefs.spec.ts, and test/unit/library-result-pagination.spec.ts.",
+        "Inspected surrounding setup, request, route synchronization, state, and template usage in app/pages/bibliotek.vue.",
+        "Read packet .quality/semantic-review/packets/09180cbb1f2d0ffeddcf6f28a0d3613ffb6b952a6706cb16690d2063092e6f3b.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Used read-only commands only; git status emitted macOS cache warnings under the read-only sandbox but no repository writes were performed."
       ]
     },
     {
@@ -7655,163 +7656,149 @@
     },
     {
       "packetId": "app/pages/sök.vue::packet::component",
-      "fingerprint": "8fc5fb089b19ff70df537236ace0a8a26c917fc707ad8d9a3cc0c677e54a939d",
+      "fingerprint": "e24a6010489b426f56d48e89b73bed06546d3255603ac2ae7f37c4ba4ad9142b",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/c621bccf8d179fdac68c9897382fdb36188103b7a974d44cd656ff345717dc4f.json",
-      "evidenceHash": "f32f6b209bdea6d9f7e561826a483858eb0ea63a6117a08b3ccfdc9d458a38d5",
+      "evidenceHash": "279e6d0b08250558d915b01e770fb1e32dead539e900f54ea64dbc2f25ec2551",
       "findingIds": [],
       "verification": [
-        "Inspected direct imports/dependencies: app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, app/lib/text-search.ts, app/composables/useTextSearchNavigation.ts, app/components/global/ChronologyRangeSlider.vue",
-        "Inspected owned source: app/pages/sök.vue",
-        "Inspected relevant tests discovered for this packet: test/unit/text-search.spec.ts, test/unit/search-multi-select.spec.ts, test/e2e/text-search.behavior.spec.ts, test/ssr/text-search.spec.ts",
-        "Read packet JSON: .quality/semantic-review/packets/c621bccf8d179fdac68c9897382fdb36188103b7a974d44cd656ff345717dc4f.json",
-        "Read review contract: quality/semantic-review-contract.md",
-        "Used read-only commands only; no tests were executed because the review request constrained commands to read-only inspection."
+        "Inspected direct dependencies app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, app/lib/text-search.ts, app/composables/useTextSearchNavigation.ts, and app/lib/text-search-navigation.ts.",
+        "Inspected owned source in app/pages/sök.vue across the packet line ranges, including route state, SSR/client async data ownership, navigation, accessibility controls, result rendering, and cleanup.",
+        "Inspected relevant tests under test/e2e/text-search.behavior.spec.ts, test/ssr/text-search.spec.ts, test/unit/text-search.spec.ts, test/unit/text-search-request-owner.spec.ts, and test/unit/search-multi-select.spec.ts by read-only search/file reads.",
+        "Read quality/semantic-review-contract.md and packet .quality/semantic-review/packets/c621bccf8d179fdac68c9897382fdb36188103b7a974d44cd656ff345717dc4f.json."
       ]
     },
     {
       "packetId": "app/pages/sök.vue::packet::script-initialPipelinePending",
-      "fingerprint": "d18a97bd2fa5a01670ad4396b51ac44cff6164c62dd0ee53ec730bd0610ef326",
+      "fingerprint": "96cbb3967594c2577ef7475bc820060cc3a294f77ad8293c0cc76f4291dcfd7e",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/14535ef396a9223992a3b042dba0a6be2b82b387d9561bca3b8785bc40fc2d80.json",
-      "evidenceHash": "323a389a8617a40dab27da399858df3eae5fee9b4d63218e0904372f5440688f",
+      "evidenceHash": "f6be3bb75394d13d9e0ce2f0260fbae8c169eceb1e4c00d220db70b22fe3d6f8",
       "findingIds": [],
       "verification": [
-        "Checked git status and diffs for the owned source, dependencies, and relevant tests using read-only commands; no reviewed source diff output was present.",
-        "Inspected owned source lines in app/pages/sök.vue for all packet units from initialPipelinePending through finishMoreRequest, plus adjacent state, route, template call sites, and cleanup paths needed to evaluate behavior.",
+        "Inspected current owned source ranges in app/pages/sök.vue lines 653-1102, plus surrounding setup/template consumers for observable behavior.",
+        "Inspected Nuxt useAsyncData implementation in node_modules/nuxt/dist/app/composables/asyncData.js for reactive-key, abort, cache, and _keyTriggersExecute behavior.",
         "Inspected packet-listed dependencies app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, and app/lib/text-search.ts.",
-        "Inspected relevant discovered tests in test/e2e/text-search.behavior.spec.ts, test/ssr/text-search.spec.ts, test/unit/text-search.spec.ts, and test/unit/text-search-request-owner.spec.ts; the packet itself listed no tests.",
-        "No unresolved critical or important findings were identified; no tests were executed and no files were modified.",
-        "Read quality/semantic-review-contract.md and exactly one packet JSON at .quality/semantic-review/packets/14535ef396a9223992a3b042dba0a6be2b82b387d9561bca3b8785bc40fc2d80.json.",
-        "Searched current source for direct callers and template bindings of owned units including chronology draft, title option loading, search mode, primary pipeline, and loading state."
+        "Read quality/semantic-review-contract.md and the specified packet JSON only.",
+        "Searched direct callers/usages and relevant discovered tests: test/unit/text-search.spec.ts, test/unit/search-multi-select.spec.ts, test/ssr/text-search.spec.ts, and test/e2e/text-search.behavior.spec.ts.",
+        "Used read-only commands only; no tests were executed and no repository files were modified."
       ]
     },
     {
       "packetId": "app/pages/sök.vue::packet::script-module",
-      "fingerprint": "4197ec767df684cdbcbb95da1b042b5dfb7a7e3d0c827feee24825debfeb08ac",
+      "fingerprint": "c10f582d394d9b04cdc09e45655439427ae958f5d5d87f1f6d61194b50b3cfda",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/79e3d0e42723b295cb273aa42f4a4745e9e05b84554570dd1a3ac8f1220ab64c.json",
-      "evidenceHash": "3042059d6b92e5ce30b72d28bd229079b4b671c98390e330fbcc5f40f7843337",
+      "evidenceHash": "875f4d522389f2a36b89f667c26fa2b31c5041d941ca99fdc71b1b3cb519f2a7",
       "findingIds": [],
       "verification": [
-        "Inspected direct imports and relevant dependencies: app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, app/lib/text-search.ts, app/composables/useTextSearchNavigation.ts, and app/lib/text-search-navigation.ts.",
-        "Inspected owned physical lines in app/pages/sök.vue: 170, 229, 390, 679-683, and 741, with surrounding source for route, chronology, primary result, navigator snapshot, and chronology draft flows.",
-        "Read review contract quality/semantic-review-contract.md and exactly one packet .quality/semantic-review/packets/79e3d0e42723b295cb273aa42f4a4745e9e05b84554570dd1a3ac8f1220ab64c.json.",
-        "Searched and inspected relevant discovered coverage in test/e2e/text-search.behavior.spec.ts, test/ssr/text-search.spec.ts, test/unit/text-search.spec.ts, test/unit/text-search-request-owner.spec.ts, and test/unit/text-search-navigation.spec.ts. Packet listed no tests.",
-        "Used read-only inspection commands only; no repository files were modified."
+        "Checked targeted git diff/status for reviewed source, dependencies, and relevant tests; reviewed source/test files had no local diff, while unrelated quality review artifacts were dirty.",
+        "Inspected generated API type boundaries in app/lib/api/generated/lbapi.ts for TextSearchChronologyResponse, TextSearchResultsRequest/Response, TextSearchCountRequest/Response, and TextSearchOptionsRequest/Response.",
+        "Inspected Nuxt useAsyncData runtime/type behavior in node_modules/nuxt/dist/app/composables/asyncData.js and asyncData.d.ts for execute, abort, cache, pending, and promise behavior relevant to the owned primary execution callback.",
+        "Inspected owned physical lines in app/pages/sök.vue: watch callbacks at lines 171, 230, and 391; primaryAsyncData finally callback lines 680-684; pendingChronologyNavigations.findLast callback line 742.",
+        "Inspected packet-listed imports and dependencies: app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, app/lib/text-search.ts, plus the relevant text-search navigation re-export/composable boundary used by the reviewed page.",
+        "Inspected relevant discovered tests despite the packet listing no tests: test/e2e/text-search.behavior.spec.ts, test/unit/text-search.spec.ts, test/unit/text-search-request-owner.spec.ts, and related chronology comparison coverage in test/e2e/library-advanced.behavior.spec.ts.",
+        "Inspected surrounding current source in app/pages/sök.vue, including route/query state derivation, primary request ownership and async-data execution, chronology bounds/draft synchronization, navigation helper, lifecycle cleanup, SearchMultiSelect call sites, and chronology template bindings.",
+        "Read quality/semantic-review-contract.md and exactly one packet JSON at .quality/semantic-review/packets/79e3d0e42723b295cb273aa42f4a4745e9e05b84554570dd1a3ac8f1220ab64c.json.",
+        "Used read-only shell inspection only; no repository files were modified and no test suite was executed."
       ]
     },
     {
       "packetId": "app/pages/sök.vue::packet::script-rawQuery",
-      "fingerprint": "4b42cd71de3b84e71077182c27eb8bb4f0e8089c81952cd8b6d49fda66d0d5d8",
+      "fingerprint": "6c361cd017b98de15043e633738e04ce96e1b248f3cc956da68b645f34d2fbc6",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/f602daa9d06a24ab701b3738264fe3c81fe49242ea9233ab7272196f20afef00.json",
-      "evidenceHash": "7304f46ff1e90de28d28bb25f0bdc6a4caeebc49eae5435a7f9d3e0372629eff",
+      "evidenceHash": "1ccfcc47fad735de01d31f04bbb2e4e09038acc00c53e87545cba1a425280064",
       "findingIds": [],
       "verification": [
-        "Inspected owned source app/pages/sök.vue lines 1-1800, including all packet-owned ranges and surrounding template consumers.",
-        "Inspected packet-listed direct imports app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, and app/lib/text-search.ts.",
-        "Inspected relevant discovered tests test/e2e/text-search.behavior.spec.ts, test/ssr/text-search.spec.ts, test/unit/text-search.spec.ts, and test/unit/text-search-request-owner.spec.ts by source.",
-        "No write or mutation commands were run.",
-        "Read exactly one packet JSON: .quality/semantic-review/packets/f602daa9d06a24ab701b3738264fe3c81fe49242ea9233ab7272196f20afef00.json.",
-        "Read review contract quality/semantic-review-contract.md.",
-        "Searched repository references for sök/text-search/SearchMultiSelect/useLbApiClient/rawQuery/loadNavigatorSnapshot/loadOptions to identify direct callers and related behavior; packet listed no callers."
+        "Checked current git status with read-only commands; existing modified quality review artifacts were unrelated to this packet review.",
+        "Inspected current app/pages/sök.vue with physical line numbers across all packet-owned script ranges from lines 151-652 and surrounding callers in the same page.",
+        "Inspected generated API type boundaries in app/lib/api/generated/lbapi.ts for /text-search chronology, count, options, and results request/response schemas.",
+        "Inspected packet-listed imports and dependencies: app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, app/lib/text-search.ts, plus app/composables/useTextSearchNavigation.ts and app/lib/text-search-navigation.ts for return-link state boundaries.",
+        "Inspected relevant discovered tests in test/unit/text-search.spec.ts, test/ssr/text-search.spec.ts, and test/e2e/text-search.behavior.spec.ts for route parsing, response acceptance, SSR/client request timing, cancellation, chronology/options prerequisites, count retry, and advanced filter behavior.",
+        "Read quality/semantic-review-contract.md and exactly the specified packet JSON at .quality/semantic-review/packets/f602daa9d06a24ab701b3738264fe3c81fe49242ea9233ab7272196f20afef00.json.",
+        "Used read-only inspection commands only and did not modify repository files."
       ]
     },
     {
       "packetId": "app/pages/sök.vue::packet::script-showMore",
-      "fingerprint": "bd50f3d0ab41869e645425b9117e6935bea0ce44ab012030fbb6cb61f85f6cfc",
+      "fingerprint": "f0a7df88188f13f86f60990d935adb29c45ce730806656a5a16732e1ecf2c953",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/9354e624eb929fed6f4c1da65f6f802ba96e7d6670707979d405ea778b1ae99d.json",
-      "evidenceHash": "c2f43c3b8f52baf8585a49bfc9b167aeffd63263301b786b91fa7f79602baaf5",
+      "evidenceHash": "0f37b605b415c26a52607d8dd7675812d22405997e026cf1cef2930d7eff9836",
       "findingIds": [],
       "verification": [
-        "Inspected app/pages/sök.vue owned physical line ranges 1103-1321, surrounding state/request code, and template call sites for showMore, resultRows, pagination, gender, and facet handlers.",
-        "Inspected direct dependencies app/lib/text-search-request-owner.ts and app/lib/text-search.ts for request ownership, route identity, pagination query serialization, response acceptance, and reader href construction.",
-        "Inspected relevant tests in test/ssr/text-search.spec.ts and test/e2e/text-search.behavior.spec.ts covering show-more expansion, stale request cancellation, pagination bounds, keyboard pagination guards, gender filtering, facet navigation, and row rendering.",
-        "Ran only read-only shell commands: sed, nl, rg, and git status --short.",
-        "Read quality/semantic-review-contract.md and the packet JSON for packet scope, owned units, imports, and review constraints."
+        "Inspected app/pages/sök.vue owned physical line ranges 1104-1322 plus surrounding state setup and template call sites for result expansion, pagination, gender, and facet handlers.",
+        "Inspected direct dependencies app/lib/text-search.ts, app/lib/text-search-request-owner.ts, app/composables/useLbApiClient.ts, and app/components/search/SearchMultiSelect.vue.",
+        "Inspected relevant current tests in test/ssr/text-search.spec.ts and test/e2e/text-search.behavior.spec.ts covering show-more expansion, cancellation, pager bounds, keyboard shortcut guards, gender filtering, facets, and row rendering.",
+        "Read quality/semantic-review-contract.md and exactly one packet JSON: .quality/semantic-review/packets/9354e624eb929fed6f4c1da65f6f802ba96e7d6670707979d405ea778b1ae99d.json.",
+        "Used read-only commands only: sed, nl, rg, git status --short, and git log. No tests were executed."
       ]
     },
     {
       "packetId": "app/pages/sök.vue::packet::style-1",
-      "fingerprint": "5554b645ff82ee976eddede253154a9aaeb3687fce869d2503b0a931cffdb9f3",
+      "fingerprint": "fae957a86529abf3a109fe14411ab4eaaa251398df53f5e8cefaabeb52ab4cab",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/ddfe46f2615c3de2b68a299449027f926ec12b855b1a72ff335d1a79363c3d85.json",
-      "evidenceHash": "78ddd450b6fd2101861da8cd7cf3bc62b18e89556ad8641bcc63be6fe641b6e5",
-      "findingIds": [],
+      "evidenceHash": "5515387221c36916f64de0b6dec10e3db5c778989988545f138e03fb293e9ee0",
+      "findingIds": [
+        "ddfe46f2-dead-non-arrow-pager-button-styles"
+      ],
       "verification": [
-        "Adjudicated the prior fixed-width overflow inference against the complete flex layout: chronology_ranges uses flex-shrink 1 and min-width 0, so its 396px mobile width is a preferred/base size rather than a minimum.",
-        "Confirmed dead .navigator button selectors were removed because the current navigator renders anchors with role=button.",
-        "Confirmed scoped text-transform: inherit on the populated-result overflow button preserves the existing immutable mobile visual baseline; no snapshot was added or updated.",
-        "Fresh Node 22 verification: mobile results visual baseline and chronology geometry tests 2/2; scoped ESLint for source and visual spec passed.",
-        "Read quality/semantic-review-contract.md and the exact current packet JSON.",
-        "Reviewed immutable commit 434731187edbcab769e7e932d9c661066a7132c9 against exact parent dd1b23bd72d0111911e2a8478d41bb527dc3d49f; exact two-file source/test scope, git show --check clean, no quality artifacts, and no screenshot baseline changes.",
-        "Verified with real mobile-chromium/iPhone 13 authority: window.innerWidth and document.documentElement.scrollWidth are both 390px; both sliders and both year textboxes have rendered boxes wholly within the viewport, nonnegative tabIndex, and accept focus."
+        "Inspected current source, direct dependencies, type boundaries, and relevant text-search tests with read-only commands.",
+        "No unresolved critical or important findings were identified.",
+        "Read exactly the specified packet JSON at .quality/semantic-review/packets/ddfe46f2615c3de2b68a299449027f926ec12b855b1a72ff335d1a79363c3d85.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Reviewed exactly packet app/pages/sök.vue::packet::style-1 and constrained the finding citation to the owned physical line ranges."
       ]
     },
     {
       "packetId": "app/pages/sök.vue::packet::template-1",
-      "fingerprint": "fafaec456b7e8b869e886f06da2049c92cad6764b39718ab6eed3d838f90755d",
+      "fingerprint": "db39fe1b96b9103a10d166bd581a736e0b533af84223d068f781f022813bd2e5",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/dda5f4a1a1518a260567e0207e4e61988a72b2f51fbdceaa542b9f037defe660.json",
-      "evidenceHash": "53d6a1de7bf0636622c27f1a8c0f0639ed5e3500faf5dcdc2818e4d67c4086e9",
-      "findingIds": [
-        "SR-dda5f4a1-001"
-      ],
+      "evidenceHash": "7a86932f920c1c427254a4d1f0a47a3a658b37ac5cd7be18455fabc4182a201a",
+      "findingIds": [],
       "verification": [
-        "jq '.' .quality/semantic-review/packets/dda5f4a1a1518a260567e0207e4e61988a72b2f51fbdceaa542b9f037defe660.json",
-        "nl -ba app/components/search/SearchMultiSelect.vue | sed -n '1,260p'",
-        "nl -ba app/composables/useLbApiClient.ts | sed -n '1,220p'",
-        "nl -ba app/lib/text-search-request-owner.ts | sed -n '1,220p'",
-        "nl -ba app/lib/text-search.ts | sed -n '1,260p'",
-        "nl -ba app/lib/text-search.ts | sed -n '260,620p'",
-        "nl -ba app/pages/sök.vue | sed -n '1,220p'",
-        "nl -ba app/pages/sök.vue | sed -n '1338,1745p'",
-        "nl -ba app/pages/sök.vue | sed -n '1742,1905p'",
-        "nl -ba app/pages/sök.vue | sed -n '220,520p'",
-        "nl -ba app/pages/sök.vue | sed -n '520,920p'",
-        "nl -ba app/pages/sök.vue | sed -n '920,1337p'",
-        "nl -ba test/ssr/text-search.spec.ts | sed -n '1,220p'",
-        "nl -ba test/ssr/text-search.spec.ts | sed -n '220,460p'",
-        "nl -ba test/ssr/text-search.spec.ts | sed -n '460,900p'",
-        "rg -n \"sök|text-search|data-search|Sök i texterna|Visa fler|Gå till träffsida\" app tests test . --glob '!node_modules' --glob '!dist' --glob '!coverage'",
-        "sed -n '1,240p' quality/semantic-review-contract.md"
+        "Inspected owned physical template ranges in app/pages/sök.vue lines 1339-1746, plus adjacent script and continuation context needed to understand bindings, route state, request ownership, Teleport, pagination, and result rendering.",
+        "Inspected packet-listed imports and dependencies: app/components/search/SearchMultiSelect.vue, app/lib/text-search.ts, and app/lib/text-search-request-owner.ts.",
+        "Inspected relevant discovered tests despite the packet listing no tests: test/ssr/text-search.spec.ts, test/e2e/text-search.behavior.spec.ts, test/unit/text-search.spec.ts, and test/unit/text-search-request-owner.spec.ts.",
+        "Read quality/semantic-review-contract.md and exactly one packet JSON at .quality/semantic-review/packets/dda5f4a1a1518a260567e0207e4e61988a72b2f51fbdceaa542b9f037defe660.json.",
+        "Reviewed accessibility semantics for search controls, advanced disclosure, multiselect/listbox controls, chronology controls, result links, loading/error live regions, and expansion actions within the owned template lines.",
+        "Reviewed SSR/client state behavior around deferred primary loading, advanced options prerequisites, chronology loading, count loading, navigator facets, and stale request rejection as exercised by the inspected source and tests.",
+        "Searched for direct callers and related usage; app/pages/sök.vue is a page with no component callers, and relevant consumers of shared search navigation/ChronologyRangeSlider were checked for context.",
+        "Used read-only commands only; no test runner was executed and no repository files were modified."
       ]
     },
     {
       "packetId": "app/pages/sök.vue::packet::template-2",
-      "fingerprint": "c6dd52fc387338b64ac8fd6ec15cdfc37f9fea0e0fd3712547d4c179bedec0ab",
+      "fingerprint": "ec30e07691885622d6aa655b7aef9a1ad9067c57eab913858c8ba610a4ab2760",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/e54dbd2741da2680e8917cd50df6664d660b846d94e10bcfef6f5049afb077ec.json",
-      "evidenceHash": "4e3c6676a668f50b84406e1041bcf38e4cd47082b444b988e3499113dc9d53be",
+      "evidenceHash": "165a4647114518385d63ed06cedca0ad0bc049f1bdebc6e50496226c311d82d5",
       "findingIds": [
-        "e54dbd2741da2680e8917cd50df6664d660b846d94e10bcfef6f5049afb077ec-001"
+        "SR-E54-001"
       ],
       "verification": [
-        "Inspected direct imports and dependencies named by the packet: app/components/search/SearchMultiSelect.vue, app/lib/text-search.ts, and app/lib/text-search-request-owner.ts.",
-        "Inspected owned physical lines 1746-1756, 1758-1760, and 1762-1841 in app/pages/sök.vue.",
-        "Inspected relevant callers and state in app/pages/sök.vue for primary results, pagination, navigator facets, request ownership, and Teleport mounting.",
-        "Read exactly the specified packet .quality/semantic-review/packets/e54dbd2741da2680e8917cd50df6664d660b846d94e10bcfef6f5049afb077ec.json.",
+        "Read packet .quality/semantic-review/packets/e54dbd2741da2680e8917cd50df6664d660b846d94e10bcfef6f5049afb077ec.json and verified packet id/fingerprint.",
         "Read quality/semantic-review-contract.md.",
-        "Searched and inspected relevant coverage in test/e2e/text-search.behavior.spec.ts, test/e2e/text-search.visual.spec.ts, and test/ssr/text-search.spec.ts.",
-        "Used read-only inspection commands only; no repository files were modified."
+        "Used read-only inspection commands only; no tests were run."
       ]
     },
     {
