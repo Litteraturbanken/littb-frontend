@@ -1905,11 +1905,9 @@ useSeoMeta({
 })
 useHead(() => ({
     htmlAttrs: {
-        style: {
-            "background-image": standalone.value ? "none" : `url('${libraryBackground}')`,
-            "background-repeat": standalone.value ? "initial" : "no-repeat",
-            "background-color": standalone.value ? "unset" : "initial"
-        }
+        style: standalone.value
+            ? "background: none;"
+            : `background: url('${libraryBackground}') no-repeat;`
     },
     bodyAttrs: {
         class: standalone.value ? "focus page-epub ready" : "focus page-library ready"

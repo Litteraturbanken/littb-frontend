@@ -125,13 +125,17 @@ test("Library background remains available without the legacy content image rout
   expect(await htmlBackgroundDimensions(page)).toEqual({ height: 1593, width: 2000 })
 })
 
-test("Search background remains available after SPA navigation without its legacy image route", async ({
+test("Library and Search replace their backgrounds during SPA navigation without legacy image routes", async ({
   page
 }) => {
+  await page.route("**/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg", route => (
+    route.abort("failed")
+  ))
   await page.route("**/red/bilder/bakgrundsbilder/sok_bkg.jpg", route => (
     route.abort("failed")
   ))
-  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  expect(await htmlBackgroundDimensions(page)).toEqual({ height: 1593, width: 2000 })
   await expect.poll(() => page.locator("#__nuxt").evaluate(element => (
     Boolean((element as HTMLElement & { __vue_app__?: unknown }).__vue_app__)
   ))).toBe(true)
@@ -149,6 +153,16 @@ test("Search background remains available after SPA navigation without its legac
   ))).toBe("alive")
 
   expect(await htmlBackgroundDimensions(page)).toEqual({ height: 1512, width: 2000 })
+
+  await page.locator(".mainnav").getByRole("link", {
+    name: "Biblioteket",
+    exact: true
+  }).click()
+  await expect(page).toHaveURL("/bibliotek")
+  expect(await page.evaluate(() => (
+    (window as typeof window & { __searchBackgroundSpa?: string }).__searchBackgroundSpa
+  ))).toBe("alive")
+  expect(await htmlBackgroundDimensions(page)).toEqual({ height: 1593, width: 2000 })
 })
 
 for (const legacyPath of ["/om/aktuellt", "/nytt"] as const) {
