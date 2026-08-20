@@ -13,7 +13,8 @@ const route = useRoute()
 const isStartPage = computed(() => route.path === "/")
 const quickSearchOpen = ref(false)
 const quickSearchTrigger = ref<HTMLAnchorElement | null>(null)
-const authorityFontStylesheetUrl = "/assets/styles/fonts/601526/32FBEBA806C948833.css"
+const defaultAuthorityFontStylesheetUrl = "/assets/styles/fonts/601526/32FBEBA806C948833.css"
+const webkitAuthorityFontStylesheetUrl = "/assets/styles/fonts/601526/FD3D54C3A22C4D32B.css"
 
 useHead({
   link: [
@@ -28,6 +29,9 @@ useHead({
 })
 
 function loadAuthorityFontStylesheet(): void {
+  const authorityFontStylesheetUrl = CSS.supports("font", "-apple-system-body")
+    ? webkitAuthorityFontStylesheetUrl
+    : defaultAuthorityFontStylesheetUrl
   if (document.querySelector(`link[href="${authorityFontStylesheetUrl}"]`)) return
   const stylesheet = document.createElement("link")
   stylesheet.rel = "stylesheet"

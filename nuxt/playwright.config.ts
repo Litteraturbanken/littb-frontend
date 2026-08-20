@@ -54,6 +54,7 @@ export default defineConfig({
       testMatch: /e2e\/.*\.spec\.ts/,
       testIgnore: [
         /e2e\/.*\.mobile\.behavior\.spec\.ts/,
+        /e2e\/requiem-webkit\.behavior\.spec\.ts/,
         /e2e\/reader-dictionary-production\.behavior\.spec\.ts/,
         /e2e\/reader-asset-graph\.behavior\.spec\.ts/,
         /e2e\/reader-assets-production\.behavior\.spec\.ts/
@@ -73,6 +74,14 @@ export default defineConfig({
         /e2e\/quick-search-developer\.behavior\.spec\.ts/
       ],
       use: { ...devices["iPhone 13"], browserName: "chromium" }
+    },
+    {
+      name: "webkit-typography",
+      testMatch: /e2e\/requiem-webkit\.behavior\.spec\.ts/,
+      use: {
+        ...devices["Desktop Safari"],
+        viewport: { width: 1440, height: 1000 }
+      }
     }
   ],
   webServer: [
