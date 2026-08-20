@@ -592,40 +592,39 @@
     },
     {
       "packetId": "app/components/global/SiteShell.vue::packet::component",
-      "fingerprint": "e18227f26f40df758ce6e233e3230c7d4b8e75ad2e4d73caa73fc839e670b2be",
+      "fingerprint": "a77e77bd800e8e40e8ef4e5fc08c4ddd64bb801551f24e14d268a823298a22c9",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/c250d12c53d1a40d034f5c47bd23d1e388896844809502a25bbe6dd810a75f05.json",
-      "evidenceHash": "df33ffa204e10a31276aa1abe6ca0349f9c096ffab57c0a279c0ac03a7cab15e",
+      "evidenceHash": "4e398add22c803e9e96a0d704dae8c42752763decf078b1019d0f20767ffd9fe",
       "findingIds": [],
       "verification": [
-        "Checked git status/diff for reviewed source, dependency, caller, and test files using read-only commands; no relevant diff output was present.",
-        "Inspected current owned source app/components/global/SiteShell.vue with physical line numbers, including all packet-owned line ranges and surrounding script/template/style context.",
-        "Inspected direct import app/lib/production-shortcuts.ts and related navigation composables useLibraryNavigation/useTextSearchNavigation.",
-        "Inspected direct layout callers app/layouts/default.vue and app/layouts/reader.vue.",
-        "Inspected relevant discovered tests: test/e2e/shell-accessibility.behavior.spec.ts, test/e2e/quick-search.behavior.spec.ts, test/ssr/quick-search.spec.ts, test/unit/production-shortcuts.spec.ts, and test/e2e/reader-production.behavior.spec.ts.",
-        "No tests were executed because this review was constrained to read-only inspection commands.",
-        "Read quality/semantic-review-contract.md and exactly one packet JSON: .quality/semantic-review/packets/c250d12c53d1a40d034f5c47bd23d1e388896844809502a25bbe6dd810a75f05.json.",
-        "Searched current app and test source for SiteShell, shell navigation, quick search trigger/dialog behavior, global keyboard/paste shortcuts, modal-open body state, and shell corridor/mainview usage."
+        "Inspected app/components/global/QuickSearch.vue for initially-open, dialog, focus restoration, global keydown, body modal class, and close/unmount interaction with SiteShell.",
+        "Inspected current owned source app/components/global/SiteShell.vue with physical line numbers, including the packet-owned line ranges and surrounding script/template/style behavior.",
+        "Inspected direct import app/lib/production-shortcuts.ts and related navigation composables app/composables/useLibraryNavigation.ts and app/composables/useTextSearchNavigation.ts.",
+        "Inspected direct layout callers app/layouts/default.vue and app/layouts/reader.vue, and searched current app/test references to SiteShell, shell navigation, shortcut/paste behavior, modal-open body state, toolkit targets, and mainview usage.",
+        "Inspected relevant discovered tests: test/e2e/shell-accessibility.behavior.spec.ts, test/e2e/quick-search.behavior.spec.ts, test/e2e/quick-search-developer.behavior.spec.ts, test/ssr/quick-search.spec.ts, test/unit/production-shortcuts.spec.ts, and test/e2e/reader-production.behavior.spec.ts.",
+        "Read quality/semantic-review-contract.md and exactly one packet JSON at .quality/semantic-review/packets/c250d12c53d1a40d034f5c47bd23d1e388896844809502a25bbe6dd810a75f05.json.",
+        "Used read-only commands only. Did not run the test suite because the review request constrained execution to read-only inspection commands."
       ]
     },
     {
       "packetId": "app/components/global/SiteShell.vue::packet::script-isStartPage",
-      "fingerprint": "eb939947fd658349fa4a7d937da19d41e0f82759cecfe6340730aadb071f8843",
+      "fingerprint": "63578cbd261f2c206af4e0a9aa0dd01102bcb5fd21b3b6680a7fe9e4e5822905",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/12913557dda1fc3cef2e9fc15d789906d082be2431af542656c71d8a9619f0f7.json",
-      "evidenceHash": "b4a3aef152072c7a069e86a9185efd9e49d9af2b9f4786b0bca5dfbbcd153f05",
+      "evidenceHash": "e6d7ea144ab691aea15afc6183c4121c2e0f412cbf531fd3e950a53a2e9d2969",
       "findingIds": [
         "SR-12913557dda1-001"
       ],
       "verification": [
+        "Inspected current owned source app/components/global/SiteShell.vue with physical line numbers and surrounding template usage.",
         "Inspected direct import app/lib/production-shortcuts.ts.",
         "Inspected direct layout callers app/layouts/default.vue and app/layouts/reader.vue.",
-        "Inspected owned units in app/components/global/SiteShell.vue lines 13, 31-41, 43-56, 58-69, 71-75, 77-81, 83-89, 91-95, and 96-100 with surrounding template usage.",
-        "Inspected relevant discovered tests test/unit/production-shortcuts.spec.ts, test/e2e/quick-search.behavior.spec.ts, test/e2e/quick-search-developer.behavior.spec.ts, and test/e2e/shell-accessibility.behavior.spec.ts.",
+        "Inspected relevant discovered tests test/unit/production-shortcuts.spec.ts, test/e2e/quick-search.behavior.spec.ts, test/e2e/shell-accessibility.behavior.spec.ts, test/ssr/authority-fonts.spec.ts, and test/e2e/reader-asset-graph.behavior.spec.ts.",
         "Read exactly one packet JSON: .quality/semantic-review/packets/12913557dda1fc3cef2e9fc15d789906d082be2431af542656c71d8a9619f0f7.json.",
         "Read quality/semantic-review-contract.md.",
         "Used read-only commands only; no tests were executed."
@@ -633,42 +632,41 @@
     },
     {
       "packetId": "app/components/global/SiteShell.vue::packet::style-1",
-      "fingerprint": "d238c4cb60bda716f39c3b5edb0f4308b491e3f5589ef32509eb43a4430f9c9a",
+      "fingerprint": "9be9f8e97a26ed9866d6f5d30f8fba6868e08b63c968134c8ad6d1b91ab830e8",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/2778f55a22eb83b72ad7fd2c2082660ad3f926bd6686703fb182634ae762ce78.json",
-      "evidenceHash": "c279424175de36cf502415d483727d437e553a9b5439fd901b55f47bae57d24a",
+      "evidenceHash": "c96370ec5b7d6d94198b175ab9a92fbacf665c6e48ed97c3340fd54d29c93eae",
       "findingIds": [],
       "verification": [
         "Inspected app/assets/styles/nuxt.scss, app/assets/styles/styles.scss, app/assets/styles/reader.scss, and app/assets/styles/reader-base.scss for dependencies that set or consume .lb-logo and --logo-l-color/--logo-b-color.",
-        "Inspected current owned source app/components/global/SiteShell.vue, including packet-owned physical lines 188-189 and surrounding SVG/template/script behavior.",
+        "Inspected current owned source app/components/global/SiteShell.vue, including packet-owned physical lines 184-185 and surrounding SVG/template/script behavior.",
         "Inspected direct layout callers app/layouts/default.vue and app/layouts/reader.vue.",
-        "Inspected named direct import app/lib/production-shortcuts.ts for surrounding shell shortcut and paste behavior.",
-        "Inspected relevant discovered tests test/unit/registered-nuxt-asset.spec.ts, test/ssr/history.spec.ts, and test/visual/capture-history-angular.spec.ts by source.",
+        "Inspected named direct import app/lib/production-shortcuts.ts for shell shortcut and paste behavior adjacent to the component.",
+        "Inspected relevant discovered tests test/unit/registered-nuxt-asset.spec.ts, test/ssr/history.spec.ts, test/e2e/presentations.visual.spec.ts, test/e2e/shell-accessibility.behavior.spec.ts, and test/visual/capture-history-angular.spec.ts by source.",
         "Read exactly the requested packet JSON: .quality/semantic-review/packets/2778f55a22eb83b72ad7fd2c2082660ad3f926bd6686703fb182634ae762ce78.json.",
         "Read quality/semantic-review-contract.md.",
-        "Searched current source and tests for SiteShell, logo fill classes, logo CSS variables, direct layout callers, and relevant shell/logo assertions.",
+        "Searched current app and test source for SiteShell, logo fill classes, logo CSS variables, direct layout callers, and shell/logo assertions.",
         "Used read-only inspection commands only; no test suite was executed."
       ]
     },
     {
       "packetId": "app/components/global/SiteShell.vue::packet::template-1",
-      "fingerprint": "5dbcb5dac5e0606b3ce8a8ccd9f21581846e497f16a50c05ce637c6874a5adee",
+      "fingerprint": "882e3c6dd218d7addb251ab8f84234f2caeac22634027560866dfea7442d07e2",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/e5ecd945f6fec53794dde925c380bdcdc272150fafb17b2064d54ff8c72264da.json",
-      "evidenceHash": "3f1e3aacdfc317a7240e8d4fb4ccb145934ca8e6a1f8671852e8b9fc90f4e623",
+      "evidenceHash": "6a6c40f09cc0d791fec0301c557b329457a10e44fbb59b42cdc8cf735a09776b",
       "findingIds": [
         "SR-e5ecd945-template-001"
       ],
       "verification": [
-        "Checked git status for reviewed source, dependency, caller, and test files; no relevant local modifications were reported.",
-        "No test runner was executed because the review was constrained to read-only inspection commands.",
-        "Read `quality/semantic-review-contract.md`.",
-        "Read exactly one packet JSON: `.quality/semantic-review/packets/e5ecd945f6fec53794dde925c380bdcdc272150fafb17b2064d54ff8c72264da.json`.",
-        "Reviewed current owned source, direct callers, direct dependencies, composable navigation dependencies, styling, and relevant tests using read-only commands only."
+        "Confirmed the packet lists no type boundaries and no named tests; inspected relevant discovered tests for the owned template behavior.",
+        "Read packet JSON .quality/semantic-review/packets/e5ecd945f6fec53794dde925c380bdcdc272150fafb17b2064d54ff8c72264da.json and reviewed only packet app/components/global/SiteShell.vue::packet::template-1.",
+        "Read review contract quality/semantic-review-contract.md.",
+        "Used read-only inspection commands only: sed, nl, and rg."
       ]
     },
     {
