@@ -6,7 +6,7 @@ import {
   test,
   type APIRequestContext,
   type Page
-} from "@playwright/test"
+} from "../fixtures/angular-visual-test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 import { fixtureOrigin } from "../helpers/test-origins"
@@ -157,7 +157,7 @@ for (const visualCase of visualCases) {
         unexpectedBrowserDataRequests.push(label)
         return route.abort("blockedbyclient")
       }
-      return route.continue()
+      return route.fallback()
     })
 
     const response = await page.goto(visualCase.route, { waitUntil: "networkidle" })

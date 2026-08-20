@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "../fixtures/angular-visual-test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 import { fixtureOrigin } from "../helpers/test-origins"
@@ -116,7 +116,7 @@ async function blockProductionAndRouteAppStyles(page: Page) {
       const response = await route.fetch({ url: `${fixture}${url.pathname}${url.search}` })
       return route.fulfill({ response })
     }
-    return route.continue()
+    return route.fallback()
   })
   return forbidden
 }

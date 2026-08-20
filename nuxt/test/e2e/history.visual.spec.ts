@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "../fixtures/angular-visual-test"
 
 import {
   historyAuthorSummaries,
@@ -81,13 +81,13 @@ test("matches the populated Angular History authority", async ({ page, request }
         path: url.pathname,
         body: browserRequest.postDataJSON() as { author_ids: string[] }
       })
-      return route.continue()
+      return route.fallback()
     }
     if (url.pathname.startsWith("/api/")) {
       unexpectedApiRequests.push(`${browserRequest.method()} ${browserRequest.url()}`)
       return route.abort("blockedbyclient")
     }
-    return route.continue()
+    return route.fallback()
   })
 
   const response = await page.goto("/historik", { waitUntil: "networkidle" })

@@ -3,6 +3,7 @@ import { join } from "node:path"
 import { describe, expect, test, vi } from "vitest"
 
 import {
+  createSharedNuxtTypePreparation,
   createShardPlan,
   superviseShardPlans,
   terminateOwnedWebServers,
@@ -19,6 +20,24 @@ function deferredChild() {
 }
 
 describe("isolated Playwright shard runner", () => {
+  test("prepares the shared root Nuxt types before isolated shard builds", () => {
+    const preparation = createSharedNuxtTypePreparation({
+      cwd: "/repo/nuxt",
+      environment: {
+        HOME: "/tmp/home",
+        NUXT_BUILD_DIR: "/tmp/stale-shard"
+      },
+      nuxtCli: "/repo/nuxt/node_modules/nuxt/bin/nuxt.mjs"
+    })
+
+    expect(preparation).toEqual({
+      command: process.execPath,
+      args: ["/repo/nuxt/node_modules/nuxt/bin/nuxt.mjs", "prepare"],
+      cwd: "/repo/nuxt",
+      env: { HOME: "/tmp/home" }
+    })
+  })
+
   test("plans one-worker shards with unique ports and directories", () => {
     const runRoot = "/tmp/littb-playwright/run-1"
     const plans = createShardPlan({

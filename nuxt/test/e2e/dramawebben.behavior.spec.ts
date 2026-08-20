@@ -216,6 +216,13 @@ async function expectExactLinks(page: Page, kind: "pjäser" | "om" | "kringtexte
 
 test.beforeEach(async ({ request }) => reset(request))
 test.afterEach(async ({ request }) => reset(request))
+test.beforeAll(async ({ baseURL, browser, request }) => {
+  const warmupPage = await browser.newPage({ baseURL })
+  const response = await warmupPage.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+  expect(response?.status()).toBe(200)
+  await warmupPage.close()
+  await reset(request)
+})
 
 for (const documentCase of [
   {

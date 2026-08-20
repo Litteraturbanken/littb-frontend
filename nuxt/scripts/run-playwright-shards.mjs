@@ -9,6 +9,33 @@ import {
   shardPorts
 } from "./test-runner-policy.mjs"
 
+export function createSharedNuxtTypePreparation({
+  cwd = process.cwd(),
+  environment = process.env,
+  nuxtCli = fileURLToPath(new URL("../node_modules/nuxt/bin/nuxt.mjs", import.meta.url))
+} = {}) {
+  const env = { ...environment }
+  delete env.NUXT_BUILD_DIR
+  return {
+    command: process.execPath,
+    args: [nuxtCli, "prepare"],
+    cwd,
+    env
+  }
+}
+
+function runPreparation(preparation) {
+  const child = spawn(preparation.command, preparation.args, {
+    cwd: preparation.cwd,
+    env: preparation.env,
+    stdio: "inherit"
+  })
+  return new Promise(resolve => {
+    child.once("error", () => resolve(1))
+    child.once("exit", (code, signal) => resolve(code ?? (signal ? 128 : 1)))
+  })
+}
+
 export function createShardPlan({
   projects,
   passthrough = [],
@@ -227,6 +254,12 @@ function spawnPlan(plan, activeChildren) {
 async function main() {
   const { projects, passthrough } = parseArguments(process.argv.slice(2))
   if (projects.length === 0) throw new TypeError("at least one --project=<name> is required")
+
+  const preparationCode = await runPreparation(createSharedNuxtTypePreparation())
+  if (preparationCode !== 0) {
+    process.exitCode = preparationCode
+    return
+  }
 
   const shardCount = configuredShardCount(process.env.LITTB_PLAYWRIGHT_SHARDS)
   const fixtureBase = environmentPort(process.env.LBAPI_FIXTURE_PORT, 4100, "LBAPI_FIXTURE_PORT")

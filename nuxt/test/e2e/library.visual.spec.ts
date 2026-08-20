@@ -1,7 +1,12 @@
 import { createHash } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
-import { expect, test, type APIRequestContext } from "@playwright/test"
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  useProductionAuthorityFonts
+} from "../fixtures/angular-visual-test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 
@@ -125,7 +130,7 @@ test("preserves the populated legacy Library shell geometry at desktop and mobil
       forbidden.push(`${route.request().method()} ${route.request().url()}`)
       return route.abort("blockedbyclient")
     }
-    return route.continue()
+    return route.fallback()
   })
 
   const response = await page.goto("/bibliotek", { waitUntil: "networkidle" })
@@ -196,13 +201,18 @@ for (const visualCase of [
         problems.push(`console ${message.type()}: ${message.text()}`)
       }
     })
+    if (visualCase.name === "standalone-epub") {
+      // This baseline was recaptured for the production-only EPUB background
+      // after the monolithic font shipped, so it intentionally covers that font.
+      await useProductionAuthorityFonts(page)
+    }
     await page.route("**/*", route => {
       const url = new URL(route.request().url())
       if (!["127.0.0.1", "localhost"].includes(url.hostname)) {
         forbidden.push(`${route.request().method()} ${route.request().url()}`)
         return route.abort("blockedbyclient")
       }
-      return route.continue()
+      return route.fallback()
     })
 
     const response = await page.goto(visualCase.route, { waitUntil: "networkidle" })
@@ -287,7 +297,7 @@ for (const visualCase of [
         forbidden.push(`${route.request().method()} ${route.request().url()}`)
         return route.abort("blockedbyclient")
       }
-      return route.continue()
+      return route.fallback()
     })
 
     const response = await page.goto(visualCase.route, { waitUntil: "networkidle" })

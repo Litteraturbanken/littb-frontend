@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "../fixtures/angular-visual-test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 import { fixtureOrigin } from "../helpers/test-origins"
@@ -175,7 +175,7 @@ test("matches the Angular SLA omtexterna authority", async ({ page, request }, t
     }
     if (isNuxtDevMetadata) {
       frameworkMetadataRequests.push(label)
-      return route.continue()
+      return route.fallback()
     }
     if (url.port === "4100"
       || isDataRequest
@@ -184,7 +184,7 @@ test("matches the Angular SLA omtexterna authority", async ({ page, request }, t
       else unexpectedRequests.push(label)
       return route.abort("blockedbyclient")
     }
-    return route.continue()
+    return route.fallback()
   })
 
   const response = await page.goto(slaRoute, { waitUntil: "networkidle" })

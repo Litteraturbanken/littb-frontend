@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from "@playwright/test"
+import { expect, test, type APIRequestContext } from "../fixtures/angular-visual-test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 import { fixtureOrigin } from "../helpers/test-origins"
@@ -46,7 +46,7 @@ test("matches the approved Angular Home page", async ({ page, request }, testInf
       forbiddenProductionRequests.push(`${browserRequest.method()} ${browserRequest.url()}`)
       return route.abort("blockedbyclient")
     }
-    return route.continue()
+    return route.fallback()
   })
 
   const response = await page.goto("/", { waitUntil: "domcontentloaded" })
@@ -91,9 +91,13 @@ test("matches the approved Angular Home page", async ({ page, request }, testInf
   expect(querySuffix(fragmentRequests[0] ?? "", "/red/om/start/startsida-ny.html")).toBe(
     querySuffix(stylesheetRequests[0] ?? "", "/red/css/startsida.css")
   )
-  // The browser paints the background once and waitForVisualAssets decodes it once.
-  expect(requests.filter(path => path === "/red/bilder/bakgrundsbilder/start_bkg_172_2026.jpg")).toHaveLength(2)
-  expect(requests).toHaveLength(4)
+  // The decode probe may reuse the painted background from the memory cache or request it once.
+  const backgroundRequests = requests.filter(
+    path => path === "/red/bilder/bakgrundsbilder/start_bkg_172_2026.jpg"
+  )
+  expect(backgroundRequests.length).toBeGreaterThanOrEqual(1)
+  expect(backgroundRequests.length).toBeLessThanOrEqual(2)
+  expect(requests).toHaveLength(2 + backgroundRequests.length)
   expect(forbiddenProductionRequests).toEqual([])
   expect(unexpectedContentRequests).toEqual([])
 

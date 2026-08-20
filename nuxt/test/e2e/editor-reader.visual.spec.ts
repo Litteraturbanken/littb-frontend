@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Page } from "../fixtures/angular-visual-test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 
@@ -24,7 +24,7 @@ test("matches deterministic Angular editor authority", async ({ page }, testInfo
       productionEscapes.push(`${route.request().method()} ${route.request().url()}`)
       return route.abort("blockedbyclient")
     }
-    return route.continue()
+    return route.fallback()
   })
 
   const response = await page.goto(editorPath, { waitUntil: "networkidle" })

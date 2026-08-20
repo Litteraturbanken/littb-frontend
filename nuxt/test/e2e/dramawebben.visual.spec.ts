@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "../fixtures/angular-visual-test"
 
 import { dramawebbenCases } from "../fixtures/dramawebben-data.mjs"
 import { waitForVisualAssets } from "../helpers/visual"
@@ -98,7 +98,7 @@ for (const documentCase of dramawebbenCases) {
         browserDataRequests.push(label)
         return route.abort("blockedbyclient")
       }
-      return route.continue()
+      return route.fallback()
     })
 
     const response = await page.goto(documentCase.route, { waitUntil: "networkidle" })

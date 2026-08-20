@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "../fixtures/angular-visual-test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 import { fixtureOrigin } from "../helpers/test-origins"
@@ -92,7 +92,7 @@ for (const visualCase of visualCases) {
         forbidden.push(`${route.request().method()} ${route.request().url()}`)
         return route.abort("blockedbyclient")
       }
-      return route.continue()
+      return route.fallback()
     })
     page.on("request", browserRequest => {
       const url = new URL(browserRequest.url())

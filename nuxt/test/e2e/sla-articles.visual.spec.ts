@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "../fixtures/angular-visual-test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 
@@ -192,14 +192,14 @@ for (const visualCase of visualCases) {
       }
       if (isNuxtDevMetadata) {
         frameworkMetadataRequests.push(label)
-        return route.continue()
+        return route.fallback()
       }
       if (url.port === fixturePort || isDataRequest
         || !["127.0.0.1", "localhost"].includes(url.hostname)) {
         unexpectedDataRequests.push(label)
         return route.abort("blockedbyclient")
       }
-      return route.continue()
+      return route.fallback()
     })
 
     const response = await page.goto(routePath, { waitUntil: "networkidle" })

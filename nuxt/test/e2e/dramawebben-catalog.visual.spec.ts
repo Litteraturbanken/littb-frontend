@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs"
-import { expect, test, type APIRequestContext } from "@playwright/test"
+import { expect, test, type APIRequestContext } from "../fixtures/angular-visual-test"
 
 import { dramawebbenCatalogExpected } from "../fixtures/dramawebben-catalog-data.mjs"
 import { waitForVisualAssets } from "../helpers/visual"
@@ -46,6 +46,13 @@ async function catalogRequests(request: APIRequestContext) {
 
 test.beforeEach(async ({ request }) => reset(request))
 test.afterEach(async ({ request }) => reset(request))
+test.beforeAll(async ({ baseURL, browser, request }) => {
+  const warmupPage = await browser.newPage({ baseURL })
+  const response = await warmupPage.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+  expect(response?.status()).toBe(200)
+  await warmupPage.close()
+  await reset(request)
+})
 
 test("catalog page exposes its exact three siblings through Vue Fragment", () => {
   expect(catalogPageSource).toContain(
@@ -98,7 +105,7 @@ for (const catalogCase of catalogCases) {
         browserDataRequests.push(label)
         return route.abort("blockedbyclient")
       }
-      return route.continue()
+      return route.fallback()
     })
 
     const response = await page.goto(catalogCase.route, { waitUntil: "networkidle" })

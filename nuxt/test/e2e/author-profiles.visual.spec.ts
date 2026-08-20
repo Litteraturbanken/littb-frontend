@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs"
-import { expect, test, type APIRequestContext } from "@playwright/test"
+import { expect, test, type APIRequestContext } from "../fixtures/angular-visual-test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 import { fixtureOrigin } from "../helpers/test-origins"
@@ -95,7 +95,7 @@ for (const visualCase of visualCases) {
         unexpectedApiRequests.push(label)
         return route.abort("blockedbyclient")
       }
-      return route.continue()
+      return route.fallback()
     })
 
     const response = await page.goto(visualCase.route, { waitUntil: "domcontentloaded" })

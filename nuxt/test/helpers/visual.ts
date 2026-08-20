@@ -1,21 +1,17 @@
 import type { Page } from "@playwright/test"
 
 export async function waitForVisualAssets(page: Page) {
-  if (await page.locator(".site-shell").count()) {
-    await page.evaluate(async () => {
-      let stylesheet = document.querySelector<HTMLLinkElement>('link[data-authority-fonts]')
-      if (!stylesheet) {
-        stylesheet = document.createElement("link")
-        stylesheet.rel = "stylesheet"
-        stylesheet.href = "/assets/styles/fonts/601526/FD3D54C3A22C4D32B.css"
-        stylesheet.dataset.authorityFonts = ""
-        document.head.append(stylesheet)
+  const hasSiteShell = Boolean(await page.locator(".site-shell").count())
+  if (hasSiteShell) {
+    await page.waitForFunction(() => {
+      const stylesheet = document.querySelector<HTMLLinkElement>('link[data-authority-fonts]')
+      if (!stylesheet?.sheet) return false
+      try {
+        return [...stylesheet.sheet.cssRules]
+          .some(rule => rule.cssText.includes('font-family: "Requiem Text A"'))
+      } catch {
+        return false
       }
-      if (stylesheet.sheet) return
-      await new Promise<void>(resolve => {
-        stylesheet.addEventListener("load", () => resolve(), { once: true })
-        stylesheet.addEventListener("error", () => resolve(), { once: true })
-      })
     })
   }
   await page.evaluate(async () => {
@@ -35,5 +31,16 @@ export async function waitForVisualAssets(page: Page) {
       image.src = match[1]
       await image.decode()
     }
+  })
+  await page.evaluate(async () => {
+    const authorityFaces = [...document.fonts].filter(face => {
+      const family = face.family.replace(/^['"]|['"]$/g, "")
+      return family.startsWith("Requiem ") || family.startsWith("Verlag ")
+    })
+    await Promise.all(authorityFaces.map(face => face.load()))
+    await document.fonts.ready
+    await new Promise<void>(resolve => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+    })
   })
 }

@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "../fixtures/angular-visual-test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 
@@ -75,7 +75,7 @@ for (const state of ["empty", "populated"] as const) {
         forbiddenProductionRequests.push(`${route.request().method()} ${route.request().url()}`)
         return route.abort("blockedbyclient")
       }
-      return route.continue()
+      return route.fallback()
     })
 
     const response = await page.goto("/om/ide", { waitUntil: "networkidle" })

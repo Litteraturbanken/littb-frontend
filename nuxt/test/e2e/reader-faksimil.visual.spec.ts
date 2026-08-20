@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "../fixtures/angular-visual-test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 import { fixtureOrigin } from "../helpers/test-origins"
@@ -124,7 +124,7 @@ for (const visualCase of visualCases) {
         }
         scanRequests.push(url.pathname)
       }
-      return route.continue()
+      return route.fallback()
     })
 
     const response = await page.goto(visualCase.route, { waitUntil: "networkidle" })

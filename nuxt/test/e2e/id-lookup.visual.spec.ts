@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "../fixtures/angular-visual-test"
 
 import { workLookupResponse } from "../fixtures/work-lookup-data.mjs"
 import { waitForVisualAssets } from "../helpers/visual"
@@ -95,7 +95,7 @@ for (const populated of [false, true]) {
         productionEscapes.push(`${browserRequest.method()} ${browserRequest.url()}`)
         return route.abort("blockedbyclient")
       }
-      return route.continue()
+      return route.fallback()
     })
 
     await page.goto("/id", { waitUntil: "networkidle" })

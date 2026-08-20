@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "../fixtures/angular-visual-test"
 
 import {
   isSameOriginRegisteredNuxtAsset
@@ -284,7 +284,7 @@ for (const visualCase of visualCases) {
         unexpectedBrowserTraffic.push(label)
         return route.abort("blockedbyclient")
       }
-      return route.continue()
+      return route.fallback()
     })
 
     const response = await page.goto(visualCase.route, { waitUntil: "networkidle" })

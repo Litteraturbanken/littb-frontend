@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "../fixtures/angular-visual-test"
 
 import { semerAuthorDocumentAssets } from "../fixtures/author-document-data.mjs"
 import { waitForVisualAssets } from "../helpers/visual"
@@ -87,7 +87,7 @@ for (const documentCase of visualCases) {
         if (browserRequest.method() === "GET"
           && url.pathname === documentCase.apiPath && url.search === "") {
           browserApiRequests.push(label)
-          return route.continue()
+          return route.fallback()
         }
         unexpectedApplicationRequests.push(label)
         return route.abort("blockedbyclient")
@@ -96,12 +96,12 @@ for (const documentCase of visualCases) {
         if (browserRequest.method() === "GET"
           && url.search === "" && selectedAssets.has(url.pathname)) {
           browserManagedAssets.push(url.pathname)
-          return route.continue()
+          return route.fallback()
         }
         unexpectedApplicationRequests.push(label)
         return route.abort("blockedbyclient")
       }
-      return route.continue()
+      return route.fallback()
     })
 
     const response = await page.goto(documentCase.route, { waitUntil: "networkidle" })
