@@ -1176,8 +1176,8 @@ function toggle1800() {
 }
 
 async function toggleDownloadMode() {
+    const query = queryFromLiveAdvancedControls()
     invalidateIntent()
-    const query: LocationQuery = { ...route.query }
     delete query.sida
     delete query.hide1800
     delete query.title

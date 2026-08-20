@@ -1683,6 +1683,36 @@ test("nedladdning selects visible source works and posts the exact chosen export
   })
 })
 
+test("nedladdning preserves a search typed before its debounce settles", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  await reset(request)
+
+  await page.evaluate(() => {
+    const filter = document.querySelector<HTMLInputElement>("[data-library-filter]")
+    const downloadMode = document.querySelector<HTMLElement>("[data-library-download-mode]")
+    if (!filter || !downloadMode) throw new Error("Library controls are unavailable")
+    filter.value = "source-pagination"
+    filter.dispatchEvent(new Event("input", { bubbles: true }))
+    downloadMode.click()
+  })
+
+  await expect(page).toHaveURL(url => (
+    url.pathname === "/bibliotek" &&
+    url.searchParams.get("filter") === "source-pagination" &&
+    url.searchParams.get("nedladdning") === "1" &&
+    url.searchParams.get("visa") === "works"
+  ))
+  await expect.poll(async () => (await epubRequests(request)).at(-1)?.body).toMatchObject({
+    mode: "works",
+    source_only: true,
+    filters: libraryFilters({ query: "source-pagination" })
+  })
+})
+
 test("source selections survive pagination and an empty refresh", async ({ page }) => {
   await page.goto(
     "/bibliotek?avancerat=1&visa=works&nedladdning=1&filter=source-pagination",
