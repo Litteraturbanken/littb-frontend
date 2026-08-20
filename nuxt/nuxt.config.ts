@@ -148,7 +148,7 @@ export default defineNuxtConfig({
         { rel: "icon", type: "image/png", sizes: "16x16", href: "/assets/img/favicons/favicon-16x16.png" }
       ],
       noscript: [{
-        innerHTML: '<link rel="stylesheet" href="/assets/styles/fonts/601526/32FBEBA806C948833.css">'
+        innerHTML: '<link rel="stylesheet" href="/assets/styles/fonts/601526/FD3D54C3A22C4D32B.css">'
       }],
       meta: [{ name: "theme-color", content: "#ffffff" }]
     }

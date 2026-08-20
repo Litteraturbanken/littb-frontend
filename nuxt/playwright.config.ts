@@ -54,7 +54,7 @@ export default defineConfig({
       testMatch: /e2e\/.*\.spec\.ts/,
       testIgnore: [
         /e2e\/.*\.mobile\.behavior\.spec\.ts/,
-        /e2e\/requiem-webkit\.behavior\.spec\.ts/,
+        /e2e\/requiem-kerning\.behavior\.spec\.ts/,
         /e2e\/reader-dictionary-production\.behavior\.spec\.ts/,
         /e2e\/reader-asset-graph\.behavior\.spec\.ts/,
         /e2e\/reader-assets-production\.behavior\.spec\.ts/
@@ -76,8 +76,24 @@ export default defineConfig({
       use: { ...devices["iPhone 13"], browserName: "chromium" }
     },
     {
+      name: "chromium-typography",
+      testMatch: /e2e\/requiem-kerning\.behavior\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 1000 }
+      }
+    },
+    {
+      name: "firefox-typography",
+      testMatch: /e2e\/requiem-kerning\.behavior\.spec\.ts/,
+      use: {
+        ...devices["Desktop Firefox"],
+        viewport: { width: 1440, height: 1000 }
+      }
+    },
+    {
       name: "webkit-typography",
-      testMatch: /e2e\/requiem-webkit\.behavior\.spec\.ts/,
+      testMatch: /e2e\/requiem-kerning\.behavior\.spec\.ts/,
       use: {
         ...devices["Desktop Safari"],
         viewport: { width: 1440, height: 1000 }

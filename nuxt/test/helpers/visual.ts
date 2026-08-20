@@ -7,7 +7,7 @@ export async function waitForVisualAssets(page: Page) {
       if (!stylesheet) {
         stylesheet = document.createElement("link")
         stylesheet.rel = "stylesheet"
-        stylesheet.href = "/assets/styles/fonts/601526/32FBEBA806C948833.css"
+        stylesheet.href = "/assets/styles/fonts/601526/FD3D54C3A22C4D32B.css"
         stylesheet.dataset.authorityFonts = ""
         document.head.append(stylesheet)
       }

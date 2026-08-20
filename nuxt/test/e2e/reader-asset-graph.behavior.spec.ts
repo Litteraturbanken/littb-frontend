@@ -1,6 +1,19 @@
 import { expect, test } from "@playwright/test"
+import { parseHTML } from "linkedom"
 
 const readerUrl = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
+
+test("the production no-script shell uses the monolithic authority stylesheet", async ({
+  request
+}) => {
+  const response = await request.get("/om/ide")
+  expect(response.ok()).toBe(true)
+
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector("noscript link[rel=stylesheet]")?.getAttribute("href")).toBe(
+    "/assets/styles/fonts/601526/FD3D54C3A22C4D32B.css"
+  )
+})
 
 test("the production reader does not load assets owned by unrelated routes", async ({ page }) => {
   await page.goto(readerUrl, { waitUntil: "networkidle" })
@@ -48,9 +61,9 @@ test("the licensed authority font sheet is fetched independently of route CSS", 
     links.map(link => (link as HTMLLinkElement).href)
   ))
 
-  expect(stylesheetUrls.some(url => /32FBEBA806C948833/i.test(url))).toBe(true)
+  expect(stylesheetUrls.some(url => /FD3D54C3A22C4D32B/i.test(url))).toBe(true)
   await expect(page.locator(
-    'link[rel="stylesheet"][href*="32FBEBA806C948833"][data-authority-fonts]'
+    'link[rel="stylesheet"][href*="FD3D54C3A22C4D32B"][data-authority-fonts]'
   )).toHaveCount(1)
 })
 
