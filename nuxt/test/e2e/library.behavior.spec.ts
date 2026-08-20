@@ -122,6 +122,12 @@ async function reset(request: APIRequestContext) {
   ])
 }
 
+async function waitForHydration(page: Page) {
+  await expect.poll(() => page.locator("#__nuxt").evaluate(element => (
+    Boolean((element as HTMLElement & { __vue_app__?: unknown }).__vue_app__)
+  ))).toBe(true)
+}
+
 test("Library background remains available without the legacy content image route", async ({
   page
 }) => {
@@ -1159,12 +1165,18 @@ test("delayed ordinary summaries never gate active rows", async ({
   request
 }) => {
   const filtered = libraryFilters({ query: "Selma" })
-  await setLibraryDelay(request, "counts", { mode: "works", filters: filtered })
-  await setLibraryDelay(request, "counts", { mode: "parts", filters: filtered })
-  await setLibraryDelay(request, "counts", { mode: "epub", filters: filtered })
-  await setLibraryDelay(request, "counts", { mode: "pdf", filters: filtered })
+  await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  await reset(request)
+  await setLibraryDelay(request, "counts", { mode: "works", filters: filtered }, 3000)
+  await setLibraryDelay(request, "counts", { mode: "parts", filters: filtered }, 3000)
+  await setLibraryDelay(request, "counts", { mode: "epub", filters: filtered }, 3000)
+  await setLibraryDelay(request, "counts", { mode: "pdf", filters: filtered }, 3000)
 
-  await page.goto("/bibliotek?filter=Selma", { waitUntil: "domcontentloaded" })
+  await page.locator("[data-library-filter]").fill("Selma")
+  await expect.poll(async () => (await libraryV2Requests(request)).counts.length).toBe(4)
+  await page.getByLabel("Från tryckår", { exact: true }).fill("1900")
+  expect(new URL(page.url()).searchParams.has("intervall")).toBe(false)
   await expect(page.getByRole("link", { name: /Lagerlöf/ })).toBeVisible()
   await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 1")
   await expect(page.locator('[data-library-tab="works"]')).toContainText(": 1")
@@ -2359,8 +2371,12 @@ test("a delayed inactive standalone count never gates the active EPUB rows", asy
   page,
   request
 }) => {
-  await setLibraryDelay(request, "counts", { mode: "pdf", filters: libraryFilters() })
-  await page.goto("/epub?sort=popularitet", { waitUntil: "domcontentloaded" })
+  await setLibraryDelay(request, "counts", { mode: "pdf", filters: libraryFilters() }, 3000)
+  await page.goto("/epub?sort=popularitet&avancerat=1", { waitUntil: "domcontentloaded" })
+  await waitForHydration(page)
+  await expect.poll(async () => (await countOnlyPdfRequests(request)).length).toBe(1)
+  await page.getByLabel("Från tryckår", { exact: true }).fill("1900")
+  expect(new URL(page.url()).searchParams.has("intervall")).toBe(false)
 
   await expect(page.locator("[data-library-epub-row]")).toHaveCount(3)
   await expect(page.locator('[data-library-tab="epub"]')).toHaveText("Epub: 201")

@@ -727,10 +727,10 @@ function invalidateIntent(): number {
     return ++requestVersion
 }
 
-function downloadCountIdentity(filterValue: string, advanced: LibraryAdvancedFilters): string {
-    return JSON.stringify([filterValue, advanced])
-}
-
+function downloadCountIdentity(filterValue: string, advanced: LibraryAdvancedFilters): string { return JSON.stringify([filterValue, advanced]) }
+function committedRouteState(): QueryState { return requestState(routeState(route.path, route.query)) }
+function activeDownloadCountIdentity(): string { const state = committedRouteState(); return downloadCountIdentity(state.filter, state.advancedFilters) }
+function activeLibrarySummaryIdentity(): string { const state = committedRouteState(); return librarySummaryIdentity(state.filter, state.advancedFilters) }
 function invalidateDownloadCounts(filterValue: string, advanced: LibraryAdvancedFilters) {
     if (!standalone.value) return
     const identity = downloadCountIdentity(filterValue, advanced)
@@ -748,7 +748,7 @@ function updateDownloadCount(
     count: number
 ) {
     const identity = downloadCountIdentity(filterValue, advanced)
-    if (identity !== downloadCountIdentity(filter.value, currentState().advancedFilters)) return
+    if (identity !== activeDownloadCountIdentity()) return
     const current =
         downloadCounts.value.identity === identity
             ? downloadCounts.value
@@ -763,7 +763,7 @@ function inactiveDownloadCountIsCurrent(
 ): result is NonNullable<typeof result> & { total: number } {
     return result?.mode === inactiveMode
         && result.total !== null
-        && identity === downloadCountIdentity(filter.value, currentState().advancedFilters)
+        && identity === activeDownloadCountIdentity()
 }
 
 async function refreshInactiveDownloadCount(
@@ -773,7 +773,7 @@ async function refreshInactiveDownloadCount(
 ) {
     if (!standalone.value) return
     const identity = downloadCountIdentity(filterValue, advanced)
-    if (identity !== downloadCountIdentity(filter.value, currentState().advancedFilters)) return
+    if (identity !== activeDownloadCountIdentity()) return
     if (downloadCounts.value.identity !== identity) invalidateDownloadCounts(filterValue, advanced)
     const inactiveMode = activeMode === "epub" ? "pdf" : "epub"
     if (downloadCounts.value[inactiveMode] !== null) return
@@ -809,7 +809,7 @@ function canUpdateLibrarySummary(state: QueryState, pageData: LibraryPageState):
     if (standalone.value || state.downloadMode || pageData.response.failed) return false
     const identity = librarySummaryIdentity(state.filter, state.advancedFilters)
     return librarySummary.value.identity === identity
-        && identity === librarySummaryIdentity(filter.value, currentState().advancedFilters)
+        && identity === activeLibrarySummaryIdentity()
 }
 
 function updateLibrarySummaryFromPage(state: QueryState, pageData: LibraryPageState) {
@@ -853,7 +853,7 @@ function updateLibrarySummaryFromPage(state: QueryState, pageData: LibraryPageSt
 }
 
 function isActiveLibrarySummaryIdentity(identity: string): boolean {
-    return identity === librarySummaryIdentity(filter.value, currentState().advancedFilters)
+    return identity === activeLibrarySummaryIdentity()
 }
 
 function hasCompleteLibrarySummary(): boolean {
@@ -879,7 +879,7 @@ function canCommitLibrarySummary(
         && summary !== null
         && summary.identity === identity
         && isActiveLibrarySummaryIdentity(identity)
-        && !currentState().downloadMode
+        && !committedRouteState().downloadMode
 }
 
 function mergedLibrarySummary(
