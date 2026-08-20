@@ -182,7 +182,7 @@ for (const visualCase of [
     bodyClass: "page-epub",
     heading: "Hämta e-böcker",
     activeTabs: ["epub"],
-    background: "none"
+    background: /ljudlandskap\.jpg/
   }
 ] as const) {
   test(`matches the canonical Angular ${visualCase.name} shell at desktop and mobile`, async ({

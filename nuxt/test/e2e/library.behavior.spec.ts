@@ -15,21 +15,30 @@ type LibrarySearchRequest = operations["v2_post_library_search"]["requestBody"][
 type LibraryCountRequest = operations["v2_post_library_counts"]["requestBody"]["content"]["application/json"]
 type LibraryFilters = LibraryCountRequest["filters"]
 
-async function htmlBackgroundDimensions(page: Page) {
+async function htmlBackgroundAsset(page: Page) {
   return await page.locator("html").evaluate(async (element) => {
     const value = (element as HTMLElement).style.backgroundImage
     const match = /^url\(["']?(.*?)["']?\)$/u.exec(value)
-    if (!match?.[1]) return { height: 0, width: 0 }
+    if (!match?.[1]) return { height: 0, pathname: "", width: 0 }
 
     const image = new Image()
     image.src = new URL(match[1], window.location.href).href
     try {
       await image.decode()
     } catch {
-      return { height: 0, width: 0 }
+      return { height: 0, pathname: new URL(image.src).pathname, width: 0 }
     }
-    return { height: image.naturalHeight, width: image.naturalWidth }
+    return {
+      height: image.naturalHeight,
+      pathname: new URL(image.src).pathname,
+      width: image.naturalWidth
+    }
   })
+}
+
+async function htmlBackgroundDimensions(page: Page) {
+  const { height, width } = await htmlBackgroundAsset(page)
+  return { height, width }
 }
 
 async function expectFocusTargetNotClipped(locator: Locator) {
@@ -123,6 +132,25 @@ test("Library background remains available without the legacy content image rout
   await page.goto("/bibliotek", { waitUntil: "networkidle" })
 
   expect(await htmlBackgroundDimensions(page)).toEqual({ height: 1593, width: 2000 })
+})
+
+test("standalone EPUB uses its distinct bundled background without the legacy image route", async ({
+  page
+}) => {
+  let legacyRequests = 0
+  await page.route("**/red/bilder/bakgrundsbilder/ljudlandskap.jpg", route => {
+    legacyRequests += 1
+    return route.abort("failed")
+  })
+
+  await page.goto("/epub?visa=epub&sort=popularitet", { waitUntil: "networkidle" })
+
+  expect(await htmlBackgroundAsset(page)).toEqual({
+    height: 1593,
+    pathname: expect.stringMatching(/\/_nuxt\/assets\/img\/ljudlandskap\.jpg$/u),
+    width: 2000
+  })
+  expect(legacyRequests).toBe(0)
 })
 
 test("Library and Search replace their backgrounds during SPA navigation without legacy image routes", async ({
@@ -2559,10 +2587,12 @@ test("SPA navigation between Library and its EPUB route updates the complete she
   await expect(page).toHaveURL("/epub?visa=epub&sort=popularitet")
   await expect(page.locator("[data-library-instance-probe]")).toHaveCount(0)
   await expect(page).toHaveTitle("E-böcker för nedladdning | Litteraturbanken")
-  await expect.poll(() => page.locator("html").evaluate(element => ({
-    color: getComputedStyle(element).backgroundColor,
-    image: getComputedStyle(element).backgroundImage
-  }))).toEqual({ color: "rgba(0, 0, 0, 0)", image: "none" })
+  await expect.poll(() => page.locator("html").evaluate(element =>
+    getComputedStyle(element).backgroundImage
+  )).toContain("/_nuxt/assets/img/ljudlandskap.jpg")
+  await expect.poll(() => page.locator("html").evaluate(element =>
+    getComputedStyle(element).backgroundRepeat
+  )).toBe("no-repeat")
   await expect(page.locator("body")).toHaveClass(/page-epub/u)
   await expect(page.locator("body")).not.toHaveClass(/page-library/u)
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hämta e-böcker")

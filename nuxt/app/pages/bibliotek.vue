@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LocationQuery, RouteLocationRaw } from "vue-router"
 import libraryBackground from "~/assets/img/biblioteket_bakgrund.jpg"
+import epubBackground from "~/assets/img/ljudlandskap.jpg"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import { legacyPaginationItems, type LegacyPaginationItem } from "~/lib/legacy-pagination"
 import type {
@@ -1905,9 +1906,7 @@ useSeoMeta({
 })
 useHead(() => ({
     htmlAttrs: {
-        style: standalone.value
-            ? "background: none;"
-            : `background: url('${libraryBackground}') no-repeat;`
+        style: `background: url('${standalone.value ? epubBackground : libraryBackground}') no-repeat;`
     },
     bodyAttrs: {
         class: standalone.value ? "focus page-epub ready" : "focus page-library ready"

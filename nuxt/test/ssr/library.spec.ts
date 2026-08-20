@@ -733,7 +733,8 @@ test("standalone EPUB keeps its shell and uses the same typed primary owner", as
 
   expect(document.title).toBe("E-böcker för nedladdning | Litteraturbanken")
   expect(document.body.className).toBe("focus page-epub ready")
-  expect(document.documentElement.getAttribute("style")).toContain("background:none")
+  expect(document.documentElement.getAttribute("style"))
+    .toContain("/_nuxt/assets/img/ljudlandskap.jpg")
   expect(document.querySelector("h1")?.textContent?.trim()).toBe("Hämta e-böcker")
   const searchInput = document.querySelector<HTMLInputElement>("[data-library-filter]")
   expect(searchInput?.id).toBeTruthy()
