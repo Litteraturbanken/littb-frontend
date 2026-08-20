@@ -1162,7 +1162,7 @@ async function loadAllAuthors() {
         authorShowAllTarget.value
     ).catch(() => null)
     if (version !== requestVersion || activeController.signal.aborted) return
-    if (pageData?.mode === "authors" && !pageData.response.failed) {
+    if (pageData?.mode === "authors") {
         authorResults.value = pageData.response
     }
     loading.value = false

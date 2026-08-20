@@ -1261,6 +1261,37 @@ test("Författare hydrates 150 rows and expands the legacy Visa alla disclosure"
   expect(visibleRequests[0]?.body).toMatchObject({ mode: "authors", limit: 151 })
 })
 
+test("a failed author expansion reports its error and recovers through a fresh author intent", async ({
+  page,
+  request
+}) => {
+  await page.goto(
+    "/bibliotek?visa=authors&sort=namn&filter=många-författare",
+    { waitUntil: "networkidle" }
+  )
+  await expect(page.locator("[data-library-author-row]")).toHaveCount(150)
+
+  await reset(request)
+  await request.put(`${fixture}/_library_v2/failures`, {
+    data: { operation: "search", mode: "authors" }
+  })
+  await page.locator("[data-library-authors-show-all]").click()
+
+  await expect(page.locator("[data-library-error]")).toHaveText("Ett fel uppstod.")
+  await expect(page.getByRole("alert")).toHaveCount(1)
+  await expect(page.locator("[data-library-loading]")).toHaveCount(0)
+
+  await request.delete(`${fixture}/_library_v2/failures`)
+  await page.locator('[data-library-sort="popularitet"]').click()
+  await expect(page.locator("[data-library-author-row]")).toHaveCount(150)
+  await expect(page.locator("[data-library-error]")).toHaveCount(0)
+  await page.locator("[data-library-authors-show-all]").click()
+  await expect(page.locator("[data-library-author-row]")).toHaveCount(151)
+
+  expect((await libraryV2Requests(request)).search.map(entry => entry.body.limit))
+    .toEqual([151, 150, 151])
+})
+
 test("Författare truthfully caps and completes a show-all request at the backend limit", async ({
   page,
   request
