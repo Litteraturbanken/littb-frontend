@@ -508,9 +508,7 @@ const selectedNarrowingKeywords = ref<LibraryCategory[]>([
 const selectedAboutAuthorIds = ref<string[]>([...initialState.advancedFilters.aboutAuthorIds])
 const selectedMedia = ref<LibraryMedia[]>([...initialState.advancedFilters.media])
 const selectedLanguages = ref<LibraryLanguage[]>([...initialState.advancedFilters.languages])
-const chronologyFromDraft = ref(
-    String(initialState.advancedFilters.yearRange?.[0] ?? chronologyBounds.value?.from ?? "")
-)
+const chronologyFromDraft = ref(String(initialState.advancedFilters.yearRange?.[0] ?? chronologyBounds.value?.from ?? ""))
 const chronologyToDraft = ref(
     String(initialState.advancedFilters.yearRange?.[1] ?? chronologyBounds.value?.to ?? "")
 )
