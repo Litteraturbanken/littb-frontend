@@ -34,7 +34,14 @@ function writeExecutable(directory: string, name: string, source: string) {
   chmodSync(path, 0o755)
 }
 
-function runDeployStage(waitForBuild: string) {
+function runDeployStage(
+  waitForBuild: string,
+  plan = {
+    status: 0,
+    output: "Job Modify Index: 41",
+    expectedIndex: "41"
+  }
+) {
   const directory = mkdtempSync(resolve(tmpdir(), "littb-stage-deploy-"))
   const tracePath = resolve(directory, "trace")
   writeExecutable(directory, "git", `#!/bin/sh
@@ -59,12 +66,15 @@ case "$1 $2" in
     esac
     printf '%s\\n' 'nomad validate' >> "$TRACE_FILE"
     ;;
+  "job plan")
+    [ "$*" = "job plan -no-color -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} -var reader_source_base=https://reader-stage.test jobs/lb-frontend-stage.nomad" ] || exit 65
+    printf '%s\\n' 'nomad plan' >> "$TRACE_FILE"
+    printf '%s\\n' "$PLAN_OUTPUT"
+    exit "$PLAN_STATUS"
+    ;;
   "job status") printf '%s\\n' 'nomad status' >> "$TRACE_FILE" ;;
-  "run -detach")
-    case " $* " in
-      *" -var reader_source_base=https://reader-stage.test "*) ;;
-      *) exit 65 ;;
-    esac
+  "run -check-index")
+    [ "$*" = "run -check-index $EXPECTED_PLAN_INDEX -detach -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} -var reader_source_base=https://reader-stage.test jobs/lb-frontend-stage.nomad" ] || exit 65
     printf '%s\\n' 'nomad run' >> "$TRACE_FILE"
     ;;
   *) exit 64 ;;
@@ -96,6 +106,9 @@ fi
         PATH: `${directory}:${process.env.PATH || ""}`,
         TRACE_FILE: tracePath,
         WAIT_FOR_BUILD: waitForBuild,
+        PLAN_STATUS: String(plan.status),
+        PLAN_OUTPUT: plan.output,
+        EXPECTED_PLAN_INDEX: plan.expectedIndex,
         BUILD_TIMEOUT_SECONDS: "5",
         REGISTRY_HOST: "registry.test:5000",
         READER_SOURCE_BASE: "https://reader-stage.test"
@@ -293,7 +306,7 @@ test("staging rehearses the production two-host rolling topology", () => {
   expect(group).toMatch(/auto_revert\s*=\s*true/u)
 })
 
-test("staging deploy resolves the built manifest digest before detached deployment", () => {
+test("staging deploy resolves the built manifest digest before planned detached deployment", () => {
   const scriptPath = resolve(repositoryRoot, "scripts/deploy-stage.sh")
   const script = readRepositoryFile("scripts/deploy-stage.sh")
 
@@ -330,12 +343,15 @@ test("staging deploy resolves the built manifest digest before detached deployme
   expect(script).toContain('image_digest="$(resolve_registry_digest "$image_ref")"')
   expect(script).toContain('immutable_image_ref="${registry_host}/${image_name}@${image_digest}"')
   const validateCommand = 'nomad job validate -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad'
-  const runCommand = 'nomad run -detach -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad'
+  const planCommand = 'nomad job plan -no-color -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad'
+  const runCommand = 'nomad run -check-index "$plan_modify_index" -detach -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad'
   expect(script).toContain(validateCommand)
+  expect(script).toContain(planCommand)
   expect(script).toContain(runCommand)
   expect(script.indexOf('re.fullmatch(r"sha256:[0-9a-f]{64}", digest)'))
     .toBeLessThan(script.indexOf(runCommand))
   expect(script.indexOf(validateCommand)).toBeLessThan(script.indexOf(runCommand))
+  expect(script.indexOf(planCommand)).toBeLessThan(script.indexOf(runCommand))
   expect(script).not.toContain('nomad run -detach -var "image=$image_ref"')
   expect(script).toContain('timeout_seconds="${BUILD_TIMEOUT_SECONDS:-1800}"')
   expect(script).not.toContain(":latest")
@@ -367,9 +383,36 @@ test("staging wait mode resolves and deploys only after builder completion", () 
     "build complete",
     "resolve",
     "nomad validate",
+    "nomad plan",
     "nomad run",
     "nomad status"
   ])
+})
+
+test.each([
+  { status: 0, output: "Job Modify Index: 0", expectedIndex: "0" },
+  { status: 1, output: "Job Modify Index: 52", expectedIndex: "52" }
+])("staging deploy accepts documented plan exit $status and uses its modify index", plan => {
+  const { result, trace } = runDeployStage("1", plan)
+
+  expect(result.status, result.stderr).toBe(0)
+  expect(result.stdout).toContain(plan.output)
+  expect(trace).toContain("nomad plan")
+  expect(trace).toContain("nomad run")
+})
+
+test.each([
+  { name: "unexpected exit", status: 255, output: "Job Modify Index: 52", expectedIndex: "52" },
+  { name: "missing modify index", status: 0, output: "No alloc changes", expectedIndex: "52" },
+  { name: "duplicate modify index", status: 0, output: "Job Modify Index: 52\\nJob Modify Index: 53", expectedIndex: "52" },
+  { name: "malformed modify index", status: 0, output: "Job Modify Index: -1", expectedIndex: "52" }
+])("staging deploy blocks run after $name", plan => {
+  const { result, trace } = runDeployStage("1", plan)
+
+  expect(result.status).not.toBe(0)
+  expect(result.stdout).toContain(plan.output)
+  expect(trace).toContain("nomad plan")
+  expect(trace).not.toContain("nomad run")
 })
 
 test("staging entrypoint starts only with exact immutable identity values", () => {

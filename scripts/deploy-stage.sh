@@ -276,7 +276,43 @@ image_digest="$(resolve_registry_digest "$image_ref")"
 immutable_image_ref="${registry_host}/${image_name}@${image_digest}"
 
 nomad job validate -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad
-nomad run -detach -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad
+
+set +e
+plan_output="$(nomad job plan -no-color -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad)"
+plan_status=$?
+set -e
+printf '%s\n' "$plan_output"
+
+case "$plan_status" in
+  0|1)
+    ;;
+  *)
+    echo "Nomad plan failed with exit status $plan_status; staging was not deployed." >&2
+    exit 1
+    ;;
+esac
+
+plan_modify_index="$(
+  printf '%s\n' "$plan_output" |
+    sed -n 's/^[[:space:]]*Job Modify Index:[[:space:]]*\([0-9][0-9]*\)[[:space:]]*$/\1/p'
+)"
+plan_modify_index_count="$(
+  printf '%s\n' "$plan_modify_index" |
+    awk 'NF { count += 1 } END { print count + 0 }'
+)"
+if [ "$plan_modify_index_count" -ne 1 ]; then
+  echo "Nomad plan did not report exactly one valid Job Modify Index; staging was not deployed." >&2
+  exit 1
+fi
+
+case "$plan_modify_index" in
+  ""|*[!0-9]*)
+    echo "Nomad plan reported an invalid Job Modify Index; staging was not deployed." >&2
+    exit 1
+    ;;
+esac
+
+nomad run -check-index "$plan_modify_index" -detach -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad
 
 echo
 echo "Deployed lb-frontend-stage from git_sha=$git_sha"
