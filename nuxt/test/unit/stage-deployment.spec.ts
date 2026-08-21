@@ -404,8 +404,11 @@ test.each([
 test.each([
   { name: "unexpected exit", status: 255, output: "Job Modify Index: 52", expectedIndex: "52" },
   { name: "missing modify index", status: 0, output: "No alloc changes", expectedIndex: "52" },
-  { name: "duplicate modify index", status: 0, output: "Job Modify Index: 52\\nJob Modify Index: 53", expectedIndex: "52" },
-  { name: "malformed modify index", status: 0, output: "Job Modify Index: -1", expectedIndex: "52" }
+  { name: "duplicate modify index", status: 0, output: "Job Modify Index: 52\nJob Modify Index: 53", expectedIndex: "52" },
+  { name: "malformed modify index", status: 0, output: "Job Modify Index: -1", expectedIndex: "52" },
+  { name: "valid plus negative modify index", status: 0, output: "Job Modify Index: 52\nJob Modify Index: -1", expectedIndex: "52" },
+  { name: "valid plus whitespace-only modify index", status: 0, output: "Job Modify Index: 52\nJob Modify Index:   ", expectedIndex: "52" },
+  { name: "valid plus trailing-junk modify index", status: 0, output: "Job Modify Index: 52\nJob Modify Index: 53 unexpected", expectedIndex: "52" }
 ])("staging deploy blocks run after $name", plan => {
   const { result, trace } = runDeployStage("1", plan)
 

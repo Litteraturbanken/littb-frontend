@@ -292,19 +292,29 @@ case "$plan_status" in
     ;;
 esac
 
-plan_modify_index="$(
-  printf '%s\n' "$plan_output" |
-    sed -n 's/^[[:space:]]*Job Modify Index:[[:space:]]*\([0-9][0-9]*\)[[:space:]]*$/\1/p'
-)"
 plan_modify_index_count="$(
-  printf '%s\n' "$plan_modify_index" |
-    awk 'NF { count += 1 } END { print count + 0 }'
+  printf '%s\n' "$plan_output" |
+    LC_ALL=C awk '
+      {
+        line = $0
+        label = "Job Modify Index:"
+        while ((position = index(line, label)) != 0) {
+          count += 1
+          line = substr(line, position + length(label))
+        }
+      }
+      END { print count + 0 }
+    '
 )"
 if [ "$plan_modify_index_count" -ne 1 ]; then
-  echo "Nomad plan did not report exactly one valid Job Modify Index; staging was not deployed." >&2
+  echo "Nomad plan did not report exactly one Job Modify Index; staging was not deployed." >&2
   exit 1
 fi
 
+plan_modify_index="$(
+  printf '%s\n' "$plan_output" |
+    LC_ALL=C sed -n 's/^[[:space:]]*Job Modify Index:[[:space:]]*\([0-9][0-9]*\)[[:space:]]*$/\1/p'
+)"
 case "$plan_modify_index" in
   ""|*[!0-9]*)
     echo "Nomad plan reported an invalid Job Modify Index; staging was not deployed." >&2
