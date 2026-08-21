@@ -212,7 +212,7 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(jobspec).toContain("variable \"reader_source_base\"")
   expect(jobspec).toContain("variable \"caddy_host\"")
   expect(jobspec).toContain("variable \"http_port\"")
-  expect(jobspec).toContain("variable \"observability_hmac_secret_path\"")
+  expect(jobspec).not.toContain("variable \"observability_hmac_secret_path\"")
   expect(jobspec).toMatch(/variable\s+"http_port"\s*\{[^}]*default\s*=\s*3020/su)
   expect(jobspec).toMatch(
     /variable\s+"reader_source_base"\s*\{[^}]*default\s*=\s*"https:\/\/litteraturbanken\.se"/su
@@ -234,9 +234,17 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(normalizedJobspec).toContain(
     'NUXT_OBSERVABILITY_ALLOWED_ORIGINS = "https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se"'
   )
-  expect(normalizedJobspec).toContain('NUXT_OBSERVABILITY_HMAC_SECRET_FILE = "/secrets/lb_observability_hmac_secret"')
-  expect(jobspec).toContain('format("%s:/secrets/lb_observability_hmac_secret:ro", var.observability_hmac_secret_path)')
-  expect(jobspec).not.toContain("NUXT_OBSERVABILITY_HMAC_SECRET =")
+  expect(normalizedJobspec).toContain('secret "runtime"')
+  expect(normalizedJobspec).toContain('provider = "nomad"')
+  expect(normalizedJobspec).toContain(
+    'path = "nomad/jobs/lb-frontend-stage/frontend/frontend"'
+  )
+  expect(normalizedJobspec).toContain('namespace = "default"')
+  expect(normalizedJobspec).toContain(
+    'NUXT_OBSERVABILITY_HMAC_SECRET = "${secret.runtime.observability_hmac_secret}"'
+  )
+  expect(jobspec).not.toContain("NUXT_OBSERVABILITY_HMAC_SECRET_FILE")
+  expect(jobspec).not.toContain("/secrets/lb_observability_hmac_secret")
   expect(normalizedJobspec).toContain('NUXT_API_BASE = "http://lb-backend-stage.service.consul:5003/v2"')
   expect(normalizedJobspec).toContain('NUXT_LIBRARY_API_BASE = "http://lb-backend-stage.service.consul:5003"')
   expect(normalizedJobspec).toContain('NUXT_CONTENT_BASE = "https://red.litteraturbanken.se"')
