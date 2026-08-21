@@ -45,6 +45,36 @@ Images are SHA-pinned at
 `registry.service.consul:5000/lb-frontend:<git-sha>`. The public route is
 `https://lb-frontend.pub.lb.se`.
 
+Stage resource ownership is fixed in the Nomad job and is not selectable by
+the deploy operator:
+
+- Nuxt server-side content uses
+  `NUXT_CONTENT_BASE=https://red.litteraturbanken.se`.
+- The allocation startup probe uses
+  `PUBLIC_RESOURCE_ORIGIN=https://stage.litteraturbanken.se`.
+
+Before Nuxt starts, the allocation verifies its immutable Git/image identity,
+checks both exact origins, and performs a redirect-disabled 10-second GET of
+`https://stage.litteraturbanken.se/red/css/etext.css`. Startup fails unless the
+response is successful, nonempty, `text/css`, and no larger than 1 MiB. Logs
+contain only status, normalized content type, and byte count. The job keeps two
+allocations on distinct hosts and rolls one healthy allocation at a time.
+
+After deployment, run the identity-bound live suite against the canonical Stage
+route with the exact Git SHA and image digest used by the deployment. Its
+Playwright configuration uses up to four workers. Set the two `DEPLOYED_*`
+shell variables from the deploy script's `git_sha` and `Image` summary, then
+run:
+
+```sh
+: "${DEPLOYED_GIT_SHA:?set from the deploy summary}"
+: "${DEPLOYED_IMAGE_DIGEST:?set from the deploy summary}"
+LITTB_EXPECTED_GIT_SHA="$DEPLOYED_GIT_SHA" \
+LITTB_EXPECTED_IMAGE_DIGEST="$DEPLOYED_IMAGE_DIGEST" \
+LITTB_NUXT_LIVE_ORIGIN=https://stage.litteraturbanken.se \
+  yarn test:e2e:nuxt-live
+```
+
 To roll back to the immediately preceding Nomad job version:
 
 ```sh

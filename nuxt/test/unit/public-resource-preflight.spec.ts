@@ -3,18 +3,18 @@ import { spawn } from "node:child_process"
 import { once } from "node:events"
 import { resolve } from "node:path"
 
-import { afterEach, describe, expect, test } from "vitest"
+import { afterEach, describe, expect, test, vi } from "vitest"
 
-import * as readerOriginPreflight from "../../scripts/verify-reader-origin.mjs"
+import * as publicResourcePreflight from "../../scripts/verify-public-resource.mjs"
 
-const cssPath = "/txt/css/lb1728740-etext.css"
-const preflightCli = resolve(import.meta.dirname, "../../scripts/verify-reader-origin.mjs")
-const payloadSentinel = "reader-origin-payload-must-not-be-logged"
-const checkReaderOrigin = (
-  readerOriginPreflight as unknown as {
-    checkReaderOrigin?: (origin: string) => Promise<{ bytes: number, contentType: string, status: number }>
+const publicCssPath = "/red/css/etext.css"
+const preflightCli = resolve(import.meta.dirname, "../../scripts/verify-public-resource.mjs")
+const payloadSentinel = "public-resource-payload-must-not-be-logged"
+const checkPublicResource = (
+  publicResourcePreflight as unknown as {
+    checkPublicResource?: (origin: string) => Promise<{ bytes: number, contentType: string, status: number }>
   }
-).checkReaderOrigin
+).checkPublicResource
 
 type Scenario = (request: import("node:http").IncomingMessage, response: import("node:http").ServerResponse) => void
 
@@ -35,7 +35,7 @@ async function closeServer(server: Server): Promise<void> {
 async function runCli(origin: string): Promise<{ status: number | null, stderr: string, stdout: string }> {
   return new Promise((resolveRun, rejectRun) => {
     const child = spawn(process.execPath, [preflightCli], {
-      env: { ...process.env, NUXT_READER_SOURCE_BASE: origin },
+      env: { ...process.env, PUBLIC_RESOURCE_ORIGIN: origin },
       stdio: ["ignore", "pipe", "pipe"]
     })
     let stdout = ""
@@ -47,32 +47,57 @@ async function runCli(origin: string): Promise<{ status: number | null, stderr: 
   })
 }
 
-describe("Reader origin startup preflight", () => {
+function expectExactCliFailure(result: Awaited<ReturnType<typeof runCli>>) {
+  expect(result.status).not.toBe(0)
+  expect(result.stdout).toBe("")
+  expect(result.stderr).toBe("Public resource preflight failed\n")
+}
+
+describe("public resource startup preflight", () => {
   const servers: Server[] = []
 
   afterEach(async () => {
+    vi.restoreAllMocks()
     await Promise.all(servers.splice(0).map(closeServer))
   })
 
-  test("requests the representative CSS asset and reports its bounded metadata", async () => {
+  test("requests the public RED stylesheet and reports only bounded summary metadata", async () => {
     const { origin, server } = await startServer((request, response) => {
-      expect(request.url).toBe(cssPath)
-      response.writeHead(200, { "content-type": "text/css; charset=utf-8" })
+      expect(request.method).toBe("GET")
+      expect(request.url).toBe(publicCssPath)
+      response.writeHead(200, {
+        "content-type": `text/css; fixture=${payloadSentinel}`
+      })
       response.end("body { color: black; }")
     })
     servers.push(server)
 
-    expect(typeof checkReaderOrigin).toBe("function")
-    await expect(checkReaderOrigin?.(origin)).resolves.toEqual({
+    expect(typeof checkPublicResource).toBe("function")
+    await expect(checkPublicResource?.(origin)).resolves.toEqual({
       bytes: 22,
-      contentType: "text/css; charset=utf-8",
+      contentType: "text/css",
       status: 200
     })
     const result = await runCli(origin)
     expect(result.status).toBe(0)
-    expect(result.stdout).toContain("status=200")
-    expect(result.stdout).toContain("content_type=text/css; charset=utf-8")
-    expect(result.stdout).toContain("bytes=22")
+    expect(result.stdout).toBe(
+      "Public resource preflight passed: status=200 content_type=text/css bytes=22\n"
+    )
+    expect(`${result.stdout}${result.stderr}`).not.toContain(payloadSentinel)
+  })
+
+  test("accepts a response at the exact 1 MiB limit", async () => {
+    const { origin, server } = await startServer((_request, response) => {
+      response.writeHead(200, { "content-type": "text/css" })
+      response.end("x".repeat(1024 * 1024))
+    })
+    servers.push(server)
+
+    await expect(checkPublicResource?.(origin)).resolves.toEqual({
+      bytes: 1024 * 1024,
+      contentType: "text/css",
+      status: 200
+    })
   })
 
   test.each([
@@ -88,19 +113,23 @@ describe("Reader origin startup preflight", () => {
       response.writeHead(200, { "content-type": "text/html" })
       response.end(payloadSentinel)
     }],
-    ["redirect", (_request: unknown, response: import("node:http").ServerResponse) => {
-      response.writeHead(302, { location: cssPath })
-      response.end(payloadSentinel)
+    ["redirect", (request: import("node:http").IncomingMessage, response: import("node:http").ServerResponse) => {
+      if (request.url === publicCssPath) {
+        response.writeHead(302, { location: "/redirect-target.css" })
+        response.end(payloadSentinel)
+        return
+      }
+      response.writeHead(200, { "content-type": "text/css" })
+      response.end("body { color: black; }")
     }],
     ["cross-origin redirect", (_request: unknown, response: import("node:http").ServerResponse) => {
       response.writeHead(302, { location: "https://example.test/reader.css" })
       response.end(payloadSentinel)
     }],
-    ["oversized body", (_request: unknown, response: import("node:http").ServerResponse) => {
+    ["one byte over the 1 MiB limit", (_request: unknown, response: import("node:http").ServerResponse) => {
       response.writeHead(200, { "content-type": "text/css" })
-      response.end(`${"x".repeat(1024 * 1024)}${payloadSentinel}`)
+      response.end("x".repeat((1024 * 1024) + 1))
     }],
-    ["timeout", (_request: unknown, _response: import("node:http").ServerResponse) => {}],
     ["HTTP error", (_request: unknown, response: import("node:http").ServerResponse) => {
       response.writeHead(503, { "content-type": "text/css" })
       response.end(payloadSentinel)
@@ -109,10 +138,23 @@ describe("Reader origin startup preflight", () => {
     const { origin, server } = await startServer(scenario as Scenario)
     servers.push(server)
 
-    expect(typeof checkReaderOrigin).toBe("function")
-    await expect(checkReaderOrigin?.(origin)).rejects.toThrow()
+    expect(typeof checkPublicResource).toBe("function")
+    await expect(checkPublicResource?.(origin)).rejects.toThrow()
     const result = await runCli(origin)
-    expect(result.status).not.toBe(0)
+    expectExactCliFailure(result)
+    expect(`${result.stdout}${result.stderr}`).not.toContain(payloadSentinel)
+  }, 25_000)
+
+  test("uses the exact 10-second timeout and fails payload-silently", async () => {
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout")
+    const { origin, server } = await startServer((_request, _response) => {})
+    servers.push(server)
+
+    await expect(checkPublicResource?.(origin)).rejects.toThrow()
+    expect(timeoutSpy).toHaveBeenCalledWith(10_000)
+
+    const result = await runCli(origin)
+    expectExactCliFailure(result)
     expect(`${result.stdout}${result.stderr}`).not.toContain(payloadSentinel)
   }, 25_000)
 
@@ -120,10 +162,10 @@ describe("Reader origin startup preflight", () => {
     const { origin, server } = await startServer((_request, response) => response.end())
     await closeServer(server)
 
-    expect(typeof checkReaderOrigin).toBe("function")
-    await expect(checkReaderOrigin?.(origin)).rejects.toThrow()
+    expect(typeof checkPublicResource).toBe("function")
+    await expect(checkPublicResource?.(origin)).rejects.toThrow()
     const result = await runCli(origin)
-    expect(result.status).not.toBe(0)
+    expectExactCliFailure(result)
     expect(`${result.stdout}${result.stderr}`).not.toContain(payloadSentinel)
   })
 })

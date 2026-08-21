@@ -24,11 +24,6 @@ variable "image_digest" {
   type = string
 }
 
-variable "reader_source_base" {
-  type    = string
-  default = "http://reader-origin.int.lb.se"
-}
-
 variable "caddy_host" {
   type    = string
   default = "lb-frontend.pub.lb.se"
@@ -147,7 +142,7 @@ job "lb-frontend-stage" {
         NUXT_API_BASE                         = "http://lb-backend-stage.service.consul:5003/v2"
         NUXT_LIBRARY_API_BASE                 = "http://lb-backend-stage.service.consul:5003"
         NUXT_CONTENT_BASE                     = "https://red.litteraturbanken.se"
-        NUXT_READER_SOURCE_BASE               = var.reader_source_base
+        PUBLIC_RESOURCE_ORIGIN                = "https://stage.litteraturbanken.se"
       }
 
       config {
@@ -199,12 +194,16 @@ job "lb-frontend-stage" {
               exit 1
               ;;
           esac
-          if [ "$NUXT_READER_SOURCE_BASE" != "http://reader-origin.int.lb.se" ]; then
-            echo "invalid NUXT_READER_SOURCE_BASE" >&2
+          if [ "$NUXT_CONTENT_BASE" != "https://red.litteraturbanken.se" ]; then
+            echo "invalid NUXT_CONTENT_BASE" >&2
+            exit 1
+          fi
+          if [ "$PUBLIC_RESOURCE_ORIGIN" != "https://stage.litteraturbanken.se" ]; then
+            echo "invalid PUBLIC_RESOURCE_ORIGIN" >&2
             exit 1
           fi
           export HOST=0.0.0.0 PORT="$NOMAD_PORT_http"
-          node scripts/verify-reader-origin.mjs
+          node scripts/verify-public-resource.mjs
           exec node .output/server/index.mjs
         EOT
         ]

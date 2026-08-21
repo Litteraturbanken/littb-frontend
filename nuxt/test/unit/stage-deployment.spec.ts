@@ -60,21 +60,18 @@ case "$1 $2" in
     printf '%s\\n' '[]'
     ;;
   "job validate")
-    case " $* " in
-      *" -var reader_source_base=https://reader-stage.test "*) ;;
-      *) exit 65 ;;
-    esac
+    [ "$*" = "job validate -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} jobs/lb-frontend-stage.nomad" ] || exit 65
     printf '%s\\n' 'nomad validate' >> "$TRACE_FILE"
     ;;
   "job plan")
-    [ "$*" = "job plan -no-color -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} -var reader_source_base=https://reader-stage.test jobs/lb-frontend-stage.nomad" ] || exit 65
+    [ "$*" = "job plan -no-color -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} jobs/lb-frontend-stage.nomad" ] || exit 65
     printf '%s\\n' 'nomad plan' >> "$TRACE_FILE"
     printf '%s\\n' "$PLAN_OUTPUT"
     exit "$PLAN_STATUS"
     ;;
   "job status") printf '%s\\n' 'nomad status' >> "$TRACE_FILE" ;;
   "run -check-index")
-    [ "$*" = "run -check-index $EXPECTED_PLAN_INDEX -detach -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} -var reader_source_base=https://reader-stage.test jobs/lb-frontend-stage.nomad" ] || exit 65
+    [ "$*" = "run -check-index $EXPECTED_PLAN_INDEX -detach -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} jobs/lb-frontend-stage.nomad" ] || exit 65
     printf '%s\\n' 'nomad run' >> "$TRACE_FILE"
     ;;
   *) exit 64 ;;
@@ -111,7 +108,6 @@ fi
         EXPECTED_PLAN_INDEX: plan.expectedIndex,
         BUILD_TIMEOUT_SECONDS: "5",
         REGISTRY_HOST: "registry.test:5000",
-        READER_SOURCE_BASE: "https://reader-stage.test"
       }
     })
     const trace = existsSync(tracePath)
@@ -162,13 +158,19 @@ function runStageEntrypoint(
   gitShaValue: string,
   imageDigestValue: string,
   imageRefValue = `registry.test:5000/lb-frontend@${imageDigest}`,
-  readerSourceBase = "http://reader-origin.int.lb.se"
+  environmentOverrides: Record<string, string> = {}
 ) {
   const directory = mkdtempSync(resolve(tmpdir(), "littb-stage-entrypoint-"))
   const tracePath = resolve(directory, "trace")
   writeExecutable(directory, "node", `#!/bin/sh
 case "$1" in
-  scripts/verify-reader-origin.mjs) printf '%s\\n' 'reader origin verified' >> "$TRACE_FILE" ;;
+  scripts/verify-public-resource.mjs)
+    if [ "$PROBE_SHOULD_FAIL" = "1" ]; then
+      printf '%s\\n' 'public resource failed' >> "$TRACE_FILE"
+      exit 70
+    fi
+    printf '%s\\n' 'public resource verified' >> "$TRACE_FILE"
+    ;;
   .output/server/index.mjs) printf '%s\\n' 'started' >> "$TRACE_FILE" ;;
   *) exit 64 ;;
 esac
@@ -184,7 +186,10 @@ esac
         GIT_SHA: gitShaValue,
         IMAGE_DIGEST: imageDigestValue,
         IMAGE_REF: imageRefValue,
-        NUXT_READER_SOURCE_BASE: readerSourceBase,
+        NUXT_CONTENT_BASE: "https://red.litteraturbanken.se",
+        PUBLIC_RESOURCE_ORIGIN: "https://stage.litteraturbanken.se",
+        PROBE_SHOULD_FAIL: "0",
+        ...environmentOverrides,
         NOMAD_PORT_http: "3020"
       }
     })
@@ -218,10 +223,10 @@ test("staging image uses the GNU build toolchain and starts its Alpine runtime a
   expect(dockerfile).toContain("CMD [\"node\", \".output/server/index.mjs\"]")
 
   const runtimeStage = dockerfile.split(`FROM ${runtimeNodeImage} AS runtime\n`)[1]
-  expect(runtimeStage.match(/^COPY .+$/gmu)).toEqual(expect.arrayContaining([
+  expect(runtimeStage.match(/^COPY .+$/gmu)).toEqual([
     "COPY --from=build --chown=node:node /app/.output ./.output",
-    "COPY --from=build --chown=node:node /app/scripts/verify-reader-origin.mjs ./scripts/verify-reader-origin.mjs"
-  ]))
+    "COPY --from=build --chown=node:node /app/scripts/verify-public-resource.mjs ./scripts/verify-public-resource.mjs"
+  ])
 })
 
 test("staging Docker build context excludes development and generated files", () => {
@@ -252,19 +257,27 @@ test("staging Docker build context excludes development and generated files", ()
 test("staging Nomad service exposes the digest-pinned Nuxt runtime through public ingress", () => {
   const jobspec = readRepositoryFile("jobs/lb-frontend-stage.nomad")
   const normalizedJobspec = jobspec.replace(/[ \t]+/gu, " ")
+  const variableNames = Array.from(
+    jobspec.matchAll(/^variable "(?<name>[^"]+)"/gmu),
+    match => match.groups?.name
+  )
+  const envBody = jobspec.match(/^\s{6}env \{(?<body>[\s\S]*?)^\s{6}\}/mu)?.groups?.body ?? ""
+  const envNames = Array.from(
+    envBody.matchAll(/^\s{8}(?<name>[A-Z][A-Z0-9_]*)\s*=/gmu),
+    match => match.groups?.name
+  )
 
   expect(jobspec).toMatch(/job\s+"lb-frontend-stage"/u)
-  expect(jobspec).toContain("variable \"image\"")
-  expect(jobspec).toContain("variable \"git_sha\"")
-  expect(jobspec).toContain("variable \"image_digest\"")
-  expect(jobspec).toContain("variable \"reader_source_base\"")
-  expect(jobspec).toContain("variable \"caddy_host\"")
-  expect(jobspec).toContain("variable \"http_port\"")
+  expect(variableNames).toEqual([
+    "datacenters",
+    "image",
+    "git_sha",
+    "image_digest",
+    "caddy_host",
+    "http_port"
+  ])
   expect(jobspec).not.toContain("variable \"observability_hmac_secret_path\"")
   expect(jobspec).toMatch(/variable\s+"http_port"\s*\{[^}]*default\s*=\s*3020/su)
-  expect(jobspec).toMatch(
-    /variable\s+"reader_source_base"\s*\{[^}]*default\s*=\s*"http:\/\/reader-origin\.int\.lb\.se"/su
-  )
   expect(normalizedJobspec).toContain('mode = "host"')
   expect(normalizedJobspec).toContain('network_mode = "host"')
   expect(jobspec).toMatch(/static\s*=\s*var\.http_port/u)
@@ -296,7 +309,25 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(normalizedJobspec).toContain('NUXT_API_BASE = "http://lb-backend-stage.service.consul:5003/v2"')
   expect(normalizedJobspec).toContain('NUXT_LIBRARY_API_BASE = "http://lb-backend-stage.service.consul:5003"')
   expect(normalizedJobspec).toContain('NUXT_CONTENT_BASE = "https://red.litteraturbanken.se"')
-  expect(normalizedJobspec).toContain('NUXT_READER_SOURCE_BASE = var.reader_source_base')
+  expect(normalizedJobspec).toContain(
+    'PUBLIC_RESOURCE_ORIGIN = "https://stage.litteraturbanken.se"'
+  )
+  expect(envNames).toEqual([
+    "GIT_SHA",
+    "IMAGE_DIGEST",
+    "IMAGE_REF",
+    "NUXT_DEPLOYMENT_GIT_SHA",
+    "NUXT_DEPLOYMENT_IMAGE_DIGEST",
+    "NUXT_DEPLOYMENT_ENVIRONMENT",
+    "NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT",
+    "NUXT_PUBLIC_OBSERVABILITY_GIT_SHA",
+    "NUXT_OBSERVABILITY_ALLOWED_ORIGINS",
+    "NUXT_OBSERVABILITY_HMAC_SECRET",
+    "NUXT_API_BASE",
+    "NUXT_LIBRARY_API_BASE",
+    "NUXT_CONTENT_BASE",
+    "PUBLIC_RESOURCE_ORIGIN"
+  ])
   expect(jobspec).toContain('"caddy-host=${var.caddy_host}"')
   expect(jobspec).toContain('"caddy-ingress=public"')
   expect(jobspec).toContain('"caddy-https=on"')
@@ -356,9 +387,6 @@ test("staging deploy resolves the built manifest digest before planned detached 
   expect(script).toContain('git_sha="$(git rev-parse --verify "${requested_ref}^{commit}")"')
   expect(script).toContain('git_url="${GIT_URL:-https://github.com/Litteraturbanken/littb-frontend.git}"')
   expect(script).toContain('image_name="${IMAGE_NAME:-lb-frontend}"')
-  expect(script).toContain(
-    'reader_source_base="${READER_SOURCE_BASE:-http://reader-origin.int.lb.se}"'
-  )
   expect(script).toContain('image_ref="${registry_host}/${image_name}:${git_sha}"')
   expect(script).toContain("resolve_registry_digest()")
   expect(script).toContain('method="HEAD"')
@@ -385,9 +413,9 @@ test("staging deploy resolves the built manifest digest before planned detached 
   expect(script).not.toContain('"NOMAD_TOKEN":')
   expect(script).toContain('image_digest="$(resolve_registry_digest "$image_ref")"')
   expect(script).toContain('immutable_image_ref="${registry_host}/${image_name}@${image_digest}"')
-  const validateCommand = 'nomad job validate -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad'
-  const planCommand = 'nomad job plan -no-color -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad'
-  const runCommand = 'nomad run -check-index "$plan_modify_index" -detach -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" -var "reader_source_base=$reader_source_base" jobs/lb-frontend-stage.nomad'
+  const validateCommand = 'nomad job validate -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad'
+  const planCommand = 'nomad job plan -no-color -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad'
+  const runCommand = 'nomad run -check-index "$plan_modify_index" -detach -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad'
   expect(script).toContain(validateCommand)
   expect(script).toContain(planCommand)
   expect(script).toContain(runCommand)
@@ -465,16 +493,33 @@ test("staging entrypoint starts only with exact immutable identity values", () =
   const { result, trace } = runStageEntrypoint(gitSha, imageDigest)
 
   expect(result.status, result.stderr).toBe(0)
-  expect(trace).toEqual(["reader origin verified", "started"])
+  expect(trace).toEqual(["public resource verified", "started"])
 })
 
-test("staging entrypoint rejects a noncanonical Reader origin before the preflight", () => {
-  const { result, trace } = runStageEntrypoint(
-    gitSha,
-    imageDigest,
-    undefined,
-    "https://reader-origin.int.lb.se"
-  )
+test("staging entrypoint fails closed when the public resource preflight fails", () => {
+  const { result, trace } = runStageEntrypoint(gitSha, imageDigest, undefined, {
+    PROBE_SHOULD_FAIL: "1"
+  })
+
+  expect(result.status).not.toBe(0)
+  expect(trace).toEqual(["public resource failed"])
+})
+
+test("staging runbook binds the live suite to the deployed Git and image identity", () => {
+  const runbook = readBuildFile("README.md")
+
+  expect(runbook).toContain(': "${DEPLOYED_GIT_SHA:?set from the deploy summary}"')
+  expect(runbook).toContain(': "${DEPLOYED_IMAGE_DIGEST:?set from the deploy summary}"')
+  expect(runbook).toContain("LITTB_EXPECTED_GIT_SHA=\"$DEPLOYED_GIT_SHA\"")
+  expect(runbook).toContain("LITTB_EXPECTED_IMAGE_DIGEST=\"$DEPLOYED_IMAGE_DIGEST\"")
+  expect(runbook).toContain("LITTB_NUXT_LIVE_ORIGIN=https://stage.litteraturbanken.se")
+})
+
+test.each([
+  ["content source", { NUXT_CONTENT_BASE: "https://stage.litteraturbanken.se" }],
+  ["public resource origin", { PUBLIC_RESOURCE_ORIGIN: "https://red.litteraturbanken.se" }]
+])("staging entrypoint rejects a changed %s before the preflight", (_name, overrides) => {
+  const { result, trace } = runStageEntrypoint(gitSha, imageDigest, undefined, overrides)
 
   expect(result.status).not.toBe(0)
   expect(trace).toEqual([])
