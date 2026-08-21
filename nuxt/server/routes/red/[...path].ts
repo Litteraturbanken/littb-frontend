@@ -3,6 +3,7 @@ import {
   getRequestHeader,
   removeResponseHeader,
   sendProxy,
+  setResponseHeader,
   type H3Event
 } from "h3"
 
@@ -11,7 +12,8 @@ import { rawUrlParts } from "../../../shared/utils/url-safety"
 import { assertProxyMethod } from "../../utils/backend-proxy"
 import {
   connectionHeaderNames,
-  contentResourceOrigin
+  contentResourceOrigin,
+  localReaderRedirect
 } from "../../utils/reader-source-proxy"
 
 const MAX_DECODE_PASSES = 16
@@ -54,7 +56,12 @@ function contentRequestHeaders(event: H3Event): Headers {
   return headers
 }
 
-function allowAssetResponseHeaders(event: H3Event, response: Response): void {
+function allowAssetResponseHeaders(
+  event: H3Event,
+  response: Response,
+  target: string,
+  base: URL
+): void {
   const hopByHopHeaders = connectionHeaderNames(response.headers.get("connection"))
   for (const name of response.headers.keys()) {
     const normalizedName = name.toLowerCase()
@@ -65,6 +72,8 @@ function allowAssetResponseHeaders(event: H3Event, response: Response): void {
       removeResponseHeader(event, name)
     }
   }
+  const location = localReaderRedirect(response, target, base)
+  if (location !== null) setResponseHeader(event, "location", location)
 }
 
 function hasUnsafePathSegment(value: string): boolean {
@@ -143,7 +152,9 @@ export default defineEventHandler(async (event) => {
         redirect: "manual",
         signal: controller.signal
       },
-      onResponse: allowAssetResponseHeaders
+      onResponse: (proxyEvent, response) => {
+        allowAssetResponseHeaders(proxyEvent, response, target, contentBase)
+      }
     })
   } catch (error) {
     if (controller.signal.aborted) return

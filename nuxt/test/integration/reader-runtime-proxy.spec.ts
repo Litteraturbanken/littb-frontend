@@ -93,11 +93,13 @@ async function redirectingContentOrigin(): Promise<{
     const url = request.url ?? ""
     requests.push(url)
     const locations: Record<string, string> = {
+      "/txt/redirect-connection": `${origin}/bilder/connection-private.jpg`,
       "/txt/redirect-external": "https://private-origin.invalid/secret",
       "/txt/redirect-local": `${origin}/bilder/redirected%20cover.jpg?size=2`,
       "/txt/redirect-private": `${origin}/private-network-target`
     }
     response.writeHead(307, "Temporary Redirect", {
+      ...(url === "/txt/redirect-connection" ? { connection: "location" } : {}),
       location: locations[url],
       "set-cookie": "redirect_session=secret; Path=/; HttpOnly",
       "x-reader-private": "redirect-private"
@@ -358,6 +360,7 @@ describe("built content resource fallback proxy", () => {
     const nuxt = await startBuiltNuxt({ contentBase: reader.origin })
 
     const local = await fetch(`${nuxt}/txt/redirect-local`, { redirect: "manual" })
+    const connection = await fetch(`${nuxt}/txt/redirect-connection`, { redirect: "manual" })
     const external = await fetch(`${nuxt}/txt/redirect-external`, { redirect: "manual" })
     const privatePath = await fetch(`${nuxt}/txt/redirect-private`, { redirect: "manual" })
 
@@ -365,16 +368,19 @@ describe("built content resource fallback proxy", () => {
     expect(local.statusText).toBe("Temporary Redirect")
     expect(local.headers.get("location")).toBe("/bilder/redirected%20cover.jpg?size=2")
     expect(await local.text()).toBe("redirect body")
+    expect(connection.status).toBe(307)
+    expect(connection.headers.get("location")).toBeNull()
     expect(external.status).toBe(307)
     expect(external.headers.get("location")).toBeNull()
     expect(privatePath.status).toBe(307)
     expect(privatePath.headers.get("location")).toBeNull()
-    for (const response of [local, external, privatePath]) {
+    for (const response of [local, connection, external, privatePath]) {
       expect(response.headers.get("set-cookie")).toBeNull()
       expect(response.headers.get("x-reader-private")).toBeNull()
     }
     expect(reader.requests).toEqual([
       "/txt/redirect-local",
+      "/txt/redirect-connection",
       "/txt/redirect-external",
       "/txt/redirect-private"
     ])

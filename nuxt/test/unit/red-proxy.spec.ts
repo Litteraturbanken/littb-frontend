@@ -316,6 +316,128 @@ describe("red content proxy boundary", () => {
     expect(response.headers["content-type"]).toContain("text/plain")
   })
 
+  test("rewrites same-source relative and absolute redirects to local Reader paths", async () => {
+    const upstreamMethods: string[] = []
+    let upstreamOrigin = ""
+    const upstream = await listen((request, response) => {
+      upstreamMethods.push(request.method ?? "")
+      if (request.url === "/red/images/relative.jpg") {
+        response.writeHead(302, {
+          location: "../redirected/relative.jpg?size=large#page"
+        })
+      } else {
+        response.writeHead(307, {
+          location: `${upstreamOrigin}/red/assets/absolute.css?theme=reader#rules`
+        })
+      }
+      response.end("not proxied through the redirect")
+    })
+    upstreamOrigin = upstream.origin
+    const proxyOrigin = await redProxyOrigin(upstream.origin)
+
+    const relative = await fetch(`${proxyOrigin}/red/images/relative.jpg`, {
+      redirect: "manual"
+    })
+    const absolute = await fetch(`${proxyOrigin}/red/images/absolute.css`, {
+      method: "HEAD",
+      redirect: "manual"
+    })
+
+    expect({
+      body: await relative.text(),
+      location: relative.headers.get("location"),
+      status: relative.status
+    }).toEqual({
+      body: "not proxied through the redirect",
+      location: "/red/redirected/relative.jpg?size=large#page",
+      status: 302
+    })
+    expect({
+      body: await absolute.text(),
+      location: absolute.headers.get("location"),
+      status: absolute.status,
+      upstreamMethods
+    }).toEqual({
+      body: "",
+      location: "/red/assets/absolute.css?theme=reader#rules",
+      status: 307,
+      upstreamMethods: ["GET", "HEAD"]
+    })
+  })
+
+  test.each([
+    ["non-HTTP scheme", "data:text/plain,private"],
+    ["malformed URL", "https://["],
+    ["unsafe Reader path", "/red/%252e%252e/private.txt"]
+  ])("strips a %s redirect", async (_label, location) => {
+    const upstream = await listen((_request, response) => {
+      response.writeHead(302, { location })
+      response.end()
+    })
+    const proxyOrigin = await redProxyOrigin(upstream.origin)
+
+    const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
+      redirect: "manual"
+    })
+
+    expect(response.status).toBe(302)
+    expect(response.headers.get("location")).toBeNull()
+  })
+
+  test("strips a same-source redirect containing credentials", async () => {
+    let credentialLocation = ""
+    const upstream = await listen((_request, response) => {
+      response.writeHead(302, { location: credentialLocation })
+      response.end()
+    })
+    const target = new URL(upstream.origin)
+    credentialLocation = `${target.protocol}//reader:secret@${target.host}/red/images/private.jpg`
+    const proxyOrigin = await redProxyOrigin(upstream.origin)
+
+    const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
+      redirect: "manual"
+    })
+
+    expect(response.status).toBe(302)
+    expect(response.headers.get("location")).toBeNull()
+  })
+
+  test("strips a same-host redirect using a different scheme", async () => {
+    let schemeLocation = ""
+    const upstream = await listen((_request, response) => {
+      response.writeHead(302, { location: schemeLocation })
+      response.end()
+    })
+    const target = new URL(upstream.origin)
+    schemeLocation = `https://${target.host}/red/images/private.jpg`
+    const proxyOrigin = await redProxyOrigin(upstream.origin)
+
+    const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
+      redirect: "manual"
+    })
+
+    expect(response.status).toBe(302)
+    expect(response.headers.get("location")).toBeNull()
+  })
+
+  test("strips a same-source redirect nominated by upstream Connection", async () => {
+    const upstream = await listen((_request, response) => {
+      response.writeHead(302, {
+        connection: "location",
+        location: "/red/images/connection-private.jpg"
+      })
+      response.end()
+    })
+    const proxyOrigin = await redProxyOrigin(upstream.origin)
+
+    const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
+      redirect: "manual"
+    })
+
+    expect(response.status).toBe(302)
+    expect(response.headers.get("location")).toBeNull()
+  })
+
   test("returns upstream redirects without following them across origins", async () => {
     let redirectTargetHeaders: Headers | undefined
     let redirectTargetRequests = 0

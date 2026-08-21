@@ -198,11 +198,16 @@ function readerRequestHeaders(event: H3Event): Headers {
   return headers
 }
 
-function localReaderRedirect(
-  location: string | null,
+export function localReaderRedirect(
+  response: Response,
   target: string,
   base: URL
 ): string | null {
+  if (!redirectStatuses.has(response.status)) return null
+  if (connectionHeaderNames(response.headers.get("connection")).has("location")) {
+    return null
+  }
+  const location = response.headers.get("location")
   if (
     location === null
     || location === ""
@@ -242,8 +247,7 @@ function allowReaderResponseHeaders(
       removeResponseHeader(event, name)
     }
   }
-  if (!redirectStatuses.has(response.status)) return
-  const location = localReaderRedirect(response.headers.get("location"), target, base)
+  const location = localReaderRedirect(response, target, base)
   if (location !== null) setResponseHeader(event, "location", location)
 }
 
