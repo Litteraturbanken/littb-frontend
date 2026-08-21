@@ -176,6 +176,13 @@ job "lb-frontend-stage" {
             echo "missing IMAGE_REF" >&2
             exit 1
           fi
+          case "$IMAGE_REF" in
+            *@"$image_digest_value") ;;
+            *)
+              echo "IMAGE_REF must be digest-qualified and match IMAGE_DIGEST" >&2
+              exit 1
+              ;;
+          esac
           export HOST=0.0.0.0 PORT="$NOMAD_PORT_http"
           exec node .output/server/index.mjs
         EOT

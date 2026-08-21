@@ -121,7 +121,11 @@ function stageEntrypoint() {
   return stageEntrypointTemplate().replace(/\$\$\{/gu, "${")
 }
 
-function runStageEntrypoint(gitShaValue: string, imageDigestValue: string) {
+function runStageEntrypoint(
+  gitShaValue: string,
+  imageDigestValue: string,
+  imageRefValue = `registry.test:5000/lb-frontend@${imageDigest}`
+) {
   const directory = mkdtempSync(resolve(tmpdir(), "littb-stage-entrypoint-"))
   const tracePath = resolve(directory, "trace")
   writeExecutable(directory, "node", `#!/bin/sh
@@ -137,7 +141,7 @@ printf '%s\\n' 'started' >> "$TRACE_FILE"
         TRACE_FILE: tracePath,
         GIT_SHA: gitShaValue,
         IMAGE_DIGEST: imageDigestValue,
-        IMAGE_REF: `registry.test:5000/lb-frontend@${imageDigest}`,
+        IMAGE_REF: imageRefValue,
         NOMAD_PORT_http: "3020"
       }
     })
@@ -352,6 +356,21 @@ test("staging entrypoint starts only with exact immutable identity values", () =
   expect(result.status, result.stderr).toBe(0)
   expect(trace).toEqual(["started"])
 })
+
+const invalidImageRefs = {
+  tagOnly: "registry.test:5000/lb-frontend:stage",
+  mismatchedDigest: `registry.test:5000/lb-frontend@sha256:${"c".repeat(64)}`
+}
+
+test.each(Object.entries(invalidImageRefs))(
+  "staging entrypoint rejects %s image references before starting Nuxt",
+  (_case, invalidImageRef) => {
+    const { result, trace } = runStageEntrypoint(gitSha, imageDigest, invalidImageRef)
+
+    expect(result.status).not.toBe(0)
+    expect(trace).toEqual([])
+  }
+)
 
 test("staging entrypoint avoids Nomad client interpolation syntax", () => {
   expect(stageEntrypointTemplate()).not.toContain("${")
