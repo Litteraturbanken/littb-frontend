@@ -179,6 +179,7 @@ test("keyboard-submits trimmed Contact data, exposes one polite status, and clea
   await openContact(page)
   await page.evaluate(() => document.fonts.ready)
   await page.clock.install()
+  await page.clock.pauseAt(Date.now() + 1_000)
   await request.put(`${fixture}/_contact_defer`)
   await fillContact(page, {
     name: "  Anna Andersson  ",
