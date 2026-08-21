@@ -3,6 +3,7 @@ import { createPlaywrightConfig } from "./playwright.config"
 export default createPlaywrightConfig({
   deploymentEnvironment: "staging",
   readerSourceBase: "http://reader-origin.int.lb.se",
+  includeE2eProjects: false,
   ssrProject: {
     name: "ssr-staging",
     testMatch: [

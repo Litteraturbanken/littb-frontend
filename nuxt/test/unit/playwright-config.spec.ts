@@ -104,10 +104,17 @@ describe("Playwright project boundaries", () => {
     )
   })
 
+  test("can omit E2E projects from a focused SSR launcher", () => {
+    const ssrConfig = createPlaywrightConfig({ includeE2eProjects: false })
+
+    expect(ssrConfig.projects?.map(project => project.name)).toEqual(["ssr"])
+  })
+
   test("uses a narrow staging launcher for only SSR policy contracts", async () => {
     const ssrConfig = (await import("../../playwright.ssr.config")).default
     const stagingProject = ssrConfig.projects?.find(project => project.name === "ssr-staging")
 
+    expect(ssrConfig.projects?.map(project => project.name)).toEqual(["ssr-staging"])
     expect(nuxtServerCommand(ssrConfig)).toContain(
       "NUXT_DEPLOYMENT_ENVIRONMENT=staging"
     )

@@ -45,11 +45,13 @@ function localSsrProject(): SsrProjectConfiguration {
 export function createPlaywrightConfig({
   deploymentEnvironment = "development",
   readerSourceBase = fixtureOrigin,
-  ssrProject = localSsrProject()
+  ssrProject = localSsrProject(),
+  includeE2eProjects = true
 }: {
   deploymentEnvironment?: PlaywrightServerEnvironment
   readerSourceBase?: string
   ssrProject?: SsrProjectConfiguration
+  includeE2eProjects?: boolean
 } = {}) {
   return defineConfig({
   outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR || "test-results",
@@ -74,6 +76,7 @@ export function createPlaywrightConfig({
   },
   projects: [
     { ...ssrProject, use: { ...devices["Desktop Chrome"] } },
+    ...(includeE2eProjects ? [
     {
       name: "desktop-chromium",
       testMatch: /e2e\/.*\.spec\.ts/,
@@ -124,6 +127,7 @@ export function createPlaywrightConfig({
         viewport: { width: 1440, height: 1000 }
       }
     }
+    ] : [])
   ],
   webServer: [
     {
