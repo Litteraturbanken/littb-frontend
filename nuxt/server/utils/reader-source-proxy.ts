@@ -13,6 +13,7 @@ import { assertProxyMethod } from "./backend-proxy"
 
 const MAX_DECODE_PASSES = 16
 const PRODUCTION_PUBLIC_HOST = "litteraturbanken.se"
+const PRIVATE_READER_ORIGIN = "http://reader-origin.int.lb.se"
 const readerPrefixes = ["/txt", "/bilder", "/export/faksimil"] as const
 type ReaderPrefix = typeof readerPrefixes[number]
 
@@ -117,12 +118,25 @@ function assertNonLoopingProductionOrigin(base: URL, environment: unknown): void
   }
 }
 
-function readerSourceOrigin(value: unknown, environment: unknown): URL {
+export function assertReaderOriginConfiguration(
+  value: unknown,
+  deploymentEnvironment: unknown
+): asserts value is string {
   assertReaderSourceText(value)
   const base = parseReaderSourceUrl(value)
   assertReaderSourceAuthority(value, base)
-  assertNonLoopingProductionOrigin(base, environment)
-  return base
+  if (
+    (deploymentEnvironment === "staging" || deploymentEnvironment === "production")
+    && value !== PRIVATE_READER_ORIGIN
+  ) {
+    invalidReaderConfiguration()
+  }
+  assertNonLoopingProductionOrigin(base, deploymentEnvironment)
+}
+
+function readerSourceOrigin(value: unknown, environment: unknown): URL {
+  assertReaderOriginConfiguration(value, environment)
+  return parseReaderSourceUrl(value)
 }
 
 function assertSafeRawSegment(rawSegment: string): void {

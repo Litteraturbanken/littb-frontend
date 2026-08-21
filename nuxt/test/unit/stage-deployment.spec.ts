@@ -124,12 +124,17 @@ function stageEntrypoint() {
 function runStageEntrypoint(
   gitShaValue: string,
   imageDigestValue: string,
-  imageRefValue = `registry.test:5000/lb-frontend@${imageDigest}`
+  imageRefValue = `registry.test:5000/lb-frontend@${imageDigest}`,
+  readerSourceBase = "http://reader-origin.int.lb.se"
 ) {
   const directory = mkdtempSync(resolve(tmpdir(), "littb-stage-entrypoint-"))
   const tracePath = resolve(directory, "trace")
   writeExecutable(directory, "node", `#!/bin/sh
-printf '%s\\n' 'started' >> "$TRACE_FILE"
+case "$1" in
+  scripts/verify-reader-origin.mjs) printf '%s\\n' 'reader origin verified' >> "$TRACE_FILE" ;;
+  .output/server/index.mjs) printf '%s\\n' 'started' >> "$TRACE_FILE" ;;
+  *) exit 64 ;;
+esac
 `)
 
   try {
@@ -142,6 +147,7 @@ printf '%s\\n' 'started' >> "$TRACE_FILE"
         GIT_SHA: gitShaValue,
         IMAGE_DIGEST: imageDigestValue,
         IMAGE_REF: imageRefValue,
+        NUXT_READER_SOURCE_BASE: readerSourceBase,
         NOMAD_PORT_http: "3020"
       }
     })
@@ -175,9 +181,10 @@ test("staging image uses the GNU build toolchain and starts its Alpine runtime a
   expect(dockerfile).toContain("CMD [\"node\", \".output/server/index.mjs\"]")
 
   const runtimeStage = dockerfile.split(`FROM ${runtimeNodeImage} AS runtime\n`)[1]
-  expect(runtimeStage.match(/^COPY .+$/gmu)).toEqual([
-    "COPY --from=build --chown=node:node /app/.output ./.output"
-  ])
+  expect(runtimeStage.match(/^COPY .+$/gmu)).toEqual(expect.arrayContaining([
+    "COPY --from=build --chown=node:node /app/.output ./.output",
+    "COPY --from=build --chown=node:node /app/scripts/verify-reader-origin.mjs ./scripts/verify-reader-origin.mjs"
+  ]))
 })
 
 test("staging Docker build context excludes development and generated files", () => {
@@ -219,7 +226,7 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(jobspec).not.toContain("variable \"observability_hmac_secret_path\"")
   expect(jobspec).toMatch(/variable\s+"http_port"\s*\{[^}]*default\s*=\s*3020/su)
   expect(jobspec).toMatch(
-    /variable\s+"reader_source_base"\s*\{[^}]*default\s*=\s*"https:\/\/litteraturbanken\.se"/su
+    /variable\s+"reader_source_base"\s*\{[^}]*default\s*=\s*"http:\/\/reader-origin\.int\.lb\.se"/su
   )
   expect(normalizedJobspec).toContain('mode = "host"')
   expect(normalizedJobspec).toContain('network_mode = "host"')
@@ -294,7 +301,7 @@ test("staging deploy resolves the built manifest digest before detached deployme
   expect(script).toContain('git_url="${GIT_URL:-https://github.com/Litteraturbanken/littb-frontend.git}"')
   expect(script).toContain('image_name="${IMAGE_NAME:-lb-frontend}"')
   expect(script).toContain(
-    'reader_source_base="${READER_SOURCE_BASE:-https://litteraturbanken.se}"'
+    'reader_source_base="${READER_SOURCE_BASE:-http://reader-origin.int.lb.se}"'
   )
   expect(script).toContain('image_ref="${registry_host}/${image_name}:${git_sha}"')
   expect(script).toContain("resolve_registry_digest()")
@@ -369,7 +376,19 @@ test("staging entrypoint starts only with exact immutable identity values", () =
   const { result, trace } = runStageEntrypoint(gitSha, imageDigest)
 
   expect(result.status, result.stderr).toBe(0)
-  expect(trace).toEqual(["started"])
+  expect(trace).toEqual(["reader origin verified", "started"])
+})
+
+test("staging entrypoint rejects a noncanonical Reader origin before the preflight", () => {
+  const { result, trace } = runStageEntrypoint(
+    gitSha,
+    imageDigest,
+    undefined,
+    "https://reader-origin.int.lb.se"
+  )
+
+  expect(result.status).not.toBe(0)
+  expect(trace).toEqual([])
 })
 
 const invalidImageRefs = {

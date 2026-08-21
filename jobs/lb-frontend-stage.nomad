@@ -26,7 +26,7 @@ variable "image_digest" {
 
 variable "reader_source_base" {
   type    = string
-  default = "https://litteraturbanken.se"
+  default = "http://reader-origin.int.lb.se"
 }
 
 variable "caddy_host" {
@@ -197,7 +197,12 @@ job "lb-frontend-stage" {
               exit 1
               ;;
           esac
+          if [ "$NUXT_READER_SOURCE_BASE" != "http://reader-origin.int.lb.se" ]; then
+            echo "invalid NUXT_READER_SOURCE_BASE" >&2
+            exit 1
+          fi
           export HOST=0.0.0.0 PORT="$NOMAD_PORT_http"
+          node scripts/verify-reader-origin.mjs
           exec node .output/server/index.mjs
         EOT
         ]

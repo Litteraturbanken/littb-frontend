@@ -13,6 +13,7 @@ import {
   readerFacsimileMetadata,
   resolveReaderPartNavigation
 } from "../../server/utils/reader-source"
+import * as readerSourceProxy from "../../server/utils/reader-source-proxy"
 
 import type { H3Event } from "h3"
 import type {
@@ -140,6 +141,55 @@ function stubConfig() {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+})
+
+const assertReaderOriginConfiguration = (
+  readerSourceProxy as unknown as {
+    assertReaderOriginConfiguration?: (value: unknown, deploymentEnvironment: unknown) => void
+  }
+).assertReaderOriginConfiguration
+
+describe("Reader source deployment origin policy", () => {
+  test("accepts the canonical private origin in staging and production", () => {
+    expect(typeof assertReaderOriginConfiguration).toBe("function")
+    expect(() => assertReaderOriginConfiguration?.(
+      "http://reader-origin.int.lb.se",
+      "staging"
+    )).not.toThrow()
+    expect(() => assertReaderOriginConfiguration?.(
+      "http://reader-origin.int.lb.se",
+      "production"
+    )).not.toThrow()
+  })
+
+  test.each([
+    "https://reader-origin.int.lb.se",
+    "http://READER-ORIGIN.INT.LB.SE",
+    "http://reader-origin.int.lb.se.",
+    "http://reader-origin.int.lb.se:80",
+    "http://reader-origin.int.lb.se/",
+    "http://reader-origin.int.lb.se/txt",
+    "http://reader-origin.int.lb.se?source=reader",
+    "http://reader-origin.int.lb.se#reader",
+    "http://reader:secret@reader-origin.int.lb.se",
+    "https://litteraturbanken.se",
+    "http://lb-apache.int.lb.se",
+    "http://lb-webserver-a.int.lb.se",
+    "http://10.1.0.19",
+    "http://10.1.0.3"
+  ])("rejects deceptive deployed Reader origin %s", value => {
+    expect(typeof assertReaderOriginConfiguration).toBe("function")
+    expect(() => assertReaderOriginConfiguration?.(value, "staging")).toThrow()
+    expect(() => assertReaderOriginConfiguration?.(value, "production")).toThrow()
+  })
+
+  test("preserves explicitly non-deployed fixture origins", () => {
+    expect(typeof assertReaderOriginConfiguration).toBe("function")
+    expect(() => assertReaderOriginConfiguration?.("https://assets.test/", "development"))
+      .not.toThrow()
+    expect(() => assertReaderOriginConfiguration?.("http://127.0.0.1:4010", "test"))
+      .not.toThrow()
+  })
 })
 
 describe("generated Reader manifest boundary", () => {

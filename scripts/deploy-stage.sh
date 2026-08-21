@@ -31,7 +31,7 @@ registry_host="${REGISTRY_HOST:-registry.service.consul:5000}"
 image_name="${IMAGE_NAME:-lb-frontend}"
 builder_job="${BUILDER_JOB:-docker-builder-multiarch}"
 image_ref="${registry_host}/${image_name}:${git_sha}"
-reader_source_base="${READER_SOURCE_BASE:-https://litteraturbanken.se}"
+reader_source_base="${READER_SOURCE_BASE:-http://reader-origin.int.lb.se}"
 
 resolve_registry_digest() {
   RESOLVE_IMAGE_REF="$1" \
