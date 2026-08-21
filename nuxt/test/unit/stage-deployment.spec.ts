@@ -134,6 +134,30 @@ function stageEntrypoint() {
   return stageEntrypointTemplate().replace(/\$\$\{/gu, "${")
 }
 
+function serviceTags(jobspec: string, serviceName: string) {
+  const service = jobspec.match(
+    new RegExp(
+      `service\\s*\\{\\s*name\\s*=\\s*"${serviceName}"(?<body>[\\s\\S]*?)\\n\\s{4}\\}`,
+      "u"
+    )
+  )
+  if (!service?.groups?.body) throw new Error(`service ${serviceName} not found`)
+
+  const tags = service.groups.body.match(/tags\s*=\s*\[(?<body>[\s\S]*?)\]/u)
+  if (!tags?.groups?.body) throw new Error(`service ${serviceName} tags not found`)
+
+  return Array.from(tags.groups.body.matchAll(/"(?<tag>[^"]+)"/gu), ({ groups }) => groups?.tag ?? "")
+}
+
+const stageIngressRetryTags = [
+  "caddy-lb-try-duration=5s",
+  "caddy-lb-try-interval=250ms"
+]
+
+function assertExactStageIngressRetryTags(tags: readonly string[]) {
+  expect(tags.filter((tag) => tag.startsWith("caddy-lb-try-"))).toEqual(stageIngressRetryTags)
+}
+
 function runStageEntrypoint(
   gitShaValue: string,
   imageDigestValue: string,
@@ -306,14 +330,23 @@ test("staging rehearses the production two-host rolling topology", () => {
   expect(group).toMatch(/auto_revert\s*=\s*true/u)
 })
 
-test("only the Stage frontend opts into the paired ingress retry tags", () => {
+test("Stage frontend has exactly the approved paired ingress retry tags", () => {
   const stageJobspec = readRepositoryFile("jobs/lb-frontend-stage.nomad")
-  const productionJobspec = readRepositoryFile("jobs/lb-frontend-live.nomad")
 
-  expect(stageJobspec).toContain('"caddy-lb-try-duration=5s"')
-  expect(stageJobspec).toContain('"caddy-lb-try-interval=250ms"')
-  expect(productionJobspec).not.toContain("caddy-lb-try-duration=")
-  expect(productionJobspec).not.toContain("caddy-lb-try-interval=")
+  assertExactStageIngressRetryTags(serviceTags(stageJobspec, "lb-frontend-stage"))
+})
+
+test.each([
+  ["duplicates the retry duration", (tags: string[]) => [...tags, "caddy-lb-try-duration=5s"]],
+  ["duplicates the retry interval", (tags: string[]) => [...tags, "caddy-lb-try-interval=250ms"]],
+  ["changes the retry duration", (tags: string[]) => tags.map((tag) => tag.replace("=5s", "=4s"))],
+  ["changes the retry interval", (tags: string[]) => tags.map((tag) => tag.replace("=250ms", "=500ms"))],
+  ["adds another retry key", (tags: string[]) => [...tags, "caddy-lb-try-attempts=2"]]
+])("Stage ingress retry contract rejects a tag list that %s", (_caseName, mutate) => {
+  const stageJobspec = readRepositoryFile("jobs/lb-frontend-stage.nomad")
+  const tags = serviceTags(stageJobspec, "lb-frontend-stage")
+
+  expect(() => assertExactStageIngressRetryTags(mutate(tags))).toThrow()
 })
 
 test("staging deploy resolves the built manifest digest before planned detached deployment", () => {
