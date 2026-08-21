@@ -169,15 +169,15 @@ test("mutable reader API pages are never shared or browser cacheable", async ({ 
   expect(conditional.headers()["cache-control"]).toBe("no-store")
 })
 
-test("staging refuses indexing through robots and response metadata", async ({ request }) => {
+test("development fixture permits indexing through robots and response metadata", async ({ request }) => {
   const robots = await request.get("/robots.txt")
   expect(robots.status()).toBe(200)
-  expect(await robots.text()).toBe("User-agent: *\nDisallow: /\n")
-  expect(robots.headers()["x-robots-tag"]).toBe("noindex, nofollow")
+  expect(await robots.text()).toBe("User-agent: *\nAllow: /\n")
+  expect(robots.headers()["x-robots-tag"]).toBeUndefined()
 
   const page = await request.get(
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
   )
   expect(page.status()).toBe(200)
-  expect(page.headers()["x-robots-tag"]).toBe("noindex, nofollow")
+  expect(page.headers()["x-robots-tag"]).toBeUndefined()
 })

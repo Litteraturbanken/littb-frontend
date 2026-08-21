@@ -59,6 +59,7 @@ export default defineConfig({
         + `LITTERATURKARTAN_PROXY_TARGET=${fixtureOrigin} `
         + `NUXT_CONTENT_BASE=${fixtureOrigin} `
         + `NUXT_READER_SOURCE_BASE=${fixtureOrigin} `
+        + "NUXT_DEPLOYMENT_ENVIRONMENT=development "
         + `yarn dev --port ${nuxtPort}`,
       url: `${nuxtOrigin}/_nuxt/@vite/client`,
       reuseExistingServer: false,

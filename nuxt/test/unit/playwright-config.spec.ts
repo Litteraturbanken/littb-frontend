@@ -1,5 +1,7 @@
 import { describe, expect, test } from "vitest"
 import config from "../../playwright.config"
+import readerAssetsConfig from "../../playwright.reader-assets-production.config"
+import slaArticlesConfig from "../../playwright.sla-articles-nuxt.config"
 
 type Pattern = string | RegExp
 
@@ -8,6 +10,13 @@ function matches(patterns: Pattern | Pattern[] | undefined, path: string): boole
   return (Array.isArray(patterns) ? patterns : [patterns]).some((pattern) => (
     typeof pattern === "string" ? path.includes(pattern) : pattern.test(path)
   ))
+}
+
+function nuxtServerCommand(fixtureConfig: typeof config): string | undefined {
+  const servers = Array.isArray(fixtureConfig.webServer)
+    ? fixtureConfig.webServer
+    : [fixtureConfig.webServer]
+  return servers.find(server => server?.command.includes("NUXT_READER_SOURCE_BASE"))?.command
 }
 
 describe("Playwright project boundaries", () => {
@@ -56,5 +65,13 @@ describe("Playwright project boundaries", () => {
     expect(nuxtServer?.command).toContain("yarn dev --port 3000")
     expect(nuxtServer?.reuseExistingServer).toBe(false)
     expect(servers.every(server => server?.reuseExistingServer === false)).toBe(true)
+  })
+
+  test("runs local Reader fixture launchers in development", () => {
+    for (const fixtureConfig of [config, readerAssetsConfig, slaArticlesConfig]) {
+      expect(nuxtServerCommand(fixtureConfig)).toContain(
+        "NUXT_DEPLOYMENT_ENVIRONMENT=development"
+      )
+    }
   })
 })

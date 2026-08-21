@@ -123,7 +123,7 @@ async function waitForNuxt(child: ChildProcess, origin: string): Promise<void> {
 }
 
 async function startBuiltNuxt(options: {
-  deploymentEnvironment?: "production" | "staging"
+  deploymentEnvironment?: "development" | "production" | "staging"
   readerSourceBase?: string
 }): Promise<string> {
   const port = await reservePort()
@@ -137,7 +137,7 @@ async function startBuiltNuxt(options: {
   Object.assign(environment, {
     HOST: "127.0.0.1",
     IMAGE_DIGEST: imageDigest,
-    NUXT_DEPLOYMENT_ENVIRONMENT: options.deploymentEnvironment ?? "staging",
+    NUXT_DEPLOYMENT_ENVIRONMENT: options.deploymentEnvironment ?? "development",
     NUXT_DEPLOYMENT_GIT_SHA: gitSha,
     NUXT_DEPLOYMENT_IMAGE_DIGEST: imageDigest,
     PORT: String(port)
