@@ -49,7 +49,21 @@ job "lb-frontend-stage" {
   }
 
   group "frontend" {
-    count = 1
+    count          = 2
+    shutdown_delay = "15s"
+
+    constraint {
+      distinct_hosts = true
+    }
+
+    update {
+      max_parallel      = 1
+      health_check      = "checks"
+      min_healthy_time  = "30s"
+      healthy_deadline  = "5m"
+      progress_deadline = "10m"
+      auto_revert       = true
+    }
 
     reschedule {
       attempts       = 3

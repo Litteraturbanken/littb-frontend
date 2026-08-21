@@ -271,6 +271,21 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(jobspec).not.toContain("dns_servers")
 })
 
+test("staging rehearses the production two-host rolling topology", () => {
+  const jobspec = readRepositoryFile("jobs/lb-frontend-stage.nomad")
+  const group = jobspec.match(/group\s+"frontend"\s*\{([\s\S]*?)\n\s+network\s*\{/u)?.[1] ?? ""
+
+  expect(group).toMatch(/count\s*=\s*2/u)
+  expect(group).toMatch(/shutdown_delay\s*=\s*"15s"/u)
+  expect(group).toMatch(/constraint\s*\{[^}]*distinct_hosts\s*=\s*true[^}]*\}/su)
+  expect(group).toMatch(/update\s*\{[^}]*max_parallel\s*=\s*1[^}]*\}/su)
+  expect(group).toMatch(/health_check\s*=\s*"checks"/u)
+  expect(group).toMatch(/min_healthy_time\s*=\s*"30s"/u)
+  expect(group).toMatch(/healthy_deadline\s*=\s*"5m"/u)
+  expect(group).toMatch(/progress_deadline\s*=\s*"10m"/u)
+  expect(group).toMatch(/auto_revert\s*=\s*true/u)
+})
+
 test("staging deploy resolves the built manifest digest before detached deployment", () => {
   const scriptPath = resolve(repositoryRoot, "scripts/deploy-stage.sh")
   const script = readRepositoryFile("scripts/deploy-stage.sh")
