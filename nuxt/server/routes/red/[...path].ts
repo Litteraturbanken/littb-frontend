@@ -9,7 +9,10 @@ import {
 import { hasC0OrC1Control, hasLoneSurrogate } from "../../../shared/utils/text-safety"
 import { rawUrlParts } from "../../../shared/utils/url-safety"
 import { assertProxyMethod } from "../../utils/backend-proxy"
-import { contentResourceOrigin } from "../../utils/reader-source-proxy"
+import {
+  connectionHeaderNames,
+  contentResourceOrigin
+} from "../../utils/reader-source-proxy"
 
 const MAX_DECODE_PASSES = 16
 
@@ -42,7 +45,9 @@ const contentResponseHeaders = new Set<string>(contentResponseHeaderNames)
 
 function contentRequestHeaders(event: H3Event): Headers {
   const headers = new Headers()
+  const hopByHopHeaders = connectionHeaderNames(getRequestHeader(event, "connection"))
   for (const name of contentRequestHeaderNames) {
+    if (hopByHopHeaders.has(name)) continue
     const value = getRequestHeader(event, name)
     if (value !== undefined) headers.set(name, value)
   }
@@ -50,8 +55,13 @@ function contentRequestHeaders(event: H3Event): Headers {
 }
 
 function allowAssetResponseHeaders(event: H3Event, response: Response): void {
+  const hopByHopHeaders = connectionHeaderNames(response.headers.get("connection"))
   for (const name of response.headers.keys()) {
-    if (!contentResponseHeaders.has(name.toLowerCase())) {
+    const normalizedName = name.toLowerCase()
+    if (
+      !contentResponseHeaders.has(normalizedName)
+      || hopByHopHeaders.has(normalizedName)
+    ) {
       removeResponseHeader(event, name)
     }
   }

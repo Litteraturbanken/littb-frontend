@@ -44,7 +44,7 @@ const readerResponseHeaderNames = [
 const readerResponseHeaders = new Set<string>(readerResponseHeaderNames)
 const redirectStatuses = new Set([300, 301, 302, 303, 307, 308])
 
-function connectionHeaderNames(value: string | null | undefined): Set<string> {
+export function connectionHeaderNames(value: string | null | undefined): Set<string> {
   return new Set((value ?? "")
     .split(",")
     .map(name => name.trim().toLowerCase())

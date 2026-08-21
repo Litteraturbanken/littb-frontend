@@ -4725,7 +4725,13 @@ const server = createServer(async (request, response) => {
     return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
   }
 
-  if (["GET", "HEAD"].includes(request.method) && url.pathname === "/red/css/etext.css") {
+  if (
+    ["GET", "HEAD"].includes(request.method)
+    && [
+      "/red/css/etext.css",
+      "/red/css/reader-proxy-fixture.css"
+    ].includes(url.pathname)
+  ) {
     contentResourceRequests.push({
       authorization: request.headers.authorization ?? null,
       cookie: request.headers.cookie ?? null,

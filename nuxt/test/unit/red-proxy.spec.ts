@@ -51,7 +51,11 @@ async function redProxyOrigin(
   return origin
 }
 
-async function rawRequest(origin: string, path: string): Promise<{
+async function rawRequest(
+  origin: string,
+  path: string,
+  headers?: IncomingHttpHeaders
+): Promise<{
   body: string
   headers: IncomingHttpHeaders
   status: number
@@ -59,6 +63,7 @@ async function rawRequest(origin: string, path: string): Promise<{
   const url = new URL(origin)
   return await new Promise((resolve, reject) => {
     const request = httpRequest({
+      headers,
       hostname: url.hostname,
       path,
       port: url.port
@@ -286,6 +291,29 @@ describe("red content proxy boundary", () => {
       pragma: "client-no-cache",
       range: "bytes=10-19"
     })
+  })
+
+  test("does not forward headers nominated by Connection in either direction", async () => {
+    let upstreamRange: string | undefined
+    const upstream = await listen((request, response) => {
+      upstreamRange = request.headers.range
+      response.writeHead(200, {
+        connection: "etag",
+        "content-type": "text/plain",
+        etag: '"origin-private"'
+      })
+      response.end("asset")
+    })
+    const proxyOrigin = await redProxyOrigin(upstream.origin)
+
+    const response = await rawRequest(proxyOrigin, "/red/images/cover.txt", {
+      connection: "range",
+      range: "bytes=1-4"
+    })
+
+    expect(upstreamRange).toBeUndefined()
+    expect(response.headers.etag).toBeUndefined()
+    expect(response.headers["content-type"]).toContain("text/plain")
   })
 
   test("returns upstream redirects without following them across origins", async () => {

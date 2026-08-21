@@ -78,7 +78,7 @@ test("same-origin Reader resources preserve read, validation, and Range semantic
 }) => {
   await request.delete(`${fixtureOrigin}/_content_resource_requests`)
   const resources = [
-    ["/red/css/etext.css", "text/css"],
+    ["/red/css/reader-proxy-fixture.css", "text/css"],
     ["/txt/css/lb-reader-doktor-glas-etext.css", "text/css"],
     ["/bilder/ornament/reader-fixture.png", "image/png"],
     ["/txt/epub/S%C3%B6derbergH_DoktorGlas.epub", "application/epub+zip"],
@@ -127,6 +127,8 @@ test("same-origin Reader resources preserve read, validation, and Range semantic
     }>
   }).requests
   expect(resourceEntries.map(({ method, path, range }) => ({ method, path, range }))).toEqual([
+    { method: "GET", path: "/red/css/reader-proxy-fixture.css", range: null },
+    { method: "HEAD", path: "/red/css/reader-proxy-fixture.css", range: null },
     { method: "GET", path: "/txt/css/lb-reader-doktor-glas-etext.css", range: null },
     { method: "HEAD", path: "/txt/css/lb-reader-doktor-glas-etext.css", range: null },
     { method: "GET", path: "/bilder/ornament/reader-fixture.png", range: null },
