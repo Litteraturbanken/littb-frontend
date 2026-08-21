@@ -18,7 +18,7 @@ function nuxtServerCommand(fixtureConfig: typeof config): string | undefined {
   const servers = Array.isArray(fixtureConfig.webServer)
     ? fixtureConfig.webServer
     : [fixtureConfig.webServer]
-  return servers.find(server => server?.command.includes("NUXT_READER_SOURCE_BASE"))?.command
+  return servers.find(server => server?.command.includes("NUXT_CONTENT_BASE"))?.command
 }
 
 function ssrSpecPaths(): string[] {
@@ -82,26 +82,25 @@ describe("Playwright project boundaries", () => {
     expect(servers.every(server => server?.reuseExistingServer === false)).toBe(true)
   })
 
-  test("runs local Reader fixture launchers in development", () => {
+  test("runs local content fixture launchers without a second Reader authority", () => {
     for (const fixtureConfig of [config, readerAssetsConfig, slaArticlesConfig]) {
       expect(nuxtServerCommand(fixtureConfig)).toContain(
         "NUXT_DEPLOYMENT_ENVIRONMENT=development"
       )
+      expect(nuxtServerCommand(fixtureConfig)).toContain("NUXT_CONTENT_BASE=http://127.0.0.1:")
+      expect(nuxtServerCommand(fixtureConfig)).not.toContain("NUXT_READER_SOURCE_BASE")
     }
   })
 
-  test("creates staging SSR launchers with the canonical private Reader origin", () => {
+  test("creates staging SSR launchers without a private Reader authority", () => {
     const ssrConfig = createPlaywrightConfig({
-      deploymentEnvironment: "staging",
-      readerSourceBase: "http://reader-origin.int.lb.se"
+      deploymentEnvironment: "staging"
     })
 
     expect(nuxtServerCommand(ssrConfig)).toContain(
       "NUXT_DEPLOYMENT_ENVIRONMENT=staging"
     )
-    expect(nuxtServerCommand(ssrConfig)).toContain(
-      "NUXT_READER_SOURCE_BASE=http://reader-origin.int.lb.se"
-    )
+    expect(nuxtServerCommand(ssrConfig)).not.toContain("NUXT_READER_SOURCE_BASE")
   })
 
   test("can omit E2E projects from a focused SSR launcher", () => {
@@ -118,9 +117,7 @@ describe("Playwright project boundaries", () => {
     expect(nuxtServerCommand(ssrConfig)).toContain(
       "NUXT_DEPLOYMENT_ENVIRONMENT=staging"
     )
-    expect(nuxtServerCommand(ssrConfig)).toContain(
-      "NUXT_READER_SOURCE_BASE=http://reader-origin.int.lb.se"
-    )
+    expect(nuxtServerCommand(ssrConfig)).not.toContain("NUXT_READER_SOURCE_BASE")
     expect(runsSpec(stagingProject, "ssr/robots.spec.ts")).toBe(true)
     expect(runsSpec(stagingProject, "ssr/deployment-identity.spec.ts")).toBe(true)
     expect(runsSpec(stagingProject, "ssr/reader.spec.ts")).toBe(false)

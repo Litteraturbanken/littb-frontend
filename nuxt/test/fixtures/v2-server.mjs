@@ -345,6 +345,7 @@ let readerMetadataRequests = []
 let readerHtmlRequests = []
 let readerOcrRequests = []
 let readerJpegRequests = []
+let contentResourceRequests = []
 let readerMetadataDelays = {}
 let readerManifestDelays = {}
 let readerManifestRequests = []
@@ -558,6 +559,34 @@ function sendBody(response, status, contentType, body, headers = {}) {
     ...headers
   })
   response.end(body)
+}
+
+function sendReadableResource(request, response, contentType, body) {
+  const payload = Buffer.isBuffer(body) ? body : Buffer.from(body)
+  const headers = {
+    "accept-ranges": "bytes",
+    "content-type": contentType
+  }
+  const range = request.headers.range
+  if (range !== undefined) {
+    const match = /^bytes=(\d+)-(\d*)$/u.exec(range)
+    const start = match ? Number(match[1]) : payload.length
+    const requestedEnd = match?.[2] ? Number(match[2]) : payload.length - 1
+    if (!match || start >= payload.length || requestedEnd < start) {
+      response.writeHead(416, { ...headers, "content-range": `bytes */${payload.length}` })
+      return response.end()
+    }
+    const end = Math.min(requestedEnd, payload.length - 1)
+    const partial = payload.subarray(start, end + 1)
+    response.writeHead(206, {
+      ...headers,
+      "content-length": partial.length,
+      "content-range": `bytes ${start}-${end}/${payload.length}`
+    })
+    return response.end(request.method === "HEAD" ? undefined : partial)
+  }
+  response.writeHead(200, { ...headers, "content-length": payload.length })
+  return response.end(request.method === "HEAD" ? undefined : payload)
 }
 
 async function readJson(request) {
@@ -3374,6 +3403,13 @@ const server = createServer(async (request, response) => {
     readerRequests = []
     return sendJson(response, 200, { requests: readerRequests })
   }
+  if (url.pathname === "/_content_resource_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: contentResourceRequests })
+  }
+  if (url.pathname === "/_content_resource_requests" && request.method === "DELETE") {
+    contentResourceRequests = []
+    return sendJson(response, 200, { requests: contentResourceRequests })
+  }
   for (const [controlPath, ledger] of [
     ["/_reader_manifest_requests", readerManifestRequests],
     ["/_editor_manifest_requests", editorManifestRequests],
@@ -4689,13 +4725,20 @@ const server = createServer(async (request, response) => {
     return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
   }
 
-  if (request.method === "GET" && url.pathname === "/red/css/etext.css") {
+  if (["GET", "HEAD"].includes(request.method) && url.pathname === "/red/css/etext.css") {
+    contentResourceRequests.push({
+      authorization: request.headers.authorization ?? null,
+      cookie: request.headers.cookie ?? null,
+      method: request.method,
+      path: `${url.pathname}${url.search}`,
+      range: request.headers.range ?? null
+    })
     readerRequests.push(`${url.pathname}${url.search}`)
     return sendBody(response, 200, "text/css; charset=utf-8", sharedReaderCss)
   }
 
   if (
-    request.method === "GET" &&
+    ["GET", "HEAD"].includes(request.method) &&
     (
       url.pathname === "/txt/css/lb-reader-doktor-glas-etext.css" ||
       url.pathname === "/txt/css/lb-reader-doktor-glas-parts-etext.css" ||
@@ -4704,6 +4747,13 @@ const server = createServer(async (request, response) => {
       url.pathname === "/txt/css/lb7604979-etext.css"
     )
   ) {
+    contentResourceRequests.push({
+      authorization: request.headers.authorization ?? null,
+      cookie: request.headers.cookie ?? null,
+      method: request.method,
+      path: `${url.pathname}${url.search}`,
+      range: request.headers.range ?? null
+    })
     readerRequests.push(`${url.pathname}${url.search}`)
     return sendBody(response, 200, "text/css; charset=utf-8", workReaderCss)
   }
@@ -4716,7 +4766,14 @@ const server = createServer(async (request, response) => {
     return sendBody(response, 200, "text/css; charset=utf-8", forvillelserReaderCss)
   }
 
-  if (request.method === "GET" && url.pathname === "/bilder/ornament/reader-fixture.png") {
+  if (["GET", "HEAD"].includes(request.method) && url.pathname === "/bilder/ornament/reader-fixture.png") {
+    contentResourceRequests.push({
+      authorization: request.headers.authorization ?? null,
+      cookie: request.headers.cookie ?? null,
+      method: request.method,
+      path: `${url.pathname}${url.search}`,
+      range: request.headers.range ?? null
+    })
     readerRequests.push(`${url.pathname}${url.search}`)
     return sendBody(response, 200, "image/png", Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
@@ -4725,13 +4782,39 @@ const server = createServer(async (request, response) => {
   }
 
   if (
-    request.method === "GET"
+    ["GET", "HEAD"].includes(request.method)
+    && url.pathname === "/txt/epub/S%C3%B6derbergH_DoktorGlas.epub"
+  ) {
+    contentResourceRequests.push({
+      authorization: request.headers.authorization ?? null,
+      cookie: request.headers.cookie ?? null,
+      method: request.method,
+      path: `${url.pathname}${url.search}`,
+      range: request.headers.range ?? null
+    })
+    return sendReadableResource(
+      request,
+      response,
+      "application/epub+zip",
+      Buffer.from("reader-epub-fixture")
+    )
+  }
+
+  if (
+    ["GET", "HEAD"].includes(request.method)
     && /^\/export\/faksimil(?:\/|$)/.test(url.pathname)
   ) {
+    contentResourceRequests.push({
+      authorization: request.headers.authorization ?? null,
+      cookie: request.headers.cookie ?? null,
+      method: request.method,
+      path: `${url.pathname}${url.search}`,
+      range: request.headers.range ?? null
+    })
     exportFaksimilRequests.push(`${url.pathname}${url.search}`)
-    return sendBody(
+    return sendReadableResource(
+      request,
       response,
-      200,
       "application/pdf",
       Buffer.from("author-works-generated-pdf-fixture")
     )

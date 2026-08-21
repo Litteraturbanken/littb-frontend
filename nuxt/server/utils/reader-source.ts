@@ -356,7 +356,7 @@ export async function loadReaderMetadata(
 ): Promise<ReaderWorkMetadata> {
   if (!isReaderMediaType(mediaType)) readerPageNotFound()
   const manifest = await fetchReaderManifest(event, authorId, titlePath, mediaType)
-  const base = useRuntimeConfig(event).readerSourceBase.replace(/\/$/u, "")
+  const base = useRuntimeConfig(event).contentBase.replace(/\/$/u, "")
   if (manifest.media_type === "faksimil") {
     return readerFacsimileMetadata(manifest, base)
   }

@@ -305,7 +305,7 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
   const position = editorPagePosition(manifest.bounds, request.pageIndex)
   const readable = readableEditorContext(manifest, position, request.pageIndex)
   const config = useRuntimeConfig(event)
-  const base = config.readerSourceBase.replace(/\/$/u, "")
+  const base = config.contentBase.replace(/\/$/u, "")
   const assets = await fetchEditorAssets(
     event,
     base,

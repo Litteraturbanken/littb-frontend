@@ -13,8 +13,7 @@ import { assertProxyMethod } from "./backend-proxy"
 
 const MAX_DECODE_PASSES = 16
 const PRODUCTION_PUBLIC_HOST = "litteraturbanken.se"
-const PRIVATE_READER_ORIGIN = "http://reader-origin.int.lb.se"
-const readerPrefixes = ["/txt", "/bilder", "/export/faksimil"] as const
+const readerPrefixes = ["/red", "/txt", "/bilder", "/export/faksimil"] as const
 type ReaderPrefix = typeof readerPrefixes[number]
 
 const readerRequestHeaderNames = [
@@ -52,10 +51,10 @@ function connectionHeaderNames(value: string | null | undefined): Set<string> {
     .filter(Boolean))
 }
 
-function invalidReaderConfiguration(): never {
+function invalidContentConfiguration(): never {
   throw createError({
     statusCode: 500,
-    statusMessage: "Invalid Reader source configuration"
+    statusMessage: "Invalid content source configuration"
   })
 }
 
@@ -77,13 +76,13 @@ function assertReaderSourceText(value: unknown): asserts value is string {
     || hasC0OrC1Control(value)
     || hasLoneSurrogate(value)
   ) {
-    invalidReaderConfiguration()
+    invalidContentConfiguration()
   }
   if (
     !/^https?:\/\//u.test(value)
     || ["\\", "?", "#"].some(character => value.includes(character))
   ) {
-    invalidReaderConfiguration()
+    invalidContentConfiguration()
   }
 }
 
@@ -91,7 +90,7 @@ function parseReaderSourceUrl(value: string): URL {
   try {
     return new URL(value)
   } catch {
-    invalidReaderConfiguration()
+    invalidContentConfiguration()
   }
 }
 
@@ -105,7 +104,7 @@ function assertReaderSourceAuthority(value: string, base: URL): void {
     || base.password
     || (pathStart >= 0 && value.slice(pathStart) !== "/")
   ) {
-    invalidReaderConfiguration()
+    invalidContentConfiguration()
   }
 }
 
@@ -114,28 +113,22 @@ function assertNonLoopingProductionOrigin(base: URL, environment: unknown): void
     environment === "production"
     && normalizedHostname(base.hostname) === PRODUCTION_PUBLIC_HOST
   ) {
-    invalidReaderConfiguration()
+    invalidContentConfiguration()
   }
 }
 
-export function assertReaderOriginConfiguration(
+export function assertContentOriginConfiguration(
   value: unknown,
   deploymentEnvironment: unknown
 ): asserts value is string {
   assertReaderSourceText(value)
   const base = parseReaderSourceUrl(value)
   assertReaderSourceAuthority(value, base)
-  if (
-    (deploymentEnvironment === "staging" || deploymentEnvironment === "production")
-    && value !== PRIVATE_READER_ORIGIN
-  ) {
-    invalidReaderConfiguration()
-  }
   assertNonLoopingProductionOrigin(base, deploymentEnvironment)
 }
 
-function readerSourceOrigin(value: unknown, environment: unknown): URL {
-  assertReaderOriginConfiguration(value, environment)
+export function contentResourceOrigin(value: unknown, environment: unknown): URL {
+  assertContentOriginConfiguration(value, environment)
   return parseReaderSourceUrl(value)
 }
 
@@ -273,8 +266,8 @@ export async function proxyReaderSourceRequest(
 ): Promise<unknown> {
   assertProxyMethod(event, ["GET", "HEAD"])
   const config = useRuntimeConfig(event)
-  const base = readerSourceOrigin(
-    config.readerSourceBase,
+  const base = contentResourceOrigin(
+    config.contentBase,
     config.deploymentEnvironment
   )
   const target = readerRequestTarget(event, prefix, base)

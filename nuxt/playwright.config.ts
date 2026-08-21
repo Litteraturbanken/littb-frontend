@@ -44,12 +44,10 @@ function localSsrProject(): SsrProjectConfiguration {
 
 export function createPlaywrightConfig({
   deploymentEnvironment = "development",
-  readerSourceBase = fixtureOrigin,
   ssrProject = localSsrProject(),
   includeE2eProjects = true
 }: {
   deploymentEnvironment?: PlaywrightServerEnvironment
-  readerSourceBase?: string
   ssrProject?: SsrProjectConfiguration
   includeE2eProjects?: boolean
 } = {}) {
@@ -149,8 +147,8 @@ export function createPlaywrightConfig({
         `LBAPI_LEGACY_PROXY_TARGET=${fixtureOrigin} ` +
         `LITTB_VITE_FS_ALLOW=${dependencyRoot} ` +
         `LITTERATURKARTAN_PROXY_TARGET=${fixtureOrigin} ` +
+        `CONTENT_PROXY_TARGET=${fixtureOrigin} ` +
         `NUXT_CONTENT_BASE=${fixtureOrigin} ` +
-        `NUXT_READER_SOURCE_BASE=${readerSourceBase} ` +
         `NUXT_OBSERVABILITY_HMAC_SECRET=${"test-observability-secret-material-0123456789"} ` +
         `NUXT_OBSERVABILITY_ALLOWED_ORIGINS=https://stage.litteraturbanken.se ` +
         `NUXT_DEPLOYMENT_ENVIRONMENT=${deploymentEnvironment} ` +

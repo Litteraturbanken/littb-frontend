@@ -2,6 +2,7 @@ import { resolve } from "node:path"
 
 const apiProxyTarget = process.env.LBAPI_PROXY_TARGET || "http://127.0.0.1:8000"
 const litteraturkartanProxyTarget = process.env.LITTERATURKARTAN_PROXY_TARGET || "https://litteraturbanken.se"
+const contentProxyTarget = process.env.CONTENT_PROXY_TARGET || "https://red.litteraturbanken.se"
 const forwardedHostHeaders = (target: string): Record<string, string> => ({
   "x-forwarded-host": new URL(target).host
 })
@@ -90,7 +91,6 @@ export default defineNuxtConfig({
     observabilityAllowedOrigins: "",
     libraryApiBase: "http://127.0.0.1:8000",
     contentBase: "https://red.litteraturbanken.se",
-    readerSourceBase: "",
     public: {
       apiBase: "/api/v2",
       libraryApiBase: "/api",
@@ -132,6 +132,10 @@ export default defineNuxtConfig({
           ...(legacyApiProxyOverride
             ? {}
             : { rewrite: path => path.replace(/^\/api(?=\/|$)/, "") })
+        },
+        "^/(?:red|txt|bilder|export/faksimil)(?:/|$)": {
+          target: contentProxyTarget,
+          changeOrigin: true
         },
         "^/litteraturkartan(?:[/?]|$)": {
           target: litteraturkartanProxyTarget,

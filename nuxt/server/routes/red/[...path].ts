@@ -9,6 +9,7 @@ import {
 import { hasC0OrC1Control, hasLoneSurrogate } from "../../../shared/utils/text-safety"
 import { rawUrlParts } from "../../../shared/utils/url-safety"
 import { assertProxyMethod } from "../../utils/backend-proxy"
+import { contentResourceOrigin } from "../../utils/reader-source-proxy"
 
 const MAX_DECODE_PASSES = 16
 
@@ -116,8 +117,12 @@ function abortOnDisconnect(event: H3Event, controller: AbortController): () => v
 export default defineEventHandler(async (event) => {
   assertProxyMethod(event, ["GET", "HEAD"])
   const { path, search } = safeProxyTarget(event)
-  const contentBase = useRuntimeConfig(event).contentBase.replace(/\/$/u, "")
-  const target = `${contentBase}/red/${path}${search}`
+  const config = useRuntimeConfig(event)
+  const contentBase = contentResourceOrigin(
+    config.contentBase,
+    config.deploymentEnvironment
+  )
+  const target = `${contentBase.origin}/red/${path}${search}`
   const controller = new AbortController()
   const removeAbortListeners = abortOnDisconnect(event, controller)
   try {

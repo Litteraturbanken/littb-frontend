@@ -35,7 +35,7 @@ async function reservePort(): Promise<number> {
   return port
 }
 
-async function readerOrigin(label: string): Promise<{
+async function contentOrigin(label: string): Promise<{
   origin: string
   requests: RecordedRequest[]
 }> {
@@ -83,7 +83,7 @@ async function readerOrigin(label: string): Promise<{
   return { origin: await listen(server), requests }
 }
 
-async function redirectingReaderOrigin(): Promise<{
+async function redirectingContentOrigin(): Promise<{
   origin: string
   requests: string[]
 }> {
@@ -123,16 +123,26 @@ async function waitForNuxt(child: ChildProcess, origin: string): Promise<void> {
 }
 
 async function startBuiltNuxt(options: {
+  contentBase?: string
   deploymentEnvironment?: "development" | "production" | "staging"
-  readerSourceBase?: string
+  obsoleteReaderSourceBase?: string
 }): Promise<string> {
   const port = await reservePort()
   const environment = { ...process.env }
-  delete environment.READER_SOURCE_PROXY_TARGET
-  if (options.readerSourceBase === undefined) {
+  if (options.obsoleteReaderSourceBase === undefined) {
     delete environment.NUXT_READER_SOURCE_BASE
   } else {
-    environment.NUXT_READER_SOURCE_BASE = options.readerSourceBase
+    environment.NUXT_READER_SOURCE_BASE = options.obsoleteReaderSourceBase
+  }
+  if (options.contentBase === undefined) {
+    delete environment.NUXT_CONTENT_BASE
+  } else {
+    environment.NUXT_CONTENT_BASE = options.contentBase
+  }
+  if (options.obsoleteReaderSourceBase === undefined) {
+    delete environment.READER_SOURCE_PROXY_TARGET
+  } else {
+    environment.READER_SOURCE_PROXY_TARGET = options.obsoleteReaderSourceBase
   }
   Object.assign(environment, {
     HOST: "127.0.0.1",
@@ -171,12 +181,19 @@ afterEach(async () => {
   await Promise.all(servers.map(server => once(server, "close")))
 })
 
-describe("built Reader runtime proxy", () => {
-  test("the same build selects either runtime origin and preserves read proxy semantics", async () => {
-    const firstReader = await readerOrigin("A")
-    const secondReader = await readerOrigin("B")
-    const firstNuxt = await startBuiltNuxt({ readerSourceBase: firstReader.origin })
-    const secondNuxt = await startBuiltNuxt({ readerSourceBase: secondReader.origin })
+describe("built content resource fallback proxy", () => {
+  test("the same build selects either contentBase origin and preserves read proxy semantics", async () => {
+    const firstReader = await contentOrigin("A")
+    const secondReader = await contentOrigin("B")
+    const obsoleteReader = await contentOrigin("O")
+    const firstNuxt = await startBuiltNuxt({
+      contentBase: firstReader.origin,
+      obsoleteReaderSourceBase: obsoleteReader.origin
+    })
+    const secondNuxt = await startBuiltNuxt({
+      contentBase: secondReader.origin,
+      obsoleteReaderSourceBase: obsoleteReader.origin
+    })
     const path = "/txt/S%C3%B6derbergH/file%20one.bin?download=a%2Fb&empty="
 
     const [firstResponse, secondResponse] = await Promise.all([
@@ -251,6 +268,7 @@ describe("built Reader runtime proxy", () => {
     expect(Buffer.from(await secondResponse.arrayBuffer())).toEqual(Buffer.from([0, 255, 66, 10]))
     expect(firstReader.requests).toHaveLength(1)
     expect(secondReader.requests).toHaveLength(1)
+    expect(obsoleteReader.requests).toEqual([])
     for (const [request, marker] of [
       [firstReader.requests[0], "first"],
       [secondReader.requests[0], "second"]
@@ -301,10 +319,10 @@ describe("built Reader runtime proxy", () => {
   })
 
   test.each(["DELETE", "PATCH", "POST", "PUT"])(
-    "rejects %s without reaching the Reader origin",
+    "rejects %s without reaching the content origin",
     async (method) => {
-      const reader = await readerOrigin("R")
-      const nuxt = await startBuiltNuxt({ readerSourceBase: reader.origin })
+      const reader = await contentOrigin("R")
+      const nuxt = await startBuiltNuxt({ contentBase: reader.origin })
 
       const response = await fetch(`${nuxt}/txt/work/file.txt`, {
         body: "must not be forwarded",
@@ -319,12 +337,13 @@ describe("built Reader runtime proxy", () => {
   )
 
   test.each([
+    "/red/dynamic/file.bin?theme=reader",
     "/txt/work/file.txt?raw=one%2Ftwo",
     "/bilder/ornament/image.png?size=2",
     "/export/faksimil/work.pdf?download=1"
   ])("proxies the exact Reader namespace path %s", async (path) => {
-    const reader = await readerOrigin("R")
-    const nuxt = await startBuiltNuxt({ readerSourceBase: reader.origin })
+    const reader = await contentOrigin("R")
+    const nuxt = await startBuiltNuxt({ contentBase: reader.origin })
 
     const response = await fetch(`${nuxt}${path}`)
 
@@ -335,8 +354,8 @@ describe("built Reader runtime proxy", () => {
   })
 
   test("rewrites only same-source redirects that stay inside Reader proxy namespaces", async () => {
-    const reader = await redirectingReaderOrigin()
-    const nuxt = await startBuiltNuxt({ readerSourceBase: reader.origin })
+    const reader = await redirectingContentOrigin()
+    const nuxt = await startBuiltNuxt({ contentBase: reader.origin })
 
     const local = await fetch(`${nuxt}/txt/redirect-local`, { redirect: "manual" })
     const external = await fetch(`${nuxt}/txt/redirect-external`, { redirect: "manual" })
@@ -362,26 +381,28 @@ describe("built Reader runtime proxy", () => {
   })
 
   test.each([
-    undefined,
     "ftp://reader.invalid",
     "https://user:secret@reader.invalid",
     "https://reader.invalid/?query=1",
     "https://reader.invalid/#fragment"
-  ])("fails closed for invalid runtime base %s", async (readerSourceBase) => {
-    const nuxt = await startBuiltNuxt({ readerSourceBase })
+  ])("fails closed for invalid runtime base %s", async (contentBase) => {
+    const nuxt = await startBuiltNuxt({ contentBase })
 
     const response = await fetch(`${nuxt}/txt/work/file.txt`)
 
     expect(response.status).toBe(500)
   })
 
-  test("rejects the public frontend authority in production", async () => {
+  test.each([
+    "/red/dynamic/file.bin",
+    "/txt/work/file.txt"
+  ])("rejects the public frontend authority in production for %s", async (path) => {
     const nuxt = await startBuiltNuxt({
       deploymentEnvironment: "production",
-      readerSourceBase: "https://litteraturbanken.se"
+      contentBase: "https://litteraturbanken.se"
     })
 
-    const response = await fetch(`${nuxt}/txt/work/file.txt`)
+    const response = await fetch(`${nuxt}${path}`)
 
     expect(response.status).toBe(500)
   })
@@ -391,8 +412,8 @@ describe("built Reader runtime proxy", () => {
     "/bilder/safe%252fprivate.png",
     "/export/faksimil/%255c%255cevil.test/private.pdf"
   ])("rejects traversal and authority-escape path %s", async (path) => {
-    const reader = await readerOrigin("R")
-    const nuxt = await startBuiltNuxt({ readerSourceBase: reader.origin })
+    const reader = await contentOrigin("R")
+    const nuxt = await startBuiltNuxt({ contentBase: reader.origin })
 
     const response = await fetch(`${nuxt}${path}`)
 

@@ -33,7 +33,6 @@ export default defineConfig({
         + `NUXT_API_BASE=${fixtureOrigin}/private-v2 `
         + `NUXT_LIBRARY_API_BASE=${fixtureOrigin}/legacy-api `
         + `NUXT_CONTENT_BASE=${fixtureOrigin} `
-        + `NUXT_READER_SOURCE_BASE=${fixtureOrigin} `
         + "NUXT_DEPLOYMENT_ENVIRONMENT=development "
         + "node .output/server/index.mjs",
       url: nuxtOrigin,

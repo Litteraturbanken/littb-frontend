@@ -73,24 +73,76 @@ test("Nitro proxies bounded backend requests without shadowing exact APIs", asyn
   expect(unsupportedMethod.status()).toBe(405)
 })
 
-test("Nitro proxies the bounded public legacy asset prefixes", async ({ request }) => {
-  const sharedStylesheet = await request.get("/red/css/etext.css")
-  expect(sharedStylesheet.status()).toBe(200)
-  expect(sharedStylesheet.headers()["content-type"]).toContain("text/css")
+test("same-origin Reader resources preserve read, validation, and Range semantics", async ({
+  request
+}) => {
+  await request.delete(`${fixtureOrigin}/_content_resource_requests`)
+  const resources = [
+    ["/red/css/etext.css", "text/css"],
+    ["/txt/css/lb-reader-doktor-glas-etext.css", "text/css"],
+    ["/bilder/ornament/reader-fixture.png", "image/png"],
+    ["/txt/epub/S%C3%B6derbergH_DoktorGlas.epub", "application/epub+zip"],
+    ["/export/faksimil/lb-DoktorGlas.pdf", "application/pdf"]
+  ] as const
 
-  const workStylesheet = await request.get(
-    "/txt/css/lb-reader-doktor-glas-etext.css"
-  )
-  expect(workStylesheet.status()).toBe(200)
-  expect(workStylesheet.headers()["content-type"]).toContain("text/css")
+  for (const [path, contentType] of resources) {
+    const response = await request.get(path, {
+      headers: {
+        authorization: "Bearer browser-secret",
+        cookie: "reader_session=browser-secret"
+      }
+    })
+    expect(response.status(), path).toBe(200)
+    expect(response.headers()["content-type"], path).toContain(contentType)
+    const head = await request.head(path)
+    expect(head.status(), `HEAD ${path}`).toBe(200)
+    expect(await head.body()).toEqual(Buffer.alloc(0))
+  }
 
-  const image = await request.get("/bilder/ornament/reader-fixture.png")
-  expect(image.status()).toBe(200)
-  expect(image.headers()["content-type"]).toContain("image/png")
+  for (const path of [
+    "/txt/epub/S%C3%B6derbergH_DoktorGlas.epub",
+    "/export/faksimil/lb-DoktorGlas.pdf"
+  ]) {
+    const partial = await request.get(path, { headers: { range: "bytes=1-4" } })
+    expect(partial.status(), path).toBe(206)
+    expect(partial.headers()["accept-ranges"]).toBe("bytes")
+    expect(partial.headers()["content-range"]).toMatch(/^bytes 1-4\/\d+$/u)
+    expect((await partial.body()).byteLength).toBe(4)
 
-  const facsimile = await request.get("/export/faksimil/lb-DoktorGlas.pdf")
-  expect(facsimile.status()).toBe(200)
-  expect(facsimile.headers()["content-type"]).toContain("application/pdf")
+    const unsatisfiable = await request.get(path, {
+      headers: { range: "bytes=999999-" }
+    })
+    expect(unsatisfiable.status(), path).toBe(416)
+    expect(unsatisfiable.headers()["content-range"]).toMatch(/^bytes \*\/\d+$/u)
+  }
+
+  const resourceLedger = await request.get(`${fixtureOrigin}/_content_resource_requests`)
+  const resourceEntries = (await resourceLedger.json() as {
+    requests: Array<{
+      authorization: string | null
+      cookie: string | null
+      method: string
+      path: string
+      range: string | null
+    }>
+  }).requests
+  expect(resourceEntries.map(({ method, path, range }) => ({ method, path, range }))).toEqual([
+    { method: "GET", path: "/txt/css/lb-reader-doktor-glas-etext.css", range: null },
+    { method: "HEAD", path: "/txt/css/lb-reader-doktor-glas-etext.css", range: null },
+    { method: "GET", path: "/bilder/ornament/reader-fixture.png", range: null },
+    { method: "HEAD", path: "/bilder/ornament/reader-fixture.png", range: null },
+    { method: "GET", path: "/txt/epub/S%C3%B6derbergH_DoktorGlas.epub", range: null },
+    { method: "HEAD", path: "/txt/epub/S%C3%B6derbergH_DoktorGlas.epub", range: null },
+    { method: "GET", path: "/export/faksimil/lb-DoktorGlas.pdf", range: null },
+    { method: "HEAD", path: "/export/faksimil/lb-DoktorGlas.pdf", range: null },
+    { method: "GET", path: "/txt/epub/S%C3%B6derbergH_DoktorGlas.epub", range: "bytes=1-4" },
+    { method: "GET", path: "/txt/epub/S%C3%B6derbergH_DoktorGlas.epub", range: "bytes=999999-" },
+    { method: "GET", path: "/export/faksimil/lb-DoktorGlas.pdf", range: "bytes=1-4" },
+    { method: "GET", path: "/export/faksimil/lb-DoktorGlas.pdf", range: "bytes=999999-" }
+  ])
+  expect(resourceEntries.every(entry => (
+    entry.authorization === null && entry.cookie === null
+  ))).toBe(true)
 
   const map = await request.get("/litteraturkartan?s=author:SoderbergH")
   expect(map.status()).toBe(200)
@@ -107,11 +159,15 @@ test("Nitro proxies the bounded public legacy asset prefixes", async ({ request 
   expect(traversal.status()).toBeGreaterThanOrEqual(400)
 })
 
-test("the production reader loads its stylesheets without console errors", async ({ page }) => {
+test("the production reader keeps browser resources same-origin without private authority requests", async ({
+  page
+}) => {
   const consoleErrors: string[] = []
+  const resourceRequests: string[] = []
   page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push(message.text())
   })
+  page.on("request", (request) => resourceRequests.push(request.url()))
 
   await page.goto(
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext",
@@ -131,6 +187,24 @@ test("the production reader loads its stylesheets without console errors", async
   const workStyles = page.locator("style[data-reader-work-styles]")
   await expect(workStyles).toHaveCount(1)
   expect(await workStyles.textContent()).toContain(".txt .titelsida")
+
+  await page.goto(
+    "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/3/faksimil",
+    { waitUntil: "networkidle" }
+  )
+  await expect(page.locator("img.faksimil")).toBeVisible()
+  const readerResources = resourceRequests.filter(url => (
+    /^\/(?:red|txt|bilder|export\/faksimil)(?:\/|$)/u.test(new URL(url).pathname)
+  ))
+  expect(readerResources.length).toBeGreaterThan(0)
+  expect(readerResources.map(url => new URL(url).pathname)).toEqual(expect.arrayContaining([
+    "/txt/lb-reader-gosta-berlings-saga/" +
+      "lb-reader-gosta-berlings-saga_3/lb-reader-gosta-berlings-saga_3_0009.jpeg"
+  ]))
+  expect(readerResources.every(url => new URL(url).origin === new URL(page.url()).origin))
+    .toBe(true)
+  expect(resourceRequests.some(url => url.includes("reader-origin.int.lb.se"))).toBe(false)
+  expect(await page.content()).not.toContain("reader-origin.int.lb.se")
   expect(consoleErrors).toEqual([])
 })
 

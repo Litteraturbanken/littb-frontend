@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vitest"
 
 type ProxyRule = {
+  changeOrigin?: boolean
   target: string
   rewrite?: (path: string) => string
 }
@@ -22,8 +23,8 @@ type NuxtConfig = {
     }
   }>
   runtimeConfig: {
+    contentBase: string
     libraryApiBase: string
-    readerSourceBase: string
   }
   vite: {
     server: {
@@ -86,31 +87,29 @@ describe("local legacy library API defaults", () => {
   })
 })
 
-describe("external reader source proxy", () => {
-  test("reserves Reader source paths for private runtime-owned handlers", async () => {
+describe("legacy content resource ownership", () => {
+  test("leaves production resources to the edge and proxies all four namespaces in development", async () => {
+    vi.stubEnv("CONTENT_PROXY_TARGET", "https://content.example.test")
+    vi.stubEnv("READER_SOURCE_PROXY_TARGET", "https://obsolete-reader.example.test")
     vi.stubEnv("LITTERATURKARTAN_PROXY_TARGET", "https://map.example.test")
 
     const config = await loadConfig()
+    const contentProxy = config.vite.server.proxy[
+      "^/(?:red|txt|bilder|export/faksimil)(?:/|$)"
+    ]
 
-    for (const path of ["/txt/**", "/bilder/**", "/export/faksimil/**"]) {
+    for (const path of ["/red/**", "/txt/**", "/bilder/**", "/export/faksimil/**"]) {
       expect(config.routeRules[path]).toBeUndefined()
     }
-    expect(config.runtimeConfig.readerSourceBase).toBe("")
-    expect(config.vite.server.proxy).not.toHaveProperty("^/(?:txt|bilder)(?:/|$)")
-    expect(config.vite.server.proxy).not.toHaveProperty("^/export/faksimil(?:/|$)")
+    expect(config.runtimeConfig).not.toHaveProperty("readerSourceBase")
+    expect(config.runtimeConfig.contentBase).toBe("https://red.litteraturbanken.se")
+    expect(contentProxy).toMatchObject({
+      changeOrigin: true,
+      target: "https://content.example.test"
+    })
     expect(config.routeRules["/litteraturkartan/**"]?.proxy).toMatchObject({
       headers: { "x-forwarded-host": "map.example.test" }
     })
-  })
-})
-
-describe("red content proxy boundary", () => {
-  test("leaves red requests to the hardened Nitro route in development", async () => {
-    vi.stubEnv("LITTB_CONTENT_PROXY_TARGET", "https://content.example.test")
-
-    const config = await loadConfig()
-
-    expect(Object.keys(config.vite.server.proxy)).not.toContain("^/red(?:/|$)")
   })
 })
 
