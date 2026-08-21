@@ -69,6 +69,13 @@ test.beforeEach(async ({ request }) => {
   await request.put(`${fixture}/_text_search/authority`)
 })
 test.afterEach(async ({ request }) => reset(request))
+test.beforeAll(async ({ baseURL, browser, request }) => {
+  const warmupPage = await browser.newPage({ baseURL })
+  const response = await warmupPage.goto("/sök", { waitUntil: "networkidle" })
+  expect(response?.status()).toBe(200)
+  await warmupPage.close()
+  await reset(request)
+})
 
 for (const visualCase of visualCases) {
   test(`matches the Angular Text Search ${visualCase.name} authority`, async ({
