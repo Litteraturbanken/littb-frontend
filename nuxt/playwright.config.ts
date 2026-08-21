@@ -19,7 +19,39 @@ const ownedServer = (pidFile: string, command: string) => (
   `node scripts/run-owned-webserver.mjs ${pidFile} ${command}`
 )
 
-export default defineConfig({
+type PlaywrightServerEnvironment = "development" | "staging"
+type SsrProjectConfiguration = {
+  name: string
+  testMatch: RegExp | RegExp[]
+  testIgnore?: RegExp | RegExp[]
+}
+
+const ssrPolicySpecs = [
+  /ssr\/robots\.spec\.ts/,
+  /ssr\/deployment-identity\.spec\.ts/
+]
+
+function localSsrProject(): SsrProjectConfiguration {
+  return {
+    name: "ssr",
+    testMatch: /ssr\/.*\.spec\.ts/,
+    testIgnore: [
+      ...ssrPolicySpecs,
+      ...(excludeStatefulSsr ? [/ssr\/reader-shorthand\.spec\.ts/] : [])
+    ]
+  }
+}
+
+export function createPlaywrightConfig({
+  deploymentEnvironment = "development",
+  readerSourceBase = fixtureOrigin,
+  ssrProject = localSsrProject()
+}: {
+  deploymentEnvironment?: PlaywrightServerEnvironment
+  readerSourceBase?: string
+  ssrProject?: SsrProjectConfiguration
+} = {}) {
+  return defineConfig({
   outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR || "test-results",
   testDir: "./test",
   fullyParallel: false,
@@ -41,14 +73,7 @@ export default defineConfig({
     navigationTimeout: 30_000
   },
   projects: [
-    {
-      name: "ssr",
-      testMatch: /ssr\/.*\.spec\.ts/,
-      testIgnore: excludeStatefulSsr
-        ? /ssr\/reader-shorthand\.spec\.ts/
-        : undefined,
-      use: { ...devices["Desktop Chrome"] }
-    },
+    { ...ssrProject, use: { ...devices["Desktop Chrome"] } },
     {
       name: "desktop-chromium",
       testMatch: /e2e\/.*\.spec\.ts/,
@@ -121,10 +146,10 @@ export default defineConfig({
         `LITTB_VITE_FS_ALLOW=${dependencyRoot} ` +
         `LITTERATURKARTAN_PROXY_TARGET=${fixtureOrigin} ` +
         `NUXT_CONTENT_BASE=${fixtureOrigin} ` +
-        `NUXT_READER_SOURCE_BASE=${fixtureOrigin} ` +
+        `NUXT_READER_SOURCE_BASE=${readerSourceBase} ` +
         `NUXT_OBSERVABILITY_HMAC_SECRET=${"test-observability-secret-material-0123456789"} ` +
         `NUXT_OBSERVABILITY_ALLOWED_ORIGINS=https://stage.litteraturbanken.se ` +
-        `NUXT_DEPLOYMENT_ENVIRONMENT=development ` +
+        `NUXT_DEPLOYMENT_ENVIRONMENT=${deploymentEnvironment} ` +
         `NUXT_DEPLOYMENT_GIT_SHA=${"a".repeat(40)} ` +
         `IMAGE_DIGEST=sha256:${"b".repeat(64)} ` +
         `NUXT_IGNORE_LOCK=1 ` +
@@ -134,4 +159,7 @@ export default defineConfig({
       timeout: 120_000
     }
   ]
-})
+  })
+}
+
+export default createPlaywrightConfig()

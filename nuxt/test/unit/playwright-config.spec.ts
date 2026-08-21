@@ -1,5 +1,7 @@
+import { readdirSync } from "node:fs"
+import { resolve } from "node:path"
 import { describe, expect, test } from "vitest"
-import config from "../../playwright.config"
+import config, { createPlaywrightConfig } from "../../playwright.config"
 import readerAssetsConfig from "../../playwright.reader-assets-production.config"
 import slaArticlesConfig from "../../playwright.sla-articles-nuxt.config"
 
@@ -17,6 +19,19 @@ function nuxtServerCommand(fixtureConfig: typeof config): string | undefined {
     ? fixtureConfig.webServer
     : [fixtureConfig.webServer]
   return servers.find(server => server?.command.includes("NUXT_READER_SOURCE_BASE"))?.command
+}
+
+function ssrSpecPaths(): string[] {
+  return readdirSync(resolve(import.meta.dirname, "../ssr"), { recursive: true })
+    .filter((entry): entry is string => typeof entry === "string" && entry.endsWith(".spec.ts"))
+    .map(entry => `ssr/${entry}`)
+}
+
+function runsSpec(
+  project: typeof config.projects[number] | undefined,
+  path: string
+): boolean {
+  return Boolean(project && matches(project.testMatch, path) && !matches(project.testIgnore, path))
 }
 
 describe("Playwright project boundaries", () => {
@@ -72,6 +87,48 @@ describe("Playwright project boundaries", () => {
       expect(nuxtServerCommand(fixtureConfig)).toContain(
         "NUXT_DEPLOYMENT_ENVIRONMENT=development"
       )
+    }
+  })
+
+  test("creates staging SSR launchers with the canonical private Reader origin", () => {
+    const ssrConfig = createPlaywrightConfig({
+      deploymentEnvironment: "staging",
+      readerSourceBase: "http://reader-origin.int.lb.se"
+    })
+
+    expect(nuxtServerCommand(ssrConfig)).toContain(
+      "NUXT_DEPLOYMENT_ENVIRONMENT=staging"
+    )
+    expect(nuxtServerCommand(ssrConfig)).toContain(
+      "NUXT_READER_SOURCE_BASE=http://reader-origin.int.lb.se"
+    )
+  })
+
+  test("uses a narrow staging launcher for only SSR policy contracts", async () => {
+    const ssrConfig = (await import("../../playwright.ssr.config")).default
+    const stagingProject = ssrConfig.projects?.find(project => project.name === "ssr-staging")
+
+    expect(nuxtServerCommand(ssrConfig)).toContain(
+      "NUXT_DEPLOYMENT_ENVIRONMENT=staging"
+    )
+    expect(nuxtServerCommand(ssrConfig)).toContain(
+      "NUXT_READER_SOURCE_BASE=http://reader-origin.int.lb.se"
+    )
+    expect(runsSpec(stagingProject, "ssr/robots.spec.ts")).toBe(true)
+    expect(runsSpec(stagingProject, "ssr/deployment-identity.spec.ts")).toBe(true)
+    expect(runsSpec(stagingProject, "ssr/reader.spec.ts")).toBe(false)
+  })
+
+  test("assigns every SSR spec to exactly one local or staging launcher", async () => {
+    const ssrConfig = (await import("../../playwright.ssr.config")).default
+    const localProject = config.projects?.find(project => project.name === "ssr")
+    const stagingProject = ssrConfig.projects?.find(project => project.name === "ssr-staging")
+
+    for (const spec of ssrSpecPaths()) {
+      expect([
+        runsSpec(localProject, spec),
+        runsSpec(stagingProject, spec)
+      ].filter(Boolean)).toHaveLength(1)
     }
   })
 })

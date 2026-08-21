@@ -56,7 +56,7 @@ test("same-origin browser events are rebuilt and signed as trusted events", asyn
     severity: "error",
     service: "lb-frontend",
     producer: "browser",
-    environment: "stage",
+    environment: "development",
     deployment_git_sha: "a".repeat(40),
     request_id: null,
     trace_id: null,

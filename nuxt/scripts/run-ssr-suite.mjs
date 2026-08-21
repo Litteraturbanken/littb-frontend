@@ -6,11 +6,12 @@ import { terminateProcessTree } from "./run-playwright-shards.mjs"
 export function createSsrSuitePhases(passthrough = []) {
   return [
     {
-      args: ["--project=ssr", ...passthrough],
+      args: ["--config=playwright.config.ts", "--project=ssr", ...passthrough],
       env: { LITTB_SSR_EXCLUDE_STATEFUL: "1" }
     },
     {
       args: [
+        "--config=playwright.config.ts",
         "--project=ssr",
         "test/ssr/reader-shorthand.spec.ts",
         ...passthrough
@@ -19,6 +20,14 @@ export function createSsrSuitePhases(passthrough = []) {
         LITTB_SSR_EXCLUDE_STATEFUL: "0",
         LITTB_PLAYWRIGHT_SHARDS: "1"
       }
+    },
+    {
+      args: [
+        "--config=playwright.ssr.config.ts",
+        "--project=ssr-staging",
+        ...passthrough
+      ],
+      env: { LITTB_PLAYWRIGHT_SHARDS: "1" }
     }
   ]
 }
