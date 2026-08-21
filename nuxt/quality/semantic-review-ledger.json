@@ -755,7 +755,7 @@
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/3e9154fac540b6e3267fdeeb04a86f235fa74de785347e3098dfd1d4b2819ace.json",
-      "evidenceHash": "1c3ccc15c21bfd63c92267a635aec8c9739565fab13d8f46f4cbb9f44fb42ac6",
+      "evidenceHash": "549b7e41495b5923bea99015d791f99ed4225fe0c6e4bc8007467d593820488d",
       "findingIds": [],
       "verification": [
         "Fresh focused desktop and mobile Chromium regression passed 2/2, covering request bodies, URL state, chip ownership, Back/Forward, reload, and hostile-only-overlap Reset.",
@@ -776,7 +776,7 @@
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/fe05b5b1ff15c752005e8b3cae4dd3988c90ab96071f2f8e162b27038368018d.json",
-      "evidenceHash": "5cc5bd703c4e9cf99ea85edd5a01f8de9570b06ac226447f95e2aedae6c8cdf4",
+      "evidenceHash": "987f1fcd8e6d505f9b9f102358ea33af6f76dd1d3d26d77966133064eac2bda7",
       "findingIds": [],
       "verification": [
         "Fresh Node 22 desktop and mobile Chromium focus regression passed 2/2, proving keyboard ring, pointer suppression, keyboard restoration, and invariant layout boxes.",
@@ -2898,7 +2898,7 @@
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/2e2f7407ae8be4327d102c290a32d2258616f4b06b195854d20cf61b3d7ecefb.json",
-      "evidenceHash": "8b552db7824135c801a6947e61ea9ead51630ad467c922cc71def5975c6e8e9d",
+      "evidenceHash": "61bb8f23ee8c0ae22402a44fab7da78df75745c45af2bd57245644899cd45740",
       "findingIds": [],
       "verification": [
         "Confirmed double-encoded literal percent, encoded slash, encoded backslash-as-data, and query/fragment dot compatibility while malformed percent, C0/C1, lone surrogate, decoded backslash, protocol-relative, executable protocol, and credentialed URLs remain rejected.",
@@ -3414,7 +3414,7 @@
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/c606b05cadb81f6356dfa7b960646bd81a3593954032892976acf58569a047e1.json",
-      "evidenceHash": "7a7085c49903d1990f35edf42ea55aa7bdd86a2701c401f31c0a26035450050c",
+      "evidenceHash": "89cbcce73c3379ad2d656f70c294baf298e22953dfea497dfbd9df7cc211667e",
       "findingIds": [],
       "verification": [
         "Confirmed backend-aligned maxima of 38 categories, 50 about authors, 4 media values, and 13 languages; primary/narrowing overlap removal preserves narrowing order.",
@@ -3470,7 +3470,7 @@
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/52517134bb060c1a7b4bee5c567e4f1e6c11e9f2b7e5576b612721dab1259afa.json",
-      "evidenceHash": "03d4cd263d76d49f8972c05c4f8670d606ee28fc784502a99868a0384a1990ad",
+      "evidenceHash": "9d34ae158f26479e52ef660f7f5904a61a9d0db888078db0b8c9fc9a04c6d0c2",
       "findingIds": [],
       "verification": [
         "Confirmed the repeated-list fix in immutable commit a4085062667eaf7b3c35ab7c8aa2e95bec7c71bd does not broaden or otherwise alter year-range semantics.",
@@ -5204,7 +5204,7 @@
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/f9e763021428683a142587fce7f76b3923ba324be07dfe021fc7757ba90a1539.json",
-      "evidenceHash": "2403d7dfb4650e265fe6ae775e85422282e72ccb8d5f9faa7350794616f7fb2a",
+      "evidenceHash": "4e6e805625a6ad8979f99cac58feef47900824c8f6d26b3daeae660b2a0ed269",
       "findingIds": [],
       "verification": [
         "Confirmed malformed coverage exercises work representation IDs, work title IDs, and EPUB title IDs across raw, encoded, double-encoded, and over-depth path characters.",
@@ -5790,7 +5790,7 @@
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/d2ee0f4b10fef9c6da35a67afa7f60ab48334a6de81999a21664194bd3b69ea8.json",
-      "evidenceHash": "c2131c7fbd3812bb27fbc8ae8dc7873f1800ae9527947bf6a1d797ad82238d1f",
+      "evidenceHash": "b43a36624d839da6b7d2b1d183cbe2af0529ff1ea82579c8ef8c302ac77d4720",
       "findingIds": [
         "SR-D2EE-001"
       ],
@@ -6498,7 +6498,7 @@
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/24cc1ada8836952175cc0cc02339f2365015d12bfde576016f8b9ba2b2267c44.json",
-      "evidenceHash": "5d6e79925b0be9ed036dbb239c7b436bcd4b41d547ccac1b35e7e71d4f864583",
+      "evidenceHash": "0341373443ad1b39175fc73acf623650248a85ea2a859263b2e5148ebe260b14",
       "findingIds": [],
       "verification": [
         "Fresh focused browser verification: yarn playwright test test/e2e/author-profiles.behavior.spec.ts --project=desktop-chromium --grep 'cross-author canonical response' (1/1 passed, covering ordinary and direct Dramawebben variants).",
@@ -7511,7 +7511,7 @@
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/52b8f95a1486342d9e032268399bd22863dfb2e564f815113bdcb5cfa7e3d324.json",
-      "evidenceHash": "63f6d37d2d9ba2444da3ca25e5ab3daa76631fad8db44a1060a2148a0287e3de",
+      "evidenceHash": "616d74d90f7371910e0e07a6994917ec581bcdeaa8881df6f0fe2e526b7bfaa4",
       "findingIds": [],
       "verification": [
         "Fresh Node 22 Chromium verification passed 1/1 for `Presentation article navigation removes prior state while the next aggregate is pending`; the test gates destination document and background independently and asserts prior body, title, description, stylesheet, inline style, HTML background, and body classes are absent throughout both pending phases.",
