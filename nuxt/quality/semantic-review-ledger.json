@@ -7951,21 +7951,22 @@
     },
     {
       "packetId": "server/api/editor/[lbid]/[ix]/[mediatype].get.ts::packet::requiredParam",
-      "fingerprint": "ddf386ce3daabab4a74c194ad761746cf11da00333b51e118779193e66120938",
+      "fingerprint": "aa47f13b12a8c81557a02a2cde6932abf3875011633c767171a493dbe9eac88e",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/f91fcca94c3067f099732ace2346e459c4ad28cd90c76e068717ac9f73ea182d.json",
-      "evidenceHash": "2b526c52103490c1d0c7fe13192fa708d0a2abf13bea46c44700ca66a4c639fb",
+      "evidenceHash": "d43fc62b33f7e75b3e3b208fa1199b8a126b60226370ab629e52eb4697c66204",
       "findingIds": [],
       "verification": [
-        "Inspected current owned source in server/api/editor/[lbid]/[ix]/[mediatype].get.ts, including requiredParam and surrounding route parsing, manifest bounds handling, readable context construction, facsimile source generation, asset fetching, DTO assembly, and defineEventHandler flow.",
-        "Inspected direct dependencies and type boundaries: shared/types/editor-reader.ts, shared/types/work-manifest.ts, shared/utils/editor-route-identity.ts, shared/utils/facsimile-source.ts, server/utils/work-manifest-client.ts, server/utils/work-manifest-validation.ts, server/utils/reader-source.ts, and app/lib/api/generated/lbapi.ts.",
-        "Inspected direct route consumer app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue for request URL construction, EditorReaderPage consumption, facsimile source selection, SSR render behavior, and navigation state.",
-        "Inspected relevant discovered tests in test/ssr/editor-reader.spec.ts and test/unit/reader-source.spec.ts, including coverage for absent size 3, sparse bounds, malformed routes, bounds-only fallback, unavailable assets, and preferred facsimile-size policy.",
-        "Read exactly packet .quality/semantic-review/packets/f91fcca94c3067f099732ace2346e459c4ad28cd90c76e068717ac9f73ea182d.json.",
+        "Inspected current owned source server/api/editor/[lbid]/[ix]/[mediatype].get.ts lines 1-316, including requiredParam, route parsing, bounds handling, readable context, facsimile source construction, asset fetching, DTO assembly, and defineEventHandler flow.",
+        "Inspected direct dependencies and type boundaries: shared/types/editor-reader.ts, shared/types/work-manifest.ts, shared/utils/editor-route-identity.ts, shared/utils/facsimile-source.ts, server/utils/work-manifest-client.ts, server/utils/work-manifest-validation.ts, server/utils/editor-reader-html.ts, and server/utils/reader-ocr.ts.",
+        "Inspected direct route consumer app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue for request URL construction, EditorReaderPage consumption, facsimile source selection, SSR behavior, raw path preservation, and navigation state.",
+        "Inspected relevant SSR and e2e coverage in test/ssr/editor-reader.spec.ts and test/e2e/editor-reader.behavior.spec.ts, plus editor fixture data in test/fixtures/reader-data.mjs and test/fixtures/v2-server.mjs.",
+        "No tests were executed because the review request required read-only inspection commands only.",
+        "Read exactly the requested packet JSON at .quality/semantic-review/packets/f91fcca94c3067f099732ace2346e459c4ad28cd90c76e068717ac9f73ea182d.json.",
         "Read quality/semantic-review-contract.md.",
-        "Used read-only commands only: sed, nl, rg, and git status --short. No tests were executed because the review request specified read-only commands."
+        "Searched current repository references for /api/editor, editorReaderPage, readableEditorContext, editorFacsimileSources, requiredParam, editor route identity, and related editor/facsimile/readable tests."
       ]
     },
     {
@@ -8903,43 +8904,39 @@
     },
     {
       "packetId": "server/routes/red/[...path].ts::packet::module",
-      "fingerprint": "96acdb40bf152e2133121c0a52265fbd0396d5a9376ebee40594da329d9372f6",
+      "fingerprint": "46d0af1bcefabc3fbc53c8e0c5c4e2cbb7eb2332e1c6901dcd3f5af87a7caa69",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/632e51fa535d27af501ae2296af9fdf248af072150536cd015bbe55b2afcaf4b.json",
-      "evidenceHash": "4ae2abf683aefed7b8dd6be93e5e2323b72ff36eef15180d59d74ba5b1c9ad20",
-      "findingIds": [],
+      "evidenceHash": "27e843a33111d85c2435f490fd6a80fb4df1c2b17a4d6fc6053d880a537c4ef5",
+      "findingIds": [
+        "SR-632E51FA-001"
+      ],
       "verification": [
-        "Attempted to run ./node_modules/.bin/vitest run test/unit/red-proxy.spec.ts, but the read-only sandbox prevented Vite from writing node_modules/.vite-temp/vitest.config.ts.timestamp-*.mjs; no tests were executed.",
-        "Inspected direct dependencies server/utils/backend-proxy.ts, shared/utils/text-safety.ts, and shared/utils/url-safety.ts.",
-        "Inspected h3 sendProxy implementation in node_modules/h3/dist/index.mjs to verify response header forwarding order and onResponse stripping behavior.",
-        "Inspected owned source server/routes/red/[...path].ts with physical line numbers, including packet-owned line ranges 1-7, 9-11, 13, 15-25, 27-38, and 40, plus surrounding module context for semantics.",
-        "Inspected sibling proxy routes server/routes/api/[...path].ts and server/routes/api/v2/[...path].ts, runtime contentBase configuration in nuxt.config.ts, and relevant red proxy tests in test/unit/red-proxy.spec.ts.",
-        "Read quality/semantic-review-contract.md and packet .quality/semantic-review/packets/632e51fa535d27af501ae2296af9fdf248af072150536cd015bbe55b2afcaf4b.json.",
-        "Searched current source for red route usage, contentBase, sendProxy, proxyBackendRequest, safeProxyTarget, and contentRequestHeaders references."
+        "Read packet .quality/semantic-review/packets/632e51fa535d27af501ae2296af9fdf248af072150536cd015bbe55b2afcaf4b.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Used read-only inspection commands only; no tests were run because the review contract emphasized source inspection and the sandbox is read-only."
       ]
     },
     {
       "packetId": "server/routes/red/[...path].ts::packet::module-contentRequestHeaders",
-      "fingerprint": "408ccb906ca937f977c1093da1943d592d505fb13fa16a051d782ca346bd01d8",
+      "fingerprint": "df89b0286b51fd1310bc3999f85a8084be9b70cb695ce444fff3ce6c1c5f41ec",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/3ac52dff862c854f28961428eee9360b04ce8cbd4528c319088915508ea32fb5.json",
-      "evidenceHash": "442c62094afa169e5dca87da881dcc9e40a5af9f557c8ae3cae782171953effe",
-      "findingIds": [],
+      "evidenceHash": "cd7c3eeee36ef5cf264b4f424200fb2db7431b7c4a63f15d397dd95bbc6d05b3",
+      "findingIds": [
+        "SR-3ac52dff-001"
+      ],
       "verification": [
-        "Checked nuxt.config.ts runtimeConfig and routeRules relevant to contentBase and legacy asset proxy behavior.",
-        "Inspected adjacent URL/path-safety patterns in shared/utils/managed-text.ts, server/utils/dramawebben-document.ts, server/utils/author-document.ts, and server/utils/sla-article.ts.",
-        "Inspected direct imports server/utils/backend-proxy.ts, shared/utils/text-safety.ts, and shared/utils/url-safety.ts.",
-        "Inspected h3 sendProxy implementation and ProxyOptions type in node_modules/h3/dist/index.mjs and node_modules/h3/dist/index.d.ts to verify header copy, onResponse timing, compression header behavior, streaming, and status propagation.",
-        "Inspected owned source server/routes/red/[...path].ts lines 42-139, including request header allow-listing, response header filtering, path segment validation, target construction, abort handling, and handler behavior.",
-        "Inspected related route callers/usages through Nuxt route conventions and repository references to /red/ assets in shared/about-pages.ts, shared/types/sla-article.ts, shared/utils/managed-text.ts, app/pages/index.vue, app/pages/presentationer/[...segments].vue, and presentation/home parsing references.",
-        "Inspected relevant tests discovered for the route despite the packet listing no tests: test/unit/red-proxy.spec.ts, test/unit/backend-proxy.spec.ts, and test/e2e/reader-assets-production.behavior.spec.ts.",
-        "Read exactly the specified packet JSON .quality/semantic-review/packets/3ac52dff862c854f28961428eee9360b04ce8cbd4528c319088915508ea32fb5.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Used read-only commands only. Did not execute test suites because the review request constrained work to read-only inspection commands."
+        "Inspected every owned physical line range in server/routes/red/[...path].ts lines 48-165.",
+        "Inspected packet-listed imports: server/utils/backend-proxy.ts, server/utils/reader-source-proxy.ts, shared/utils/text-safety.ts, and shared/utils/url-safety.ts.",
+        "Inspected relevant discovered tests: test/unit/red-proxy.spec.ts, test/unit/backend-proxy.spec.ts, test/integration/reader-runtime-proxy.spec.ts, and test/e2e/reader-assets-production.behavior.spec.ts.",
+        "Read quality/semantic-review-contract.md and exactly the specified packet JSON .quality/semantic-review/packets/3ac52dff862c854f28961428eee9360b04ce8cbd4528c319088915508ea32fb5.json.",
+        "Searched current source for direct callers and adjacent Reader asset proxy routes; the packet has no direct callers and no packet-named tests.",
+        "Used read-only inspection commands only; no tests were executed because the review request constrained the work to read-only commands."
       ]
     },
     {
@@ -11484,70 +11481,156 @@
       ]
     },
     {
+      "packetId": "server/utils/reader-source-proxy.ts::packet::assertContentOriginConfiguration",
+      "fingerprint": "bfc6743dc0e5bfa19dbe95c525e00638b87f1f87ee4f482f57be02e1d094180f",
+      "state": "approved",
+      "reviewer": "independent-codex-review",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/f994a645e1300abd3fda1fe3165c54f04adee8753fc6559fbcdc765f7550607c.json",
+      "evidenceHash": "eb2c9b6dd2458408731369c6ea982f6fad61d7334f08f283cf610008456e65bd",
+      "findingIds": [],
+      "verification": [
+        "Inspected owned unit server/utils/reader-source-proxy.ts lines 120-128 with physical line numbers; finding eligibility was constrained to that owned range.",
+        "Inspected packet-listed direct callers server/routes/bilder/[...path].ts, server/routes/export/faksimil/[...path].ts, server/routes/red/[...path].ts, and server/routes/txt/[...path].ts.",
+        "Inspected packet-listed imports server/utils/backend-proxy.ts, shared/utils/text-safety.ts, and shared/utils/url-safety.ts.",
+        "Inspected relevant discovered coverage in test/integration/reader-runtime-proxy.spec.ts and related proxy/config tests; the packet itself named no tests.",
+        "Inspected runtime configuration in nuxt.config.ts for contentBase and deploymentEnvironment defaults.",
+        "Inspected surrounding implementation in server/utils/reader-source-proxy.ts, including source text validation, URL parsing, authority restrictions, production loop prevention, contentResourceOrigin, request target construction, path validation, header allowlists, redirect rewriting, method enforcement, and abort behavior.",
+        "Read quality/semantic-review-contract.md and exactly the specified packet JSON.",
+        "Searched current source and tests for contentBase, deploymentEnvironment, assertContentOriginConfiguration, contentResourceOrigin, reader-source-proxy, and the Reader namespace routes.",
+        "Used read-only commands only and did not execute test commands because the review request required read-only inspection."
+      ]
+    },
+    {
+      "packetId": "server/utils/reader-source-proxy.ts::packet::connectionHeaderNames",
+      "fingerprint": "213c571588a23decf22bc4d4d8da30d565ddf259a7b60209b6f8d46543808680",
+      "state": "approved",
+      "reviewer": "independent-codex-review",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/9a09c44a75f409dcb7ab693a9d86e0c42e374a8c4f76b86cb64df47d7e464e30.json",
+      "evidenceHash": "b85508fbe0fe8c0a23dc6c314f815d0623e26d05af61c6d0a35e71cc8984a282",
+      "findingIds": [],
+      "verification": [
+        "Inspected direct callers server/routes/bilder/[...path].ts, server/routes/export/faksimil/[...path].ts, server/routes/red/[...path].ts, and server/routes/txt/[...path].ts.",
+        "Inspected direct imports server/utils/backend-proxy.ts, shared/utils/text-safety.ts, and shared/utils/url-safety.ts.",
+        "Inspected owned unit server/utils/reader-source-proxy.ts lines 47-52 with physical line numbers.",
+        "Inspected relevant discovered coverage in test/integration/reader-runtime-proxy.spec.ts and test/unit/red-proxy.spec.ts for Connection-nominated request header suppression, response header stripping, and redirect Location suppression.",
+        "Read exactly one packet JSON: .quality/semantic-review/packets/9a09c44a75f409dcb7ab693a9d86e0c42e374a8c4f76b86cb64df47d7e464e30.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Searched current source for connectionHeaderNames, proxyReaderSourceRequest, localReaderRedirect, readerRequestHeaders, and allowReaderResponseHeaders usages.",
+        "Used read-only commands only; no tests were executed because the review request required read-only inspection and the packet listed no tests."
+      ]
+    },
+    {
+      "packetId": "server/utils/reader-source-proxy.ts::packet::contentResourceOrigin",
+      "fingerprint": "a2c1bd6b1bf0ee74b4c655981c0a6564ebd15820513408895f299ccaa2a29cb5",
+      "state": "approved",
+      "reviewer": "independent-codex-review",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/0ecf4a5dcc001ae26a1c9f72309737a6bb153c061634a7dfc983da313d0a9950.json",
+      "evidenceHash": "f72a520d315b98de964427557ea83f9d175385289421172d9105d6b0e4a04bec",
+      "findingIds": [],
+      "verification": [
+        "Checked scoped git diff/status with read-only commands; git emitted sandbox cache warnings, and no scoped source diff for the reviewed source/test files was shown.",
+        "Inspected owned unit server/utils/reader-source-proxy.ts lines 130-133 with physical line numbers; finding eligibility was constrained to that owned range.",
+        "Inspected packet-listed direct callers server/routes/bilder/[...path].ts, server/routes/export/faksimil/[...path].ts, server/routes/red/[...path].ts, and server/routes/txt/[...path].ts.",
+        "Inspected packet-listed imports server/utils/backend-proxy.ts, shared/utils/text-safety.ts, and shared/utils/url-safety.ts.",
+        "Inspected relevant discovered coverage in test/integration/reader-runtime-proxy.spec.ts and test/unit/red-proxy.spec.ts; the packet itself named no tests.",
+        "Inspected runtime configuration in nuxt.config.ts for contentBase and deploymentEnvironment defaults.",
+        "Inspected surrounding reader proxy implementation, including content origin validation, URL parsing, production loop prevention, request target construction, path validation, header allowlists, redirect rewriting, method enforcement, and abort behavior.",
+        "Read exactly the specified packet JSON .quality/semantic-review/packets/0ecf4a5dcc001ae26a1c9f72309737a6bb153c061634a7dfc983da313d0a9950.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Searched current source and tests for contentResourceOrigin, assertContentOriginConfiguration, proxyReaderSourceRequest, contentBase, deploymentEnvironment, and related Reader namespace routes.",
+        "Used read-only commands only and did not execute tests because the request required read-only inspection."
+      ]
+    },
+    {
+      "packetId": "server/utils/reader-source-proxy.ts::packet::localReaderRedirect",
+      "fingerprint": "44fe12ba65ad72603661e4833bd430172c9c98f6c1fb172ab9252a38051816b1",
+      "state": "approved",
+      "reviewer": "independent-codex-review",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/81ad354037d85d2438ddf99b1e23d38670598c95d69dd4d424be22477c22a3a3.json",
+      "evidenceHash": "41231c2b3528155a34d7399a6a280be15c022e40f74865e7ab8d51b9ae552d8f",
+      "findingIds": [],
+      "verification": [
+        "Inspected owned unit server/utils/reader-source-proxy.ts::function::localReaderRedirect at physical lines 201-232, with finding eligibility constrained to that range.",
+        "Inspected packet-listed direct callers server/routes/bilder/[...path].ts, server/routes/export/faksimil/[...path].ts, server/routes/red/[...path].ts, and server/routes/txt/[...path].ts.",
+        "Inspected packet-listed imports server/utils/backend-proxy.ts, shared/utils/text-safety.ts, and shared/utils/url-safety.ts.",
+        "Inspected relevant discovered coverage in test/integration/reader-runtime-proxy.spec.ts, including same-source redirect rewriting, external/private redirect suppression, hop-by-hop Location suppression, header filtering, method enforcement, runtime-base validation, and unsafe path rejection; the packet itself listed no tests.",
+        "Inspected runtime configuration in nuxt.config.ts for contentBase and deploymentEnvironment defaults relevant to redirect origin comparison.",
+        "Inspected surrounding reader-source proxy code in server/utils/reader-source-proxy.ts for redirect status gating, hop-by-hop header handling, base-origin validation, path safety, request target construction, response header filtering, sendProxy usage, and abort behavior.",
+        "Read quality/semantic-review-contract.md and exactly the specified packet JSON .quality/semantic-review/packets/81ad354037d85d2438ddf99b1e23d38670598c95d69dd4d424be22477c22a3a3.json.",
+        "Searched current source and tests for localReaderRedirect, proxyReaderSourceRequest, reader-source-proxy, contentBase, Reader namespace paths, redirects, and Location handling.",
+        "Used read-only inspection commands only; tests were not executed because the review request required read-only commands and the sandbox is read-only."
+      ]
+    },
+    {
       "packetId": "server/utils/reader-source-proxy.ts::packet::module",
-      "fingerprint": "81b6edbe8d52e372dbe2ee5502b8229d22b4a3a8dd1257187feef53aefafd74c",
+      "fingerprint": "3749c1282d3360b73b815a97e766a8ad4428bbc8da5dc6931d37c88bb82f92d4",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/0350988e8e0e5f75d422364751f0b1b502a53da7c0ace70323c716608ba25bf1.json",
-      "evidenceHash": "91b0cf5fc883101590921403c29a905ccd425b114c840dad2ebe1dbb97e5cfe3",
+      "evidenceHash": "d66fcb9826d3e01592a5ee212d3c4c460d5ce0dcb505492c94b728652c51dd33",
       "findingIds": [],
       "verification": [
-        "Checked read-only git status/diff; git emitted sandbox cache warnings and showed unrelated existing quality-review artifact changes, with no scoped source diff for the reviewed source/test files.",
-        "Compared the established local asset-proxy pattern in `server/routes/red/[...path].ts`.",
-        "Inspected direct callers `server/routes/bilder/[...path].ts`, `server/routes/export/faksimil/[...path].ts`, and `server/routes/txt/[...path].ts`.",
-        "Inspected direct imports `server/utils/backend-proxy.ts`, `shared/utils/text-safety.ts`, and `shared/utils/url-safety.ts`.",
-        "Inspected owned physical lines for `server/utils/reader-source-proxy.ts` and surrounding module behavior using line-numbered read-only output.",
-        "Inspected relevant discovered coverage in `test/integration/reader-runtime-proxy.spec.ts`, `test/unit/backend-proxy.spec.ts`, and `test/e2e/reader-assets-production.behavior.spec.ts`; the packet itself listed no tests.",
-        "Read `quality/semantic-review-contract.md`.",
-        "Read exactly the specified packet JSON `.quality/semantic-review/packets/0350988e8e0e5f75d422364751f0b1b502a53da7c0ace70323c716608ba25bf1.json`.",
-        "Searched current source and tests for `proxyReaderSourceRequest`, `readerSourceBase`, Reader namespace paths, method guards, `sendProxy`, and related runtime configuration.",
-        "Used read-only commands only and did not execute tests because the sandbox is read-only and the review request required read-only inspection."
+        "Checked read-only git status; git emitted sandbox cache warnings and showed unrelated existing quality-review artifact changes. No source edits were made.",
+        "Inspected direct caller/dependent routes server/routes/bilder/[...path].ts, server/routes/export/faksimil/[...path].ts, server/routes/red/[...path].ts, and server/routes/txt/[...path].ts.",
+        "Inspected direct imports server/utils/backend-proxy.ts, shared/utils/text-safety.ts, and shared/utils/url-safety.ts.",
+        "Inspected owned physical lines 1-45 in server/utils/reader-source-proxy.ts and surrounding module behavior with line-numbered read-only output.",
+        "Inspected relevant discovered tests test/integration/reader-runtime-proxy.spec.ts, test/unit/red-proxy.spec.ts, test/unit/backend-proxy.spec.ts, and test/e2e/reader-assets-production.behavior.spec.ts; the packet named no tests.",
+        "Read exactly the specified packet JSON .quality/semantic-review/packets/0350988e8e0e5f75d422364751f0b1b502a53da7c0ace70323c716608ba25bf1.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Searched current source and tests for reader-source-proxy, proxyReaderSourceRequest, localReaderRedirect, connectionHeaderNames, contentResourceOrigin, Reader namespace paths, and contentBase/deploymentEnvironment usage.",
+        "Used read-only commands only and did not execute tests because this review was constrained to read-only inspection."
       ]
     },
     {
-      "packetId": "server/utils/reader-source-proxy.ts::packet::module-connectionHeaderNames",
-      "fingerprint": "0744b0101dbb0ea816d9eccfc6ec6a046a1eeda24d9573d6d2dcca127c7a2670",
+      "packetId": "server/utils/reader-source-proxy.ts::packet::module-invalidContentConfiguration",
+      "fingerprint": "695f8c6e5cb6c8aa610e5288f0345500dbcdca99ab2d2fe0b37953d244f2eac0",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
-      "evidencePath": "quality/semantic-reviews/35b72839586e600233d26804dbb52b2c091ccbf3712f2f48fa671480201fd11f.json",
-      "evidenceHash": "686dee8d37d3cc23b81e41629fc6494bdc8c4749b7c477bb419d2ebc422a65fc",
+      "evidencePath": "quality/semantic-reviews/5faadbd55d61a8bff5e5da962dc65544df10fea1165463e2cfef1cd0c0e7e11f.json",
+      "evidenceHash": "47a831eb649c3aefa16eae8092e6306084676c1a2765cecb1bbcfc46499f1a67",
       "findingIds": [
-        "35b72839-local-redirect-normalizes-before-raw-validation"
+        "695f8c6e-reader-source-proxy-minor-001",
+        "695f8c6e-reader-source-proxy-minor-002"
       ],
       "verification": [
-        "Inspected current source for server/utils/reader-source-proxy.ts with physical line numbers.",
-        "Inspected direct callers server/routes/bilder/[...path].ts, server/routes/export/faksimil/[...path].ts, and server/routes/txt/[...path].ts.",
-        "Inspected direct imports server/utils/backend-proxy.ts, shared/utils/text-safety.ts, and shared/utils/url-safety.ts.",
-        "Inspected h3 sendProxy implementation in node_modules/h3/dist/index.mjs.",
-        "Inspected test/integration/reader-runtime-proxy.spec.ts as discovered relevant coverage; the packet itself named no tests.",
-        "Ran only read-only commands; no repository files were modified.",
-        "Read packet .quality/semantic-review/packets/35b72839586e600233d26804dbb52b2c091ccbf3712f2f48fa671480201fd11f.json.",
+        "Inspected discovered integration coverage in test/integration/reader-runtime-proxy.spec.ts for runtime contentBase selection, header filtering, method rejection, namespace proxying, redirect rewriting, invalid contentBase rejection, production loop prevention, and unsafe path rejection; the packet itself listed no tests.",
+        "Inspected every packet-owned physical line range in server/utils/reader-source-proxy.ts: 54-59, 61-66, 68-70, 72-87, 83, 89-95, 97-109, 111-118, 135-159, 161-163, 162, 165-176, 178-188, 190-199, 234-252, 254-265, 255, and 256-258.",
+        "Inspected h3 sendProxy implementation and type boundary in node_modules/h3/dist/index.mjs and node_modules/h3/dist/index.d.ts to verify response metadata ordering and onResponse behavior.",
+        "Inspected packet-listed callers server/routes/bilder/[...path].ts, server/routes/export/faksimil/[...path].ts, server/routes/red/[...path].ts, and server/routes/txt/[...path].ts.",
+        "Inspected packet-listed imports server/utils/backend-proxy.ts, shared/utils/text-safety.ts, and shared/utils/url-safety.ts.",
+        "Inspected runtime configuration in nuxt.config.ts and related config coverage in test/unit/nuxt-config.spec.ts for contentBase and namespace ownership.",
+        "Read exactly the supplied packet JSON at .quality/semantic-review/packets/5faadbd55d61a8bff5e5da962dc65544df10fea1165463e2cfef1cd0c0e7e11f.json.",
         "Read quality/semantic-review-contract.md.",
-        "Searched repository references for proxyReaderSourceRequest, reader-source-proxy, readerSourceBase, Reader namespace paths, redirects, and relevant tests."
+        "Searched current source and tests for reader-source-proxy, proxyReaderSourceRequest, localReaderRedirect, contentResourceOrigin, contentBase, deploymentEnvironment, and Reader namespace paths.",
+        "Used read-only inspection commands only; no test command was executed because the request constrained work to read-only commands."
       ]
     },
     {
       "packetId": "server/utils/reader-source-proxy.ts::packet::proxyReaderSourceRequest",
-      "fingerprint": "bfd8f467c0fa63737272d345383c555d62fb27625ef0b0dcdd87d0109f327353",
+      "fingerprint": "17a0493b570c3f52d008012424c93beedae83fc98077c94f72dfa9fc016e3e5e",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/df976095e1b4e26b5b5fbeef845a8ca53695cb043b6f8c03f9702ca126cad800.json",
-      "evidenceHash": "407c3ed96ca155205c83d422f63f4851c5665da0a4e77cec6ef3fede34f0b8b7",
+      "evidenceHash": "80974870ca355747d473a240f06bc22f852380369fef7558c9db6042141f815e",
       "findingIds": [],
       "verification": [
-        "Checked git status with read-only command; git emitted sandbox cache warnings and reported unrelated existing quality review file changes.",
-        "Compared established local proxy behavior in server/routes/red/[...path].ts and h3 sendProxy implementation in node_modules/h3/dist/index.mjs.",
-        "Did not execute tests because the review requested read-only commands and the environment sandbox is read-only.",
-        "Inspected direct callers server/routes/bilder/[...path].ts, server/routes/export/faksimil/[...path].ts, and server/routes/txt/[...path].ts.",
-        "Inspected direct imports server/utils/backend-proxy.ts, shared/utils/text-safety.ts, and shared/utils/url-safety.ts.",
-        "Inspected owned unit server/utils/reader-source-proxy.ts lines 256-287 and surrounding helper code for configuration validation, path validation, request header forwarding, response header allowlisting, redirect rewriting, and disconnect cancellation.",
-        "Inspected relevant discovered coverage in test/integration/reader-runtime-proxy.spec.ts, including runtime origin selection, request/response header filtering, write-method rejection, namespace proxying, redirect filtering, invalid base handling, production loop prevention, and unsafe path rejection.",
-        "Read exactly one packet JSON: .quality/semantic-review/packets/df976095e1b4e26b5b5fbeef845a8ca53695cb043b6f8c03f9702ca126cad800.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Searched current source for proxyReaderSourceRequest, readerSourceBase, sendProxy, and Reader namespace route usage."
+        "Checked git status with read-only command; git emitted sandbox cache warnings and showed unrelated existing quality-review artifact changes. No repository files were modified.",
+        "Inspected h3 sendProxy runtime and declaration in node_modules/h3/dist/index.mjs and node_modules/h3/dist/index.d.ts for fetch option, response metadata, streaming, and onResponse behavior.",
+        "Inspected owned unit server/utils/reader-source-proxy.ts lines 267-298 with physical line numbers, constraining finding eligibility to that range.",
+        "Inspected packet-listed direct callers server/routes/bilder/[...path].ts, server/routes/export/faksimil/[...path].ts, server/routes/red/[...path].ts, and server/routes/txt/[...path].ts.",
+        "Inspected packet-listed imports server/utils/backend-proxy.ts, shared/utils/text-safety.ts, and shared/utils/url-safety.ts.",
+        "Inspected relevant discovered tests in test/integration/reader-runtime-proxy.spec.ts and test/e2e/reader-assets-production.behavior.spec.ts; the packet itself listed no tests.",
+        "Inspected surrounding implementation in server/utils/reader-source-proxy.ts for runtime content origin validation, raw Reader path construction, safe segment validation, request header allowlisting, response header filtering, redirect rewriting, and disconnect abort handling.",
+        "No tests were run because the review request required read-only commands.",
+        "Read quality/semantic-review-contract.md and exactly the specified packet JSON .quality/semantic-review/packets/df976095e1b4e26b5b5fbeef845a8ca53695cb043b6f8c03f9702ca126cad800.json.",
+        "Searched current source and tests for proxyReaderSourceRequest, reader-source-proxy, contentBase, sendProxy, /txt, /bilder, /export/faksimil, redirects, range, and HEAD behavior."
       ]
     },
     {
@@ -11703,25 +11786,23 @@
     },
     {
       "packetId": "server/utils/reader-source.ts::packet::loadReaderMetadata",
-      "fingerprint": "574ac239a84e44c83eef640f933b19ed322484dcec70deeb8a4276402ecc5080",
+      "fingerprint": "194cc295efbc9f6d49e3d59244a6fbd38142f35d5106fb025128940ebdf41cec",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/badf8a7b8eb4795c6849f94bfed2f42e30bcc961159eaa2cffba45f3eeaf643b.json",
-      "evidenceHash": "9936a56fcc2a0bbc70cf4458c7c7c5b71540849f54edbb17f5d6df4bb42b3941",
+      "evidenceHash": "0a57fa57f1fa157728d01ff15d3cbc1741df22a7bef66fb300cfa29c9c4493e4",
       "findingIds": [],
       "verification": [
-        "Checked git diff for reviewed source, caller, dependency, type, and test files; no local diffs were present in those files.",
-        "Did not run tests because the review request required read-only commands.",
-        "Inspected direct callers server/api/reader/[author]/[title]/[page]/[mediatype].get.ts and server/api/reader/resolve/[author]/[title]/[mediatype].get.ts.",
-        "Inspected direct dependency server/utils/work-manifest-client.ts for fetchReaderManifest request construction, abort handling, status mapping, and generated response validation handoff.",
-        "Inspected generated and public type boundaries shared/types/work-manifest.ts and shared/types/reader.ts.",
-        "Inspected owned physical lines server/utils/reader-source.ts lines 351-368 with surrounding metadata helpers and exported reader-source utilities.",
-        "Inspected packet-listed tests in test/unit/reader-source.spec.ts covering etext and faksimil metadata loading, backend error mapping, abort preservation, and invalid media rejection before runtime config or fetch.",
-        "Inspected response validation dependency server/utils/work-manifest-validation.ts for media-type, identity, page, contributor, alternate-media, facsimile-size, and navigation validation boundaries.",
-        "Read exactly one packet JSON: .quality/semantic-review/packets/badf8a7b8eb4795c6849f94bfed2f42e30bcc961159eaa2cffba45f3eeaf643b.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Searched current source for loadReaderMetadata call sites and reader-source references with rg."
+        "Inspected direct dependency server/utils/work-manifest-client.ts, including fetchReaderManifest request construction, response validation handoff, abort preservation, and public error mapping.",
+        "Inspected manifest validation dependency server/utils/work-manifest-validation.ts for Reader media discriminant, identity, pages, contributors, parts, alternate media, and facsimile size boundaries.",
+        "Inspected owned unit server/utils/reader-source.ts lines 351-368 with surrounding metadata helpers.",
+        "Inspected packet-listed test test/unit/reader-source.spec.ts, including successful etext/faksimil metadata loading, error mapping, abort behavior, invalid media short-circuiting, and related Reader boundary coverage.",
+        "Inspected public/generated type boundaries shared/types/work-manifest.ts, shared/types/reader.ts, and test/nuxt/reader-editor-manifest-contract.ts.",
+        "Inspected related work-manifest client tests in test/unit/work-manifest-client.spec.ts for generated manifest preservation and rejection boundaries.",
+        "Read quality/semantic-review-contract.md and exactly the specified packet JSON.",
+        "Searched current source for loadReaderMetadata callers and inspected server/api/reader/[author]/[title]/[page]/[mediatype].get.ts and server/api/reader/resolve/[author]/[title]/[mediatype].get.ts.",
+        "Used read-only inspection commands only; tests were not executed because the review request constrained commands to read-only inspection."
       ]
     },
     {
