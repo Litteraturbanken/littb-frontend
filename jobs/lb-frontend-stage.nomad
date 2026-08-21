@@ -94,6 +94,8 @@ job "lb-frontend-stage" {
         "caddy-host=${var.caddy_host}",
         "caddy-ingress=public",
         "caddy-https=on",
+        "caddy-lb-try-duration=5s",
+        "caddy-lb-try-interval=250ms",
       ]
 
       check {

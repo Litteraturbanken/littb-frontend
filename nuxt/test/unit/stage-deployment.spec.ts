@@ -306,6 +306,16 @@ test("staging rehearses the production two-host rolling topology", () => {
   expect(group).toMatch(/auto_revert\s*=\s*true/u)
 })
 
+test("only the Stage frontend opts into the paired ingress retry tags", () => {
+  const stageJobspec = readRepositoryFile("jobs/lb-frontend-stage.nomad")
+  const productionJobspec = readRepositoryFile("jobs/lb-frontend-live.nomad")
+
+  expect(stageJobspec).toContain('"caddy-lb-try-duration=5s"')
+  expect(stageJobspec).toContain('"caddy-lb-try-interval=250ms"')
+  expect(productionJobspec).not.toContain("caddy-lb-try-duration=")
+  expect(productionJobspec).not.toContain("caddy-lb-try-interval=")
+})
+
 test("staging deploy resolves the built manifest digest before planned detached deployment", () => {
   const scriptPath = resolve(repositoryRoot, "scripts/deploy-stage.sh")
   const script = readRepositoryFile("scripts/deploy-stage.sh")
