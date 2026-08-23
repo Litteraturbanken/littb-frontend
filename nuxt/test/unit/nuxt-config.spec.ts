@@ -27,6 +27,7 @@ type NuxtConfig = {
     libraryApiBase: string
   }
   vite: {
+    cacheDir?: string
     server: {
       proxy: Record<string, ProxyRule>
     }
@@ -54,6 +55,14 @@ describe("local legacy library API defaults", () => {
     const config = await loadConfig()
 
     expect(config.buildDir).toBe("/tmp/littb-playwright/shard-1/nuxt")
+  })
+
+  test("honors an isolated Vite dependency cache", async () => {
+    vi.stubEnv("LITTB_VITE_CACHE_DIR", "/tmp/littb-playwright/shard-1/vite")
+
+    const config = await loadConfig()
+
+    expect(config.vite.cacheDir).toBe("/tmp/littb-playwright/shard-1/vite")
   })
 
   test("keeps frontend-owned handlers outside the backend API namespace", async () => {

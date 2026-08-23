@@ -32,6 +32,12 @@ async function openReadyPage(page: Page) {
 
   const response = await page.goto("/om/statistik", { waitUntil: "networkidle" })
   expect(response?.status()).toBe(200)
+  await expect.poll(() => page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router?: unknown } } }
+    }
+    return Boolean(root.__vue_app__?.config.globalProperties.$router)
+  })).toBe(true)
   await page.evaluate(() => document.fonts.ready)
   return problems
 }
@@ -174,15 +180,17 @@ test("renders exact copy, order, URLs, metadata, and no hydration errors", async
 test("a Nuxt-owned popular work pushes history and Back restores Statistics", async ({
   page
 }) => {
+  const readerRoute = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+  const warmResponse = await page.goto(readerRoute, { waitUntil: "networkidle" })
+  expect(warmResponse?.status()).toBe(200)
+  await expect(page.locator(".reader_main")).toBeVisible()
   const problems = await openReadyPage(page)
   await page.evaluate(() => {
     Object.defineProperty(window, "__statisticsNavigationSentinel", { value: "alive" })
   })
 
   await page.locator(".content.stats > ul").nth(1).locator("li a").first().click()
-  await expect(page).toHaveURL(
-    "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
-  )
+  await expect(page).toHaveURL(readerRoute, { timeout: 60_000 })
   await expect(page.locator(".reader_main")).toBeVisible()
   expect(await page.evaluate(() => (
     window as Window & { __statisticsNavigationSentinel?: string }

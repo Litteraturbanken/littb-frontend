@@ -43,6 +43,7 @@ export function createShardPlan({
   fixtureBase = 4100,
   nuxtBase = 3000,
   runRoot,
+  artifactRoot,
   playwrightCli
 }) {
   if (!Array.isArray(projects) || projects.length === 0) {
@@ -70,6 +71,8 @@ export function createShardPlan({
         "test",
         ...projects.map(project => `--project=${project}`),
         "--workers=1",
+        ...(shardCount > 1 ? ["--fail-on-flaky-tests"] : []),
+        ...(shardCount > 1 ? ["--pass-with-no-tests"] : []),
         `--shard=${index + 1}/${shardCount}`,
         ...passthrough
       ],
@@ -78,6 +81,7 @@ export function createShardPlan({
         LITTB_NUXT_TEST_PORT: String(nuxtPort),
         LITTB_DISABLE_VITE_HMR: shardCount > 1 ? "1" : "0",
         LITTB_PLAYWRIGHT_RETRIES: shardCount > 1 ? "1" : "0",
+        LITTB_VITE_CACHE_DIR: join(shardRoot, "vite"),
         LITTB_VITE_SERVER_HMR_PORT: shardCount > 1
           ? String(viteServerHmrPort)
           : "0",
@@ -85,7 +89,9 @@ export function createShardPlan({
         LITTB_NUXT_PID_FILE: join(shardRoot, "nuxt.pid"),
         NUXT_IGNORE_LOCK: "1",
         NUXT_BUILD_DIR: join(shardRoot, "nuxt"),
-        PLAYWRIGHT_OUTPUT_DIR: join(shardRoot, "playwright")
+        PLAYWRIGHT_OUTPUT_DIR: artifactRoot
+          ? join(artifactRoot, `shard-${index + 1}`)
+          : join(shardRoot, "playwright")
       }
     }
   })
@@ -115,12 +121,13 @@ export async function superviseShardPlans(plans, spawnShard, cleanup = async () 
     }))
     return firstFailure
   } catch (error) {
+    if (firstFailure === 0) firstFailure = 1
     children.forEach((child, index) => {
       if (!settled.has(index)) child.terminate()
     })
     throw error
   } finally {
-    await cleanup()
+    await cleanup(firstFailure)
   }
 }
 
@@ -146,16 +153,21 @@ function environmentPort(value, fallback, label) {
 export function terminateProcessTree(
   child,
   platform = process.platform,
-  kill = process.kill
+  kill = process.kill,
+  signal = "SIGTERM"
 ) {
   if (child.killed) return
   if (platform === "win32" || !Number.isInteger(child.pid)) {
-    child.kill("SIGTERM")
+    child.kill(signal)
     return
   }
   try {
-    kill(-child.pid, "SIGTERM")
+    kill(-child.pid, signal)
   } catch (error) {
+    if (error instanceof Error && Reflect.has(error, "code") && error.code === "EPERM") {
+      child.kill(signal)
+      return
+    }
     if (!(error instanceof Error) || !Reflect.has(error, "code") || error.code !== "ESRCH") {
       throw error
     }
@@ -172,7 +184,9 @@ export async function terminateOwnedWebServers(
       try {
         process.kill(pid, 0)
       } catch (error) {
-        if (error instanceof Error && Reflect.has(error, "code") && error.code === "ESRCH") {
+        if (error instanceof Error
+          && Reflect.has(error, "code")
+          && ["EPERM", "ESRCH"].includes(String(error.code))) {
           return
         }
         throw error
@@ -182,7 +196,9 @@ export async function terminateOwnedWebServers(
     try {
       process.kill(platform === "win32" ? pid : -pid, "SIGKILL")
     } catch (error) {
-      if (!(error instanceof Error) || !Reflect.has(error, "code") || error.code !== "ESRCH") {
+      if (!(error instanceof Error)
+        || !Reflect.has(error, "code")
+        || !["EPERM", "ESRCH"].includes(String(error.code))) {
         throw error
       }
     }
@@ -207,14 +223,17 @@ export async function terminateOwnedWebServers(
     if (!Number.isInteger(pid) || pid < 1) {
       throw new TypeError(`invalid owned web-server pid in ${pidFile}`)
     }
-    ownedPids.push(pid)
     try {
       kill(platform === "win32" ? pid : -pid, "SIGTERM")
     } catch (error) {
-      if (!(error instanceof Error) || !Reflect.has(error, "code") || error.code !== "ESRCH") {
+      if (!(error instanceof Error)
+        || !Reflect.has(error, "code")
+        || !["EPERM", "ESRCH"].includes(String(error.code))) {
         throw error
       }
+      return
     }
+    ownedPids.push(pid)
   }))
   await Promise.all(ownedPids.map(pid => waitForExit(pid)))
 }
@@ -264,12 +283,14 @@ async function main() {
   const shardCount = configuredShardCount(process.env.LITTB_PLAYWRIGHT_SHARDS)
   const fixtureBase = environmentPort(process.env.LBAPI_FIXTURE_PORT, 4100, "LBAPI_FIXTURE_PORT")
   const nuxtBase = environmentPort(process.env.LITTB_NUXT_TEST_PORT, 3000, "LITTB_NUXT_TEST_PORT")
-  const runRoot = resolve(
-    "node_modules/.cache/littb-playwright",
-    `${Date.now()}-${process.pid}`
-  )
+  const runId = `${Date.now()}-${process.pid}`
+  const runRoot = resolve("node_modules/.cache/littb-playwright", runId)
+  const artifactRoot = resolve("test-results/playwright-shards", runId)
   const playwrightCli = fileURLToPath(import.meta.resolve("@playwright/test/cli"))
-  await mkdir(runRoot, { recursive: true })
+  await Promise.all([
+    mkdir(runRoot, { recursive: true }),
+    mkdir(artifactRoot, { recursive: true })
+  ])
   const plans = createShardPlan({
     projects,
     passthrough,
@@ -277,6 +298,7 @@ async function main() {
     fixtureBase,
     nuxtBase,
     runRoot,
+    artifactRoot,
     playwrightCli
   })
   const activeChildren = []
@@ -293,9 +315,14 @@ async function main() {
     const code = await superviseShardPlans(
       plans,
       plan => spawnPlan(plan, activeChildren),
-      async () => {
+      async failureCode => {
         await terminateOwnedWebServers(plans)
         await rm(runRoot, { recursive: true, force: true })
+        if (failureCode === 0) {
+          await rm(artifactRoot, { recursive: true, force: true })
+        } else {
+          console.error(`Playwright failure diagnostics: ${artifactRoot}`)
+        }
       }
     )
     process.exitCode = signalExitCode || code

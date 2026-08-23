@@ -71,10 +71,16 @@ test.beforeEach(async ({ request }) => {
 test.afterEach(async ({ request }) => reset(request))
 test.beforeAll(async ({ baseURL, browser, request }) => {
   const warmupPage = await browser.newPage({ baseURL })
-  const response = await warmupPage.goto("/sök", { waitUntil: "networkidle" })
-  expect(response?.status()).toBe(200)
-  await warmupPage.close()
-  await reset(request)
+  try {
+    await reset(request)
+    await request.put(`${fixture}/_text_search/authority`)
+    const response = await warmupPage.goto("/sök", { waitUntil: "networkidle" })
+    expect(response?.status()).toBe(200)
+    await expectReady(warmupPage, visualCases[0])
+  } finally {
+    await warmupPage.close()
+    await reset(request)
+  }
 })
 
 for (const visualCase of visualCases) {

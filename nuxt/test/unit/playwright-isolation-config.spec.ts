@@ -55,4 +55,29 @@ describe("Playwright shard output isolation", () => {
     expect(config.retries).toBe(1)
   })
 
+  test("keeps behavior and visual files in separate E2E lanes", async () => {
+    vi.stubEnv("LITTB_E2E_LANE", "behavior")
+    const behavior = (await import("../../playwright.config")).default
+    const behaviorDesktop = behavior.projects.find(project => project.name === "desktop-chromium")
+    const behaviorMobile = behavior.projects.find(project => project.name === "mobile-chromium")
+
+    expect(behaviorDesktop?.testIgnore).toContainEqual(/e2e\/.*\.visual\.spec\.ts/)
+    expect(behaviorMobile?.testIgnore).toContainEqual(/e2e\/.*\.visual\.spec\.ts/)
+
+    vi.resetModules()
+    vi.stubEnv("LITTB_E2E_LANE", "visual")
+    const visual = (await import("../../playwright.config")).default
+    const visualDesktop = visual.projects.find(project => project.name === "desktop-chromium")
+    const visualMobile = visual.projects.find(project => project.name === "mobile-chromium")
+
+    expect(visualDesktop?.testMatch).toEqual(/e2e\/.*\.visual\.spec\.ts/)
+    expect(visualMobile?.testMatch).toEqual(/e2e\/.*\.visual\.spec\.ts/)
+  })
+
+  test("rejects unknown E2E lanes", async () => {
+    vi.stubEnv("LITTB_E2E_LANE", "mixed")
+
+    await expect(import("../../playwright.config")).rejects.toThrow(/LITTB_E2E_LANE/u)
+  })
+
 })

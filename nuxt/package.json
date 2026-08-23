@@ -29,7 +29,7 @@
     "test:unit": "vitest run",
     "test:ssr": "node scripts/run-ssr-suite.mjs",
     "test:reader-runtime-proxy": "yarn build && vitest run --config vitest.runtime-proxy.config.ts",
-    "test:e2e": "node scripts/run-playwright-shards.mjs --project=desktop-chromium --project=mobile-chromium --project=chromium-typography --project=firefox-typography --project=webkit-typography",
+    "test:e2e": "node scripts/run-e2e-suite.mjs",
     "test:visual:capture": "playwright test --config=playwright.angular.config.ts",
     "test:visual:home:capture": "playwright test --config=playwright.home-angular.config.ts",
     "test:visual:presentations:capture": "playwright test --config=playwright.presentations-angular.config.ts",

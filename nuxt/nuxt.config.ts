@@ -115,6 +115,9 @@ export default defineNuxtConfig({
     }
   },
   vite: {
+    ...(process.env.LITTB_VITE_CACHE_DIR
+      ? { cacheDir: process.env.LITTB_VITE_CACHE_DIR }
+      : {}),
     server: {
       ...(disableViteHmr ? { hmr: false } : {}),
       ...(process.env.LITTB_VITE_FS_ALLOW

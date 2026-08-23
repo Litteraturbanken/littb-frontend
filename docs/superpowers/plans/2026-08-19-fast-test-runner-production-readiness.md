@@ -16,15 +16,28 @@ The implementation is complete through Task 6 and the production-readiness
 audit is recorded in
 `docs/superpowers/2026-08-19-production-readiness-audit.md`.
 
-Two evidence-driven amendments supersede the original estimates below:
+The final flake-control audit on 2026-08-23 supersedes the original estimates
+below:
 
 - Full runs showed that four simultaneous cold Nuxt compilers are unstable on
   this laptop. The measured default is therefore three isolated browser/SSR
   shards; callers may still override it explicitly.
-- Multi-shard browser runs allow one retry for cold Vite startup failures and
-  expose those retries in the reporter. The serial lane retains zero retries.
-  The final three-shard full browser run passed 1,003 tests with 9 intentional
-  skips and two recovered cold-start attempts in 505.75 seconds.
+- Multi-shard browser runs retain one retry to capture a trace, but
+  `--fail-on-flaky-tests` makes every recovered attempt fail the release gate.
+  The serial lane retains zero retries. Failure traces are kept under
+  `test-results/playwright-shards`; successful artifacts and all compiler
+  caches are removed.
+- Each shard now owns its Nuxt build directory, Vite dependency cache, fixture
+  ports, Nuxt port, and Playwright output. This removed the observed concurrent
+  Vite optimizer `ENOTEMPTY` race.
+- The public E2E command runs three behavior shards followed by two visual
+  shards. Collection checks preserve filtered invocations, reject a globally
+  empty selection, and an executable partition test pins the complete disjoint
+  set at 869 behavior plus 156 visual tests.
+- The final full browser matrix passed 1,016 tests with 9 intentional skips and
+  zero retries in 543.22 seconds. The real hydration-mismatch authority then
+  passed three simultaneous cold repetitions with zero retries after its
+  browser warm-up was made explicit.
 
 The final public `yarn test:ssr` command passed all 611 tests with the
 three-shard default plus the serial stateful Reader lane in 60.15 seconds.

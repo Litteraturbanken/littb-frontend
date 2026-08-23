@@ -33,6 +33,9 @@ async function warmHomeRoute(request: APIRequestContext): Promise<void> {
 
 test("reports a server-only Home mismatch through the signed intake", async ({ page, request }) => {
   await warmHomeRoute(request)
+  const warmResponse = await page.goto("/", { waitUntil: "networkidle" })
+  expect(warmResponse?.status()).toBe(200)
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Litteraturbanken")
   await resetObservabilityLedger(request)
 
   const pageExceptions: Error[] = []
@@ -50,7 +53,7 @@ test("reports a server-only Home mismatch through the signed intake", async ({ p
     })
   })
 
-  const response = await page.goto("/", { waitUntil: "networkidle" })
+  const response = await page.reload({ waitUntil: "networkidle" })
   expect(response?.status()).toBe(200)
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Litteraturbanken")

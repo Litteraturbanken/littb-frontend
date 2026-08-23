@@ -15,6 +15,21 @@ const nuxtPidFile = process.env.LITTB_NUXT_PID_FILE || resolve(
 )
 const excludeStatefulSsr = process.env.LITTB_SSR_EXCLUDE_STATEFUL === "1"
 const configuredRetries = process.env.LITTB_PLAYWRIGHT_RETRIES
+const configuredE2eLane = process.env.LITTB_E2E_LANE
+if (configuredE2eLane !== undefined
+  && !["behavior", "visual"].includes(configuredE2eLane)) {
+  throw new TypeError("LITTB_E2E_LANE must be behavior or visual")
+}
+const visualE2eSpec = /e2e\/.*\.visual\.spec\.ts/
+const mobileBehaviorSpecs = [
+  /e2e\/reader\.behavior\.spec\.ts/,
+  /e2e\/editor-reader\.mobile\.behavior\.spec\.ts/,
+  /e2e\/library-advanced\.behavior\.spec\.ts/,
+  /e2e\/quick-search-developer\.behavior\.spec\.ts/
+]
+let mobileE2eTestMatch: RegExp | RegExp[] = [visualE2eSpec, ...mobileBehaviorSpecs]
+if (configuredE2eLane === "visual") mobileE2eTestMatch = visualE2eSpec
+else if (configuredE2eLane === "behavior") mobileE2eTestMatch = mobileBehaviorSpecs
 const ownedServer = (pidFile: string, command: string) => (
   `node scripts/run-owned-webserver.mjs ${pidFile} ${command}`
 )
@@ -77,13 +92,16 @@ export function createPlaywrightConfig({
     ...(includeE2eProjects ? [
     {
       name: "desktop-chromium",
-      testMatch: /e2e\/.*\.spec\.ts/,
+      testMatch: configuredE2eLane === "visual"
+        ? visualE2eSpec
+        : /e2e\/.*\.spec\.ts/,
       testIgnore: [
         /e2e\/.*\.mobile\.behavior\.spec\.ts/,
         /e2e\/requiem-kerning\.behavior\.spec\.ts/,
         /e2e\/reader-dictionary-production\.behavior\.spec\.ts/,
         /e2e\/reader-asset-graph\.behavior\.spec\.ts/,
-        /e2e\/reader-assets-production\.behavior\.spec\.ts/
+        /e2e\/reader-assets-production\.behavior\.spec\.ts/,
+        ...(configuredE2eLane === "behavior" ? [visualE2eSpec] : [])
       ],
       use: {
         ...devices["Desktop Chrome"],
@@ -92,13 +110,8 @@ export function createPlaywrightConfig({
     },
     {
       name: "mobile-chromium",
-      testMatch: [
-        /e2e\/.*\.visual\.spec\.ts/,
-        /e2e\/reader\.behavior\.spec\.ts/,
-        /e2e\/editor-reader\.mobile\.behavior\.spec\.ts/,
-        /e2e\/library-advanced\.behavior\.spec\.ts/,
-        /e2e\/quick-search-developer\.behavior\.spec\.ts/
-      ],
+      testMatch: mobileE2eTestMatch,
+      testIgnore: configuredE2eLane === "behavior" ? [visualE2eSpec] : undefined,
       use: { ...devices["iPhone 13"], browserName: "chromium" }
     },
     {
