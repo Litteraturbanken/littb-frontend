@@ -205,13 +205,11 @@ smal skärm. Prioritera följande sammanhängande flöden.
 Den exakta kandidat som granskas ska alltid identifieras via
 [`/_deployment`](https://stage.litteraturbanken.se/_deployment). Vid
 evidensinsamlingen den 24 augusti 2026 svarade startsida, bibliotek och läsare
-med HTTP 200, och endpointen angav Git-revision
-`f3a23269967ff8cdab500f1a7b1209dd3abc8fca` samt bild-digest
-`sha256:a48e63b8723e7511299302b91b20c94ccc3c4ffd1568bd9a5ab51c038f1260a4`.
-En senare lokal ändring (`9248714c`) pekar Stage mot svenska.se:s staged
-Reader-embed och ingick ännu inte i den fingerprinten. Ordboksflödet ska
-därför inte godkännas förrän `/_deployment` visar den nya kandidaten och
-uppslaget fungerar i den faktiskt inbäddade vyn.
+med HTTP 200. Den nu utlagda granskningskandidaten är Git-revision
+`eefd441e279b38fd6ef06c9f8622576262f49034` med bild-digest
+`sha256:7be9f32d1fe0f0f746400f48857340d28cb74fd6ab28156cf4185850052d9665`.
+Den innehåller Stage-kopplingen till svenska.se:s staged Reader-embed; den
+inbäddade SO-/SAOB-vyn ska fortfarande provas som ett redaktionellt flöde.
 
 ---
 
