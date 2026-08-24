@@ -10,6 +10,7 @@ export default defineEventHandler(event => {
     deploymentEnvironment: String(config.deploymentEnvironment || ""),
     deploymentGitSha: String(config.deploymentGitSha || ""),
     hmacSecret: String(config.observabilityHmacSecret || ""),
-    hmacSecretFile: String(config.observabilityHmacSecretFile || "")
+    hmacSecretFile: String(config.observabilityHmacSecretFile || ""),
+    trustedProxyCidrs: String(config.observabilityTrustedProxyCidrs || "")
   })
 })

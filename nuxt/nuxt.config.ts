@@ -89,6 +89,8 @@ export default defineNuxtConfig({
     observabilityHmacSecret: "",
     observabilityHmacSecretFile: "",
     observabilityAllowedOrigins: "",
+    observabilityTrustedProxyCidrs:
+      process.env.NUXT_OBSERVABILITY_TRUSTED_PROXY_CIDRS || "",
     libraryApiBase: "http://127.0.0.1:8000",
     contentBase: "https://red.litteraturbanken.se",
     public: {

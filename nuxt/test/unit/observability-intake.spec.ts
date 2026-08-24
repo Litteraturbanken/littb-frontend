@@ -45,7 +45,8 @@ const intakeConfig = {
   deploymentEnvironment: "stage",
   deploymentGitSha: "a".repeat(40),
   hmacSecret: "test-observability-secret-material-0123456789",
-  hmacSecretFile: ""
+  hmacSecretFile: "",
+  trustedProxyCidrs: ""
 }
 
 function acceptedResponse(accepted = 1): Response {
@@ -353,7 +354,8 @@ describe("observability intake guard", () => {
       deploymentEnvironment: "stage",
       deploymentGitSha: "a".repeat(40),
       hmacSecret: "test-observability-secret-material-0123456789",
-      hmacSecretFile: ""
+      hmacSecretFile: "",
+      trustedProxyCidrs: ""
     }
     const options = { fetch: fetchImplementation, guard, now }
 
@@ -422,13 +424,17 @@ describe("observability intake guard", () => {
       guard,
       now: () => 1_000
     }
+    const config = {
+      ...intakeConfig,
+      trustedProxyCidrs: "10.0.0.40/32"
+    }
 
     for (let attempt = 0; attempt < 60; attempt += 1) {
       const event = intakeRequest()
       event.node.req.headers["x-forwarded-for"] = `203.0.113.${attempt}`
       await expect(handleObservabilityIntake(
         event,
-        intakeConfig,
+        config,
         options
       )).resolves.toEqual({ accepted: attempt === 0 ? 1 : 0 })
     }
@@ -437,10 +443,73 @@ describe("observability intake guard", () => {
     rejected.node.req.headers["x-forwarded-for"] = "198.51.100.200"
     await expect(handleObservabilityIntake(
       rejected,
-      intakeConfig,
+      config,
       options
     )).rejects.toMatchObject({ statusCode: 429 })
     expect(fetchImplementation).toHaveBeenCalledOnce()
+  })
+
+  test("gives sanitized client addresses independent quotas behind the trusted ingress", async () => {
+    const guard = new ObservabilityIntakeGuard()
+    const fetchImplementation = vi.fn(async () => acceptedResponse())
+    const options = {
+      fetch: fetchImplementation,
+      guard,
+      now: () => 1_000
+    }
+    const config = {
+      ...intakeConfig,
+      trustedProxyCidrs: "10.0.0.40/32"
+    }
+
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      const event = intakeRequest()
+      event.node.req.socket.remoteAddress = "10.0.0.40"
+      event.node.req.headers["x-forwarded-for"] = "203.0.113.10"
+      await expect(handleObservabilityIntake(event, config, options))
+        .resolves.toEqual({ accepted: attempt === 0 ? 1 : 0 })
+    }
+
+    const independentClient = intakeRequest()
+    independentClient.node.req.socket.remoteAddress = "10.0.0.40"
+    independentClient.node.req.headers["x-forwarded-for"] = "198.51.100.20"
+    await expect(handleObservabilityIntake(independentClient, config, options))
+      .resolves.toEqual({ accepted: 0 })
+
+    const exhaustedClient = intakeRequest()
+    exhaustedClient.node.req.socket.remoteAddress = "10.0.0.40"
+    exhaustedClient.node.req.headers["x-forwarded-for"] = "203.0.113.10"
+    await expect(handleObservabilityIntake(exhaustedClient, config, options))
+      .rejects.toMatchObject({ statusCode: 429 })
+  })
+
+  test("does not trust ambiguous forwarded chains from the trusted ingress", async () => {
+    const guard = new ObservabilityIntakeGuard()
+    const fetchImplementation = vi.fn(async () => acceptedResponse())
+    const options = {
+      fetch: fetchImplementation,
+      guard,
+      now: () => 1_000
+    }
+    const config = {
+      ...intakeConfig,
+      trustedProxyCidrs: "10.0.0.40/32"
+    }
+
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      const event = intakeRequest()
+      event.node.req.socket.remoteAddress = "10.0.0.40"
+      event.node.req.headers["x-forwarded-for"]
+        = `203.0.113.${attempt}, 198.51.100.20`
+      await expect(handleObservabilityIntake(event, config, options))
+        .resolves.toEqual({ accepted: attempt === 0 ? 1 : 0 })
+    }
+
+    const rejected = intakeRequest()
+    rejected.node.req.socket.remoteAddress = "10.0.0.40"
+    rejected.node.req.headers["x-forwarded-for"] = "192.0.2.200, 198.51.100.20"
+    await expect(handleObservabilityIntake(rejected, config, options))
+      .rejects.toMatchObject({ statusCode: 429 })
   })
 
   test("deduplicates event IDs temporarily and releases failed deliveries", () => {

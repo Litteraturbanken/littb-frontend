@@ -141,6 +141,7 @@ job "lb-frontend-stage" {
         NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://svenska.se"
         NUXT_OBSERVABILITY_ALLOWED_ORIGINS      = "https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se"
         NUXT_OBSERVABILITY_HMAC_SECRET          = "${secret.runtime.observability_hmac_secret}"
+        NUXT_OBSERVABILITY_TRUSTED_PROXY_CIDRS  = "10.0.0.40/32"
         NUXT_API_BASE                           = "http://lb-backend-stage.service.consul:5003/v2"
         NUXT_LIBRARY_API_BASE                   = "http://lb-backend-stage.service.consul:5003"
         NUXT_CONTENT_BASE                       = "https://red.litteraturbanken.se"

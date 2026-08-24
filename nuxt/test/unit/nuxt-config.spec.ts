@@ -25,6 +25,7 @@ type NuxtConfig = {
   runtimeConfig: {
     contentBase: string
     libraryApiBase: string
+    observabilityTrustedProxyCidrs: string
     public: {
       readerDictionaryMode: string
       svenskaReaderEmbedOrigin: string
@@ -163,5 +164,24 @@ describe("Reader dictionary embed runtime configuration", () => {
     expect(config.runtimeConfig.public.readerDictionaryMode).toBe("embed")
     expect(config.runtimeConfig.public.svenskaReaderEmbedOrigin)
       .toBe("https://dictionaries.example.test")
+  })
+})
+
+describe("observability trusted ingress runtime configuration", () => {
+  test("does not trust a forwarded client address by default", async () => {
+    vi.stubEnv("NUXT_OBSERVABILITY_TRUSTED_PROXY_CIDRS", undefined)
+
+    const config = await loadConfig()
+
+    expect(config.runtimeConfig.observabilityTrustedProxyCidrs).toBe("")
+  })
+
+  test("exposes the closed trusted ingress CIDR setting", async () => {
+    vi.stubEnv("NUXT_OBSERVABILITY_TRUSTED_PROXY_CIDRS", "10.0.0.40/32")
+
+    const config = await loadConfig()
+
+    expect(config.runtimeConfig.observabilityTrustedProxyCidrs)
+      .toBe("10.0.0.40/32")
   })
 })

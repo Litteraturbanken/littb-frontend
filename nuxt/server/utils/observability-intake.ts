@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomBytes } from "node:crypto"
 import { readFile } from "node:fs/promises"
+import { BlockList, isIP } from "node:net"
 
 import {
   createError,
@@ -87,6 +88,7 @@ export interface ObservabilityIntakeConfig {
   deploymentGitSha: string
   hmacSecret: string
   hmacSecretFile: string
+  trustedProxyCidrs: string
 }
 
 interface BrowserErrorIntakeEvent {
@@ -478,8 +480,44 @@ async function readSecret(config: ObservabilityIntakeConfig): Promise<Buffer> {
   return secret
 }
 
-function clientKey(event: H3Event): string {
-  const address = getRequestIP(event) ?? "unknown"
+function isTrustedProxy(address: string, configuredCidrs: string): boolean {
+  const addressFamily = isIP(address)
+  if (addressFamily === 0) {
+    return false
+  }
+  const family = addressFamily === 4 ? "ipv4" : "ipv6"
+  for (const rawCidr of configuredCidrs.split(",")) {
+    const [subnet, prefixText, unexpected] = rawCidr.trim().split("/")
+    const subnetFamily = subnet ? isIP(subnet) : 0
+    const prefix = Number(prefixText)
+    const maxPrefix = subnetFamily === 4 ? 32 : 128
+    if (
+      unexpected !== undefined
+      || subnetFamily !== addressFamily
+      || !Number.isInteger(prefix)
+      || prefix < 0
+      || prefix > maxPrefix
+    ) {
+      continue
+    }
+    const blockList = new BlockList()
+    blockList.addSubnet(subnet!, prefix, family)
+    if (blockList.check(address, family)) {
+      return true
+    }
+  }
+  return false
+}
+
+function clientKey(event: H3Event, configuredProxyCidrs: string): string {
+  const peerAddress = getRequestIP(event) ?? "unknown"
+  const forwardedAddress = getHeader(event, "x-forwarded-for")?.trim()
+  const address = isTrustedProxy(peerAddress, configuredProxyCidrs)
+    && forwardedAddress
+    && !forwardedAddress.includes(",")
+    && isIP(forwardedAddress) !== 0
+    ? forwardedAddress
+    : peerAddress
   return createHash("sha256").update(address).digest("hex")
 }
 
@@ -544,7 +582,7 @@ async function prepareIntake(
   const guard = options.guard ?? intakeGuard
   const now = (options.now ?? Date.now)()
   const reservationOwner = Symbol("observability intake reservation")
-  guard.enforceRate(clientKey(event), now)
+  guard.enforceRate(clientKey(event, config.trustedProxyCidrs || ""), now)
   const batch = parseBatch(await readBoundedRequestBody(event))
   return {
     guard,
