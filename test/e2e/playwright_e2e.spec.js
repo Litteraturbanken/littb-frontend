@@ -348,7 +348,7 @@ test.describe("Nuxt whole-site staging smoke", () => {
             .toBeVisible()
     })
 
-    test("opens a typed dictionary article through the same-origin API", async ({
+    test("opens the Svenska reader dictionary embed", async ({
         page
     }) => {
         await openNuxtRoute(
@@ -365,18 +365,21 @@ test.describe("Nuxt whole-site staging smoke", () => {
             word.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }))
         })
         const lookup = page.getByRole("button", {
-            name: "Slå upp damm i Svensk ordbok"
+            name: "Slå upp damm i SO och SAOB"
         })
         await expect(lookup).toBeVisible()
-        const dictionaryResponse = page.waitForResponse(result =>
-            result.url().includes("/api/v2/dictionary/articles")
-        )
         await lookup.click()
 
-        expect((await dictionaryResponse).status()).toBe(200)
-        await expect(page.getByRole("dialog")).toContainText(
-            "Svensk ordbok utgiven av"
-        )
+        const dialog = page.getByRole("dialog", { name: "Slå upp ord" })
+        const frame = dialog.locator('iframe[title="Slå upp damm i SO och SAOB"]')
+        await expect(frame).toBeVisible()
+        await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin")
+        await expect(frame).toHaveAttribute("referrerpolicy", "origin")
+        const dictionary = frame.contentFrame()
+        await expect(dictionary.getByRole("heading", { name: "Uppslag: damm" }))
+            .toBeVisible()
+        await expect(dictionary.getByRole("status")).toHaveText("Visar SO.")
+        await expect(dictionary.getByRole("heading", { name: "1 damm" })).toBeVisible()
     })
 
     test("loads lb12106 Editor etext and navigates to the next page", async ({

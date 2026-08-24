@@ -219,7 +219,7 @@ class NuxtLivePlaywrightTest(unittest.TestCase):
             "opens source information when one person has multiple contributor roles",
             "validates a bounded diverse corpus of real source information",
             "loads facsimile Reader content and exposes its OCR layer",
-            "opens a typed dictionary article through the same-origin API",
+            "opens the Svenska reader dictionary embed",
             "loads lb12106 Editor etext and navigates to the next page",
             "reports the unavailable lb12106 Editor facsimile manifest honestly",
             "retains Editor next-page interaction coverage",
