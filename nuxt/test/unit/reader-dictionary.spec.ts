@@ -55,6 +55,16 @@ describe("reader dictionary", () => {
     expect(stylesSource).toContain("min(72vh, 760px)")
   })
 
+  it("restores focus to the initiating Reader word without adding a permanent tab stop", () => {
+    expect(lookupSource).toContain("focusRestoreTarget = selected.element")
+    expect(lookupSource).toContain("target.isConnected")
+    expect(lookupSource).toContain("target.focus({ preventScroll: true })")
+    expect(lookupSource).toContain('target.setAttribute("tabindex", "-1")')
+    expect(lookupSource).toContain('target.removeAttribute("tabindex")')
+    expect(lookupSource).toContain('target.addEventListener("blur", restoreTabIndex, { once: true })')
+    expect(lookupSource).toContain("clearFocusRestoreTarget()")
+  })
+
   it("keeps inert SO markup while dropping active content and attributes", () => {
     const html = sanitizeDictionaryArticle(
       '<lemma id="safe" onclick="bad()"><grundform>hund</grundform>' +

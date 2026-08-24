@@ -22,7 +22,12 @@ const route = useRoute()
 const client = useLbApiClient()
 const mode = readerDictionaryMode(useRuntimeConfig().public.readerDictionaryMode)
 const embed = useReaderDictionaryEmbed()
-const indicator = ref<{ left: number, top: number, word: string } | null>(null)
+const indicator = shallowRef<{
+  element: HTMLElement
+  left: number
+  top: number
+  word: string
+} | null>(null)
 const article = ref<DictionaryArticle | null>(null)
 const articleHtml = ref<SanitizedHtml<"dictionary-article">>(emptyRenderableHtml())
 const embedAttemptWord = ref<string | null>(null)
@@ -31,6 +36,9 @@ let selectionTimer: ReturnType<typeof setTimeout> | null = null
 let messageTimer: ReturnType<typeof setTimeout> | null = null
 let lookupGeneration = 0
 let lookupController: AbortController | null = null
+let focusRestoreGeneration = 0
+let focusRestoreTarget: HTMLElement | null = null
+let focusRestoreTabIndexCleanup: (() => void) | null = null
 
 const legacyModalOpen = computed(() => article.value !== null && articleHtml.value.length > 0)
 const embedModalOpen = computed(() => (
@@ -68,9 +76,21 @@ function clearSelectionTimer(): void {
   selectionTimer = null
 }
 
+function clearIndicator(): void {
+  indicator.value = null
+}
+
+function clearFocusRestoreTarget(): void {
+  focusRestoreGeneration += 1
+  focusRestoreTarget = null
+  focusRestoreTabIndexCleanup?.()
+}
+
 function showIndicator(selected: { element: HTMLElement, word: string }): void {
+  clearFocusRestoreTarget()
   const box = selected.element.getBoundingClientRect()
   indicator.value = {
+    element: selected.element,
     left: box.right + window.scrollX,
     top: box.top + window.scrollY - 20,
     word: selected.word
@@ -81,7 +101,7 @@ function inspectSelection(): void {
   const root = document.querySelector(".reader_main")
   const selected = root ? selectedReaderWord(window.getSelection(), root) : null
   if (!selected) {
-    indicator.value = null
+    clearIndicator()
     return
   }
   showIndicator(selected)
@@ -103,7 +123,7 @@ function handleSelectionKeyup(event: KeyboardEvent): void {
 
 function handleDoubleClick(event: MouseEvent): void {
   clearSelectionTimer()
-  indicator.value = null
+  clearIndicator()
   const target = event.target
   const root = document.querySelector(".reader_main")
   if (!(target instanceof Element) || !root) return
@@ -116,7 +136,7 @@ function handleDoubleClick(event: MouseEvent): void {
 function handleDocumentClick(event: MouseEvent): void {
   const target = event.target
   if (target instanceof Element && target.closest(".search_dict, [role='dialog']")) return
-  indicator.value = null
+  clearIndicator()
 }
 
 function validArticle(value: unknown, word: string): value is DictionaryArticle {
@@ -160,11 +180,13 @@ async function lookupLegacy(word: string): Promise<void> {
     })
     if (!lookupIsCurrent(generation, controller, routeFullPath)) return
     if (result.error || !validArticle(result.data, word)) {
+      clearFocusRestoreTarget()
       showMessage("Hittade inget uppslag")
       return
     }
     const sanitized = sanitizeDictionaryArticle(result.data.article_html)
     if (!sanitized) {
+      clearFocusRestoreTarget()
       showMessage("Hittade inget uppslag")
       return
     }
@@ -174,6 +196,7 @@ async function lookupLegacy(word: string): Promise<void> {
     article.value = result.data
   } catch {
     if (lookupIsCurrent(generation, controller, routeFullPath)) {
+      clearFocusRestoreTarget()
       showMessage("Hittade inget uppslag")
     }
   } finally {
@@ -183,10 +206,12 @@ async function lookupLegacy(word: string): Promise<void> {
 
 async function lookup(): Promise<void> {
   const selected = indicator.value
-  indicator.value = null
+  clearIndicator()
   clearSelectionTimer()
   window.getSelection()?.removeAllRanges()
   if (!selected) return
+  clearFocusRestoreTarget()
+  focusRestoreTarget = selected.element
   cancelLookup()
   closeEmbed()
   article.value = null
@@ -209,10 +234,39 @@ function closeEmbed(): void {
   embed.close()
 }
 
+async function restoreReaderWordFocus(
+  target: HTMLElement | null,
+  generation: number
+): Promise<void> {
+  await nextTick()
+  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+  if (!target || generation !== focusRestoreGeneration || !target.isConnected) return
+
+  const previousTabIndex = target.getAttribute("tabindex")
+  target.setAttribute("tabindex", "-1")
+  const restoreTabIndex = (): void => {
+    target.removeEventListener("blur", restoreTabIndex)
+    if (previousTabIndex === null) target.removeAttribute("tabindex")
+    else target.setAttribute("tabindex", previousTabIndex)
+    if (focusRestoreTabIndexCleanup === restoreTabIndex) {
+      focusRestoreTabIndexCleanup = null
+    }
+  }
+  focusRestoreTabIndexCleanup?.()
+  focusRestoreTabIndexCleanup = restoreTabIndex
+  target.addEventListener("blur", restoreTabIndex, { once: true })
+  target.focus({ preventScroll: true })
+  if (document.activeElement !== target) restoreTabIndex()
+}
+
 function close(): void {
+  const target = focusRestoreTarget
+  const generation = focusRestoreGeneration
+  focusRestoreTarget = null
   cancelLookup()
   closeLegacy()
   closeEmbed()
+  void restoreReaderWordFocus(target, generation)
 }
 
 function setEmbedFrame(element: Element | ComponentPublicInstance | null): void {
@@ -222,8 +276,9 @@ function setEmbedFrame(element: Element | ComponentPublicInstance | null): void 
 watch(() => route.fullPath, () => {
   cancelLookup()
   closeEmbed()
+  clearFocusRestoreTarget()
   clearSelectionTimer()
-  indicator.value = null
+  clearIndicator()
   closeLegacy()
 })
 
@@ -236,6 +291,7 @@ onBeforeMount(() => {
 onBeforeUnmount(() => {
   cancelLookup()
   closeEmbed()
+  clearFocusRestoreTarget()
   document.removeEventListener("mouseup", handleMouseup)
   document.removeEventListener("dblclick", handleDoubleClick)
   document.removeEventListener("click", handleDocumentClick)
