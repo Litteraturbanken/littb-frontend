@@ -129,20 +129,22 @@ job "lb-frontend-stage" {
       }
 
       env {
-        GIT_SHA                               = var.git_sha
-        IMAGE_DIGEST                          = var.image_digest
-        IMAGE_REF                             = var.image
-        NUXT_DEPLOYMENT_GIT_SHA               = var.git_sha
-        NUXT_DEPLOYMENT_IMAGE_DIGEST          = var.image_digest
-        NUXT_DEPLOYMENT_ENVIRONMENT           = "staging"
-        NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT = "stage"
-        NUXT_PUBLIC_OBSERVABILITY_GIT_SHA     = var.git_sha
-        NUXT_OBSERVABILITY_ALLOWED_ORIGINS    = "https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se"
-        NUXT_OBSERVABILITY_HMAC_SECRET        = "${secret.runtime.observability_hmac_secret}"
-        NUXT_API_BASE                         = "http://lb-backend-stage.service.consul:5003/v2"
-        NUXT_LIBRARY_API_BASE                 = "http://lb-backend-stage.service.consul:5003"
-        NUXT_CONTENT_BASE                     = "https://red.litteraturbanken.se"
-        PUBLIC_RESOURCE_ORIGIN                = "https://stage.litteraturbanken.se"
+        GIT_SHA                                 = var.git_sha
+        IMAGE_DIGEST                            = var.image_digest
+        IMAGE_REF                               = var.image
+        NUXT_DEPLOYMENT_GIT_SHA                 = var.git_sha
+        NUXT_DEPLOYMENT_IMAGE_DIGEST            = var.image_digest
+        NUXT_DEPLOYMENT_ENVIRONMENT             = "staging"
+        NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT   = "stage"
+        NUXT_PUBLIC_OBSERVABILITY_GIT_SHA       = var.git_sha
+        NUXT_PUBLIC_READER_DICTIONARY_MODE      = "embed"
+        NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://svenska.se"
+        NUXT_OBSERVABILITY_ALLOWED_ORIGINS      = "https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se"
+        NUXT_OBSERVABILITY_HMAC_SECRET          = "${secret.runtime.observability_hmac_secret}"
+        NUXT_API_BASE                           = "http://lb-backend-stage.service.consul:5003/v2"
+        NUXT_LIBRARY_API_BASE                   = "http://lb-backend-stage.service.consul:5003"
+        NUXT_CONTENT_BASE                       = "https://red.litteraturbanken.se"
+        PUBLIC_RESOURCE_ORIGIN                  = "https://stage.litteraturbanken.se"
       }
 
       config {
@@ -150,7 +152,7 @@ job "lb-frontend-stage" {
         force_pull   = true
         network_mode = "host"
         ports        = ["http"]
-        entrypoint = ["/bin/sh", "-ec"]
+        entrypoint   = ["/bin/sh", "-ec"]
         args = [<<-EOT
           git_sha_value="$GIT_SHA"
           git_sha_length="$(printf '%s' "$git_sha_value" | wc -c | tr -d '[:space:]')"

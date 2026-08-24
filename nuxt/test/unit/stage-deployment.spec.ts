@@ -292,6 +292,14 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(normalizedJobspec).toContain('NUXT_DEPLOYMENT_ENVIRONMENT = "staging"')
   expect(normalizedJobspec).toContain('NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT = "stage"')
   expect(normalizedJobspec).toContain('NUXT_PUBLIC_OBSERVABILITY_GIT_SHA = var.git_sha')
+  expect(normalizedJobspec).toContain('NUXT_PUBLIC_READER_DICTIONARY_MODE = "embed"')
+  expect(normalizedJobspec).toContain(
+    'NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://svenska.se"'
+  )
+  expect(normalizedJobspec).not.toContain("stage.svenska.se")
+  expect(normalizedJobspec).not.toMatch(
+    /NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = (?:var\.|"[^"]*\*)/u
+  )
   expect(normalizedJobspec).toContain(
     'NUXT_OBSERVABILITY_ALLOWED_ORIGINS = "https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se"'
   )
@@ -321,6 +329,8 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
     "NUXT_DEPLOYMENT_ENVIRONMENT",
     "NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT",
     "NUXT_PUBLIC_OBSERVABILITY_GIT_SHA",
+    "NUXT_PUBLIC_READER_DICTIONARY_MODE",
+    "NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN",
     "NUXT_OBSERVABILITY_ALLOWED_ORIGINS",
     "NUXT_OBSERVABILITY_HMAC_SECRET",
     "NUXT_API_BASE",
