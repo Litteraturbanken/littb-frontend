@@ -25,6 +25,26 @@ const readRepositoryFile = (name: string) => {
   return existsSync(path) ? readFileSync(path, "utf8") : ""
 }
 
+function frontendTaskEnvironment(jobspec: string) {
+  const envBody = jobspec.match(
+    /^ {4}task "frontend" \{[\s\S]*?^ {6}env \{\n(?<body>[\s\S]*?)^ {6}\}/mu
+  )?.groups?.body
+  if (!envBody) {
+    throw new Error("frontend task env block is missing")
+  }
+
+  const assignments = new Map<string, string[]>()
+  for (const match of envBody.matchAll(
+    /^ {8}(?<name>[A-Z][A-Z0-9_]*)\s*=\s*(?<value>.+?)\s*$/gmu
+  )) {
+    const name = match.groups?.name
+    const value = match.groups?.value
+    if (!name || !value) continue
+    assignments.set(name, [...(assignments.get(name) ?? []), value])
+  }
+  return assignments
+}
+
 const gitSha = "a".repeat(40)
 const imageDigest = `sha256:${"b".repeat(64)}`
 
@@ -254,6 +274,26 @@ test("staging Docker build context excludes development and generated files", ()
   ]))
 })
 
+test("frontend environment parsing ignores approved values outside actual assignments", () => {
+  const assignments = frontendTaskEnvironment(`# NUXT_PUBLIC_READER_DICTIONARY_MODE = "embed"
+# NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://svenska.se"
+job "fixture" {
+  group "fixture" {
+    task "frontend" {
+      env {
+        NUXT_PUBLIC_READER_DICTIONARY_MODE = var.caddy_host
+        NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://\${var.caddy_host}"
+      }
+    }
+  }
+}`)
+
+  expect(assignments.get("NUXT_PUBLIC_READER_DICTIONARY_MODE"))
+    .toEqual(["var.caddy_host"])
+  expect(assignments.get("NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN"))
+    .toEqual(['"https://${var.caddy_host}"'])
+})
+
 test("staging Nomad service exposes the digest-pinned Nuxt runtime through public ingress", () => {
   const jobspec = readRepositoryFile("jobs/lb-frontend-stage.nomad")
   const normalizedJobspec = jobspec.replace(/[ \t]+/gu, " ")
@@ -261,11 +301,8 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
     jobspec.matchAll(/^variable "(?<name>[^"]+)"/gmu),
     match => match.groups?.name
   )
-  const envBody = jobspec.match(/^\s{6}env \{(?<body>[\s\S]*?)^\s{6}\}/mu)?.groups?.body ?? ""
-  const envNames = Array.from(
-    envBody.matchAll(/^\s{8}(?<name>[A-Z][A-Z0-9_]*)\s*=/gmu),
-    match => match.groups?.name
-  )
+  const envAssignments = frontendTaskEnvironment(jobspec)
+  const envNames = Array.from(envAssignments.keys())
 
   expect(jobspec).toMatch(/job\s+"lb-frontend-stage"/u)
   expect(variableNames).toEqual([
@@ -292,14 +329,10 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(normalizedJobspec).toContain('NUXT_DEPLOYMENT_ENVIRONMENT = "staging"')
   expect(normalizedJobspec).toContain('NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT = "stage"')
   expect(normalizedJobspec).toContain('NUXT_PUBLIC_OBSERVABILITY_GIT_SHA = var.git_sha')
-  expect(normalizedJobspec).toContain('NUXT_PUBLIC_READER_DICTIONARY_MODE = "embed"')
-  expect(normalizedJobspec).toContain(
-    'NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://svenska.se"'
-  )
-  expect(normalizedJobspec).not.toContain("stage.svenska.se")
-  expect(normalizedJobspec).not.toMatch(
-    /NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = (?:var\.|"[^"]*\*)/u
-  )
+  expect(envAssignments.get("NUXT_PUBLIC_READER_DICTIONARY_MODE"))
+    .toEqual(['"embed"'])
+  expect(envAssignments.get("NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN"))
+    .toEqual(['"https://svenska.se"'])
   expect(normalizedJobspec).toContain(
     'NUXT_OBSERVABILITY_ALLOWED_ORIGINS = "https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se"'
   )
