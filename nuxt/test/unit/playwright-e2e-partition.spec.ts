@@ -12,7 +12,9 @@ const allProjects = [
   "webkit-typography"
 ]
 
-function collectedTests(lane?: "behavior" | "visual") {
+type E2eLane = "behavior" | "visual"
+
+function collectedTests(lane?: E2eLane, shard?: `${number}/${number}`) {
   const projects = lane === "visual"
     ? ["desktop-chromium", "mobile-chromium"]
     : allProjects
@@ -20,6 +22,7 @@ function collectedTests(lane?: "behavior" | "visual") {
     playwrightCli,
     "test",
     "--list",
+    ...(shard ? [`--shard=${shard}`] : []),
     ...projects.map(project => `--project=${project}`)
   ], {
     cwd: fileURLToPath(new URL("../..", import.meta.url)),
@@ -41,9 +44,29 @@ test("behavior and visual lanes are a complete disjoint E2E partition", () => {
   const overlap = new Set([...behavior].filter(identity => visual.has(identity)))
   const combined = new Set([...behavior, ...visual])
 
-  expect(baseline.size).toBe(1_025)
-  expect(behavior.size).toBe(869)
+  expect(baseline.size).toBe(1_054)
+  expect(behavior.size).toBe(898)
   expect(visual.size).toBe(156)
   expect(overlap).toEqual(new Set())
   expect(combined).toEqual(baseline)
+}, 30_000)
+
+test("outer shards assign every lane identity exactly once", () => {
+  for (const [lane, shardCount] of [
+    ["behavior", 3],
+    ["visual", 2]
+  ] as const) {
+    const laneTests = collectedTests(lane)
+    const assignments = new Map<string, number>()
+    for (let shard = 1; shard <= shardCount; shard += 1) {
+      const shardTests = collectedTests(lane, `${shard}/${shardCount}`)
+      expect(shardTests.size).toBeGreaterThan(0)
+      for (const identity of shardTests) {
+        assignments.set(identity, (assignments.get(identity) ?? 0) + 1)
+      }
+    }
+
+    expect(new Set(assignments.keys())).toEqual(laneTests)
+    expect([...assignments.values()].every(count => count === 1)).toBe(true)
+  }
 }, 30_000)
