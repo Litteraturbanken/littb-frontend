@@ -564,7 +564,7 @@ for (const [name, scenario, message] of [
       name: "Öppna uppslaget på Svenska Akademiens ordbokssida"
     })).toHaveAttribute(
       "href",
-      `${fixture}/?q=DOKTOR&activeTab=alla&exactMatch=true`
+      `${svenskaEmbedOrigin}/?q=DOKTOR&activeTab=alla&exactMatch=true`
     )
     expect(await fixtureRequests(request, "_dictionary_requests")).toEqual([])
   })

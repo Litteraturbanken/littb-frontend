@@ -134,6 +134,8 @@ test("late Home content cannot populate a fresh revisit", async ({ page }) => {
   const firstRequestStarted = new Promise<void>(resolve => { markFirstRequestStarted = resolve })
   let markSecondRequestStarted!: () => void
   const secondRequestStarted = new Promise<void>(resolve => { markSecondRequestStarted = resolve })
+  let releaseSecondResponse!: () => void
+  const secondResponseReleased = new Promise<void>(resolve => { releaseSecondResponse = resolve })
   let markFirstHandlerCompleted!: () => void
   const firstHandlerCompleted = new Promise<void>(resolve => { markFirstHandlerCompleted = resolve })
   let requests = 0
@@ -152,6 +154,7 @@ test("late Home content cannot populate a fresh revisit", async ({ page }) => {
       return
     }
     markSecondRequestStarted()
+    await secondResponseReleased
     await route.fulfill({ response: await route.fetch() })
   })
 
@@ -162,15 +165,22 @@ test("late Home content cannot populate a fresh revisit", async ({ page }) => {
 
   await startClientNavigation(page, "/")
   await secondRequestStarted
-  await expect(page.locator('.searching[role="status"]')).toHaveText("Laddar startsidan")
-  await expect(page.getByText("Månadens tema", { exact: true })).toHaveCount(0)
-  releaseFirstResponse()
-  await firstHandlerCompleted
-  await page.evaluate(() => new Promise<void>(resolve => setTimeout(resolve, 0)))
+  try {
+    await expect(page.locator('.searching[role="status"]')).toHaveText("Laddar startsidan")
+    await expect(page.getByText("Månadens tema", { exact: true })).toHaveCount(0)
+    releaseFirstResponse()
+    await firstHandlerCompleted
+    await page.evaluate(() => new Promise<void>(resolve => setTimeout(resolve, 0)))
 
-  await expect(page.getByText("Månadens tema", { exact: true })).toBeVisible()
-  await expect(page.getByText("Försenat gammalt Home-innehåll", { exact: true })).toHaveCount(0)
-  await firstNavigation.catch(() => undefined)
+    await expect(page.getByText("Månadens tema", { exact: true })).toHaveCount(0)
+    await expect(page.getByText("Försenat gammalt Home-innehåll", { exact: true })).toHaveCount(0)
+    releaseSecondResponse()
+    await expect(page.getByText("Månadens tema", { exact: true })).toBeVisible()
+  } finally {
+    releaseFirstResponse()
+    releaseSecondResponse()
+    await firstNavigation.catch(() => undefined)
+  }
   expect(requests).toBe(2)
   expect(problems).toEqual([])
 })
