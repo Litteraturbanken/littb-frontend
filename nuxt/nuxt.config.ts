@@ -96,7 +96,10 @@ export default defineNuxtConfig({
       libraryApiBase: "/api",
       contentBase: "",
       observabilityEnvironment: process.env.DEPLOYMENT_ENV || "production",
-      observabilityGitSha: process.env.GIT_SHA || "0000000000000000000000000000000000000000"
+      observabilityGitSha: process.env.GIT_SHA || "0000000000000000000000000000000000000000",
+      readerDictionaryMode: process.env.NUXT_PUBLIC_READER_DICTIONARY_MODE || "legacy",
+      svenskaReaderEmbedOrigin:
+        process.env.NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN || "https://svenska.se"
     }
   },
   typescript: {

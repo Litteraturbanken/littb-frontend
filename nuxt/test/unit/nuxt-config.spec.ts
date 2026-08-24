@@ -25,6 +25,10 @@ type NuxtConfig = {
   runtimeConfig: {
     contentBase: string
     libraryApiBase: string
+    public: {
+      readerDictionaryMode: string
+      svenskaReaderEmbedOrigin: string
+    }
   }
   vite: {
     cacheDir?: string
@@ -132,5 +136,32 @@ describe("Reader source-information auto-import boundary", () => {
       expect(include(`/repo/server/utils/reader-source-info-${module}.ts`)).toBe(false)
     }
     expect(include("/repo/server/utils/other-helper.ts")).toBe(true)
+  })
+})
+
+describe("Reader dictionary embed runtime configuration", () => {
+  test("defaults to the legacy path and the public Svenska origin", async () => {
+    vi.stubEnv("NUXT_PUBLIC_READER_DICTIONARY_MODE", undefined)
+    vi.stubEnv("NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN", undefined)
+
+    const config = await loadConfig()
+
+    expect(config.runtimeConfig.public.readerDictionaryMode).toBe("legacy")
+    expect(config.runtimeConfig.public.svenskaReaderEmbedOrigin)
+      .toBe("https://svenska.se")
+  })
+
+  test("exposes explicit runtime values for validation by the Reader boundary", async () => {
+    vi.stubEnv("NUXT_PUBLIC_READER_DICTIONARY_MODE", "embed")
+    vi.stubEnv(
+      "NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN",
+      "https://dictionaries.example.test"
+    )
+
+    const config = await loadConfig()
+
+    expect(config.runtimeConfig.public.readerDictionaryMode).toBe("embed")
+    expect(config.runtimeConfig.public.svenskaReaderEmbedOrigin)
+      .toBe("https://dictionaries.example.test")
   })
 })
