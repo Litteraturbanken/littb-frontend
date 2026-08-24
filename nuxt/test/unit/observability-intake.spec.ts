@@ -88,7 +88,123 @@ function hydrationIntakeEvent(overrides: Record<string, unknown> = {}) {
   }
 }
 
+function dictionaryIntakeEvent(overrides: Record<string, unknown> = {}) {
+  return {
+    event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e",
+    event_name: "business.dictionary_lookup",
+    word_length: 7,
+    outcome: "both",
+    selected_dictionary: "so",
+    duration_ms: 125,
+    ...overrides
+  }
+}
+
 describe("observability intake guard", () => {
+  test("converts the compact dictionary outcome into a trusted business event", async () => {
+    const fetchImplementation = vi.fn(async () => acceptedResponse())
+
+    await expect(handleObservabilityIntake(
+      intakeRequestWithBody(JSON.stringify({ events: [dictionaryIntakeEvent()] })),
+      intakeConfig,
+      {
+        fetch: fetchImplementation,
+        guard: new ObservabilityIntakeGuard(),
+        now: () => Date.parse("2026-08-23T12:00:00Z")
+      }
+    )).resolves.toEqual({ accepted: 1 })
+
+    const forwarded = JSON.parse(String(fetchImplementation.mock.calls[0]?.[1]?.body))
+    expect(forwarded.events).toEqual([{
+      schema_version: "lb.observability.v1",
+      timestamp: "2026-08-23T12:00:00.000Z",
+      event_id: "018f47c0-4d5b-7a62-8f41-a04b5df3fd8e",
+      event_name: "business.dictionary_lookup",
+      event_kind: "business",
+      severity: "info",
+      service: "lb-frontend",
+      producer: "browser",
+      environment: "stage",
+      deployment_git_sha: "a".repeat(40),
+      request_id: null,
+      trace_id: null,
+      span_id: null,
+      route: null,
+      http_method: null,
+      status_code: null,
+      duration_ms: 125,
+      error_type: null,
+      error_fingerprint: null,
+      attributes: {
+        word_length: 7,
+        found: true,
+        outcome: "both",
+        selected_dictionary: "so"
+      }
+    }])
+    for (const privateField of ["word", "query", "url"]) {
+      expect(forwarded.events[0]).not.toHaveProperty(privateField)
+      expect(forwarded.events[0].attributes).not.toHaveProperty(privateField)
+    }
+  })
+
+  test.each([
+    ["opened", null],
+    ["so", true],
+    ["saob", true],
+    ["both", true],
+    ["empty", false],
+    ["child_error", null],
+    ["timeout", null]
+  ])("derives found from the %s dictionary outcome", async (outcome, found) => {
+    const fetchImplementation = vi.fn(async () => acceptedResponse())
+
+    await handleObservabilityIntake(
+      intakeRequestWithBody(JSON.stringify({
+        events: [dictionaryIntakeEvent({ outcome })]
+      })),
+      intakeConfig,
+      {
+        fetch: fetchImplementation,
+        guard: new ObservabilityIntakeGuard(),
+        now: () => 1_000
+      }
+    )
+
+    const forwarded = JSON.parse(String(fetchImplementation.mock.calls[0]?.[1]?.body))
+    expect(forwarded.events[0].attributes.found).toBe(found)
+  })
+
+  test.each([
+    ["unknown outcome", { outcome: "unknown" }],
+    ["SAOL selection", { selected_dictionary: "saol" }],
+    ["extra field", { extra: true }],
+    ["zero word length", { word_length: 0 }],
+    ["oversized word length", { word_length: 101 }],
+    ["negative duration", { duration_ms: -1 }],
+    ["oversized duration", { duration_ms: 60_001 }],
+    ["private data", {
+      word: "hemligt",
+      query: "hemligt",
+      url: "https://svenska.se/?q=hemligt"
+    }]
+  ])("rejects a dictionary outcome with %s", async (_case, overrides) => {
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>()
+
+    await expect(handleObservabilityIntake(
+      intakeRequestWithBody(JSON.stringify({
+        events: [dictionaryIntakeEvent(overrides)]
+      })),
+      intakeConfig,
+      {
+        fetch: fetchImplementation,
+        guard: new ObservabilityIntakeGuard(),
+        now: () => 1_000
+      }
+    )).rejects.toMatchObject({ statusCode: 422 })
+    expect(fetchImplementation).not.toHaveBeenCalled()
+  })
+
   test("accepts only the exact compact hydration classification", async () => {
     const fetchImplementation = vi.fn(async () => acceptedResponse())
     const options = {

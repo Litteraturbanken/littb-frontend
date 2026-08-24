@@ -11,6 +11,7 @@ import {
   type H3Event
 } from "h3"
 
+import type { components } from "../../app/lib/api/generated/lbapi"
 import type {
   BrowserEvent,
   BrowserEventName
@@ -29,6 +30,7 @@ const REPLAY_WINDOW_MS = 5 * 60_000
 const MAX_CLIENTS = 10_000
 const MAX_EVENT_IDS = 20_000
 const FORWARD_TIMEOUT_MS = 10_000
+const MAX_DICTIONARY_LOOKUP_DURATION_MS = 60_000
 const EVENT_ID_PATTERN
   = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u
@@ -62,6 +64,19 @@ const RESOURCE_KINDS = new Set([
   "image",
   "unknown"
 ] as const)
+const DICTIONARY_LOOKUP_OUTCOMES: ReadonlySet<string> = new Set([
+  "opened",
+  "so",
+  "saob",
+  "both",
+  "empty",
+  "child_error",
+  "timeout"
+] as const)
+const DICTIONARY_LOOKUP_SELECTIONS: ReadonlySet<string> = new Set(["so", "saob"])
+
+type DictionaryLookupEvent = components["schemas"]["DictionaryLookupEvent"]
+type TrustedIntakeEvent = BrowserEvent | DictionaryLookupEvent
 
 export interface ObservabilityIntakeConfig {
   apiBase: string
@@ -72,13 +87,24 @@ export interface ObservabilityIntakeConfig {
   hmacSecretFile: string
 }
 
-interface BrowserIntakeEvent {
+interface BrowserErrorIntakeEvent {
   event_id: string
   event_name: BrowserEventName
   error_type: string
   resource_kind: NonNullable<BrowserEvent["attributes"]["resource_kind"]>
   correlation_token: string | null
 }
+
+interface DictionaryLookupIntakeEvent {
+  event_id: string
+  event_name: "business.dictionary_lookup"
+  word_length: number
+  outcome: NonNullable<DictionaryLookupEvent["attributes"]["outcome"]>
+  selected_dictionary: DictionaryLookupEvent["attributes"]["selected_dictionary"]
+  duration_ms: number
+}
+
+type BrowserIntakeEvent = BrowserErrorIntakeEvent | DictionaryLookupIntakeEvent
 
 interface BrowserIntakeBatch {
   events: BrowserIntakeEvent[]
@@ -240,9 +266,8 @@ function validateOrigin(event: H3Event, allowedOrigins: string): void {
   }
 }
 
-function validBrowserEventIdentity(event: Record<string, unknown>): boolean {
-  return Object.keys(event).length === 5
-    && Object.hasOwn(event, "event_id")
+function validEventId(event: Record<string, unknown>): boolean {
+  return Object.hasOwn(event, "event_id")
     && typeof event.event_id === "string"
     && EVENT_ID_PATTERN.test(event.event_id)
 }
@@ -286,10 +311,27 @@ function validCorrelationToken(value: unknown): boolean {
 function isBrowserIntakeEvent(value: unknown): value is BrowserIntakeEvent {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false
   const event = value as Record<string, unknown>
-  return validBrowserEventIdentity(event)
+  return (Object.keys(event).length === 5
+    && validEventId(event)
     && validBrowserEventClassification(event)
     && validBrowserEventResource(event)
-    && validCorrelationToken(event.correlation_token)
+    && validCorrelationToken(event.correlation_token))
+    || (Object.keys(event).length === 6
+      && validEventId(event)
+      && event.event_name === "business.dictionary_lookup"
+      && typeof event.word_length === "number"
+      && Number.isSafeInteger(event.word_length)
+      && event.word_length >= 1
+      && event.word_length <= 100
+      && typeof event.outcome === "string"
+      && DICTIONARY_LOOKUP_OUTCOMES.has(event.outcome)
+      && (event.selected_dictionary === null
+        || (typeof event.selected_dictionary === "string"
+          && DICTIONARY_LOOKUP_SELECTIONS.has(event.selected_dictionary)))
+      && typeof event.duration_ms === "number"
+      && Number.isFinite(event.duration_ms)
+      && event.duration_ms >= 0
+      && event.duration_ms <= MAX_DICTIONARY_LOOKUP_DURATION_MS)
 }
 
 function parseBatch(body: Buffer): BrowserIntakeBatch {
@@ -320,8 +362,8 @@ function nonZeroSpanId(): string {
   return /^0+$/u.test(value) ? `1${value.slice(1)}` : value
 }
 
-function trustedBrowserEvent(
-  event: BrowserIntakeEvent,
+function trustedBrowserErrorEvent(
+  event: BrowserErrorIntakeEvent,
   config: ObservabilityIntakeConfig,
   now: number,
   resolveCorrelation: typeof resolveCorrelationToken
@@ -362,6 +404,61 @@ function trustedBrowserEvent(
     }
   }
   return { ...common, event_name: event.event_name } as BrowserEvent
+}
+
+function trustedDictionaryLookupEvent(
+  event: DictionaryLookupIntakeEvent,
+  config: ObservabilityIntakeConfig,
+  now: number
+): DictionaryLookupEvent {
+  const found = event.outcome === "so"
+    || event.outcome === "saob"
+    || event.outcome === "both"
+      ? true
+      : event.outcome === "empty"
+        ? false
+        : null
+  return {
+    schema_version: "lb.observability.v1",
+    timestamp: new Date(now).toISOString(),
+    event_id: event.event_id,
+    event_name: "business.dictionary_lookup",
+    event_kind: "business",
+    severity: "info",
+    service: "lb-frontend",
+    producer: "browser",
+    environment: normalizeDeploymentEnvironment(config.deploymentEnvironment)
+      ?? "development",
+    deployment_git_sha: GIT_SHA_PATTERN.test(config.deploymentGitSha)
+      ? config.deploymentGitSha
+      : ZERO_GIT_SHA,
+    request_id: null,
+    trace_id: null,
+    span_id: null,
+    route: null,
+    http_method: null,
+    status_code: null,
+    duration_ms: event.duration_ms,
+    error_type: null,
+    error_fingerprint: null,
+    attributes: {
+      word_length: event.word_length,
+      found,
+      outcome: event.outcome,
+      selected_dictionary: event.selected_dictionary
+    }
+  }
+}
+
+function trustedIntakeEvent(
+  event: BrowserIntakeEvent,
+  config: ObservabilityIntakeConfig,
+  now: number,
+  resolveCorrelation: typeof resolveCorrelationToken
+): TrustedIntakeEvent {
+  return event.event_name === "business.dictionary_lookup"
+    ? trustedDictionaryLookupEvent(event, config, now)
+    : trustedBrowserErrorEvent(event, config, now, resolveCorrelation)
 }
 
 async function readSecret(config: ObservabilityIntakeConfig): Promise<Buffer> {
@@ -458,7 +555,7 @@ async function prepareIntake(
 async function signedForwardRequest(
   event: H3Event,
   config: ObservabilityIntakeConfig,
-  events: BrowserEvent[],
+  events: TrustedIntakeEvent[],
   now: number
 ): Promise<Readonly<{ init: RequestInit, target: string }>> {
   const body = Buffer.from(JSON.stringify({ events }))
@@ -557,7 +654,7 @@ interface ReplayConflictRecoveryOptions {
   intakeOptions: ObservabilityIntakeOptions
   now: number
   reservationOwner: symbol
-  trustedEvents: BrowserEvent[]
+  trustedEvents: TrustedIntakeEvent[]
 }
 
 async function recoverReplayConflict(
@@ -630,7 +727,7 @@ export async function handleObservabilityIntake(
     return { accepted: 0 }
   }
 
-  const events = intakeEvents.map(item => trustedBrowserEvent(
+  const events = intakeEvents.map(item => trustedIntakeEvent(
     item,
     config,
     now,

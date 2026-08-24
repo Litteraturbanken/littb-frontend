@@ -1102,6 +1102,10 @@ export interface components {
         DictionaryLookupAttributes: {
             /** Found */
             found?: boolean | null;
+            /** Outcome */
+            outcome?: ("opened" | "so" | "saob" | "both" | "empty" | "child_error" | "timeout") | null;
+            /** Selected Dictionary */
+            selected_dictionary?: ("so" | "saob") | null;
             /** Word Length */
             word_length: number;
         };
@@ -1792,7 +1796,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            mode: "parts" | "works";
+            mode: "works" | "parts";
             /** Total */
             total: number | null;
         };
