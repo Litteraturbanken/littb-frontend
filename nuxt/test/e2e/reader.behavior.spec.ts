@@ -2254,6 +2254,7 @@ for (const focusPath of [readerPath, facsimilePath] as const) {
 test("Läsfokus Escape yields to editable fields and Reader dialogs", async ({ page }) => {
   const problems = captureBrowserProblems(page)
   await page.goto(`${readerPath}?fokus`, { waitUntil: "networkidle" })
+  const editable = page.getByRole("textbox", { name: "Tillfälligt redigerbart fält" })
   await page.evaluate(() => {
     const input = document.createElement("input")
     input.setAttribute("aria-label", "Tillfälligt redigerbart fält")
@@ -2262,6 +2263,8 @@ test("Läsfokus Escape yields to editable fields and Reader dialogs", async ({ p
   })
   await page.keyboard.press("Escape")
   await expect(page).toHaveURL(`${readerPath}?fokus`)
+  await editable.evaluate(element => element.remove())
+  await expect(editable).toHaveCount(0)
 
   await navigateClient(page, `${readerEncodedPath}?fokus&om-boken`)
   const dialog = page.getByRole("dialog", { name: "Om boken" })
