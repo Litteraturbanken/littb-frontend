@@ -11194,330 +11194,335 @@
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::boundedHtmlString",
-      "fingerprint": "091db2cb21bf067f3cd90cc82b6c939dbc9c336ac1a504e67a317fff57e24a56",
+      "fingerprint": "ff3af7d5bc0ce17c381f9590445bd1cafa1a56b1c6f8a63d40518ca7b209c05e",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/55c5520c3e6f327613a2726626f17d0ee21496e07c8abfe427ec4afdec58ca3b.json",
-      "evidenceHash": "d4ac0186a991876d1712c6441ff15e879e95d14fad7997a25fa05da8645d681f",
+      "evidenceHash": "a216c97dc7c6d0a2e578b39b7d381a4a1e16f5a9964d102efa79419f7bbc5091",
       "findingIds": [],
       "verification": [
-        "Inspected direct dependency shared/utils/text-safety.ts, direct callers in server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info.ts, server/utils/work-manifest-validation.ts, and server/api/reader/resolve/[author]/[title].get.ts.",
-        "Inspected generated type boundary app/lib/api/generated/lbapi.ts#components WorkSourceInfoResponse.",
+        "Did not run tests because the review requested read-only inspection; commands were limited to read-only source inspection.",
+        "Inspected direct callers and validation flows in server/utils/reader-source-info-validation.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info.ts, server/api/reader/resolve/[author]/[title].get.ts, and server/utils/work-manifest-validation.ts.",
+        "Inspected direct dependency shared/utils/text-safety.ts, including hasHtmlUnsafeCodeUnit and related unit tests.",
         "Inspected listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
-        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 89-98 and surrounding validation helpers.",
-        "Read quality/semantic-review-contract.md and the specified packet JSON.",
-        "Used read-only commands only; tests were inspected rather than executed to avoid write side effects in the read-only review environment."
+        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 91-100 in current source.",
+        "Inspected type boundary app/lib/api/generated/lbapi.ts#components WorkSourceInfoResponse and consumer shared/types/reader-source-info.ts.",
+        "Read quality/semantic-review-contract.md and packet 55c5520c3e6f327613a2726626f17d0ee21496e07c8abfe427ec4afdec58ca3b.json."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::boundedString",
-      "fingerprint": "936bc68a7fd2df612126bac8326e401e960cf95fab6138a11c4d8e541d608ef4",
+      "fingerprint": "dd51accbcee602087f9e1e78c336a04d007c0f7f89a19268e137cd68ce804b62",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/98670356915b375d3364c39d17e489e5fa47efe6cecf9b9e2729bf5b655ff433.json",
-      "evidenceHash": "43ba3da1246bfa30687435043b12455f93041e7db5d17621215ad7d7eeaa7b7d",
+      "evidenceHash": "7c66808116b9e3d6389506b9a1adf87b7d7d56c6b950bf11a19d5939fdb252ce",
       "findingIds": [],
       "verification": [
-        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts#components around WorkSourceInfoResponse.",
-        "Inspected owned source server/utils/reader-source-info-validation.ts, dependency shared/utils/text-safety.ts, direct callers/importers server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/reader-source-info.ts, and server/utils/work-manifest-validation.ts.",
-        "Inspected relevant tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
-        "Read packet .quality/semantic-review/packets/98670356915b375d3364c39d17e489e5fa47efe6cecf9b9e2729bf5b655ff433.json and reviewed only owned unit server/utils/reader-source-info-validation.ts::function::boundedString lines 73-83.",
-        "Read review contract at quality/semantic-review-contract.md."
+        "Inspected direct callers/import users: server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/reader-source-info.ts, and server/utils/work-manifest-validation.ts.",
+        "Inspected direct dependency shared/utils/text-safety.ts.",
+        "Inspected generated type boundary app/lib/api/generated/lbapi.ts#components WorkSourceInfoResponse.",
+        "Inspected named tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
+        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 75-85 and surrounding validation helpers.",
+        "Read packet .quality/semantic-review/packets/98670356915b375d3364c39d17e489e5fa47efe6cecf9b9e2729bf5b655ff433.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Reviewed current diff for server/utils/reader-source-info-validation.ts and named tests with read-only git diff."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::encodeReaderSourceSegment",
-      "fingerprint": "e582cac8959e3897362162ce478ecf88265ab7e49a803e384c58b801e4b9fe5f",
+      "fingerprint": "7861dceb51c6a93f8c7a7739090ec8bf45668fac38e0604385adf646108a1d53",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/e573b730ccd1f8f5ebb2e467ac20cc77c1b0c120c9be5af35a805128d5690575.json",
-      "evidenceHash": "a10b398f5fb9aec59145a2e57b792fb10f2eba5b343e1d36cf1c161e68863e70",
+      "evidenceHash": "0d252cc214cf409438cb49a60d253268a315a45a90a39ecf3aec3918c92d26f3",
       "findingIds": [
-        "F-001"
+        "SR-e573b730-001"
       ],
       "verification": [
-        "Did not run tests because the review requested read-only inspection and the relevant behavior was verified from current source and named tests.",
-        "Inspected server/utils/reader-source-info-validation.ts, shared/utils/text-safety.ts, listed direct callers, generated lbapi WorkSourceInfoResponse type boundary, and listed unit tests using read-only commands.",
-        "Read packet .quality/semantic-review/packets/e573b730ccd1f8f5ebb2e467ac20cc77c1b0c120c9be5af35a805128d5690575.json.",
-        "Read quality/semantic-review-contract.md."
+        "Inspected current source for server/utils/reader-source-info-validation.ts and its direct import shared/utils/text-safety.ts.",
+        "Inspected generated type boundary app/lib/api/generated/lbapi.ts around WorkSourceInfoResponse and operation response wiring.",
+        "Inspected listed direct callers and dependencies: server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, and server/utils/work-manifest-validation.ts.",
+        "Inspected listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts for validation, sanitizer, projection, static resource, and facade coverage.",
+        "Read exactly the specified packet JSON .quality/semantic-review/packets/e573b730ccd1f8f5ebb2e467ac20cc77c1b0c120c9be5af35a805128d5690575.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Used read-only inspection commands only; no tests were executed."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::exactKeys",
-      "fingerprint": "87aa64a05495e1c13cdc36115652ed574510e574a50079fb312e60ef93d734f5",
+      "fingerprint": "8973fb2a1c4e52e62642019f43f44a665a2fdcd9232c16dfce9613adb6b6e0d4",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/daf3994fac49889eb52a552719e515eb0b6ede748923e20204c38674a0de237e.json",
-      "evidenceHash": "79965dea4cf1d6b139ea85f97bcc6f434a34c9aeda5d4a9c2eba4fa90dfd0139",
+      "evidenceHash": "33dfbbd78c7b5947e9e0145501878bcd30d16211ebb26c164a2859285ad98702",
       "findingIds": [],
       "verification": [
-        "Inspected direct imports, callers, generated API type boundaries, and named tests using read-only commands: nl, sed, rg, and git status.",
-        "Inspected owned physical lines 46-49 in server/utils/reader-source-info-validation.ts.",
-        "Read quality/semantic-review-contract.md and the requested packet JSON only.",
-        "Verified exactKeys is used as a strict runtime own-enumerable string key-set guard before deeper validation and generated type casts; no unresolved critical or important semantic defects found within the owned line range."
+        "Attempted ./node_modules/.bin/vitest --run test/unit/reader-source-info.spec.ts test/unit/reader-source-info-facade.spec.ts; blocked by read-only environment because Vite tried to write node_modules/.vite-temp/vitest.config.ts timestamp file.",
+        "Attempted pnpm test -- --run test/unit/reader-source-info.spec.ts test/unit/reader-source-info-facade.spec.ts; command did not run because packageManager requires yarn.",
+        "Attempted yarn test --run test/unit/reader-source-info.spec.ts test/unit/reader-source-info-facade.spec.ts; blocked by read-only environment because Yarn could not create or use a cache folder.",
+        "Inspected direct callers in server/utils/reader-source-info.ts, server/utils/reader-source-info-projection.ts, server/utils/work-manifest-validation.ts, and server/api/reader/resolve/[author]/[title].get.ts.",
+        "Inspected generated type boundary app/lib/api/generated/lbapi.ts for WorkSourceInfoResponse and nested SourceInfo* schemas.",
+        "Inspected listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
+        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 48-51 in current source, plus surrounding validation code.",
+        "Read quality/semantic-review-contract.md and the specified packet JSON only."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::invalidSourceInfo",
-      "fingerprint": "82c0b4a70fa0da09dbb477a4b6a725584c160023547a54cad2fed17123eb7e6a",
+      "fingerprint": "521c05338e913d2e991595ed241f21c451f206cad38f8d128c6906c2add3a76b",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/b87cfc0fe4bcd5c898bdcd47bcf18f85d8661045ffd0b189aa6636a064e8d0f7.json",
-      "evidenceHash": "2f1e46df89a385cd87497eb0716f0455a0fa081d700c92b6d01fe579ceb3ab04",
+      "evidenceHash": "5811657be0a35d4ceaedd750ed3b603cde4176bcd47e77085ef6c2f04bad0430",
       "findingIds": [],
       "verification": [
-        "Inspected direct callers and related modules: server/api/reader/source-info/[author]/[title].get.ts, server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, and server/utils/work-manifest-validation.ts.",
-        "Inspected direct imports and helper dependency shared/utils/text-safety.ts.",
-        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for WorkSourceInfoResponse and v2_get_work_source_info.",
-        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 51-53 in full module context.",
-        "Inspected packet-listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
-        "No tests were run because the requested review was read-only and source inspection was sufficient for this bounded packet.",
-        "Read packet .quality/semantic-review/packets/b87cfc0fe4bcd5c898bdcd47bcf18f85d8661045ffd0b189aa6636a064e8d0f7.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Used rg to confirm current references to invalidSourceInfo, sourceInfoHttpError, validateReaderSourceInfoResponse, parseReaderSourceInfoRequest, sanitizeReaderSourceInfoHtml, and fetchWorkSourceInfo."
+        "Inspected direct callers and dependencies in server/utils/reader-source-info.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/reader-source-info-definitions.ts, server/api/reader/resolve/[author]/[title].get.ts, server/api/reader/source-info/[author]/[title].get.ts, server/utils/work-manifest-validation.ts, shared/utils/text-safety.ts, and app/lib/api/generated/lbapi.ts.",
+        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 53-55 and surrounding validation helpers.",
+        "Inspected relevant tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
+        "Read quality/semantic-review-contract.md and packet b87cfc0fe4bcd5c898bdcd47bcf18f85d8661045ffd0b189aa6636a064e8d0f7.json."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::isReaderSourceRecord",
-      "fingerprint": "b30f2a65dc8f93c325f10f06aeac250f3118fc8efdbc7b3a7761b421639450d6",
+      "fingerprint": "b4bb21e921b57f9d64a3a80e3204a02028f4ecd79ab124c1392086c195863ce6",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/00f7727bbdcaf300a0142db603585d6567731a87c6c30e5c301c1031bf137d7c.json",
-      "evidenceHash": "b2cb6ddd81ddb6e1616085dad121390415c4cc3ed3abef0ab3941a2b1818dfcd",
+      "evidenceHash": "9ebbb9b80a0e37c05ffff7f72735ec35c7a6767acd234a3fac18d58680e7e79e",
       "findingIds": [],
       "verification": [
-        "Inspected direct import dependency shared/utils/text-safety.ts.",
-        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for WorkSourceInfoResponse and /works/{author_id}/{title_path}/source-info operation typing.",
-        "Inspected listed direct callers: server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/reader-source-info.ts, and server/utils/work-manifest-validation.ts.",
-        "Inspected named tests test/unit/reader-source-info-facade.spec.ts and test/unit/reader-source-info.spec.ts.",
-        "Inspected owned unit server/utils/reader-source-info-validation.ts:42-44 in context of the full validation module.",
-        "Read quality/semantic-review-contract.md and the specified packet JSON only.",
-        "Used rg to enumerate isReaderSourceRecord references and confirm caller usage patterns."
+        "Inspected direct import shared/utils/text-safety.ts.",
+        "Inspected generated type boundary app/lib/api/generated/lbapi.ts around WorkSourceInfoResponse.",
+        "Inspected listed callers: server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/reader-source-info.ts, and server/utils/work-manifest-validation.ts.",
+        "Inspected listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
+        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 44-46 and surrounding validation module.",
+        "Read packet .quality/semantic-review/packets/00f7727bbdcaf300a0142db603585d6567731a87c6c30e5c301c1031bf137d7c.json.",
+        "Read review contract at quality/semantic-review-contract.md.",
+        "Searched repository references for isReaderSourceRecord and related record guards using rg."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::module",
-      "fingerprint": "27f28e75948cc65e0d712c5a2b41a288022f4a22fd8c48b6d1904046ea5e8dff",
+      "fingerprint": "cf133d9197faa3ce7f873b0065c09ffefeed46244628eb453d67becb2c93da3e",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/7fd425d742e9ff60bea9a30e89bb868364dc0209163ed6c2bd6d26f12852a5b8.json",
-      "evidenceHash": "7d27d3adf8f5a5457d3c3c4ad64ab027bdf17e4e5cd9d237d29d19ffe6318796",
+      "evidenceHash": "4adb448cee5a4ded49b27b5e04c5d776124ba046da6315ea11d02b999575c1d4",
       "findingIds": [],
       "verification": [
-        "Did not run tests because the contract requested read-only inspection commands only",
-        "Inspected direct import: shared/utils/text-safety.ts",
-        "Inspected generated type boundary: app/lib/api/generated/lbapi.ts around WorkSourceInfoResponse and SourceInfo* schemas",
-        "Inspected listed callers: server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/work-manifest-validation.ts",
-        "Inspected listed tests: test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts",
-        "Inspected owned unit with physical lines: nl -ba server/utils/reader-source-info-validation.ts | sed -n '1,220p' and sed -n '220,460p'",
-        "Read packet JSON: .quality/semantic-review/packets/7fd425d742e9ff60bea9a30e89bb868364dc0209163ed6c2bd6d26f12852a5b8.json",
-        "Read review contract: quality/semantic-review-contract.md",
-        "Searched cross-references with rg for validation exports, WorkSourceInfoResponse, SourceInfo schemas, and source-info usages"
+        "Inspected direct callers and dependencies: server/utils/reader-source-info.ts, server/api/reader/resolve/[author]/[title].get.ts, server/utils/work-manifest-validation.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts.",
+        "Inspected generated type boundary app/lib/api/generated/lbapi.ts#components schemas for WorkSourceInfoResponse and nested SourceInfo* schemas.",
+        "Inspected listed tests: test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
+        "Inspected owned physical lines in server/utils/reader-source-info-validation.ts: 1, 3-8, 10-12, 14-16, 18-42, 409-412, plus surrounding implementation for behavior.",
+        "Read quality/semantic-review-contract.md and packet 7fd425d742e9ff60bea9a30e89bb868364dc0209163ed6c2bd6d26f12852a5b8.json.",
+        "Used read-only rg, nl, sed, and git diff/status inspection only; did not run tests because the contract requested read-only commands and this sandbox is read-only."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::module-optionalHtmlString",
-      "fingerprint": "02821057146be5adeb14221fa1774de14ea0f0416f0687117fe55a4ec1ad0e1a",
+      "fingerprint": "e3ca4af9fdf05518c034a3b6d083209b4efc9f3dedddb91e9a0b49922d0ac446",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/65cb4a0153be7d689a3d4ba0ad7639842d98e29ce7e564cb87442641a49218fa.json",
-      "evidenceHash": "bc4924988500b4922d3433904a191cb0e81482732a8dda2085f19457d2c73173",
-      "findingIds": [
-        "F1"
-      ],
+      "evidenceHash": "7a5b06d30015a708ccfea0f90ebdbab885e59a590d7bb28c66bab7fdad6bd120",
+      "findingIds": [],
       "verification": [
-        "Inspected packet-owned source units and their imports, direct callers, generated API type boundary in `app/lib/api/generated/lbapi.ts`, and listed tests `test/unit/reader-source-info.spec.ts` and `test/unit/reader-source-info-facade.spec.ts`.",
-        "Read `quality/semantic-review-contract.md` and the single packet JSON.",
-        "Used only read-only inspection commands; tests were inspected but not executed."
+        "Inspected direct callers server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, and server/utils/work-manifest-validation.ts",
+        "Inspected direct import shared/utils/text-safety.ts",
+        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for WorkSourceInfoResponse and nested SourceInfo schemas",
+        "Inspected owned source lines in server/utils/reader-source-info-validation.ts",
+        "Inspected relevant tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts",
+        "Read packet .quality/semantic-review/packets/65cb4a0153be7d689a3d4ba0ad7639842d98e29ce7e564cb87442641a49218fa.json",
+        "Read quality/semantic-review-contract.md",
+        "Used read-only commands only; did not run test commands because the review request constrained inspection to read-only commands"
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::optionalString",
-      "fingerprint": "b21e8957be9286b9fa3bff5dba6776e3aa0340d67873078b18978e74ba8202f7",
+      "fingerprint": "59ed7f73fd7eac8954298fe0151ce0531e7d39a00f4477e39a3cbd95074bbe62",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/e2f537c0cab8cbe6185171a9fc9cf9855cc8309617ae5e91001f88fa4bc0557b.json",
-      "evidenceHash": "5841589e143653bc36c09fc3bd1d5026e12903e6233e99556945ea3f7731d6cc",
+      "evidenceHash": "2e39675f8b34e6c717b23855906bff594d702fb4e118e4ec701a6fc1a2709c0f",
       "findingIds": [],
       "verification": [
-        "Inspected dependency shared/utils/text-safety.ts and generated type boundary app/lib/api/generated/lbapi.ts#components schemas around SourceInfoAuthor, SourceInfoProvenance, and WorkSourceInfoResponse.",
-        "Inspected direct callers/importers: server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, and server/utils/work-manifest-validation.ts.",
-        "Inspected listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts. No tests were executed because the review request limited commands to read-only inspection.",
-        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 85-87 and surrounding validation code.",
-        "Read quality/semantic-review-contract.md and the specified packet JSON only."
+        "Checked worktree status and packet-related diff read-only; git emitted macOS cache warnings under read-only sandbox but completed.",
+        "Inspected direct callers and import sites with rg for optionalString and reader-source-info-validation across server, test, and generated API files.",
+        "Inspected direct dependencies shared/utils/text-safety.ts via imports and generated boundary app/lib/api/generated/lbapi.ts WorkSourceInfoResponse and related schemas.",
+        "Inspected listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
+        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 87-89 and surrounding validation helpers.",
+        "Read packet .quality/semantic-review/packets/e2f537c0cab8cbe6185171a9fc9cf9855cc8309617ae5e91001f88fa4bc0557b.json.",
+        "Read quality/semantic-review-contract.md."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::parseReaderSourceInfoRequest",
-      "fingerprint": "25e431d22bd25fa5771f0177dece62f447721556b07e7ac1a8394db4bd5ca06d",
+      "fingerprint": "39e05858cf086031d208d789fcea57c02d00a726753a5550c9aaed74a168f75e",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/1939569e0051b6e234754dd598c9753442ffdf883feaeeff860fff0a7869fc31.json",
-      "evidenceHash": "45e2d4224a4e48f09f9312aae1c08d1596c2096b3e935e714c2979fd137bced9",
-      "findingIds": [],
+      "evidenceHash": "b2a6fbd4ea6aeb4ac1702b2a1b97b21fcffb001f5ba408a4a5c4de22667435e1",
+      "findingIds": [
+        "1939569e0051b6e234754dd598c9753442ffdf883feaeeff860fff0a7869fc31-minor-001"
+      ],
       "verification": [
-        "Inspected dependent validation helpers, shared text-safety utilities, reader-source-info facade, projection, sanitizer, definitions, and work-manifest-validation usage.",
-        "Inspected direct callers server/api/reader/source-info/[author]/[title].get.ts and server/api/reader/resolve/[author]/[title].get.ts.",
-        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for v2_get_work_source_info query and WorkSourceInfoResponse.",
-        "Inspected listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts; tests were not executed to keep commands read-only.",
-        "Inspected owned physical lines 429-446 in server/utils/reader-source-info-validation.ts, including callback line 438.",
-        "Read quality/semantic-review-contract.md and the specified packet JSON only."
+        "Tests were inspected but not executed because the review request required read-only commands.",
+        "Used read-only inspection commands only; no repository files were modified."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::safeHttpUrl",
-      "fingerprint": "c4274c01e8a66b35b16fda158e12d3217e4f1e071ae401d653bf4c96942c9117",
+      "fingerprint": "ebda56a06cce3c52ca84c09ba761308ea49dc98bc04aa7dffcf92171c3dc7a54",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/4b5149e660941cc9547e92f7753a0dfefa345e37010ec2ee8cefcc7a21df6978.json",
-      "evidenceHash": "5e157995006385dad339c586c177083266ec2972f960086c5240afcb4628936f",
+      "evidenceHash": "70b63faf27ce3234618202611a7e99a20fcb5236ce38d0486131e770d58aceac",
       "findingIds": [],
       "verification": [
-        "Inspected direct dependency shared/utils/text-safety.ts.",
-        "Inspected generated type boundary app/lib/api/generated/lbapi.ts#components, including WorkSourceInfoResponse.",
-        "Inspected listed callers: server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/reader-source-info.ts, server/utils/work-manifest-validation.ts.",
-        "Inspected listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
-        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 161-173.",
-        "Ran read-only searches for all safeHttpUrl call sites and reviewed current git diff for relevant files."
+        "Inspected direct imports/callers/dependencies: shared/utils/text-safety.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/reader-source-info.ts, server/utils/reader-source-info-projection.ts, server/utils/work-manifest-validation.ts, and server/api/reader/resolve/[author]/[title].get.ts.",
+        "Inspected generated type boundary app/lib/api/generated/lbapi.ts around WorkSourceInfoResponse and SourceInfo URL-bearing schemas.",
+        "Inspected named tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts. No unresolved semantic defects found in the owned line range.",
+        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 163-175 in current source.",
+        "Read quality/semantic-review-contract.md and the specified packet JSON only."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::safeNonnegativeInteger",
-      "fingerprint": "07776743e0a98dd2861e07431f538b00b75c9ed33f95bbd8828449a7717701ec",
+      "fingerprint": "b629285f5a1854fe08e15ccaf7f356dab80f63d20b35db10e02dfabea02b1110",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/c32f20407ce94e0d48d76e9343d2010d2f64715407ac6c22a49bd2435fb737f7.json",
-      "evidenceHash": "2ce2445bc4263bb9993e699556e9acb3e80f26457cd51e27087d754c5033afd6",
-      "findingIds": [],
+      "evidenceHash": "9bed1257369be46f3a7297566e250978537824e044adc4dbb69e7afd025ad1ab",
+      "findingIds": [
+        "c32f20407ce94e0d48d76e9343d2010d2f64715407ac6c22a49bd2435fb737f7-001"
+      ],
       "verification": [
-        "Inspected direct uses in server/utils/reader-source-info-validation.ts, server/utils/work-manifest-validation.ts, server/utils/reader-source-info.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, and server/api/reader/resolve/[author]/[title].get.ts.",
-        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 192-196 in full-file context.",
-        "Inspected packet-named tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts; no tests were executed to keep the review read-only.",
-        "Inspected related generated and shared type boundaries in app/lib/api/generated/lbapi.ts, shared/types/work-manifest.ts, and shared/types/reader-source-info.ts.",
-        "Read quality/semantic-review-contract.md and the specified packet JSON."
+        "Did not execute tests; this was a bounded read-only semantic review.",
+        "No unresolved critical or important findings were identified.",
+        "Used only read-only inspection commands."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::safeRootUrl",
-      "fingerprint": "859383a4a1c50be35d2342ad3d153f8811025b6d81485f09f5b4ece82f4f70a2",
+      "fingerprint": "5bd92a261b5df2c249d296f297ed54e4268cdbc8654a65ed5d8981ee35343d03",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/40e3b37f82cbea4952c3dcda00ca9af33859fb33d8d99767329f25dc56dc20f7.json",
-      "evidenceHash": "87b05161d29764dc1e8938ac546d4e472044232248d6c7f750d59f41616ebd78",
+      "evidenceHash": "02adf8133868ab386b935df6d327fb56bba7f0108ea17811a951d114fb921551",
       "findingIds": [],
       "verification": [
-        "Checked repository status/diff read-only; no source diff was reviewed outside the specified packet scope.",
-        "Inspected direct import shared/utils/text-safety.ts.",
-        "Inspected generated type boundary app/lib/api/generated/lbapi.ts#components for WorkSourceInfoResponse and source-info operation.",
-        "Inspected named tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts, including safeRootUrl coverage for encoded delimiter traversal, safe encoded pathname data, validation consumers, and sanitizer consumers.",
-        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 143-159 and surrounding helpers/call sites in the same file.",
-        "Inspected packet callers: server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/reader-source-info.ts, and server/utils/work-manifest-validation.ts.",
-        "Read .quality/semantic-review/packets/40e3b37f82cbea4952c3dcda00ca9af33859fb33d8d99767329f25dc56dc20f7.json.",
-        "Read quality/semantic-review-contract.md."
+        "Inspected current source for server/utils/reader-source-info-validation.ts, shared/utils/text-safety.ts, listed callers server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/reader-source-info.ts, server/utils/work-manifest-validation.ts, generated type boundary app/lib/api/generated/lbapi.ts, and listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
+        "No tests were executed because the requested review was limited to read-only commands and the sandbox is read-only.",
+        "Read git status and git diff for touched packet-related files; git emitted macOS cache warnings under the read-only sandbox but completed and showed current worktree modifications. No repository files were modified by this review.",
+        "Read packet .quality/semantic-review/packets/40e3b37f82cbea4952c3dcda00ca9af33859fb33d8d99767329f25dc56dc20f7.json and reviewed only owned unit server/utils/reader-source-info-validation.ts::function::safeRootUrl lines 145-161.",
+        "Read quality/semantic-review-contract.md and quality/semantic-review-evidence.schema.json.",
+        "Used rg to enumerate safeRootUrl, validPublicHref, safeHttpUrl, safeStaticFilename, validateReaderSourceInfoResponse, and parseReaderSourceInfoRequest references in server and named tests."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::safeStaticFilename",
-      "fingerprint": "2d70ac1acaf4594d067984c2284ea581684b007c299b1c980e706e840229a81a",
+      "fingerprint": "c504bbfa1111e361ef4d06c3a49589828442a0fa1a7c18f7c52020b1ff9187d2",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/ae38d82dd9c3d1b84ae907a8982cd05740780a812104e4ceb54fab2b63a2c932.json",
-      "evidenceHash": "59c4929dcd162fd17a5dd2be961b05eed0a8e0d3363d005dbf6e019ec8d19994",
+      "evidenceHash": "d3ab2f8f76c578a6989271f2769746140fc6cb7b750da89c58b9e022ce797a71",
       "findingIds": [
-        "F1"
+        "ae38d82-safeStaticFilename-dead-decode"
       ],
       "verification": [
-        "Reviewed exactly the requested packet server/utils/reader-source-info-validation.ts::packet::safeStaticFilename.",
-        "Used read-only commands only: sed, nl, and rg."
+        "Read packet .quality/semantic-review/packets/ae38d82dd9c3d1b84ae907a8982cd05740780a812104e4ceb54fab2b63a2c932.json and reviewed only its owned unit.",
+        "Read review contract quality/semantic-review-contract.md.",
+        "Reviewed current source for server/utils/reader-source-info-validation.ts, direct imports, direct callers, generated type boundary, and named tests using read-only commands."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::sourceInfoHttpError",
-      "fingerprint": "5564a50d22a02993c37e4b4f0f815c656a832ae5d60ab7f06e8025e544a9c629",
+      "fingerprint": "ba65aaedebc4eb2430fba9e9f6992051390049ad6e1ddc396698353abced5215",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/5bbd64a68309722d808e692e3a56119ded67fe5dd012df9f8c486edb218f4ee6.json",
-      "evidenceHash": "281acb36ef3a702a5ef43b39aa35e6014c26129a449acf511a0d2ef6a05ae6b0",
+      "evidenceHash": "e80a134a8f300fab3634122152e08b1291d570b6c7b72400349e3f87f1565f34",
       "findingIds": [],
       "verification": [
-        "Inspected direct callers in server/utils/reader-source-info.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/api/reader/source-info/[author]/[title].get.ts, and server/api/reader/resolve/[author]/[title].get.ts.",
-        "Inspected generated type boundary app/lib/api/generated/lbapi.ts references for WorkSourceInfoResponse/source-info.",
-        "Inspected listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
-        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 55-71 and surrounding validation/request parsing code.",
-        "Read .quality/semantic-review/packets/5bbd64a68309722d808e692e3a56119ded67fe5dd012df9f8c486edb218f4ee6.json.",
-        "Read quality/semantic-review-contract.md."
+        "Inspected direct callers and dependency context in server/utils/reader-source-info.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, server/utils/work-manifest-validation.ts, and server/api/reader/resolve/[author]/[title].get.ts.",
+        "Inspected direct imports in shared/utils/text-safety.ts.",
+        "Inspected generated API type boundary references in app/lib/api/generated/lbapi.ts via ripgrep.",
+        "Inspected owned physical lines 57-73 in server/utils/reader-source-info-validation.ts.",
+        "Inspected relevant tests in test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
+        "Read quality/semantic-review-contract.md and the exact packet JSON."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::validateReaderSourceInfoResponse",
-      "fingerprint": "7ede735d6b1e844c1630b1f914fcc0c908e1ce9d8569a1c51ba4883080129be3",
+      "fingerprint": "c3570a72a421fcef62deb307b5a6d80e8b725a30cec81e7f5ce03d89c94a0907",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/ed1a61cef0f9b1178d5a1736238aa9bddb3dc67206d7c084baf0404d0da20bab.json",
-      "evidenceHash": "d5b4522d7ccb3e2b15f0f332a01d8a29d4901a0d191e6d932d6e12899c1471b3",
+      "evidenceHash": "a7fc016fa14a62664cf4dfae8229e95f83bb77f8e2a05909d8bd4794395506df",
       "findingIds": [],
       "verification": [
-        "Inspected direct callers and facade exports in server/utils/reader-source-info.ts and server/api/reader/resolve/[author]/[title].get.ts.",
-        "Inspected generated type boundary app/lib/api/generated/lbapi.ts#components WorkSourceInfoResponse and SourceInfo* schemas.",
-        "Inspected named tests test/unit/reader-source-info-facade.spec.ts and test/unit/reader-source-info.spec.ts.",
-        "Inspected owned lines 407-427 in server/utils/reader-source-info-validation.ts.",
-        "Inspected packet dependencies in shared/utils/text-safety.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, and server/utils/work-manifest-validation.ts.",
-        "Read quality/semantic-review-contract.md and the specified packet JSON only.",
-        "Used read-only commands only; did not modify repository or review any other packet."
+        "Checked git diff and git status read-only; the worktree contains pre-existing modifications, including packet-related source and tests. No tests were executed because the review was constrained to read-only commands and the sandbox is read-only.",
+        "Inspected direct callers and facade/export boundaries: server/utils/reader-source-info.ts, server/api/reader/resolve/[author]/[title].get.ts, server/api/reader/source-info/[author]/[title].get.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, and server/utils/work-manifest-validation.ts.",
+        "Inspected direct import shared/utils/text-safety.ts.",
+        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for WorkSourceInfoResponse, SourceInfoReadAction, and SourceInfoDownloadAction.",
+        "Inspected owned physical lines server/utils/reader-source-info-validation.ts:458-478 and the validator helpers it composes in the same file.",
+        "Inspected packet-named tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts, including response-shape validation, read-action URL validation, errata bounds, facade export preservation, and generated operation coverage.",
+        "Read quality/semantic-review-contract.md and exactly the specified packet JSON .quality/semantic-review/packets/ed1a61cef0f9b1178d5a1736238aa9bddb3dc67206d7c084baf0404d0da20bab.json.",
+        "Searched current repository references for validateReaderSourceInfoResponse, fetchWorkSourceInfo, parseReaderSourceInfoRequest, WorkSourceInfoResponse, and source-info usage."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::validPublicHref",
-      "fingerprint": "233e74e51a12f1e12f22ddafd37d27f0f1e005fb5017d962ab81a3fe8e1d4a5b",
+      "fingerprint": "358bea65dc6cfc820da353d95f15011e7f9445dae4a360aef192893ed8915de1",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/a4373935ad72b943e7af995debe171de541ae8f266feae9d8e5f64c8cfbdb6c4.json",
-      "evidenceHash": "3130cc1dc89f7a1cf1385c57a2b89a484674cbb4643cc2b7b6bb53dd7fd44cb2",
+      "evidenceHash": "39b6b2df68999e2151307a2a4b033a7dde9b1742c45b877c29cef5a3e1e84d2e",
       "findingIds": [],
       "verification": [
-        "Inspected direct callers in server/utils/reader-source-info-sanitizer.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info.ts, server/utils/work-manifest-validation.ts, and server/api/reader/resolve/[author]/[title].get.ts.",
-        "Inspected direct imports/dependencies including shared/utils/text-safety.ts and adjacent URL validation helpers.",
-        "Inspected generated type boundary app/lib/api/generated/lbapi.ts#components WorkSourceInfoResponse.",
-        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 187-190 in current source context.",
-        "Inspected relevant tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts.",
-        "Read quality/semantic-review-contract.md and the specified packet JSON."
+        "Inspected direct dependency shared/utils/text-safety.ts and adjacent URL validation helpers safeRootUrl and safeHttpUrl.",
+        "Inspected direct use in server/utils/reader-source-info-sanitizer.ts lines 125-148 and module callers listed by the packet, including reader-source-info.ts, reader-source-info-definitions.ts, reader-source-info-projection.ts, work-manifest-validation.ts, and server/api/reader/resolve/[author]/[title].get.ts.",
+        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 189-192 in current source.",
+        "Inspected packet-listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts, including sanitizer URL-safety cases.",
+        "Read quality/semantic-review-contract.md and packet .quality/semantic-review/packets/a4373935ad72b943e7af995debe171de541ae8f266feae9d8e5f64c8cfbdb6c4.json.",
+        "Used read-only commands only; did not run the test suite because the review request was inspection-focused and the sandbox is read-only."
       ]
     },
     {
       "packetId": "server/utils/reader-source-info-validation.ts::packet::validSegment",
-      "fingerprint": "1ebd676e3712329a339b19f036cfb749c17e98a96e7cb158954dbdb8676b0baa",
+      "fingerprint": "26dffc1bf7146bef7b1c0f3c34043fc6e4190c7cda9268bad0306bb52244a792",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/da80d0aeeaf4d5a5106998b3d49058afd1c875d6a5dccfe02d235ba145f407db.json",
-      "evidenceHash": "78848ee3b1c0150eba5b67dedcf0962afb1f5f5370a253c1e465c363f50d6608",
+      "evidenceHash": "e35356d2c33d72eb51deef662d449c6c329cbfaf9c314099a96ebc503ec3e2c5",
       "findingIds": [],
       "verification": [
-        "Attempted targeted tests with npx vitest run test/unit/reader-source-info.spec.ts test/unit/reader-source-info-facade.spec.ts --pool forks; startup was blocked by read-only sandbox because Vite attempted to write node_modules/.vite-temp/vitest.config.ts.timestamp-*.mjs. An earlier --runInBand attempt failed because this Vitest version does not support that option.",
-        "Inspected direct callers named by the packet: server/api/reader/resolve/[author]/[title].get.ts, server/utils/reader-source-info.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-sanitizer.ts, and server/utils/work-manifest-validation.ts. Also inspected server/api/reader/source-info/[author]/[title].get.ts found by current-source reference search.",
-        "Inspected direct imports and dependencies: shared/utils/text-safety.ts, app/lib/api/generated/lbapi.ts, app/lib/api/client.ts, server/utils/server-lb-api-client.ts, and relevant h3/openapi-fetch path decoding/encoding behavior in node_modules.",
-        "Inspected listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts, including request-boundary and encoded path hazard cases.",
-        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 104-112 in current source, plus surrounding validation, URL, and request parsing logic.",
-        "Ran rg -n \"validSegment|isSafePathSegment|reader-source-info-validation\" server test app shared and rg -n \"getRouterParam\\(|decode: true|parseReaderSourceInfoRequest\\(\" -S . to verify current callers.",
+        "Inspected direct callers/importers: server/api/reader/resolve/[author]/[title].get.ts, server/api/reader/source-info/[author]/[title].get.ts, server/utils/reader-source-info.ts, server/utils/reader-source-info-projection.ts, server/utils/reader-source-info-definitions.ts, server/utils/reader-source-info-sanitizer.ts, and server/utils/work-manifest-validation.ts.",
+        "Inspected generated API boundary app/lib/api/generated/lbapi.ts for WorkSourceInfoResponse and source-info operation parameters.",
+        "Inspected listed tests test/unit/reader-source-info.spec.ts and test/unit/reader-source-info-facade.spec.ts, plus fixture request validation in test/fixtures/v2-server.mjs.",
+        "Inspected owned unit server/utils/reader-source-info-validation.ts lines 106-114 and surrounding validation logic.",
+        "Ran read-only search commands with rg/nl/sed; did not modify repository or review any other packet.",
         "Read packet .quality/semantic-review/packets/da80d0aeeaf4d5a5106998b3d49058afd1c875d6a5dccfe02d235ba145f407db.json.",
-        "Read review contract quality/semantic-review-contract.md."
+        "Read quality/semantic-review-contract.md."
       ]
     },
     {

@@ -130,7 +130,10 @@ describe("Nuxt live-stage runner", () => {
 
     const sourceWithoutDeploymentRead = source.replace('request.get("/_deployment")', "")
     expect(sourceWithoutDeploymentRead).not.toMatch(/\/_[a-z_]+/u)
-    expect(source).not.toMatch(/\b(?:page|request)\.(?:delete|patch|post|put)\s*\(/u)
+    expect(source).not.toMatch(/\b(?:page|request)\.(?:delete|patch|put)\s*\(/u)
+    expect([...source.matchAll(/\brequest\.post\(\s*"([^"]+)"/gu)].map(
+      match => match[1]
+    )).toEqual(["/api/v2/library/search"])
     expect(source).toContain("LITTB_EXPECTED_GIT_SHA")
     expect(source).toContain("LITTB_EXPECTED_IMAGE_DIGEST")
     expect(source).toContain('request.get("/_deployment")')

@@ -12,6 +12,8 @@ type UnknownRecord = Record<string, unknown>
 export type ReaderMediaQuery = "etext" | "faksimil"
 
 const SAFE_STATIC_FILENAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,499}$/u
+const MAX_ERRATA_CELLS = 10_000
+const MAX_ERRATA_HTML_CODE_UNITS = 1_000_000
 
 const workKeys = new Set([
   "author_id", "authors", "cover", "download_actions", "dramawebben",
@@ -210,7 +212,7 @@ function strictArray(value: unknown, maximum: number): unknown[] {
 function validateWorkIdentity(
   value: UnknownRecord,
   requestedTitlePath: string
-): { authorId: string, workId: string } {
+): { authorId: string, startPage: string | null, titlePath: string, workId: string } {
   if (
     !validSegment(value.work_id)
     || !validSegment(value.author_id)
@@ -223,7 +225,12 @@ function validateWorkIdentity(
     || !optionalString(value.start_page, 200)
     || (value.start_page !== null && !validSegment(value.start_page))
   ) invalidSourceInfo()
-  return { authorId: value.author_id, workId: value.work_id }
+  return {
+    authorId: value.author_id,
+    startPage: value.start_page,
+    titlePath: value.title_path,
+    workId: value.work_id
+  }
 }
 
 function sourceDescriptionIsValid(value: UnknownRecord): boolean {
@@ -296,7 +303,10 @@ function validateCover(value: unknown, workId: string): void {
   ) invalidSourceInfo()
 }
 
-function validateReadActions(value: unknown): void {
+function validateReadActions(
+  value: unknown,
+  identity: { authorId: string, titlePath: string }
+): void {
   const actions = strictArray(value, 2)
   const media = new Set<string>()
   for (const item of actions) {
@@ -305,12 +315,35 @@ function validateReadActions(value: unknown): void {
       (item.media_type !== "etext" && item.media_type !== "faksimil")
       || item.label !== item.media_type
       || media.has(item.media_type)
-      || !safeRootUrl(item.url)
-      || !item.url.startsWith("/författare/")
-      || !item.url.endsWith(`/${item.media_type}`)
+      || !validReadActionUrl(item.url, item.media_type, identity)
     ) invalidSourceInfo()
     media.add(item.media_type)
   }
+}
+
+function validReadActionUrl(
+  value: unknown,
+  mediaType: "etext" | "faksimil",
+  identity: { authorId: string, titlePath: string }
+): value is string {
+  if (!safeRootUrl(value)) return false
+  const prefix = [
+    "/författare",
+    encodeReaderSourceSegment(identity.authorId),
+    "titlar",
+    encodeReaderSourceSegment(identity.titlePath),
+    "sida"
+  ].join("/") + "/"
+  const suffix = `/${mediaType}`
+  if (!value.startsWith(prefix) || !value.endsWith(suffix)) return false
+  const encodedPage = value.slice(prefix.length, -suffix.length)
+  let page: string
+  try {
+    page = decodeURIComponent(encodedPage)
+  } catch {
+    return false
+  }
+  return validSegment(page) && encodedPage === encodeReaderSourceSegment(page)
 }
 
 function validDownloadFilename(filename: string, mediaType: "epub" | "pdf"): boolean {
@@ -320,6 +353,7 @@ function validDownloadFilename(filename: string, mediaType: "epub" | "pdf"): boo
     && !filename.includes("/")
     && !filename.includes("\\")
     && !hasC0OrC1Control(filename)
+    && !hasLoneSurrogate(filename)
     && filename.endsWith(`.${mediaType}`)
 }
 
@@ -372,12 +406,27 @@ function validateProvenance(value: unknown): void {
   }
 }
 
+interface ErrataTotals {
+  cells: number
+  htmlCodeUnits: number
+}
+
+function validateErrataCells(value: unknown, totals: ErrataTotals): void {
+  const cells = strictArray(value, 100)
+  totals.cells += cells.length
+  if (totals.cells > MAX_ERRATA_CELLS) invalidSourceInfo()
+  for (const cell of cells) {
+    if (!boundedHtmlString(cell, 200_000, true)) invalidSourceInfo()
+    totals.htmlCodeUnits += cell.length
+    if (totals.htmlCodeUnits > MAX_ERRATA_HTML_CODE_UNITS) invalidSourceInfo()
+  }
+}
+
 function validateErrata(value: unknown): void {
+  const totals: ErrataTotals = { cells: 0, htmlCodeUnits: 0 }
   for (const row of strictArray(value, 10_000)) {
     if (!isReaderSourceRecord(row) || !exactKeys(row, errataKeys)) invalidSourceInfo()
-    for (const cell of strictArray(row.cells_html, 100)) {
-      if (!boundedHtmlString(cell, 200_000, true)) invalidSourceInfo()
-    }
+    validateErrataCells(row.cells_html, totals)
   }
 }
 
@@ -416,11 +465,11 @@ export function validateReaderSourceInfoResponse(
   if (!validSegment(requestedAuthorId, 100) || !validSegment(requestedTitlePath, 200)) {
     invalidSourceInfo()
   }
-  const { authorId, workId } = validateWorkIdentity(value, requestedTitlePath)
+  const identity = validateWorkIdentity(value, requestedTitlePath)
   validateWorkMetadata(value)
-  validateAuthors(value.authors, authorId)
-  validateCover(value.cover, workId)
-  validateReadActions(value.read_actions)
+  validateAuthors(value.authors, identity.authorId)
+  validateCover(value.cover, identity.workId)
+  validateReadActions(value.read_actions, identity)
   validateDownloadActions(value.download_actions)
   validateProvenance(value.provenance)
   validateErrata(value.errata)

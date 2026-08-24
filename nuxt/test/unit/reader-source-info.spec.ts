@@ -123,6 +123,12 @@ describe("Reader source-information runtime contract", () => {
     ["read action mismatch", (value: JsonRecord) => {
       requiredRecord({ action: requiredArray(value, "read_actions")[0] }, "action").label = "faksimil"
     }],
+    ["read action for another work", (value: JsonRecord) => {
+      requiredRecord(
+        { action: requiredArray(value, "read_actions")[0] },
+        "action"
+      ).url = "/författare/S%C3%B6derbergH/titlar/OtherWork/sida/-2/etext"
+    }],
     ["unsafe download filename", (value: JsonRecord) => {
       requiredRecord({ action: requiredArray(value, "download_actions")[0] }, "action").filename = "../book.epub"
     }],
@@ -211,6 +217,41 @@ describe("Reader source-information runtime contract", () => {
     )).toEqual(doktorGlasSourceInfo)
   })
 
+  test("accepts an alternate media action with its own safe start page", () => {
+    const value = clone(doktorGlasSourceInfo)
+    value.read_actions[1]!.url = [
+      "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida",
+      encodeURIComponent("omslag & titel"),
+      "faksimil"
+    ].join("/")
+
+    expect(validateReaderSourceInfoResponse(
+      value,
+      "SöderbergH",
+      "DoktorGlas",
+      "etext"
+    )).toEqual(value)
+  })
+
+  test.each([
+    ["aggregate errata cells", () => Array.from({ length: 101 }, () => ({
+      cells_html: Array(100).fill("")
+    }))],
+    ["aggregate errata HTML", () => [{
+      cells_html: Array(6).fill("x".repeat(200_000))
+    }]]
+  ])("rejects oversized %s", (_name, errata) => {
+    const value = clone(doktorGlasSourceInfo)
+    value.errata = errata()
+
+    expect(() => validateReaderSourceInfoResponse(
+      value,
+      "SöderbergH",
+      "DoktorGlas",
+      "etext"
+    )).toThrow("Invalid Reader source information")
+  })
+
   test("rejects a canonical author that is not a public response author", () => {
     const value = clone(doktorGlasSourceInfo)
     value.author_id = "OtherAuthor"
@@ -239,6 +280,18 @@ describe("Reader source-information runtime contract", () => {
     )).toEqual(value)
 
     action.filename = `${"😀".repeat(496)}.epub`
+    expect(() => validateReaderSourceInfoResponse(
+      value,
+      "SöderbergH",
+      "DoktorGlas",
+      "etext"
+    )).toThrow("Invalid Reader source information")
+  })
+
+  test("rejects a lone surrogate in a download filename", () => {
+    const value = clone(doktorGlasSourceInfo)
+    value.download_actions[0]!.filename = "bad\uD800.epub"
+
     expect(() => validateReaderSourceInfoResponse(
       value,
       "SöderbergH",
@@ -330,6 +383,13 @@ describe("Reader source-information runtime contract", () => {
     )
     author.author_id = authorId
     author.url = "/författare/Question%3FHash%23"
+    for (const action of requiredArray(value, "read_actions")) {
+      const record = requiredRecord({ action }, "action")
+      record.url = String(record.url).replace(
+        "/författare/S%C3%B6derbergH/",
+        "/författare/Question%3FHash%23/"
+      )
+    }
 
     expect(validateReaderSourceInfoResponse(
       value,

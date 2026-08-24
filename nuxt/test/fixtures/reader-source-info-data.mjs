@@ -429,6 +429,11 @@ export const emptyErrataSourceInfo = {
     small_url: "/txt/lbEmptyErrata1/lbEmptyErrata1_small.jpeg",
     large_url: "/txt/lbEmptyErrata1/lbEmptyErrata1_large.jpeg"
   },
+  read_actions: [{
+    media_type: "etext",
+    label: "etext",
+    url: "/författare/EmptyErrataA/titlar/EmptyErrata/sida/-2/etext"
+  }],
   errata: []
 }
 
