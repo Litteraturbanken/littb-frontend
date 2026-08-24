@@ -1,9 +1,18 @@
 import { execFileSync } from "node:child_process"
+import { mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { expect, test } from "vitest"
+import { afterAll, expect, test } from "vitest"
 
 const playwrightCli = fileURLToPath(import.meta.resolve("@playwright/test/cli"))
+const collectionReporter = fileURLToPath(new URL(
+  "../helpers/playwright-collection-reporter.mjs",
+  import.meta.url
+))
+const collectionRoot = mkdtempSync(join(tmpdir(), "littb-playwright-collection-"))
+let collectionIndex = 0
 const allProjects = [
   "desktop-chromium",
   "mobile-chromium",
@@ -15,27 +24,34 @@ const allProjects = [
 type E2eLane = "behavior" | "visual"
 
 function collectedTests(lane?: E2eLane, shard?: `${number}/${number}`) {
+  const outputPath = join(collectionRoot, `${collectionIndex += 1}.json`)
   const projects = lane === "visual"
     ? ["desktop-chromium", "mobile-chromium"]
     : allProjects
-  const output = execFileSync(process.execPath, [
+  const env = {
+    ...process.env,
+    LITTB_PLAYWRIGHT_COLLECTION_FILE: outputPath
+  }
+  if (lane) env.LITTB_E2E_LANE = lane
+  else delete env.LITTB_E2E_LANE
+  execFileSync(process.execPath, [
     playwrightCli,
     "test",
     "--list",
+    `--reporter=${collectionReporter}`,
     ...(shard ? [`--shard=${shard}`] : []),
     ...projects.map(project => `--project=${project}`)
   ], {
     cwd: fileURLToPath(new URL("../..", import.meta.url)),
-    encoding: "utf8",
-    env: {
-      ...process.env,
-      ...(lane ? { LITTB_E2E_LANE: lane } : {})
-    },
+    env,
+    stdio: ["ignore", "ignore", "pipe"],
     timeout: 30_000
   })
 
-  return new Set(output.split("\n").filter(line => /^\s*\[[^\]]+\] › /u.test(line)))
+  return new Set(JSON.parse(readFileSync(outputPath, "utf8")) as string[])
 }
+
+afterAll(() => rmSync(collectionRoot, { force: true, recursive: true }))
 
 test("behavior and visual lanes are a complete disjoint E2E partition", () => {
   const baseline = collectedTests()
