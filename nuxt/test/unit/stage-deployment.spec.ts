@@ -25,13 +25,64 @@ const readRepositoryFile = (name: string) => {
   return existsSync(path) ? readFileSync(path, "utf8") : ""
 }
 
-function frontendTaskEnvironment(jobspec: string) {
-  const envBody = jobspec.match(
-    /^ {4}task "frontend" \{[\s\S]*?^ {6}env \{\n(?<body>[\s\S]*?)^ {6}\}/mu
-  )?.groups?.body
-  if (!envBody) {
-    throw new Error("frontend task env block is missing")
+function closingHeredocOffset(source: string, offset: number) {
+  const declaration = source.slice(offset).match(/^<<-?(?<delimiter>[A-Z][A-Z0-9_]*)/u)
+  const delimiter = declaration?.groups?.delimiter
+  if (!delimiter) return null
+  const declarationEnd = source.indexOf("\n", offset)
+  if (declarationEnd < 0) return source.length
+  const terminator = new RegExp(`^\\s*${delimiter}\\s*$`, "mu")
+    .exec(source.slice(declarationEnd + 1))
+  if (!terminator) return source.length
+  return declarationEnd + 1 + terminator.index + terminator[0].length
+}
+
+function hclBlockBody(source: string, openingBrace: number) {
+  let depth = 0
+  for (let offset = openingBrace; offset < source.length; offset += 1) {
+    const character = source[offset]
+    const next = source[offset + 1]
+    if (character === '"') {
+      for (offset += 1; offset < source.length; offset += 1) {
+        if (source[offset] === "\\") offset += 1
+        else if (source[offset] === '"') break
+      }
+    } else if (character === "#" || (character === "/" && next === "/")) {
+      const lineEnd = source.indexOf("\n", offset)
+      offset = lineEnd < 0 ? source.length : lineEnd
+    } else if (character === "/" && next === "*") {
+      const commentEnd = source.indexOf("*/", offset + 2)
+      offset = commentEnd < 0 ? source.length : commentEnd + 1
+    } else if (character === "<" && next === "<") {
+      offset = closingHeredocOffset(source, offset) ?? offset
+    } else if (character === "{") {
+      depth += 1
+    } else if (character === "}") {
+      depth -= 1
+      if (depth === 0) return source.slice(openingBrace + 1, offset)
+    }
   }
+  throw new Error("unterminated HCL block")
+}
+
+function namedHclBlockBody(source: string, header: RegExp, error: string) {
+  const match = header.exec(source)
+  if (!match) throw new Error(error)
+  const openingBrace = source.indexOf("{", match.index)
+  return hclBlockBody(source, openingBrace)
+}
+
+function frontendTaskEnvironment(jobspec: string) {
+  const taskBody = namedHclBlockBody(
+    jobspec,
+    /^ {4}task "frontend" \{/mu,
+    "frontend task is missing"
+  )
+  const envBody = namedHclBlockBody(
+    taskBody,
+    /^ {6}env \{/mu,
+    "frontend task env block is missing"
+  )
 
   const assignments = new Map<string, string[]>()
   for (const match of envBody.matchAll(
@@ -292,6 +343,26 @@ job "fixture" {
     .toEqual(["var.caddy_host"])
   expect(assignments.get("NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN"))
     .toEqual(['"https://${var.caddy_host}"'])
+})
+
+test("frontend environment parsing does not capture a later sidecar environment", () => {
+  const jobspec = `job "fixture" {
+  group "fixture" {
+    task "frontend" {
+      driver = "docker"
+    }
+
+    task "sidecar" {
+      env {
+        NUXT_PUBLIC_READER_DICTIONARY_MODE = "embed"
+        NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://svenska.se"
+      }
+    }
+  }
+}`
+
+  expect(() => frontendTaskEnvironment(jobspec))
+    .toThrow("frontend task env block is missing")
 })
 
 test("staging Nomad service exposes the digest-pinned Nuxt runtime through public ingress", () => {
