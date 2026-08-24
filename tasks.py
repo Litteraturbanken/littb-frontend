@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shlex
 import signal
@@ -18,7 +19,7 @@ from invoke import Collection, Context, Exit, task
 
 ROOT = Path(__file__).resolve().parent
 VISUAL_BASELINE_PATH = "nuxt/test/visual/baselines"
-VISUAL_BASELINE_AUTHORITY = "69686c57"
+VISUAL_BASELINE_MANIFEST_PATH = "nuxt/test/visual/baseline-review.json"
 
 
 def _default_backend_dir() -> Path:
@@ -177,10 +178,90 @@ def _check_nuxt_contracts(
     )
 
 
-def _verify_visual_baselines(
-    repository: Path = ROOT,
-    authority: str = VISUAL_BASELINE_AUTHORITY,
-) -> None:
+def _visual_review_base(repository: Path) -> tuple[str, str]:
+    configured = os.environ.get("VISUAL_BASELINE_REVIEW_BASE")
+    if configured:
+        result = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", f"{configured}^{{commit}}"],
+            cwd=repository,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            raise Exit("VISUAL_BASELINE_REVIEW_BASE is not a valid commit")
+        return result.stdout.strip(), "VISUAL_BASELINE_REVIEW_BASE"
+
+    origin_head = subprocess.run(
+        ["git", "rev-parse", "--verify", "--quiet", "origin/HEAD^{commit}"],
+        cwd=repository,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if origin_head.returncode == 0:
+        merge_base = subprocess.run(
+            ["git", "merge-base", "HEAD", origin_head.stdout.strip()],
+            cwd=repository,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if merge_base.returncode == 0:
+            return merge_base.stdout.strip(), "merge-base with origin/HEAD"
+
+    parent = subprocess.run(
+        ["git", "rev-parse", "--verify", "--quiet", "HEAD^"],
+        cwd=repository,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if parent.returncode == 0:
+        return parent.stdout.strip(), "fallback: HEAD^"
+
+    head = subprocess.run(
+        ["git", "rev-parse", "--verify", "HEAD^{commit}"],
+        cwd=repository,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if head.returncode != 0:
+        raise Exit("Unable to resolve a visual-baseline review base")
+    return head.stdout.strip(), "fallback: HEAD"
+
+
+def _head_blob(repository: Path, relative_path: str, label: str) -> bytes:
+    entry = subprocess.run(
+        ["git", "ls-tree", "-z", "--full-tree", "HEAD", "--", relative_path],
+        cwd=repository,
+        capture_output=True,
+        check=False,
+    )
+    records = [record for record in entry.stdout.split(b"\0") if record]
+    if entry.returncode != 0 or len(records) != 1:
+        raise Exit(f"The committed {label} is missing")
+    try:
+        metadata, encoded_path = records[0].split(b"\t", 1)
+        mode, object_type, object_id = metadata.split(b" ", 2)
+        path = encoded_path.decode("utf-8")
+    except (UnicodeDecodeError, ValueError) as error:
+        raise Exit(f"The committed {label} entry is malformed") from error
+    if path != relative_path or mode != b"100644" or object_type != b"blob":
+        raise Exit(f"The committed {label} must be a regular file")
+    blob = subprocess.run(
+        ["git", "cat-file", "blob", object_id.decode("ascii")],
+        cwd=repository,
+        capture_output=True,
+        check=False,
+    )
+    if blob.returncode != 0:
+        raise Exit(f"Unable to read the committed {label}")
+    return blob.stdout
+
+
+def _verify_visual_baselines(repository: Path = ROOT) -> None:
     root_result = subprocess.run(
         ["git", "rev-parse", "--show-toplevel"],
         cwd=repository,
@@ -192,45 +273,78 @@ def _verify_visual_baselines(
         raise Exit("Unable to resolve the visual-baseline repository root")
     repository_root = Path(root_result.stdout.strip()).resolve()
 
-    authority_result = subprocess.run(
-        ["git", "rev-parse", "--verify", "--quiet", f"{authority}^{{commit}}"],
+    head_tree = subprocess.run(
+        ["git", "rev-parse", f"HEAD:{VISUAL_BASELINE_PATH}"],
         cwd=repository_root,
         capture_output=True,
+        text=True,
         check=False,
     )
-    if authority_result.returncode != 0:
-        raise Exit("The immutable visual-baseline authority is invalid")
-
-    committed_result = subprocess.run(
-        ["git", "diff", "--quiet", f"{authority}..HEAD", "--", VISUAL_BASELINE_PATH],
+    if head_tree.returncode != 0:
+        raise Exit("The committed visual baseline tree is missing")
+    head_tree_id = head_tree.stdout.strip()
+    tree_type = subprocess.run(
+        ["git", "cat-file", "-t", head_tree_id],
         cwd=repository_root,
+        capture_output=True,
+        text=True,
         check=False,
     )
-    if committed_result.returncode == 1:
-        raise Exit("Committed visual baselines differ from the immutable authority")
-    if committed_result.returncode != 0:
-        raise Exit("Unable to compare committed visual baselines with the authority")
+    if tree_type.returncode != 0 or tree_type.stdout.strip() != "tree":
+        raise Exit("The committed visual baseline path is not a tree")
 
+    manifest_blob = _head_blob(
+        repository_root,
+        VISUAL_BASELINE_MANIFEST_PATH,
+        "visual baseline review manifest",
+    )
+    try:
+        manifest = json.loads(manifest_blob)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise Exit("The visual baseline review manifest is not valid JSON") from error
+    if (
+        not isinstance(manifest, dict)
+        or set(manifest) != {"version", "baselineTree"}
+        or manifest.get("version") != 1
+        or not isinstance(manifest.get("baselineTree"), str)
+    ):
+        raise Exit("The visual baseline review manifest has an unsupported schema")
+    if manifest["baselineTree"] != head_tree_id:
+        raise Exit("The committed visual baselines have not been reviewed in the manifest")
+
+    protected_paths = [VISUAL_BASELINE_PATH, VISUAL_BASELINE_MANIFEST_PATH]
     staged_result = subprocess.run(
-        ["git", "diff", "--cached", "--quiet", authority, "--", VISUAL_BASELINE_PATH],
+        ["git", "diff", "--cached", "--quiet", "HEAD", "--", *protected_paths],
         cwd=repository_root,
         check=False,
     )
     if staged_result.returncode == 1:
-        raise Exit("Staged visual baselines differ from the immutable authority")
+        raise Exit("Staged visual baseline review state differs from HEAD")
     if staged_result.returncode != 0:
-        raise Exit("Unable to compare staged visual baselines with the authority")
+        raise Exit("Unable to compare staged visual baseline review state with HEAD")
+
+    index_flags = subprocess.run(
+        ["git", "ls-files", "-v", "-z", "--", *protected_paths],
+        cwd=repository_root,
+        capture_output=True,
+        check=False,
+    )
+    if index_flags.returncode != 0:
+        raise Exit("Unable to inspect visual baseline index flags")
+    for record in index_flags.stdout.split(b"\0"):
+        if record and not record.startswith(b"H "):
+            raise Exit("Visual baseline assume-unchanged and skip-worktree flags are forbidden")
 
     tree_result = subprocess.run(
-        ["git", "ls-tree", "-r", "-z", "--full-tree", authority, "--", VISUAL_BASELINE_PATH],
+        ["git", "ls-tree", "-r", "-z", "--full-tree", "HEAD", "--", VISUAL_BASELINE_PATH],
         cwd=repository_root,
         capture_output=True,
         check=False,
     )
     if tree_result.returncode != 0:
-        raise Exit("Unable to read the immutable visual-baseline authority")
+        raise Exit("Unable to read the committed visual baseline tree")
 
-    authority_blobs: dict[str, bytes] = {}
+    head_blobs: dict[str, bytes] = {}
     for record in tree_result.stdout.split(b"\0"):
         if not record:
             continue
@@ -239,19 +353,20 @@ def _verify_visual_baselines(
             mode, object_type, object_id = metadata.split(b" ", 2)
             relative_path = encoded_path.decode("utf-8")
         except (UnicodeDecodeError, ValueError) as error:
-            raise Exit("The immutable visual-baseline authority is malformed") from error
+            raise Exit("The committed visual baseline tree is malformed") from error
         if object_type != b"blob" or mode == b"120000":
-            raise Exit("The immutable visual-baseline authority contains a non-file entry")
-        authority_blobs[relative_path] = object_id
+            raise Exit("The committed visual baseline tree contains a non-file entry")
+        head_blobs[relative_path] = object_id
 
     baseline_root = repository_root / VISUAL_BASELINE_PATH
-    component = repository_root
-    for part in Path(VISUAL_BASELINE_PATH).parts:
-        component /= part
-        if component.is_symlink():
-            raise Exit("Visual baseline symlinks are forbidden")
-        if not component.exists():
-            break
+    for protected_path in protected_paths:
+        component = repository_root
+        for part in Path(protected_path).parts:
+            component /= part
+            if component.is_symlink():
+                raise Exit("Visual baseline symlinks are forbidden")
+            if not component.exists():
+                break
     filesystem_files: dict[str, Path] = {}
     if baseline_root.exists():
         for path in baseline_root.rglob("*"):
@@ -260,9 +375,9 @@ def _verify_visual_baselines(
             if path.is_file():
                 filesystem_files[path.relative_to(repository_root).as_posix()] = path
 
-    if set(authority_blobs) != set(filesystem_files):
-        raise Exit("The visual baseline tree differs from the immutable authority")
-    for relative_path, object_id in authority_blobs.items():
+    if set(head_blobs) != set(filesystem_files):
+        raise Exit("The visual baseline filesystem tree differs from HEAD")
+    for relative_path, object_id in head_blobs.items():
         blob_result = subprocess.run(
             ["git", "cat-file", "blob", object_id.decode("ascii")],
             cwd=repository_root,
@@ -270,9 +385,37 @@ def _verify_visual_baselines(
             check=False,
         )
         if blob_result.returncode != 0:
-            raise Exit("Unable to read an immutable visual-baseline blob")
+            raise Exit("Unable to read a committed visual baseline blob")
         if filesystem_files[relative_path].read_bytes() != blob_result.stdout:
-            raise Exit(f"Visual baseline bytes differ from authority: {relative_path}")
+            raise Exit(f"Visual baseline bytes differ from HEAD: {relative_path}")
+
+    manifest_path = repository_root / VISUAL_BASELINE_MANIFEST_PATH
+    if not manifest_path.is_file() or manifest_path.read_bytes() != manifest_blob:
+        raise Exit("The visual baseline review manifest differs from HEAD")
+
+    review_base, review_source = _visual_review_base(repository_root)
+    changes = subprocess.run(
+        [
+            "git",
+            "diff",
+            "--name-status",
+            f"{review_base}..HEAD",
+            "--",
+            *protected_paths,
+        ],
+        cwd=repository_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if changes.returncode != 0:
+        raise Exit("Unable to report committed visual baseline review changes")
+    print(f"Visual baseline review base: {review_base} ({review_source})")
+    if changes.stdout:
+        print("Committed visual baseline review changes:")
+        print(changes.stdout, end="" if changes.stdout.endswith("\n") else "\n")
+    else:
+        print("Committed visual baseline review changes: none")
 
 
 def _backend_has_v2(settings: Settings) -> bool:

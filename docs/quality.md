@@ -24,7 +24,7 @@ Command ownership from the repository root:
 | `invoke quality.contract` | OpenAPI snapshot/client drift, standalone strict TypeScript contracts, and focused backend/Nuxt contract tests |
 | `invoke quality.frontend` | policy, lint, typecheck, all units, build, and all SSR checks in order |
 | `invoke quality.reader-editor` | focused Reader/Editor manifest models, provider/API behavior, generated contract, Nuxt projections, and SSR parity |
-| `invoke quality.release` | backend, contract, frontend, full desktop/mobile E2E, and immutable visual-baseline verification |
+| `invoke quality.release` | backend, contract, frontend, full desktop/mobile E2E, and reviewed visual-baseline verification |
 
 `invoke quality.library` and `invoke quality.reader-editor` are the focused
 Library and Reader/Editor contract gates.
@@ -161,18 +161,45 @@ Library SSR project. Every Yarn subprocess in this task uses the Node 22
 runtime pinned by `nuxt/.nvmrc`. The full desktop/mobile browser and visual
 suites remain part of the parity gate above.
 
-Committed visual baselines are immutable relative to authority commit
-`69686c57`. This authority includes the staged Library regression coverage and
-the approved distinct standalone EPUB background baselines; later baseline
-changes remain forbidden. From the resolved repository root, the release task
-independently compares the authority with committed `HEAD`, the staged index,
-and the current filesystem. It then reads the authority tree's exact blob set
-and byte-compares it with the filesystem baseline tree. This remains effective
-when working bytes hide a committed or staged change and is independent of
-index flags such as assume-unchanged and skip-worktree. Changed, missing,
-added, ordinary-untracked, ignored-untracked, or symlinked baseline files fail,
-as does a symlink in any baseline-path ancestor. The gate never updates
-snapshots or generated artifacts.
+Visual baseline review state lives in
+`nuxt/test/visual/baseline-review.json`. The small versioned manifest records
+the single Git tree object for the complete baseline directory, rather than a
+list of image hashes. A committed baseline addition, update, or removal is
+accepted only when the same reviewed work updates the manifest to the exact
+baseline subtree at `HEAD`.
+
+The release task reports committed baseline and manifest path changes since
+`VISUAL_BASELINE_REVIEW_BASE` when it is set. By default it uses the merge base
+of `HEAD` and `origin/HEAD`. A repository without that remote reference falls
+back to `HEAD^`, or to `HEAD` for a root commit. These reported, committed
+deltas do not fail the gate when the manifest reviews the resulting tree.
+
+From the resolved repository root, the gate independently verifies the
+committed manifest, the `HEAD` baseline tree, the staged index, index flags,
+and the current filesystem. It reads the exact committed blob set and
+byte-compares it with the filesystem baseline tree and manifest. Changed,
+missing, staged, ordinary-untracked, ignored-untracked, assume-unchanged,
+skip-worktree, or symlinked baseline files fail, as does a symlink in any
+baseline or manifest path ancestor. This also catches working files silently
+rewritten behind Git's normal status checks. The gate never updates snapshots,
+the manifest, or generated artifacts; the visual suite still runs without a
+snapshot-update option.
+
+To review an intentional visual baseline change:
+
+1. Inspect the PNG diff and the captured visual output, and stage only the
+   intended files under `nuxt/test/visual/baselines`.
+2. Run `git write-tree`, then run
+   `git rev-parse <index-tree>:nuxt/test/visual/baselines` with the returned
+   index-tree ID.
+3. Manually set `baselineTree` in
+   `nuxt/test/visual/baseline-review.json` to that subtree ID, inspect the
+   manifest diff, and stage the manifest in the same reviewed work.
+4. Run the visual suite and `invoke quality.release` without any snapshot
+   update option before publishing the commit.
+
+The release task never creates screenshots and never edits either the PNGs or
+the review manifest.
 
 ## Reader and Editor manifest ownership
 
@@ -195,7 +222,7 @@ The ownership layers are deliberate:
 | `nuxt/test/nuxt/reader-editor-manifest-contract.ts` | Exact generated operation, response, nested DTO, and contribution-role equality |
 | Nuxt unit and SSR tests | Manifest projection, bounds/navigation, degradation, assets, and zero legacy metadata ownership |
 | Playwright behavior tests | Observable Reader and Editor route, navigation, search, and control parity |
-| Visual baseline gate | Immutable visual authority at commit `69686c57` |
+| Visual baseline gate | Versioned reviewed-tree manifest plus exact `HEAD`, index, and filesystem agreement |
 
 HTML, OCR, and image bodies are not OpenAPI DTOs. They remain separately
 validated managed assets with authority, path, media-type, byte-bound,

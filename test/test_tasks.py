@@ -1,4 +1,5 @@
 import inspect
+import io
 import json
 import os
 import shutil
@@ -6,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import MagicMock, call, patch
 
@@ -13,6 +15,8 @@ import tasks
 
 
 ROOT = Path(__file__).resolve().parents[1]
+VISUAL_BASELINE_PATH = Path("nuxt/test/visual/baselines")
+VISUAL_BASELINE_MANIFEST_PATH = Path("nuxt/test/visual/baseline-review.json")
 
 
 def run_invoke(*arguments: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -39,8 +43,30 @@ def run_git(repository: Path, *arguments: str) -> subprocess.CompletedProcess[st
     )
 
 
+def visual_tree_id(repository: Path, revision: str) -> str:
+    result = run_git(repository, "rev-parse", f"{revision}:{VISUAL_BASELINE_PATH.as_posix()}")
+    if result.returncode != 0:
+        raise AssertionError(result.stderr)
+    return result.stdout.strip()
+
+
+def stage_visual_manifest(repository: Path) -> str:
+    index_tree = run_git(repository, "write-tree")
+    if index_tree.returncode != 0:
+        raise AssertionError(index_tree.stderr)
+    baseline_tree = visual_tree_id(repository, index_tree.stdout.strip())
+    manifest = repository / VISUAL_BASELINE_MANIFEST_PATH
+    manifest.write_text(
+        json.dumps({"version": 1, "baselineTree": baseline_tree}, indent=2) + "\n"
+    )
+    result = run_git(repository, "add", VISUAL_BASELINE_MANIFEST_PATH.as_posix())
+    if result.returncode != 0:
+        raise AssertionError(result.stderr)
+    return baseline_tree
+
+
 def initialize_visual_repository(repository: Path) -> str:
-    baseline = repository / "nuxt" / "test" / "visual" / "baselines" / "authority.png"
+    baseline = repository / VISUAL_BASELINE_PATH / "authority.png"
     baseline.parent.mkdir(parents=True)
     baseline.write_bytes(b"authority")
     for arguments in (
@@ -53,17 +79,22 @@ def initialize_visual_repository(repository: Path) -> str:
         result = run_git(repository, *arguments)
         if result.returncode != 0:
             raise AssertionError(result.stderr)
+    stage_visual_manifest(repository)
+    result = run_git(repository, "commit", "-qm", "review visual baselines")
+    if result.returncode != 0:
+        raise AssertionError(result.stderr)
     return run_git(repository, "rev-parse", "HEAD").stdout.strip()
 
 
 class InvokeTaskTests(unittest.TestCase):
-    def test_visual_baseline_gate_defaults_to_the_approved_epub_authority(self) -> None:
-        authority_default = inspect.signature(
-            tasks._verify_visual_baselines
-        ).parameters["authority"].default
+    def test_visual_baseline_gate_uses_the_review_manifest_without_a_historical_authority(self) -> None:
+        parameters = inspect.signature(tasks._verify_visual_baselines).parameters
 
-        self.assertEqual(tasks.VISUAL_BASELINE_AUTHORITY, "69686c57")
-        self.assertEqual(authority_default, tasks.VISUAL_BASELINE_AUTHORITY)
+        self.assertEqual(
+            getattr(tasks, "VISUAL_BASELINE_MANIFEST_PATH", None),
+            VISUAL_BASELINE_MANIFEST_PATH.as_posix(),
+        )
+        self.assertNotIn("authority", parameters)
 
     def test_nuxt_contract_project_inherits_nuxt_aliases_and_covers_every_contract(self) -> None:
         config_path = ROOT / "nuxt" / "tsconfig.contracts.json"
@@ -647,7 +678,7 @@ class InvokeTaskTests(unittest.TestCase):
             ["yarn", "typecheck"],
         ])
 
-    def test_release_quality_composes_fail_fast_gates_and_immutable_visual_check(self) -> None:
+    def test_release_quality_composes_fail_fast_gates_and_reviewed_visual_check(self) -> None:
         with tempfile.TemporaryDirectory() as nuxt_dir:
             nuxt_path = Path(nuxt_dir)
             (nuxt_path / ".nvmrc").write_text("22.22.0\n")
@@ -694,114 +725,315 @@ class InvokeTaskTests(unittest.TestCase):
             ],
         )
 
-    def test_visual_baseline_gate_accepts_a_clean_authority_checkout(self) -> None:
+    def test_visual_baseline_gate_accepts_a_clean_reviewed_checkout(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
-            authority = initialize_visual_repository(repository)
-            tasks._verify_visual_baselines(repository, authority)
+            initialize_visual_repository(repository)
 
-    def test_visual_baseline_gate_rejects_a_committed_change_after_authority(self) -> None:
+            tasks._verify_visual_baselines(repository)
+
+    def test_visual_baseline_gate_rejects_a_committed_change_without_manifest_review(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
-            authority = initialize_visual_repository(repository)
-            baseline = repository / "nuxt/test/visual/baselines/authority.png"
+            initialize_visual_repository(repository)
+            baseline = repository / VISUAL_BASELINE_PATH / "authority.png"
             baseline.write_bytes(b"committed later")
-            self.assertEqual(run_git(repository, "add", str(baseline)).returncode, 0)
+            self.assertEqual(
+                run_git(repository, "add", baseline.relative_to(repository).as_posix()).returncode,
+                0,
+            )
             self.assertEqual(
                 run_git(repository, "commit", "-qm", "change visual baseline").returncode,
                 0,
             )
-            baseline.write_bytes(b"authority")
 
             with self.assertRaises(tasks.Exit):
-                tasks._verify_visual_baselines(repository, authority)
+                tasks._verify_visual_baselines(repository)
+
+    def test_visual_baseline_gate_accepts_a_committed_change_with_manifest_review(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            initialize_visual_repository(repository)
+            baseline = repository / VISUAL_BASELINE_PATH / "authority.png"
+            baseline.write_bytes(b"reviewed update")
+            self.assertEqual(
+                run_git(repository, "add", baseline.relative_to(repository).as_posix()).returncode,
+                0,
+            )
+            reviewed_tree = stage_visual_manifest(repository)
+            self.assertEqual(
+                run_git(repository, "commit", "-qm", "review visual update").returncode,
+                0,
+            )
+
+            tasks._verify_visual_baselines(repository)
+
+            self.assertEqual(reviewed_tree, visual_tree_id(repository, "HEAD"))
+
+    def test_visual_baseline_gate_reports_committed_changes_since_explicit_review_base(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            review_base = initialize_visual_repository(repository)
+            baseline = repository / VISUAL_BASELINE_PATH / "new.png"
+            baseline.write_bytes(b"new reviewed baseline")
+            self.assertEqual(
+                run_git(repository, "add", baseline.relative_to(repository).as_posix()).returncode,
+                0,
+            )
+            stage_visual_manifest(repository)
+            self.assertEqual(
+                run_git(repository, "commit", "-qm", "add reviewed baseline").returncode,
+                0,
+            )
+            output = io.StringIO()
+
+            with patch.dict(
+                os.environ,
+                {"VISUAL_BASELINE_REVIEW_BASE": review_base},
+            ), redirect_stdout(output):
+                tasks._verify_visual_baselines(repository)
+
+            self.assertIn("A\tnuxt/test/visual/baselines/new.png", output.getvalue())
+            self.assertIn("M\tnuxt/test/visual/baseline-review.json", output.getvalue())
+
+    def test_visual_baseline_gate_falls_back_to_head_parent_for_change_reporting(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            initialize_visual_repository(repository)
+            baseline = repository / VISUAL_BASELINE_PATH / "authority.png"
+            baseline.write_bytes(b"reviewed fallback update")
+            self.assertEqual(
+                run_git(repository, "add", baseline.relative_to(repository).as_posix()).returncode,
+                0,
+            )
+            stage_visual_manifest(repository)
+            self.assertEqual(
+                run_git(repository, "commit", "-qm", "review fallback update").returncode,
+                0,
+            )
+            output = io.StringIO()
+
+            with patch.dict(os.environ, {}, clear=False), redirect_stdout(output):
+                os.environ.pop("VISUAL_BASELINE_REVIEW_BASE", None)
+                tasks._verify_visual_baselines(repository)
+
+            self.assertIn("fallback: HEAD^", output.getvalue())
+            self.assertIn("M\tnuxt/test/visual/baselines/authority.png", output.getvalue())
+
+    def test_visual_baseline_gate_defaults_to_the_origin_head_merge_base(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            review_base = initialize_visual_repository(repository)
+            baseline = repository / VISUAL_BASELINE_PATH / "authority.png"
+            baseline.write_bytes(b"reviewed branch update")
+            self.assertEqual(
+                run_git(repository, "add", baseline.relative_to(repository).as_posix()).returncode,
+                0,
+            )
+            stage_visual_manifest(repository)
+            self.assertEqual(
+                run_git(repository, "commit", "-qm", "review branch update").returncode,
+                0,
+            )
+            self.assertEqual(
+                run_git(
+                    repository,
+                    "update-ref",
+                    "refs/remotes/origin/HEAD",
+                    review_base,
+                ).returncode,
+                0,
+            )
+            output = io.StringIO()
+
+            with patch.dict(os.environ, {}, clear=False), redirect_stdout(output):
+                os.environ.pop("VISUAL_BASELINE_REVIEW_BASE", None)
+                tasks._verify_visual_baselines(repository)
+
+            self.assertIn(
+                f"Visual baseline review base: {review_base} "
+                "(merge-base with origin/HEAD)",
+                output.getvalue(),
+            )
+
+    def test_visual_baseline_gate_falls_back_to_head_in_a_root_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            baseline = repository / VISUAL_BASELINE_PATH / "authority.png"
+            baseline.parent.mkdir(parents=True)
+            baseline.write_bytes(b"root authority")
+            for arguments in (
+                ("init", "-q"),
+                ("config", "user.email", "quality@example.test"),
+                ("config", "user.name", "Quality Gate"),
+                ("add", "."),
+            ):
+                self.assertEqual(run_git(repository, *arguments).returncode, 0)
+            stage_visual_manifest(repository)
+            self.assertEqual(
+                run_git(repository, "commit", "-qm", "root visual review").returncode,
+                0,
+            )
+            head = run_git(repository, "rev-parse", "HEAD").stdout.strip()
+            output = io.StringIO()
+
+            with patch.dict(os.environ, {}, clear=False), redirect_stdout(output):
+                os.environ.pop("VISUAL_BASELINE_REVIEW_BASE", None)
+                tasks._verify_visual_baselines(repository)
+
+            self.assertIn(
+                f"Visual baseline review base: {head} (fallback: HEAD)",
+                output.getvalue(),
+            )
+
+    def test_visual_baseline_gate_rejects_an_invalid_explicit_review_base(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            initialize_visual_repository(repository)
+
+            with patch.dict(
+                os.environ,
+                {"VISUAL_BASELINE_REVIEW_BASE": "not-a-commit"},
+            ), self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository)
 
     def test_visual_baseline_gate_rejects_a_staged_tracked_change(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
-            authority = initialize_visual_repository(repository)
-            baseline = repository / "nuxt/test/visual/baselines/authority.png"
+            initialize_visual_repository(repository)
+            baseline = repository / VISUAL_BASELINE_PATH / "authority.png"
             baseline.write_bytes(b"staged")
             self.assertEqual(run_git(repository, "add", str(baseline)).returncode, 0)
             baseline.write_bytes(b"authority")
             with self.assertRaises(tasks.Exit):
-                tasks._verify_visual_baselines(repository, authority)
+                tasks._verify_visual_baselines(repository)
 
     def test_visual_baseline_gate_rejects_an_unstaged_tracked_change(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
-            authority = initialize_visual_repository(repository)
-            (repository / "nuxt/test/visual/baselines/authority.png").write_bytes(b"unstaged")
+            initialize_visual_repository(repository)
+            (repository / VISUAL_BASELINE_PATH / "authority.png").write_bytes(b"unstaged")
             with self.assertRaises(tasks.Exit):
-                tasks._verify_visual_baselines(repository, authority)
+                tasks._verify_visual_baselines(repository)
+
+    def test_visual_baseline_gate_rejects_a_dirty_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            initialize_visual_repository(repository)
+            (repository / VISUAL_BASELINE_MANIFEST_PATH).write_text(
+                '{"version": 1, "baselineTree": "dirty"}\n'
+            )
+
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository)
+
+    def test_visual_baseline_gate_rejects_a_staged_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            initialize_visual_repository(repository)
+            manifest = repository / VISUAL_BASELINE_MANIFEST_PATH
+            manifest.write_text('{"version": 1, "baselineTree": "staged"}\n')
+            self.assertEqual(
+                run_git(repository, "add", VISUAL_BASELINE_MANIFEST_PATH.as_posix()).returncode,
+                0,
+            )
+
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository)
 
     def test_visual_baseline_gate_rejects_even_an_ignored_untracked_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
-            authority = initialize_visual_repository(repository)
+            initialize_visual_repository(repository)
             (repository / ".gitignore").write_text("nuxt/test/visual/baselines/new.png\n")
-            (repository / "nuxt/test/visual/baselines/new.png").write_bytes(b"untracked")
+            (repository / VISUAL_BASELINE_PATH / "new.png").write_bytes(b"untracked")
             with self.assertRaises(tasks.Exit):
-                tasks._verify_visual_baselines(repository, authority)
+                tasks._verify_visual_baselines(repository)
 
     def test_visual_baseline_gate_rejects_an_ordinary_untracked_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
-            authority = initialize_visual_repository(repository)
-            (repository / "nuxt/test/visual/baselines/new.png").write_bytes(b"untracked")
+            initialize_visual_repository(repository)
+            (repository / VISUAL_BASELINE_PATH / "new.png").write_bytes(b"untracked")
 
             with self.assertRaises(tasks.Exit):
-                tasks._verify_visual_baselines(repository, authority)
+                tasks._verify_visual_baselines(repository)
 
-    def test_visual_baseline_gate_reads_assume_unchanged_files_from_disk(self) -> None:
+    def test_visual_baseline_gate_rejects_assume_unchanged_even_when_bytes_match(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
-            authority = initialize_visual_repository(repository)
+            initialize_visual_repository(repository)
             relative_path = "nuxt/test/visual/baselines/authority.png"
             self.assertEqual(
                 run_git(repository, "update-index", "--assume-unchanged", relative_path).returncode,
                 0,
             )
-            (repository / relative_path).write_bytes(b"hidden assume-unchanged change")
 
             with self.assertRaises(tasks.Exit):
-                tasks._verify_visual_baselines(repository, authority)
+                tasks._verify_visual_baselines(repository)
 
-    def test_visual_baseline_gate_reads_skip_worktree_files_from_disk(self) -> None:
+    def test_visual_baseline_gate_rejects_skip_worktree_even_when_bytes_match(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
-            authority = initialize_visual_repository(repository)
+            initialize_visual_repository(repository)
             relative_path = "nuxt/test/visual/baselines/authority.png"
             self.assertEqual(
                 run_git(repository, "update-index", "--skip-worktree", relative_path).returncode,
                 0,
             )
-            (repository / relative_path).write_bytes(b"hidden skip-worktree change")
 
             with self.assertRaises(tasks.Exit):
-                tasks._verify_visual_baselines(repository, authority)
+                tasks._verify_visual_baselines(repository)
 
     def test_visual_baseline_gate_resolves_repository_root_from_a_subdirectory(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
-            authority = initialize_visual_repository(repository)
-            (repository / "nuxt/test/visual/baselines/authority.png").write_bytes(b"subdirectory change")
+            initialize_visual_repository(repository)
+            (repository / VISUAL_BASELINE_PATH / "authority.png").write_bytes(b"subdirectory change")
 
             with self.assertRaises(tasks.Exit):
-                tasks._verify_visual_baselines(repository / "nuxt", authority)
+                tasks._verify_visual_baselines(repository / "nuxt")
 
-    def test_visual_baseline_gate_rejects_an_invalid_authority(self) -> None:
+    def test_visual_baseline_gate_rejects_a_manifest_with_the_wrong_tree(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
             initialize_visual_repository(repository)
+            manifest = repository / VISUAL_BASELINE_MANIFEST_PATH
+            manifest.write_text(
+                json.dumps({"version": 1, "baselineTree": "0" * 40}) + "\n"
+            )
+            self.assertEqual(
+                run_git(repository, "add", VISUAL_BASELINE_MANIFEST_PATH.as_posix()).returncode,
+                0,
+            )
+            self.assertEqual(
+                run_git(repository, "commit", "-qm", "wrong visual review").returncode,
+                0,
+            )
 
             with self.assertRaises(tasks.Exit):
-                tasks._verify_visual_baselines(repository, "not-an-authority")
+                tasks._verify_visual_baselines(repository)
 
-    def test_visual_baseline_gate_rejects_a_file_symlink_with_authority_bytes(self) -> None:
+    def test_visual_baseline_gate_rejects_a_missing_committed_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
-            authority = initialize_visual_repository(repository)
+            initialize_visual_repository(repository)
+            self.assertEqual(
+                run_git(repository, "rm", VISUAL_BASELINE_MANIFEST_PATH.as_posix()).returncode,
+                0,
+            )
+            self.assertEqual(
+                run_git(repository, "commit", "-qm", "remove visual review").returncode,
+                0,
+            )
+
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository)
+
+    def test_visual_baseline_gate_rejects_a_file_symlink_with_head_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            initialize_visual_repository(repository)
             baseline = repository / "nuxt/test/visual/baselines/authority.png"
             target = repository / "authority-copy.png"
             target.write_bytes(b"authority")
@@ -809,12 +1041,25 @@ class InvokeTaskTests(unittest.TestCase):
             baseline.symlink_to(target)
 
             with self.assertRaises(tasks.Exit):
-                tasks._verify_visual_baselines(repository, authority)
+                tasks._verify_visual_baselines(repository)
 
-    def test_visual_baseline_gate_rejects_a_symlinked_ancestor_with_authority_bytes(self) -> None:
+    def test_visual_baseline_gate_rejects_a_manifest_symlink_with_head_bytes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
-            authority = initialize_visual_repository(repository)
+            initialize_visual_repository(repository)
+            manifest = repository / VISUAL_BASELINE_MANIFEST_PATH
+            target = repository / "manifest-copy.json"
+            target.write_bytes(manifest.read_bytes())
+            manifest.unlink()
+            manifest.symlink_to(target)
+
+            with self.assertRaises(tasks.Exit):
+                tasks._verify_visual_baselines(repository)
+
+    def test_visual_baseline_gate_rejects_a_symlinked_ancestor_with_head_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            initialize_visual_repository(repository)
             visual = repository / "nuxt/test/visual"
             external_visual = repository / "external-visual"
             shutil.copytree(visual, external_visual)
@@ -822,7 +1067,7 @@ class InvokeTaskTests(unittest.TestCase):
             visual.symlink_to(external_visual, target_is_directory=True)
 
             with self.assertRaises(tasks.Exit):
-                tasks._verify_visual_baselines(repository, authority)
+                tasks._verify_visual_baselines(repository)
 
     def test_release_quality_stops_after_the_first_failed_gate(self) -> None:
         context = tasks.Context()
