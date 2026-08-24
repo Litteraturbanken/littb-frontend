@@ -295,6 +295,7 @@ const slaArticleDescriptorMap = new Map(Object.entries(slaArticleDescriptors))
 const port = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
 const redirectTargetPort = port + 1
 const redirectTargetOrigin = `http://127.0.0.1:${redirectTargetPort}`
+const svenskaEmbedPort = Number(process.env.LITTB_SVENSKA_EMBED_PORT || port + 2)
 let requests = []
 let observabilityRequests = []
 let contactSubmissions = []
@@ -2843,7 +2844,7 @@ function textSearchResponse(operation, body) {
   return textSearchOptionsResponse(body)
 }
 
-const server = createServer(async (request, response) => {
+const handleFixtureRequest = async (request, response) => {
   const rawPathname = request.url.split("?", 1)[0]
   const url = new URL(request.url, `http://${request.headers.host}`)
   const apiPathname = url.pathname.replace(/^\/private-v2(?=\/|$)/, "/v2")
@@ -6272,7 +6273,10 @@ const server = createServer(async (request, response) => {
   return sendJson(response, 404, {
     error: { code: "not_found", message: "Resource not found", details: null }
   })
-})
+}
+
+const server = createServer(handleFixtureRequest)
+const svenskaEmbedServer = createServer(handleFixtureRequest)
 
 const redirectTargetServer = createServer(async (request, response) => {
   let body = null
@@ -6338,6 +6342,7 @@ server.listen(port, "127.0.0.1", () => {
   console.log(`LB API fixture listening on http://127.0.0.1:${port}`)
 })
 redirectTargetServer.listen(redirectTargetPort, "127.0.0.1")
+svenskaEmbedServer.listen(svenskaEmbedPort, "127.0.0.1")
 
 for (const signal of ["SIGINT", "SIGTERM"]) {
   process.on(signal, () => {
@@ -6346,6 +6351,8 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
     server.closeAllConnections()
     redirectTargetServer.close()
     redirectTargetServer.closeAllConnections()
+    svenskaEmbedServer.close()
+    svenskaEmbedServer.closeAllConnections()
     setTimeout(() => process.exit(0), 250).unref()
   })
 }

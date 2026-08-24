@@ -26,7 +26,8 @@ export function shardPorts(
   index,
   fixtureBase = 4100,
   nuxtBase = 3000,
-  viteServerHmrBase = 24_678
+  viteServerHmrBase = 24_678,
+  svenskaEmbedBase = 4200
 ) {
   if (!Number.isInteger(index) || index < 0) {
     throw new TypeError("shard index must be a non-negative integer")
@@ -34,6 +35,7 @@ export function shardPorts(
   return {
     fixturePort: positiveInteger(fixtureBase, "fixture port") + (index * 2),
     nuxtPort: positiveInteger(nuxtBase, "Nuxt port") + index,
+    svenskaEmbedPort: positiveInteger(svenskaEmbedBase, "Svenska embed port") + index,
     viteServerHmrPort: positiveInteger(viteServerHmrBase, "Vite server HMR port") + index
   }
 }

@@ -47,6 +47,7 @@ describe("isolated Playwright shard runner", () => {
       shardCount: 2,
       fixtureBase: 4200,
       nuxtBase: 3100,
+      svenskaEmbedBase: 4400,
       runRoot,
       artifactRoot,
       playwrightCli: "/repo/node_modules/@playwright/test/cli.js"
@@ -69,6 +70,7 @@ describe("isolated Playwright shard runner", () => {
       env: expect.objectContaining({
         LBAPI_FIXTURE_PORT: "4200",
         LITTB_NUXT_TEST_PORT: "3100",
+        LITTB_SVENSKA_EMBED_PORT: "4400",
         LITTB_DISABLE_VITE_HMR: "1",
         LITTB_PLAYWRIGHT_RETRIES: "1",
         LITTB_VITE_CACHE_DIR: join(runRoot, "shard-1", "vite"),
@@ -84,6 +86,7 @@ describe("isolated Playwright shard runner", () => {
     expect(plans[1]?.env).toMatchObject({
       LBAPI_FIXTURE_PORT: "4202",
       LITTB_NUXT_TEST_PORT: "3101",
+      LITTB_SVENSKA_EMBED_PORT: "4401",
       LITTB_DISABLE_VITE_HMR: "1",
       LITTB_PLAYWRIGHT_RETRIES: "1",
       LITTB_VITE_CACHE_DIR: join(runRoot, "shard-2", "vite"),

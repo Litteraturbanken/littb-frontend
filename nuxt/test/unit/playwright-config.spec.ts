@@ -91,16 +91,25 @@ describe("Playwright project boundaries", () => {
   })
 
   test("launches development and reader-asset suites with the local embed origin", () => {
-    for (const [fixtureConfig, fixturePort] of [
-      [config, Number(process.env.LBAPI_FIXTURE_PORT || 4100)],
-      [readerAssetsConfig, Number(process.env.LBAPI_FIXTURE_PORT || 4120)]
+    for (const [fixtureConfig, fixturePort, embedPort] of [
+      [
+        config,
+        Number(process.env.LBAPI_FIXTURE_PORT || 4100),
+        Number(process.env.LITTB_SVENSKA_EMBED_PORT || 4102)
+      ],
+      [
+        readerAssetsConfig,
+        Number(process.env.LBAPI_FIXTURE_PORT || 4120),
+        Number(process.env.LITTB_SVENSKA_EMBED_PORT || 4122)
+      ]
     ] as const) {
       const command = serverCommandContaining(fixtureConfig, "NUXT_API_BASE")
 
       expect(command).toContain("NUXT_PUBLIC_READER_DICTIONARY_MODE=embed")
       expect(command).toContain(
-        `NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN=http://127.0.0.1:${fixturePort}`
+        `NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN=http://127.0.0.1:${embedPort}`
       )
+      expect(embedPort).not.toBe(fixturePort)
     }
   })
 

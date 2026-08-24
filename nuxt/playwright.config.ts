@@ -4,6 +4,8 @@ import { defineConfig, devices } from "@playwright/test"
 
 const fixturePort = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
 const fixtureOrigin = `http://127.0.0.1:${fixturePort}`
+const svenskaEmbedPort = Number(process.env.LITTB_SVENSKA_EMBED_PORT || fixturePort + 2)
+const svenskaEmbedOrigin = `http://127.0.0.1:${svenskaEmbedPort}`
 const nuxtPort = Number(process.env.LITTB_NUXT_TEST_PORT || 3000)
 const nuxtOrigin = `http://127.0.0.1:${nuxtPort}`
 const dependencyRoot = realpathSync(resolve(import.meta.dirname, "node_modules"))
@@ -166,7 +168,7 @@ export function createPlaywrightConfig({
         `NUXT_OBSERVABILITY_HMAC_SECRET=${"test-observability-secret-material-0123456789"} ` +
         `NUXT_OBSERVABILITY_ALLOWED_ORIGINS=https://stage.litteraturbanken.se ` +
         `NUXT_PUBLIC_READER_DICTIONARY_MODE=embed ` +
-        `NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN=${fixtureOrigin} ` +
+        `NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN=${svenskaEmbedOrigin} ` +
         `NUXT_DEPLOYMENT_ENVIRONMENT=${deploymentEnvironment} ` +
         `NUXT_DEPLOYMENT_GIT_SHA=${"a".repeat(40)} ` +
         `IMAGE_DIGEST=sha256:${"b".repeat(64)} ` +

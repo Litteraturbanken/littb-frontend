@@ -2,6 +2,8 @@ import { defineConfig, devices } from "@playwright/test"
 
 const fixturePort = Number(process.env.LBAPI_FIXTURE_PORT || 4120)
 const fixtureOrigin = `http://127.0.0.1:${fixturePort}`
+const svenskaEmbedPort = Number(process.env.LITTB_SVENSKA_EMBED_PORT || fixturePort + 2)
+const svenskaEmbedOrigin = `http://127.0.0.1:${svenskaEmbedPort}`
 const nuxtPort = Number(process.env.LITTB_NUXT_TEST_PORT || 3032)
 const nuxtOrigin = `http://127.0.0.1:${nuxtPort}`
 
@@ -28,7 +30,7 @@ export default defineConfig({
     {
       command:
         `NUXT_PUBLIC_READER_DICTIONARY_MODE=embed `
-        + `NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN=${fixtureOrigin} `
+        + `NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN=${svenskaEmbedOrigin} `
         + `LITTERATURKARTAN_PROXY_TARGET=${fixtureOrigin} `
         + "yarn build && "
         + `PORT=${nuxtPort} `
@@ -36,7 +38,7 @@ export default defineConfig({
         + `NUXT_LIBRARY_API_BASE=${fixtureOrigin}/legacy-api `
         + `NUXT_CONTENT_BASE=${fixtureOrigin} `
         + "NUXT_PUBLIC_READER_DICTIONARY_MODE=embed "
-        + `NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN=${fixtureOrigin} `
+        + `NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN=${svenskaEmbedOrigin} `
         + "NUXT_DEPLOYMENT_ENVIRONMENT=development "
         + "node .output/server/index.mjs",
       url: nuxtOrigin,

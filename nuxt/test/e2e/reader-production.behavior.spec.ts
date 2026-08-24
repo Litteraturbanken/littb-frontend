@@ -1,6 +1,11 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
-const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
+const fixturePort = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
+const fixture = `http://127.0.0.1:${fixturePort}`
+const svenskaEmbedPort = Number(
+  process.env.LITTB_SVENSKA_EMBED_PORT || fixturePort + 2
+)
+const svenskaEmbedOrigin = `http://127.0.0.1:${svenskaEmbedPort}`
 const nuxtOrigin = `http://127.0.0.1:${process.env.LITTB_NUXT_TEST_PORT || 3000}`
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
 const readerManifest = "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
@@ -190,7 +195,7 @@ test("one selected Reader word accepts the result from the current cross-origin 
   ).__readerDictionarySourceProofs)
   expect(sourceProofs).toHaveLength(2)
   expect(sourceProofs?.every(proof => (
-    proof.origin === fixture && proof.sourceMatches
+    proof.origin === svenskaEmbedOrigin && proof.sourceMatches
   ))).toBe(true)
   await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
   await close.focus()

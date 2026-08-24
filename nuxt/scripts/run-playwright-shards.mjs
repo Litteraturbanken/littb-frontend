@@ -42,6 +42,7 @@ export function createShardPlan({
   shardCount,
   fixtureBase = 4100,
   nuxtBase = 3000,
+  svenskaEmbedBase = 4200,
   runRoot,
   artifactRoot,
   playwrightCli
@@ -57,10 +58,12 @@ export function createShardPlan({
   }
 
   return Array.from({ length: shardCount }, (_, index) => {
-    const { fixturePort, nuxtPort, viteServerHmrPort } = shardPorts(
+    const { fixturePort, nuxtPort, svenskaEmbedPort, viteServerHmrPort } = shardPorts(
       index,
       fixtureBase,
-      nuxtBase
+      nuxtBase,
+      24_678,
+      svenskaEmbedBase
     )
     const shardRoot = join(runRoot, `shard-${index + 1}`)
     return {
@@ -79,6 +82,7 @@ export function createShardPlan({
       env: {
         LBAPI_FIXTURE_PORT: String(fixturePort),
         LITTB_NUXT_TEST_PORT: String(nuxtPort),
+        LITTB_SVENSKA_EMBED_PORT: String(svenskaEmbedPort),
         LITTB_DISABLE_VITE_HMR: shardCount > 1 ? "1" : "0",
         LITTB_PLAYWRIGHT_RETRIES: shardCount > 1 ? "1" : "0",
         LITTB_VITE_CACHE_DIR: join(shardRoot, "vite"),
@@ -283,6 +287,11 @@ async function main() {
   const shardCount = configuredShardCount(process.env.LITTB_PLAYWRIGHT_SHARDS)
   const fixtureBase = environmentPort(process.env.LBAPI_FIXTURE_PORT, 4100, "LBAPI_FIXTURE_PORT")
   const nuxtBase = environmentPort(process.env.LITTB_NUXT_TEST_PORT, 3000, "LITTB_NUXT_TEST_PORT")
+  const svenskaEmbedBase = environmentPort(
+    process.env.LITTB_SVENSKA_EMBED_PORT,
+    4200,
+    "LITTB_SVENSKA_EMBED_PORT"
+  )
   const runId = `${Date.now()}-${process.pid}`
   const runRoot = resolve("node_modules/.cache/littb-playwright", runId)
   const artifactRoot = resolve("test-results/playwright-shards", runId)
@@ -297,6 +306,7 @@ async function main() {
     shardCount,
     fixtureBase,
     nuxtBase,
+    svenskaEmbedBase,
     runRoot,
     artifactRoot,
     playwrightCli
