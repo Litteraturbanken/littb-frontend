@@ -70,6 +70,28 @@
     > .modal-dialog {
         z-index: 1050;
     }
+
+    .reader-dictionary-embed {
+        display: flex;
+        box-sizing: border-box;
+        flex-direction: column;
+        height: min(72vh, 760px);
+        max-height: calc(100vh - 40px);
+        padding: 1em 1em 1.5em;
+    }
+
+    .reader-dictionary-embed__frame {
+        width: 100%;
+        min-height: 0;
+        flex: 1 1 auto;
+        border: 0;
+    }
+
+    .reader-dictionary-embed__status,
+    .reader-dictionary-embed__fallback {
+        flex: 0 0 auto;
+        margin: 0 0 0.75em;
+    }
 }
 
 .page-id {

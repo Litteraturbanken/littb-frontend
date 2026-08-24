@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { ComponentPublicInstance } from "vue"
+
 import type { components } from "~/lib/api/generated/lbapi"
 import type { SanitizedHtml } from "#shared/types/renderable-html"
 import { emptyRenderableHtml } from "#shared/utils/renderable-html"
@@ -8,21 +10,44 @@ import {
   sanitizeDictionaryArticle,
   selectedReaderWord
 } from "~/lib/reader-dictionary"
+import {
+  buildSvenskaDictionaryUrl,
+  readerDictionaryMode
+} from "~/lib/reader-dictionary-embed"
 
 type DictionaryArticle = components["schemas"]["DictionaryArticleResponse"]
 
+const safeSvenskaOrigin = "https://svenska.se"
 const route = useRoute()
 const client = useLbApiClient()
+const mode = readerDictionaryMode(useRuntimeConfig().public.readerDictionaryMode)
+const embed = useReaderDictionaryEmbed()
 const indicator = ref<{ left: number, top: number, word: string } | null>(null)
 const article = ref<DictionaryArticle | null>(null)
 const articleHtml = ref<SanitizedHtml<"dictionary-article">>(emptyRenderableHtml())
+const embedAttemptWord = ref<string | null>(null)
 const message = ref("")
 let selectionTimer: ReturnType<typeof setTimeout> | null = null
 let messageTimer: ReturnType<typeof setTimeout> | null = null
 let lookupGeneration = 0
 let lookupController: AbortController | null = null
 
-const modalOpen = computed(() => article.value !== null && articleHtml.value.length > 0)
+const legacyModalOpen = computed(() => article.value !== null && articleHtml.value.length > 0)
+const embedModalOpen = computed(() => (
+  embedAttemptWord.value !== null && embed.status.value !== "closed"
+))
+const modalOpen = computed(() => mode === "embed" ? embedModalOpen.value : legacyModalOpen.value)
+const embedFullSiteUrl = computed(() => {
+  const word = embedAttemptWord.value
+  if (!word) return null
+  const session = embed.session.value
+  if (!session) return buildSvenskaDictionaryUrl(safeSvenskaOrigin, word)
+  return buildSvenskaDictionaryUrl(
+    new URL(session.src).origin,
+    word,
+    { allowLocalHttp: true }
+  )
+})
 
 useHead(() => ({
   bodyAttrs: { class: modalOpen.value ? "modal-open" : "" }
@@ -123,24 +148,18 @@ function lookupIsCurrent(
     && route.fullPath === routeFullPath
 }
 
-async function lookup(): Promise<void> {
-  const selected = indicator.value
-  indicator.value = null
-  clearSelectionTimer()
-  window.getSelection()?.removeAllRanges()
-  if (!selected) return
-  cancelLookup()
+async function lookupLegacy(word: string): Promise<void> {
   const generation = lookupGeneration
   const controller = new AbortController()
   const routeFullPath = route.fullPath
   lookupController = controller
   try {
     const result = await client.GET("/dictionary/articles", {
-      params: { query: { word: selected.word } },
+      params: { query: { word } },
       signal: controller.signal
     })
     if (!lookupIsCurrent(generation, controller, routeFullPath)) return
-    if (result.error || !validArticle(result.data, selected.word)) {
+    if (result.error || !validArticle(result.data, word)) {
       showMessage("Hittade inget uppslag")
       return
     }
@@ -162,16 +181,50 @@ async function lookup(): Promise<void> {
   }
 }
 
-function close(): void {
+async function lookup(): Promise<void> {
+  const selected = indicator.value
+  indicator.value = null
+  clearSelectionTimer()
+  window.getSelection()?.removeAllRanges()
+  if (!selected) return
+  cancelLookup()
+  closeEmbed()
+  article.value = null
+  articleHtml.value = emptyRenderableHtml()
+  if (mode === "embed") {
+    embedAttemptWord.value = selected.word
+    embed.start(selected.word)
+    return
+  }
+  await lookupLegacy(selected.word)
+}
+
+function closeLegacy(): void {
   article.value = null
   articleHtml.value = emptyRenderableHtml()
 }
 
+function closeEmbed(): void {
+  embedAttemptWord.value = null
+  embed.close()
+}
+
+function close(): void {
+  cancelLookup()
+  closeLegacy()
+  closeEmbed()
+}
+
+function setEmbedFrame(element: Element | ComponentPublicInstance | null): void {
+  embed.frame.value = element instanceof HTMLIFrameElement ? element : null
+}
+
 watch(() => route.fullPath, () => {
   cancelLookup()
+  closeEmbed()
   clearSelectionTimer()
   indicator.value = null
-  close()
+  closeLegacy()
 })
 
 onBeforeMount(() => {
@@ -182,6 +235,7 @@ onBeforeMount(() => {
 })
 onBeforeUnmount(() => {
   cancelLookup()
+  closeEmbed()
   document.removeEventListener("mouseup", handleMouseup)
   document.removeEventListener("dblclick", handleDoubleClick)
   document.removeEventListener("click", handleDocumentClick)
@@ -198,7 +252,9 @@ onBeforeUnmount(() => {
       class="search_dict"
       type="button"
       :style="{ left: `${indicator.left}px`, top: `${indicator.top}px` }"
-      :aria-label="`Slå upp ${indicator.word} i Svensk ordbok`"
+      :aria-label="mode === 'embed'
+        ? `Slå upp ${indicator.word} i SO och SAOB`
+        : `Slå upp ${indicator.word} i Svensk ordbok`"
       @mousedown.prevent
       @click.stop="lookup"
     >
@@ -208,6 +264,20 @@ onBeforeUnmount(() => {
     </button>
   </Teleport>
   <ReaderDictionaryDialog
+    v-if="mode === 'embed' && embedAttemptWord"
+    mode="embed"
+    :frame-ref="setEmbedFrame"
+    :full-site-url="embedFullSiteUrl"
+    :handle-frame-load="embed.handleFrameLoad"
+    :open="modalOpen"
+    :session="embed.session.value"
+    :status="embed.status.value"
+    :word="embedAttemptWord"
+    @close="close"
+  />
+  <ReaderDictionaryDialog
+    v-else-if="mode === 'legacy'"
+    mode="legacy"
     :article-html="articleHtml"
     :open="modalOpen"
     @close="close"

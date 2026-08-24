@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+
 import { parseHTML } from "linkedom"
 import { describe, expect, it } from "vitest"
 
@@ -7,7 +9,52 @@ import {
   selectedReaderWord
 } from "../../app/lib/reader-dictionary"
 
+const lookupSource = readFileSync(
+  new URL("../../app/components/reader/ReaderDictionaryLookup.vue", import.meta.url),
+  "utf8"
+)
+const dialogSource = readFileSync(
+  new URL("../../app/components/reader/ReaderDictionaryDialog.vue", import.meta.url),
+  "utf8"
+)
+const stylesSource = readFileSync(
+  new URL("../../app/assets/styles/nuxt.scss", import.meta.url),
+  "utf8"
+)
+
 describe("reader dictionary", () => {
+  it("selects the validated embed path without removing the legacy lookup path", () => {
+    expect(lookupSource).toContain("readerDictionaryMode")
+    expect(lookupSource).toContain('if (mode === "embed")')
+    expect(lookupSource).toContain("embed.start(selected.word)")
+    expect(lookupSource).toContain("lookupLegacy(selected.word)")
+    expect(lookupSource).toContain("Slå upp ${indicator.word} i SO och SAOB")
+    expect(lookupSource).toContain("Slå upp ${indicator.word} i Svensk ordbok")
+  })
+
+  it("keeps a failed embed attempt reachable without trusting its rejected origin", () => {
+    expect(lookupSource).toContain("const embedAttemptWord = ref<string | null>(null)")
+    expect(lookupSource).toContain("embedAttemptWord.value = selected.word")
+    expect(lookupSource).toContain('const safeSvenskaOrigin = "https://svenska.se"')
+    expect(lookupSource).toContain("buildSvenskaDictionaryUrl(safeSvenskaOrigin, word)")
+    expect(dialogSource).toContain("session: EmbedSession | null")
+    expect(dialogSource).toContain('v-if="props.session"')
+  })
+
+  it("renders the authenticated embed session with accessible fallback states", () => {
+    expect(dialogSource).toContain('mode: "legacy"')
+    expect(dialogSource).toContain('mode: "embed"')
+    expect(dialogSource).toContain('sandbox="allow-scripts allow-same-origin"')
+    expect(dialogSource).toContain('referrerpolicy="origin"')
+    expect(dialogSource).toContain("Slå upp ${props.word} i SO och SAOB")
+    expect(dialogSource).toContain('role="status"')
+    expect(dialogSource).toContain("Hittade inget uppslag")
+    expect(dialogSource).toContain("Ordboken kunde inte laddas")
+    expect(dialogSource).toContain(":href=\"props.fullSiteUrl\"")
+    expect(dialogSource).toContain(':initial-focus="closeButton"')
+    expect(stylesSource).toContain("min(72vh, 760px)")
+  })
+
   it("keeps inert SO markup while dropping active content and attributes", () => {
     const html = sanitizeDictionaryArticle(
       '<lemma id="safe" onclick="bad()"><grundform>hund</grundform>' +
