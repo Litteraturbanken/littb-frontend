@@ -56,6 +56,36 @@ function evaluatedFrontendEnvironment(path: string, variables: Record<string, st
   return tasks[0]?.Env ?? {}
 }
 
+function declaredJobspecVariables(source: string) {
+  const declarationsOnly = source
+    .replace(/\/\*[\s\S]*?\*\//gu, "")
+    .replace(/<<-?(?<delimiter>[A-Z][A-Z0-9_]*)\n[\s\S]*?^\s*\k<delimiter>\s*$/gmu, "")
+    .replace(/^\s*(?:#|\/\/).*$/gmu, "")
+  return Array.from(
+    declarationsOnly.matchAll(/^variable "(?<name>[^"]+)"\s*\{/gmu),
+    match => match.groups?.name
+  )
+}
+
+function assertReaderEnvironmentInvariant(
+  path: string,
+  baselineVariables: Record<string, string>,
+  alternateVariables: Record<string, string>
+) {
+  for (const [name, value] of Object.entries(alternateVariables)) {
+    const environment = evaluatedFrontendEnvironment(path, {
+      ...baselineVariables,
+      [name]: value
+    })
+    if (
+      environment.NUXT_PUBLIC_READER_DICTIONARY_MODE !== "embed"
+      || environment.NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN !== "https://svenska.se"
+    ) {
+      throw new Error(`Reader dictionary environment changed for ${name}`)
+    }
+  }
+}
+
 const gitSha = "a".repeat(40)
 const imageDigest = `sha256:${"b".repeat(64)}`
 
@@ -347,21 +377,68 @@ job "fixture" {
   }
 })
 
+test("declared variable inventory ignores decoys and preserves duplicates", () => {
+  expect(declaredJobspecVariables(`/* variable "commented" { type = string } */
+value = <<-EOT
+  variable "heredoc" { type = string }
+EOT
+variable "real" { type = string }
+variable "real" { type = string }
+`)).toEqual(["real", "real"])
+})
+
+test("Reader environment invariance rejects defaulted operator controls", () => {
+  const directory = mkdtempSync(resolve(tmpdir(), "littb-reader-invariance-"))
+  const path = resolve(directory, "fixture.nomad")
+  writeFileSync(path, `variable "reader_mode" {
+  type = string
+  default = "embed"
+}
+variable "reader_origin" {
+  type = string
+  default = "https://svenska.se"
+}
+job "fixture" {
+  datacenters = ["local"]
+  group "frontend" {
+    task "frontend" {
+      driver = "raw_exec"
+      env {
+        NUXT_PUBLIC_READER_DICTIONARY_MODE = var.reader_mode
+        NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = var.reader_origin
+      }
+      config {
+        command = "/bin/true"
+      }
+    }
+  }
+}`)
+
+  try {
+    expect(() => assertReaderEnvironmentInvariant(path, {}, {
+      reader_mode: "legacy"
+    })).toThrow("Reader dictionary environment changed")
+    expect(() => assertReaderEnvironmentInvariant(path, {}, {
+      reader_origin: "https://operator-controlled.invalid"
+    })).toThrow("Reader dictionary environment changed")
+  } finally {
+    rmSync(directory, { force: true, recursive: true })
+  }
+})
+
 test("staging Nomad service exposes the digest-pinned Nuxt runtime through public ingress", () => {
   const jobspec = readRepositoryFile("jobs/lb-frontend-stage.nomad")
   const normalizedJobspec = jobspec.replace(/[ \t]+/gu, " ")
   const variableNames = Array.from(
-    jobspec.matchAll(/^variable "(?<name>[^"]+)"/gmu),
-    match => match.groups?.name
+    declaredJobspecVariables(jobspec)
   )
-  const environment = evaluatedFrontendEnvironment(
-    resolve(repositoryRoot, "jobs/lb-frontend-stage.nomad"),
-    {
-      git_sha: gitSha,
-      image: `registry.test:5000/lb-frontend@${imageDigest}`,
-      image_digest: imageDigest
-    }
-  )
+  const path = resolve(repositoryRoot, "jobs/lb-frontend-stage.nomad")
+  const baselineVariables = {
+    git_sha: gitSha,
+    image: `registry.test:5000/lb-frontend@${imageDigest}`,
+    image_digest: imageDigest
+  }
+  const environment = evaluatedFrontendEnvironment(path, baselineVariables)
   const envNames = Object.keys(environment).sort()
 
   expect(jobspec).toMatch(/job\s+"lb-frontend-stage"/u)
@@ -392,6 +469,17 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(environment.NUXT_PUBLIC_READER_DICTIONARY_MODE).toBe("embed")
   expect(environment.NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN)
     .toBe("https://svenska.se")
+  const alternateVariables = {
+    caddy_host: "operator-controlled.invalid",
+    datacenters: '["operator-controlled"]',
+    git_sha: "c".repeat(40),
+    http_port: "43210",
+    image: `registry.invalid/lb-frontend@sha256:${"d".repeat(64)}`,
+    image_digest: `sha256:${"d".repeat(64)}`
+  }
+  expect(Object.keys(alternateVariables).sort())
+    .toEqual([...variableNames].sort())
+  assertReaderEnvironmentInvariant(path, baselineVariables, alternateVariables)
   expect(normalizedJobspec).toContain(
     'NUXT_OBSERVABILITY_ALLOWED_ORIGINS = "https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se"'
   )
