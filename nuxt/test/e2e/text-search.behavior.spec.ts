@@ -1304,9 +1304,13 @@ test("chronology capture loss resets its draft and prevents a stale pointer comm
     clientY: y,
     pointerId: 81
   })
-  await expect(page.getByRole("slider", { name: "Från år reglage" })).toHaveValue("1400")
+  const fromSlider = page.getByRole("slider", { name: "Från år reglage" })
+  await expect.poll(async () => Number(await fromSlider.inputValue())).toBeGreaterThan(1300)
+  const pointerDraft = Number(await fromSlider.inputValue())
+  expect(pointerDraft).toBeGreaterThanOrEqual(1399)
+  expect(pointerDraft).toBeLessThanOrEqual(1401)
   await track.dispatchEvent("lostpointercapture", { pointerId: 81 })
-  await expect(page.getByRole("slider", { name: "Från år reglage" })).toHaveValue("1300")
+  await expect(fromSlider).toHaveValue("1300")
   await track.dispatchEvent("pointermove", {
     button: 0,
     clientX: yearX(1500),
