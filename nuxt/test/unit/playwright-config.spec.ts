@@ -92,8 +92,8 @@ describe("Playwright project boundaries", () => {
 
   test("launches development and reader-asset suites with the local embed origin", () => {
     for (const [fixtureConfig, fixturePort] of [
-      [config, 4100],
-      [readerAssetsConfig, 4120]
+      [config, Number(process.env.LBAPI_FIXTURE_PORT || 4100)],
+      [readerAssetsConfig, Number(process.env.LBAPI_FIXTURE_PORT || 4120)]
     ] as const) {
       const command = serverCommandContaining(fixtureConfig, "NUXT_API_BASE")
 
@@ -118,7 +118,9 @@ describe("Playwright project boundaries", () => {
     expect(nuxtServer?.command).toContain(
       "NUXT_IGNORE_LOCK=1 node scripts/run-owned-webserver.mjs"
     )
-    expect(nuxtServer?.command).toContain("yarn dev --port 3000")
+    expect(nuxtServer?.command).toContain(
+      `yarn dev --port ${process.env.LITTB_NUXT_TEST_PORT || 3000}`
+    )
     expect(nuxtServer?.reuseExistingServer).toBe(false)
     expect(servers.every(server => server?.reuseExistingServer === false)).toBe(true)
   })

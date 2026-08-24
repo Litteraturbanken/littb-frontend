@@ -43,8 +43,11 @@ describe("Playwright shard output isolation", () => {
     expect(servers[1]?.command).toContain(
       "run-owned-webserver.mjs /tmp/littb/nuxt.pid"
     )
-    expect(servers[1]?.command).toContain("yarn dev --port 3000")
-    expect(servers[1]?.url).toBe("http://127.0.0.1:3000/_nuxt/@vite/client")
+    const nuxtPort = process.env.LITTB_NUXT_TEST_PORT || "3000"
+    expect(servers[1]?.command).toContain(`yarn dev --port ${nuxtPort}`)
+    expect(servers[1]?.url).toBe(
+      `http://127.0.0.1:${nuxtPort}/_nuxt/@vite/client`
+    )
   })
 
   test("honors an explicit retry budget for isolated shards", async () => {
