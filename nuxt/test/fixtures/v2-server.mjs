@@ -325,6 +325,8 @@ let malformedAuthorProfileIdentity = false
 let authorProfileCanonicalPath = null
 let bibliographyRequests = []
 let dictionaryRequests = []
+let svenskaEmbedRequests = []
+let svenskaEmbedScenarios = new Map()
 let bibliographyFailure = false
 let bibliographyDisconnect = false
 let bibliographyDelays = {}
@@ -559,6 +561,131 @@ function sendBody(response, status, contentType, body, headers = {}) {
     ...headers
   })
   response.end(body)
+}
+
+function escapeHtml(value) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;")
+}
+
+function serializeScriptValue(value) {
+  return JSON.stringify(value)
+    .replaceAll("<", "\\u003c")
+    .replaceAll(">", "\\u003e")
+    .replaceAll("&", "\\u0026")
+    .replaceAll("\u2028", "\\u2028")
+    .replaceAll("\u2029", "\\u2029")
+}
+
+function defaultSvenskaEmbedScenario(word) {
+  return {
+    autoPost: true,
+    dictionaries: ["so", "saob"],
+    event: "result",
+    longContent: false,
+    selectedDictionary: "so",
+    word
+  }
+}
+
+function validSvenskaEmbedScenario(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const allowedKeys = new Set([
+    "autoPost",
+    "dictionaries",
+    "event",
+    "longContent",
+    "requestIdOverride",
+    "selectedDictionary",
+    "word"
+  ])
+  if (!Object.keys(value).every(key => allowedKeys.has(key))) return false
+  if (typeof value.word !== "string" || value.word.length < 1 || value.word.length > 100) {
+    return false
+  }
+  if (typeof value.autoPost !== "boolean" || typeof value.longContent !== "boolean") return false
+  if (!["result", "empty", "error", "silent"].includes(value.event)) return false
+  if (value.requestIdOverride !== undefined && typeof value.requestIdOverride !== "string") {
+    return false
+  }
+  if (value.event !== "result") {
+    return value.dictionaries === undefined && value.selectedDictionary === undefined
+  }
+  return Array.isArray(value.dictionaries)
+    && value.dictionaries.length >= 1
+    && value.dictionaries.length <= 2
+    && value.dictionaries.every(dictionary => ["so", "saob"].includes(dictionary))
+    && new Set(value.dictionaries).size === value.dictionaries.length
+    && value.dictionaries.includes(value.selectedDictionary)
+}
+
+function svenskaEmbedArticleText(scenario, selected, visibleWord) {
+  if (scenario.event === "empty") return "Hittade inget uppslag"
+  if (scenario.event === "error") return "Ordboken kunde inte laddas"
+  if (scenario.event === "silent") return "Väntar på svar"
+  return `${selected.toUpperCase()}-artikel för ${visibleWord}`
+}
+
+function svenskaEmbedHtml({ requestId, scenario, word }) {
+  const selected = scenario.selectedDictionary === "saob" ? "saob" : "so"
+  const terminalMessage = scenario.event === "silent"
+    ? null
+    : {
+        type: "svenska-reader-lookup",
+        version: 1,
+        requestId: scenario.requestIdOverride ?? requestId,
+        event: scenario.event,
+        ...(scenario.event === "result" ? {
+          dictionaries: scenario.dictionaries,
+          selectedDictionary: scenario.selectedDictionary
+        } : {})
+      }
+  const visibleWord = escapeHtml(word)
+  const visibleArticle = svenskaEmbedArticleText(scenario, selected, visibleWord)
+  const filler = scenario.longContent
+    ? `<p class="filler">${"Lång ordbokstext. ".repeat(180)}</p>`
+    : ""
+  return `<!doctype html>
+<html lang="sv"><head><meta charset="utf-8"><title>Ordboksuppslag</title>
+<style>
+html,body{margin:0;padding:0;font:16px/1.45 sans-serif}body{padding:12px}
+[role=tab]{margin-right:8px}[role=tabpanel]{padding-top:12px}.filler{max-width:52ch}
+</style></head><body>
+<div role="tablist" aria-label="Ordböcker">
+  <button id="so-tab" type="button" role="tab" aria-selected="${selected === "so"}">SO</button>
+  <button id="saob-tab" type="button" role="tab" aria-selected="${selected === "saob"}">SAOB</button>
+</div>
+<section id="article" role="tabpanel">${visibleArticle}${filler}</section>
+<button id="post-result" type="button">Skicka svar</button>
+<script>
+const word = ${serializeScriptValue(word)}
+const terminalMessage = ${serializeScriptValue(terminalMessage)}
+const autoPost = ${serializeScriptValue(scenario.autoPost)}
+const parentOrigin = new URL(document.referrer).origin
+const article = document.querySelector("#article")
+function selectDictionary(dictionary) {
+  document.querySelector("#so-tab").setAttribute("aria-selected", String(dictionary === "so"))
+  document.querySelector("#saob-tab").setAttribute("aria-selected", String(dictionary === "saob"))
+  article.textContent = dictionary.toUpperCase() + "-artikel för " + word
+}
+document.querySelector("#so-tab").addEventListener("click", () => selectDictionary("so"))
+document.querySelector("#saob-tab").addEventListener("click", () => selectDictionary("saob"))
+function postTerminal() {
+  if (terminalMessage) parent.postMessage(terminalMessage, parentOrigin)
+}
+document.querySelector("#post-result").addEventListener("click", postTerminal)
+parent.postMessage({
+  type: "svenska-reader-lookup",
+  version: 1,
+  requestId: ${serializeScriptValue(requestId)},
+  event: "ready"
+}, parentOrigin)
+if (autoPost) requestAnimationFrame(postTerminal)
+</script></body></html>`
 }
 
 function sendReadableResource(request, response, contentType, body) {
@@ -2718,6 +2845,69 @@ const server = createServer(async (request, response) => {
   if (request.method === "OPTIONS") return sendJson(response, 204, null)
   if (request.method === "GET" && url.pathname === "/health") {
     return sendJson(response, 200, { ok: true })
+  }
+  if (url.pathname === "/_svenska_embed_requests") {
+    if (request.method === "GET") {
+      return sendJson(response, 200, { requests: svenskaEmbedRequests })
+    }
+    if (request.method === "DELETE") {
+      svenskaEmbedRequests = []
+      return sendJson(response, 200, { requests: svenskaEmbedRequests })
+    }
+    return validationError(response)
+  }
+  if (url.pathname === "/_svenska_embed_scenarios") {
+    if (request.method === "GET") {
+      return sendJson(response, 200, {
+        scenarios: Object.fromEntries(svenskaEmbedScenarios)
+      })
+    }
+    if (request.method === "DELETE") {
+      svenskaEmbedScenarios = new Map()
+      return sendJson(response, 200, { scenarios: {} })
+    }
+    if (request.method === "PUT") {
+      let scenario
+      try { scenario = await readJson(request) } catch { return validationError(response) }
+      if (!validSvenskaEmbedScenario(scenario)) return validationError(response)
+      svenskaEmbedScenarios.set(scenario.word, scenario)
+      return sendJson(response, 200, {
+        scenarios: Object.fromEntries(svenskaEmbedScenarios)
+      })
+    }
+    return validationError(response)
+  }
+  if (
+    request.method === "GET"
+    && ["/embed/reader", "/svenska-embed/reader"].includes(url.pathname)
+  ) {
+    const wordValues = url.searchParams.getAll("word")
+    const requestIdValues = url.searchParams.getAll("requestId")
+    const word = wordValues.length === 1 ? wordValues[0] : null
+    const requestId = requestIdValues.length === 1 ? requestIdValues[0] : null
+    if (
+      url.searchParams.size !== 2
+      || typeof word !== "string"
+      || word.length < 1
+      || word.length > 100
+      || typeof requestId !== "string"
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu
+        .test(requestId)
+    ) return validationError(response)
+    const scenario = svenskaEmbedScenarios.get(word) ?? defaultSvenskaEmbedScenario(word)
+    svenskaEmbedRequests.push({
+      path: url.pathname,
+      referrer: request.headers.referer ?? null,
+      requestId,
+      word
+    })
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      svenskaEmbedHtml({ requestId, scenario, word }),
+      { "cache-control": "no-store" }
+    )
   }
   if (url.pathname === "/_observability_requests") {
     if (request.method === "GET") {

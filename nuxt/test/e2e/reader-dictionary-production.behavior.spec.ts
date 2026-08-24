@@ -31,3 +31,23 @@ test("the production browser dictionary API uses the private upstream", async ({
     query: "?word=DOKTOR"
   }])
 })
+
+test("the explicit legacy mode keeps the Reader dictionary rollback usable", async ({
+  page,
+  request
+}) => {
+  await page.goto(
+    "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext",
+    { waitUntil: "networkidle" }
+  )
+  await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().dblclick()
+  await page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" }).click()
+
+  await expect(page.locator("._so_article"))
+    .toContainText("En deterministisk ordboksartikel.")
+  expect(await dictionaryRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/dictionary/articles",
+    query: "?word=DOKTOR"
+  }])
+})

@@ -210,6 +210,33 @@ test("the production reader keeps browser resources same-origin without private 
   expect(consoleErrors).toEqual([])
 })
 
+test("the production artifact opens the cross-origin Reader dictionary embed", async ({
+  page,
+  request
+}) => {
+  await Promise.all([
+    request.delete(`${fixtureOrigin}/_dictionary_requests`),
+    request.delete(`${fixtureOrigin}/_svenska_embed_requests`),
+    request.delete(`${fixtureOrigin}/_svenska_embed_scenarios`)
+  ])
+  const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().dblclick()
+  await page.getByRole("button", { name: "Slå upp DOKTOR i SO och SAOB" }).click()
+
+  const frame = page.locator('iframe[title="Slå upp DOKTOR i SO och SAOB"]')
+  await expect(frame.contentFrame().getByRole("tabpanel"))
+    .toContainText("SO-artikel för DOKTOR")
+  expect(await (await request.get(`${fixtureOrigin}/_dictionary_requests`)).json())
+    .toEqual({ requests: [] })
+  const embedLedger = await (await request.get(
+    `${fixtureOrigin}/_svenska_embed_requests`
+  )).json() as { requests: Array<{ path: string, word: string }> }
+  expect(embedLedger.requests).toEqual([
+    expect.objectContaining({ path: "/embed/reader", word: "DOKTOR" })
+  ])
+})
+
 for (const [acceptEncoding, accepted] of [
   ["br", true],
   ["br;q=0", false],

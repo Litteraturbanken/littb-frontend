@@ -25,8 +25,11 @@ export default defineConfig({
     },
     {
       command:
-        `yarn build && PORT=${nuxtPort} ` +
+        `NUXT_PUBLIC_READER_DICTIONARY_MODE=legacy yarn build && PORT=${nuxtPort} ` +
         `NUXT_API_BASE=${fixtureOrigin}/private-v2 ` +
+        `NUXT_CONTENT_BASE=${fixtureOrigin} ` +
+        `NUXT_DEPLOYMENT_ENVIRONMENT=development ` +
+        `NUXT_PUBLIC_READER_DICTIONARY_MODE=legacy ` +
         "node .output/server/index.mjs",
       url: nuxtOrigin,
       reuseExistingServer: false,

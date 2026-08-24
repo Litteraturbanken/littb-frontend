@@ -27,12 +27,16 @@ export default defineConfig({
     },
     {
       command:
-        `LITTERATURKARTAN_PROXY_TARGET=${fixtureOrigin} `
+        `NUXT_PUBLIC_READER_DICTIONARY_MODE=embed `
+        + `NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN=${fixtureOrigin} `
+        + `LITTERATURKARTAN_PROXY_TARGET=${fixtureOrigin} `
         + "yarn build && "
         + `PORT=${nuxtPort} `
         + `NUXT_API_BASE=${fixtureOrigin}/private-v2 `
         + `NUXT_LIBRARY_API_BASE=${fixtureOrigin}/legacy-api `
         + `NUXT_CONTENT_BASE=${fixtureOrigin} `
+        + "NUXT_PUBLIC_READER_DICTIONARY_MODE=embed "
+        + `NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN=${fixtureOrigin} `
         + "NUXT_DEPLOYMENT_ENVIRONMENT=development "
         + "node .output/server/index.mjs",
       url: nuxtOrigin,

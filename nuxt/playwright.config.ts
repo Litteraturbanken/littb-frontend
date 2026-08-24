@@ -23,6 +23,7 @@ if (configuredE2eLane !== undefined
 const visualE2eSpec = /e2e\/.*\.visual\.spec\.ts/
 const mobileBehaviorSpecs = [
   /e2e\/reader\.behavior\.spec\.ts/,
+  /e2e\/reader-production\.behavior\.spec\.ts/,
   /e2e\/editor-reader\.mobile\.behavior\.spec\.ts/,
   /e2e\/library-advanced\.behavior\.spec\.ts/,
   /e2e\/quick-search-developer\.behavior\.spec\.ts/
@@ -164,6 +165,8 @@ export function createPlaywrightConfig({
         `NUXT_CONTENT_BASE=${fixtureOrigin} ` +
         `NUXT_OBSERVABILITY_HMAC_SECRET=${"test-observability-secret-material-0123456789"} ` +
         `NUXT_OBSERVABILITY_ALLOWED_ORIGINS=https://stage.litteraturbanken.se ` +
+        `NUXT_PUBLIC_READER_DICTIONARY_MODE=embed ` +
+        `NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN=${fixtureOrigin} ` +
         `NUXT_DEPLOYMENT_ENVIRONMENT=${deploymentEnvironment} ` +
         `NUXT_DEPLOYMENT_GIT_SHA=${"a".repeat(40)} ` +
         `IMAGE_DIGEST=sha256:${"b".repeat(64)} ` +

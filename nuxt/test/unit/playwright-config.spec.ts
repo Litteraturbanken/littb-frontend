@@ -2,6 +2,7 @@ import { readdirSync } from "node:fs"
 import { resolve } from "node:path"
 import { describe, expect, test } from "vitest"
 import config, { createPlaywrightConfig } from "../../playwright.config"
+import dictionaryProductionConfig from "../../playwright.dictionary-production.config"
 import readerAssetsConfig from "../../playwright.reader-assets-production.config"
 import slaArticlesConfig from "../../playwright.sla-articles-nuxt.config"
 
@@ -19,6 +20,16 @@ function nuxtServerCommand(fixtureConfig: typeof config): string | undefined {
     ? fixtureConfig.webServer
     : [fixtureConfig.webServer]
   return servers.find(server => server?.command.includes("NUXT_CONTENT_BASE"))?.command
+}
+
+function serverCommandContaining(
+  fixtureConfig: typeof config,
+  fragment: string
+): string | undefined {
+  const servers = Array.isArray(fixtureConfig.webServer)
+    ? fixtureConfig.webServer
+    : [fixtureConfig.webServer]
+  return servers.find(server => server?.command.includes(fragment))?.command
 }
 
 function ssrSpecPaths(): string[] {
@@ -68,6 +79,36 @@ describe("Playwright project boundaries", () => {
     expect(matches(desktop?.testMatch, spec)).toBe(true)
     expect(matches(desktop?.testIgnore, spec)).toBe(true)
     expect(matches(mobile?.testMatch, spec)).toBe(false)
+  })
+
+  test("runs Reader embed behavior in both desktop and mobile projects", () => {
+    const spec = "e2e/reader-production.behavior.spec.ts"
+    const desktop = config.projects?.find(project => project.name === "desktop-chromium")
+    const mobile = config.projects?.find(project => project.name === "mobile-chromium")
+
+    expect(runsSpec(desktop, spec)).toBe(true)
+    expect(runsSpec(mobile, spec)).toBe(true)
+  })
+
+  test("launches development and reader-asset suites with the local embed origin", () => {
+    for (const [fixtureConfig, fixturePort] of [
+      [config, 4100],
+      [readerAssetsConfig, 4120]
+    ] as const) {
+      const command = serverCommandContaining(fixtureConfig, "NUXT_API_BASE")
+
+      expect(command).toContain("NUXT_PUBLIC_READER_DICTIONARY_MODE=embed")
+      expect(command).toContain(
+        `NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN=http://127.0.0.1:${fixturePort}`
+      )
+    }
+  })
+
+  test("keeps the production dictionary suite as the explicit legacy rollback", () => {
+    const command = serverCommandContaining(dictionaryProductionConfig, "NUXT_API_BASE")
+
+    expect(command).toContain("NUXT_PUBLIC_READER_DICTIONARY_MODE=legacy")
+    expect(command).not.toContain("NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN")
   })
 
   test("bypasses only the Nuxt checkout lock while keeping isolated servers non-reusable", () => {
