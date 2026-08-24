@@ -25,75 +25,35 @@ const readRepositoryFile = (name: string) => {
   return existsSync(path) ? readFileSync(path, "utf8") : ""
 }
 
-function closingHeredocOffset(source: string, offset: number) {
-  const declaration = source.slice(offset).match(/^<<-?(?<delimiter>[A-Z][A-Z0-9_]*)/u)
-  const delimiter = declaration?.groups?.delimiter
-  if (!delimiter) return null
-  const declarationEnd = source.indexOf("\n", offset)
-  if (declarationEnd < 0) return source.length
-  const terminator = new RegExp(`^\\s*${delimiter}\\s*$`, "mu")
-    .exec(source.slice(declarationEnd + 1))
-  if (!terminator) return source.length
-  return declarationEnd + 1 + terminator.index + terminator[0].length
+type EvaluatedNomadTask = {
+  Env?: Record<string, string>
+  Name?: string
 }
 
-function hclBlockBody(source: string, openingBrace: number) {
-  let depth = 0
-  for (let offset = openingBrace; offset < source.length; offset += 1) {
-    const character = source[offset]
-    const next = source[offset + 1]
-    if (character === '"') {
-      for (offset += 1; offset < source.length; offset += 1) {
-        if (source[offset] === "\\") offset += 1
-        else if (source[offset] === '"') break
-      }
-    } else if (character === "#" || (character === "/" && next === "/")) {
-      const lineEnd = source.indexOf("\n", offset)
-      offset = lineEnd < 0 ? source.length : lineEnd
-    } else if (character === "/" && next === "*") {
-      const commentEnd = source.indexOf("*/", offset + 2)
-      offset = commentEnd < 0 ? source.length : commentEnd + 1
-    } else if (character === "<" && next === "<") {
-      offset = closingHeredocOffset(source, offset) ?? offset
-    } else if (character === "{") {
-      depth += 1
-    } else if (character === "}") {
-      depth -= 1
-      if (depth === 0) return source.slice(openingBrace + 1, offset)
-    }
-  }
-  throw new Error("unterminated HCL block")
+type EvaluatedNomadGroup = {
+  Name?: string
+  Tasks?: EvaluatedNomadTask[]
 }
 
-function namedHclBlockBody(source: string, header: RegExp, error: string) {
-  const match = header.exec(source)
-  if (!match) throw new Error(error)
-  const openingBrace = source.indexOf("{", match.index)
-  return hclBlockBody(source, openingBrace)
-}
-
-function frontendTaskEnvironment(jobspec: string) {
-  const taskBody = namedHclBlockBody(
-    jobspec,
-    /^ {4}task "frontend" \{/mu,
-    "frontend task is missing"
+function evaluatedFrontendEnvironment(path: string, variables: Record<string, string> = {}) {
+  const variableArguments = Object.entries(variables)
+    .flatMap(([name, value]) => ["-var", `${name}=${value}`])
+  const result = spawnSync(
+    "nomad",
+    ["job", "run", "-output", ...variableArguments, path],
+    { encoding: "utf8" }
   )
-  const envBody = namedHclBlockBody(
-    taskBody,
-    /^ {6}env \{/mu,
-    "frontend task env block is missing"
-  )
-
-  const assignments = new Map<string, string[]>()
-  for (const match of envBody.matchAll(
-    /^ {8}(?<name>[A-Z][A-Z0-9_]*)\s*=\s*(?<value>.+?)\s*$/gmu
-  )) {
-    const name = match.groups?.name
-    const value = match.groups?.value
-    if (!name || !value) continue
-    assignments.set(name, [...(assignments.get(name) ?? []), value])
+  if (result.status !== 0) throw new Error("Nomad jobspec evaluation failed")
+  const output = JSON.parse(result.stdout) as {
+    Job?: { TaskGroups?: EvaluatedNomadGroup[] }
   }
-  return assignments
+  const groups = (output.Job?.TaskGroups ?? [])
+    .filter(group => group.Name === "frontend")
+  if (groups.length !== 1) throw new Error("expected exactly one frontend group")
+  const tasks = (groups[0]?.Tasks ?? [])
+    .filter(task => task.Name === "frontend")
+  if (tasks.length !== 1) throw new Error("expected exactly one frontend task")
+  return tasks[0]?.Env ?? {}
 }
 
 const gitSha = "a".repeat(40)
@@ -325,44 +285,66 @@ test("staging Docker build context excludes development and generated files", ()
   ]))
 })
 
-test("frontend environment parsing ignores approved values outside actual assignments", () => {
-  const assignments = frontendTaskEnvironment(`# NUXT_PUBLIC_READER_DICTIONARY_MODE = "embed"
-# NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://svenska.se"
+test("Nomad evaluation ignores fake frontend blocks in comments and heredocs", () => {
+  const directory = mkdtempSync(resolve(tmpdir(), "littb-nomad-evaluation-"))
+  const path = resolve(directory, "fixture.nomad")
+  writeFileSync(path, `/*
+task "frontend" {
+  env {
+    NUXT_PUBLIC_READER_DICTIONARY_MODE = "embed"
+    NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://svenska.se"
+  }
+}
+*/
+variable "caddy_host" {
+  type = string
+  default = "operator-controlled.invalid"
+}
 job "fixture" {
-  group "fixture" {
+  datacenters = ["local"]
+  meta {
+    fake_frontend = <<-EOT
+      task "frontend" {
+        env {
+          NUXT_PUBLIC_READER_DICTIONARY_MODE = "embed"
+          NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://svenska.se"
+        }
+      }
+    EOT
+  }
+  group "frontend" {
     task "frontend" {
+      driver = "raw_exec"
       env {
         NUXT_PUBLIC_READER_DICTIONARY_MODE = var.caddy_host
         NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://\${var.caddy_host}"
+      }
+      config {
+        command = "/bin/true"
+      }
+    }
+    task "sidecar" {
+      driver = "raw_exec"
+      env {
+        NUXT_PUBLIC_READER_DICTIONARY_MODE = "embed"
+        NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://svenska.se"
+      }
+      config {
+        command = "/bin/true"
       }
     }
   }
 }`)
 
-  expect(assignments.get("NUXT_PUBLIC_READER_DICTIONARY_MODE"))
-    .toEqual(["var.caddy_host"])
-  expect(assignments.get("NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN"))
-    .toEqual(['"https://${var.caddy_host}"'])
-})
-
-test("frontend environment parsing does not capture a later sidecar environment", () => {
-  const jobspec = `job "fixture" {
-  group "fixture" {
-    task "frontend" {
-      driver = "docker"
-    }
-
-    task "sidecar" {
-      env {
-        NUXT_PUBLIC_READER_DICTIONARY_MODE = "embed"
-        NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN = "https://svenska.se"
-      }
-    }
+  try {
+    const environment = evaluatedFrontendEnvironment(path)
+    expect(environment.NUXT_PUBLIC_READER_DICTIONARY_MODE)
+      .toBe("operator-controlled.invalid")
+    expect(environment.NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN)
+      .toBe("https://operator-controlled.invalid")
+  } finally {
+    rmSync(directory, { force: true, recursive: true })
   }
-}`
-
-  expect(() => frontendTaskEnvironment(jobspec))
-    .toThrow("frontend task env block is missing")
 })
 
 test("staging Nomad service exposes the digest-pinned Nuxt runtime through public ingress", () => {
@@ -372,8 +354,15 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
     jobspec.matchAll(/^variable "(?<name>[^"]+)"/gmu),
     match => match.groups?.name
   )
-  const envAssignments = frontendTaskEnvironment(jobspec)
-  const envNames = Array.from(envAssignments.keys())
+  const environment = evaluatedFrontendEnvironment(
+    resolve(repositoryRoot, "jobs/lb-frontend-stage.nomad"),
+    {
+      git_sha: gitSha,
+      image: `registry.test:5000/lb-frontend@${imageDigest}`,
+      image_digest: imageDigest
+    }
+  )
+  const envNames = Object.keys(environment).sort()
 
   expect(jobspec).toMatch(/job\s+"lb-frontend-stage"/u)
   expect(variableNames).toEqual([
@@ -400,10 +389,9 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(normalizedJobspec).toContain('NUXT_DEPLOYMENT_ENVIRONMENT = "staging"')
   expect(normalizedJobspec).toContain('NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT = "stage"')
   expect(normalizedJobspec).toContain('NUXT_PUBLIC_OBSERVABILITY_GIT_SHA = var.git_sha')
-  expect(envAssignments.get("NUXT_PUBLIC_READER_DICTIONARY_MODE"))
-    .toEqual(['"embed"'])
-  expect(envAssignments.get("NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN"))
-    .toEqual(['"https://svenska.se"'])
+  expect(environment.NUXT_PUBLIC_READER_DICTIONARY_MODE).toBe("embed")
+  expect(environment.NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN)
+    .toBe("https://svenska.se")
   expect(normalizedJobspec).toContain(
     'NUXT_OBSERVABILITY_ALLOWED_ORIGINS = "https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se"'
   )
@@ -428,18 +416,18 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
     "GIT_SHA",
     "IMAGE_DIGEST",
     "IMAGE_REF",
+    "NUXT_API_BASE",
+    "NUXT_CONTENT_BASE",
+    "NUXT_DEPLOYMENT_ENVIRONMENT",
     "NUXT_DEPLOYMENT_GIT_SHA",
     "NUXT_DEPLOYMENT_IMAGE_DIGEST",
-    "NUXT_DEPLOYMENT_ENVIRONMENT",
+    "NUXT_LIBRARY_API_BASE",
+    "NUXT_OBSERVABILITY_ALLOWED_ORIGINS",
+    "NUXT_OBSERVABILITY_HMAC_SECRET",
     "NUXT_PUBLIC_OBSERVABILITY_ENVIRONMENT",
     "NUXT_PUBLIC_OBSERVABILITY_GIT_SHA",
     "NUXT_PUBLIC_READER_DICTIONARY_MODE",
     "NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN",
-    "NUXT_OBSERVABILITY_ALLOWED_ORIGINS",
-    "NUXT_OBSERVABILITY_HMAC_SECRET",
-    "NUXT_API_BASE",
-    "NUXT_LIBRARY_API_BASE",
-    "NUXT_CONTENT_BASE",
     "PUBLIC_RESOURCE_ORIGIN"
   ])
   expect(jobspec).toContain('"caddy-host=${var.caddy_host}"')
