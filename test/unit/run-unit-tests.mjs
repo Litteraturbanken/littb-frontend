@@ -28,6 +28,7 @@ let outDir
 try {
     run(process.execPath, ["test/unit/vite-angularjs-annotate.spec.mjs"])
     run(process.execPath, ["test/unit/stats-popular-works.spec.mjs"])
+    run(process.execPath, ["test/unit/nuxt-live-source-info-corpus.spec.mjs"])
 
     outDir = mkdtempSync(join(tmpdir(), "littb-unit-"))
     run(process.execPath, [

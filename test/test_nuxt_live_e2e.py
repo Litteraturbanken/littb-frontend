@@ -207,7 +207,7 @@ class NuxtLivePlaywrightTest(unittest.TestCase):
         result = run_live_playwright("--list")
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Total: 17 tests in 1 file", result.stdout)
+        self.assertIn("Total: 19 tests in 1 file", result.stdout)
         for title in (
             "loads and hydrates the home page",
             "loads the advanced Library route and exercises its controls",
@@ -216,6 +216,8 @@ class NuxtLivePlaywrightTest(unittest.TestCase):
             "loads and hydrates Hjalmar Söderberg's author route",
             "loads Strindberg's production author works payload",
             "loads etext Reader content and navigates to the next page",
+            "opens source information when one person has multiple contributor roles",
+            "validates a bounded diverse corpus of real source information",
             "loads facsimile Reader content and exposes its OCR layer",
             "opens a typed dictionary article through the same-origin API",
             "loads lb12106 Editor etext and navigates to the next page",

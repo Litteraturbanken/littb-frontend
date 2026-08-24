@@ -1,4 +1,9 @@
 const { test, expect } = require("@playwright/test")
+const {
+    mapWithConcurrency,
+    sampleReadableWorks,
+    sourceInfoSearchMatrix
+} = require("./nuxt_live_source_info_corpus.cjs")
 
 const browserErrors = new WeakMap()
 const expectedGitSha = process.env.LITTB_EXPECTED_GIT_SHA
@@ -241,6 +246,91 @@ test.describe("Nuxt whole-site staging smoke", () => {
             /\/f%C3%B6rfattare\/S%C3%B6derbergH\/titlar\/DoktorGlas\/sida\/2\/etext$/
         )
         await expect(reader).toHaveAttribute("aria-label", /Doktor Glas, sida 2/)
+    })
+
+    test("opens source information when one person has multiple contributor roles", async ({
+        page
+    }) => {
+        await openNuxtRoute(
+            page,
+            "/författare/BergstrandPoulsenE/titlar/Kronan/sida/VIII/etext?om-boken"
+        )
+
+        const dialog = page.getByRole("dialog", { name: "Om boken" })
+        await expect(dialog).toBeVisible()
+        await expect(dialog.locator(".error")).toHaveCount(0)
+        await expect(dialog.locator(".author a")).toHaveText([
+            "Elisabeth Bergstrand-Poulsen",
+            "Elisabeth Bergstrand-Poulsen ill."
+        ])
+    })
+
+    test("validates a bounded diverse corpus of real source information", async ({
+        request
+    }) => {
+        test.setTimeout(120000)
+        const searches = await mapWithConcurrency(
+            sourceInfoSearchMatrix(),
+            4,
+            async payload => {
+                const response = await request.post("/api/v2/library/search", {
+                    data: payload
+                })
+                const text = await response.text()
+                if (response.status() !== 200) {
+                    return {
+                        payload,
+                        failure: `HTTP ${response.status()}: ${text.slice(0, 300)}`
+                    }
+                }
+                try {
+                    return { payload, body: JSON.parse(text) }
+                } catch {
+                    return { payload, failure: `invalid JSON: ${text.slice(0, 300)}` }
+                }
+            }
+        )
+        const searchFailures = searches.filter(result => result.failure)
+        expect(
+            searchFailures,
+            `library discovery failed:\n${JSON.stringify(searchFailures, null, 2)}`
+        ).toEqual([])
+
+        const works = sampleReadableWorks(searches.map(result => result.body), 96)
+        expect(works.length, "the corpus sweep must discover at least 30 readable works")
+            .toBeGreaterThanOrEqual(30)
+
+        const audits = await mapWithConcurrency(works, 8, async work => {
+            const path = [
+                "/nuxt-api/reader/source-info",
+                encodeURIComponent(work.route_author_id),
+                encodeURIComponent(work.route_title_id)
+            ].join("/") + `?media_type=${encodeURIComponent(work.route_media_type)}`
+            const response = await request.get(path)
+            const text = await response.text()
+            if (response.status() !== 200) {
+                return { path, failure: `HTTP ${response.status()}: ${text.slice(0, 300)}` }
+            }
+            try {
+                const body = JSON.parse(text)
+                if (
+                    typeof body.workId !== "string"
+                    || body.workId.length === 0
+                    || body.mediaType !== work.route_media_type
+                    || !Array.isArray(body.authors)
+                ) {
+                    return { path, failure: `invalid source-info body: ${text.slice(0, 300)}` }
+                }
+            } catch {
+                return { path, failure: `invalid JSON: ${text.slice(0, 300)}` }
+            }
+            return { path, failure: null }
+        })
+        const failures = audits.filter(result => result.failure)
+        expect(
+            failures,
+            `source-information corpus failures:\n${JSON.stringify(failures, null, 2)}`
+        ).toEqual([])
     })
 
     test("loads facsimile Reader content and exposes its OCR layer", async ({ page }) => {

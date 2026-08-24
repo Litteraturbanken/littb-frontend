@@ -175,6 +175,33 @@ describe("Reader source-information runtime contract", () => {
     ).media_type).toBe("infopost")
   })
 
+  test("accepts the same person credited in distinct contributor roles", () => {
+    const value = clone(doktorGlasSourceInfo)
+    value.authors.push({
+      ...value.authors[0],
+      author_type: "illustrator"
+    })
+
+    expect(validateReaderSourceInfoResponse(
+      value,
+      "SöderbergH",
+      "DoktorGlas",
+      "etext"
+    )).toEqual(value)
+  })
+
+  test("accepts legacy line breaks in display titles", () => {
+    const value = clone(doktorGlasSourceInfo)
+    value.title = "Doktor Glas.\n   Roman"
+
+    expect(validateReaderSourceInfoResponse(
+      value,
+      "SöderbergH",
+      "DoktorGlas",
+      "etext"
+    )).toEqual(value)
+  })
+
   test("accepts a backend lookup alias absent from projected public authors", () => {
     expect(validateReaderSourceInfoResponse(
       doktorGlasSourceInfo,

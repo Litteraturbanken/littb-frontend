@@ -249,8 +249,8 @@ function publicationMetadataIsValid(value: UnknownRecord): boolean {
 }
 
 function validateWorkMetadata(value: UnknownRecord): void {
-  if (!boundedString(value.title, 20_000)
-    || !optionalString(value.short_title, 20_000)
+  if (!boundedHtmlString(value.title, 20_000)
+    || !optionalHtmlString(value.short_title, 20_000)
     || !optionalString(value.text_type, 200)
     || !sourceDescriptionIsValid(value)
     || !introductionIsValid(value)
@@ -259,11 +259,9 @@ function validateWorkMetadata(value: UnknownRecord): void {
 }
 
 function validSourceAuthor(
-  item: UnknownRecord,
-  authorIds: ReadonlySet<string>
+  item: UnknownRecord
 ): item is UnknownRecord & { author_id: string } {
   return validSegment(item.author_id)
-    && !authorIds.has(item.author_id)
     && boundedString(item.full_name, 20_000)
     && optionalString(item.surname, 20_000)
     && optionalString(item.role, 200)
@@ -275,9 +273,13 @@ function validSourceAuthor(
 function validateAuthors(value: unknown, canonicalAuthorId: string): void {
   const authors = strictArray(value, 100)
   const authorIds = new Set<string>()
+  const contributorIdentities = new Set<string>()
   for (const item of authors) {
     if (!isReaderSourceRecord(item) || !exactKeys(item, authorKeys)) invalidSourceInfo()
-    if (!validSourceAuthor(item, authorIds)) invalidSourceInfo()
+    if (!validSourceAuthor(item)) invalidSourceInfo()
+    const identity = JSON.stringify([item.author_id, item.role, item.author_type])
+    if (contributorIdentities.has(identity)) invalidSourceInfo()
+    contributorIdentities.add(identity)
     authorIds.add(item.author_id)
   }
   if (authors.length > 0 && !authorIds.has(canonicalAuthorId)) invalidSourceInfo()
