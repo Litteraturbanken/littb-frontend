@@ -70,7 +70,8 @@ function declaredJobspecVariables(source: string) {
 function assertReaderEnvironmentInvariant(
   path: string,
   baselineVariables: Record<string, string>,
-  alternateVariables: Record<string, string>
+  alternateVariables: Record<string, string>,
+  expectedOrigin = "https://svenska.se"
 ) {
   for (const [name, value] of Object.entries(alternateVariables)) {
     const environment = evaluatedFrontendEnvironment(path, {
@@ -79,7 +80,7 @@ function assertReaderEnvironmentInvariant(
     })
     if (
       environment.NUXT_PUBLIC_READER_DICTIONARY_MODE !== "embed"
-      || environment.NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN !== "https://svenska.se"
+      || environment.NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN !== expectedOrigin
     ) {
       throw new Error(`Reader dictionary environment changed for ${name}`)
     }
@@ -468,7 +469,9 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(normalizedJobspec).toContain('NUXT_PUBLIC_OBSERVABILITY_GIT_SHA = var.git_sha')
   expect(environment.NUXT_PUBLIC_READER_DICTIONARY_MODE).toBe("embed")
   expect(environment.NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN)
-    .toBe("https://svenska.se")
+    .toBe("https://stage.svenska.se")
+  expect(environment.NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN)
+    .not.toBe("https://svenska.se")
   const alternateVariables = {
     caddy_host: "operator-controlled.invalid",
     datacenters: '["operator-controlled"]',
@@ -479,10 +482,14 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   }
   expect(Object.keys(alternateVariables).sort())
     .toEqual([...variableNames].sort())
-  assertReaderEnvironmentInvariant(path, baselineVariables, alternateVariables)
-  expect(normalizedJobspec).toContain(
-    'NUXT_OBSERVABILITY_ALLOWED_ORIGINS = "https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se"'
+  assertReaderEnvironmentInvariant(
+    path,
+    baselineVariables,
+    alternateVariables,
+    "https://stage.svenska.se"
   )
+  expect(environment.NUXT_OBSERVABILITY_ALLOWED_ORIGINS)
+    .toBe("https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se")
   expect(environment).not.toHaveProperty(
     "NUXT_OBSERVABILITY_TRUSTED_PROXY_CIDRS"
   )

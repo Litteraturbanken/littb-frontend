@@ -141,7 +141,7 @@ describe("Reader source-information auto-import boundary", () => {
 })
 
 describe("Reader dictionary embed runtime configuration", () => {
-  test("defaults to the legacy path and the public Svenska origin", async () => {
+  test("live defaults to the legacy path and the public Svenska origin", async () => {
     vi.stubEnv("NUXT_PUBLIC_READER_DICTIONARY_MODE", undefined)
     vi.stubEnv("NUXT_PUBLIC_SVENSKA_READER_EMBED_ORIGIN", undefined)
 
