@@ -18,6 +18,7 @@ from invoke import Collection, Context, Exit, task
 
 ROOT = Path(__file__).resolve().parent
 VISUAL_BASELINE_PATH = "nuxt/test/visual/baselines"
+VISUAL_BASELINE_AUTHORITY = "69686c57"
 
 
 def _default_backend_dir() -> Path:
@@ -178,7 +179,7 @@ def _check_nuxt_contracts(
 
 def _verify_visual_baselines(
     repository: Path = ROOT,
-    authority: str = "06add2bb",
+    authority: str = VISUAL_BASELINE_AUTHORITY,
 ) -> None:
     root_result = subprocess.run(
         ["git", "rev-parse", "--show-toplevel"],

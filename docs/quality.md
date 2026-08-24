@@ -162,15 +162,17 @@ runtime pinned by `nuxt/.nvmrc`. The full desktop/mobile browser and visual
 suites remain part of the parity gate above.
 
 Committed visual baselines are immutable relative to authority commit
-`06add2bb`. From the resolved repository root, the release task independently
-compares the authority with committed `HEAD`, the staged index, and the current
-filesystem. It then reads the authority tree's exact blob set and byte-compares
-it with the filesystem baseline tree. This remains effective when working bytes
-hide a committed or staged change and is independent of index flags such as
-assume-unchanged and skip-worktree. Changed, missing, added,
-ordinary-untracked, ignored-untracked, or symlinked baseline files fail, as
-does a symlink in any baseline-path ancestor. The gate never updates snapshots
-or generated artifacts.
+`69686c57`. This authority includes the staged Library regression coverage and
+the approved distinct standalone EPUB background baselines; later baseline
+changes remain forbidden. From the resolved repository root, the release task
+independently compares the authority with committed `HEAD`, the staged index,
+and the current filesystem. It then reads the authority tree's exact blob set
+and byte-compares it with the filesystem baseline tree. This remains effective
+when working bytes hide a committed or staged change and is independent of
+index flags such as assume-unchanged and skip-worktree. Changed, missing,
+added, ordinary-untracked, ignored-untracked, or symlinked baseline files fail,
+as does a symlink in any baseline-path ancestor. The gate never updates
+snapshots or generated artifacts.
 
 ## Reader and Editor manifest ownership
 
@@ -193,7 +195,7 @@ The ownership layers are deliberate:
 | `nuxt/test/nuxt/reader-editor-manifest-contract.ts` | Exact generated operation, response, nested DTO, and contribution-role equality |
 | Nuxt unit and SSR tests | Manifest projection, bounds/navigation, degradation, assets, and zero legacy metadata ownership |
 | Playwright behavior tests | Observable Reader and Editor route, navigation, search, and control parity |
-| Visual baseline gate | Immutable visual authority at commit `06add2bb` |
+| Visual baseline gate | Immutable visual authority at commit `69686c57` |
 
 HTML, OCR, and image bodies are not OpenAPI DTOs. They remain separately
 validated managed assets with authority, path, media-type, byte-bound,

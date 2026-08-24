@@ -1,3 +1,4 @@
+import inspect
 import json
 import os
 import shutil
@@ -56,6 +57,14 @@ def initialize_visual_repository(repository: Path) -> str:
 
 
 class InvokeTaskTests(unittest.TestCase):
+    def test_visual_baseline_gate_defaults_to_the_approved_epub_authority(self) -> None:
+        authority_default = inspect.signature(
+            tasks._verify_visual_baselines
+        ).parameters["authority"].default
+
+        self.assertEqual(tasks.VISUAL_BASELINE_AUTHORITY, "69686c57")
+        self.assertEqual(authority_default, tasks.VISUAL_BASELINE_AUTHORITY)
+
     def test_nuxt_contract_project_inherits_nuxt_aliases_and_covers_every_contract(self) -> None:
         config_path = ROOT / "nuxt" / "tsconfig.contracts.json"
 
