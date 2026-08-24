@@ -1796,7 +1796,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            mode: "works" | "parts";
+            mode: "parts" | "works";
             /** Total */
             total: number | null;
         };
