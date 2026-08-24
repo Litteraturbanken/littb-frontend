@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "packetId": "app/lib/reader-dictionary-embed.ts::packet::readerDictionaryMode",
+  "packetFingerprint": "af07f0f9ea3cbced6a1e36831227a007f5cb472610d63d08d05c3c0adbb533d7",
+  "author": "implementation-agent",
+  "reviewer": "semantic-reader-reviewer",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [],
+  "verification": [
+    "Generated and read the exact current mode packet and type boundary.",
+    "Inspected the production component consumer, complete mode tests, fail-safe runtime default and tests, evaluated stage environment, and deployment assertions.",
+    "Confirmed exact embed opt-in with legacy fallback is the smallest fail-closed implementation.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

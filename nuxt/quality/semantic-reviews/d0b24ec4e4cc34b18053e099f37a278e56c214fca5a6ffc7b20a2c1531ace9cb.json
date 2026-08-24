@@ -1,1 +1,19 @@
-{"version":1,"packetId":"server/utils/observability-intake.ts::packet::handleObservabilityIntake","packetFingerprint":"7720a88eef0f568fa9a4d1fd6d89f373e9d96c796556f710bd5a197a773ff0f9","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read quality/semantic-review-contract.md.","Read exactly the specified packet JSON at .quality/semantic-review/packets/d0b24ec4e4cc34b18053e099f37a278e56c214fca5a6ffc7b20a2c1531ace9cb.json.","Inspected owned unit server/utils/observability-intake.ts lines 617-691 and surrounding validation, reservation, signing, forwarding, replay, and acceptance helpers in the same file.","Inspected direct caller server/routes/_observability/events.post.ts.","Inspected direct dependencies app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.","Inspected generated API boundaries in app/lib/api/generated/lbapi.ts for browser event schemas, ObservabilityEventBatch, ObservabilityAcceptedResponse, and the internal observability events operation.","Inspected packet-named test test/unit/observability-intake.spec.ts and related SSR route coverage in test/ssr/observability-api.spec.ts.","Searched current repository references for handleObservabilityIntake, observability-intake, the observability route, replay conflict status handling, and accepted-count behavior using read-only commands.","Checked scoped git status for reviewed source, direct caller, dependencies, generated API boundary, and relevant tests; no scoped modifications were reported. Git emitted macOS temp/cache warnings under the read-only sandbox.","Used read-only commands only; did not run the test suite because the request constrained review execution to read-only inspection."]}
+{
+  "version": 1,
+  "packetId": "server/utils/observability-intake.ts::packet::handleObservabilityIntake",
+  "packetFingerprint": "460959036f9fdc441ca6cf858e9403f5f5cd36c151efcfff189357716de911cc",
+  "author": "implementation-agent",
+  "reviewer": "semantic-observability-fix-reviewer-b",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [],
+  "verification": [
+    "Read the semantic review contract and exact current handler packet after both observability fixes.",
+    "Inspected owned handler units, surrounding preparation/signing/forwarding/replay helpers, direct route caller, imports, generated API boundaries, browser retry classification, runtime config, stage wiring, and relevant tests.",
+    "Confirmed trusted-event transformation is release-protected and a throwing correlation resolver releases the event ID for successful retry.",
+    "Confirmed only payload statuses map to terminal 422, upstream 401 maps to retryable 502 with release and retry coverage, and the return type is generated ObservabilityAcceptedResponse.",
+    "Confirmed forwarded addresses are accepted only from configured trusted peers with one valid address; default, direct-spoof, ambiguous-chain, and independent-quota cases are covered.",
+    "Reviewed ownership, replay, timeout, and delayed-completion concurrency policies with no Critical or Important finding.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

@@ -1,1 +1,17 @@
-{"version":1,"packetId":"server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.enforceRate","packetFingerprint":"7d810354cc09d9f1d94788cd960fdc60feb5287777c2a200db6665a7fbbd8544","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read quality/semantic-review-contract.md.","Read exactly the specified packet JSON at .quality/semantic-review/packets/cd232dbe2a3e74964aea69a68a2903887dcd730fb72443d7c37a4f75cbc396ab.json.","Inspected owned unit server/utils/observability-intake.ts lines 110-126 and surrounding ObservabilityIntakeGuard state, reservation, acceptance, release, and handleObservabilityIntake flow.","Inspected direct caller server/routes/_observability/events.post.ts and prepareIntake call path at server/utils/observability-intake.ts lines 439-456.","Inspected packet-listed dependencies app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.","Inspected generated API boundaries in app/lib/api/generated/lbapi.ts around browser observability event schemas and ObservabilityAcceptedResponse.","Inspected named tests in test/unit/observability-intake.spec.ts, including per-client window recovery, capacity-full behavior, malformed-body rate limiting, forwarded-address handling, replay reservation behavior, upstream failure handling, and accepted-count handling.","Searched current repository references for enforceRate, ObservabilityIntakeGuard, and observability-intake.","Checked scoped git diff for reviewed source, caller, dependencies, and named test; no scoped source diff output was present. Git emitted macOS cache warnings under the read-only sandbox.","Used read-only inspection commands only; did not run tests because the review request constrained execution to read-only commands."]}
+{
+  "version": 1,
+  "packetId": "server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.enforceRate",
+  "packetFingerprint": "1ff9f5a32a288c7352b366d36194af8deec62def9adafb170cd402fa6da20ed9",
+  "author": "implementation-agent",
+  "reviewer": "semantic-observability-fix-reviewer-b",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [],
+  "verification": [
+    "Read the semantic review contract and exact current rate-limit packet.",
+    "Inspected the method, client-key/trusted-CIDR derivation, preparation order, route/runtime/deployment wiring, browser retry behavior, generated boundary, and tests.",
+    "Confirmed fixed-window behavior, expiry pruning, bounded capacity, pre-body enforcement, direct spoof rejection, trusted single-address quotas, ambiguous-chain fallback, and retryable 429 delivery.",
+    "Confirmed configuration is server-only, closed by default, and stage-wired to the known ingress CIDR.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

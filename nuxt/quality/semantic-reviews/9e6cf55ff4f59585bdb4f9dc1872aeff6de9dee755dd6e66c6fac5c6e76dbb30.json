@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "packetId": "server/routes/_observability/events.post.ts::packet::module-defineEventHandler.callback[1]@03112b9a8db6#1",
+  "packetFingerprint": "0f5489617521f419e64e508f80f3898488031885d616e508fd8de89d27c60389",
+  "author": "implementation-agent",
+  "reviewer": "semantic-observability-fix-reviewer-b",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [],
+  "verification": [
+    "Read the semantic review contract and exact current route-callback packet.",
+    "Inspected the callback, request-scoped runtime config mapping, Nuxt defaults, Playwright configuration, trusted-proxy config tests, and stage deployment assertions.",
+    "Inspected the intake boundary, generated batch/accepted schemas and contract tests, plus SSR endpoint coverage for rebuilding/signing, redaction, origins, size/shape failures, correlation, and replay.",
+    "Confirmed the route is a minimal adapter returning generated response type with fail-closed optional configuration and no request-state leakage.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

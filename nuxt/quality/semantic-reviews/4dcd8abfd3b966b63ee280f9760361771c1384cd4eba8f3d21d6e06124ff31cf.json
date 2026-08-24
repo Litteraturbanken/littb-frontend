@@ -1,1 +1,32 @@
-{"version":1,"packetId":"app/components/reader/ReaderDictionaryDialog.vue::packet::component","packetFingerprint":"11c1dc0ce3cb45f78afad44cbd6fa7420d805c062df5c0582b3346f258bb829d","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read review contract quality/semantic-review-contract.md.","Read packet .quality/semantic-review/packets/4dcd8abfd3b966b63ee280f9760361771c1384cd4eba8f3d21d6e06124ff31cf.json.","Inspected owned physical line ranges in app/components/reader/ReaderDictionaryDialog.vue with line numbers.","Searched for direct callers and component references; confirmed ReaderDictionaryLookup.vue is the template consumer via Nuxt component auto-import.","Inspected direct consumer app/components/reader/ReaderDictionaryLookup.vue around modal state, close handling, lookup concurrency, sanitization handoff, and template props.","Inspected reader page caller app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around ReaderDictionaryLookup usage.","Inspected raw HTML boundary app/components/global/RenderableHtmlContent.vue, shared/types/renderable-html.ts, shared/utils/renderable-html.ts, and app/lib/reader-dictionary.ts.","Inspected related dictionary and dialog coverage in test/e2e/reader-production.behavior.spec.ts, test/unit/reader-dictionary.spec.ts, and renderable HTML contract tests.","Checked local @headlessui/vue dependency version from package.json and searched existing Dialog patterns in app and tests.","Used read-only commands only: sed, nl, rg, node -p, and git status --short. No tests were run because the review request required read-only inspection commands."]}
+{
+  "version": 1,
+  "packetId": "app/components/reader/ReaderDictionaryDialog.vue::packet::component",
+  "packetFingerprint": "b77eeabafdc954bc5cde3e2ec4a6aa3aedece5b0cbe8e4e36ca00bda8064857f",
+  "author": "implementation-agent",
+  "reviewer": "semantic-reader-reviewer",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [
+    {
+      "id": "SR-4dcd8ab-minor-001",
+      "severity": "minor",
+      "category": "complexity",
+      "path": "app/components/reader/ReaderDictionaryDialog.vue",
+      "unitId": "app/components/reader/ReaderDictionaryDialog.vue::component::ReaderDictionaryDialog",
+      "line": 20,
+      "summary": "The embed dialog exposes a frame-load callback whose implementation is intentionally empty.",
+      "consequence": "The prop, caller binding, iframe listener, composable return member, and test invocation imply iframe load changes lifecycle state although authenticated messages are the sole readiness boundary.",
+      "evidence": "EmbedDialogProps requires handleFrameLoad and the iframe invokes it; the parent passes the composable callback, whose implementation is empty.",
+      "recommendation": "Remove handleFrameLoad from the dialog props, iframe binding, parent binding, composable return value, and no-op test invocation.",
+      "status": "unresolved",
+      "resolution": null,
+      "resolutionCommit": null,
+      "verification": ["Traced handleFrameLoad through dialog, parent, composable, and lifecycle test.", "Confirmed message events own every observable state transition."]
+    }
+  ],
+  "verification": [
+    "Read the semantic review contract and exact current requested packet.",
+    "Inspected every owned range, direct type boundary and sole caller, branded HTML boundary, styles, unit coverage, and observable browser coverage.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

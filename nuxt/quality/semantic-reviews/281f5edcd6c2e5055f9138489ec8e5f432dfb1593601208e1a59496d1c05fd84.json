@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "packetId": "app/lib/reader-dictionary-embed.ts::packet::svenskaReaderEmbedOrigin",
+  "packetFingerprint": "92f64a28b27b0862da2ea8fb859d88bc29728ff4d41abdb7682cd800dd7d4e69",
+  "author": "implementation-agent",
+  "reviewer": "semantic-reader-reviewer",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [
+    {
+      "id": "loopback-host-policy-duplicated",
+      "severity": "minor",
+      "category": "duplication",
+      "path": "app/lib/reader-dictionary-embed.ts",
+      "unitId": "app/lib/reader-dictionary-embed.ts::function::svenskaReaderEmbedOrigin",
+      "line": 40,
+      "summary": "The loopback-host allowlist is duplicated in the composable's parent-host check.",
+      "consequence": "The policies could drift and make local parent and target HTTP authorization inconsistent.",
+      "evidence": "The module and composable independently declare the identical localhost, IPv4 loopback, and IPv6 loopback set.",
+      "recommendation": "Reuse one isLoopbackHostname policy while retaining explicit allowLocalHttp capability.",
+      "status": "unresolved",
+      "resolution": null,
+      "resolutionCommit": null,
+      "verification": ["Compared both hostname policies and their tests."]
+    }
+  ],
+  "verification": [
+    "Generated and read the exact current origin packet, options, and loopback policy.",
+    "Inspected both URL builders, runtime config caller, parent capability check, fallback caller, complete origin tests, lifecycle local/production behavior, stage wiring, and configuration tests.",
+    "Ran read-only URL probes for credentials, IPv6 loopback, and noncanonical forms.",
+    "Made no repository edits."
+  ]
+}

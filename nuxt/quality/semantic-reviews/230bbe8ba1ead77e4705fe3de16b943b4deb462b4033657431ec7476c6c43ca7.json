@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "packetId": "app/lib/reader-dictionary-embed.ts::packet::parseReaderLookupMessage",
+  "packetFingerprint": "b87984800f139f34f4b462dd06868c07eb59a0f99b329f554ecac2c26e85a858",
+  "author": "implementation-agent",
+  "reviewer": "semantic-reader-reviewer",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [
+    {
+      "id": "reader-message-return-type-not-discriminated",
+      "severity": "minor",
+      "category": "types",
+      "path": "app/lib/reader-dictionary-embed.ts",
+      "unitId": "app/lib/reader-dictionary-embed.ts::function::parseReaderLookupMessage",
+      "line": 157,
+      "summary": "The parser enforces a discriminated protocol at runtime but returns optional result fields for every event.",
+      "consequence": "Consumers cannot rely on result fields after event narrowing, while impossible non-result shapes remain representable.",
+      "evidence": "The parser guarantees result fields and forbids them on non-result messages, but ReaderLookupMessage makes both optional and the caller adds impossible-state fallbacks.",
+      "recommendation": "Model ReaderLookupMessage as a discriminated union and remove caller fallbacks that runtime validation makes impossible.",
+      "status": "unresolved",
+      "resolution": null,
+      "resolutionCommit": null,
+      "verification": ["Compared runtime return branches, public protocol type, and narrowed caller behavior."]
+    }
+  ],
+  "verification": [
+    "Generated and read the exact current parser packet and public protocol type.",
+    "Inspected all parser helpers, lifecycle caller, complete protocol tests, lifecycle correlation tests, production E2E security boundaries, and child fixture protocol.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

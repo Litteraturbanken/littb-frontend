@@ -1,1 +1,53 @@
-{"version":1,"packetId":"server/utils/observability-intake.ts::packet::module-validateOrigin","packetFingerprint":"b8c764a0916fece43c111eeb471843ebeeca6baf81ebe1ff0d5864d73644c063","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read quality/semantic-review-contract.md and exactly one packet JSON at .quality/semantic-review/packets/2bec35eae1076cd9da27e93020828757ee1d3afe17b3a0c96191e93c3455d726.json.","Inspected owned units in server/utils/observability-intake.ts physical lines 217-615, including origin validation, compact browser event validation, batch parsing, trusted event rebuilding, secret loading, client keying, header validation, intake preparation, signed forwarding, timeout handling, failed-forward release, accepted-count parsing, and replay-conflict recovery.","Inspected direct caller server/routes/_observability/events.post.ts for runtime config wiring and route response behavior.","Inspected direct imports and type dependencies: app/lib/observability/events.ts, app/lib/api/generated/lbapi.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.","Inspected packet-named tests in test/unit/observability-intake.spec.ts, including origin/content/body validation, browser event classification, rate limiting, duplicate reservation behavior, timeout release, conflict recovery, invalid upstream accepted responses, partial accepted counts, and signing failure release.","Inspected related endpoint-level coverage in test/ssr/observability-api.spec.ts for same-origin intake, public alias acceptance, compact trusted event forwarding, privacy filtering, correlation token attribution, and replay acknowledgement.","Searched current repository references for handleObservabilityIntake, ObservabilityIntakeGuard, readBoundedRequestBody, /_observability/events, observabilityAllowedOrigins, browser observability schemas, and internal observability forwarding paths.","Checked scoped git status/diff with read-only commands; git emitted macOS cache/temp warnings under the read-only sandbox and no scoped source diff output was produced.","Used read-only inspection commands only; did not run the test runner because the review request required read-only commands in a read-only sandbox."]}
+{
+  "version": 1,
+  "packetId": "server/utils/observability-intake.ts::packet::module-validateOrigin",
+  "packetFingerprint": "b7fae0e9f46cdda65a0313ed97e9d72974650faf2ee7abf004b4d4af111b8f09",
+  "author": "implementation-agent",
+  "reviewer": "semantic-observability-fix-reviewer-a",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [
+    {
+      "id": "observability-intake-proxy-peer-rate-key",
+      "severity": "important",
+      "category": "correctness",
+      "path": "server/utils/observability-intake.ts",
+      "unitId": "server/utils/observability-intake.ts::function::clientKey",
+      "line": 517,
+      "summary": "The ingress now provides the single sanitized client address required by the intake rate-key boundary.",
+      "consequence": "Trusted chains receive independent client quotas while an untrusted direct request cannot choose its identity through spoofed X-Forwarded-For.",
+      "evidence": "lb-infra 1dc00415 overwrites XFF with Caddy's {client_ip} in all four proxy branches after strict trust processing; Nuxt accepts it only from configured ingress 10.0.0.40/32.",
+      "recommendation": "Retain four-branch completeness, strict trust, single-address replacement, and direct-spoof/independent-quota tests.",
+      "status": "resolved",
+      "resolution": "lb-infra commit 1dc00415 normalizes every ingress proxy branch to one Caddy-sanitized client address.",
+      "resolutionCommit": "1dc00415",
+      "verification": [
+        "Inspected immutable commit 1dc00415 template, runbook, trust source, listener config, jobspec, and proxy tests.",
+        "Confirmed four proxy branches and four replacement operations with no additive XFF operation.",
+        "Inspected Caddy 2.11.2 trust parsing and header Set order plus Nuxt trusted-ingress tests."
+      ]
+    },
+    {
+      "id": "observability-intake-auth-failure-made-terminal",
+      "severity": "important",
+      "category": "correctness",
+      "path": "server/utils/observability-intake.ts",
+      "unitId": "server/utils/observability-intake.ts::function::rejectFailedForward",
+      "line": 669,
+      "summary": "Upstream authentication and deployment failures remain retryable.",
+      "consequence": "Secret drift no longer discards telemetry and released reservations permit later redelivery.",
+      "evidence": "Only payload statuses become terminal 422; 401 becomes 502, 503 stays 503, reservations release first, and browser terminal status excludes both.",
+      "recommendation": "Retain explicit payload-only mapping and same-event redelivery coverage.",
+      "status": "resolved",
+      "resolution": "Commit e189ab2e mapped authentication/deployment failures to retryable statuses and added release/retry coverage.",
+      "resolutionCommit": "e189ab2e",
+      "verification": ["Rechecked failure mapping, generated response semantics, browser classification, and retry tests."]
+    }
+  ],
+  "verification": [
+    "Read the semantic review contract and regenerated the exact current packet.",
+    "Inspected every owned unit, imports/caller, generated boundary, intake tests, and lb-infra commit 1dc00415 without checkout.",
+    "Inspected all ingress branches, Caddy trust/header ordering, listener trust, jobspec CIDR, and deployment validation path.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

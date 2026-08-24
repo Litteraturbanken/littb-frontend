@@ -1,1 +1,17 @@
-{"version":1,"packetId":"server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.constructor","packetFingerprint":"28061cfecd1b211ddc014db672cc759f51e0be338811b3a1c52a54de49e15260","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read quality/semantic-review-contract.md.","Read exactly the specified packet JSON at .quality/semantic-review/packets/97890597998e38a17b975bf165d1f5b4a9da5ea9abefd5b40648ddf0650e5fa5.json.","Inspected owned unit server/utils/observability-intake.ts::constructor::ObservabilityIntakeGuard.constructor at current physical lines 106-108, plus surrounding guard state, rate limiting, reservation, eviction, accept, release, and intake forwarding flow.","Inspected direct caller server/routes/_observability/events.post.ts and singleton construction in server/utils/observability-intake.ts.","Inspected direct imports app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.","Inspected generated API type boundaries in app/lib/api/generated/lbapi.ts for BrowserEvent schemas, ObservabilityEventBatch, ObservabilityAcceptedResponse, and /internal/observability/events.","Inspected packet-named tests in test/unit/observability-intake.spec.ts covering default guard construction, test capacity construction, rate limiting, replay dedupe, owner-safe release/accept behavior, forwarding failures, timeouts, conflicts, and accepted-count handling.","Inspected related endpoint-level tests in test/ssr/observability-api.spec.ts for same-origin intake, compact browser event rebuilding, privacy filtering, correlation, and replay acknowledgement.","Searched current repository references for ObservabilityIntakeGuard, new ObservabilityIntakeGuard, handleObservabilityIntake, observability endpoint paths, and browser observability schemas using read-only rg/nl/sed commands.","Checked git status and git diff with read-only commands; git emitted macOS cache warnings under the read-only sandbox and reported pre-existing quality artifact changes. No files were modified.","No tests were run because the review request required read-only commands in a read-only sandbox."]}
+{
+  "version": 1,
+  "packetId": "server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.constructor",
+  "packetFingerprint": "1b0a5032eb0f45e9bcbc6c72dbc083f063e40da3986d5abd952c11a681234df0",
+  "author": "implementation-agent",
+  "reviewer": "semantic-observability-fix-reviewer-b",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [],
+  "verification": [
+    "Read the semantic review contract and exact current constructor packet.",
+    "Inspected constructor/capacity field, production singleton, all call sites, reservation/pruning/eviction behavior, route caller, generated boundary, and tests.",
+    "Confirmed production uses the closed 20,000-event constant, the override affects only event capacity, and focused tests use small bounds to exercise saturation/eviction safely.",
+    "Confirmed capacity rejection precedes mutation and eviction is limited to eligible accepted reservations.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "packetId": "app/components/reader/ReaderDictionaryDialog.vue::packet::script-frameTitle",
+  "packetFingerprint": "c7e34dace057ea73a9158abd1402e6b4da09f0ab7c25891b810645c2dd000d63",
+  "author": "implementation-agent",
+  "reviewer": "semantic-reader-reviewer",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [],
+  "verification": [
+    "Read the semantic review contract and exact current requested packet.",
+    "Inspected the complete owned unit, iframe consumer, discriminated branches, session-word boundary, parent caller, Reader-word validation, and browser title coverage.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

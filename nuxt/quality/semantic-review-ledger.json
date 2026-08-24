@@ -1491,133 +1491,123 @@
     },
     {
       "packetId": "app/components/reader/ReaderDictionaryDialog.vue::packet::component",
-      "fingerprint": "11c1dc0ce3cb45f78afad44cbd6fa7420d805c062df5c0582b3346f258bb829d",
+      "fingerprint": "b77eeabafdc954bc5cde3e2ec4a6aa3aedece5b0cbe8e4e36ca00bda8064857f",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-reader-reviewer",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/4dcd8abfd3b966b63ee280f9760361771c1384cd4eba8f3d21d6e06124ff31cf.json",
-      "evidenceHash": "84ff7ab7f3f425131f1e314590f83a183bef45db26aca5fb17b4ec6a256fe974",
+      "evidenceHash": "572d08756316103d629105125dcf7d02086e833530218c7a7320381e9278b059",
+      "findingIds": [
+        "SR-4dcd8ab-minor-001"
+      ],
+      "verification": [
+        "Inspected every owned range, direct type boundary and sole caller, branded HTML boundary, styles, unit coverage, and observable browser coverage.",
+        "Read the semantic review contract and exact current requested packet.",
+        "Used read-only inspection commands and made no repository edits."
+      ]
+    },
+    {
+      "packetId": "app/components/reader/ReaderDictionaryDialog.vue::packet::script-frameTitle",
+      "fingerprint": "c7e34dace057ea73a9158abd1402e6b4da09f0ab7c25891b810645c2dd000d63",
+      "state": "approved",
+      "reviewer": "semantic-reader-reviewer",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/08024328ca71ede6de625f836b81da421ca1e11aade9225d32e66c5d37a0ae7e.json",
+      "evidenceHash": "2b9431c260d12d7d6438a5161cb4db464fe35ba5153ec8a40157962a22ef0767",
       "findingIds": [],
       "verification": [
-        "Checked local @headlessui/vue dependency version from package.json and searched existing Dialog patterns in app and tests.",
-        "Inspected direct consumer app/components/reader/ReaderDictionaryLookup.vue around modal state, close handling, lookup concurrency, sanitization handoff, and template props.",
-        "Inspected owned physical line ranges in app/components/reader/ReaderDictionaryDialog.vue with line numbers.",
-        "Inspected raw HTML boundary app/components/global/RenderableHtmlContent.vue, shared/types/renderable-html.ts, shared/utils/renderable-html.ts, and app/lib/reader-dictionary.ts.",
-        "Inspected reader page caller app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around ReaderDictionaryLookup usage.",
-        "Inspected related dictionary and dialog coverage in test/e2e/reader-production.behavior.spec.ts, test/unit/reader-dictionary.spec.ts, and renderable HTML contract tests.",
-        "Read packet .quality/semantic-review/packets/4dcd8abfd3b966b63ee280f9760361771c1384cd4eba8f3d21d6e06124ff31cf.json.",
-        "Read review contract quality/semantic-review-contract.md.",
-        "Searched for direct callers and component references; confirmed ReaderDictionaryLookup.vue is the template consumer via Nuxt component auto-import.",
-        "Used read-only commands only: sed, nl, rg, node -p, and git status --short. No tests were run because the review request required read-only inspection commands."
+        "Inspected the complete owned unit, iframe consumer, discriminated branches, session-word boundary, parent caller, Reader-word validation, and browser title coverage.",
+        "Read the semantic review contract and exact current requested packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "app/components/reader/ReaderDictionaryDialog.vue::packet::template-1",
-      "fingerprint": "b4faa613e22dc6a7d980c89c884dc3ae4ed614baee04af389a3a52968b9ddd35",
+      "fingerprint": "fab545c3298fbee2809a55d9161a209f6917643a184cfb17703931be4c77efc2",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-reader-reviewer",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/f448fd5ba98271d1249d5f80632d299d7d9cda7a81cab741655ac52c4097ce3b.json",
-      "evidenceHash": "e35fbf7f1788c6700bb4d2c4e10bfd82c846b3e6169684c804ee7c57444884c2",
-      "findingIds": [],
+      "evidenceHash": "df59e09011ceb365d681f23301b9ecf83a26b6395773af942f65b84fdf053f83",
+      "findingIds": [
+        "SR-f448fd5-minor-001"
+      ],
       "verification": [
-        "Compared adjacent established dialog patterns in app/components/reader/ReaderContentsDialog.vue and app/components/reader/ReaderSourceInfoDialog.vue.",
-        "Inspected direct consumer app/components/reader/ReaderDictionaryLookup.vue around modalOpen, articleHtml, close handling, lookup concurrency, route cleanup, and template usage.",
-        "Inspected direct dependencies app/lib/reader-dictionary.ts, app/lib/api/generated/lbapi.ts, and app/assets/styles/nuxt.scss for sanitization, generated dictionary response types, and modal styling.",
-        "Inspected full ReaderDictionaryDialog.vue script/template props, emits, Headless UI usage, focus target, and RenderableHtmlContent boundary.",
-        "Inspected owned physical lines 16-42 in app/components/reader/ReaderDictionaryDialog.vue with line numbers.",
-        "Inspected relevant tests test/e2e/reader-production.behavior.spec.ts, test/e2e/reader-dictionary-production.behavior.spec.ts, and test/unit/reader-dictionary.spec.ts.",
-        "Read .quality/semantic-review/packets/f448fd5ba98271d1249d5f80632d299d7d9cda7a81cab741655ac52c4097ce3b.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Searched current source and tests for ReaderDictionaryDialog, ReaderDictionaryLookup, dictionary, search_dict, modal-open, role dialog, aria usage, and Stäng close controls.",
-        "Used read-only commands only; no test commands were run because the review request constrained work to read-only inspection."
+        "Inspected all owned template lines, composable boundary, parent caller, URL and HTML policies, unit coverage, and production browser suites.",
+        "Read the semantic review contract and exact current requested packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::component",
-      "fingerprint": "86dcb2eaac544d5463ab11b0080e06c5c83a9ca7881f93d357f7b1f1f6ac4df4",
+      "fingerprint": "9275f6537f8a00cbdde541416e4d409bdac1d8940b3074e485d1232b5cd34060",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-reader-fix-reviewer",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/1fe8886c1a2d8559e0b1a6acd9a0b76f326f91210f0dccda8141b5559bd54458.json",
-      "evidenceHash": "a1db10a1299faae5edb9983e4e6acf2df158dcc099c594fbff17250715d67a92",
-      "findingIds": [
-        "SR-1fe8886-minor-001"
-      ],
+      "evidenceHash": "e0f60eecd6c80ac20c28dd52299c58924481c5625de91359a3599f62bf66947e",
+      "findingIds": [],
       "verification": [
-        "Inspected direct dialog consumer `app/components/reader/ReaderDictionaryDialog.vue` and template caller usage in the reader page.",
-        "Inspected direct imports `app/composables/useLbApiClient.ts` and `app/lib/reader-dictionary.ts`.",
-        "Inspected generated API type boundary in `app/lib/api/generated/lbapi.ts` for `/dictionary/articles` and `DictionaryArticleResponse`.",
-        "Inspected owned unit `app/components/reader/ReaderDictionaryLookup.vue`.",
-        "Read packet `.quality/semantic-review/packets/1fe8886c1a2d8559e0b1a6acd9a0b76f326f91210f0dccda8141b5559bd54458.json`.",
-        "Read review contract `quality/semantic-review-contract.md`.",
-        "Searched for relevant tests and usages with `rg`; reviewed `test/unit/reader-dictionary.spec.ts` and related renderable HTML boundaries."
+        "Confirmed duplicate response-object state was removed and route/unmount cleanup clears transient message state and timer.",
+        "Confirmed every terminal legacy failure restores the initiating word without scrolling and temporary tabindex is cleaned after focus moves.",
+        "Inspected every owned range, complete component, direct dependencies, generated API boundary, sole Reader-page consumer, unit tests, and legacy browser suite.",
+        "Read the semantic review contract and generated the exact current requested packet.",
+        "Reviewed concurrency, generated typing, sanitization, URL policy, modal semantics, keyboard labeling, and focus cleanup against all nine contract questions.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
-      "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::script-modalOpen",
-      "fingerprint": "32fe30eff3902d51a12b46921c93c4645af640877dbf3624f1bd3c8ecca58309",
+      "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::script-legacyModalOpen",
+      "fingerprint": "e8d9d969854ff8610b32851c1d0262d65bf7af0a86fa15bd60af48cb50d60f21",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-reader-fix-reviewer",
       "method": "codex-read-only",
-      "evidencePath": "quality/semantic-reviews/a22d20556ad62512c9e4b9ecefbf4462038bdf870db754cf00043acacefa4f97.json",
-      "evidenceHash": "6703a99996e6f7ea39f2581351736c7fd18ea8d4e2f0b75484cbcba4affda549",
+      "evidencePath": "quality/semantic-reviews/edd96450d285c4a859c548c210bead28e04f76d2a1ac7db98a360fbb29969824.json",
+      "evidenceHash": "eece055ae333b060524e0dabf9e567791a032798236b9c76dbd69bc5ab065a8e",
       "findingIds": [],
       "verification": [
-        "Inspected all owned physical line ranges in app/components/reader/ReaderDictionaryLookup.vue with line numbers.",
-        "Inspected child dialog app/components/reader/ReaderDictionaryDialog.vue because the owned modalOpen state drives its open prop.",
-        "Inspected direct consumer app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around ReaderDictionaryLookup usage and reader body modal state.",
-        "Inspected direct imports app/composables/useLbApiClient.ts and app/lib/reader-dictionary.ts.",
-        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for /dictionary/articles and DictionaryArticleResponse.",
-        "Inspected relevant tests test/e2e/reader-production.behavior.spec.ts, test/e2e/reader-dictionary-production.behavior.spec.ts, and test/unit/reader-dictionary.spec.ts.",
-        "Read packet .quality/semantic-review/packets/a22d20556ad62512c9e4b9ecefbf4462038bdf870db754cf00043acacefa4f97.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Searched current source and tests for ReaderDictionaryLookup, search_dict, dictionary/articles, ReaderDictionaryDialog, reader-dictionary helpers, modal-open, LegacyNotice, and related dictionary coverage.",
-        "Used read-only commands only: sed, jq, nl, rg, ls, and git status --short. No test commands were run because the review request constrained work to read-only inspection."
+        "Confirmed every terminal legacy failure restores initiating-word focus with generation and connection guards, and browser coverage verifies no scroll movement and temporary tabindex cleanup.",
+        "Confirmed redundant raw article state is removed and sanitized articleHtml alone owns modal state.",
+        "Confirmed route changes and unmount clear transient message state and timer with lifecycle coverage.",
+        "Inspected cancellation, stale-generation rejection, route invalidation, sanitization, origin validation, dialog behavior, and the Nuxt caller with no Critical or Important finding.",
+        "Read the semantic review contract and exact current packet plus its relevant production boundaries, caller, generated API type, and tests.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::script-module",
-      "fingerprint": "f4bd0e6325b5ebc2bea7370997ec2cf2f2016e91323f96af9675dc68803ca554",
+      "fingerprint": "049ccee426ab03c4733a3f03b59fc827e7e21ad061144e500d82dbeca8e9cdbe",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-reader-fix-reviewer",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/be857ba3f1d13e17a7d1bfa46d24649b474980415e30e000c07de94141edcb3e.json",
-      "evidenceHash": "d0ae8525a7accff5678a40ca34ed3d03ce5cd965ca2a88b64c766daa6ccc940b",
+      "evidenceHash": "64800da43a71bc782e4bf71f3d04e5d6c2a707e48cfd7908b388c4ac9d6aa0a9",
       "findingIds": [],
       "verification": [
-        "Confirmed the owned route watcher at line 170 now invalidates pending lookups through cancelLookup(), clears pending selection inspection, hides the indicator, and closes the dialog; lookup() also checks generation, AbortController, and captured route.fullPath before committing results.",
-        "Inspected direct caller app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue where ReaderDictionaryLookup is rendered.",
-        "Inspected direct imports app/composables/useLbApiClient.ts and app/lib/reader-dictionary.ts.",
-        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for DictionaryArticleResponse and v2_get_dictionary_article.",
-        "Inspected owned physical line 170 in app/components/reader/ReaderDictionaryLookup.vue and surrounding lookup, cancellation, cleanup, modal, and route-watch state transitions.",
-        "Inspected relevant dictionary coverage in test/unit/reader-dictionary.spec.ts, test/e2e/reader-production.behavior.spec.ts, test/e2e/reader-dictionary-production.behavior.spec.ts, and the dictionary fixture in test/fixtures/v2-server.mjs.",
-        "Read .quality/semantic-review/packets/be857ba3f1d13e17a7d1bfa46d24649b474980415e30e000c07de94141edcb3e.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Used read-only commands only: sed, nl, rg, and git status --short. No test commands were run because this review was constrained to read-only inspection commands."
+        "Confirmed asynchronous legacy commits are gated by generation, controller identity/state, and captured route path.",
+        "Confirmed route changes abort and invalidate legacy work, close embed/modal state, invalidate focus restoration, clear selection and indicator state, and clear the notice timer.",
+        "Inspected direct imports, generated API boundary, actual Reader caller, and route-invalidation coverage.",
+        "Inspected the owned route watcher and surrounding request, modal, selection, focus, timer, and lifecycle transitions.",
+        "Read the semantic review contract and exact current script-module packet after the Reader focus fix.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::template-1",
-      "fingerprint": "afce58c9525a6a8a370293ac2f3f1605acbb462229be022290ab889eaa6fb70a",
+      "fingerprint": "0c544ee16af09dcafb519778e673f21f6f68ca083efe2868639ddfb0a0a0913b",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-reader-reviewer",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/c8a6ba3b8c4156479e099dc9b8f50ea8175ac5fe2591285638c08ae284a85934.json",
-      "evidenceHash": "5af7add48c3ea69a25f9e25abbcfe4286adde6aec1237707a5d21221b80692c3",
-      "findingIds": [],
+      "evidenceHash": "d41152ef832b2d7801a345174b90b4c103b3ed5e744b17f95e209dd264876880",
+      "findingIds": [
+        "lookup-template-forwards-noop-frame-load"
+      ],
       "verification": [
-        "Inspected child and adjacent UI components app/components/reader/ReaderDictionaryDialog.vue and app/components/global/LegacyNotice.vue.",
-        "Inspected direct caller app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around the ReaderDictionaryLookup usage.",
-        "Inspected direct dependencies app/composables/useLbApiClient.ts and app/lib/reader-dictionary.ts.",
-        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for DictionaryArticleResponse.",
-        "Inspected owned physical lines 195-215 in app/components/reader/ReaderDictionaryLookup.vue with line numbers.",
-        "Inspected relevant styles for .search_dict in app/assets/styles/styles.scss and app/assets/styles/reader.scss.",
-        "Inspected relevant tests test/e2e/reader-production.behavior.spec.ts, test/e2e/reader-dictionary-production.behavior.spec.ts, and test/unit/reader-dictionary.spec.ts.",
-        "Inspected surrounding ReaderDictionaryLookup.vue state, lookup concurrency guards, selection handlers, route watcher, cleanup, and template bindings.",
-        "Read .quality/semantic-review/packets/c8a6ba3b8c4156479e099dc9b8f50ea8175ac5fe2591285638c08ae284a85934.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Used read-only commands only."
+        "Confirmed the focus/message changes introduce no Critical or Important issue.",
+        "Generated and read the exact current template packet and full component after the focus fix.",
+        "Inspected failure focus generations, route/unmount cleanup, generated API and sanitizer boundaries, dialog and notice semantics, component tests, legacy failure E2E, and embed security/focus E2E.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
@@ -2093,6 +2083,43 @@
         "Inspected direct dependency app/lib/quick-search-developer.ts lines 1-226.",
         "Read quality/semantic-review-contract.md and the packet JSON for owned line ranges and review scope.",
         "Searched for direct callers and consumers with rg; inspected reader-page publisher call, author publisher call sites list, QuickSearch consumer, and relevant developer quick-search tests."
+      ]
+    },
+    {
+      "packetId": "app/composables/useReaderDictionaryEmbed.ts::packet::module-localParentAllowsHttp",
+      "fingerprint": "c3b41f666dc70c1a567b94595be51c38f41c1c540d1fa26bcaf568c665290be0",
+      "state": "approved",
+      "reviewer": "semantic-reader-reviewer",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/f3e77083bf390891b3447f19943e88dfc8dc539e2ab4162f54cd1666087856d8.json",
+      "evidenceHash": "1c45a71f90ff01107a9e2715a4b6d366c7fe03de6eda75791a03394e755db13f",
+      "findingIds": [
+        "SR-f3e7708-minor-001",
+        "SR-f3e7708-minor-002"
+      ],
+      "verification": [
+        "Inspected all owned units, imports, message/URL/privacy policies, UI consumers, complete lifecycle tests, and real-browser correlation coverage.",
+        "Read the semantic review contract and exact current requested packet.",
+        "Used read-only inspection commands and made no repository edits."
+      ]
+    },
+    {
+      "packetId": "app/composables/useReaderDictionaryEmbed.ts::packet::useReaderDictionaryEmbed",
+      "fingerprint": "36a5bca5334f0f44d30bb260bbe8c7511422a7858559b694e287ac7c68477eb9",
+      "state": "approved",
+      "reviewer": "semantic-reader-reviewer",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/56df7883c11a21a371b5e1b6e9bdcf98b909c71b5b2635a7cd9883349ffbe21c.json",
+      "evidenceHash": "69da19d722a9571b21d0ade169063bf55c7b4d2bd61e34fa3d0022ef1b578b69",
+      "findingIds": [
+        "SR-56df788-minor-001",
+        "SR-56df788-minor-002",
+        "SR-56df788-minor-003"
+      ],
+      "verification": [
+        "Inspected all owned callbacks, imports, lifecycle class, production consumers, complete lifecycle tests, and real-browser security and invalidation coverage.",
+        "Read the semantic review contract and exact current requested packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
@@ -4054,6 +4081,23 @@
       ]
     },
     {
+      "packetId": "app/lib/observability/dictionary-lookup.ts::packet::reportDictionaryLookupOutcome",
+      "fingerprint": "321ba1734f8332ebe8a274953c023dd2d18c0128f028f5401ddf3222c04db380",
+      "state": "approved",
+      "reviewer": "semantic-reader-reviewer",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/8bfdd6cae858dabb276d0b8fb70547e7197dbc127d5930610179d10998c6767c.json",
+      "evidenceHash": "72873ccb36d0036bf4a21e6ccc562f919d56341fb3ce6489c7c980743f40aad4",
+      "findingIds": [
+        "dictionary-lookup-parallel-generated-unions"
+      ],
+      "verification": [
+        "Generated and read the exact current packet and complete owned function.",
+        "Inspected its caller, complete unit test, generated dictionary observability types, strict intake typing/conversion/tests, privacy compile-time contract, and adjacent generated-type pattern.",
+        "Used read-only inspection commands and made no repository edits."
+      ]
+    },
+    {
       "packetId": "app/lib/observability/events.ts::packet::module",
       "fingerprint": "5dfb44ed885647db06d349f897c76da5ab318acd65e3d975cc09a58ebefc5846",
       "state": "approved",
@@ -4462,6 +4506,111 @@
         "Read quality/semantic-review-contract.md and the exact packet JSON .quality/semantic-review/packets/f1ffb300a39d8d608ae81095e2f5667f949be1d9fe0b10bde3f86aae2f326386.json.",
         "Searched the repository for toBoundedDeveloperValue, stableDeveloperJson, DeveloperJsonValue, and maximumInfoJsonLength usages to confirm the public type boundary and usage surface.",
         "Used read-only inspection commands only; no tests were executed."
+      ]
+    },
+    {
+      "packetId": "app/lib/reader-dictionary-embed.ts::packet::buildReaderDictionaryEmbedUrl",
+      "fingerprint": "dce8c58c94405e614e3dae1eb4e59e117d868ca06e03ab992303bd016d4454a2",
+      "state": "approved",
+      "reviewer": "semantic-reader-reviewer",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/2959bca68a5f61303d8e281c81c3e4e1acebbe57ed7f9225b0aab9fe373a6f8e.json",
+      "evidenceHash": "52cbd40265d86c892048bba05961bd642bafa17f7dc59cef8f5a215580eefef7",
+      "findingIds": [
+        "reader-word-validation-rule-duplicated"
+      ],
+      "verification": [
+        "Generated and read the exact current packet and complete owned function.",
+        "Inspected origin, UUID and word policies, runtime callers, selection boundary, complete unit tests, production E2E URL assertions, and runtime default.",
+        "Used read-only inspection commands and made no repository edits."
+      ]
+    },
+    {
+      "packetId": "app/lib/reader-dictionary-embed.ts::packet::buildSvenskaDictionaryUrl",
+      "fingerprint": "b0535d7871e7440d18cda93ddcee5af7f22ce632e331c4c0d8e7a54c59338f69",
+      "state": "approved",
+      "reviewer": "semantic-reader-reviewer",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/44cd282b616d25c70866459fa78aac7c4c470d5d66ce0d31fd6994306a22409b.json",
+      "evidenceHash": "fb7dd0212da62d78e70986ec8aeb896d65b45603e5af8277583a539c5badf3c4",
+      "findingIds": [
+        "fallback-reader-word-validation-duplicated"
+      ],
+      "verification": [
+        "Generated and read the exact current packet and adjacent policies.",
+        "Inspected the UI caller, dialog link, duplicate selection policy, complete unit tests, source wiring, and behavioral fallback coverage.",
+        "Used read-only inspection commands and made no repository edits."
+      ]
+    },
+    {
+      "packetId": "app/lib/reader-dictionary-embed.ts::packet::module-readerLookupWord",
+      "fingerprint": "176666878af554225930f79541d291be146e3b3c36ffe4e83d8e502979a3734a",
+      "state": "approved",
+      "reviewer": "semantic-reader-reviewer",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/1f907c5fd44846a53edee04d4d3e7d842e298e9b511d283abd11114a088e3bb3.json",
+      "evidenceHash": "276ee700ad14e0cadbb57411e753283372769ecdfd98fa5bdf8bf3f79910cf63",
+      "findingIds": [
+        "reader-protocol-enums-have-parallel-runtime-lists",
+        "reader-word-lone-surrogate-normalized-silently",
+        "reader-word-validator-duplicated"
+      ],
+      "verification": [
+        "Generated and read every unit in the exact current packet.",
+        "Inspected outgoing and incoming consumers, lifecycle correlation, selection paths, complete protocol tests, shared text-safety helpers, and established surrogate guards.",
+        "Made no repository edits.",
+        "Ran a read-only runtime probe confirming lone-surrogate replacement during URL encoding."
+      ]
+    },
+    {
+      "packetId": "app/lib/reader-dictionary-embed.ts::packet::parseReaderLookupMessage",
+      "fingerprint": "b87984800f139f34f4b462dd06868c07eb59a0f99b329f554ecac2c26e85a858",
+      "state": "approved",
+      "reviewer": "semantic-reader-reviewer",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/230bbe8ba1ead77e4705fe3de16b943b4deb462b4033657431ec7476c6c43ca7.json",
+      "evidenceHash": "cdebfbfc20ae194b3110d3f26fe366ada688289bb631d2f98b57c917cc0ca1af",
+      "findingIds": [
+        "reader-message-return-type-not-discriminated"
+      ],
+      "verification": [
+        "Generated and read the exact current parser packet and public protocol type.",
+        "Inspected all parser helpers, lifecycle caller, complete protocol tests, lifecycle correlation tests, production E2E security boundaries, and child fixture protocol.",
+        "Used read-only inspection commands and made no repository edits."
+      ]
+    },
+    {
+      "packetId": "app/lib/reader-dictionary-embed.ts::packet::readerDictionaryMode",
+      "fingerprint": "af07f0f9ea3cbced6a1e36831227a007f5cb472610d63d08d05c3c0adbb533d7",
+      "state": "approved",
+      "reviewer": "semantic-reader-reviewer",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/ee9afeb27be67916f9c74864ca9a4eb2757e5f180cf0013cfe90977a4096442b.json",
+      "evidenceHash": "bc831b588c6c3a4ee8e6491cc8d537de157439c87928ff2c2b0b73ff3f39cda3",
+      "findingIds": [],
+      "verification": [
+        "Confirmed exact embed opt-in with legacy fallback is the smallest fail-closed implementation.",
+        "Generated and read the exact current mode packet and type boundary.",
+        "Inspected the production component consumer, complete mode tests, fail-safe runtime default and tests, evaluated stage environment, and deployment assertions.",
+        "Used read-only inspection commands and made no repository edits."
+      ]
+    },
+    {
+      "packetId": "app/lib/reader-dictionary-embed.ts::packet::svenskaReaderEmbedOrigin",
+      "fingerprint": "92f64a28b27b0862da2ea8fb859d88bc29728ff4d41abdb7682cd800dd7d4e69",
+      "state": "approved",
+      "reviewer": "semantic-reader-reviewer",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/281f5edcd6c2e5055f9138489ec8e5f432dfb1593601208e1a59496d1c05fd84.json",
+      "evidenceHash": "08cf92b4ff7a7b7d51ce83c1625a30ffdc6acbb9539c01727371ea6108d43a79",
+      "findingIds": [
+        "loopback-host-policy-duplicated"
+      ],
+      "verification": [
+        "Generated and read the exact current origin packet, options, and loopback policy.",
+        "Inspected both URL builders, runtime config caller, parent capability check, fallback caller, complete origin tests, lifecycle local/production behavior, stage wiring, and configuration tests.",
+        "Made no repository edits.",
+        "Ran read-only URL probes for credentials, IPv6 loopback, and noncanonical forms."
       ]
     },
     {
@@ -8639,22 +8788,20 @@
       ]
     },
     {
-      "packetId": "server/routes/_observability/events.post.ts::packet::module-defineEventHandler.callback[1]@f228e7581683#1",
-      "fingerprint": "88486ea472dbcbaa13455ea25ed7098c2d7f6e2cc05e3f66b51a786b835c3675",
+      "packetId": "server/routes/_observability/events.post.ts::packet::module-defineEventHandler.callback[1]@03112b9a8db6#1",
+      "fingerprint": "0f5489617521f419e64e508f80f3898488031885d616e508fd8de89d27c60389",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-observability-fix-reviewer-b",
       "method": "codex-read-only",
-      "evidencePath": "quality/semantic-reviews/936db8abc7a97ae2d17b46056541e4bb74f3a9f2ae14cfe8329ea3114f3688a0.json",
-      "evidenceHash": "a1e7a77490b64d54679d70f40ab66e0938869b6175c86e9e1290e16ced9cdad0",
+      "evidencePath": "quality/semantic-reviews/9e6cf55ff4f59585bdb4f9dc1872aeff6de9dee755dd6e66c6fac5c6e76dbb30.json",
+      "evidenceHash": "1ae78f909f011f86ecc68dd57eae7ed56c66d1e7e1dd2a6590c43bff90a1cea8",
       "findingIds": [],
       "verification": [
-        "Checked git status with a read-only command; existing unrelated quality review artifacts are present.",
-        "Inspected direct dependency server/utils/observability-intake.ts, including config type, header/origin/body validation, signing, forwarding, deduplication, and response handling.",
-        "Inspected owned route unit server/routes/_observability/events.post.ts lines 5-15.",
-        "Inspected relevant tests test/ssr/observability-api.spec.ts and test/unit/observability-intake.spec.ts, plus runtime config coverage in nuxt.config.ts and playwright.config.ts.",
-        "Read quality/semantic-review-contract.md and the exact packet JSON .quality/semantic-review/packets/936db8abc7a97ae2d17b46056541e4bb74f3a9f2ae14cfe8329ea3114f3688a0.json.",
-        "Searched current repository references for the route, handleObservabilityIntake, observability runtime config keys, browser reporter delivery, and generated API observability contract references.",
-        "Used read-only inspection commands only and did not execute tests because the request constrained the review to read-only commands."
+        "Confirmed the route is a minimal adapter returning generated response type with fail-closed optional configuration and no request-state leakage.",
+        "Inspected the callback, request-scoped runtime config mapping, Nuxt defaults, Playwright configuration, trusted-proxy config tests, and stage deployment assertions.",
+        "Inspected the intake boundary, generated batch/accepted schemas and contract tests, plus SSR endpoint coverage for rebuilding/signing, redaction, origins, size/shape failures, correlation, and replay.",
+        "Read the semantic review contract and exact current route-callback packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
@@ -10330,240 +10477,213 @@
     },
     {
       "packetId": "server/utils/observability-intake.ts::packet::handleObservabilityIntake",
-      "fingerprint": "7720a88eef0f568fa9a4d1fd6d89f373e9d96c796556f710bd5a197a773ff0f9",
+      "fingerprint": "460959036f9fdc441ca6cf858e9403f5f5cd36c151efcfff189357716de911cc",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-observability-fix-reviewer-b",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/d0b24ec4e4cc34b18053e099f37a278e56c214fca5a6ffc7b20a2c1531ace9cb.json",
-      "evidenceHash": "1f9c4dd4cb1ad37f3675ea7a583630fbe0b1fdf8a7f42b2dfe0b5fe92f2c2d28",
+      "evidenceHash": "0ea03ba62a73a01c84ab1cc56f013e1d7f399dc76f6ae780e1ca3fe50175ee38",
       "findingIds": [],
       "verification": [
-        "Checked scoped git status for reviewed source, direct caller, dependencies, generated API boundary, and relevant tests; no scoped modifications were reported. Git emitted macOS temp/cache warnings under the read-only sandbox.",
-        "Inspected direct caller server/routes/_observability/events.post.ts.",
-        "Inspected direct dependencies app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.",
-        "Inspected generated API boundaries in app/lib/api/generated/lbapi.ts for browser event schemas, ObservabilityEventBatch, ObservabilityAcceptedResponse, and the internal observability events operation.",
-        "Inspected owned unit server/utils/observability-intake.ts lines 617-691 and surrounding validation, reservation, signing, forwarding, replay, and acceptance helpers in the same file.",
-        "Inspected packet-named test test/unit/observability-intake.spec.ts and related SSR route coverage in test/ssr/observability-api.spec.ts.",
-        "Read exactly the specified packet JSON at .quality/semantic-review/packets/d0b24ec4e4cc34b18053e099f37a278e56c214fca5a6ffc7b20a2c1531ace9cb.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Searched current repository references for handleObservabilityIntake, observability-intake, the observability route, replay conflict status handling, and accepted-count behavior using read-only commands.",
-        "Used read-only commands only; did not run the test suite because the request constrained review execution to read-only inspection."
+        "Confirmed forwarded addresses are accepted only from configured trusted peers with one valid address; default, direct-spoof, ambiguous-chain, and independent-quota cases are covered.",
+        "Confirmed only payload statuses map to terminal 422, upstream 401 maps to retryable 502 with release and retry coverage, and the return type is generated ObservabilityAcceptedResponse.",
+        "Confirmed trusted-event transformation is release-protected and a throwing correlation resolver releases the event ID for successful retry.",
+        "Inspected owned handler units, surrounding preparation/signing/forwarding/replay helpers, direct route caller, imports, generated API boundaries, browser retry classification, runtime config, stage wiring, and relevant tests.",
+        "Read the semantic review contract and exact current handler packet after both observability fixes.",
+        "Reviewed ownership, replay, timeout, and delayed-completion concurrency policies with no Critical or Important finding.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "server/utils/observability-intake.ts::packet::module",
-      "fingerprint": "273cbac926b39a8331dc2dffc2db14200244cf942bd4dea341180479129dabf5",
+      "fingerprint": "cb5d66e846cc9f79820e71df6b571cff55de44fe53f05d526bbf4dce3607f282",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-observability-fix-reviewer-b",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/e490029b8a8008ca8de2f759952fbac242d1044cfb9695912344e4b4a9bc9505.json",
-      "evidenceHash": "100033cd66ac2cea35be7b45ee75ca40135cb1ed659c25fa4ed764aa77ee1316",
+      "evidenceHash": "02fdd8cb7d4918159a463889cef99541b15995815a04a85a02fee979be2dc705",
+      "findingIds": [
+        "SR-cb5d66e8-minor-001"
+      ],
+      "verification": [
+        "Confirmed generated boundaries, compact untrusted transport, bounded process-local state, closed trusted-proxy config, and authentication/body/origin/HMAC/correlation/replay policies.",
+        "Inspected owned imports, constants, schema aliases, transport/config/options types, singleton state, functional consumers, route caller, generated schemas, browser retry classification, runtime wiring, unit tests, and SSR coverage.",
+        "Read the semantic review contract and exact current module packet.",
+        "Used read-only inspection commands and made no repository edits."
+      ]
+    },
+    {
+      "packetId": "server/utils/observability-intake.ts::packet::module-recoverReplayConflict",
+      "fingerprint": "cb968e4ebcd4a9ac25e8435c61f432914621e74a1d8d2f4f688d9ff301128328",
+      "state": "approved",
+      "reviewer": "semantic-observability-fix-reviewer-b",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/980b6b571c0df54e460b685c3d6c609818c8f8a9e2bb187877d86c83286c45d1.json",
+      "evidenceHash": "fd98973df74562905e08db315b117d0a62a6d0ea16948f469fc0b66efe7d7edd",
       "findingIds": [],
       "verification": [
-        "Inspected direct caller server/routes/_observability/events.post.ts.",
-        "Inspected generated API boundaries in app/lib/api/generated/lbapi.ts for browser observability event schemas, ObservabilityEventBatch, ObservabilityAcceptedResponse, and /internal/observability/events.",
-        "Inspected owned module server/utils/observability-intake.ts, including the packet-owned physical line ranges and surrounding validation, reservation, signing, forwarding, replay recovery, and response handling flow.",
-        "Inspected packet-listed dependencies app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.",
-        "Inspected packet-named tests in test/unit/observability-intake.spec.ts and related endpoint coverage in test/ssr/observability-api.spec.ts.",
-        "Read exactly one packet JSON at .quality/semantic-review/packets/e490029b8a8008ca8de2f759952fbac242d1044cfb9695912344e4b4a9bc9505.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Searched current repository references for handleObservabilityIntake, ObservabilityIntakeGuard, readBoundedRequestBody, /_observability/events, internal observability forwarding, and observability runtime config keys.",
-        "Used read-only inspection commands only; did not run tests because the review request constrained execution to read-only commands in a read-only sandbox."
+        "Confirmed behavioral coverage for all-replayed, mixed, lost-response, accepted counts, repeat suppression, and duplicate-forward prevention.",
+        "Confirmed exact-owner settlement prevents stranded reservations and stale-owner mutation; concurrency is bounded by the ten-event batch and timers are cleared.",
+        "Confirmed recovery is restricted to multi-event upstream 409, preserves input alignment, distinguishes replayed from newly accepted events, and leaves malformed/error cases unresolved and retryable.",
+        "Inspected every owned recovery unit/callback, caller path, signing/forwarding, owner-scoped transitions, generated endpoint semantics, imports, route caller, and relevant tests.",
+        "Read the semantic review contract and exact current replay-recovery packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "server/utils/observability-intake.ts::packet::module-validateOrigin",
-      "fingerprint": "b8c764a0916fece43c111eeb471843ebeeca6baf81ebe1ff0d5864d73644c063",
+      "fingerprint": "b7fae0e9f46cdda65a0313ed97e9d72974650faf2ee7abf004b4d4af111b8f09",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-observability-fix-reviewer-a",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/2bec35eae1076cd9da27e93020828757ee1d3afe17b3a0c96191e93c3455d726.json",
-      "evidenceHash": "eacf41dda0165b7cf15945d9542e7096aa396d377eada8261d8b927ee289cd32",
-      "findingIds": [],
+      "evidenceHash": "e1b9056b052c9c3c7c9fcaf42f8d0a35c45687b1fc6f7844f60fa21d6c2da508",
+      "findingIds": [
+        "observability-intake-auth-failure-made-terminal",
+        "observability-intake-proxy-peer-rate-key"
+      ],
       "verification": [
-        "Checked scoped git status/diff with read-only commands; git emitted macOS cache/temp warnings under the read-only sandbox and no scoped source diff output was produced.",
-        "Inspected direct caller server/routes/_observability/events.post.ts for runtime config wiring and route response behavior.",
-        "Inspected direct imports and type dependencies: app/lib/observability/events.ts, app/lib/api/generated/lbapi.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.",
-        "Inspected owned units in server/utils/observability-intake.ts physical lines 217-615, including origin validation, compact browser event validation, batch parsing, trusted event rebuilding, secret loading, client keying, header validation, intake preparation, signed forwarding, timeout handling, failed-forward release, accepted-count parsing, and replay-conflict recovery.",
-        "Inspected packet-named tests in test/unit/observability-intake.spec.ts, including origin/content/body validation, browser event classification, rate limiting, duplicate reservation behavior, timeout release, conflict recovery, invalid upstream accepted responses, partial accepted counts, and signing failure release.",
-        "Inspected related endpoint-level coverage in test/ssr/observability-api.spec.ts for same-origin intake, public alias acceptance, compact trusted event forwarding, privacy filtering, correlation token attribution, and replay acknowledgement.",
-        "Read quality/semantic-review-contract.md and exactly one packet JSON at .quality/semantic-review/packets/2bec35eae1076cd9da27e93020828757ee1d3afe17b3a0c96191e93c3455d726.json.",
-        "Searched current repository references for handleObservabilityIntake, ObservabilityIntakeGuard, readBoundedRequestBody, /_observability/events, observabilityAllowedOrigins, browser observability schemas, and internal observability forwarding paths.",
-        "Used read-only inspection commands only; did not run the test runner because the review request required read-only commands in a read-only sandbox."
+        "Inspected all ingress branches, Caddy trust/header ordering, listener trust, jobspec CIDR, and deployment validation path.",
+        "Inspected every owned unit, imports/caller, generated boundary, intake tests, and lb-infra commit 1dc00415 without checkout.",
+        "Read the semantic review contract and regenerated the exact current packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.#evictAccepted",
-      "fingerprint": "4ed9357707fad57de2b8229a1346b0123ea35631dab410391505e5b1a8a3cd17",
+      "fingerprint": "dbae1a35dcea145056460d34cf2d7ea189bd118033745747ea2a9f7c4fafa1c1",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-observability-fix-reviewer-b",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/139fdc4236fb37dea6732b8482c78a4fffd756070d14781bd1b097c6b22e456d.json",
-      "evidenceHash": "2ced720fdbf679cc2c9d1f5cb44850a984b9d74937ff0e022cc4247a10f479cb",
+      "evidenceHash": "61ade2ccb8b5c0924f71ee841a6a695f877f3832d947ec125ef57c538fa067cb",
       "findingIds": [],
       "verification": [
-        "nl -ba app/lib/api/generated/lbapi.ts | sed -n '760,1025p'; nl -ba app/lib/api/generated/lbapi.ts | sed -n '2290,2320p'",
-        "nl -ba app/lib/observability/events.ts | sed -n '1,260p'",
-        "nl -ba server/routes/_observability/events.post.ts | sed -n '1,260p'",
-        "nl -ba server/utils/observability-correlation.ts | sed -n '1,260p'",
-        "nl -ba server/utils/observability-intake.ts | sed -n '1,240p'",
-        "nl -ba server/utils/observability-intake.ts | sed -n '240,660p'",
-        "nl -ba server/utils/observability.ts | sed -n '1,220p'",
-        "nl -ba shared/utils/deployment-environment.ts | sed -n '1,200p'",
-        "nl -ba test/unit/observability-intake.spec.ts | sed -n '1,940p'",
-        "rg -n \"Browser(Hydration|Error|Chunk|Unhandled)|Observability\" app/lib/api/generated/lbapi.* app/lib/api/generated -g '*'",
-        "rg -n \"new ObservabilityIntakeGuard|reserveNewEvents|#evictAccepted|MAX_EVENT_IDS|observability\" server test app shared -g '!app/lib/api/generated/lbapi.ts'",
-        "sed -n '1,240p' quality/semantic-review-contract.md",
-        "sed -n '1,260p' .quality/semantic-review/packets/139fdc4236fb37dea6732b8482c78a4fffd756070d14781bd1b097c6b22e456d.json"
+        "Confirmed behavioral tests cover accepted eviction, pending rejection, overlap atomicity, current-batch protection, stale-owner safety, and delayed completion ordering.",
+        "Confirmed exact excess calculation, pending protection, current-batch replay protection, atomic insufficient-capacity rejection, acceptance-time ordering, and synchronous mutation.",
+        "Inspected the method/comparator, caller, pruning/reservation/acceptance/release transitions, guard construction, route caller, generated response boundary, and tests.",
+        "Read the semantic review contract and exact current eviction packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.#pruneEventIds",
-      "fingerprint": "aef691810df3eeddf837dd61c7bd2cf6e3d82113ffa5361ab5f9bfa76ca76ac7",
+      "fingerprint": "e02f3efcb72697c035e0046542e5d79e84b45fc5e7c836ed26b98a883fb413ef",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-observability-fix-reviewer-b",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/553df4c59b1d0f4608a1beafd34f48016ded2fda4afcb9646595ac8423eaedcd.json",
-      "evidenceHash": "9564867f85b3a5aefe12931504f5c76b00e1602d9c8d599abcdec29d74ca88c9",
+      "evidenceHash": "bc485eaa505eabe0a4ec61e187c57606ed4accd351aa8caee1c91045769fbfa3",
       "findingIds": [],
       "verification": [
-        "Checked git status and git diff with read-only commands; git emitted macOS cache warnings due the read-only sandbox and reported pre-existing quality artifact changes.",
-        "Inspected direct caller server/routes/_observability/events.post.ts.",
-        "Inspected direct dependencies app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.",
-        "Inspected generated observability API type boundaries in app/lib/api/generated/lbapi.ts for browser event schemas, ObservabilityEventBatch, ObservabilityAcceptedResponse, and /internal/observability/events responses.",
-        "Inspected owned unit server/utils/observability-intake.ts lines 128-135 and surrounding ObservabilityIntakeGuard reservation, eviction, acceptance, release, and handleObservabilityIntake flow.",
-        "Inspected packet-named tests in test/unit/observability-intake.spec.ts, including replay expiry, pending owner safety, stale owner safety, capacity eviction, forwarding timeout release, upstream conflict, and accepted-response failure release behavior.",
-        "Inspected related endpoint-level coverage in test/ssr/observability-api.spec.ts for browser intake forwarding and replay acknowledgement.",
-        "No tests were run because the review request required read-only commands in a read-only sandbox.",
-        "Read exactly the specified packet JSON at .quality/semantic-review/packets/553df4c59b1d0f4608a1beafd34f48016ded2fda4afcb9646595ac8423eaedcd.json.",
-        "Read review contract at quality/semantic-review-contract.md.",
-        "Searched current repository references for ObservabilityIntakeGuard, #pruneEventIds, reserveNewEvents, accept, release, handleObservabilityIntake, REPLAY_WINDOW_MS, acceptedAt, and /_observability/events using read-only rg commands."
+        "Confirmed only expired accepted reservations are removed, acceptance time starts the replay window, synchronous Map deletion is safe, and pruning precedes duplicate/capacity classification.",
+        "Confirmed owner checks prevent expired owners mutating new reservations and tests cover suppression, expiry, pending protection, delayed acceptance, stale owners, and forwarding after expiry.",
+        "Inspected the method, reservation state, caller, acceptance/release paths, eviction interaction, route caller, generated response boundary, and tests.",
+        "Read the semantic review contract and exact current pruning packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.accept",
-      "fingerprint": "446130135e208f57a2f5f90f2cdd6c922e8015bf2b05a505da92bcc0ad97e736",
+      "fingerprint": "6242e2b896c54f299423d2abe39b4d0c5789792ae5e0027ee60f34457e30939b",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-observability-fix-reviewer-b",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/3398bafc796fea285164ef820c31feec72929a063862f77cd9af89c6b16f2930.json",
-      "evidenceHash": "3ea4a55532c856c99da0a18c035b642802d69ce6ea8c9c786c2f4fa5d42a4e50",
+      "evidenceHash": "9844536555f54307bfe365617eb4eb0d698557f8ac03c1227a994ceb18e8d700",
       "findingIds": [],
       "verification": [
-        "Inspected direct caller server/routes/_observability/events.post.ts and handleObservabilityIntake call sites for accept at server/utils/observability-intake.ts lines 594 and 609.",
-        "Inspected imports app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.",
-        "Inspected owned unit server/utils/observability-intake.ts lines 193-203 plus surrounding guard state, reservation, release, and forwarding flow.",
-        "Inspected relevant tests in test/unit/observability-intake.spec.ts covering pending owner acceptance, stale owner rejection, capacity behavior, forwarding conflicts, and retry/replay behavior.",
-        "Read review contract at quality/semantic-review-contract.md.",
-        "Used read-only commands only; did not modify repository."
+        "Confirmed coverage for suppression, expiry, stale owners, delayed timing, eviction order, conflict commitment, lost-response recovery, and mixed replay recovery.",
+        "Confirmed exact-owner pending-only transitions, settlement-time replay windows, independent subset settlement, and correct accept versus release routing across success/recovery/failure paths.",
+        "Inspected the method, reservation state, pruning/eviction/release, all production accept call sites, route caller, generated response boundary, and tests.",
+        "Read the semantic review contract and exact current accept packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.constructor",
-      "fingerprint": "28061cfecd1b211ddc014db672cc759f51e0be338811b3a1c52a54de49e15260",
+      "fingerprint": "1b0a5032eb0f45e9bcbc6c72dbc083f063e40da3986d5abd952c11a681234df0",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-observability-fix-reviewer-b",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/97890597998e38a17b975bf165d1f5b4a9da5ea9abefd5b40648ddf0650e5fa5.json",
-      "evidenceHash": "5964898806f865b627eb49bc09acec88b9ef846c14e51bbb8e3fd56de1e1f3ad",
+      "evidenceHash": "55e0cb09faba2a93af236f36b3394b7a7d84cbbf0b9f85988187087990a23530",
       "findingIds": [],
       "verification": [
-        "Checked git status and git diff with read-only commands; git emitted macOS cache warnings under the read-only sandbox and reported pre-existing quality artifact changes. No files were modified.",
-        "Inspected direct caller server/routes/_observability/events.post.ts and singleton construction in server/utils/observability-intake.ts.",
-        "Inspected direct imports app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.",
-        "Inspected generated API type boundaries in app/lib/api/generated/lbapi.ts for BrowserEvent schemas, ObservabilityEventBatch, ObservabilityAcceptedResponse, and /internal/observability/events.",
-        "Inspected owned unit server/utils/observability-intake.ts::constructor::ObservabilityIntakeGuard.constructor at current physical lines 106-108, plus surrounding guard state, rate limiting, reservation, eviction, accept, release, and intake forwarding flow.",
-        "Inspected packet-named tests in test/unit/observability-intake.spec.ts covering default guard construction, test capacity construction, rate limiting, replay dedupe, owner-safe release/accept behavior, forwarding failures, timeouts, conflicts, and accepted-count handling.",
-        "Inspected related endpoint-level tests in test/ssr/observability-api.spec.ts for same-origin intake, compact browser event rebuilding, privacy filtering, correlation, and replay acknowledgement.",
-        "No tests were run because the review request required read-only commands in a read-only sandbox.",
-        "Read exactly the specified packet JSON at .quality/semantic-review/packets/97890597998e38a17b975bf165d1f5b4a9da5ea9abefd5b40648ddf0650e5fa5.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Searched current repository references for ObservabilityIntakeGuard, new ObservabilityIntakeGuard, handleObservabilityIntake, observability endpoint paths, and browser observability schemas using read-only rg/nl/sed commands."
+        "Confirmed capacity rejection precedes mutation and eviction is limited to eligible accepted reservations.",
+        "Confirmed production uses the closed 20,000-event constant, the override affects only event capacity, and focused tests use small bounds to exercise saturation/eviction safely.",
+        "Inspected constructor/capacity field, production singleton, all call sites, reservation/pruning/eviction behavior, route caller, generated boundary, and tests.",
+        "Read the semantic review contract and exact current constructor packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.enforceRate",
-      "fingerprint": "7d810354cc09d9f1d94788cd960fdc60feb5287777c2a200db6665a7fbbd8544",
+      "fingerprint": "1ff9f5a32a288c7352b366d36194af8deec62def9adafb170cd402fa6da20ed9",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-observability-fix-reviewer-b",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/cd232dbe2a3e74964aea69a68a2903887dcd730fb72443d7c37a4f75cbc396ab.json",
-      "evidenceHash": "c88c95ebc128d26cdab42cc38f3105c9f5fa0b9bb0bd4695eb7ebc5e33dbab91",
+      "evidenceHash": "e16df9e674e5f2bbf089cf327af6f911780b9110cd4054137102dfeb9d648379",
       "findingIds": [],
       "verification": [
-        "Checked scoped git diff for reviewed source, caller, dependencies, and named test; no scoped source diff output was present. Git emitted macOS cache warnings under the read-only sandbox.",
-        "Inspected direct caller server/routes/_observability/events.post.ts and prepareIntake call path at server/utils/observability-intake.ts lines 439-456.",
-        "Inspected generated API boundaries in app/lib/api/generated/lbapi.ts around browser observability event schemas and ObservabilityAcceptedResponse.",
-        "Inspected named tests in test/unit/observability-intake.spec.ts, including per-client window recovery, capacity-full behavior, malformed-body rate limiting, forwarded-address handling, replay reservation behavior, upstream failure handling, and accepted-count handling.",
-        "Inspected owned unit server/utils/observability-intake.ts lines 110-126 and surrounding ObservabilityIntakeGuard state, reservation, acceptance, release, and handleObservabilityIntake flow.",
-        "Inspected packet-listed dependencies app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.",
-        "Read exactly the specified packet JSON at .quality/semantic-review/packets/cd232dbe2a3e74964aea69a68a2903887dcd730fb72443d7c37a4f75cbc396ab.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Searched current repository references for enforceRate, ObservabilityIntakeGuard, and observability-intake.",
-        "Used read-only inspection commands only; did not run tests because the review request constrained execution to read-only commands."
+        "Confirmed configuration is server-only, closed by default, and stage-wired to the known ingress CIDR.",
+        "Confirmed fixed-window behavior, expiry pruning, bounded capacity, pre-body enforcement, direct spoof rejection, trusted single-address quotas, ambiguous-chain fallback, and retryable 429 delivery.",
+        "Inspected the method, client-key/trusted-CIDR derivation, preparation order, route/runtime/deployment wiring, browser retry behavior, generated boundary, and tests.",
+        "Read the semantic review contract and exact current rate-limit packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.release",
-      "fingerprint": "6a5490862e7725cb141a0eeff2688ad4d9d19787dd41f3d77a13368ef12385a8",
+      "fingerprint": "8c510571bb292f09e442cadac05a7f974d3e267496b4a5ba9bda0b770f4fb629",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-observability-fix-reviewer-b",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/8cfddcb4b4cf4f071f28a934c8c80fa03dec4c2dc35f9677f3bd12da16b9f017.json",
-      "evidenceHash": "13b8827470c6f2c1888073b18f8c51c2310a2349735decb08f098fff37ed896c",
+      "evidenceHash": "9395f56dfd24c9182cc52a7a5805ee3059015bb762ff4e323f8a21d73c132cd8",
       "findingIds": [],
       "verification": [
-        "Attempted ./node_modules/.bin/vitest run test/unit/observability-intake.spec.ts; blocked by read-only sandbox because Vite could not write node_modules/.vite-temp/vitest.config.ts timestamp module.",
-        "Attempted yarn test:unit test/unit/observability-intake.spec.ts; blocked by read-only sandbox because Yarn could not create/use a cache folder.",
-        "Inspected owned unit server/utils/observability-intake.ts lines 205-212, surrounding guard state/reservation logic, release callers in server/utils/observability-intake.ts, direct route caller server/routes/_observability/events.post.ts, listed imports, and test/unit/observability-intake.spec.ts.",
-        "Read quality/semantic-review-contract.md and exactly the specified packet JSON.",
-        "Searched for ObservabilityIntakeGuard, handleObservabilityIntake, and release call sites with rg."
+        "Confirmed behavioral tests cover direct retry, stale owners, capacity recovery, timeout variants, invalid/partial responses, transformation/signing failure, and upstream retry statuses.",
+        "Confirmed exact-owner pending-only deletion, stale-owner protection, complete failure-path release, accept routing for successful/replayed events, and immediate retry after timeout.",
+        "Inspected release, reservation/acceptance state, all release call sites, timeout/recovery paths, route caller, generated boundary, and tests.",
+        "Read the semantic review contract and exact current release packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.reserveNewEvents",
-      "fingerprint": "b04e4912ce0576afa3398bfb43bcc25822611dfe269d3d5ad6e8e1b092b9dbc4",
+      "fingerprint": "4d70842de69a9853396a0c67ec17f4e6ad18ce8afa47f9167f8bbaa316bdac25",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-observability-fix-reviewer-b",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/d9bf184bb4524364d88082d16415be07fc875ac931b990d3979dd9625110ac38.json",
-      "evidenceHash": "323c8fd16793a62cbe477d3506f39bb355fe9da329ad328c88bfaa9e4bf4e99d",
-      "findingIds": [],
+      "evidenceHash": "b636a9aad9887b76480e1ee824bb6761fd55ce95ba48e6959ee5545c894a6952",
+      "findingIds": [
+        "SR-4d70842d-minor-001"
+      ],
       "verification": [
-        "Checked git status with a read-only command; existing unrelated quality review artifact changes are present and git emitted macOS cache warnings under the read-only sandbox.",
-        "Inspected direct caller server/routes/_observability/events.post.ts.",
-        "Inspected direct imports app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.",
-        "Inspected generated API boundaries in app/lib/api/generated/lbapi.ts for BrowserEvent variants, ObservabilityEventBatch, ObservabilityAcceptedResponse, and /internal/observability/events responses.",
-        "Inspected owned unit server/utils/observability-intake.ts lines 155-191 and callback line 177 in current source.",
-        "Inspected packet-named tests in test/unit/observability-intake.spec.ts, including duplicate batch rejection, pending conflicts, accepted replay suppression, replay expiry, stale-owner safety, pending owner retention, capacity handling, upstream conflict, timeout release, and accepted-count failure behavior.",
-        "Inspected related endpoint-level coverage in test/ssr/observability-api.spec.ts for browser intake forwarding and replay acknowledgement.",
-        "Inspected surrounding ObservabilityIntakeGuard state, pruning, accepted-event eviction, acceptance, release, prepareIntake, forwarding, and handleObservabilityIntake flow in server/utils/observability-intake.ts.",
-        "Read exactly the specified packet JSON at .quality/semantic-review/packets/d9bf184bb4524364d88082d16415be07fc875ac931b990d3979dd9625110ac38.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Searched current repository references for reserveNewEvents, ObservabilityIntakeGuard, handleObservabilityIntake, observability endpoint paths, and related error messages using read-only rg commands.",
-        "Used read-only inspection commands only and did not run tests because the review request constrained execution to read-only commands in a read-only sandbox."
+        "Confirmed coverage across overlap, retry, suppression/expiry, stale owners, pending protection, saturation, ordering, conflicts, and mixed recovery.",
+        "Confirmed duplicate rejection before mutation, accepted suppression, pending-overlap atomic rejection, pre-insertion capacity checks, protected eviction, synchronous batch insertion, and unique-owner settlement.",
+        "Inspected every branch/callback, surrounding guard methods, preparation caller, route caller, generated boundaries, and unit/SSR tests.",
+        "Read the semantic review contract and exact current reservation packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {
       "packetId": "server/utils/observability-intake.ts::packet::readBoundedRequestBody",
-      "fingerprint": "bd148ca88b43ab05dad4815dfbad478c60f286ba05178cabd7510e16258fd425",
+      "fingerprint": "4597ce5f2648e081d0465d0566fd1c0c0adc8ef59caa48281652a97c2f88bc59",
       "state": "approved",
-      "reviewer": "independent-codex-review",
+      "reviewer": "semantic-observability-fix-reviewer-b",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/266d47a2dec8747d07893ee369781af66348d0cf55b17576795cd49ababe473f.json",
-      "evidenceHash": "20766ef0eb3f65f74f8a262f56d721baaa17326cfd6f55e44c0bda32d09629f1",
+      "evidenceHash": "aa9cafe3e5cb0679b488b6a479af242767e380c0e9303406b3197c910bfd7c4d",
       "findingIds": [],
       "verification": [
-        "Checked scoped git diff for reviewed source, caller, dependencies, and named test; no source diff output was present, though git emitted macOS cache/temp warnings under the read-only sandbox.",
-        "Inspected direct caller server/routes/_observability/events.post.ts and the prepareIntake call path at server/utils/observability-intake.ts lines 439-456.",
-        "Inspected generated API boundary app/lib/api/generated/lbapi.ts around browser observability event schemas, ObservabilityEventBatch, ObservabilityAcceptedResponse, and /internal/observability/events.",
-        "Inspected named test test/unit/observability-intake.spec.ts, including streamed body limit enforcement, oversized chunk behavior, multibyte string byte counting, exact-limit acceptance, malformed-body rate limiting, forwarding failure, timeout, replay, and accepted-count coverage.",
-        "Inspected owned unit server/utils/observability-intake.ts lines 387-407 and surrounding intake validation, parsing, signing, forwarding, reservation, and response handling.",
-        "Inspected packet-listed dependencies app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.",
-        "Read exactly the specified packet JSON at .quality/semantic-review/packets/266d47a2dec8747d07893ee369781af66348d0cf55b17576795cd49ababe473f.json.",
-        "Read review contract at quality/semantic-review-contract.md.",
-        "Searched current repository references for readBoundedRequestBody, MAX_BODY_BYTES, Event batch too large, readRawBody, and observability-intake.",
-        "Used read-only inspection commands only; did not run the test runner because the workspace is read-only and test execution may write caches or artifacts."
+        "Confirmed streamed-byte enforcement independent of Content-Length, UTF-8 accounting, exact-limit acceptance, pre-copy oversized rejection, iterator closure, and bounded retained memory.",
+        "Inspected the function, preparation caller, route, generated payload boundary, unit tests, and SSR oversized-request coverage.",
+        "Read the semantic review contract and exact current bounded-body packet.",
+        "Used read-only inspection commands and made no repository edits."
       ]
     },
     {

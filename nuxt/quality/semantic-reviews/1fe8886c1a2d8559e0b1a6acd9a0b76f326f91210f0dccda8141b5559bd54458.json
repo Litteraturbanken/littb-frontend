@@ -1,1 +1,18 @@
-{"version":1,"packetId":"app/components/reader/ReaderDictionaryLookup.vue::packet::component","packetFingerprint":"86dcb2eaac544d5463ab11b0080e06c5c83a9ca7881f93d357f7b1f1f6ac4df4","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[{"id":"SR-1fe8886-minor-001","severity":"minor","category":"complexity","path":"app/components/reader/ReaderDictionaryLookup.vue","unitId":"app/components/reader/ReaderDictionaryLookup.vue::component::ReaderDictionaryLookup","line":17,"summary":"`article` state duplicates `articleHtml` as modal-open state.","consequence":"The component carries a second modal state value that is not rendered or passed to the dialog, so future changes can make `article` and `articleHtml` drift without changing any user-visible data needs.","evidence":"`article` is declared at line 17, but the template passes only `articleHtml` and `modalOpen` to `ReaderDictionaryDialog`; `article` is otherwise only used as a boolean companion to non-empty sanitized HTML.","recommendation":"Remove `article`, compute `modalOpen` from `articleHtml.value.length > 0`, and let successful lookup assign only sanitized HTML after the generated response type has been accepted.","status":"unresolved","resolution":null,"resolutionCommit":null,"verification":["Read owned unit with `nl -ba app/components/reader/ReaderDictionaryLookup.vue`.","Checked direct consumer `app/components/reader/ReaderDictionaryDialog.vue`.","Checked caller usage in `app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue`."]}],"verification":["Read review contract `quality/semantic-review-contract.md`.","Read packet `.quality/semantic-review/packets/1fe8886c1a2d8559e0b1a6acd9a0b76f326f91210f0dccda8141b5559bd54458.json`.","Inspected owned unit `app/components/reader/ReaderDictionaryLookup.vue`.","Inspected direct imports `app/composables/useLbApiClient.ts` and `app/lib/reader-dictionary.ts`.","Inspected generated API type boundary in `app/lib/api/generated/lbapi.ts` for `/dictionary/articles` and `DictionaryArticleResponse`.","Inspected direct dialog consumer `app/components/reader/ReaderDictionaryDialog.vue` and template caller usage in the reader page.","Searched for relevant tests and usages with `rg`; reviewed `test/unit/reader-dictionary.spec.ts` and related renderable HTML boundaries."]}
+{
+  "version": 1,
+  "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::component",
+  "packetFingerprint": "9275f6537f8a00cbdde541416e4d409bdac1d8940b3074e485d1232b5cd34060",
+  "author": "implementation-agent",
+  "reviewer": "semantic-reader-fix-reviewer",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [],
+  "verification": [
+    "Read the semantic review contract and generated the exact current requested packet.",
+    "Inspected every owned range, complete component, direct dependencies, generated API boundary, sole Reader-page consumer, unit tests, and legacy browser suite.",
+    "Confirmed every terminal legacy failure restores the initiating word without scrolling and temporary tabindex is cleaned after focus moves.",
+    "Confirmed duplicate response-object state was removed and route/unmount cleanup clears transient message state and timer.",
+    "Reviewed concurrency, generated typing, sanitization, URL policy, modal semantics, keyboard labeling, and focus cleanup against all nine contract questions.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

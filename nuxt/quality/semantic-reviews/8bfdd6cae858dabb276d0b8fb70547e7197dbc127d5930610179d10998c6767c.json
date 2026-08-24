@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "packetId": "app/lib/observability/dictionary-lookup.ts::packet::reportDictionaryLookupOutcome",
+  "packetFingerprint": "321ba1734f8332ebe8a274953c023dd2d18c0128f028f5401ddf3222c04db380",
+  "author": "implementation-agent",
+  "reviewer": "semantic-reader-reviewer",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [
+    {
+      "id": "dictionary-lookup-parallel-generated-unions",
+      "severity": "minor",
+      "category": "types",
+      "path": "app/lib/observability/dictionary-lookup.ts",
+      "unitId": "app/lib/observability/dictionary-lookup.ts::function::reportDictionaryLookupOutcome",
+      "line": 34,
+      "summary": "The reporter sends values typed by handwritten unions that duplicate the generated backend contract.",
+      "consequence": "A future generated-contract change could leave this reporter typechecking while the strict intake rejects its event.",
+      "evidence": "Local outcome and selection unions cross the wire although the same values exist in generated DictionaryLookupAttributes, while adjacent observability code derives types from generated components.",
+      "recommendation": "Derive DictionaryLookupOutcome and DictionaryLookupSelection from the generated DictionaryLookupAttributes schema.",
+      "status": "unresolved",
+      "resolution": null,
+      "resolutionCommit": null,
+      "verification": ["Compared reporter types and wire fields with generated attributes and the established generated-type pattern."]
+    }
+  ],
+  "verification": [
+    "Generated and read the exact current packet and complete owned function.",
+    "Inspected its caller, complete unit test, generated dictionary observability types, strict intake typing/conversion/tests, privacy compile-time contract, and adjacent generated-type pattern.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

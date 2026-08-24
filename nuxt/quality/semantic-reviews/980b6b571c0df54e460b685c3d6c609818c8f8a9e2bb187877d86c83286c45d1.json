@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "packetId": "server/utils/observability-intake.ts::packet::module-recoverReplayConflict",
+  "packetFingerprint": "cb968e4ebcd4a9ac25e8435c61f432914621e74a1d8d2f4f688d9ff301128328",
+  "author": "implementation-agent",
+  "reviewer": "semantic-observability-fix-reviewer-b",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [],
+  "verification": [
+    "Read the semantic review contract and exact current replay-recovery packet.",
+    "Inspected every owned recovery unit/callback, caller path, signing/forwarding, owner-scoped transitions, generated endpoint semantics, imports, route caller, and relevant tests.",
+    "Confirmed recovery is restricted to multi-event upstream 409, preserves input alignment, distinguishes replayed from newly accepted events, and leaves malformed/error cases unresolved and retryable.",
+    "Confirmed exact-owner settlement prevents stranded reservations and stale-owner mutation; concurrency is bounded by the ten-event batch and timers are cleared.",
+    "Confirmed behavioral coverage for all-replayed, mixed, lost-response, accepted counts, repeat suppression, and duplicate-forward prevention.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

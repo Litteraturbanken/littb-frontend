@@ -1,1 +1,33 @@
-{"version":1,"packetId":"app/components/reader/ReaderDictionaryLookup.vue::packet::template-1","packetFingerprint":"afce58c9525a6a8a370293ac2f3f1605acbb462229be022290ab889eaa6fb70a","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read quality/semantic-review-contract.md.","Read .quality/semantic-review/packets/c8a6ba3b8c4156479e099dc9b8f50ea8175ac5fe2591285638c08ae284a85934.json.","Inspected owned physical lines 195-215 in app/components/reader/ReaderDictionaryLookup.vue with line numbers.","Inspected surrounding ReaderDictionaryLookup.vue state, lookup concurrency guards, selection handlers, route watcher, cleanup, and template bindings.","Inspected direct dependencies app/composables/useLbApiClient.ts and app/lib/reader-dictionary.ts.","Inspected generated API type boundary app/lib/api/generated/lbapi.ts for DictionaryArticleResponse.","Inspected direct caller app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around the ReaderDictionaryLookup usage.","Inspected child and adjacent UI components app/components/reader/ReaderDictionaryDialog.vue and app/components/global/LegacyNotice.vue.","Inspected relevant styles for .search_dict in app/assets/styles/styles.scss and app/assets/styles/reader.scss.","Inspected relevant tests test/e2e/reader-production.behavior.spec.ts, test/e2e/reader-dictionary-production.behavior.spec.ts, and test/unit/reader-dictionary.spec.ts.","Used read-only commands only."]}
+{
+  "version": 1,
+  "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::template-1",
+  "packetFingerprint": "0c544ee16af09dcafb519778e673f21f6f68ca083efe2868639ddfb0a0a0913b",
+  "author": "implementation-agent",
+  "reviewer": "semantic-reader-reviewer",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [
+    {
+      "id": "lookup-template-forwards-noop-frame-load",
+      "severity": "minor",
+      "category": "complexity",
+      "path": "app/components/reader/ReaderDictionaryLookup.vue",
+      "unitId": "app/components/reader/ReaderDictionaryLookup.vue::template::template[1]",
+      "line": 336,
+      "summary": "The lookup template forwards an iframe-load callback that intentionally performs no work.",
+      "consequence": "The prop chain enlarges the component API and implies a load transition that does not exist.",
+      "evidence": "The template passes an empty composable callback that the dialog invokes on iframe load.",
+      "recommendation": "Remove the callback chain and retain authenticated postMessage plus timeout as the only state transitions.",
+      "status": "unresolved",
+      "resolution": null,
+      "resolutionCommit": null,
+      "verification": ["Traced the lookup binding through composable, dialog prop, iframe listener, and tests."]
+    }
+  ],
+  "verification": [
+    "Generated and read the exact current template packet and full component after the focus fix.",
+    "Inspected failure focus generations, route/unmount cleanup, generated API and sanitizer boundaries, dialog and notice semantics, component tests, legacy failure E2E, and embed security/focus E2E.",
+    "Confirmed the focus/message changes introduce no Critical or Important issue.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

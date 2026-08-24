@@ -1,1 +1,17 @@
-{"version":1,"packetId":"server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.#evictAccepted","packetFingerprint":"4ed9357707fad57de2b8229a1346b0123ea35631dab410391505e5b1a8a3cd17","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["sed -n '1,240p' quality/semantic-review-contract.md","sed -n '1,260p' .quality/semantic-review/packets/139fdc4236fb37dea6732b8482c78a4fffd756070d14781bd1b097c6b22e456d.json","nl -ba server/utils/observability-intake.ts | sed -n '1,240p'","nl -ba server/utils/observability-intake.ts | sed -n '240,660p'","nl -ba server/routes/_observability/events.post.ts | sed -n '1,260p'","nl -ba test/unit/observability-intake.spec.ts | sed -n '1,940p'","nl -ba app/lib/observability/events.ts | sed -n '1,260p'","nl -ba server/utils/observability-correlation.ts | sed -n '1,260p'","nl -ba server/utils/observability.ts | sed -n '1,220p'","nl -ba shared/utils/deployment-environment.ts | sed -n '1,200p'","rg -n \"new ObservabilityIntakeGuard|reserveNewEvents|#evictAccepted|MAX_EVENT_IDS|observability\" server test app shared -g '!app/lib/api/generated/lbapi.ts'","rg -n \"Browser(Hydration|Error|Chunk|Unhandled)|Observability\" app/lib/api/generated/lbapi.* app/lib/api/generated -g '*'","nl -ba app/lib/api/generated/lbapi.ts | sed -n '760,1025p'; nl -ba app/lib/api/generated/lbapi.ts | sed -n '2290,2320p'"]}
+{
+  "version": 1,
+  "packetId": "server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.#evictAccepted",
+  "packetFingerprint": "dbae1a35dcea145056460d34cf2d7ea189bd118033745747ea2a9f7c4fafa1c1",
+  "author": "implementation-agent",
+  "reviewer": "semantic-observability-fix-reviewer-b",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [],
+  "verification": [
+    "Read the semantic review contract and exact current eviction packet.",
+    "Inspected the method/comparator, caller, pruning/reservation/acceptance/release transitions, guard construction, route caller, generated response boundary, and tests.",
+    "Confirmed exact excess calculation, pending protection, current-batch replay protection, atomic insufficient-capacity rejection, acceptance-time ordering, and synchronous mutation.",
+    "Confirmed behavioral tests cover accepted eviction, pending rejection, overlap atomicity, current-batch protection, stale-owner safety, and delayed completion ordering.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

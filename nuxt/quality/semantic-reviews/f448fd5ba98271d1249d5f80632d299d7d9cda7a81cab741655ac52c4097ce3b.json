@@ -1,1 +1,32 @@
-{"version":1,"packetId":"app/components/reader/ReaderDictionaryDialog.vue::packet::template-1","packetFingerprint":"b4faa613e22dc6a7d980c89c884dc3ae4ed614baee04af389a3a52968b9ddd35","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read quality/semantic-review-contract.md.","Read .quality/semantic-review/packets/f448fd5ba98271d1249d5f80632d299d7d9cda7a81cab741655ac52c4097ce3b.json.","Inspected owned physical lines 16-42 in app/components/reader/ReaderDictionaryDialog.vue with line numbers.","Inspected full ReaderDictionaryDialog.vue script/template props, emits, Headless UI usage, focus target, and RenderableHtmlContent boundary.","Inspected direct consumer app/components/reader/ReaderDictionaryLookup.vue around modalOpen, articleHtml, close handling, lookup concurrency, route cleanup, and template usage.","Inspected direct dependencies app/lib/reader-dictionary.ts, app/lib/api/generated/lbapi.ts, and app/assets/styles/nuxt.scss for sanitization, generated dictionary response types, and modal styling.","Compared adjacent established dialog patterns in app/components/reader/ReaderContentsDialog.vue and app/components/reader/ReaderSourceInfoDialog.vue.","Inspected relevant tests test/e2e/reader-production.behavior.spec.ts, test/e2e/reader-dictionary-production.behavior.spec.ts, and test/unit/reader-dictionary.spec.ts.","Searched current source and tests for ReaderDictionaryDialog, ReaderDictionaryLookup, dictionary, search_dict, modal-open, role dialog, aria usage, and Stäng close controls.","Used read-only commands only; no test commands were run because the review request constrained work to read-only inspection."]}
+{
+  "version": 1,
+  "packetId": "app/components/reader/ReaderDictionaryDialog.vue::packet::template-1",
+  "packetFingerprint": "fab545c3298fbee2809a55d9161a209f6917643a184cfb17703931be4c77efc2",
+  "author": "implementation-agent",
+  "reviewer": "semantic-reader-reviewer",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [
+    {
+      "id": "SR-f448fd5-minor-001",
+      "severity": "minor",
+      "category": "complexity",
+      "path": "app/components/reader/ReaderDictionaryDialog.vue",
+      "unitId": "app/components/reader/ReaderDictionaryDialog.vue::template::template[1]",
+      "line": 95,
+      "summary": "The iframe load listener calls a deliberately empty lifecycle callback.",
+      "consequence": "The binding suggests iframe load is meaningful state although correlated postMessage events are the sole readiness boundary.",
+      "evidence": "The iframe binds the callback passed by the parent, whose composable implementation is empty and has no observable state transition.",
+      "recommendation": "Remove the load binding and associated no-op prop, composable member, and test invocation.",
+      "status": "unresolved",
+      "resolution": null,
+      "resolutionCommit": null,
+      "verification": ["Traced the binding through parent, composable, and lifecycle test.", "Confirmed authenticated messages own every state transition."]
+    }
+  ],
+  "verification": [
+    "Read the semantic review contract and exact current requested packet.",
+    "Inspected all owned template lines, composable boundary, parent caller, URL and HTML policies, unit coverage, and production browser suites.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

@@ -1,1 +1,16 @@
-{"version":1,"packetId":"server/utils/observability-intake.ts::packet::readBoundedRequestBody","packetFingerprint":"bd148ca88b43ab05dad4815dfbad478c60f286ba05178cabd7510e16258fd425","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read review contract at quality/semantic-review-contract.md.","Read exactly the specified packet JSON at .quality/semantic-review/packets/266d47a2dec8747d07893ee369781af66348d0cf55b17576795cd49ababe473f.json.","Inspected owned unit server/utils/observability-intake.ts lines 387-407 and surrounding intake validation, parsing, signing, forwarding, reservation, and response handling.","Inspected direct caller server/routes/_observability/events.post.ts and the prepareIntake call path at server/utils/observability-intake.ts lines 439-456.","Inspected packet-listed dependencies app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.","Inspected generated API boundary app/lib/api/generated/lbapi.ts around browser observability event schemas, ObservabilityEventBatch, ObservabilityAcceptedResponse, and /internal/observability/events.","Inspected named test test/unit/observability-intake.spec.ts, including streamed body limit enforcement, oversized chunk behavior, multibyte string byte counting, exact-limit acceptance, malformed-body rate limiting, forwarding failure, timeout, replay, and accepted-count coverage.","Searched current repository references for readBoundedRequestBody, MAX_BODY_BYTES, Event batch too large, readRawBody, and observability-intake.","Checked scoped git diff for reviewed source, caller, dependencies, and named test; no source diff output was present, though git emitted macOS cache/temp warnings under the read-only sandbox.","Used read-only inspection commands only; did not run the test runner because the workspace is read-only and test execution may write caches or artifacts."]}
+{
+  "version": 1,
+  "packetId": "server/utils/observability-intake.ts::packet::readBoundedRequestBody",
+  "packetFingerprint": "4597ce5f2648e081d0465d0566fd1c0c0adc8ef59caa48281652a97c2f88bc59",
+  "author": "implementation-agent",
+  "reviewer": "semantic-observability-fix-reviewer-b",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [],
+  "verification": [
+    "Read the semantic review contract and exact current bounded-body packet.",
+    "Inspected the function, preparation caller, route, generated payload boundary, unit tests, and SSR oversized-request coverage.",
+    "Confirmed streamed-byte enforcement independent of Content-Length, UTF-8 accounting, exact-limit acceptance, pre-copy oversized rejection, iterator closure, and bounded retained memory.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

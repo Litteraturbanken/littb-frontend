@@ -1,1 +1,17 @@
-{"version":1,"packetId":"server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.#pruneEventIds","packetFingerprint":"aef691810df3eeddf837dd61c7bd2cf6e3d82113ffa5361ab5f9bfa76ca76ac7","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read review contract at quality/semantic-review-contract.md.","Read exactly the specified packet JSON at .quality/semantic-review/packets/553df4c59b1d0f4608a1beafd34f48016ded2fda4afcb9646595ac8423eaedcd.json.","Inspected owned unit server/utils/observability-intake.ts lines 128-135 and surrounding ObservabilityIntakeGuard reservation, eviction, acceptance, release, and handleObservabilityIntake flow.","Inspected direct caller server/routes/_observability/events.post.ts.","Inspected direct dependencies app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.","Inspected generated observability API type boundaries in app/lib/api/generated/lbapi.ts for browser event schemas, ObservabilityEventBatch, ObservabilityAcceptedResponse, and /internal/observability/events responses.","Inspected packet-named tests in test/unit/observability-intake.spec.ts, including replay expiry, pending owner safety, stale owner safety, capacity eviction, forwarding timeout release, upstream conflict, and accepted-response failure release behavior.","Inspected related endpoint-level coverage in test/ssr/observability-api.spec.ts for browser intake forwarding and replay acknowledgement.","Searched current repository references for ObservabilityIntakeGuard, #pruneEventIds, reserveNewEvents, accept, release, handleObservabilityIntake, REPLAY_WINDOW_MS, acceptedAt, and /_observability/events using read-only rg commands.","Checked git status and git diff with read-only commands; git emitted macOS cache warnings due the read-only sandbox and reported pre-existing quality artifact changes.","No tests were run because the review request required read-only commands in a read-only sandbox."]}
+{
+  "version": 1,
+  "packetId": "server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.#pruneEventIds",
+  "packetFingerprint": "e02f3efcb72697c035e0046542e5d79e84b45fc5e7c836ed26b98a883fb413ef",
+  "author": "implementation-agent",
+  "reviewer": "semantic-observability-fix-reviewer-b",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [],
+  "verification": [
+    "Read the semantic review contract and exact current pruning packet.",
+    "Inspected the method, reservation state, caller, acceptance/release paths, eviction interaction, route caller, generated response boundary, and tests.",
+    "Confirmed only expired accepted reservations are removed, acceptance time starts the replay window, synchronous Map deletion is safe, and pruning precedes duplicate/capacity classification.",
+    "Confirmed owner checks prevent expired owners mutating new reservations and tests cover suppression, expiry, pending protection, delayed acceptance, stale owners, and forwarding after expiry.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

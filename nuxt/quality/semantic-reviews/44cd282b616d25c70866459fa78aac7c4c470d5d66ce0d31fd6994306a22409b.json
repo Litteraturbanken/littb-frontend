@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "packetId": "app/lib/reader-dictionary-embed.ts::packet::buildSvenskaDictionaryUrl",
+  "packetFingerprint": "b0535d7871e7440d18cda93ddcee5af7f22ce632e331c4c0d8e7a54c59338f69",
+  "author": "implementation-agent",
+  "reviewer": "semantic-reader-reviewer",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [
+    {
+      "id": "fallback-reader-word-validation-duplicated",
+      "severity": "minor",
+      "category": "duplication",
+      "path": "app/lib/reader-dictionary-embed.ts",
+      "unitId": "app/lib/reader-dictionary-embed.ts::function::buildSvenskaDictionaryUrl",
+      "line": 92,
+      "summary": "The fallback URL builder uses a private word validator that duplicates the Reader selection validator.",
+      "consequence": "The copies can drift and make fallback, embed, and legacy lookup accept different selected-word sets.",
+      "evidence": "readerLookupWord and validatedReaderWord independently implement the same trim, length, whitespace, and control-character policy.",
+      "recommendation": "Reuse one Reader-word normalization policy at selection, embed URL, and fallback URL boundaries.",
+      "status": "unresolved",
+      "resolution": null,
+      "resolutionCommit": null,
+      "verification": ["Compared both validators and all three consumers."]
+    }
+  ],
+  "verification": [
+    "Generated and read the exact current packet and adjacent policies.",
+    "Inspected the UI caller, dialog link, duplicate selection policy, complete unit tests, source wiring, and behavioral fallback coverage.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

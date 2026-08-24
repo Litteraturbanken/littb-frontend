@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "packetId": "app/composables/useReaderDictionaryEmbed.ts::packet::useReaderDictionaryEmbed",
+  "packetFingerprint": "36a5bca5334f0f44d30bb260bbe8c7511422a7858559b694e287ac7c68477eb9",
+  "author": "implementation-agent",
+  "reviewer": "semantic-reader-reviewer",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [
+    {
+      "id": "SR-56df788-minor-001",
+      "severity": "minor",
+      "category": "complexity",
+      "path": "app/composables/useReaderDictionaryEmbed.ts",
+      "unitId": "app/composables/useReaderDictionaryEmbed.ts::function::useReaderDictionaryEmbed.handleFrameLoad",
+      "line": 163,
+      "summary": "The composable exports an intentionally empty frame-load callback.",
+      "consequence": "The public callback implies iframe load affects state although correlated messages are the sole authenticated readiness boundary.",
+      "evidence": "The empty callback is returned, passed through the parent, bound to iframe load, and invoked by a test only to prove no state change.",
+      "recommendation": "Delete the callback and all no-op plumbing while retaining postMessage as the sole readiness boundary.",
+      "status": "unresolved",
+      "resolution": null,
+      "resolutionCommit": null,
+      "verification": ["Traced every callback reference and lifecycle transition."]
+    },
+    {
+      "id": "SR-56df788-minor-002",
+      "severity": "minor",
+      "category": "complexity",
+      "path": "app/composables/useReaderDictionaryEmbed.ts",
+      "unitId": "app/composables/useReaderDictionaryEmbed.ts::function::useReaderDictionaryEmbed",
+      "line": 178,
+      "summary": "The returned API exposes internal message handling and unused selection state.",
+      "consequence": "Tests couple to public members no production caller consumes.",
+      "evidence": "Production search finds no consumer of handleMessage or selectedDictionary, while tests read them as internal state.",
+      "recommendation": "Keep handleMessage private and verify selected dictionary through telemetry rather than an unused reactive ref.",
+      "status": "unresolved",
+      "resolution": null,
+      "resolutionCommit": null,
+      "verification": ["Searched all production/test consumers and inspected telemetry flow."]
+    },
+    {
+      "id": "SR-56df788-minor-003",
+      "severity": "minor",
+      "category": "duplication",
+      "path": "app/composables/useReaderDictionaryEmbed.ts",
+      "unitId": "app/composables/useReaderDictionaryEmbed.ts::callback::useReaderDictionaryEmbed.watch.callback[1]@aa36da15ce02#1",
+      "line": 167,
+      "summary": "Route invalidation is owned by both the composable and its sole production caller.",
+      "consequence": "Every route change invokes the idempotent lifecycle close twice.",
+      "evidence": "Both the composable and ReaderDictionaryLookup watch route.fullPath and close the same lifecycle.",
+      "recommendation": "Retain centralized caller cleanup and composable unmount cleanup, removing the duplicate composable route watch.",
+      "status": "unresolved",
+      "resolution": null,
+      "resolutionCommit": null,
+      "verification": ["Compared both watchers and their route-invalidation coverage."]
+    }
+  ],
+  "verification": [
+    "Read the semantic review contract and exact current requested packet.",
+    "Inspected all owned callbacks, imports, lifecycle class, production consumers, complete lifecycle tests, and real-browser security and invalidation coverage.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}

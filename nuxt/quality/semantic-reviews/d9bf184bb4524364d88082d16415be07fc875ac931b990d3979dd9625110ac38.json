@@ -1,1 +1,34 @@
-{"version":1,"packetId":"server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.reserveNewEvents","packetFingerprint":"b04e4912ce0576afa3398bfb43bcc25822611dfe269d3d5ad6e8e1b092b9dbc4","author":"implementation-agent","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read quality/semantic-review-contract.md.","Read exactly the specified packet JSON at .quality/semantic-review/packets/d9bf184bb4524364d88082d16415be07fc875ac931b990d3979dd9625110ac38.json.","Inspected owned unit server/utils/observability-intake.ts lines 155-191 and callback line 177 in current source.","Inspected surrounding ObservabilityIntakeGuard state, pruning, accepted-event eviction, acceptance, release, prepareIntake, forwarding, and handleObservabilityIntake flow in server/utils/observability-intake.ts.","Inspected direct caller server/routes/_observability/events.post.ts.","Inspected direct imports app/lib/observability/events.ts, server/utils/observability-correlation.ts, server/utils/observability.ts, and shared/utils/deployment-environment.ts.","Inspected generated API boundaries in app/lib/api/generated/lbapi.ts for BrowserEvent variants, ObservabilityEventBatch, ObservabilityAcceptedResponse, and /internal/observability/events responses.","Inspected packet-named tests in test/unit/observability-intake.spec.ts, including duplicate batch rejection, pending conflicts, accepted replay suppression, replay expiry, stale-owner safety, pending owner retention, capacity handling, upstream conflict, timeout release, and accepted-count failure behavior.","Inspected related endpoint-level coverage in test/ssr/observability-api.spec.ts for browser intake forwarding and replay acknowledgement.","Searched current repository references for reserveNewEvents, ObservabilityIntakeGuard, handleObservabilityIntake, observability endpoint paths, and related error messages using read-only rg commands.","Checked git status with a read-only command; existing unrelated quality review artifact changes are present and git emitted macOS cache warnings under the read-only sandbox.","Used read-only inspection commands only and did not run tests because the review request constrained execution to read-only commands in a read-only sandbox."]}
+{
+  "version": 1,
+  "packetId": "server/utils/observability-intake.ts::packet::ObservabilityIntakeGuard.reserveNewEvents",
+  "packetFingerprint": "4d70842de69a9853396a0c67ec17f4e6ad18ce8afa47f9167f8bbaa316bdac25",
+  "author": "implementation-agent",
+  "reviewer": "semantic-observability-fix-reviewer-b",
+  "method": "codex-read-only",
+  "verdict": "approved",
+  "findings": [
+    {
+      "id": "SR-4d70842d-minor-001",
+      "severity": "minor",
+      "category": "complexity",
+      "path": "server/utils/observability-intake.ts",
+      "unitId": "server/utils/observability-intake.ts::method::ObservabilityIntakeGuard.reserveNewEvents",
+      "line": 216,
+      "summary": "New pending reservations store an unused reservation timestamp.",
+      "consequence": "The field has no effect and misleadingly implies pending reservations are age-pruned.",
+      "evidence": "reservedAt is assigned and declared but never read; pruning uses acceptedAt and tests intentionally retain old pending reservations.",
+      "recommendation": "Remove reservedAt from pending reservation creation and type.",
+      "status": "unresolved",
+      "resolution": null,
+      "resolutionCommit": null,
+      "verification": ["Searched every reference and inspected pruning, settlement, timeout, and pending-owner behavior."]
+    }
+  ],
+  "verification": [
+    "Read the semantic review contract and exact current reservation packet.",
+    "Inspected every branch/callback, surrounding guard methods, preparation caller, route caller, generated boundaries, and unit/SSR tests.",
+    "Confirmed duplicate rejection before mutation, accepted suppression, pending-overlap atomic rejection, pre-insertion capacity checks, protected eviction, synchronous batch insertion, and unique-owner settlement.",
+    "Confirmed coverage across overlap, retry, suppression/expiry, stale owners, pending protection, saturation, ordering, conflicts, and mixed recovery.",
+    "Used read-only inspection commands and made no repository edits."
+  ]
+}
