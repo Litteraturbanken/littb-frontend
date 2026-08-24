@@ -600,7 +600,7 @@ describe("observability intake guard", () => {
     expect(fetchImplementation).toHaveBeenCalledOnce()
 
     settleFirst?.(new Response(null, { status: 503 }))
-    await expect(firstDelivery).rejects.toMatchObject({ statusCode: 502 })
+    await expect(firstDelivery).rejects.toMatchObject({ statusCode: 503 })
     now = 300_002
     await expect(handleObservabilityIntake(
       intakeRequest(),
@@ -985,6 +985,69 @@ describe("observability intake guard", () => {
       intakeConfig,
       options
     )).resolves.toEqual({ accepted: 2 })
+    expect(fetchImplementation).toHaveBeenCalledTimes(2)
+  })
+
+  test("releases event IDs when trusted event transformation fails", async () => {
+    const resolveCorrelation = vi.fn()
+      .mockImplementationOnce(() => {
+        throw new Error("correlation resolver failed")
+      })
+      .mockReturnValue(null)
+    const fetchImplementation = vi.fn(async () => acceptedResponse())
+    const options = {
+      fetch: fetchImplementation,
+      guard: new ObservabilityIntakeGuard(),
+      now: () => 1_000,
+      resolveCorrelation
+    }
+
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).rejects.toThrow("correlation resolver failed")
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 1 })
+    expect(resolveCorrelation).toHaveBeenCalledTimes(2)
+    expect(fetchImplementation).toHaveBeenCalledOnce()
+  })
+
+  test.each([
+    [400, 502],
+    [401, 502],
+    [404, 502],
+    [413, 422],
+    [415, 422],
+    [422, 422],
+    [500, 502],
+    [503, 503]
+  ])("maps upstream status %i to retry-safe %i and releases its reservation", async (
+    upstreamStatus,
+    intakeStatus
+  ) => {
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: upstreamStatus }))
+      .mockResolvedValueOnce(acceptedResponse())
+    const options = {
+      fetch: fetchImplementation,
+      guard: new ObservabilityIntakeGuard(),
+      now: () => 1_000
+    }
+
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).rejects.toMatchObject({ statusCode: intakeStatus })
+    await expect(handleObservabilityIntake(
+      intakeRequest(),
+      intakeConfig,
+      options
+    )).resolves.toEqual({ accepted: 1 })
     expect(fetchImplementation).toHaveBeenCalledTimes(2)
   })
 

@@ -76,6 +76,8 @@ const DICTIONARY_LOOKUP_OUTCOMES: ReadonlySet<string> = new Set([
 const DICTIONARY_LOOKUP_SELECTIONS: ReadonlySet<string> = new Set(["so", "saob"])
 
 type DictionaryLookupEvent = components["schemas"]["DictionaryLookupEvent"]
+type ObservabilityAcceptedResponse
+  = components["schemas"]["ObservabilityAcceptedResponse"]
 type TrustedIntakeEvent = BrowserEvent | DictionaryLookupEvent
 
 export interface ObservabilityIntakeConfig {
@@ -626,8 +628,15 @@ function rejectFailedForward(
   reservationOwner: symbol
 ): never {
   guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
+  const statusCode = response.status === 413
+    || response.status === 415
+    || response.status === 422
+    ? 422
+    : response.status === 503
+      ? 503
+      : 502
   throw createError({
-    statusCode: response.status >= 400 && response.status < 500 ? 422 : 502,
+    statusCode,
     statusMessage: "Event intake unavailable"
   })
 }
@@ -715,7 +724,7 @@ export async function handleObservabilityIntake(
   event: H3Event,
   config: ObservabilityIntakeConfig,
   options: ObservabilityIntakeOptions = {}
-): Promise<{ accepted: number }> {
+): Promise<ObservabilityAcceptedResponse> {
   const {
     guard,
     intakeEvents,
@@ -727,14 +736,15 @@ export async function handleObservabilityIntake(
     return { accepted: 0 }
   }
 
-  const events = intakeEvents.map(item => trustedIntakeEvent(
-    item,
-    config,
-    now,
-    options.resolveCorrelation ?? resolveCorrelationToken
-  ))
+  let events: TrustedIntakeEvent[]
   let request: Awaited<ReturnType<typeof signedForwardRequest>>
   try {
+    events = intakeEvents.map(item => trustedIntakeEvent(
+      item,
+      config,
+      now,
+      options.resolveCorrelation ?? resolveCorrelationToken
+    ))
     request = await signedForwardRequest(event, config, events, now)
   } catch (error) {
     guard.release(intakeEvents.map(item => item.event_id), reservationOwner)
