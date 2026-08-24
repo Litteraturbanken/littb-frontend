@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import subprocess
@@ -55,6 +56,15 @@ def initialize_visual_repository(repository: Path) -> str:
 
 
 class InvokeTaskTests(unittest.TestCase):
+    def test_nuxt_contract_project_inherits_nuxt_aliases_and_covers_every_contract(self) -> None:
+        config_path = ROOT / "nuxt" / "tsconfig.contracts.json"
+
+        self.assertTrue(config_path.is_file(), "missing Nuxt contract tsconfig")
+        config = json.loads(config_path.read_text())
+        self.assertEqual(config["extends"], "./.nuxt/tsconfig.app.json")
+        self.assertEqual(config["include"], ["test/nuxt/*-contract.ts"])
+        self.assertTrue(config["compilerOptions"]["noEmit"])
+
     def test_default_backend_dir_is_discovered_from_the_main_repository(self) -> None:
         git_result = subprocess.CompletedProcess(
             args=[],
@@ -360,7 +370,7 @@ class InvokeTaskTests(unittest.TestCase):
             "test_lbapi/v2/test_work_manifest_api.py",
             "scripts/export_v2_openapi.py --check",
             "yarn api:check",
-            "test/nuxt/reader-editor-manifest-contract.ts",
+            "yarn tsc --noEmit --project tsconfig.contracts.json",
             "yarn typecheck",
             "yarn lint",
             "yarn vitest run test/unit/work-manifest-client.spec.ts "
@@ -432,12 +442,7 @@ class InvokeTaskTests(unittest.TestCase):
                 ),
                 call(
                     context,
-                    [
-                        "yarn", "tsc", "--noEmit", "--skipLibCheck",
-                        "--moduleResolution", "bundler", "--module", "esnext",
-                        "--target", "es2022", "--strict",
-                        "test/nuxt/library-contract.ts",
-                    ],
+                    ["yarn", "tsc", "--noEmit", "--project", "tsconfig.contracts.json"],
                     settings.nuxt_dir,
                     env=node_environment,
                 ),
@@ -483,7 +488,7 @@ class InvokeTaskTests(unittest.TestCase):
             ],
         )
 
-    def test_contract_quality_runs_all_standalone_and_library_contract_gates(self) -> None:
+    def test_contract_quality_runs_project_and_library_contract_gates(self) -> None:
         settings = tasks.Settings(
             backend_app="example.web:app",
             backend_dir=Path("/configured/backend"),
@@ -505,11 +510,6 @@ class InvokeTaskTests(unittest.TestCase):
         ), patch.object(tasks, "_run") as run:
             tasks.quality_contract.body(context)
 
-        compile_prefix = [
-            "yarn", "tsc", "--noEmit", "--skipLibCheck",
-            "--moduleResolution", "bundler", "--module", "esnext",
-            "--target", "es2022",
-        ]
         self.assertEqual(
             run.call_args_list,
             [
@@ -533,45 +533,7 @@ class InvokeTaskTests(unittest.TestCase):
                 ),
                 call(
                     context,
-                    [
-                        *compile_prefix,
-                        "--strict",
-                        "test/nuxt/author-works-contract.ts",
-                    ],
-                    settings.nuxt_dir,
-                    env=node_environment,
-                ),
-                call(
-                    context,
-                    [*compile_prefix, "--strict", "test/nuxt/library-contract.ts"],
-                    settings.nuxt_dir,
-                    env=node_environment,
-                ),
-                call(
-                    context,
-                    [*compile_prefix, "--strict", "test/nuxt/observability-contract.ts"],
-                    settings.nuxt_dir,
-                    env=node_environment,
-                ),
-                call(
-                    context,
-                    [
-                        *compile_prefix,
-                        "--strict",
-                        "test/nuxt/reader-editor-manifest-contract.ts",
-                    ],
-                    settings.nuxt_dir,
-                    env=node_environment,
-                ),
-                call(
-                    context,
-                    [*compile_prefix, "--strict", "test/nuxt/reader-source-info-contract.ts"],
-                    settings.nuxt_dir,
-                    env=node_environment,
-                ),
-                call(
-                    context,
-                    [*compile_prefix, "--strict", "test/nuxt/renderable-html-contract.ts"],
+                    ["yarn", "tsc", "--noEmit", "--project", "tsconfig.contracts.json"],
                     settings.nuxt_dir,
                     env=node_environment,
                 ),

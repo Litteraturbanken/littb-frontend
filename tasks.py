@@ -158,10 +158,9 @@ def _check_backend_openapi(context: Context, settings: Settings) -> None:
     )
 
 
-def _check_nuxt_contract(
+def _check_nuxt_contracts(
     context: Context,
     settings: Settings,
-    contract_file: str,
 ) -> None:
     _run(
         context,
@@ -169,15 +168,8 @@ def _check_nuxt_contract(
             "yarn",
             "tsc",
             "--noEmit",
-            "--skipLibCheck",
-            "--moduleResolution",
-            "bundler",
-            "--module",
-            "esnext",
-            "--target",
-            "es2022",
-            "--strict",
-            contract_file,
+            "--project",
+            "tsconfig.contracts.json",
         ],
         settings.nuxt_dir,
         env=_nuxt_node_environment(settings),
@@ -528,15 +520,7 @@ def quality_contract(context: Context) -> None:
     settings = Settings.from_environment()
     python = _backend_python(settings)
     codegen_check.body(context)
-    for contract_file in (
-        "test/nuxt/author-works-contract.ts",
-        "test/nuxt/library-contract.ts",
-        "test/nuxt/observability-contract.ts",
-        "test/nuxt/reader-editor-manifest-contract.ts",
-        "test/nuxt/reader-source-info-contract.ts",
-        "test/nuxt/renderable-html-contract.ts",
-    ):
-        _check_nuxt_contract(context, settings, contract_file)
+    _check_nuxt_contracts(context, settings)
     _run(
         context,
         [
@@ -597,11 +581,7 @@ def quality_reader_editor(context: Context) -> None:
         settings.backend_dir,
     )
     codegen_check.body(context)
-    _check_nuxt_contract(
-        context,
-        settings,
-        "test/nuxt/reader-editor-manifest-contract.ts",
-    )
+    _check_nuxt_contracts(context, settings)
     for command in (
         ["yarn", "typecheck"],
         ["yarn", "lint"],
@@ -662,7 +642,7 @@ def quality_library(context: Context) -> None:
         settings.backend_dir,
     )
     codegen_check.body(context)
-    _check_nuxt_contract(context, settings, "test/nuxt/library-contract.ts")
+    _check_nuxt_contracts(context, settings)
     _run(
         context,
         ["yarn", "typecheck"],
