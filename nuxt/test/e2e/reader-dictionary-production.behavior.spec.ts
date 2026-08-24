@@ -51,3 +51,57 @@ test("the explicit legacy mode keeps the Reader dictionary rollback usable", asy
     query: "?word=DOKTOR"
   }])
 })
+
+for (const [name, response] of [
+  ["API failure", {
+    status: 503,
+    json: {
+      error: {
+        code: "dictionary_unavailable",
+        message: "Dictionary unavailable",
+        details: null
+      }
+    }
+  }],
+  ["invalid article", {
+    status: 200,
+    json: {
+      word: "DOKTOR",
+      base_form: "",
+      article_html: "<lemma><grundform>DOKTOR</grundform></lemma>"
+    }
+  }],
+  ["sanitized-empty article", {
+    status: 200,
+    json: {
+      word: "DOKTOR",
+      base_form: "DOKTOR",
+      article_html: "<script>bad()</script>"
+    }
+  }]
+] as const) {
+  test(`${name} restores focus to the initiating Reader word`, async ({ page }) => {
+    await page.route("**/api/v2/dictionary/articles?word=DOKTOR", route => (
+      route.fulfill(response)
+    ))
+    await page.goto(
+      "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext",
+      { waitUntil: "networkidle" }
+    )
+    const word = page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first()
+    await word.dblclick()
+    const scrollBeforeLookup = await page.evaluate(() => window.scrollY)
+
+    await page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" }).click()
+
+    await expect(page.locator(".alert_popup")).toHaveText("Hittade inget uppslag")
+    await expect(page.getByRole("dialog")).toHaveCount(0)
+    await expect(word).toBeFocused()
+    await expect(word).toHaveAttribute("tabindex", "-1")
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrollBeforeLookup)
+
+    await page.locator(".reader-work-search-trigger").focus()
+    await expect(page.locator(".reader-work-search-trigger")).toBeFocused()
+    await expect.poll(() => word.getAttribute("tabindex")).toBeNull()
+  })
+}

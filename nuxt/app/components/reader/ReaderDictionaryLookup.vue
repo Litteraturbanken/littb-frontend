@@ -28,7 +28,6 @@ const indicator = shallowRef<{
   top: number
   word: string
 } | null>(null)
-const article = ref<DictionaryArticle | null>(null)
 const articleHtml = ref<SanitizedHtml<"dictionary-article">>(emptyRenderableHtml())
 const embedAttemptWord = ref<string | null>(null)
 const message = ref("")
@@ -40,7 +39,7 @@ let focusRestoreGeneration = 0
 let focusRestoreTarget: HTMLElement | null = null
 let focusRestoreTabIndexCleanup: (() => void) | null = null
 
-const legacyModalOpen = computed(() => article.value !== null && articleHtml.value.length > 0)
+const legacyModalOpen = computed(() => articleHtml.value.length > 0)
 const embedModalOpen = computed(() => (
   embedAttemptWord.value !== null && embed.status.value !== "closed"
 ))
@@ -62,12 +61,18 @@ useHead(() => ({
 }))
 
 function showMessage(value: string): void {
+  clearMessage()
   message.value = value
-  if (messageTimer) clearTimeout(messageTimer)
   messageTimer = setTimeout(() => {
     message.value = ""
     messageTimer = null
   }, 2200)
+}
+
+function clearMessage(): void {
+  message.value = ""
+  if (messageTimer) clearTimeout(messageTimer)
+  messageTimer = null
 }
 
 function clearSelectionTimer(): void {
@@ -168,6 +173,18 @@ function lookupIsCurrent(
     && route.fullPath === routeFullPath
 }
 
+function restorePendingReaderWordFocus(): void {
+  const target = focusRestoreTarget
+  const generation = focusRestoreGeneration
+  focusRestoreTarget = null
+  void restoreReaderWordFocus(target, generation)
+}
+
+function failLegacyLookup(): void {
+  showMessage("Hittade inget uppslag")
+  restorePendingReaderWordFocus()
+}
+
 async function lookupLegacy(word: string): Promise<void> {
   const generation = lookupGeneration
   const controller = new AbortController()
@@ -180,24 +197,20 @@ async function lookupLegacy(word: string): Promise<void> {
     })
     if (!lookupIsCurrent(generation, controller, routeFullPath)) return
     if (result.error || !validArticle(result.data, word)) {
-      clearFocusRestoreTarget()
-      showMessage("Hittade inget uppslag")
+      failLegacyLookup()
       return
     }
     const sanitized = sanitizeDictionaryArticle(result.data.article_html)
     if (!sanitized) {
-      clearFocusRestoreTarget()
-      showMessage("Hittade inget uppslag")
+      failLegacyLookup()
       return
     }
     await new Promise<void>(resolve => setTimeout(resolve, 0))
     if (!lookupIsCurrent(generation, controller, routeFullPath)) return
     articleHtml.value = sanitized
-    article.value = result.data
   } catch {
     if (lookupIsCurrent(generation, controller, routeFullPath)) {
-      clearFocusRestoreTarget()
-      showMessage("Hittade inget uppslag")
+      failLegacyLookup()
     }
   } finally {
     if (lookupController === controller) lookupController = null
@@ -214,7 +227,6 @@ async function lookup(): Promise<void> {
   focusRestoreTarget = selected.element
   cancelLookup()
   closeEmbed()
-  article.value = null
   articleHtml.value = emptyRenderableHtml()
   if (mode === "embed") {
     embedAttemptWord.value = selected.word
@@ -225,7 +237,6 @@ async function lookup(): Promise<void> {
 }
 
 function closeLegacy(): void {
-  article.value = null
   articleHtml.value = emptyRenderableHtml()
 }
 
@@ -260,13 +271,10 @@ async function restoreReaderWordFocus(
 }
 
 function close(): void {
-  const target = focusRestoreTarget
-  const generation = focusRestoreGeneration
-  focusRestoreTarget = null
   cancelLookup()
   closeLegacy()
   closeEmbed()
-  void restoreReaderWordFocus(target, generation)
+  restorePendingReaderWordFocus()
 }
 
 function setEmbedFrame(element: Element | ComponentPublicInstance | null): void {
@@ -280,6 +288,7 @@ watch(() => route.fullPath, () => {
   clearSelectionTimer()
   clearIndicator()
   closeLegacy()
+  clearMessage()
 })
 
 onBeforeMount(() => {
@@ -297,7 +306,7 @@ onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick)
   document.removeEventListener("keyup", handleSelectionKeyup)
   clearSelectionTimer()
-  if (messageTimer) clearTimeout(messageTimer)
+  clearMessage()
 })
 </script>
 

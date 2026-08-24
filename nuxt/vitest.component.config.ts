@@ -21,6 +21,7 @@ export default defineProject({
       "test/unit/legacy-notice.spec.ts",
       "test/unit/reader-contributors.spec.ts",
       "test/unit/reader-contents-dialog.spec.ts",
+      "test/unit/reader-dictionary-lookup.spec.ts",
       "test/unit/reader-focus-controls.spec.ts",
       "test/unit/reader-source-info-dialog.spec.ts"
     ]
