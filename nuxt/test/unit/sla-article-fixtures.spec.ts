@@ -26,6 +26,7 @@ import {
 const nuxtRoot = fileURLToPath(new URL("../..", import.meta.url))
 const port = 32_000 + process.pid % 10_000
 const origin = `http://127.0.0.1:${port}`
+const svenskaEmbedPort = port + 1_000
 let fixture: ChildProcess
 
 type SlaArticleOperation = paths["/authors/{author_id}/documents/omtexterna/articles/{article_id}"]["get"]
@@ -75,7 +76,11 @@ describe("SLA article corpus fixture", () => {
   beforeAll(async () => {
     fixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
       cwd: nuxtRoot,
-      env: { ...process.env, LBAPI_FIXTURE_PORT: String(port) },
+      env: {
+        ...process.env,
+        LBAPI_FIXTURE_PORT: String(port),
+        LITTB_SVENSKA_EMBED_PORT: String(svenskaEmbedPort)
+      },
       stdio: "ignore"
     })
     await waitUntilReady()

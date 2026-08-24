@@ -161,6 +161,7 @@ const generatedReaderHitResponse: ReaderHitResponse = {
 const nuxtRoot = fileURLToPath(new URL("../..", import.meta.url))
 const port = 42_000 + process.pid % 10_000
 const origin = `http://127.0.0.1:${port}`
+const svenskaEmbedPort = port + 1_000
 let fixture: ChildProcess
 
 async function waitUntilReady() {
@@ -467,7 +468,11 @@ describe("v2 fixture server operations", () => {
   beforeAll(async () => {
     fixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
       cwd: nuxtRoot,
-      env: { ...process.env, LBAPI_FIXTURE_PORT: String(port) },
+      env: {
+        ...process.env,
+        LBAPI_FIXTURE_PORT: String(port),
+        LITTB_SVENSKA_EMBED_PORT: String(svenskaEmbedPort)
+      },
       stdio: "ignore"
     })
     await waitUntilReady()
@@ -2281,7 +2286,11 @@ describe("v2 fixture server operations", () => {
     const shutdownOrigin = `http://127.0.0.1:${shutdownPort}`
     const shutdownFixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
       cwd: nuxtRoot,
-      env: { ...process.env, LBAPI_FIXTURE_PORT: String(shutdownPort) },
+      env: {
+        ...process.env,
+        LBAPI_FIXTURE_PORT: String(shutdownPort),
+        LITTB_SVENSKA_EMBED_PORT: String(shutdownPort + 1_000)
+      },
       stdio: "ignore"
     })
     const exited = once(shutdownFixture, "exit")
