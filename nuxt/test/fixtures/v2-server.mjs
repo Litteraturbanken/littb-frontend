@@ -631,7 +631,10 @@ function svenskaEmbedArticleText(scenario, selected, visibleWord) {
 }
 
 function svenskaEmbedHtml({ requestId, scenario, word }) {
-  const selected = scenario.selectedDictionary === "saob" ? "saob" : "so"
+  const dictionaries = scenario.event === "result" ? scenario.dictionaries : []
+  const selected = dictionaries.includes(scenario.selectedDictionary)
+    ? scenario.selectedDictionary
+    : dictionaries[0] ?? "so"
   const terminalMessage = scenario.event === "silent"
     ? null
     : {
@@ -646,6 +649,11 @@ function svenskaEmbedHtml({ requestId, scenario, word }) {
       }
   const visibleWord = escapeHtml(word)
   const visibleArticle = svenskaEmbedArticleText(scenario, selected, visibleWord)
+  const dictionaryTabs = dictionaries.length > 0
+    ? `<div role="tablist" aria-label="Ordböcker">
+  ${dictionaries.map(dictionary => `<button id="${dictionary}-tab" data-dictionary="${dictionary}" type="button" role="tab" aria-selected="${selected === dictionary}">${dictionary.toUpperCase()}</button>`).join("\n  ")}
+</div>`
+    : ""
   const filler = scenario.longContent
     ? `<p class="filler">${"Lång ordbokstext. ".repeat(180)}</p>`
     : ""
@@ -655,10 +663,7 @@ function svenskaEmbedHtml({ requestId, scenario, word }) {
 html,body{margin:0;padding:0;font:16px/1.45 sans-serif}body{padding:12px}
 [role=tab]{margin-right:8px}[role=tabpanel]{padding-top:12px}.filler{max-width:52ch}
 </style></head><body>
-<div role="tablist" aria-label="Ordböcker">
-  <button id="so-tab" type="button" role="tab" aria-selected="${selected === "so"}">SO</button>
-  <button id="saob-tab" type="button" role="tab" aria-selected="${selected === "saob"}">SAOB</button>
-</div>
+${dictionaryTabs}
 <section id="article" role="tabpanel">${visibleArticle}${filler}</section>
 <button id="post-result" type="button">Skicka svar</button>
 <script>
@@ -668,12 +673,14 @@ const autoPost = ${serializeScriptValue(scenario.autoPost)}
 const parentOrigin = new URL(document.referrer).origin
 const article = document.querySelector("#article")
 function selectDictionary(dictionary) {
-  document.querySelector("#so-tab").setAttribute("aria-selected", String(dictionary === "so"))
-  document.querySelector("#saob-tab").setAttribute("aria-selected", String(dictionary === "saob"))
+  for (const tab of document.querySelectorAll("[data-dictionary]")) {
+    tab.setAttribute("aria-selected", String(tab.dataset.dictionary === dictionary))
+  }
   article.textContent = dictionary.toUpperCase() + "-artikel för " + word
 }
-document.querySelector("#so-tab").addEventListener("click", () => selectDictionary("so"))
-document.querySelector("#saob-tab").addEventListener("click", () => selectDictionary("saob"))
+for (const tab of document.querySelectorAll("[data-dictionary]")) {
+  tab.addEventListener("click", () => selectDictionary(tab.dataset.dictionary))
+}
 function postTerminal() {
   if (terminalMessage) parent.postMessage(terminalMessage, parentOrigin)
 }

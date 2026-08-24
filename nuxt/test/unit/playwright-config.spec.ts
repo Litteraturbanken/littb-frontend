@@ -81,7 +81,7 @@ describe("Playwright project boundaries", () => {
     expect(matches(mobile?.testMatch, spec)).toBe(false)
   })
 
-  test("runs Reader embed behavior in both desktop and mobile projects", () => {
+  test("assigns the Reader embed matrix to desktop and its dedicated case to mobile", () => {
     const spec = "e2e/reader-production.behavior.spec.ts"
     const desktop = config.projects?.find(project => project.name === "desktop-chromium")
     const mobile = config.projects?.find(project => project.name === "mobile-chromium")

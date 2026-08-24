@@ -87,7 +87,12 @@ test.beforeEach(async ({ page, request }) => {
     window.addEventListener("beforeunload", () => {
       sessionStorage.setItem("reader-production-reloaded", "1")
     })
-    const sourceProofs: Array<{ origin: string, sourceMatches: boolean }> = []
+    const sourceProofs: Array<{
+      event: string | null
+      origin: string
+      requestId: string | null
+      sourceMatches: boolean
+    }> = []
     Object.assign(window, { __readerDictionarySourceProofs: sourceProofs })
     window.addEventListener("message", (event) => {
       if (event.data?.type !== "svenska-reader-lookup") return
@@ -95,7 +100,9 @@ test.beforeEach(async ({ page, request }) => {
         ".reader-dictionary-embed__frame"
       )
       sourceProofs.push({
+        event: typeof event.data.event === "string" ? event.data.event : null,
         origin: event.origin,
+        requestId: typeof event.data.requestId === "string" ? event.data.requestId : null,
         sourceMatches: event.source === frame?.contentWindow
       })
     }, true)
@@ -151,7 +158,8 @@ test("one selected Reader word accepts the result from the current cross-origin 
   request
 }) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
-  await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().dblclick()
+  const word = page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first()
+  await word.dblclick()
 
   const indicator = page.getByRole("button", { name: "Slå upp DOKTOR i SO och SAOB" })
   await expect(indicator).toBeVisible()
@@ -186,9 +194,15 @@ test("one selected Reader word accepts the result from the current cross-origin 
   ))).toBe(true)
   await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
   await close.focus()
+  const scrollBeforeClose = await page.evaluate(() => window.scrollY)
   await close.click()
   await expect(dialog).toHaveCount(0)
-  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true)
+  await expect(word).toBeFocused()
+  await expect(word).toHaveAttribute("tabindex", "-1")
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollBeforeClose)
+  await page.locator(".reader-work-search-trigger").focus()
+  await expect(page.locator(".reader-work-search-trigger")).toBeFocused()
+  await expect.poll(() => word.getAttribute("tabindex")).toBeNull()
   expect(await fixtureRequests(request, "_dictionary_requests")).toEqual([])
   expect(await embedRequests(request)).toEqual([{
     path: "/embed/reader",
@@ -334,6 +348,7 @@ test("a SAOB-only result selects and renders the SAOB tab", async ({
 
   await expect(frame.contentFrame().getByRole("tab", { name: "SAOB" }))
     .toHaveAttribute("aria-selected", "true")
+  await expect(frame.contentFrame().getByRole("tab", { name: "SO" })).toHaveCount(0)
   await expect(frame.contentFrame().getByRole("tabpanel"))
     .toContainText("SAOB-artikel för DOKTOR")
   expect(await fixtureRequests(request, "_dictionary_requests")).toEqual([])
@@ -342,18 +357,39 @@ test("a SAOB-only result selects and renders the SAOB tab", async ({
   ])
 })
 
-test("a newer dictionary lookup replaces a closed pending frame", async ({
+test("an SO-only result renders no undeclared SAOB tab", async ({ page, request }) => {
+  await configureEmbed(request, {
+    autoPost: true,
+    dictionaries: ["so"],
+    event: "result",
+    longContent: false,
+    selectedDictionary: "so",
+    word: "DOKTOR"
+  })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  const frame = await openEmbed(page, "DOKTOR")
+
+  await expect(frame.contentFrame().getByRole("tab", { name: "SO" }))
+    .toHaveAttribute("aria-selected", "true")
+  await expect(frame.contentFrame().getByRole("tab", { name: "SAOB" })).toHaveCount(0)
+  await expect(frame.contentFrame().getByRole("tabpanel"))
+    .toContainText("SO-artikel för DOKTOR")
+})
+
+test("a newer dictionary lookup replaces the active session before its late result", async ({
   page,
   request
 }) => {
   await configureEmbed(request, {
     autoPost: false,
-    event: "silent",
+    dictionaries: ["so", "saob"],
+    event: "result",
     longContent: false,
+    selectedDictionary: "so",
     word: "DOKTOR"
   })
   await configureEmbed(request, {
-    autoPost: true,
+    autoPost: false,
     dictionaries: ["saob"],
     event: "result",
     longContent: false,
@@ -364,18 +400,101 @@ test("a newer dictionary lookup replaces a closed pending frame", async ({
 
   const first = await openEmbed(page, "DOKTOR")
   await expect(page.getByRole("status")).toHaveText("Laddar ordboken…")
-  await page.getByRole("button", { name: "Stäng" }).click()
-  await expect(first).toHaveCount(0)
-  const second = await openEmbed(page, "GLAS")
+  const firstRequestId = new URL((await first.getAttribute("src"))!)
+    .searchParams.get("requestId")!
+  await first.contentFrame().locator("body").evaluate(() => {
+    const requestId = new URL(window.location.href).searchParams.get("requestId")!
+    const parentOrigin = new URL(document.referrer).origin
+    window.addEventListener("beforeunload", () => {
+      parent.postMessage({
+        type: "svenska-reader-lookup",
+        version: 1,
+        requestId,
+        event: "result",
+        dictionaries: ["so", "saob"],
+        selectedDictionary: "so"
+      }, parentOrigin)
+    }, { once: true })
+  })
+
+  await selectReaderWord(page, "GLAS")
+  const nextIndicator = page.getByRole("button", { name: "Slå upp GLAS i SO och SAOB" })
+  await expect(nextIndicator).toBeVisible()
+  // Headless UI makes the Reader background inert while the modal is open. Invoke the
+  // rendered indicator in-page to exercise the component's real replacement path.
+  await nextIndicator.evaluate((button: HTMLButtonElement) => button.click())
+  const second = page.locator('iframe[title="Slå upp GLAS i SO och SAOB"]')
+
+  await expect.poll(() => page.evaluate((requestId) => (
+    (window as typeof window & {
+      __readerDictionarySourceProofs?: Array<{
+        event: string | null
+        requestId: string | null
+        sourceMatches: boolean
+      }>
+    }).__readerDictionarySourceProofs?.some(proof => (
+      proof.event === "result"
+      && proof.requestId === requestId
+      && proof.sourceMatches
+    )) ?? false
+  ), firstRequestId)).toBe(true)
+  await expect(page.getByRole("status")).toHaveText("Laddar ordboken…")
+  await second.contentFrame().getByRole("button", { name: "Skicka svar" }).click()
 
   await expect(second.contentFrame().getByRole("tabpanel"))
     .toContainText("SAOB-artikel för GLAS")
+  await expect(page.getByRole("status")).toHaveCount(0)
   await expect(page.locator('iframe[title*="DOKTOR"]')).toHaveCount(0)
   expect((await embedRequests(request)).map(entry => entry.word)).toEqual(["DOKTOR", "GLAS"])
   expect(await fixtureRequests(request, "_dictionary_requests")).toEqual([])
   expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
     readerManifest
   ])
+})
+
+test("a trusted sibling frame cannot answer for the current dictionary frame", async ({
+  page,
+  request
+}) => {
+  await configureEmbed(request, {
+    autoPost: false,
+    dictionaries: ["so", "saob"],
+    event: "result",
+    longContent: false,
+    selectedDictionary: "so",
+    word: "DOKTOR"
+  })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  const currentFrame = await openEmbed(page, "DOKTOR")
+  const requestId = new URL((await currentFrame.getAttribute("src"))!)
+    .searchParams.get("requestId")!
+
+  await page.evaluate(({ activeRequestId, sourceOrigin }) => {
+    const url = new URL("/embed/reader", sourceOrigin)
+    url.searchParams.set("word", "SIBLING")
+    url.searchParams.set("requestId", activeRequestId)
+    const sibling = document.createElement("iframe")
+    sibling.id = "trusted-sibling-frame"
+    sibling.src = url.toString()
+    document.body.append(sibling)
+  }, { activeRequestId: requestId, sourceOrigin: fixture })
+  await expect.poll(() => page.evaluate((activeRequestId) => (
+    (window as typeof window & {
+      __readerDictionarySourceProofs?: Array<{
+        event: string | null
+        requestId: string | null
+        sourceMatches: boolean
+      }>
+    }).__readerDictionarySourceProofs?.some(proof => (
+      proof.event === "result"
+      && proof.requestId === activeRequestId
+      && !proof.sourceMatches
+    )) ?? false
+  ), requestId)).toBe(true)
+
+  await expect(page.getByRole("status")).toHaveText("Laddar ordboken…")
+  await currentFrame.contentFrame().getByRole("button", { name: "Skicka svar" }).click()
+  await expect(page.getByRole("status")).toHaveCount(0)
 })
 
 test("route changes invalidate a pending dictionary lookup", async ({ page, request }) => {
@@ -669,6 +788,14 @@ test("the mobile dictionary fits, scrolls internally, and locks the Reader backg
   })
   await page.goto(readerPath, { waitUntil: "networkidle" })
 
+  const readerWord = page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first()
+  await readerWord.evaluate((element) => {
+    element.scrollIntoView({ block: "start" })
+    window.scrollBy(0, 120)
+  })
+  const backgroundScroll = await page.evaluate(() => window.scrollY)
+  expect(backgroundScroll).toBeGreaterThan(0)
+
   const frame = await openEmbed(page, "DOKTOR")
   const embedPanel = page.locator(".reader-dictionary-embed")
   const panelBox = await embedPanel.boundingBox()
@@ -690,6 +817,7 @@ test("the mobile dictionary fits, scrolls internally, and locks the Reader backg
   expect(await frameBody.evaluate(() => window.scrollY)).toBeGreaterThan(0)
 
   const lockedScroll = await page.evaluate(() => window.scrollY)
+  expect(lockedScroll).toBeGreaterThan(0)
   await page.mouse.move(2, viewport!.height - 2)
   await page.mouse.wheel(0, 400)
   expect(await page.evaluate(() => window.scrollY)).toBe(lockedScroll)
