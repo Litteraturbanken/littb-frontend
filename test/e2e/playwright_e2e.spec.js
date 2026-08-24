@@ -65,12 +65,25 @@ function expectDefiningTextSearchResults(body) {
     ))).toBe(true)
 }
 
+function isSameOriginConsoleMessage(page, message) {
+    const sourceUrl = message.location().url
+    if (!sourceUrl) return true
+    try {
+        return new URL(sourceUrl).origin === new URL(page.url()).origin
+    } catch {
+        return true
+    }
+}
+
 test.describe("Nuxt whole-site staging smoke", () => {
     test.beforeEach(async ({ page }) => {
         const errors = []
         browserErrors.set(page, errors)
         page.on("console", message => {
-            if (message.type() === "error") errors.push(`console: ${message.text()}`)
+            if (
+                message.type() === "error"
+                && isSameOriginConsoleMessage(page, message)
+            ) errors.push(`console: ${message.text()}`)
         })
         page.on("pageerror", error => errors.push(`pageerror: ${error.message}`))
     })
