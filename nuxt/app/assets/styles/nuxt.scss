@@ -610,6 +610,11 @@
     }
 }
 
+.page-search #mainview [data-search-root] .results_container.searching .table_container table td {
+    opacity: 1;
+    transition: none;
+}
+
 @media (max-width: 767px) {
     .page-search .filter_select {
         margin-bottom: 8px;

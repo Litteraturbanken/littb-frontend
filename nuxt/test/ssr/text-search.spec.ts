@@ -627,7 +627,7 @@ test("route navigation aborts active title work and clears its spinner and stale
   await expect(page.getByRole("option", { name: "Gösta Berlings saga" })).toHaveCount(1)
 })
 
-test("pending primary navigation fades the committed table and current failure clears it", async ({
+test("pending primary navigation keeps the committed table visible and current failure clears it", async ({
   page,
   request
 }) => {
@@ -642,8 +642,10 @@ test("pending primary navigation fades the committed table and current failure c
   await page.locator(".submit_form").evaluate(form => (form as HTMLFormElement).requestSubmit())
   await expect(page.locator("#results")).toHaveClass(/searching/)
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
-  await expect(page.locator("#results td.header").first())
-    .toHaveCSS("opacity", "0.2")
+  await page.waitForTimeout(500)
+  expect(await page.locator("#results td.header").first().evaluate(element => (
+    getComputedStyle(element).opacity
+  ))).toBe("1")
   await expect(page.locator("#results")).not.toHaveClass(/searching/, { timeout: 5000 })
 
   await request.put(`${fixture}/_text_search/failures`, { data: { operation: "results" } })

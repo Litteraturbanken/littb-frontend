@@ -227,6 +227,9 @@ test("keeps accepted results visible while a dropdown filter refreshes", async (
   await request.put(`${fixture}/_text_search/delays`, {
     data: { operation: "options", selector: "", delay: 1200 }
   })
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "frihet", delay: 3000 }
+  })
   await page.locator("#results").evaluate(element => {
     Object.assign(window, { __searchResultChildren: [] as string[] })
     new MutationObserver(() => {
@@ -250,7 +253,11 @@ test("keeps accepted results visible while a dropdown filter refreshes", async (
 
   await expect(page.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(0)
   await expect(firstResult).toBeVisible()
-  await page.waitForTimeout(300)
+  await expect(page.locator("#results")).toHaveClass(/searching/)
+  await page.waitForTimeout(500)
+  expect(await firstResult.locator("xpath=ancestor::td[1]").evaluate(element => (
+    getComputedStyle(element).opacity
+  ))).toBe("1")
   await expect(firstResult).toBeVisible()
   await expect.poll(async () => (await requests(request, "options")).length).toBe(2)
   await expect.poll(() => new URL(page.url()).searchParams.get("languages"))
