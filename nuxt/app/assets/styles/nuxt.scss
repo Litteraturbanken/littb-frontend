@@ -249,6 +249,11 @@
         color: black;
     }
 
+    .multiselect__option--selected.multiselect__option--highlight {
+        background: #e9e9e9;
+        color: black;
+    }
+
     .multiselect__option--highlight::after {
         display: none;
     }

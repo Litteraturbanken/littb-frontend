@@ -260,7 +260,6 @@ test("advanced SSR resolves every selected label through its independent options
       include_modernized: true,
       author_ids: ["StrindbergA"],
       about_author_ids: ["LagerlöfS"],
-      work_ids: ["lb238704"],
       gender: "female",
       year_from: 1879,
       year_to: 1912,

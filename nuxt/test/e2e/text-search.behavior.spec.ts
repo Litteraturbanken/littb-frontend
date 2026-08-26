@@ -177,6 +177,89 @@ test("vue-multiselect title search selects and removes a route-owned title", asy
   await expect.poll(() => new URL(page.url()).searchParams.has("titlar")).toBe(false)
 })
 
+test("a selected title does not prevent searching for and selecting another title", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+  const title = page.locator(".title_select")
+  await title.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
+  const input = title.locator("input.select2-search__field")
+
+  await input.fill("röda")
+  await title.getByRole("option", { name: "Röda rummet", exact: true }).click()
+  await expect.poll(() => new URL(page.url()).searchParams.get("titlar")).toBe("lb238704")
+
+  await input.fill("lager")
+  await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
+    .toMatchObject({
+      title_filter: "lager",
+      selected_work_ids: ["lb238704"]
+    })
+  expect((await requests(request, "options")).at(-1)?.body).not.toHaveProperty("work_ids")
+  await title.getByRole("option", { name: "Gösta Berlings saga", exact: true }).click()
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("titlar"))
+    .toBe("lb238704,lb278171")
+})
+
+test("selected dropdown rows use the neutral site hover color", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1&titlar=lb238704")
+  const title = page.locator(".title_select")
+  await title.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
+  const selected = title.getByRole("option", { name: "Röda rummet", exact: true })
+
+  await selected.hover()
+
+  expect(await selected.locator(".multiselect__option").evaluate(element => {
+    const style = getComputedStyle(element)
+    return { background: style.backgroundColor, color: style.color }
+  })).toEqual({ background: "rgb(233, 233, 233)", color: "rgb(0, 0, 0)" })
+})
+
+test("keeps accepted results visible while a dropdown filter refreshes", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
+  const firstResult = page.getByRole("link", { name: "Röda rummet", exact: true }).first()
+  await expect(firstResult).toBeVisible()
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "options", selector: "", delay: 1200 }
+  })
+  await page.locator("#results").evaluate(element => {
+    Object.assign(window, { __searchResultChildren: [] as string[] })
+    new MutationObserver(() => {
+      const firstClass = element.firstElementChild?.className
+      if (typeof firstClass === "string") {
+        (window as typeof window & { __searchResultChildren: string[] })
+          .__searchResultChildren.push(firstClass)
+      }
+    }).observe(element, { childList: true })
+  })
+
+  const languages = page.locator(".lang_select")
+  await languages.getByRole("button", { name: "Visa alternativ för Språk …" }).click()
+  const refreshStarted = page.waitForRequest(request => (
+    request.method() === "POST"
+    && new URL(request.url()).pathname.endsWith("/text-search/options")
+    && request.postDataJSON().languages?.includes("language:swe")
+  ))
+  await languages.getByRole("option", { name: "Svenska", exact: true }).click()
+  await refreshStarted
+
+  await expect(page.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(0)
+  await expect(firstResult).toBeVisible()
+  await page.waitForTimeout(300)
+  await expect(firstResult).toBeVisible()
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(2)
+  await expect.poll(() => new URL(page.url()).searchParams.get("languages"))
+    .toBe("language:swe")
+  expect(await page.evaluate(() => (
+    window as typeof window & { __searchResultChildren: string[] }
+  ).__searchResultChildren)).not.toContain("searching")
+})
+
 test("an overlong title filter clears loading and reports a recoverable error", async ({ page }) => {
   const problems = browserProblems(page)
   await openSearch(page, "/s%C3%B6k?avancerad=1")
@@ -2186,6 +2269,23 @@ test("filtered title disclosure stops after every distinct option is loaded", as
   await expect(page.getByRole("option", { name: "Doktortitel 41" })).toBeVisible()
 })
 
+test("closing advanced search clears the transient title filter notice", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
+  await page.locator(".title_select input.select2-search__field").fill("doktor")
+  await expect(page.getByRole("button", { name: "Visa alla 43 matchande titlar" }))
+    .toBeVisible()
+
+  await page.locator("[data-search-advanced]").click()
+  await expect(page).not.toHaveURL(/avancerad=1/u)
+  await page.locator("[data-search-advanced]").click()
+  await expect(page).toHaveURL(/avancerad=1/u)
+
+  await expect(page.getByText(/matchande titlarna/u)).toHaveCount(0)
+  await page.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
+  await expect(page.getByRole("option", { name: "Gösta Berlings saga" })).toBeVisible()
+  await expect(page.getByRole("option", { name: "Doktortitel 1", exact: true })).toHaveCount(0)
+})
+
 test("special title catalogs still resolve the selected route-owned title", async ({
   page
 }) => {
@@ -2337,6 +2437,22 @@ test("primary, options, and more errors remain local and recover on retry", asyn
   await more.evaluate((button: HTMLButtonElement) => button.click())
   expect((await recoveredMoreResponse).status()).toBe(200)
   await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(2)
+})
+
+test("a failed primary search can be retried with the same phrase", async ({ page, request }) => {
+  await openSearch(page)
+  await request.put(`${fixture}/_text_search/failures`, { data: { operation: "results" } })
+  await request.delete(`${fixture}/_text_search/requests/results`)
+
+  await submitPhrase(page, "frihet")
+  await expect(page.locator("[data-search-error]")).toHaveText(
+    "Sökresultatet kan inte visas just nu."
+  )
+  await request.delete(`${fixture}/_text_search/failures/results`)
+  await submitPhrase(page, "frihet")
+
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
 })
 
 test("options and more cancellation clear loading and reject stale identity data", async ({

@@ -23,7 +23,9 @@ import {
   textSearchPageQuery,
   textSearchResultsRequestIdentity,
   textSearchRouteIdentity,
-  textSearchSubmitQuery
+  textSearchSubmitQuery,
+  textSearchCategoryOptions,
+  textSearchLanguageOptions
 } from "../../app/lib/text-search"
 import {
   cloneRecord,
@@ -110,6 +112,21 @@ describe("text search return href", () => {
     expect(attachTextSearchReturnHref("https://x/reader", origin)).toBe("https://x/reader")
     expect(parseTextSearchReturnHref({ s_return: [origin] })).toBeNull()
     expect(parseTextSearchReturnHref({ s_return: "" })).toBeNull()
+  })
+})
+
+describe("text search filter option contracts", () => {
+  test("every displayed language and category value is accepted by the route parser", () => {
+    const languages = textSearchLanguageOptions.map(([value]) => value)
+    const categories = textSearchCategoryOptions.map(([value]) => value)
+
+    const parsed = parseTextSearchRouteQuery({
+      languages: languages.join(","),
+      keywords: categories.join(",")
+    })
+
+    expect(parsed.languages).toEqual(languages)
+    expect(parsed.categories).toEqual(categories)
   })
 })
 
@@ -425,7 +442,7 @@ describe("text search route state", () => {
       query: "frihet", title_filter: "lager", title_limit: 500,
       include_static_options: false, selected_work_ids: ["lb2"],
       prefix: true, suffix: true, word_form_only: false, include_modernized: false,
-      author_ids: ["AuthorA"], about_author_ids: ["AuthorB"], work_ids: ["lb1"],
+      author_ids: ["AuthorA"], about_author_ids: ["AuthorB"],
       languages: ["language:swe"], categories: ["texttype:roman"],
       legacy_filters: [{ field: "source", value: "sol" }],
       facet_author_id: "AuthorC", year_from: 1850, year_to: 1950
@@ -460,6 +477,22 @@ describe("text search route state", () => {
       .toThrow(RangeError)
     expect(() => buildTextSearchOptionsRequest(state, { titleLimit: 31 as 30 }))
       .toThrow(RangeError)
+  })
+
+  test("keeps selected titles without narrowing subsequent title-option searches", () => {
+    const state = parseTextSearchRouteQuery({
+      avancerad: "1",
+      titlar: "lb238704"
+    })
+
+    const request = buildTextSearchOptionsRequest(state, {
+      titleFilter: "lager",
+      selectedWorkIds: state.workIds,
+      includeStaticOptions: false
+    })
+
+    expect(request.selected_work_ids).toEqual(["lb238704"])
+    expect(request).not.toHaveProperty("work_ids")
   })
 
   test("creates order-stable identities for every relevant route and request input", () => {

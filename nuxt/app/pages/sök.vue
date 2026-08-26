@@ -29,6 +29,8 @@ import {
   resetTextSearchQuery,
   textSearchCountRequestIdentity,
   textSearchFilterQuery,
+  textSearchCategoryOptions,
+  textSearchLanguageOptions,
   textSearchOptionsRequestIdentity,
   textSearchPageQuery,
   textSearchResultsRequestIdentity,
@@ -85,63 +87,11 @@ type OptionsLoadState = Readonly<{
   identity: string
   status: "idle" | "pending" | "failed" | "accepted"
 }>
-
-const languageOptions = [
-  ["modernized:true", "Moderniserat språk"],
-  ["modernized:false", "Ej moderniserat språk"],
-  ["translation:true", "Översättning"],
-  ["original:true", "På originalspråk"],
-  ["language:swe", "Svenska"],
-  ["foreign:true", "Främmande språk"],
-  ["language:eng", "Engelska"],
-  ["language:deu", "Tyska"],
-  ["language:fra", "Franska"],
-  ["language:lat", "Latin"],
-  ["language:smi", "Samiska språk"],
-  ["proofread:true", "Korrekturläst"],
-  ["proofread:false", "Ej korrekturläst"]
-] as const satisfies readonly (readonly [string, string])[]
-
-const categoryOptions = [
-  ["texttype:brev;brevsamling", "Brev"],
-  ["texttype:drama;dramasamling", "Dramatik"],
-  ["texttype:essä;essäsamling", "Essäer"],
-  ["texttype:novellsamling;novell", "Noveller"],
-  ["texttype:diktsamling;dikt", "Poesi"],
-  ["texttype:roman", "Romaner"],
-  ["texttype:sakprosa;kringtexter;avhandling;referensverk", "Sakprosa"],
-  ["keyword:Barnlitteratur", "Barn- och ungdomslitteratur"],
-  ["keyword:Biografika|texttype:brev;brevsamling", "Biografisk litteratur"],
-  ["keyword:Finlandssvenskt", "Finlandssvensk litteratur"],
-  ["keyword:Flickböcker", "Flickböcker"],
-  ["texttype:herdaminne", "Herdaminnen"],
-  ["keyword:Humor", "Humoristiska verk"],
-  ["texttype:kistebrev", "Kistebrev"],
-  ["texttype:kringtext", "Kringtexter"],
-  ["texttype:kåseri;kåserisamling", "Kåserier"],
-  ["texttype:reseskildring", "Reseskildringar"],
-  ["keyword:Rösträtt", "Rösträtt"],
-  ["keyword:Sapmi", "Sápmi"],
-  ["keyword:Folktryck", "Skillingtryck och folktryck"],
-  ["keyword:sentpajorden", "Gunnar Ekelöf. Sent på jorden"],
-  ["keyword:OrdenPrövas", "Harry Martinson. Orden prövas"],
-  ["keyword:LB-antologi", "Litteraturbankens antologier"],
-  ["keyword:1800", "Nya vägar till det förflutna"],
-  ["source:bibliotekariesidor", "Bibliotekariesidorna"],
-  ["source:diktensmuseum", "Diktens museum"],
-  ["keyword:Dramawebben", "Dramawebben"],
-  ["source:skolan", "Litteraturbankens skola"],
-  ["source:litteraturkartan", "Litteraturkartan"],
-  ["source:ljudochbild", "Ljud & Bild"],
-  ["source:sol", "Översättarlexikon"],
-  ["keyword:SLS-FI", "SLS Finland"],
-  ["provenance.library:SVELITT", "SLS Sverige"],
-  ["provenance.library:SA", "Svenska Akademien"],
-  ["provenance.library:SFS", "Svenska fornskriftssällskapet"],
-  ["provenance.library:SVA", "Svenskt visarkiv"],
-  ["author_ids:KunglSamfundet", "Kungl. Samfundet för utgivande av handskrifter"],
-  ["provenance.library:SVS", "Svenska Vitterhetssamfundet"]
-] as const satisfies readonly (readonly [string, string])[]
+type TitleOptionsOverride = Readonly<{
+  identity: string
+  titles: readonly SearchMultiSelectOption[]
+  titleTotal: number
+}>
 
 const route = useRoute()
 const router = useRouter()
@@ -571,6 +521,7 @@ const optionsCache = useState<Record<string, OptionsView>>(
   "text-search-options-cache",
   () => ({})
 )
+const titleOptionsOverride = shallowRef<TitleOptionsOverride | null>(null)
 const optionsInFlight = new Map<string, TextSearchOwnedRequest>()
 const optionsRequestOwner = createTextSearchRequestOwner()
 const optionsIdentity = computed(() => textSearchOptionsRequestIdentity(
@@ -632,7 +583,16 @@ async function loadInitialOptions(): Promise<void> {
 }
 if (import.meta.server) await loadInitialOptions()
 else void loadInitialOptions()
-const options = computed(() => optionsCache.value[optionsIdentity.value] ?? null)
+const options = computed(() => {
+  const cached = optionsCache.value[optionsIdentity.value] ?? null
+  const override = titleOptionsOverride.value
+  if (!cached || override?.identity !== optionsIdentity.value) return cached
+  return {
+    ...cached,
+    titles: override.titles,
+    titleTotal: override.titleTotal
+  }
+})
 const optionsFailed = computed(() => (
   state.value.advanced
   && optionsLoadState.value.identity === optionsIdentity.value
@@ -651,13 +611,15 @@ const initialPrerequisitesPending = computed(() => (
   && !optionsFailed.value
 ))
 const initialPipelinePending = computed(() => (
-  initialPrerequisitesPending.value
-  || (
-    Boolean(state.value.phrase)
-    && displayPrimary.value === null
-    && acceptedPrimary.value?.identity !== primaryIdentity.value
-    && !primaryFailed.value
-    && !optionsFailed.value
+  displayPrimary.value === null
+  && (
+    initialPrerequisitesPending.value
+    || (
+      Boolean(state.value.phrase)
+      && acceptedPrimary.value?.identity !== primaryIdentity.value
+      && !primaryFailed.value
+      && !optionsFailed.value
+    )
   )
 ))
 
@@ -675,16 +637,20 @@ watch(
       || primaryExecutionIdentity.value === identity
       || acceptedPrimary.value?.identity === identity
     ) return
-    primaryExecutionIdentity.value = identity
-    primaryInFlightIdentity.value = identity
-    void primaryAsyncData.execute({ cause: "initial" }).finally(() => {
-      if (primaryInFlightIdentity.value === identity) {
-        primaryInFlightIdentity.value = null
-      }
-    })
+    executePrimary(identity, "initial")
   },
   { immediate: true, flush: "post" }
 )
+
+function executePrimary(identity: string, cause: "initial" | "refresh:manual"): void {
+  primaryExecutionIdentity.value = identity
+  primaryInFlightIdentity.value = identity
+  void primaryAsyncData.execute({ cause }).finally(() => {
+    if (primaryInFlightIdentity.value === identity) {
+      primaryInFlightIdentity.value = null
+    }
+  })
+}
 const lastAcceptedAdvancedChronologyBounds = shallowRef({
   yearFrom: options.value?.yearFrom ?? DEFAULT_CHRONOLOGY_FLOOR,
   yearTo: options.value?.yearTo ?? DEFAULT_CHRONOLOGY_CEILING
@@ -835,9 +801,8 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
       ? acceptTextSearchOptionsResponse(result.data, body, requestIdentity)
       : null
     if (titleRequestOwner.isCurrent(request, optionsIdentity.value) && accepted) {
-      const current = optionsCache.value[identity]
-      optionsCache.value[identity] = {
-        ...(current ?? optionsView(accepted, false)),
+      titleOptionsOverride.value = {
+        identity,
         titles: optionsView(accepted).titles,
         titleTotal: accepted.title_total
       }
@@ -894,6 +859,8 @@ function cancelTitleOptions() {
   titleLoading.value = false
   titleOptionsFailed.value = false
   titleOptionsExpanded.value = false
+  titleFilterText.value = ""
+  titleOptionsOverride.value = null
   failedTitleOptionsRequest = null
 }
 
@@ -939,8 +906,8 @@ const titleChoices = computed<SearchMultiSelectOption[]>(() => {
   }
   return [...choices.values()]
 })
-const languageChoices = languageOptions.map(([value, label]) => ({ value, label }))
-const categoryChoices = categoryOptions.map(([value, label]) => ({
+const languageChoices = textSearchLanguageOptions.map(([value, label]) => ({ value, label }))
+const categoryChoices = textSearchCategoryOptions.map(([value, label]) => ({
   value,
   label,
   disabled: value === "texttype:drama;dramasamling"
@@ -962,7 +929,21 @@ function navigate(query: Record<string, string | readonly string[] | null | unde
 }
 
 function submitSearch() {
-  void navigate(textSearchSubmitQuery(rawQuery.value, queryInput.value))
+  const query = textSearchSubmitQuery(rawQuery.value, queryInput.value)
+  const submittedState = parseTextSearchRouteQuery(query)
+  const submittedIdentity = submittedState.phrase
+    ? textSearchResultsRequestIdentity(buildTextSearchResultsRequest(submittedState))
+    : "empty"
+  if (
+    primaryFailed.value
+    && primaryPrerequisitesReady.value
+    && submittedIdentity === primaryIdentity.value
+  ) {
+    acceptedPrimary.value = null
+    executePrimary(submittedIdentity, "refresh:manual")
+    return
+  }
+  void navigate(query)
 }
 
 async function resetSearch() {
