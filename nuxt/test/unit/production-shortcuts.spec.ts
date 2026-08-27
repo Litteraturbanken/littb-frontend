@@ -2,14 +2,26 @@ import { describe, expect, it } from "vitest"
 import { parseHTML } from "linkedom"
 
 import {
+  encodedUrnResolverUrl,
   isProductionShortcutGuarded,
   isPublicShellPasteGuarded,
+  legacyEnvironmentShortcutDestination,
+  legacyQuickSearchInfoShortcut,
   pastedLbNavigationDestination,
   publicShellShortcutDestination,
   urnResolverUrl
 } from "../../app/lib/production-shortcuts"
 
 describe("production shortcuts", () => {
+  it("applies source-info URN safety without imposing the copy shortcut length", () => {
+    const longUrn = `urn:nbn:se:lb-${"x".repeat(120)}`
+    expect(encodedUrnResolverUrl(longUrn)).not.toBeNull()
+    expect(urnResolverUrl(longUrn)).toBeNull()
+    for (const invalid of ["", "bad urn", " urn:nbn:se:lb-1", "urn:nbn:se:lb-1\u0080"]) {
+      expect(encodedUrnResolverUrl(invalid)).toBeNull()
+    }
+  })
+
   it("builds the legacy typed resolver URL", () => {
     expect(urnResolverUrl("urn:nbn:se:lb-lb1234"))
       .toBe("https://urn.kb.se/resolve?urn=urn:nbn:se:lb-lb1234")
@@ -58,12 +70,16 @@ describe("production shortcuts", () => {
       ctrlKey: false,
       defaultPrevented: false,
       isComposing: false,
+      key: "",
       metaKey: false,
       shiftKey: false,
       target: plain,
       ...overrides
     } as unknown as KeyboardEvent)
     expect(isProductionShortcutGuarded(event({ ctrlKey: true }), plain)).toBe(true)
+    expect(isProductionShortcutGuarded(event({ altKey: true, key: "®" }), plain)).toBe(false)
+    expect(isProductionShortcutGuarded(event({ altKey: true, key: "ı" }), plain)).toBe(false)
+    expect(isProductionShortcutGuarded(event({ altKey: true, key: "b" }), plain)).toBe(true)
     expect(isProductionShortcutGuarded(event({ isComposing: true }), plain)).toBe(true)
     expect(isProductionShortcutGuarded(event({ target: input }), input))
       .toBe(true)
@@ -99,6 +115,43 @@ describe("production shortcuts", () => {
     expect(publicShellShortcutDestination("F20", "/bibliotek")).toBeNull()
   })
 
+  it.each(["F20", "ı", "ī"])("recognizes the legacy info shortcut %s", key => {
+    expect(legacyQuickSearchInfoShortcut(key)).toBe(true)
+  })
+
+  it("ignores unrelated keys for the legacy info shortcut", () => {
+    expect(legacyQuickSearchInfoShortcut("s")).toBe(false)
+    expect(legacyQuickSearchInfoShortcut("I")).toBe(false)
+  })
+
+  it.each(["F19", "®", "ŗ"])("toggles the legacy site origin for %s", key => {
+    expect(legacyEnvironmentShortcutDestination(
+      key,
+      "https://litteraturbanken.se/författare/StrindbergA?tab=verk#top"
+    )).toBe("https://stage.litteraturbanken.se/f%C3%B6rfattare/StrindbergA?tab=verk#top")
+    expect(legacyEnvironmentShortcutDestination(
+      key,
+      "https://stage.litteraturbanken.se/bibliotek?visa=works"
+    )).toBe("https://litteraturbanken.se/bibliotek?visa=works")
+    expect(legacyEnvironmentShortcutDestination(
+      key,
+      "https://stage.litteraturbanken.se/epub?visa=epub"
+    )).toBe("https://litteraturbanken.se/epub?visa=epub")
+    expect(legacyEnvironmentShortcutDestination(
+      key,
+      "http://127.0.0.1:3000/sök?fras=ord"
+    )).toBe("https://litteraturbanken.se/s%C3%B6k?fras=ord")
+  })
+
+  it("does not build an environment destination for unrelated keys or invalid URLs", () => {
+    expect(legacyEnvironmentShortcutDestination("F18", "https://litteraturbanken.se"))
+      .toBeNull()
+    expect(legacyEnvironmentShortcutDestination("F19", "not a URL")).toBeNull()
+    for (const href of ["javascript:alert(1)", "data:text/html,x", "mailto:a@example.se"]) {
+      expect(legacyEnvironmentShortcutDestination("F19", href)).toBeNull()
+    }
+  })
+
   it("maps one pasted lb-id to Editor and normalizes its prefix", () => {
     expect(pastedLbNavigationDestination("Öppna LB8345227, tack"))
       .toBe("/editor/lb8345227/ix/0/f")
@@ -127,6 +180,9 @@ describe("production shortcuts", () => {
     "",
     "utan identifierare",
     "blb123",
+    "ölburk",
+    "ålb123ö",
+    "élbTest",
     "lb-123",
     `lb${"x".repeat(99)}`,
     `prefix ${"x".repeat(65_536)} lb123`

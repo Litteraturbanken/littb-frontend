@@ -103,7 +103,7 @@ test("inert Library tooltip hosts join keyboard order and reveal their full text
   await expect(author).not.toHaveAttribute("aria-describedby", /library-tooltip-/)
 })
 
-test("advanced Library placeholders retain the production baseline at each breakpoint", async ({
+test("advanced Library controls retain the production baseline at each breakpoint", async ({
   page
 }) => {
   await page.goto(
@@ -114,12 +114,12 @@ test("advanced Library placeholders retain the production baseline at each break
   await waitForHydration(page)
 
   const isNarrow = page.viewportSize()!.width <= 767
-  await expect(page.locator(
-    "[data-library-about-authors] .search-multiselect__main-trigger"
-  )).toHaveCSS("padding-top", isNarrow ? "4px" : "5px")
-  await expect(page.locator(
-    "[data-library-about-authors] .search-multiselect__main-trigger"
-  )).toHaveCSS("padding-bottom", isNarrow ? "6px" : "5px")
+  const aboutAuthors = page.locator("[data-library-about-authors] .multiselect")
+  await expect(aboutAuthors).toHaveCSS("height", "32px")
+  await expect(aboutAuthors.locator(".multiselect__placeholder")).toHaveCSS(
+    "color",
+    "rgb(153, 153, 153)"
+  )
   await expect(page.locator(
     "[data-library-narrowing] .search-multiselect__input-row"
   )).toHaveCSS("padding-top", isNarrow ? "5px" : "4px")

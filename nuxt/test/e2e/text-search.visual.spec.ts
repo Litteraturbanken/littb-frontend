@@ -33,18 +33,19 @@ async function expectReady(page: Page, visualCase: typeof visualCases[number]) {
   await page.locator('[data-search-root][data-search-mounted="true"]').waitFor()
   await expect(page.locator("body.focus.page-search.ready")).toHaveCount(1)
   await expect(page.locator("[data-search-root]")).not.toHaveClass(/searching/)
-  await expect(page.locator("#results")).not.toHaveClass(/searching/)
   await expect(page.locator("[data-search-advanced]")).toHaveAttribute("type", "button")
   if (visualCase.advanced) await expect(page.locator(".bottom_row")).toBeVisible()
   else await expect(page.locator(".bottom_row")).toHaveCount(0)
 
   if (!visualCase.populated) {
-    await expect(page.locator("#results table.results")).toHaveCount(0)
+    await expect(page.locator("#results")).toHaveCount(0)
   } else if (visualCase.noHit) {
+    await expect(page.locator("#results")).not.toHaveClass(/searching/)
     await expect(page.getByText("Din sökning gav inga träffar", { exact: true })).toBeVisible()
     await expect(page.locator("#results table.results tr")).toHaveCount(0)
     await expect(page.locator(".hits_info .hits")).toBeHidden()
   } else {
+    await expect(page.locator("#results")).not.toHaveClass(/searching/)
     await expect(page.locator("#results table.results tr")).toHaveCount(9)
     await expect(page.locator("#results tr.sentence .match")).toHaveCount(6)
     await expect(page.locator("#results .overflow .more")).toHaveCount(1)
@@ -60,6 +61,28 @@ async function expectReady(page: Page, visualCase: typeof visualCases[number]) {
       label.textContent = "Filtrera: kvinnliga / manliga / alla"
       label.classList.add("select2-selection__placeholder")
     })
+
+    const titleChip = page.locator(".title_select .select2-selection__choice").first()
+    await expect(titleChip).toHaveCSS("font-weight", "400")
+    await expect(titleChip).toHaveCSS("font-family", /Requiem Text A/u)
+    await expect(titleChip).toHaveCSS("text-transform", "uppercase")
+    // The historical Angular capture was made with the small-caps family
+    // substituted locally. Assert the corrected live typography above, then
+    // normalize only that stale capture detail for the layout comparison.
+    await page.locator(".title_select .select2-selection__choice").evaluateAll(chips => {
+      for (const chip of chips) {
+        (chip as HTMLElement).style.fontFamily = '"Requiem Text SC A", "Requiem Text SC B"'
+      }
+    })
+
+    for (const selector of [".author_select", ".about_select"]) {
+      const placeholder = page.locator(`${selector} input[placeholder]`)
+      await expect(placeholder).toHaveCount(1)
+      await expect(placeholder).toHaveCSS("font-weight", "400")
+      expect(await placeholder.evaluate(element => (
+        getComputedStyle(element, "::placeholder").color
+      ))).toBe("rgb(158, 158, 158)")
+    }
   }
   await waitForVisualAssets(page)
 }
@@ -145,9 +168,13 @@ for (const visualCase of visualCases) {
       caret: "hide",
       scale: "css",
       threshold: 0.1,
-      // Advanced filters retain reviewed, semantic Vue-Multiselect markup;
-      // exact page dimensions and control stacking are preserved above.
-      maxDiffPixels: visualCase.advanced ? 1_500 : 100
+      // Chromium's glyph antialiasing varies at the selected-chip and
+      // Listbox edges. Desktop stays below 400 pixels; the much taller mobile
+      // image has a measured 1,436-pixel noise floor. Computed typography is
+      // asserted above before the screenshot is taken.
+      maxDiffPixels: visualCase.advanced
+        ? (device === "mobile" ? 1_500 : 400)
+        : 100
     })
     expect(productionEscapes).toEqual([])
     expect(problems).toEqual([])

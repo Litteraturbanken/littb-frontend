@@ -1,18 +1,1 @@
-{
-  "version": 1,
-  "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::script-legacyModalOpen",
-  "packetFingerprint": "e8d9d969854ff8610b32851c1d0262d65bf7af0a86fa15bd60af48cb50d60f21",
-  "author": "implementation-agent",
-  "reviewer": "semantic-reader-fix-reviewer",
-  "method": "codex-read-only",
-  "verdict": "approved",
-  "findings": [],
-  "verification": [
-    "Read the semantic review contract and exact current packet plus its relevant production boundaries, caller, generated API type, and tests.",
-    "Confirmed every terminal legacy failure restores initiating-word focus with generation and connection guards, and browser coverage verifies no scroll movement and temporary tabindex cleanup.",
-    "Confirmed redundant raw article state is removed and sanitized articleHtml alone owns modal state.",
-    "Confirmed route changes and unmount clear transient message state and timer with lifecycle coverage.",
-    "Inspected cancellation, stale-generation rejection, route invalidation, sanitization, origin validation, dialog behavior, and the Nuxt caller with no Critical or Important finding.",
-    "Used read-only inspection commands and made no repository edits."
-  ]
-}
+{"version":1,"packetId":"app/components/reader/ReaderDictionaryLookup.vue::packet::script-legacyModalOpen","packetFingerprint":"15e155eda01f2c1e3c11ae3118fb35e03dc9748f4d20e1eb29535b5a54a9075e","author":"codex-root","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read quality/semantic-review-contract.md and the exact packet JSON .quality/semantic-review/packets/edd96450d285c4a859c548c210bead28e04f76d2a1ac7db98a360fbb29969824.json.","Inspected owned physical ranges in app/components/reader/ReaderDictionaryLookup.vue lines 43-330.","Inspected direct imports and dependencies: app/composables/useLbApiClient.ts, app/lib/reader-dictionary-embed.ts, app/lib/reader-dictionary.ts, app/composables/useReaderDictionaryEmbed.ts, and app/components/reader/ReaderDictionaryDialog.vue.","Inspected direct component use in app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue at line 2083.","Inspected generated API type boundary app/lib/api/generated/lbapi.ts for DictionaryArticleResponse and v2_get_dictionary_article.","Inspected relevant dictionary lookup tests discovered in test/unit/reader-dictionary-lookup.spec.ts, test/unit/reader-dictionary-embed-lifecycle.spec.ts, test/unit/reader-dictionary-embed.spec.ts, test/unit/reader-dictionary.spec.ts, and selected reader-production E2E coverage.","Did not run test commands because the review was requested with read-only commands and the filesystem sandbox is read-only; test execution may write caches/artifacts."]}

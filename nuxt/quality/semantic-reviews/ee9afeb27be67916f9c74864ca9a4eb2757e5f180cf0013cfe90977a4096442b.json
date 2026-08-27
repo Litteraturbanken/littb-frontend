@@ -1,16 +1,1 @@
-{
-  "version": 1,
-  "packetId": "app/lib/reader-dictionary-embed.ts::packet::readerDictionaryMode",
-  "packetFingerprint": "af07f0f9ea3cbced6a1e36831227a007f5cb472610d63d08d05c3c0adbb533d7",
-  "author": "implementation-agent",
-  "reviewer": "semantic-reader-reviewer",
-  "method": "codex-read-only",
-  "verdict": "approved",
-  "findings": [],
-  "verification": [
-    "Generated and read the exact current mode packet and type boundary.",
-    "Inspected the production component consumer, complete mode tests, fail-safe runtime default and tests, evaluated stage environment, and deployment assertions.",
-    "Confirmed exact embed opt-in with legacy fallback is the smallest fail-closed implementation.",
-    "Used read-only inspection commands and made no repository edits."
-  ]
-}
+{"version":1,"packetId":"app/lib/reader-dictionary-embed.ts::packet::readerDictionaryMode","packetFingerprint":"cc06610c5e943644eb9e43cbcc510a59f9aa53d94220f7e2ce4dd656872be55c","author":"codex-root","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read review contract at quality/semantic-review-contract.md.","Read exactly the specified packet JSON at .quality/semantic-review/packets/ee9afeb27be67916f9c74864ca9a4eb2757e5f180cf0013cfe90977a4096442b.json.","Inspected owned unit app/lib/reader-dictionary-embed.ts lines 32-34 with adjacent exports and helpers in the same file.","Inspected direct callers named by the packet: app/components/reader/ReaderDictionaryLookup.vue and app/composables/useReaderDictionaryEmbed.ts.","Inspected runtime configuration boundary in nuxt.config.ts for public readerDictionaryMode and svenskaReaderEmbedOrigin values.","Inspected packet-listed test test/unit/reader-dictionary-embed.spec.ts and related Reader dictionary configuration tests in test/unit/nuxt-config.spec.ts, test/unit/stage-deployment.spec.ts, test/unit/reader-dictionary-lookup.spec.ts, and test/unit/reader-dictionary.spec.ts.","Searched current repository references for readerDictionaryMode, ReaderDictionaryMode, NUXT_PUBLIC_READER_DICTIONARY_MODE, svenskaReaderEmbedOrigin, and readerDictionary usages.","Checked git status and relevant diff with read-only git commands; git emitted macOS cache warnings under the read-only sandbox, and no repository files were modified by this review.","No test runner was executed because the request required read-only commands and this environment is read-only."]}

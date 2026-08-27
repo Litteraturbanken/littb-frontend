@@ -144,7 +144,10 @@ for (const visualCase of visualCases) {
       await expect(image).not.toHaveAttribute("srcset", /./)
     }
     await expect(image).toHaveAttribute("width", String(visualCase.width))
-    await expect(image).not.toHaveAttribute("height", /./)
+    await expect(image).toHaveAttribute(
+      "height",
+      String(Math.round(visualCase.width * 1.44))
+    )
     await expect(image).toHaveCSS("width", `${visualCase.width}px`)
     await expect(page.locator(".reader_main .img_area")).toHaveCSS(
       "width",

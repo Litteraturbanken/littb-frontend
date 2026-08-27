@@ -2,7 +2,7 @@ import { hasC0OrC1Control, hasEcmaWhitespace } from "#shared/utils/text-safety"
 
 export type ReaderDictionaryMode = "embed" | "legacy"
 type ReaderDictionary = "so" | "saob"
-type ReaderLookupEvent = "ready" | "result" | "empty" | "error"
+type ReaderLookupEvent = "ready" | "result" | "empty" | "error" | "close"
 
 export type ReaderLookupMessage = {
   type: "svenska-reader-lookup"
@@ -19,7 +19,13 @@ type OriginOptions = {
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu
 const localHosts = new Set(["localhost", "127.0.0.1", "[::1]"])
-const readerLookupEvents = new Set<ReaderLookupEvent>(["ready", "result", "empty", "error"])
+const readerLookupEvents = new Set<ReaderLookupEvent>([
+  "ready",
+  "result",
+  "empty",
+  "error",
+  "close"
+])
 const messageKeys = new Set(["type", "version", "requestId", "event"])
 const resultMessageKeys = new Set([...messageKeys, "dictionaries", "selectedDictionary"])
 

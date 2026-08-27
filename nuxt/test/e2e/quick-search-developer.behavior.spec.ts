@@ -102,6 +102,23 @@ test("/info renders stable Reader and author JSON and stale context is cleared",
   await expect(page.locator(".quick-search-options")).toHaveCount(0)
 })
 
+test("the complete legacy info shortcut set opens contextual information", async ({ page }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+
+  for (const key of ["F20", "ı", "ī"]) {
+    await page.evaluate(value => document.dispatchEvent(new KeyboardEvent("keydown", {
+      key: value,
+      bubbles: true,
+      cancelable: true
+    })), key)
+    await expect(page.getByRole("dialog", { name: "Snabbsökning" })).toBeVisible()
+    await expect(page.locator(".quick-search-developer-info"))
+      .toContainText('"workId": "lb-reader-doktor-glas"')
+    await page.keyboard.press("Escape")
+    await expect(page.getByRole("dialog", { name: "Snabbsökning" })).toHaveCount(0)
+  }
+})
+
 for (const [owner, path, authorName] of authorInfoRoutes) {
   test(`publishes author /info context from the ${owner} route owner`, async ({ page }) => {
     await page.goto(path, { waitUntil: "networkidle" })

@@ -101,7 +101,7 @@ test("direct result SSR returns the loading shell without starting expensive sea
   expect(document.querySelector<HTMLInputElement>(".submit_form input")?.value)
     .toBe("frihet")
   expect(document.querySelector(".submit_form .spinner")).not.toBeNull()
-  expect(document.querySelector("#results table.results")).toBeNull()
+  expect(document.querySelector("#results")).toBeNull()
   const globalSearchLink = [...document.querySelectorAll<HTMLAnchorElement>(".mainnav a")]
     .find(link => compactText(link.textContent) === "Sök i texterna")
   expect(globalSearchLink?.getAttribute("href")).toBe("/s%C3%B6k?fras=frihet")
@@ -790,6 +790,20 @@ test("pager page input opens and navigates only within inclusive bounds", async 
   await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
 })
 
+test("pager and author facet actions use native button semantics", async ({ page }) => {
+  await page.goto("/s%C3%B6k?fras=overflow")
+  await waitForHydration(page)
+
+  const actions = page.locator(
+    ".littb_pager .ctrl li:not(.arrows) > :is(a, button), .navigator li > :is(a, button)"
+  )
+  await expect(actions).toHaveCount(6)
+  expect(await actions.evaluateAll(elements => elements.map(element => element.localName)))
+    .toEqual(Array(6).fill("button"))
+  await expect(page.locator(".littb_pager .ctrl a:not([href]), .navigator a:not([href])"))
+    .toHaveCount(0)
+})
+
 test("absent and explicit all gender both show all authors without a backend filter", async ({
   page,
   request
@@ -805,8 +819,8 @@ test("absent and explicit all gender both show all authors without a backend fil
   await page.goto("/s%C3%B6k?fras=frihet&avancerad")
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
   const absentDocument = parseHTML(await page.content()).document
-  expect(absentDocument.querySelector(".gender_select")?.getAttribute("data-gender-value"))
-    .toBe("all")
+  expect(compactText(absentDocument.querySelector(".gender_select")?.textContent))
+    .toContain("Filtrera: kvinnliga / manliga / alla")
   expect((await requests(request, "results"))[0]?.body).not.toHaveProperty("gender")
 
   await reset(request)

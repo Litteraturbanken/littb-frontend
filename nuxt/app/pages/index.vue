@@ -23,6 +23,7 @@ const cacheBuster = useState<string>("home-cache-buster", () => {
   return String((now.getFullYear() % 100) * 100 + now.getMonth() + 1)
 })
 const config = useRuntimeConfig()
+const pendingHomeStylesheetPath = "/red/css/startsida.css"
 
 const homeContentAsyncData = await useAsyncData<HomeContent>("home-content", async (_nuxtApp, { signal }) => {
   const base = import.meta.server ? config.contentBase : config.public.contentBase
@@ -54,17 +55,19 @@ onBeforeUnmount(cancelHomeContent)
 
 useHead(() => {
   const parsed = homeContent.value
+  const stylesheetPath = parsed.stylesheetPath
+    || (homeContentPending.value ? pendingHomeStylesheetPath : "")
   const background = parsed.backgroundImagePath && parsed.backgroundColor
     ? `background: ${parsed.backgroundColor} url('${parsed.backgroundImagePath}') no-repeat;`
     : ""
   return {
     htmlAttrs: { style: background },
     bodyAttrs: { class: "focus page-start ready" },
-    link: parsed.stylesheetPath
+    link: stylesheetPath
       ? [{
           key: "home-runtime-stylesheet",
           rel: "stylesheet",
-          href: `${parsed.stylesheetPath}?${cacheBuster.value}`
+          href: `${stylesheetPath}?${cacheBuster.value}`
         }]
       : []
   }

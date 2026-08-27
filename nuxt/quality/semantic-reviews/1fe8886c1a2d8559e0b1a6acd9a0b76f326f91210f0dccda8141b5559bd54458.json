@@ -1,18 +1,1 @@
-{
-  "version": 1,
-  "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::component",
-  "packetFingerprint": "9275f6537f8a00cbdde541416e4d409bdac1d8940b3074e485d1232b5cd34060",
-  "author": "implementation-agent",
-  "reviewer": "semantic-reader-fix-reviewer",
-  "method": "codex-read-only",
-  "verdict": "approved",
-  "findings": [],
-  "verification": [
-    "Read the semantic review contract and generated the exact current requested packet.",
-    "Inspected every owned range, complete component, direct dependencies, generated API boundary, sole Reader-page consumer, unit tests, and legacy browser suite.",
-    "Confirmed every terminal legacy failure restores the initiating word without scrolling and temporary tabindex is cleaned after focus moves.",
-    "Confirmed duplicate response-object state was removed and route/unmount cleanup clears transient message state and timer.",
-    "Reviewed concurrency, generated typing, sanitization, URL policy, modal semantics, keyboard labeling, and focus cleanup against all nine contract questions.",
-    "Used read-only inspection commands and made no repository edits."
-  ]
-}
+{"version":1,"packetId":"app/components/reader/ReaderDictionaryLookup.vue::packet::component","packetFingerprint":"2c56963dbcc64cafedb3f17178dff21e591d04f99a83bfe3111e909ef30f373d","author":"codex-root","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[],"verification":["Read quality/semantic-review-contract.md and exactly the specified packet JSON .quality/semantic-review/packets/1fe8886c1a2d8559e0b1a6acd9a0b76f326f91210f0dccda8141b5559bd54458.json.","Inspected owned unit app/components/reader/ReaderDictionaryLookup.vue with physical line numbers, including packet-owned line ranges 1-2, 4-16, 18, 20-41, 331, 333, and 371.","Inspected direct imports app/composables/useLbApiClient.ts, app/lib/reader-dictionary.ts, and app/lib/reader-dictionary-embed.ts.","Inspected auto-imported dependency app/composables/useReaderDictionaryEmbed.ts and child render boundary app/components/reader/ReaderDictionaryDialog.vue.","Inspected generated API type boundary app/lib/api/generated/lbapi.ts for DictionaryArticleResponse and /dictionary/articles response typing.","Inspected direct current consumer app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around the ReaderDictionaryLookup usage.","Inspected relevant tests discovered by search: test/unit/reader-dictionary-lookup.spec.ts, test/unit/reader-dictionary.spec.ts, test/unit/reader-dictionary-embed.spec.ts, test/unit/reader-dictionary-embed-lifecycle.spec.ts, and test/e2e/reader-dictionary-production.behavior.spec.ts; the packet listed no tests.","Searched current source, tests, quality metadata, and configuration for ReaderDictionaryLookup, reader-dictionary helpers, dictionary/articles, ReaderDictionaryDialog, readerDictionaryMode, svenskaReaderEmbedOrigin, search_dict, and modal-open references.","Checked git status with a read-only command; it completed after macOS cache warnings caused by the read-only sandbox. No repository files were modified by this review.","Did not run test commands because the review request constrained work to read-only inspection."]}

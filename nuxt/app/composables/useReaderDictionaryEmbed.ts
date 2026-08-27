@@ -45,7 +45,8 @@ class ReaderDictionaryEmbedLifecycle {
 
   constructor(
     private readonly origin: string | null,
-    private readonly allowLocalHttp: boolean
+    private readonly allowLocalHttp: boolean,
+    private readonly onCloseRequest: () => void
   ) {}
 
   private clearLookupTimeout(): void {
@@ -133,8 +134,13 @@ class ReaderDictionaryEmbedLifecycle {
     if (
       message === null
       || message.requestId !== this.activeRequestId
-      || this.terminalReported
     ) return
+
+    if (message.event === "close") {
+      this.onCloseRequest()
+      return
+    }
+    if (this.terminalReported) return
 
     if (message.event === "ready") {
       return
@@ -151,12 +157,16 @@ class ReaderDictionaryEmbedLifecycle {
   }
 }
 
-export function useReaderDictionaryEmbed() {
+export function useReaderDictionaryEmbed(options: { onCloseRequest?: () => void } = {}) {
   const route = useRoute()
   const configuredOrigin = useRuntimeConfig().public.svenskaReaderEmbedOrigin
   const allowLocalHttp = localParentAllowsHttp()
   const origin = svenskaReaderEmbedOrigin(configuredOrigin, { allowLocalHttp })
-  const lifecycle = new ReaderDictionaryEmbedLifecycle(origin, allowLocalHttp)
+  const lifecycle = new ReaderDictionaryEmbedLifecycle(
+    origin,
+    allowLocalHttp,
+    options.onCloseRequest ?? (() => {})
+  )
   const close = lifecycle.close.bind(lifecycle)
   const handleMessage = lifecycle.handleMessage.bind(lifecycle)
   const start = lifecycle.start.bind(lifecycle)
@@ -164,7 +174,11 @@ export function useReaderDictionaryEmbed() {
     // A cross-origin load event is not an authenticated lookup result.
   }
 
-  watch(() => route.fullPath, close)
+  watch(() => {
+    const query = { ...route.query }
+    Reflect.deleteProperty(query, "so")
+    return JSON.stringify([route.path, route.hash, query])
+  }, close)
   onMounted(() => window.addEventListener("message", handleMessage))
   onBeforeUnmount(() => {
     window.removeEventListener("message", handleMessage)

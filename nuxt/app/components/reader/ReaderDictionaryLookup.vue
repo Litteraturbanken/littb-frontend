@@ -19,9 +19,10 @@ type DictionaryArticle = components["schemas"]["DictionaryArticleResponse"]
 
 const safeSvenskaOrigin = "https://svenska.se"
 const route = useRoute()
+const router = useRouter()
 const client = useLbApiClient()
 const mode = readerDictionaryMode(useRuntimeConfig().public.readerDictionaryMode)
-const embed = useReaderDictionaryEmbed()
+const embed = useReaderDictionaryEmbed({ onCloseRequest: close })
 const indicator = shallowRef<{
   element: HTMLElement
   left: number
@@ -226,14 +227,27 @@ async function lookup(): Promise<void> {
   clearFocusRestoreTarget()
   focusRestoreTarget = selected.element
   cancelLookup()
-  closeEmbed()
   articleHtml.value = emptyRenderableHtml()
   if (mode === "embed") {
+    await setRouteLookupWord(selected.word)
     embedAttemptWord.value = selected.word
     embed.start(selected.word)
     return
   }
+  closeEmbed()
   await lookupLegacy(selected.word)
+}
+
+async function setRouteLookupWord(
+  word: string | null,
+  options: { replace?: boolean } = {}
+): Promise<void> {
+  const query = { ...route.query }
+  if (word) query.so = word
+  else Reflect.deleteProperty(query, "so")
+  const location = { path: route.path, query, hash: route.hash }
+  if (options.replace) await router.replace(location)
+  else await router.push(location)
 }
 
 function closeLegacy(): void {
@@ -274,6 +288,7 @@ function close(): void {
   cancelLookup()
   closeLegacy()
   closeEmbed()
+  if (route.query.so !== undefined) void setRouteLookupWord(null, { replace: true })
   restorePendingReaderWordFocus()
 }
 
@@ -281,7 +296,11 @@ function setEmbedFrame(element: Element | ComponentPublicInstance | null): void 
   embed.frame.value = element instanceof HTMLIFrameElement ? element : null
 }
 
-watch(() => route.fullPath, () => {
+watch(() => {
+  const query = { ...route.query }
+  Reflect.deleteProperty(query, "so")
+  return JSON.stringify([route.path, route.hash, query])
+}, () => {
   cancelLookup()
   closeEmbed()
   clearFocusRestoreTarget()
@@ -289,6 +308,7 @@ watch(() => route.fullPath, () => {
   clearIndicator()
   closeLegacy()
   clearMessage()
+  if (route.query.so !== undefined) void setRouteLookupWord(null, { replace: true })
 })
 
 onBeforeMount(() => {

@@ -50,6 +50,29 @@ function mechanicallyOwnedStyles(legacy: string): string {
       "background-image: var(--dramawebben-subpage-background-image, none) !important;"
     ],
     [
+      `        .search_opts_widget {
+            margin-top : 1em;
+            margin-bottom : 1em;
+            @include small-caps();
+            li {
+                cursor : pointer;
+            }
+        }
+
+`,
+      ""
+    ],
+    [
+      `        .caret {
+            background-image: url(/components/select2/select2x2.png) !important;
+            background-repeat: no-repeat !important;
+            background-size: 60px 40px !important;
+        }
+
+`,
+      ""
+    ],
+    [
       `.page-biblinfo {
 
     #mainview {

@@ -129,6 +129,12 @@ describe("Reader lookup message protocol", () => {
       version: 1,
       requestId,
       event: "error"
+    },
+    {
+      type: "svenska-reader-lookup",
+      version: 1,
+      requestId,
+      event: "close"
     }
   ])("accepts a closed version-1 %s message", (message) => {
     expect(parseReaderLookupMessage(message)).toEqual(message)

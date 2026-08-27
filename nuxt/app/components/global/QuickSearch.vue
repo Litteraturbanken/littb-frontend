@@ -45,8 +45,10 @@ type DeveloperOutput =
 
 const props = withDefaults(defineProps<{
   initiallyOpen?: boolean
+  showContextInfoInitially?: boolean
 }>(), {
-  initiallyOpen: false
+  initiallyOpen: false,
+  showContextInfoInitially: false
 })
 const emit = defineEmits<{
   closed: []
@@ -338,12 +340,17 @@ async function runDeveloperAction(
     return
   }
   if (action === "info") {
-    if (!context) return
-    developerOutput.value = { kind: "info", value: stableDeveloperJson(context.info) }
+    showContextInfo()
     return
   }
 
   await searchDeveloperFtp(label)
+}
+
+function showContextInfo(): void {
+  const context = developerContext.value
+  if (!context) return
+  developerOutput.value = { kind: "info", value: stableDeveloperJson(context.info) }
 }
 
 async function copyDeveloperWorkId(context: QuickSearchContext | null): Promise<void> {
@@ -375,7 +382,11 @@ async function searchDeveloperFtp(label: string): Promise<void> {
 
 onMounted(() => window.addEventListener("keydown", onGlobalKeydown))
 onMounted(() => {
-  if (isOpen.value) void nextTick(() => inputElement()?.focus())
+  if (!isOpen.value) return
+  void nextTick(() => {
+    inputElement()?.focus()
+    if (props.showContextInfoInitially) showContextInfo()
+  })
 })
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", onGlobalKeydown)

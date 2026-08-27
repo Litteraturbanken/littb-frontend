@@ -267,6 +267,109 @@ test("keeps accepted results visible while a dropdown filter refreshes", async (
   ).__searchResultChildren)).not.toContain("searching")
 })
 
+test("empty advanced filters match production geometry without an empty results window", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+
+  await expect(page.locator("#results")).toHaveCount(0)
+  await expect(page.locator(".title_limit_notice")).toHaveCount(0)
+  await expect(page.locator(".gender_select").getByRole("button"))
+    .toHaveText("Filtrera: kvinnliga / manliga / alla")
+
+  for (const control of ["author", "title", "lang", "about", "keyword"]) {
+    const filter = page.locator(`.${control}_select`)
+    const box = await filter.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.height).toBeGreaterThanOrEqual(27)
+    expect(box!.height).toBeLessThanOrEqual(29)
+    const placeholder = filter.locator("input[placeholder]")
+    await expect(placeholder).toHaveCount(1)
+    await expect(placeholder).toHaveCSS("font-weight", "400")
+    expect(await placeholder.evaluate(element => (
+      getComputedStyle(element, "::placeholder").color
+    ))).toBe("rgb(158, 158, 158)")
+  }
+})
+
+test("initial search paint keeps the hydrated heading position", async ({ page }) => {
+  await page.addInitScript(() => {
+    const shifts: number[] = []
+    Object.assign(window, { __searchLayoutShifts: shifts })
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as Array<PerformanceEntry & {
+        hadRecentInput: boolean
+        value: number
+      }>) {
+        if (!entry.hadRecentInput) shifts.push(entry.value)
+      }
+    }).observe({ type: "layout-shift", buffered: true })
+  })
+
+  await page.goto("/s%C3%B6k?avancerad=1", { waitUntil: "domcontentloaded" })
+  await page.locator('[data-search-root][data-search-mounted="true"]').waitFor()
+  await page.evaluate(() => document.fonts.ready)
+  await page.waitForTimeout(100)
+
+  await expect(page.getByRole("heading", { name: "Sök i texterna" }))
+    .toHaveCSS("margin-top", "40.2px")
+  const cumulativeLayoutShift = await page.evaluate(() => (
+    (window as typeof window & { __searchLayoutShifts: number[] })
+      .__searchLayoutShifts.reduce((total, value) => total + value, 0)
+  ))
+  expect(cumulativeLayoutShift).toBeLessThan(0.005)
+})
+
+test("search options keep their first-paint geometry while legacy layout CSS reattaches", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+
+  const options = page.locator(".search_opts_widget")
+  const firstOption = options.locator("li").first()
+  const settledBox = await options.boundingBox()
+  expect(settledBox).not.toBeNull()
+
+  await page.evaluate(() => {
+    for (const style of document.querySelectorAll<HTMLStyleElement>(
+      'style[data-vite-dev-id*="/assets/styles/styles.scss"]'
+    )) {
+      style.disabled = true
+    }
+  })
+
+  await expect(options).toHaveCSS(
+    "font-family",
+    '"Requiem Text SC A", "Requiem Text SC B"'
+  )
+  await expect(options).toHaveCSS("text-transform", "lowercase")
+  await expect(options).toHaveCSS("margin-top", "17px")
+  await expect(options).toHaveCSS("margin-bottom", "17px")
+  await expect(firstOption).toHaveCSS("cursor", "pointer")
+  const detachedBox = await options.boundingBox()
+  expect(detachedBox).not.toBeNull()
+  expect(detachedBox!.width).toBe(settledBox!.width)
+  expect(detachedBox!.height).toBe(settledBox!.height)
+})
+
+test("filter option loading neither opens the results window nor shows its spinner", async ({
+  page,
+  request
+}) => {
+  await page.goto("/om/ide", { waitUntil: "domcontentloaded" })
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "options", selector: "", delay: 5000 }
+  })
+
+  void pushRoute(page, "/s%C3%B6k?avancerad=1").catch(() => undefined)
+
+  const search = page.locator("[data-search-root]")
+  await expect(search).toBeVisible({ timeout: 1500 })
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+  await expect(search.locator("#results")).toHaveCount(0)
+  await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(0)
+})
+
 test("an overlong title filter clears loading and reports a recoverable error", async ({ page }) => {
   const problems = browserProblems(page)
   await openSearch(page, "/s%C3%B6k?avancerad=1")
@@ -411,9 +514,9 @@ test("mounts Search before chronology settles", async ({ page, request }) => {
   await expect(search.getByRole("heading", { name: "Sök i texterna" })).toBeVisible()
   await expect(search.locator(".submit_form")).toBeVisible()
   await expect.poll(async () => (await requests(request, "chronology")).length).toBe(1)
-  await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(1)
+  await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(0)
   await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toHaveCount(0)
-  await expect(search.locator("#results .results tr")).toHaveCount(0)
+  await expect(search.locator("#results")).toHaveCount(0)
 })
 
 test("mounts Search before advanced options settle", async ({ page, request }) => {
@@ -431,9 +534,9 @@ test("mounts Search before advanced options settle", async ({ page, request }) =
   await expect(search.getByRole("heading", { name: "Sök i texterna" })).toBeVisible()
   await expect(search.locator(".submit_form")).toBeVisible()
   await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
-  await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(1)
+  await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(0)
   await expect(page.getByRole("heading", { name: "Om Litteraturbanken" })).toHaveCount(0)
-  await expect(search.locator("#results .results tr")).toHaveCount(0)
+  await expect(search.locator("#results")).toHaveCount(0)
 })
 
 test("waits for accepted advanced options before sending route-owned result filters", async ({
@@ -462,7 +565,8 @@ test("waits for accepted advanced options before sending route-owned result filt
     const search = page.locator("[data-search-root]")
     await expect(search).toBeVisible({ timeout: 1500 })
     await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
-    await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(1)
+    await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(0)
+    await expect(search.locator("#results")).toHaveCount(0)
     await page.waitForTimeout(200)
     expect(await requests(request, "results")).toEqual([])
 
@@ -737,7 +841,7 @@ test("failed advanced options settle to a retryable owner error without forwardi
   await expect(error).toContainText("Sökfiltren kan inte hämtas just nu.")
   await expect(search.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(0)
   await expect(search).not.toHaveClass(/searching/)
-  await expect(search.locator("#results")).not.toHaveClass(/searching/)
+  await expect(search.locator("#results")).toHaveCount(0)
   await expect(search.locator(".submit_form .top_row .spinner")).toBeHidden()
   expect(await requests(request, "results")).toEqual([])
   expect(await requests(request, "count")).toEqual([])
@@ -755,7 +859,7 @@ test("failed advanced options settle to a retryable owner error without forwardi
   await expect(error).toHaveCount(0)
 })
 
-test("keeps one named status through the delayed initial primary result", async ({
+test("keeps the results window absent through the delayed initial primary result", async ({
   page,
   request
 }) => {
@@ -779,16 +883,13 @@ test("keeps one named status through the delayed initial primary result", async 
     await expect(search).toBeVisible({ timeout: 1500 })
     await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
     const status = search.getByRole("status", { name: "Laddar sökdata" })
-    await expect(status).toHaveCount(1)
-    await expect(status).toBeVisible()
-    await expect(search.locator('[aria-live="polite"]')).toHaveCount(1)
+    await expect(status).toHaveCount(0)
     await expect(search.locator(".submit_form .top_row .spinner"))
       .toHaveAttribute("aria-hidden", "true")
-    await expect(search.locator("#results .results tr")).toHaveCount(0)
+    await expect(search.locator("#results")).toHaveCount(0)
 
     releaseResult()
     await expect(page.getByRole("link", { name: "Röda rummet" }).first()).toBeVisible()
-    await expect(status).toHaveCount(0)
   } finally {
     releaseResult()
     await resultHandled.catch(() => undefined)
@@ -1287,7 +1388,8 @@ test("selecting all authors clears the gender filter while preserving the visibl
 
   await expect.poll(() => new URL(page.url()).searchParams.has("kön")).toBe(false)
   await expect(gender).toHaveAttribute("data-gender-value", "all")
-  await expect(gender.getByRole("button")).toHaveText("Alla författare")
+  await expect(gender.getByRole("button"))
+    .toHaveText("Filtrera: kvinnliga / manliga / alla")
   await expect.poll(async () => (await requests(request, "results")).length).toBe(3)
   const recorded = await requests(request, "results")
   expect(recorded.at(-2)?.body).toMatchObject({ query: "frihet", gender: "female" })
@@ -2230,22 +2332,25 @@ test("static options are lazy and cached while title search is exact 250 ms late
   await expect(page.getByRole("option", { name: "Röda rummet" })).toHaveCount(0)
 })
 
-test("title disclosure loads the expanded set and retries a local failure", async ({
+test("filtered title disclosure loads the expanded set and retries a local failure", async ({
   page,
   request
 }) => {
   await openSearch(page, "/s%C3%B6k?fras=overflow&avancerad=1")
   await request.delete(`${fixture}/_text_search/requests/options`)
+  await page.locator(".title_select input.select2-search__field").fill("doktor")
+  await expect(page.getByRole("button", { name: "Visa alla 43 matchande titlar" }))
+    .toBeVisible()
   await request.put(`${fixture}/_text_search/failures`, {
     data: { operation: "options" }
   })
 
   await page.getByRole("button", {
-    name: "Visa alla 731 titlar"
+    name: "Visa alla 43 matchande titlar"
   }).click()
   await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
     .toMatchObject({
-      title_filter: "",
+      title_filter: "doktor",
       title_limit: 500,
       include_static_options: false
     })
@@ -2254,9 +2359,9 @@ test("title disclosure loads the expanded set and retries a local failure", asyn
 
   await request.delete(`${fixture}/_text_search/failures/options`)
   await failure.getByRole("button", { name: "Försök igen" }).click()
-  await expect.poll(async () => (await requests(request, "options")).length).toBe(2)
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(3)
   await page.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
-  await expect(page.getByRole("option", { name: "Överflödestitel 500" })).toBeVisible()
+  await expect(page.getByRole("option", { name: "Doktortitel 41" })).toBeVisible()
 })
 
 test("filtered title disclosure stops after every distinct option is loaded", async ({
@@ -2662,6 +2767,15 @@ test("renders all five authoritative right-context tokens without truncation", a
     `${"4".repeat(29)} `,
     `${"5".repeat(29)} `
   ])
+})
+
+test("renders a phrase hit as one accessible Reader link", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?fras=phrase-hit")
+
+  const match = page.locator("#results tr.sentence .match").first()
+  await expect(match.locator("a")).toHaveCount(1)
+  await expect(match.locator("a")).toHaveText("frihetnu")
+  await expect(match.locator("a .word")).toHaveCount(2)
 })
 
 test("Search result return restores the exact origin and Reader hit", async ({ page }) => {

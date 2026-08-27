@@ -29,6 +29,9 @@ const emit = defineEmits<{
 
 const settingsOpen = ref(false)
 const partsOpen = ref(false)
+const showBarToggle = shallowRef<HTMLButtonElement | null>(null)
+const hideBarToggle = shallowRef<HTMLButtonElement | null>(null)
+let focusAfterBarToggle: "show" | "hide" | null = null
 type FocusViewportStyle = CSSProperties & Record<`--reader-focus-${string}`, string>
 const focusViewportStyle = shallowRef<FocusViewportStyle>({})
 let focusViewportFrame: number | null = null
@@ -81,6 +84,19 @@ watch(
   scheduleFocusViewportSync,
   { flush: "post" }
 )
+watch(() => props.barVisible, async (visible) => {
+  const target = focusAfterBarToggle
+  focusAfterBarToggle = null
+  if (!target) return
+  await nextTick()
+  const button = visible ? hideBarToggle.value : showBarToggle.value
+  button?.focus({ preventScroll: true })
+})
+
+function toggleBar(focusTarget: "show" | "hide"): void {
+  focusAfterBarToggle = focusTarget
+  emit("toggleBar")
+}
 
 function navigatePage(event: MouseEvent, href: string): void {
   if (
@@ -101,14 +117,15 @@ function navigatePage(event: MouseEvent, href: string): void {
   <Teleport to="body">
     <div class="reader-focus-layer" :style="focusViewportStyle" @click.stop>
       <button
+        v-if="!barVisible"
+        ref="showBarToggle"
         type="button"
         class="focus-bar-toggle"
-        :class="{ 'bar-visible': barVisible }"
         :aria-controls="'reader-focus-toolbar'"
-        :aria-expanded="barVisible"
-        :aria-label="barVisible ? 'Dölj verktygsfält' : 'Visa verktygsfält'"
-        @click="emit('toggleBar')"
-      ><i class="fa" :class="barVisible ? 'fa-angle-down' : 'fa-angle-up'" aria-hidden="true" /></button>
+        :aria-expanded="false"
+        aria-label="Visa verktygsfält"
+        @click="toggleBar('hide')"
+      ><i class="fa fa-angle-up" aria-hidden="true" /></button>
       <a
         v-if="previousHref"
         class="leftCover"
@@ -125,6 +142,15 @@ function navigatePage(event: MouseEvent, href: string): void {
       />
 
       <div v-show="barVisible" id="reader-focus-toolbar" class="bottomBar" role="toolbar" aria-label="Läsfokus">
+        <button
+          ref="hideBarToggle"
+          type="button"
+          class="focus-toolbar-toggle"
+          aria-controls="reader-focus-toolbar"
+          :aria-expanded="true"
+          aria-label="Dölj verktygsfält"
+          @click="toggleBar('show')"
+        ><i class="fa fa-angle-down" aria-hidden="true" /></button>
         <span class="focus-control-menu focus-settings-menu">
           <button
             type="button"

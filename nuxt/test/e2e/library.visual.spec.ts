@@ -16,7 +16,7 @@ const libraryStateBaselineManifest = {
   "library-advanced-desktop.png": "d60838f909cd640f394edbfb84a66128e7fea89b2dd6fd1d2a1fe97979128768",
   "library-advanced-mobile.png": "74ebe521951d1741038e5b350a32414dcf3d17405cd8cc662275298b4a6f6f51",
   "library-advanced-selected-controls-desktop.png": "aab6a0814bace9cbd91caa926c188e11ebe5d2c171f49c5628231ddce220cd72",
-  "library-advanced-selected-controls-mobile.png": "cf28926f511754316ea0d9527451b196447ce7398d14cfb05465a61422e397e7",
+  "library-advanced-selected-controls-mobile.png": "d854ed9956ab9ba86841bda2cea626f117994696b0bfbd0b01f8f818709f2cc7",
   "library-gender-filter-desktop.png": "b608ee8b8732815d05cae9a59b8563303c1f563be75f53cd330f997ccd3cd746",
   "library-keywords-dropdown-open-desktop.png": "edf418ed8a8a30ca9395706dfdfba806dce558fafc1d519491d32d1ddfb8e08b",
   "library-narrowing-input-desktop.png": "253e4e90490e53674c19ad93e2d3644d710225c2a589174cb18eb9d319b1cdfe",
@@ -340,7 +340,9 @@ for (const visualCase of [
       await expect(multiselect).toHaveCSS("font-size", "12.8px")
       await expect(multiselect).toHaveCSS("font-family", /Requiem Text SC/)
       await expect(multiselect).toHaveCSS("margin-top", "0px")
-      const visibleField = multiselect.locator(".search-multiselect__input-row")
+      const visibleField = multiselect.locator(
+        ".search-multiselect__input-row:visible, input.multiselect__input:visible"
+      ).first()
       await expect(visibleField).toHaveCSS("border-top-width", "1px")
       await expect(visibleField).toHaveCSS("border-top-color", "rgb(153, 153, 153)")
       await expect(visibleField).toHaveCSS("font-size", "16px")
@@ -490,7 +492,7 @@ test("matches production selected Library filter placement at desktop and mobile
       }
     )
     await expect(
-      page.locator("[data-library-about-authors] .search-multiselect__main-trigger")
+      page.locator("[data-library-about-authors] input.multiselect__input")
     ).toHaveScreenshot("library-about-author-input-desktop.png", {
       animations: "disabled",
       caret: "hide",

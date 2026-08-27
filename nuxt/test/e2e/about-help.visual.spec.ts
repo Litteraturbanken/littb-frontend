@@ -14,6 +14,7 @@ for (const [baseline, route, marker] of pages) {
   test(`matches the approved Angular ${baseline} page`, async ({ page }, testInfo) => {
     await page.goto(route, { waitUntil: "domcontentloaded" })
     await expect(page.getByRole("heading", { name: marker, exact: false }).first()).toBeVisible()
+    await page.waitForLoadState("networkidle")
     if (baseline === "hjalp") {
       await expect(page.locator("#toolkit > [toolkit] > ul.help_submenu.sticky")).toHaveCount(1)
     }

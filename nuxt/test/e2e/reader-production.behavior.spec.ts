@@ -73,7 +73,9 @@ async function openEmbed(page: Page, word: string) {
   const indicator = page.getByRole("button", { name: `Slå upp ${word} i SO och SAOB` })
   await expect(indicator).toBeVisible()
   await indicator.click({ force: true })
-  return page.locator(`iframe[title="Slå upp ${word} i SO och SAOB"]`)
+  const frame = page.locator(`iframe[title="Slå upp ${word} i SO och SAOB"]`)
+  await expect(frame).toBeVisible()
+  return frame
 }
 
 test.beforeEach(async ({ page, request }) => {
@@ -173,6 +175,8 @@ test("one selected Reader word accepts the result from the current cross-origin 
   const dialog = page.getByRole("dialog")
   const frame = dialog.locator('iframe[title="Slå upp DOKTOR i SO och SAOB"]')
   await expect(frame).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get("so"))
+    .toBe("DOKTOR")
   await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin")
   await expect(frame).toHaveAttribute("referrerpolicy", "origin")
   const close = dialog.getByRole("button", { name: "Stäng" })
@@ -202,6 +206,8 @@ test("one selected Reader word accepts the result from the current cross-origin 
   const scrollBeforeClose = await page.evaluate(() => window.scrollY)
   await close.click()
   await expect(dialog).toHaveCount(0)
+  await expect.poll(() => new URL(page.url()).searchParams.has("so"))
+    .toBe(false)
   await expect(word).toBeFocused()
   await expect(word).toHaveAttribute("tabindex", "-1")
   expect(await page.evaluate(() => window.scrollY)).toBe(scrollBeforeClose)
@@ -220,6 +226,35 @@ test("one selected Reader word accepts the result from the current cross-origin 
   expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
     readerManifest
   ])
+})
+
+test("an authenticated Escape request from the active dictionary frame closes the modal", async ({
+  page
+}) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  const word = page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first()
+  const frame = await openEmbed(page, "DOKTOR")
+  const src = await frame.getAttribute("src")
+  expect(src).not.toBeNull()
+  const requestId = new URL(src!).searchParams.get("requestId")
+  expect(requestId).not.toBeNull()
+  await expect(frame.contentFrame().getByRole("tabpanel")).toContainText(
+    "SO-artikel för DOKTOR"
+  )
+
+  await frame.contentFrame().locator("body").evaluate((_, payload) => {
+    window.parent.postMessage({
+      type: "svenska-reader-lookup",
+      version: 1,
+      requestId: payload.requestId,
+      event: "close"
+    }, payload.parentOrigin)
+  }, { parentOrigin: nuxtOrigin, requestId })
+
+  await expect(page.locator(".reader-dictionary-modal")).toHaveCount(0)
+  await expect.poll(() => new URL(page.url()).searchParams.has("so"))
+    .toBe(false)
+  await expect(word).toBeFocused()
 })
 
 test("the embed fixture renders hostile words as text without script or markup injection", async ({
@@ -514,7 +549,7 @@ test("route changes invalidate a pending dictionary lookup", async ({ page, requ
 
   await openEmbed(page, "DOKTOR")
   await expect(page.getByRole("status")).toHaveText("Laddar ordboken…")
-  await page.locator('a[href$="?om-boken"]').first().evaluate((link: HTMLAnchorElement) => {
+  await page.locator('a[href*="om-boken"]').first().evaluate((link: HTMLAnchorElement) => {
     link.click()
   })
   await expect(page).toHaveURL(`${readerPath}?om-boken`)

@@ -8,9 +8,15 @@ import {
   hasLoneSurrogate
 } from "#shared/utils/text-safety"
 
-const pastedLbId = /(?<![A-Za-z0-9_])lb[A-Za-z0-9_]+(?![A-Za-z0-9_])/giu
+const pastedLbId = /(?<![\p{L}\p{N}_])lb[A-Za-z0-9_]+(?![\p{L}\p{N}_])/giu
 const maximumPasteLength = 65_536
 const maximumPastedIds = 100
+const maximumSourceInfoUrnLength = 2000
+const legacyEnvironmentShortcutKeys = new Set(["F19", "®", "ŗ"])
+const legacyQuickSearchInfoKeys = new Set(["F20", "ı", "ī"])
+const legacyAltShortcutKeys = new Set(["®", "ŗ", "ı", "ī"])
+const productionHostname = "litteraturbanken.se"
+const stagingHostname = "stage.litteraturbanken.se"
 
 function editableTarget(target: EventTarget | null): boolean {
   if (!target || typeof target !== "object" || !("closest" in target)) return false
@@ -39,7 +45,7 @@ function hasFocusedPasteOwner(target: EventTarget | null): boolean {
 function modifiedProductionShortcut(event: KeyboardEvent): boolean {
   return event.defaultPrevented
     || event.isComposing
-    || event.altKey
+    || (event.altKey && !legacyAltShortcutKeys.has(event.key))
     || event.ctrlKey
     || event.metaKey
     || event.shiftKey
@@ -90,6 +96,31 @@ export function publicShellShortcutDestination(
   return null
 }
 
+export function legacyQuickSearchInfoShortcut(key: string): boolean {
+  return legacyQuickSearchInfoKeys.has(key)
+}
+
+export function legacyEnvironmentShortcutDestination(
+  key: string,
+  currentHref: string
+): string | null {
+  if (!legacyEnvironmentShortcutKeys.has(key)) return null
+  try {
+    const destination = new URL(currentHref)
+    if (destination.protocol !== "http:" && destination.protocol !== "https:") return null
+    destination.protocol = "https:"
+    destination.hostname = destination.hostname.toLocaleLowerCase("en-US") === productionHostname
+      ? stagingHostname
+      : productionHostname
+    destination.port = ""
+    destination.username = ""
+    destination.password = ""
+    return destination.href
+  } catch {
+    return null
+  }
+}
+
 export function pastedLbNavigationDestination(text: string): string | null {
   if (!text || text.length > maximumPasteLength) return null
   const matches = [...text.matchAll(pastedLbId)]
@@ -103,21 +134,23 @@ export function pastedLbNavigationDestination(text: string): string | null {
   return `/editor/${encodeURIComponent(ids[0]!)}/ix/0/f`
 }
 
+function validUrn(urn: string, maximumLength: number): boolean {
+  return Boolean(urn)
+    && urn.length <= maximumLength
+    && urn.trim() === urn
+    && !hasEcmaWhitespace(urn)
+    && !hasC0OrC1Control(urn)
+    && !hasLoneSurrogate(urn)
+}
+
 export function encodedUrnResolverUrl(urn: string): string | null {
-  if (hasLoneSurrogate(urn)) return null
+  if (!validUrn(urn, maximumSourceInfoUrnLength)) return null
   const queryValue = encodeURIComponent(urn).replaceAll("%3A", ":")
   return `https://urn.kb.se/resolve?urn=${queryValue}`
 }
 
 export function urnResolverUrl(urn: string | null): string | null {
-  if (
-    !urn
-    || urn.length > 100
-    || urn.trim() !== urn
-    || hasEcmaWhitespace(urn)
-    || hasC0OrC1Control(urn)
-    || hasLoneSurrogate(urn)
-  ) return null
+  if (!urn || !validUrn(urn, 100)) return null
   return encodedUrnResolverUrl(urn)
 }
 

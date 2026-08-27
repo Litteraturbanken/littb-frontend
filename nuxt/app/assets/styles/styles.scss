@@ -1638,15 +1638,6 @@ body > .header {
                 color : $primarycolor;
             }
         }
-        .search_opts_widget {
-            margin-top : 1em;
-            margin-bottom : 1em;
-            @include small-caps();
-            li {
-                cursor : pointer;
-            }
-        }
-
         .simple .search_opts_widget li.advanced_only {
             display: none;
         }
@@ -3806,12 +3797,6 @@ grundform-clean {
         @include small-caps();
         padding : 0.2em 0.9em 0.4em 0.9em;
         font-size: 16px;
-
-        .caret {
-            background-image: url(/components/select2/select2x2.png) !important;
-            background-repeat: no-repeat !important;
-            background-size: 60px 40px !important;
-        }
 
     }
     .controls {

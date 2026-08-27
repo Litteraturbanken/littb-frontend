@@ -8,6 +8,7 @@ const svenskaEmbedPort = Number(process.env.LITTB_SVENSKA_EMBED_PORT || fixtureP
 const svenskaEmbedOrigin = `http://127.0.0.1:${svenskaEmbedPort}`
 const nuxtPort = Number(process.env.LITTB_NUXT_TEST_PORT || 3000)
 const nuxtOrigin = `http://127.0.0.1:${nuxtPort}`
+const reuseExistingServers = process.env.LITTB_REUSE_EXISTING_SERVERS === "1"
 const dependencyRoot = realpathSync(resolve(import.meta.dirname, "node_modules"))
 const fixturePidFile = process.env.LITTB_FIXTURE_PID_FILE || resolve(
   "node_modules/.cache/littb-playwright/default-fixture.pid"
@@ -23,6 +24,7 @@ if (configuredE2eLane !== undefined
   throw new TypeError("LITTB_E2E_LANE must be behavior or visual")
 }
 const visualE2eSpec = /e2e\/.*\.visual\.spec\.ts/
+const productionLayoutShiftSpec = /e2e\/layout-shift-production\.behavior\.spec\.ts/
 const mobileBehaviorSpecs = [
   /e2e\/reader\.behavior\.spec\.ts/,
   /e2e\/reader-production\.behavior\.spec\.ts/,
@@ -104,6 +106,7 @@ export function createPlaywrightConfig({
         /e2e\/reader-dictionary-production\.behavior\.spec\.ts/,
         /e2e\/reader-asset-graph\.behavior\.spec\.ts/,
         /e2e\/reader-assets-production\.behavior\.spec\.ts/,
+        productionLayoutShiftSpec,
         ...(configuredE2eLane === "behavior" ? [visualE2eSpec] : [])
       ],
       use: {
@@ -114,7 +117,9 @@ export function createPlaywrightConfig({
     {
       name: "mobile-chromium",
       testMatch: mobileE2eTestMatch,
-      testIgnore: configuredE2eLane === "behavior" ? [visualE2eSpec] : undefined,
+      testIgnore: configuredE2eLane === "behavior"
+        ? [visualE2eSpec, productionLayoutShiftSpec]
+        : [productionLayoutShiftSpec],
       use: { ...devices["iPhone 13"], browserName: "chromium" }
     },
     {
@@ -150,7 +155,7 @@ export function createPlaywrightConfig({
         `node test/fixtures/v2-server.mjs`
       ),
       url: `${fixtureOrigin}/health`,
-      reuseExistingServer: false,
+      reuseExistingServer: reuseExistingServers,
       timeout: 30_000
     },
     {
@@ -175,7 +180,7 @@ export function createPlaywrightConfig({
         `NUXT_IGNORE_LOCK=1 ` +
         ownedServer(nuxtPidFile, `yarn dev --port ${nuxtPort}`),
       url: `${nuxtOrigin}/_nuxt/@vite/client`,
-      reuseExistingServer: false,
+      reuseExistingServer: reuseExistingServers,
       timeout: 120_000
     }
   ]

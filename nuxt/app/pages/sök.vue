@@ -89,6 +89,7 @@ type OptionsLoadState = Readonly<{
 }>
 type TitleOptionsOverride = Readonly<{
   identity: string
+  titleFilter: string
   titles: readonly SearchMultiSelectOption[]
   titleTotal: number
 }>
@@ -606,23 +607,6 @@ const primaryPrerequisitesReady = computed(() => (
       && options.value?.staticComplete === true
     : !chronologyPending.value
 ))
-const initialPrerequisitesPending = computed(() => (
-  !primaryPrerequisitesReady.value
-  && !optionsFailed.value
-))
-const initialPipelinePending = computed(() => (
-  displayPrimary.value === null
-  && (
-    initialPrerequisitesPending.value
-    || (
-      Boolean(state.value.phrase)
-      && acceptedPrimary.value?.identity !== primaryIdentity.value
-      && !primaryFailed.value
-      && !optionsFailed.value
-    )
-  )
-))
-
 function retryOptions(): void {
   if (!optionsFailed.value) return
   void loadOptions()
@@ -803,6 +787,7 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
     if (titleRequestOwner.isCurrent(request, optionsIdentity.value) && accepted) {
       titleOptionsOverride.value = {
         identity,
+        titleFilter,
         titles: optionsView(accepted).titles,
         titleTotal: accepted.title_total
       }
@@ -1260,19 +1245,24 @@ watch(routeIdentity, () => {
   gotoPageInput.value = ""
 }, { flush: "sync" })
 
-const genderSelection = computed(() => {
+const rawGenderSelection = computed(() => {
   const rawGender = rawQuery.value["kön"]
-  const firstGender = typeof rawGender === "string" ? rawGender : rawGender?.[0]
-  return firstGender === "all" ? "all" : (state.value.gender ?? "all")
+  return typeof rawGender === "string" ? rawGender : rawGender?.[0]
 })
+const genderSelection = computed(() => (
+  rawGenderSelection.value === "all" ? "all" : (state.value.gender ?? "all")
+))
 const genderChoices = [
   { value: "all", label: "Alla författare" },
   { value: "female", label: "Kvinnliga författare" },
   { value: "male", label: "Manliga författare" }
 ] as const
-const genderLabel = computed(() => genderChoices.find(
-  option => option.value === genderSelection.value
-)?.label ?? genderChoices[0].label)
+const genderLabel = computed(() => (
+  genderSelection.value === "all" && rawGenderSelection.value !== "all"
+    ? "Filtrera: kvinnliga / manliga / alla"
+    : genderChoices.find(option => option.value === genderSelection.value)?.label
+      ?? genderChoices[0].label
+))
 function setGender(value: string) {
   patchFilters({ gender: value === "female" || value === "male" ? value : null })
 }
@@ -1326,7 +1316,7 @@ useHead({
       simple: !state.advanced
     }"
   >
-    <h1 class="text-6xl">Sök i texterna</h1>
+    <h1 class="mt-[0.67em] text-6xl">Sök i texterna</h1>
 
     <form class="submit_form" @submit.prevent="submitSearch">
       <div class="top_row -mt-2 flex max-w-xl">
@@ -1428,7 +1418,7 @@ useHead({
         </div>
       </div>
 
-      <ul class="search_opts_widget inline-block">
+      <ul class="search_opts_widget sc my-[1em] inline-block text-[17px] leading-[1.2]">
         <li
 v-for="item in [
           ['default', 'SÖK EFTER ORD ELLER FRAS'],
@@ -1437,7 +1427,7 @@ v-for="item in [
           ['prefix', 'SÖK EFTER ORDBÖRJAN'],
           ['suffix', 'SÖK EFTER ORDSLUT'],
           ['infix', 'SÖK EFTER DEL AV ORD']
-        ]" :key="item[0]" class="hover:text-primary">
+        ]" :key="item[0]" class="cursor-pointer hover:text-primary">
           <span
             v-if="selectedMode(item[0]!)"
             role="checkbox"
@@ -1511,7 +1501,10 @@ v-for="item in [
           </div>
           <div class="title_select_container">
             <div
-              v-if="(options?.titleTotal ?? 0) > (options?.titles.length ?? 0)"
+              v-if="titleFilterText
+                && titleOptionsOverride?.identity === optionsIdentity
+                && titleOptionsOverride.titleFilter === titleFilterText
+                && (options?.titleTotal ?? 0) > (options?.titles.length ?? 0)"
               class="title_limit_notice"
             >
               {{ titleFilterText
@@ -1625,28 +1618,18 @@ v-for="item in [
       </p>
     </form>
 
+    <div v-if="optionsFailed" data-search-options-error class="error" role="alert">
+      Sökfiltren kan inte hämtas just nu.
+      <button type="button" @click="retryOptions">Försök igen</button>
+    </div>
+
     <div
+      v-if="displayPrimary?.status === 200"
       id="results"
       class="row results_container"
       :class="{ searching: primaryLoading }"
     >
-      <div
-        v-if="initialPipelinePending"
-        class="searching"
-        role="status"
-        aria-live="polite"
-        aria-label="Laddar sökdata"
-      >
-        <div class="preloader">
-          <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
-          <span class="sr-only">Laddar sökdata</span>
-        </div>
-      </div>
-      <div v-else-if="optionsFailed" data-search-options-error class="error" role="alert">
-        Sökfiltren kan inte hämtas just nu.
-        <button type="button" @click="retryOptions">Försök igen</button>
-      </div>
-      <div v-else-if="displayPrimary?.status === 200" class="table_viewport">
+      <div class="table_viewport">
         <div class="table_container">
           <div v-if="results?.totalWorks === 0">Din sökning gav inga träffar</div>
           <table cellspacing="0" class="results">
@@ -1683,9 +1666,14 @@ v-for="item in [
                   >{{ `${word.text} ` }}</span>
                 </td>
                 <td class="match w-px whitespace-nowrap">
-                  <span v-for="(word, wordIndex) in row.hit.match" :key="wordIndex">
-                    <NuxtLink :to="readerHrefWithReturn(row.hit.href)" class="word" :class="{ punct: word.punct }">{{ word.text }}</NuxtLink>
-                  </span>
+                  <NuxtLink :to="readerHrefWithReturn(row.hit.href)">
+                    <span
+                      v-for="(word, wordIndex) in row.hit.match"
+                      :key="wordIndex"
+                      class="word"
+                      :class="{ punct: word.punct }"
+                    >{{ word.text }}</span>
+                  </NuxtLink>
                 </td>
                 <td class="right_context">
                   <span
@@ -1716,9 +1704,9 @@ v-for="item in [
           </table>
         </div>
       </div>
-      <div v-else-if="primaryFailed" data-search-error class="error" role="alert">
-        Sökresultatet kan inte visas just nu.
-      </div>
+    </div>
+    <div v-else-if="primaryFailed" data-search-error class="error" role="alert">
+      Sökresultatet kan inte visas just nu.
     </div>
 
     <Teleport to="#toolkit" :disabled="!toolkitMounted">
@@ -1763,23 +1751,21 @@ v-for="item in [
               </button>
             </li>
             <li>
-              <a role="button" tabindex="0" @click="goToPage(1)" @keydown.enter.prevent="goToPage(1)" @keydown.space.prevent="goToPage(1)">Gå till första träffen</a>
+              <button class="link-control" type="button" @click="goToPage(1)">Gå till första träffen</button>
             </li>
             <li>
-              <a role="button" tabindex="0" @click="goToPage(totalPages)" @keydown.enter.prevent="goToPage(totalPages)" @keydown.space.prevent="goToPage(totalPages)">Gå till sista träffen</a>
+              <button class="link-control" type="button" @click="goToPage(totalPages)">Gå till sista träffen</button>
             </li>
             <li
               :class="{ open: showGotoPageInput }"
               :aria-disabled="totalPages === 1"
             >
-              <a
-                role="button"
-                tabindex="0"
-                :aria-disabled="totalPages === 1"
+              <button
+                class="link-control"
+                type="button"
+                :disabled="totalPages === 1"
                 @click="toggleGotoPageInput"
-                @keydown.enter.prevent="toggleGotoPageInput"
-                @keydown.space.prevent="toggleGotoPageInput"
-              >Gå till träffsida . . .</a>
+              >Gå till träffsida . . .</button>
               <form v-if="showGotoPageInput" @submit.prevent="submitGotoPage">
                 <input
                   ref="gotoPageElement"
@@ -1797,26 +1783,22 @@ v-for="item in [
       </div>
       <ul v-if="navigatorFacets.length || state.facetAuthorId" class="navigator">
         <li>
-          <a
-            role="button"
-            tabindex="0"
+          <button
+            class="link-control"
+            type="button"
             :class="{ selected: !state.facetAuthorId }"
             :aria-pressed="!state.facetAuthorId"
             @click="setFacet(null)"
-            @keydown.enter.prevent="setFacet(null)"
-            @keydown.space.prevent="setFacet(null)"
-          >Visa alla</a>
+          >Visa alla</button>
         </li>
         <li v-for="facet in navigatorFacets" :key="facet.key">
-          <a
-            role="button"
-            tabindex="0"
+          <button
+            class="link-control"
+            type="button"
             :class="{ selected: state.facetAuthorId === facet.key }"
             :aria-pressed="state.facetAuthorId === facet.key"
             @click="setFacet(facet.key)"
-            @keydown.enter.prevent="setFacet(facet.key)"
-            @keydown.space.prevent="setFacet(facet.key)"
-          >{{ facet.name }}</a>
+          >{{ facet.name }}</button>
         </li>
       </ul>
     </Teleport>
@@ -1960,11 +1942,6 @@ v-for="item in [
 
 .littb_pager .ctrl li:not(.arrows) > button:disabled {
   color: #333;
-}
-
-.littb_pager .ctrl a[aria-disabled="true"] {
-  color: grey !important;
-  cursor: default;
 }
 
 @media (max-width: 767px) {

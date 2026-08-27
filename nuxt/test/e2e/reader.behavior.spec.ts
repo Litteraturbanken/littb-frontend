@@ -2289,10 +2289,26 @@ test("Läsfokus exposes a keyboard-operable toolbar visibility control", async (
 
   const show = page.getByRole("button", { name: "Visa verktygsfält" })
   await expect(show).toBeVisible()
-  await show.focus()
+  await expect(show).toBeFocused()
   await show.press(" ")
   await expect(toolbar).toBeVisible()
+  await expect(hide).toBeFocused()
   await expect(page).toHaveURL(`${readerPath}?fokus`)
+})
+
+test("Läsfokus keeps its visibility control within the open toolbar", async ({ page }) => {
+  await page.goto(`${readerPath}?fokus`, { waitUntil: "networkidle" })
+  const toolbar = page.getByRole("toolbar", { name: "Läsfokus" })
+  const toggle = page.getByRole("button", { name: "Dölj verktygsfält" })
+  const toolbarBox = await toolbar.boundingBox()
+  const toggleBox = await toggle.boundingBox()
+
+  expect(toolbarBox).not.toBeNull()
+  expect(toggleBox).not.toBeNull()
+  expect(toggleBox!.y).toBeGreaterThanOrEqual(toolbarBox!.y)
+  expect(toggleBox!.y + toggleBox!.height).toBeLessThanOrEqual(
+    toolbarBox!.y + toolbarBox!.height
+  )
 })
 
 test("Läsfokus page anchors preserve native modified clicks and normal history", async ({
@@ -2550,6 +2566,73 @@ test("hydrates a fixed-width faksimil scan with legacy size and rotation control
   await expect(page.locator(".img_area")).toHaveCSS("width", "625px")
   expect(await readerHitRequests(request)).toEqual([])
   expect(problems).toEqual([])
+})
+
+test("reserves facsimile geometry before the scan loads", async ({ page }) => {
+  let releaseImage: (() => void) | undefined
+  const imageGate = new Promise<void>((resolve) => {
+    releaseImage = resolve
+  })
+  await page.route("**/lb-reader-gosta-berlings-saga_*/**/*.jpeg", async (route) => {
+    await imageGate
+    await route.continue()
+  })
+
+  const response = await page.goto(facsimilePath, { waitUntil: "domcontentloaded" })
+  expect(response?.status()).toBe(200)
+
+  const image = page.locator("img.faksimil")
+  const imageArea = page.locator(".img_area")
+  await expect(image).toHaveAttribute("width", "625")
+  await expect(image).toHaveAttribute("height", "900")
+  const reservedImageBox = await image.boundingBox()
+  const reservedAreaBox = await imageArea.boundingBox()
+  expect(reservedImageBox).not.toBeNull()
+  expect(reservedAreaBox).not.toBeNull()
+  expect(reservedImageBox!.height / reservedImageBox!.width).toBeCloseTo(900 / 625, 2)
+  expect(reservedAreaBox!.height).toBeCloseTo(reservedImageBox!.height, 1)
+
+  releaseImage?.()
+  await expect.poll(() => image.evaluate(element => {
+    const scan = element as HTMLImageElement
+    return scan.complete && scan.naturalHeight > 0
+  })).toBe(true)
+  const loadedImageBox = await image.boundingBox()
+  const loadedAreaBox = await imageArea.boundingBox()
+  expect(loadedImageBox).not.toBeNull()
+  expect(loadedAreaBox).not.toBeNull()
+  expect(loadedAreaBox!.height).toBeCloseTo(loadedImageBox!.height, 1)
+})
+
+test("reserves fallback facsimile geometry when OCR is unavailable", async ({ page }) => {
+  let releaseImage: (() => void) | undefined
+  const imageGate = new Promise<void>((resolve) => {
+    releaseImage = resolve
+  })
+  await page.route("**/lb-reader-gosta-berlings-saga_*/**/*.jpeg", async (route) => {
+    await imageGate
+    await route.continue()
+  })
+
+  const response = await page.goto(
+    "/författare/LagerlöfS/titlar/UnsearchableFacsimileReader/sida/3/faksimil",
+    { waitUntil: "domcontentloaded" }
+  )
+  expect(response?.status()).toBe(200)
+
+  const image = page.locator("img.faksimil")
+  const imageArea = page.locator(".img_area")
+  await expect(page.locator(".reader-ocr-layer")).toHaveCount(0)
+  await expect(image).toHaveAttribute("width", "625")
+  await expect(image).toHaveAttribute("height", "900")
+  const reservedImageBox = await image.boundingBox()
+  const reservedAreaBox = await imageArea.boundingBox()
+  expect(reservedImageBox).not.toBeNull()
+  expect(reservedAreaBox).not.toBeNull()
+  expect(reservedImageBox!.height / reservedImageBox!.width).toBeCloseTo(900 / 625, 2)
+  expect(reservedAreaBox!.height).toBeCloseTo(reservedImageBox!.height, 1)
+
+  releaseImage?.()
 })
 
 test("faksimil page navigation preserves queries and restores scan identity", async ({

@@ -5,6 +5,7 @@ import { describe, expect, test, vi } from "vitest"
 import {
   createSharedNuxtTypePreparation,
   createShardPlan,
+  normalizeColorEnvironment,
   superviseShardPlans,
   terminateOwnedWebServers,
   terminateProcessTree
@@ -20,6 +21,15 @@ function deferredChild() {
 }
 
 describe("isolated Playwright shard runner", () => {
+  test("drops NO_COLOR before Playwright enables colored child output", () => {
+    expect(normalizeColorEnvironment({
+      NO_COLOR: "1",
+      HOME: "/tmp/home"
+    })).toEqual({
+      HOME: "/tmp/home"
+    })
+  })
+
   test("prepares the shared root Nuxt types before isolated shard builds", () => {
     const preparation = createSharedNuxtTypePreparation({
       cwd: "/repo/nuxt",

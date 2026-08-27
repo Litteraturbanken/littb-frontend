@@ -711,9 +711,6 @@
         width: 44px;
         z-index: 251;
 
-        &.bar-visible {
-            bottom: calc(var(--reader-focus-bottom, 0px) + 76px);
-        }
     }
 
     .leftCover,
@@ -768,6 +765,18 @@
             color: inherit;
             font: inherit;
             padding: 0;
+        }
+
+        .focus-toolbar-toggle {
+            color: #333;
+            font-size: 18px;
+            height: 20px;
+            line-height: 20px;
+            margin: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 24px;
         }
 
         .nav {

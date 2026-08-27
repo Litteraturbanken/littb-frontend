@@ -2595,6 +2595,15 @@ function textSearchResultsResponse(body) {
       page_name: "1"
     }))
   }
+  if (body.query === "phrase-hit") {
+    rich.total_work_hits = 1
+    rich.author_facets = [{ ...rich.author_facets[0], count: 1 }]
+    rich.works = [rich.works[0]]
+    rich.works[0].highlights[0].match = [
+      { word: "frihet", word_id: "w1_11", page_name: "1" },
+      { word: "nu", word_id: "w1_12", page_name: "1" }
+    ]
+  }
   if (body.work_ids?.length) {
     const workIds = new Set(body.work_ids)
     rich.works = rich.works.filter(work => workIds.has(work.lbworkid))
@@ -2640,6 +2649,9 @@ function textSearchCountResponse(body) {
     return { query: body.query, total_documents: 64, total_highlights: 512 }
   }
   if (body.query === "five-context") {
+    return { query: body.query, total_documents: 1, total_highlights: 1 }
+  }
+  if (body.query === "phrase-hit") {
     return { query: body.query, total_documents: 1, total_highlights: 1 }
   }
   if (body.facet_author_id) {

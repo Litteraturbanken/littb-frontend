@@ -9,12 +9,18 @@ import {
   shardPorts
 } from "./test-runner-policy.mjs"
 
+export function normalizeColorEnvironment(environment) {
+  const env = { ...environment }
+  delete env.NO_COLOR
+  return env
+}
+
 export function createSharedNuxtTypePreparation({
   cwd = process.cwd(),
   environment = process.env,
   nuxtCli = fileURLToPath(new URL("../node_modules/nuxt/bin/nuxt.mjs", import.meta.url))
 } = {}) {
-  const env = { ...environment }
+  const env = normalizeColorEnvironment(environment)
   delete env.NUXT_BUILD_DIR
   return {
     command: process.execPath,
@@ -246,7 +252,7 @@ function spawnPlan(plan, activeChildren) {
   const child = spawn(plan.command, plan.args, {
     cwd: process.cwd(),
     detached: process.platform !== "win32",
-    env: { ...process.env, ...plan.env },
+    env: normalizeColorEnvironment({ ...process.env, ...plan.env }),
     stdio: "inherit"
   })
   let settled = false

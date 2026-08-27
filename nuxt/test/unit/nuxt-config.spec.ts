@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises"
 import { afterEach, describe, expect, test, vi } from "vitest"
 
 type ProxyRule = {
@@ -33,6 +34,22 @@ type NuxtConfig = {
   }
   vite: {
     cacheDir?: string
+    build?: {
+      rollupOptions?: {
+        onwarn?: (
+          warning: { code?: string, plugin?: string },
+          defaultHandler: (warning: unknown) => void
+        ) => void
+      }
+    }
+    css?: {
+      preprocessorOptions?: {
+        scss?: {
+          quietDeps?: boolean
+          silenceDeprecations?: string[]
+        }
+      }
+    }
     server: {
       proxy: Record<string, ProxyRule>
     }
@@ -54,6 +71,43 @@ afterEach(() => {
 })
 
 describe("local legacy library API defaults", () => {
+  test("silences only the known deprecations in the retained legacy Sass dependencies", async () => {
+    const config = await loadConfig()
+
+    expect(config.vite.css?.preprocessorOptions?.scss).toEqual({
+      quietDeps: true,
+      silenceDeprecations: ["import"]
+    })
+  })
+
+  test("suppresses only Nuxt's known module-preload sourcemap warning", async () => {
+    const config = await loadConfig()
+    const onwarn = config.vite.build?.rollupOptions?.onwarn
+    const defaultHandler = vi.fn()
+
+    onwarn?.({ code: "SOURCEMAP_BROKEN", plugin: "nuxt:module-preload-polyfill" }, defaultHandler)
+    expect(defaultHandler).not.toHaveBeenCalled()
+
+    const unrelatedWarning = { code: "SOURCEMAP_BROKEN", plugin: "application-plugin" }
+    onwarn?.(unrelatedWarning, defaultHandler)
+    expect(defaultHandler).toHaveBeenCalledWith(unrelatedWarning)
+  })
+
+  test("does not reference the retired Select2 sprite", async () => {
+    const styles = await readFile(new URL("../../app/assets/styles/styles.scss", import.meta.url), "utf8")
+
+    expect(styles).not.toContain("/components/select2/select2x2.png")
+  })
+
+  test("suppresses stale browser-data warnings after pinning the newest available data", async () => {
+    const packageJson = JSON.parse(
+      await readFile(new URL("../../package.json", import.meta.url), "utf8")
+    ) as { scripts: Record<string, string> }
+
+    expect(packageJson.scripts.dev).toMatch(/^BROWSERSLIST_IGNORE_OLD_DATA=true /u)
+    expect(packageJson.scripts.build).toMatch(/^BROWSERSLIST_IGNORE_OLD_DATA=true /u)
+  })
+
   test("honors an isolated Nuxt build directory", async () => {
     vi.stubEnv("NUXT_BUILD_DIR", "/tmp/littb-playwright/shard-1/nuxt")
 

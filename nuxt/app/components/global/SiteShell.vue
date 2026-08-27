@@ -2,6 +2,8 @@
 import {
   isProductionShortcutGuarded,
   isPublicShellPasteGuarded,
+  legacyEnvironmentShortcutDestination,
+  legacyQuickSearchInfoShortcut,
   pastedLbNavigationDestination,
   publicShellShortcutDestination
 } from "~/lib/production-shortcuts"
@@ -12,11 +14,26 @@ const router = useRouter()
 const route = useRoute()
 const isStartPage = computed(() => route.path === "/")
 const quickSearchOpen = ref(false)
+const quickSearchInfoRequested = ref(false)
 const quickSearchTrigger = ref<HTMLAnchorElement | null>(null)
+const layoutFontsLoading = ref(true)
 const authorityFontStylesheetUrl = "/assets/styles/fonts/601526/FD3D54C3A22C4D32B.css"
+const layoutFontQueries = [
+  ['20px "Requiem Text A"', "Litteraturbanken Svenska"],
+  ['20px "Requiem Display A"', "Litteraturbanken Svenska"],
+  ['20px "Requiem Text SC A"', "Rättigheter Statistik Kontakt Organisation Tack"]
+] as const
 
 useHead({
+  htmlAttrs: {
+    class: computed(() => layoutFontsLoading.value ? "layout-fonts-loading" : "")
+  },
   link: [
+    {
+      rel: "stylesheet",
+      href: authorityFontStylesheetUrl,
+      "data-authority-fonts": ""
+    },
     {
       rel: "preload",
       as: "font",
@@ -27,35 +44,25 @@ useHead({
   ]
 })
 
-function loadAuthorityFontStylesheet(): void {
-  if (document.querySelector(`link[href="${authorityFontStylesheetUrl}"]`)) return
-  const stylesheet = document.createElement("link")
-  stylesheet.rel = "stylesheet"
-  stylesheet.href = authorityFontStylesheetUrl
-  stylesheet.dataset.authorityFonts = ""
-  document.head.append(stylesheet)
-}
-
-function scheduleAuthorityFontStylesheet(): void {
-  const loadWhenIdle = () => {
-    const requestIdle = (window as unknown as {
-      requestIdleCallback?: Window["requestIdleCallback"]
-    }).requestIdleCallback
-    if (requestIdle) {
-      requestIdle(loadAuthorityFontStylesheet, { timeout: 1_000 })
-    } else {
-      window.setTimeout(loadAuthorityFontStylesheet)
-    }
-  }
-  if (document.readyState === "complete") loadWhenIdle()
-  else window.addEventListener("load", loadWhenIdle, { once: true })
-}
-
 function onShellKeydown(event: KeyboardEvent) {
   if (isProductionShortcutGuarded(event)) return
   if (event.key === "s") {
     event.preventDefault()
     openQuickSearch()
+    return
+  }
+  if (legacyQuickSearchInfoShortcut(event.key)) {
+    event.preventDefault()
+    openQuickSearch(true)
+    return
+  }
+  const environmentDestination = legacyEnvironmentShortcutDestination(
+    event.key,
+    window.location.href
+  )
+  if (environmentDestination) {
+    event.preventDefault()
+    window.location.href = environmentDestination
     return
   }
   const destination = publicShellShortcutDestination(event.key, libraryHref.value)
@@ -64,14 +71,16 @@ function onShellKeydown(event: KeyboardEvent) {
   void router.push(destination)
 }
 
-function openQuickSearch(): void {
+function openQuickSearch(showContextInfo = false): void {
   if (quickSearchOpen.value) return
+  quickSearchInfoRequested.value = showContextInfo
   quickSearchOpen.value = true
   document.body.classList.add("modal-open")
 }
 
 function closeQuickSearch(): void {
   quickSearchOpen.value = false
+  quickSearchInfoRequested.value = false
   document.body.classList.remove("modal-open")
   void nextTick(() => quickSearchTrigger.value?.focus())
 }
@@ -84,10 +93,21 @@ function onShellPaste(event: ClipboardEvent) {
   void router.push(destination)
 }
 
+async function settleLayoutFonts(): Promise<void> {
+  const loadedFaces = await Promise.allSettled(
+    layoutFontQueries.map(([descriptor, text]) => document.fonts.load(descriptor, text))
+  )
+  if (loadedFaces.every(result => result.status === "fulfilled" && result.value.length > 0)) {
+    layoutFontsLoading.value = false
+    await nextTick()
+    document.documentElement.classList.remove("layout-fonts-loading")
+  }
+}
+
 onMounted(() => {
   document.addEventListener("keydown", onShellKeydown)
   document.addEventListener("paste", onShellPaste)
-  scheduleAuthorityFontStylesheet()
+  void settleLayoutFonts()
 })
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", onShellKeydown)
@@ -131,13 +151,14 @@ onBeforeUnmount(() => {
               tabindex="0"
               class="quick-search-trigger"
               title="Snabbkommando: 's'"
-              @click="openQuickSearch"
-              @keydown.enter.prevent="openQuickSearch"
-              @keydown.space.prevent="openQuickSearch"
+              @click="openQuickSearch()"
+              @keydown.enter.prevent="openQuickSearch()"
+              @keydown.space.prevent="openQuickSearch()"
             >Snabbsökning</a>
             <LazyQuickSearch
               v-if="quickSearchOpen"
               initially-open
+              :show-context-info-initially="quickSearchInfoRequested"
               @closed="closeQuickSearch"
             />
           </li>

@@ -1,3 +1,87 @@
+@font-face {
+    font-family: "Requiem Display Fallback";
+    src: local("Times New Roman");
+    size-adjust: 97%;
+    ascent-override: 101.667%;
+    descent-override: 26.667%;
+    line-gap-override: 0%;
+}
+
+@font-face {
+    font-family: "Requiem Text Fallback";
+    src: local("Times New Roman");
+    size-adjust: 101.5%;
+}
+
+@font-face {
+    font-family: "Requiem Text SC Metric Fallback";
+    src: local("Times New Roman");
+    size-adjust: 137%;
+}
+
+.layout-fonts-loading :is(
+    .page-start,
+    .page-library,
+    .page-epub,
+    .page-presentation,
+    .page-about,
+    .page-authorInfo
+) {
+    font-family: "Requiem Text A", "Requiem Text B", "Requiem Text Fallback", georgia, serif;
+}
+
+.layout-fonts-loading :is(
+    .page-start,
+    .page-library,
+    .page-epub,
+    .page-presentation,
+    .page-about,
+    .page-authorInfo
+) :is(h1, h2, h3, h4, h5, h6, .font-display, .mainnav, .hits, .links) {
+    font-family: "Requiem Display A", "Requiem Display B", "Requiem Display Fallback", georgia, serif;
+}
+
+.layout-fonts-loading .page-epub .sc,
+.layout-fonts-loading .page-about :is(.links, .help_submenu) {
+    font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Text SC Metric Fallback", serif;
+}
+
+.page-search .littb_pager .ctrl .link-control,
+.page-search .navigator .link-control {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font: inherit;
+    line-height: inherit;
+    text-align: inherit;
+}
+
+.page-search .littb_pager .ctrl .link-control {
+    color: #7a1400;
+}
+
+.page-search .littb_pager .ctrl .link-control:hover {
+    color: #333;
+}
+
+.page-search .littb_pager .ctrl .link-control:disabled {
+    color: grey;
+    cursor: default;
+}
+
+.page-search .navigator .link-control {
+    color: #333;
+}
+
+.page-search .navigator .link-control.selected {
+    color: #7a1400;
+}
+
+.page-search .filter_btn .caret {
+    background-image: none !important;
+}
+
 #__nuxt,
 .site-shell {
     display: contents;
@@ -424,7 +508,7 @@
 @media (max-width: 767px) {
     [data-library-advanced-panel]
         [data-library-about-authors]
-        .search-multiselect__main-trigger {
+        :is(.search-multiselect__main-trigger, .search-multiselect__native-search) {
         padding-top: 4px;
         padding-bottom: 6px;
     }
@@ -441,6 +525,13 @@
 
 [data-library-advanced-panel] [data-library-about-authors] .search-multiselect__input-row {
     position: static !important;
+}
+
+[data-library-advanced-panel]
+    [data-library-about-authors]
+    .search-multiselect__native-search {
+    padding: 5px 5px 5px 10px !important;
+    top: 0;
 }
 
 [data-library-advanced-panel]
@@ -478,7 +569,7 @@
     }
 
     .multiselect.select2-selection--multiple {
-        min-height: 30px;
+        min-height: 28px;
         border: 0 !important;
         background: transparent;
     }
@@ -487,6 +578,11 @@
         align-items: stretch;
         display: flex;
         flex-direction: column;
+        min-height: 28px;
+    }
+
+    .multiselect:has(> .search-multiselect__main-trigger) .multiselect__tags {
+        display: none;
     }
 
     .multiselect:not(.multiselect--active):has(.select2-selection__choice)
@@ -509,7 +605,13 @@
         list-style: none;
         margin-top: 6px;
         font-size: 13.6px !important;
+        font-weight: 400;
         line-height: 16.32px;
+    }
+
+    &.title_select .select2-selection__choice {
+        font-family: "Requiem Text A", "Requiem Text B";
+        text-transform: uppercase;
     }
 
     .select2-selection__choice__remove {
@@ -558,7 +660,7 @@
     }
 
     .multiselect__input::placeholder {
-        color: #999;
+        color: #9e9e9e;
         opacity: 1;
     }
 

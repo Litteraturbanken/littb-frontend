@@ -457,34 +457,34 @@
     },
     {
       "packetId": "app/components/global/QuickSearch.vue::packet::component",
-      "fingerprint": "6b3c638f81067f38942f07a56696419463baa17c9b6486ed5508c82c9998f900",
+      "fingerprint": "9a48b05533dedba0700d8173d807436f6855d89fc3be56b1690071d4fc88ce28",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/3c567a52063070b8857bd94490cf68586dfc4c8d687121f412e702421058009a.json",
-      "evidenceHash": "8696bc73b6b94d051f8486bebf0d7f3995f3f57ab8c961edcd8d2c5e33045c86",
+      "evidenceHash": "c74de9f7c5cad45b11021c912cee889b6df749f4535e590769f108ca0e1d9633",
       "findingIds": [
-        "SR-3c567a52-001"
+        "SR-3c567a52-anchor-trigger-001"
       ],
       "verification": [
-        "Did not run test commands; the review used read-only inspection only.",
+        "Did not run test commands because the review was constrained to read-only inspection commands.",
         "Inspected current owned source app/components/global/QuickSearch.vue with physical line numbers.",
         "Inspected direct imports app/composables/useLbApiClient.ts and app/lib/quick-search-developer.ts.",
-        "Inspected discovered relevant tests test/ssr/quick-search.spec.ts, test/e2e/quick-search.behavior.spec.ts, test/e2e/quick-search.visual.spec.ts, test/e2e/quick-search-developer.behavior.spec.ts, and test/unit/quick-search-developer.spec.ts by read-only commands.",
-        "Inspected generated API type boundaries for QuickSearchItem, QuickSearchResponse, and v2_get_quick_search in app/lib/api/generated/lbapi.ts.",
-        "Read exactly the requested packet JSON at .quality/semantic-review/packets/3c567a52063070b8857bd94490cf68586dfc4c8d687121f412e702421058009a.json.",
+        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for QuickSearchItem, QuickSearchResponse, and the /quick-search response contract.",
+        "Inspected relevant tests test/ssr/quick-search.spec.ts, test/e2e/quick-search.behavior.spec.ts, test/e2e/quick-search.visual.spec.ts, test/e2e/quick-search-developer.behavior.spec.ts, and test/unit/quick-search-developer.spec.ts by read-only commands.",
+        "Read exactly the specified packet JSON .quality/semantic-review/packets/3c567a52063070b8857bd94490cf68586dfc4c8d687121f412e702421058009a.json.",
         "Read quality/semantic-review-contract.md.",
-        "Searched current source for QuickSearch, quick-search, autocomplete, and useQuickSearchContext usage; inspected discovered caller context in app/components/global/SiteShell.vue and app/composables/useQuickSearchContext.ts."
+        "Searched current source for QuickSearch, quick-search, autocomplete, useQuickSearchContext, and discovered direct usage in app/components/global/SiteShell.vue plus context publishers."
       ]
     },
     {
       "packetId": "app/components/global/QuickSearch.vue::packet::script-inputElement",
-      "fingerprint": "9578fdeba1abf24cdc9cbb6042cb0cc704c83d01508592e8a3ac76996c95030e",
+      "fingerprint": "fdb551ef6ffbdcf549c6b7f8ee95cf34b4bb052c254b233770071e35fff85728",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/97de43634b05b691a427a1ba0c4b40bc973aa280a17e295cbe1d333052234df0.json",
-      "evidenceHash": "3ff780a1bde572ca1534db098d88ee87676c551037aa6661d493eeee4e762bf3",
+      "evidenceHash": "a2f76e285cffdc581fe7052a8e6c4863101ff484321e9cfc9729f3520f872717",
       "findingIds": [
         "SR-97de4363-quick-search-dead-shortcut-001"
       ],
@@ -497,43 +497,42 @@
     },
     {
       "packetId": "app/components/global/QuickSearch.vue::packet::script-module",
-      "fingerprint": "9d8969e159e6ee963df2f442b4be1e79350db6ceff3693c120b32e5d2239b0f7",
+      "fingerprint": "9b52a065ee96228f17a2cc891d755351a46c1031956b0ec3451fce8532a05522",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/3830164ac692a099de6e0a755f52467a1401f7dd1b32a0f297e23e542707eba5.json",
-      "evidenceHash": "c44a81947d77ea9931a76cc56d79e8efe985d344e7d9bd4cb79f52eac7c7c992",
+      "evidenceHash": "f65485b3b6213e482763980809992c78e3a235b59c56ce31e44bfafae18043ad",
       "findingIds": [],
       "verification": [
+        "Inspected direct caller app/components/global/SiteShell.vue for initially-open lifecycle and body modal state interactions.",
         "Inspected direct dependencies app/composables/useLbApiClient.ts and app/lib/quick-search-developer.ts.",
-        "Inspected direct shell usage in app/components/global/SiteShell.vue and relevant quick-search behavior/developer e2e tests discovered by rg.",
         "Inspected generated API type boundary app/lib/api/generated/lbapi.ts QuickSearchItem and QuickSearchResponse schemas.",
-        "Inspected owned units in app/components/global/QuickSearch.vue at lines 231-234, 291, and 378, plus surrounding QuickSearch state, request cancellation, focus, and combobox logic.",
-        "Read packet .quality/semantic-review/packets/3830164ac692a099de6e0a755f52467a1401f7dd1b32a0f297e23e542707eba5.json.",
-        "Read review contract quality/semantic-review-contract.md.",
-        "Read-only commands only; no tests were run because the packet named no tests and the review requested inspection."
+        "Inspected owned physical lines 233-236, 293, and 386-389 in app/components/global/QuickSearch.vue.",
+        "Inspected relevant quick-search coverage in test/e2e/quick-search.behavior.spec.ts, test/e2e/quick-search-developer.behavior.spec.ts, test/e2e/quick-search.visual.spec.ts, and test/unit/quick-search-developer.spec.ts.",
+        "Read .quality/semantic-review/packets/3830164ac692a099de6e0a755f52467a1401f7dd1b32a0f297e23e542707eba5.json and reviewed only packet app/components/global/QuickSearch.vue::packet::script-module.",
+        "Read quality/semantic-review-contract.md and applied the single-packet review contract.",
+        "Used read-only commands only; no repository modifications or test executions were performed."
       ]
     },
     {
       "packetId": "app/components/global/QuickSearch.vue::packet::template-1",
-      "fingerprint": "03769c026247dfd0c363c49ac417397adec2bb76dd5afa50816d4bfec487319c",
+      "fingerprint": "e34c43273f6a0c23d6db479b93bef89c119b9e281b7b3153e52d318664e27df4",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/32d0942880f1d8f093078655a441698fd1f04d1015d9eb2bfc4b71f2132069a6.json",
-      "evidenceHash": "f553c80539aa9ffa5fb10698311ce873da4e1722c239bcfb0ced14d5649eb7a9",
-      "findingIds": [
-        "SR-32d094-template-001"
-      ],
+      "evidenceHash": "ac5f850bb4cb441f5009d697a7db5f720770a15e7f483b844392fb4f1d7b6227",
+      "findingIds": [],
       "verification": [
-        "Inspected direct dependencies app/composables/useLbApiClient.ts and app/lib/quick-search-developer.ts.",
-        "Inspected discovered source caller app/components/global/SiteShell.vue.",
-        "Inspected generated type boundary app/lib/api/generated/lbapi.ts for /quick-search, QuickSearchItem, and QuickSearchResponse.",
-        "Inspected relevant discovered tests test/e2e/quick-search.behavior.spec.ts, test/e2e/quick-search-developer.behavior.spec.ts, and test/ssr/quick-search.spec.ts.",
-        "Inspected the owned template range app/components/global/QuickSearch.vue lines 388-497 and surrounding script state/handlers.",
-        "Read exactly the requested packet JSON at .quality/semantic-review/packets/32d0942880f1d8f093078655a441698fd1f04d1015d9eb2bfc4b71f2132069a6.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Used read-only inspection commands only; no test runner was executed."
+        "Inspected current source app/components/global/QuickSearch.vue with physical line numbers, including script state, request handling, selection, developer output validation, and owned template rendering.",
+        "Inspected direct component usage and shortcut caller in app/components/global/SiteShell.vue, plus quick-search context publisher app/composables/useQuickSearchContext.ts.",
+        "Inspected direct imports app/composables/useLbApiClient.ts and app/lib/quick-search-developer.ts.",
+        "Inspected generated API boundary app/lib/api/generated/lbapi.ts for /quick-search, QuickSearchItem, and QuickSearchResponse.",
+        "Inspected relevant tests test/e2e/quick-search.behavior.spec.ts, test/e2e/quick-search-developer.behavior.spec.ts, and test/e2e/quick-search.visual.spec.ts.",
+        "Read packet .quality/semantic-review/packets/32d0942880f1d8f093078655a441698fd1f04d1015d9eb2bfc4b71f2132069a6.json and reviewed only owned unit app/components/global/QuickSearch.vue::template::template[1] lines 399-508.",
+        "Read review contract quality/semantic-review-contract.md.",
+        "Used read-only commands only: sed, nl, and rg."
       ]
     },
     {
@@ -592,81 +591,83 @@
     },
     {
       "packetId": "app/components/global/SiteShell.vue::packet::component",
-      "fingerprint": "a77e77bd800e8e40e8ef4e5fc08c4ddd64bb801551f24e14d268a823298a22c9",
+      "fingerprint": "685e6425b7d8104b6e0fffe03f7a22bf627425497a38e93c886679847d9cf4ce",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/c250d12c53d1a40d034f5c47bd23d1e388896844809502a25bbe6dd810a75f05.json",
-      "evidenceHash": "4e398add22c803e9e96a0d704dae8c42752763decf078b1019d0f20767ffd9fe",
+      "evidenceHash": "c2891b9e09b2727f7c21d3ec85a7dee5b67aeb41ee55b7db270c64a66ba4df50",
       "findingIds": [],
       "verification": [
         "Inspected app/components/global/QuickSearch.vue for initially-open, dialog, focus restoration, global keydown, body modal class, and close/unmount interaction with SiteShell.",
         "Inspected current owned source app/components/global/SiteShell.vue with physical line numbers, including the packet-owned line ranges and surrounding script/template/style behavior.",
         "Inspected direct import app/lib/production-shortcuts.ts and related navigation composables app/composables/useLibraryNavigation.ts and app/composables/useTextSearchNavigation.ts.",
-        "Inspected direct layout callers app/layouts/default.vue and app/layouts/reader.vue, and searched current app/test references to SiteShell, shell navigation, shortcut/paste behavior, modal-open body state, toolkit targets, and mainview usage.",
-        "Inspected relevant discovered tests: test/e2e/shell-accessibility.behavior.spec.ts, test/e2e/quick-search.behavior.spec.ts, test/e2e/quick-search-developer.behavior.spec.ts, test/ssr/quick-search.spec.ts, test/unit/production-shortcuts.spec.ts, and test/e2e/reader-production.behavior.spec.ts.",
-        "Read quality/semantic-review-contract.md and exactly one packet JSON at .quality/semantic-review/packets/c250d12c53d1a40d034f5c47bd23d1e388896844809502a25bbe6dd810a75f05.json.",
-        "Used read-only commands only. Did not run the test suite because the review request constrained execution to read-only inspection commands."
+        "Inspected direct layout callers app/layouts/default.vue and app/layouts/reader.vue, plus current references to SiteShell, shell navigation, shortcut/paste behavior, modal-open body state, toolkit targets, mainview, and layout-fonts-loading.",
+        "Inspected relevant discovered tests: test/e2e/shell-accessibility.behavior.spec.ts, test/e2e/quick-search.behavior.spec.ts, test/e2e/quick-search-developer.behavior.spec.ts, test/ssr/quick-search.spec.ts, test/unit/production-shortcuts.spec.ts, test/e2e/reader-production.behavior.spec.ts, test/ssr/authority-fonts.spec.ts, and test/e2e/layout-shift-production.behavior.spec.ts.",
+        "Ran read-only git status/diff inspection; git emitted macOS xcrun cache warnings under the read-only sandbox, but the status command completed. No tests were executed because the review request constrained work to read-only commands.",
+        "Read quality/semantic-review-contract.md and exactly one packet JSON at .quality/semantic-review/packets/c250d12c53d1a40d034f5c47bd23d1e388896844809502a25bbe6dd810a75f05.json."
       ]
     },
     {
       "packetId": "app/components/global/SiteShell.vue::packet::script-isStartPage",
-      "fingerprint": "63578cbd261f2c206af4e0a9aa0dd01102bcb5fd21b3b6680a7fe9e4e5822905",
+      "fingerprint": "52ae6405756bc081c0cc7c068ff4f306fde9e5b2d97053bef5e365fbb96136f3",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/12913557dda1fc3cef2e9fc15d789906d082be2431af542656c71d8a9619f0f7.json",
-      "evidenceHash": "e6d7ea144ab691aea15afc6183c4121c2e0f412cbf531fd3e950a53a2e9d2969",
+      "evidenceHash": "0e704953d61c6177652cbd1d6bf7aa0350c68f17abe7123e2c8e43d001eda68b",
       "findingIds": [
-        "SR-12913557dda1-001"
+        "12913557dda1fc3cef2e9fc15d789906d082be2431af542656c71d8a9619f0f7-SiteShell-open-info-while-open"
       ],
       "verification": [
-        "Inspected current owned source app/components/global/SiteShell.vue with physical line numbers and surrounding template usage.",
-        "Inspected direct import app/lib/production-shortcuts.ts.",
-        "Inspected direct layout callers app/layouts/default.vue and app/layouts/reader.vue.",
-        "Inspected relevant discovered tests test/unit/production-shortcuts.spec.ts, test/e2e/quick-search.behavior.spec.ts, test/e2e/shell-accessibility.behavior.spec.ts, test/ssr/authority-fonts.spec.ts, and test/e2e/reader-asset-graph.behavior.spec.ts.",
-        "Read exactly one packet JSON: .quality/semantic-review/packets/12913557dda1fc3cef2e9fc15d789906d082be2431af542656c71d8a9619f0f7.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Used read-only commands only; no tests were executed."
+        "Inspected app/components/global/SiteShell.vue, app/lib/production-shortcuts.ts, app/components/global/QuickSearch.vue, and direct layout callers app/layouts/default.vue and app/layouts/reader.vue via ripgrep results.",
+        "Inspected relevant tests: test/e2e/quick-search.behavior.spec.ts, test/e2e/quick-search-developer.behavior.spec.ts, test/e2e/layout-shift-production.behavior.spec.ts, test/ssr/authority-fonts.spec.ts, test/ssr/quick-search.spec.ts, and test/unit/production-shortcuts.spec.ts.",
+        "No test command was executed because the packet listed no tests and the review request constrained the work to read-only commands; Playwright and Vitest commonly write artifacts or caches.",
+        "Ran git status and scoped git diff read-only; git emitted macOS cache warnings under the read-only sandbox but returned current worktree/staged state.",
+        "Read .quality/semantic-review/packets/12913557dda1fc3cef2e9fc15d789906d082be2431af542656c71d8a9619f0f7.json.",
+        "Read quality/semantic-review-contract.md."
       ]
     },
     {
       "packetId": "app/components/global/SiteShell.vue::packet::style-1",
-      "fingerprint": "9be9f8e97a26ed9866d6f5d30f8fba6868e08b63c968134c8ad6d1b91ab830e8",
+      "fingerprint": "45d1d13d3841c93da468cce7fba65f743a92534f341a87cb984f63c5e8bf5728",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/2778f55a22eb83b72ad7fd2c2082660ad3f926bd6686703fb182634ae762ce78.json",
-      "evidenceHash": "c96370ec5b7d6d94198b175ab9a92fbacf665c6e48ed97c3340fd54d29c93eae",
+      "evidenceHash": "0499058daf0fedc63d003095ec4dcf92055893b104709c519f069d2ba4aac3d0",
       "findingIds": [],
       "verification": [
-        "Inspected app/assets/styles/nuxt.scss, app/assets/styles/styles.scss, app/assets/styles/reader.scss, and app/assets/styles/reader-base.scss for dependencies that set or consume .lb-logo and --logo-l-color/--logo-b-color.",
-        "Inspected current owned source app/components/global/SiteShell.vue, including packet-owned physical lines 184-185 and surrounding SVG/template/script behavior.",
+        "Inspected app/assets/styles/nuxt.scss, app/assets/styles/styles.scss, and app/assets/styles/reader.scss for dependencies that set or consume .lb-logo and --logo-l-color/--logo-b-color.",
+        "Inspected current owned source app/components/global/SiteShell.vue with physical line numbers, including owned style lines 205-206 and the surrounding SVG/template/script behavior.",
         "Inspected direct layout callers app/layouts/default.vue and app/layouts/reader.vue.",
-        "Inspected named direct import app/lib/production-shortcuts.ts for shell shortcut and paste behavior adjacent to the component.",
-        "Inspected relevant discovered tests test/unit/registered-nuxt-asset.spec.ts, test/ssr/history.spec.ts, test/e2e/presentations.visual.spec.ts, test/e2e/shell-accessibility.behavior.spec.ts, and test/visual/capture-history-angular.spec.ts by source.",
-        "Read exactly the requested packet JSON: .quality/semantic-review/packets/2778f55a22eb83b72ad7fd2c2082660ad3f926bd6686703fb182634ae762ce78.json.",
+        "Inspected named direct import app/lib/production-shortcuts.ts for adjacent shell shortcut and paste behavior.",
+        "Inspected relevant discovered tests by source: test/ssr/authority-fonts.spec.ts, test/e2e/layout-shift-production.behavior.spec.ts, test/e2e/presentations.visual.spec.ts, and test/visual/capture-history-angular.spec.ts.",
+        "Read exactly one packet JSON: .quality/semantic-review/packets/2778f55a22eb83b72ad7fd2c2082660ad3f926bd6686703fb182634ae762ce78.json.",
         "Read quality/semantic-review-contract.md.",
-        "Searched current app and test source for SiteShell, logo fill classes, logo CSS variables, direct layout callers, and shell/logo assertions.",
+        "Searched current app, test, and existing review source for SiteShell, logo fill classes, logo CSS variables, direct layout callers, and shell/logo assertions.",
         "Used read-only inspection commands only; no test suite was executed."
       ]
     },
     {
       "packetId": "app/components/global/SiteShell.vue::packet::template-1",
-      "fingerprint": "882e3c6dd218d7addb251ab8f84234f2caeac22634027560866dfea7442d07e2",
+      "fingerprint": "a0c1964fbce261c579693da5bb6bbd47edc9f2df9ce7a465539e37a43fb1c8ef",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/e5ecd945f6fec53794dde925c380bdcdc272150fafb17b2064d54ff8c72264da.json",
-      "evidenceHash": "6a6c40f09cc0d791fec0301c557b329457a10e44fbb59b42cdc8cf735a09776b",
+      "evidenceHash": "ee5409f137fe1fec3b5df1a5103e90373a75da8bb8e0bbbdc89d2251d6d1df90",
       "findingIds": [
-        "SR-e5ecd945-template-001"
+        "SR-e5ecd945-site-shell-anchor-button"
       ],
       "verification": [
-        "Confirmed the packet lists no type boundaries and no named tests; inspected relevant discovered tests for the owned template behavior.",
-        "Read packet JSON .quality/semantic-review/packets/e5ecd945f6fec53794dde925c380bdcdc272150fafb17b2064d54ff8c72264da.json and reviewed only packet app/components/global/SiteShell.vue::packet::template-1.",
-        "Read review contract quality/semantic-review-contract.md.",
-        "Used read-only inspection commands only: sed, nl, and rg."
+        "Checked scoped git status and diff with read-only commands; git emitted macOS xcrun cache warnings under the read-only sandbox, while status showed local changes in reviewed source/dependency/test files.",
+        "Inspected current owned source app/components/global/SiteShell.vue physical lines 120-201 and surrounding script/style context.",
+        "Inspected direct imports, direct layout callers, dependencies, and relevant discovered tests named by source usage because the packet listed no tests.",
+        "No test suites were executed because the request constrained work to read-only commands.",
+        "Read exactly one packet JSON: .quality/semantic-review/packets/e5ecd945f6fec53794dde925c380bdcdc272150fafb17b2064d54ff8c72264da.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Reviewed only packet app/components/global/SiteShell.vue::packet::template-1 with fingerprint a0c1964fbce261c579693da5bb6bbd47edc9f2df9ce7a465539e37a43fb1c8ef."
       ]
     },
     {
@@ -1491,123 +1492,127 @@
     },
     {
       "packetId": "app/components/reader/ReaderDictionaryDialog.vue::packet::component",
-      "fingerprint": "b77eeabafdc954bc5cde3e2ec4a6aa3aedece5b0cbe8e4e36ca00bda8064857f",
+      "fingerprint": "1880db3fb36fa20f1b056e33a6c7c09d63c2484ea38b1888cc1ad48b5610b99e",
       "state": "approved",
-      "reviewer": "semantic-reader-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/4dcd8abfd3b966b63ee280f9760361771c1384cd4eba8f3d21d6e06124ff31cf.json",
-      "evidenceHash": "572d08756316103d629105125dcf7d02086e833530218c7a7320381e9278b059",
-      "findingIds": [
-        "SR-4dcd8ab-minor-001"
-      ],
+      "evidenceHash": "db4d6e85cd6cf7719292e3823703ddebbe929312f1d1c330290e1daca426b82c",
+      "findingIds": [],
       "verification": [
-        "Inspected every owned range, direct type boundary and sole caller, branded HTML boundary, styles, unit coverage, and observable browser coverage.",
-        "Read the semantic review contract and exact current requested packet.",
-        "Used read-only inspection commands and made no repository edits."
+        "Inspected direct dependency app/composables/useReaderDictionaryEmbed.ts lines 1-198.",
+        "Inspected owned unit app/components/reader/ReaderDictionaryDialog.vue lines 1-122, including all packet-owned physical line ranges.",
+        "Inspected relevant local tests discovered by source search: test/unit/reader-dictionary.spec.ts, test/unit/reader-dictionary-embed-lifecycle.spec.ts, and test/unit/reader-dictionary-lookup.spec.ts.",
+        "Packet listed no named tests and no typeBoundaries; no test command was run under the read-only review constraint.",
+        "Read packet .quality/semantic-review/packets/4dcd8abfd3b966b63ee280f9760361771c1384cd4eba8f3d21d6e06124ff31cf.json.",
+        "Read review contract quality/semantic-review-contract.md.",
+        "Searched direct callers with rg; inspected app/components/reader/ReaderDictionaryLookup.vue call sites at lines 351-369 and setup dependency use at line 25."
       ]
     },
     {
       "packetId": "app/components/reader/ReaderDictionaryDialog.vue::packet::script-frameTitle",
-      "fingerprint": "c7e34dace057ea73a9158abd1402e6b4da09f0ab7c25891b810645c2dd000d63",
+      "fingerprint": "de2f2658ae3e8fcc8882c67f239368df8903fb5f4eea03aed8dae7064a79d861",
       "state": "approved",
-      "reviewer": "semantic-reader-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/08024328ca71ede6de625f836b81da421ca1e11aade9225d32e66c5d37a0ae7e.json",
-      "evidenceHash": "2b9431c260d12d7d6438a5161cb4db464fe35ba5153ec8a40157962a22ef0767",
-      "findingIds": [],
+      "evidenceHash": "d6bf83ecb1e0df101e867e2172a6d4f604456261a1a0f0f1151ab4ba5a408ecf",
+      "findingIds": [
+        "SR-08024328-001"
+      ],
       "verification": [
-        "Inspected the complete owned unit, iframe consumer, discriminated branches, session-word boundary, parent caller, Reader-word validation, and browser title coverage.",
-        "Read the semantic review contract and exact current requested packet.",
-        "Used read-only inspection commands and made no repository edits."
+        "Confirmed all cited finding lines are within the owned unit physical line range 29-30.",
+        "Did not modify repository files or review any other packet JSON.",
+        "Read quality/semantic-review-contract.md and exactly one packet JSON at .quality/semantic-review/packets/08024328ca71ede6de625f836b81da421ca1e11aade9225d32e66c5d37a0ae7e.json.",
+        "Used read-only inspection commands only: sed, nl, rg, and find."
       ]
     },
     {
       "packetId": "app/components/reader/ReaderDictionaryDialog.vue::packet::template-1",
-      "fingerprint": "fab545c3298fbee2809a55d9161a209f6917643a184cfb17703931be4c77efc2",
+      "fingerprint": "34d5390a649700801084c5cd0f7671bfaf3d4457232a8e2abf3491bcbcfe56ad",
       "state": "approved",
-      "reviewer": "semantic-reader-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/f448fd5ba98271d1249d5f80632d299d7d9cda7a81cab741655ac52c4097ce3b.json",
-      "evidenceHash": "df59e09011ceb365d681f23301b9ecf83a26b6395773af942f65b84fdf053f83",
-      "findingIds": [
-        "SR-f448fd5-minor-001"
-      ],
+      "evidenceHash": "7c4cd7b3c4b00f8e1afdbd16d19fc02db1f62dd7d6627e877a0004f10c3d1d83",
+      "findingIds": [],
       "verification": [
-        "Inspected all owned template lines, composable boundary, parent caller, URL and HTML policies, unit coverage, and production browser suites.",
-        "Read the semantic review contract and exact current requested packet.",
-        "Used read-only inspection commands and made no repository edits."
+        "Did not run tests because the review request specified read-only commands and this sandbox is read-only; test runners may write caches or artifacts.",
+        "Inspected direct caller app/components/reader/ReaderDictionaryLookup.vue, including both ReaderDictionaryDialog call sites, embedAttemptWord/session/status propagation, close handling, and fallback URL construction.",
+        "Inspected direct dependency app/composables/useReaderDictionaryEmbed.ts for session/status lifecycle, request correlation, timeout behavior, frame source validation, and message origin/source checks.",
+        "Inspected relevant tests test/unit/reader-dictionary.spec.ts, test/unit/reader-dictionary-embed.spec.ts, test/unit/reader-dictionary-embed-lifecycle.spec.ts, test/unit/reader-dictionary-lookup.spec.ts, and test/e2e/reader-dictionary-production.behavior.spec.ts.",
+        "Inspected the complete ReaderDictionaryDialog.vue component for prop discrimination, close behavior, dialog semantics, iframe title, sandbox/referrer boundary, status rendering, fallback link, and sanitized legacy HTML rendering path.",
+        "Inspected the owned physical template range app/components/reader/ReaderDictionaryDialog.vue lines 35-120 with line numbers.",
+        "Inspected URL/message dependency app/lib/reader-dictionary-embed.ts and raw HTML render boundary app/components/global/RenderableHtmlContent.vue.",
+        "Read exact packet JSON .quality/semantic-review/packets/f448fd5ba98271d1249d5f80632d299d7d9cda7a81cab741655ac52c4097ce3b.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Searched current source and test references for ReaderDictionaryDialog, ReaderDictionaryLookup, useReaderDictionaryEmbed, reader dictionary embed, iframe, modal, and status behavior using read-only rg/nl/sed commands."
       ]
     },
     {
       "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::component",
-      "fingerprint": "9275f6537f8a00cbdde541416e4d409bdac1d8940b3074e485d1232b5cd34060",
+      "fingerprint": "2c56963dbcc64cafedb3f17178dff21e591d04f99a83bfe3111e909ef30f373d",
       "state": "approved",
-      "reviewer": "semantic-reader-fix-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/1fe8886c1a2d8559e0b1a6acd9a0b76f326f91210f0dccda8141b5559bd54458.json",
-      "evidenceHash": "e0f60eecd6c80ac20c28dd52299c58924481c5625de91359a3599f62bf66947e",
+      "evidenceHash": "0e71b6ebba6e301ab492906db854255f3bcb645c4966dedeba710ac9fd26268f",
       "findingIds": [],
       "verification": [
-        "Confirmed duplicate response-object state was removed and route/unmount cleanup clears transient message state and timer.",
-        "Confirmed every terminal legacy failure restores the initiating word without scrolling and temporary tabindex is cleaned after focus moves.",
-        "Inspected every owned range, complete component, direct dependencies, generated API boundary, sole Reader-page consumer, unit tests, and legacy browser suite.",
-        "Read the semantic review contract and generated the exact current requested packet.",
-        "Reviewed concurrency, generated typing, sanitization, URL policy, modal semantics, keyboard labeling, and focus cleanup against all nine contract questions.",
-        "Used read-only inspection commands and made no repository edits."
+        "Checked git status with a read-only command; it completed after macOS cache warnings caused by the read-only sandbox. No repository files were modified by this review.",
+        "Did not run test commands because the review request constrained work to read-only inspection.",
+        "Inspected auto-imported dependency app/composables/useReaderDictionaryEmbed.ts and child render boundary app/components/reader/ReaderDictionaryDialog.vue.",
+        "Inspected direct current consumer app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around the ReaderDictionaryLookup usage.",
+        "Inspected direct imports app/composables/useLbApiClient.ts, app/lib/reader-dictionary.ts, and app/lib/reader-dictionary-embed.ts.",
+        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for DictionaryArticleResponse and /dictionary/articles response typing.",
+        "Inspected owned unit app/components/reader/ReaderDictionaryLookup.vue with physical line numbers, including packet-owned line ranges 1-2, 4-16, 18, 20-41, 331, 333, and 371.",
+        "Inspected relevant tests discovered by search: test/unit/reader-dictionary-lookup.spec.ts, test/unit/reader-dictionary.spec.ts, test/unit/reader-dictionary-embed.spec.ts, test/unit/reader-dictionary-embed-lifecycle.spec.ts, and test/e2e/reader-dictionary-production.behavior.spec.ts; the packet listed no tests.",
+        "Read quality/semantic-review-contract.md and exactly the specified packet JSON .quality/semantic-review/packets/1fe8886c1a2d8559e0b1a6acd9a0b76f326f91210f0dccda8141b5559bd54458.json.",
+        "Searched current source, tests, quality metadata, and configuration for ReaderDictionaryLookup, reader-dictionary helpers, dictionary/articles, ReaderDictionaryDialog, readerDictionaryMode, svenskaReaderEmbedOrigin, search_dict, and modal-open references."
       ]
     },
     {
       "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::script-legacyModalOpen",
-      "fingerprint": "e8d9d969854ff8610b32851c1d0262d65bf7af0a86fa15bd60af48cb50d60f21",
+      "fingerprint": "15e155eda01f2c1e3c11ae3118fb35e03dc9748f4d20e1eb29535b5a54a9075e",
       "state": "approved",
-      "reviewer": "semantic-reader-fix-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/edd96450d285c4a859c548c210bead28e04f76d2a1ac7db98a360fbb29969824.json",
-      "evidenceHash": "eece055ae333b060524e0dabf9e567791a032798236b9c76dbd69bc5ab065a8e",
+      "evidenceHash": "1b739f462f4785757ddcfdf15bd9f9a8d455374ecca8fe265a4a409c26e47fe0",
       "findingIds": [],
       "verification": [
-        "Confirmed every terminal legacy failure restores initiating-word focus with generation and connection guards, and browser coverage verifies no scroll movement and temporary tabindex cleanup.",
-        "Confirmed redundant raw article state is removed and sanitized articleHtml alone owns modal state.",
-        "Confirmed route changes and unmount clear transient message state and timer with lifecycle coverage.",
-        "Inspected cancellation, stale-generation rejection, route invalidation, sanitization, origin validation, dialog behavior, and the Nuxt caller with no Critical or Important finding.",
-        "Read the semantic review contract and exact current packet plus its relevant production boundaries, caller, generated API type, and tests.",
-        "Used read-only inspection commands and made no repository edits."
-      ]
-    },
-    {
-      "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::script-module",
-      "fingerprint": "049ccee426ab03c4733a3f03b59fc827e7e21ad061144e500d82dbeca8e9cdbe",
-      "state": "approved",
-      "reviewer": "semantic-reader-fix-reviewer",
-      "method": "codex-read-only",
-      "evidencePath": "quality/semantic-reviews/be857ba3f1d13e17a7d1bfa46d24649b474980415e30e000c07de94141edcb3e.json",
-      "evidenceHash": "64800da43a71bc782e4bf71f3d04e5d6c2a707e48cfd7908b388c4ac9d6aa0a9",
-      "findingIds": [],
-      "verification": [
-        "Confirmed asynchronous legacy commits are gated by generation, controller identity/state, and captured route path.",
-        "Confirmed route changes abort and invalidate legacy work, close embed/modal state, invalidate focus restoration, clear selection and indicator state, and clear the notice timer.",
-        "Inspected direct imports, generated API boundary, actual Reader caller, and route-invalidation coverage.",
-        "Inspected the owned route watcher and surrounding request, modal, selection, focus, timer, and lifecycle transitions.",
-        "Read the semantic review contract and exact current script-module packet after the Reader focus fix.",
-        "Used read-only inspection commands and made no repository edits."
+        "Did not run test commands because the review was requested with read-only commands and the filesystem sandbox is read-only; test execution may write caches/artifacts.",
+        "Inspected direct component use in app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue at line 2083.",
+        "Inspected direct imports and dependencies: app/composables/useLbApiClient.ts, app/lib/reader-dictionary-embed.ts, app/lib/reader-dictionary.ts, app/composables/useReaderDictionaryEmbed.ts, and app/components/reader/ReaderDictionaryDialog.vue.",
+        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for DictionaryArticleResponse and v2_get_dictionary_article.",
+        "Inspected owned physical ranges in app/components/reader/ReaderDictionaryLookup.vue lines 43-330.",
+        "Inspected relevant dictionary lookup tests discovered in test/unit/reader-dictionary-lookup.spec.ts, test/unit/reader-dictionary-embed-lifecycle.spec.ts, test/unit/reader-dictionary-embed.spec.ts, test/unit/reader-dictionary.spec.ts, and selected reader-production E2E coverage.",
+        "Read quality/semantic-review-contract.md and the exact packet JSON .quality/semantic-review/packets/edd96450d285c4a859c548c210bead28e04f76d2a1ac7db98a360fbb29969824.json."
       ]
     },
     {
       "packetId": "app/components/reader/ReaderDictionaryLookup.vue::packet::template-1",
-      "fingerprint": "0c544ee16af09dcafb519778e673f21f6f68ca083efe2868639ddfb0a0a0913b",
+      "fingerprint": "291bc100d3eccb352188c94f25bb81e0e827ce6e1c4c79591d695d3b327e6d19",
       "state": "approved",
-      "reviewer": "semantic-reader-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/c8a6ba3b8c4156479e099dc9b8f50ea8175ac5fe2591285638c08ae284a85934.json",
-      "evidenceHash": "d41152ef832b2d7801a345174b90b4c103b3ed5e744b17f95e209dd264876880",
-      "findingIds": [
-        "lookup-template-forwards-noop-frame-load"
-      ],
+      "evidenceHash": "c595ea62fd0d74ba5ff3b89e77d1ba34fbcd5ccdb3183f8156b3aa6843ebb9cb",
+      "findingIds": [],
       "verification": [
-        "Confirmed the focus/message changes introduce no Critical or Important issue.",
-        "Generated and read the exact current template packet and full component after the focus fix.",
-        "Inspected failure focus generations, route/unmount cleanup, generated API and sanitizer boundaries, dialog and notice semantics, component tests, legacy failure E2E, and embed security/focus E2E.",
-        "Used read-only inspection commands and made no repository edits."
+        "Checked git status with a read-only command; repository already had unrelated modified review/source/test files, and this review did not modify files.",
+        "Inspected additional direct dependency app/composables/useReaderDictionaryEmbed.ts because the owned template consumes its session, status, frame, load handler, and close lifecycle.",
+        "Inspected discovered direct caller app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue, where ReaderDictionaryLookup is mounted beside the Reader surface.",
+        "Inspected generated API type boundary app/lib/api/generated/lbapi.ts for DictionaryArticleResponse and v2_get_dictionary_article.",
+        "Inspected owned physical lines app/components/reader/ReaderDictionaryLookup.vue:334-370 with line numbers.",
+        "Inspected packet imports app/composables/useLbApiClient.ts, app/lib/reader-dictionary.ts, and app/lib/reader-dictionary-embed.ts.",
+        "Inspected relevant tests discovered by search: test/unit/reader-dictionary-lookup.spec.ts, test/e2e/reader-dictionary-production.behavior.spec.ts, test/e2e/reader-production.behavior.spec.ts, and test/e2e/reader-assets-production.behavior.spec.ts; the packet listed no tests.",
+        "Inspected rendered dialog dependency app/components/reader/ReaderDictionaryDialog.vue for prop contracts, accessible dialog semantics, iframe boundary, fallback link, close event, and raw HTML rendering boundary.",
+        "Inspected surrounding component state and handlers in app/components/reader/ReaderDictionaryLookup.vue, including indicator rendering inputs, lookup mode branching, route query behavior, lookup cancellation, and close behavior.",
+        "No tests were executed because this was a read-only semantic inspection and prior Vitest/Vite commands in this read-only environment are known to attempt cache writes.",
+        "Read exactly one packet JSON: .quality/semantic-review/packets/c8a6ba3b8c4156479e099dc9b8f50ea8175ac5fe2591285638c08ae284a85934.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Searched current source and tests for ReaderDictionaryLookup, search_dict, ReaderDictionaryDialog, DictionaryArticleResponse, dictionary/articles, and lookup button accessible labels using read-only commands only."
       ]
     },
     {
@@ -1651,169 +1656,164 @@
     },
     {
       "packetId": "app/components/reader/ReaderFacsimileImage.vue::packet::component",
-      "fingerprint": "059d56abeb487368dbcbfd902761c0a4bb110272b7a841b1b0bc6a2b362316ae",
+      "fingerprint": "cf50997c57b2b8da1c4f419c3e0671245626847f9acffd62c28c5f0941c06e01",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/8abde2541766262695a5a7687ccee525e5e89b8bb2779815ff466dabade0f101.json",
-      "evidenceHash": "4bb1fb694778d07e5de4b6c07ec1c6a168482365b2f48afeb8acd4d6605fc068",
+      "evidenceHash": "0925cb86cc540258bcec5f2725b88efa6f16e8160a8a755a8f449c759c92426a",
       "findingIds": [],
       "verification": [
-        "Inspected caller state and behavior around facsimileReader, selectedFacsimileSize, markedFacsimileReader, and selectFacsimileSize.",
-        "Inspected direct dependencies shared/utils/facsimile-source.ts and app/components/global/RenderableHtmlContent.vue.",
-        "Inspected owned unit app/components/reader/ReaderFacsimileImage.vue with physical line numbers.",
-        "Inspected relevant reader e2e coverage in test/e2e/reader.behavior.spec.ts, including facsimile hydration, sparse size navigation, rotation persistence/reset, image error handling, and OCR hit marking.",
-        "Inspected relevant styles in app/assets/styles/reader.scss for img_area, faksimil, OCR overlay, error state, and controls.",
-        "Inspected type boundaries in shared/types/reader.ts and server response/source construction in server/api/reader/[author]/[title]/[page]/[mediatype].get.ts and server/utils/reader-source.ts.",
-        "Ran read-only git diff for app/components/reader/ReaderFacsimileImage.vue; no local diff was present.",
-        "Read .quality/semantic-review/packets/8abde2541766262695a5a7687ccee525e5e89b8bb2779815ff466dabade0f101.json.",
+        "Checked repository status and targeted diff with read-only git commands; git emitted macOS temp/cache warnings under the read-only sandbox, and no targeted diff content was printed for the reviewed source/dependencies command.",
+        "Inspected direct dependency and type boundaries in shared/types/reader.ts, shared/types/work-manifest.ts, shared/utils/facsimile-source.ts, app/lib/api/generated/lbapi.ts, server/api/reader/[author]/[title]/[page]/[mediatype].get.ts, server/utils/reader-source.ts, and app/components/global/RenderableHtmlContent.vue.",
+        "Inspected owned unit app/components/reader/ReaderFacsimileImage.vue with physical line numbers, including packet-owned script, prop, emit, state, template, and closing template ranges.",
+        "Inspected relevant facsimile tests discovered by repository search: test/e2e/reader.behavior.spec.ts, test/e2e/reader-faksimil.visual.spec.ts, test/ssr/reader.spec.ts, test/ssr/reader-final-parity.spec.ts, and test/fixtures/v2-server.mjs.",
+        "Inspected relevant styles in app/assets/styles/reader.scss for img_area, faksimil, OCR overlay, facsimile controls, error alert, and focus-mode overrides.",
+        "Inspected the direct caller app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around facsimileReader, selectedFacsimileSize, markedFacsimileReader, selectFacsimileSize, and the ReaderFacsimileImage call site.",
+        "Read exactly one packet JSON: .quality/semantic-review/packets/8abde2541766262695a5a7687ccee525e5e89b8bb2779815ff466dabade0f101.json.",
         "Read quality/semantic-review-contract.md.",
-        "Searched for direct callers/usages; found ReaderFacsimileImage usage in app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
-        "Used read-only inspection commands only; no tests were executed."
+        "Used only read-only inspection commands. No test suites were executed because the workspace/review constraints disallow write-producing verification."
       ]
     },
     {
       "packetId": "app/components/reader/ReaderFacsimileImage.vue::packet::script-module",
-      "fingerprint": "ba84ae0c1e8dce52c5346358ccefeb74c9c6081c33595ba18fdad875e8fe7dfb",
+      "fingerprint": "53d3ed26761dd079c154d75627d128350782abb2acb6df28548d360277363cee",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/9215bf61fe8893f790fb3c75c25e7df50e82ffbb5e489a647ab6c4cc517310c9.json",
-      "evidenceHash": "b3db47a3c8e0b26c036c908cf80dc9ee454a9c8e8254fa18664f1ae65d6d9105",
+      "evidenceHash": "e8d0968b5ba01067cf035d9cc38adedcbcf9614ecc44e8356c7bf539979382c8",
       "findingIds": [],
       "verification": [
-        "Did not execute tests because the review request constrained work to read-only commands.",
-        "Inspected app/components/reader/ReaderFacsimileImage.vue with line numbers, including owned physical line 62 and surrounding watchers/state/template usage.",
-        "Inspected direct caller app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue at the ReaderFacsimileImage call site and related reader identity/selected size code.",
+        "Inspected current owned unit app/components/reader/ReaderFacsimileImage.vue line 73 with surrounding computed identities, image failure watchers, rotation state, and template consumers.",
+        "Inspected direct caller app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around reader identity, retained reader state, selectedFacsimileSize, markedFacsimileReader, selectFacsimileSize, and the ReaderFacsimileImage call site.",
         "Inspected direct type and utility dependencies shared/types/reader.ts and shared/utils/facsimile-source.ts.",
-        "Inspected relevant e2e coverage in test/e2e/reader.behavior.spec.ts for rotation controls, size changes, page identity behavior, and reset after media-session change.",
-        "Ran read-only git diff for app/components/reader/ReaderFacsimileImage.vue; no local diff was present.",
-        "Read .quality/semantic-review/packets/9215bf61fe8893f790fb3c75c25e7df50e82ffbb5e489a647ab6c4cc517310c9.json.",
+        "Inspected relevant reader behavior tests in test/e2e/reader.behavior.spec.ts covering facsimile controls, size replacement, image error reset, page identity behavior, and rotation reset after a different media session.",
+        "Read exactly the specified packet JSON at .quality/semantic-review/packets/9215bf61fe8893f790fb3c75c25e7df50e82ffbb5e489a647ab6c4cc517310c9.json.",
         "Read quality/semantic-review-contract.md.",
-        "Searched for ReaderFacsimileImage usage and faksimil rotation references under app, shared, server, and test paths while excluding generated/public output."
+        "Used read-only inspection commands only; tests were inspected rather than executed because the review request constrained work to read-only commands."
       ]
     },
     {
       "packetId": "app/components/reader/ReaderFacsimileImage.vue::packet::script-selectedSource",
-      "fingerprint": "831bc227c63e9e4793dfc876e9030f7ffdeae7b7ef67098703afd8b67e73395b",
+      "fingerprint": "d1c455e3d49989a25f530dcb7c1788315c5e773d22aab6a954551eedfb2fce24",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/0d96dd6e56b5084a485a1a82e98e00efccaad563356b0b44ae8e498baf43b9dd.json",
-      "evidenceHash": "76702ab29a01d48e88f34268b625e18a4c3d6c3afed57d6846327874b7888f03",
+      "evidenceHash": "ba1c27087f878dd3b3503eb53681c34c8cfb4d9422ef824af720310c1128dc9f",
       "findingIds": [],
       "verification": [
-        "Inspected current owned source in app/components/reader/ReaderFacsimileImage.vue lines 21-67 and surrounding template consumers for selectedSource, retinaSource, smallerSize, largerSize, sourceSet, overlayStyle, pageIdentity, selectedSourceIdentity, and watchers.",
-        "Inspected direct caller app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around selectedFacsimileSize, focus size helpers, selectFacsimileSize, and the ReaderFacsimileImage call site.",
-        "Inspected direct dependency shared/utils/facsimile-source.ts; adjacentFacsimileSize selects nearest available lower/higher source, including sparse source lists.",
-        "Inspected raw HTML boundary through ReaderOcrOverlay, RenderableHtmlContent.vue, server/utils/reader-ocr.ts, shared/types/renderable-html.ts, and app/lib/search-hit-highlight.ts.",
-        "Inspected relevant discoverable tests in test/unit/reader-source.spec.ts and test/e2e/reader.behavior.spec.ts covering nearest sparse size selection, src/srcset changes, query preservation, retained controls during pending navigation, image error reset, rotation reset/persistence, and OCR overlay marking.",
-        "Inspected shared/types/reader.ts and backend response construction in server/api/reader/[author]/[title]/[page]/[mediatype].get.ts plus server/utils/reader-source.ts for ReaderFacsimilePage, ReaderFacsimileSource, preferredSize, sources, and srcset pairing boundaries.",
-        "Ran read-only git diff for reviewed source and related files; no local diff was present.",
-        "Read only the specified packet JSON at .quality/semantic-review/packets/0d96dd6e56b5084a485a1a82e98e00efccaad563356b0b44ae8e498baf43b9dd.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Used read-only inspection commands only: sed, jq, nl, rg, and git diff. No tests were executed because the packet listed no tests and the review was constrained to read-only inspection."
-      ]
-    },
-    {
-      "packetId": "app/components/reader/ReaderFacsimileImage.vue::packet::template-1",
-      "fingerprint": "c58e1a004b493711c4801c4aa500ab1ca7ba56f1a522cbc930e85b80004b8c82",
-      "state": "approved",
-      "reviewer": "independent-codex-review",
-      "method": "codex-read-only",
-      "evidencePath": "quality/semantic-reviews/75aea69beb42b19c1acf46d530fa18e526bdcd602a0a52cb21410a703c594084.json",
-      "evidenceHash": "73c4b3e6113750663346b73c9c985e8dbeb10f4f0d5f8e05e7c23a0f0e84ef17",
-      "findingIds": [],
-      "verification": [
-        "Inspected app/components/reader/ReaderFacsimileImage.vue with physical line numbers, including the owned template ranges 71-104 and 106-139 and surrounding script state that drives the template.",
-        "Inspected direct caller app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around facsimileReader, selectedFacsimileSize, selectFacsimileSize, component usage, and adjacent Teleports.",
-        "Inspected direct type and utility boundaries in shared/types/reader.ts and shared/utils/facsimile-source.ts.",
-        "Inspected OCR source and sanitizer path in server/api/reader/[author]/[title]/[page]/[mediatype].get.ts and server/utils/reader-ocr.ts.",
-        "Inspected raw HTML boundary dependency app/components/global/RenderableHtmlContent.vue plus shared/types/renderable-html.ts and shared/utils/renderable-html.ts.",
-        "Inspected relevant reader styles in app/assets/styles/reader.scss for img_area, faksimil, OCR overlay, error state, and facsimile controls.",
-        "Inspected relevant SSR, e2e, and visual coverage in test/ssr/reader.spec.ts, test/e2e/reader.behavior.spec.ts, and test/e2e/reader-faksimil.visual.spec.ts.",
-        "Inspected SiteShell Teleport targets in app/components/global/SiteShell.vue.",
-        "No tests were executed because the workspace and review request constrained work to read-only commands.",
-        "Ran read-only git diff for app/components/reader/ReaderFacsimileImage.vue; no local diff was present.",
-        "Read quality/semantic-review-contract.md.",
-        "Read the specified packet JSON at .quality/semantic-review/packets/75aea69beb42b19c1acf46d530fa18e526bdcd602a0a52cb21410a703c594084.json and reviewed only that packet.",
-        "Searched current source with rg for ReaderFacsimileImage, facsimile controls, OCR overlay, and toolkit Teleports."
-      ]
-    },
-    {
-      "packetId": "app/components/reader/ReaderFocusControls.vue::packet::component",
-      "fingerprint": "4f1d86fdc5fd3542ca84a44bafcb6fe0fac2c4214939b32c8a79400186b46981",
-      "state": "approved",
-      "reviewer": "independent-codex-review",
-      "method": "codex-read-only",
-      "evidencePath": "quality/semantic-reviews/3d4fe304e32a03275aeecd1fc19068b40b9a89f8cb3fa50c45b54eac101031c5.json",
-      "evidenceHash": "3ba96dbc7672aa79a739aec2c5a705ca7f07ef164c9659ec003f5123eed7a5b6",
-      "findingIds": [],
-      "verification": [
-        "Inspected current owned component source at `app/components/reader/ReaderFocusControls.vue`, including prop and emit contracts, local state, viewport synchronization, Teleport root, and template behavior around the owned physical line ranges listed by the packet.",
-        "Inspected direct callers in `app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue` and `app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue` for prop values, focus mode state, navigation handlers, text scaling, night mode, and facsimile size selection.",
-        "Inspected relevant tests despite the packet listing none: `test/unit/reader-focus-controls.spec.ts`, `test/e2e/reader-final-parity.behavior.spec.ts`, `test/e2e/reader.behavior.spec.ts`, `test/e2e/editor-reader.behavior.spec.ts`, `test/e2e/editor-reader.mobile.behavior.spec.ts`, `test/ssr/reader-final-parity.spec.ts`, and `test/ssr/editor-reader.spec.ts`.",
-        "Inspected styling dependencies in `app/assets/styles/reader.scss` for the focus layer, side cover links, toolbar, menus, and viewport CSS custom properties.",
-        "No unresolved critical or important semantic findings were identified on the owned physical line ranges.",
-        "Read `quality/semantic-review-contract.md`.",
-        "Read packet `.quality/semantic-review/packets/3d4fe304e32a03275aeecd1fc19068b40b9a89f8cb3fa50c45b54eac101031c5.json` and reviewed only `app/components/reader/ReaderFocusControls.vue::packet::component`.",
-        "Used read-only inspection commands only; no test suites were executed because the sandbox is read-only and the request specified read-only commands."
-      ]
-    },
-    {
-      "packetId": "app/components/reader/ReaderFocusControls.vue::packet::script-module",
-      "fingerprint": "f9ac7eb00ae8a9d42048622a0665ee5aa394555c0aebbf233cbae0e965b79e50",
-      "state": "approved",
-      "reviewer": "independent-codex-review",
-      "method": "codex-read-only",
-      "evidencePath": "quality/semantic-reviews/ca091406071fe8c8ad004210b3481f69420f5e46a67d8958682b58e0eb2c21b6.json",
-      "evidenceHash": "08f7a67b991616477ca785471dcd7070e1e08c60496363ff19a6758749975e6f",
-      "findingIds": [],
-      "verification": [
-        "Checked repository references with rg for ReaderFocusControls, focus state, mediaType, settingsOpen, and partsOpen.",
-        "Confirmed no source diff for the reviewed component, callers, or relevant test via git diff.",
-        "Inspected direct component callers in app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue and app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue.",
-        "Inspected owned source lines in app/components/reader/ReaderFocusControls.vue, including the owned watch callback at line 76 and related template state consumers.",
-        "Inspected relevant tests in test/unit/reader-focus-controls.spec.ts.",
-        "Read packet JSON: .quality/semantic-review/packets/ca091406071fe8c8ad004210b3481f69420f5e46a67d8958682b58e0eb2c21b6.json",
+        "Inspected direct caller and size-selection flow in app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue",
+        "Inspected owned source lines 22-78 and template use in app/components/reader/ReaderFacsimileImage.vue",
+        "Inspected relevant reader facsimile behavior and visual tests in test/e2e/reader.behavior.spec.ts, test/e2e/reader-final-parity.behavior.spec.ts, and test/e2e/reader-faksimil.visual.spec.ts",
+        "Inspected shared dependency shared/utils/facsimile-source.ts and server source construction in server/utils/reader-source.ts",
+        "Inspected type boundaries in shared/types/reader.ts and generated FacsimileSize schema in app/lib/api/generated/lbapi.ts",
+        "No tests were executed because the review requested read-only inspection and the available test runners may write caches or artifacts.",
+        "Read packet JSON: .quality/semantic-review/packets/0d96dd6e56b5084a485a1a82e98e00efccaad563356b0b44ae8e498baf43b9dd.json",
         "Read review contract: quality/semantic-review-contract.md"
       ]
     },
     {
+      "packetId": "app/components/reader/ReaderFacsimileImage.vue::packet::template-1",
+      "fingerprint": "e51aa2cc14d2b1696627c4c1a7186845fb11f32287c5e4142bbc6f956c7c5dc1",
+      "state": "approved",
+      "reviewer": "independent-codex-review",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/75aea69beb42b19c1acf46d530fa18e526bdcd602a0a52cb21410a703c594084.json",
+      "evidenceHash": "364c8ad53d50028cf1cc0355da4a861e65bba09f89d2dfd3abc44654ac77028f",
+      "findingIds": [],
+      "verification": [
+        "Checked git status and targeted diffs with read-only git commands; git emitted macOS temp/cache warnings under the read-only sandbox, and no targeted diff content was printed for the reviewed source/dependency/test files.",
+        "Inspected current owned template lines 82-151 in app/components/reader/ReaderFacsimileImage.vue, including image, OCR overlay, image-error alert, ClientOnly Teleport controls, size buttons, and rotation buttons.",
+        "Inspected direct caller app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around facsimileReader, selectedFacsimileSize, markedFacsimileReader, selectFacsimileSize, and the ReaderFacsimileImage call site.",
+        "Inspected direct type and utility dependencies shared/types/reader.ts and shared/utils/facsimile-source.ts.",
+        "Inspected raw HTML rendering boundary app/components/global/RenderableHtmlContent.vue, shared/types/renderable-html.ts, shared/utils/renderable-html.ts, and server-side OCR sanitizer path in server/utils/reader-ocr.ts plus server/api/reader/[author]/[title]/[page]/[mediatype].get.ts.",
+        "Inspected relevant SSR, e2e, and visual tests discovered for this template: test/ssr/reader.spec.ts, test/ssr/reader-final-parity.spec.ts, test/e2e/reader.behavior.spec.ts, and test/e2e/reader-faksimil.visual.spec.ts.",
+        "Inspected surrounding script state and computed values in app/components/reader/ReaderFacsimileImage.vue lines 1-79 that drive the owned template.",
+        "Inspected Teleport targets in app/components/global/SiteShell.vue and relevant styles in app/assets/styles/reader.scss for .img_area, .faksimil, .overlay, .reader-facsimile-error, and facsimile controls.",
+        "No tests were executed because the review request constrained work to read-only inspection commands.",
+        "Read exactly one packet JSON at .quality/semantic-review/packets/75aea69beb42b19c1acf46d530fa18e526bdcd602a0a52cb21410a703c594084.json.",
+        "Read review contract at quality/semantic-review-contract.md.",
+        "Searched current source for ReaderFacsimileImage, facsimile controls, OCR overlay, toolkit Teleports, and related tests using read-only rg/nl/sed/jq commands."
+      ]
+    },
+    {
+      "packetId": "app/components/reader/ReaderFocusControls.vue::packet::component",
+      "fingerprint": "52b9835c14e85ac9e0f5bd903c7194b9ed231a38411e7250c713536f2f49f6e9",
+      "state": "approved",
+      "reviewer": "independent-codex-review",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/3d4fe304e32a03275aeecd1fc19068b40b9a89f8cb3fa50c45b54eac101031c5.json",
+      "evidenceHash": "bde2d9cd2e3ae310810c73d20d6d4123504ff7b6c5fdcd23f523d8ace15783fe",
+      "findingIds": [],
+      "verification": [
+        "Checked repository status and targeted diff with read-only git commands; git emitted macOS temp/cache warnings under the read-only sandbox, and the workspace is dirty including the reviewed component and adjacent reader files.",
+        "Inspected current owned component source in app/components/reader/ReaderFocusControls.vue with physical line numbers, including prop and emit contracts, local state, viewport synchronization watcher, Teleport template boundary, and all packet-owned line ranges.",
+        "Inspected direct callers in app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue and app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue for focus-mode gating, ClientOnly boundaries, prop values, navigation handlers, text scaling, night mode, toolbar visibility, and facsimile size selection.",
+        "Inspected relevant tests discovered by repository search despite the packet listing none: test/unit/reader-focus-controls.spec.ts, test/e2e/reader-final-parity.behavior.spec.ts, test/e2e/reader-final-parity.visual.spec.ts, test/e2e/reader.behavior.spec.ts, test/e2e/editor-reader.behavior.spec.ts, and test/e2e/reader-faksimil.visual.spec.ts.",
+        "Inspected styling dependencies in app/assets/styles/reader.scss for focus layer positioning, side cover links, toolbar/menu layout, and --reader-focus-* custom property consumers.",
+        "No unresolved critical or important semantic findings were identified on the packet-owned physical line ranges.",
+        "Read exactly one packet JSON: .quality/semantic-review/packets/3d4fe304e32a03275aeecd1fc19068b40b9a89f8cb3fa50c45b54eac101031c5.json.",
+        "Read review contract quality/semantic-review-contract.md.",
+        "Used read-only inspection commands only; no test suite was executed because the review request specified read-only commands and the sandbox is read-only."
+      ]
+    },
+    {
+      "packetId": "app/components/reader/ReaderFocusControls.vue::packet::script-module",
+      "fingerprint": "18a84a82cdd517931d4f741912893e69c7e1f48c6c660242aac0337ee1619748",
+      "state": "approved",
+      "reviewer": "independent-codex-review",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/ca091406071fe8c8ad004210b3481f69420f5e46a67d8958682b58e0eb2c21b6.json",
+      "evidenceHash": "e1c8a9bbfef613df6ae599c1e5687f98265bdf066d62a33dec61b28f2c40bc20",
+      "findingIds": [],
+      "verification": [
+        "Inspected direct callers in app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue and app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue.",
+        "Inspected owned physical lines 79 and 87 in app/components/reader/ReaderFocusControls.vue with surrounding component state, template controls, and focus behavior.",
+        "Read quality/semantic-review-contract.md and packet .quality/semantic-review/packets/ca091406071fe8c8ad004210b3481f69420f5e46a67d8958682b58e0eb2c21b6.json.",
+        "Searched app and test for ReaderFocusControls, focus-mode controls, and relevant behavior coverage; inspected test/unit/reader-focus-controls.spec.ts."
+      ]
+    },
+    {
       "packetId": "app/components/reader/ReaderFocusControls.vue::packet::script-syncFocusViewport",
-      "fingerprint": "c89e9c360b4e7d8f111a930d01d43679aae7f2d4b4d7d483e4b70274c77ba107",
+      "fingerprint": "56848fd7db275eb58e6ecfc28fa665a45b09607f1115829828606d10eabe9c9d",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/c118be9b768cb05e774ca435600ad6012de244ad2313c5ef776851f9c46f40d6.json",
-      "evidenceHash": "1e30f4f2cac0b097280e692ea55acd35ac813779bf6534cae3de509ad772e46c",
+      "evidenceHash": "1292b956796e31112b5ac87224422bfffe77ad314779f2fe4c69486385d7385c",
       "findingIds": [],
       "verification": [
-        "Inspected current owned source in `app/components/reader/ReaderFocusControls.vue` lines 36-97, including viewport CSS variable synchronization, requestAnimationFrame scheduling, mount/unmount listener lifecycle, media-type watcher, and page-link click interception.",
-        "Inspected direct component callers in `app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue` and `app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue` for focus-mode ClientOnly boundaries, navigation event handlers, href construction, bar state, media-type props, and size/night-mode props.",
-        "Inspected relevant tests found by repository search, especially `test/unit/reader-focus-controls.spec.ts` coverage for visual viewport anchoring, listener cleanup, unmodified primary link interception, and night-mode state.",
-        "Inspected styling dependencies in `app/assets/styles/reader.scss` for `--reader-focus-*` custom property consumers on the focus layer, cover links, toggle, and toolbar.",
+        "Checked repository references with `rg` for `ReaderFocusControls`, `visualViewport`, `reader-focus`, `focusMode`, and navigation handler usage.",
+        "Inspected current owned source in `app/components/reader/ReaderFocusControls.vue` lines 39-113, including visual viewport CSS variable synchronization, requestAnimationFrame coalescing, mount/unmount listener lifecycle, prop watchers, focus restoration after toolbar visibility changes, and page-link click interception.",
+        "Inspected direct component callers in `app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue` and `app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue` for ClientOnly boundaries, focus-mode gating, navigation handlers, bar state, media-type props, size/night-mode props, and href construction.",
+        "Inspected relevant tests found by repository search, especially `test/unit/reader-focus-controls.spec.ts`, `test/e2e/reader.behavior.spec.ts`, `test/e2e/editor-reader.behavior.spec.ts`, and `test/e2e/reader-final-parity.behavior.spec.ts` coverage for viewport anchoring, listener cleanup, toolbar focus restoration, native modified-click preservation, and normal navigation.",
+        "Inspected styling dependencies in `app/assets/styles/reader.scss` for `--reader-focus-*` custom property consumers on the focus layer, side covers, toolbar toggle, and bottom toolbar.",
         "No unresolved critical or important semantic findings were identified on the owned physical line ranges.",
-        "Read `quality/semantic-review-contract.md`.",
         "Read only packet `.quality/semantic-review/packets/c118be9b768cb05e774ca435600ad6012de244ad2313c5ef776851f9c46f40d6.json`.",
-        "Used read-only inspection commands only; no test suite was executed because the review request constrained the work to read-only commands."
+        "Read review contract `quality/semantic-review-contract.md`.",
+        "Used read-only inspection commands only; no test suite was executed because the review request was limited to read-only commands and the sandbox is read-only."
       ]
     },
     {
       "packetId": "app/components/reader/ReaderFocusControls.vue::packet::template-1",
-      "fingerprint": "ec92161726b19e19d18f72466332befa918cc6e98c697828a98e234797370bb3",
+      "fingerprint": "4472deb2f1af28287ca6fca9befd312db3adfd7b2ad6d686129d360f6b42b061",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/96121dbe0b093ccc3d5c556363e8b3ef0ca9cafe263cd0adfdc20651344ebcee.json",
-      "evidenceHash": "6477cac2204a91ad2d067e3d0959e6cbe3b5fafccd2500c794e59a98867921e4",
+      "evidenceHash": "949f6f9881ae33eac0556742bc57154acc4decade0514f1197be7563ec4cae80",
       "findingIds": [],
       "verification": [
-        "Inspected direct caller wiring in app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue around focus state, event handlers, and component invocation.",
-        "Inspected owned template lines 101-190 in app/components/reader/ReaderFocusControls.vue.",
-        "Inspected reader route helpers in app/lib/reader-routes.ts and focus control styles in app/assets/styles/reader.scss plus shared focus styling.",
-        "Inspected relevant tests found by search: test/unit/reader-focus-controls.spec.ts, test/e2e/reader.behavior.spec.ts, test/e2e/editor-reader.behavior.spec.ts, and test/e2e/reader-final-parity.behavior.spec.ts. No tests were executed because the review was limited to read-only inspection commands.",
-        "Read quality/semantic-review-contract.md and the packet JSON for the single requested packet."
+        "Checked repository status and targeted diffs with read-only git commands; git emitted macOS cache/temp warnings under the read-only sandbox but returned the inspected outputs.",
+        "Inspected current owned template source in app/components/reader/ReaderFocusControls.vue lines 117-216 with surrounding script state, emits, focus restoration, and navigation interception.",
+        "Inspected direct callers in app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue and app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue for focus-mode gating, prop values, toolbar visibility state, close behavior, navigation handling, text scaling, night mode, and facsimile size selection.",
+        "Inspected relevant tests discovered by repository search despite the packet listing none: test/unit/reader-focus-controls.spec.ts, test/e2e/reader.behavior.spec.ts, test/e2e/editor-reader.behavior.spec.ts, and test/e2e/reader-final-parity.behavior.spec.ts.",
+        "Inspected styling dependencies in app/assets/styles/reader.scss for reader-focus-layer, side cover links, focus bar toggle, toolbar layout, nested menu positioning, and viewport CSS variable consumers.",
+        "No unresolved critical or important semantic findings were identified on the packet-owned physical line ranges.",
+        "Read review contract quality/semantic-review-contract.md and exactly one packet JSON .quality/semantic-review/packets/96121dbe0b093ccc3d5c556363e8b3ef0ca9cafe263cd0adfdc20651344ebcee.json.",
+        "Used read-only inspection commands only; no test suite was executed because the review request was limited to read-only commands and this sandbox is read-only."
       ]
     },
     {
@@ -1904,20 +1904,22 @@
     },
     {
       "packetId": "app/components/search/SearchMultiSelect.vue::packet::component",
-      "fingerprint": "59ed83895072a24808fc3a826873a16e084a1318b875a3b5e78d26b26d00aaa6",
+      "fingerprint": "d61cadaed2a0e375843203b62bb0fa822ec87966403d4ecd57037b8e6f696024",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/b00a484bc6006b19a1f24047cd9b0ae76086033f1a7bdd3bd934b3edfeedcfe3.json",
-      "evidenceHash": "1b8216f2bc24726e6706dfe4cb18508b3f7756d5bfc6c4bee271b55a5a9b3a13",
+      "evidenceHash": "ec707d52a0ab408bcc2e74111dc3d45da4711da75205efec581bda96275cf7b7",
       "findingIds": [],
       "verification": [
-        "Inspected direct callers app/components/library/LibraryAdvancedFilters.vue and app/pages/sök.vue, including SearchMultiSelect usage and option type boundaries.",
-        "Inspected direct dependency usage of vue-multiselect and related stylesheet hooks in app/assets/styles/nuxt.scss.",
-        "Inspected owned unit app/components/search/SearchMultiSelect.vue::component::SearchMultiSelect at app/components/search/SearchMultiSelect.vue lines 1-3, 5, 7-12, 14-17, 19-21, 23-26, 28-30, 32-51, 53-56, 58-59, 104, 106, 229, and 231.",
-        "Inspected relevant discovered tests test/unit/search-multi-select.spec.ts, test/e2e/library-multiselect-parity.behavior.spec.ts, test/e2e/library-advanced.behavior.spec.ts, and test/e2e/text-search.behavior.spec.ts; packet listed no tests.",
-        "Read review contract quality/semantic-review-contract.md and exactly one packet JSON .quality/semantic-review/packets/b00a484bc6006b19a1f24047cd9b0ae76086033f1a7bdd3bd934b3edfeedcfe3.json.",
-        "Used read-only commands only: sed, nl, rg, and git status --short."
+        "Checked git status and relevant diff paths read-only; the worktree is dirty, and git emitted macOS cache warnings under the read-only sandbox, but current source inspection was still available.",
+        "Inspected dependency behavior in node_modules/vue-multiselect/dist/vue-multiselect.esm.js for combobox/listbox roles, search input labeling, update:modelValue emission, disabled option handling, group labels, keyboard events, and toggle/remove behavior.",
+        "Inspected direct callers app/components/library/LibraryAdvancedFilters.vue and app/pages/sök.vue for SearchMultiSelect props, event use, labels, grouping, async title query use, and filter value type boundaries.",
+        "Inspected discovered relevant tests despite the packet listing none: test/unit/search-multi-select.spec.ts, test/e2e/library-multiselect-parity.behavior.spec.ts, test/e2e/library-advanced.behavior.spec.ts, test/e2e/text-search.behavior.spec.ts, plus search hits in test/ssr/library.spec.ts and library visual tests.",
+        "Inspected owned component app/components/search/SearchMultiSelect.vue with physical line numbers, including exported option types, props/emits, attrs boundary, vue-multiselect wrapper, and stylesheet import.",
+        "Inspected related styling hooks in app/assets/styles/nuxt.scss for SearchMultiSelect geometry, hidden native placeholder rows, selected chips, arrows, dropdown z-index, and data-library markers.",
+        "Read review contract at quality/semantic-review-contract.md and packet JSON .quality/semantic-review/packets/b00a484bc6006b19a1f24047cd9b0ae76086033f1a7bdd3bd934b3edfeedcfe3.json.",
+        "Searched current source and tests for SearchMultiSelect, data-library marker attributes, multiselect roles, selected chips, searchable input behavior, disabled narrowing, query emission, and direct call sites."
       ]
     },
     {
@@ -1941,21 +1943,23 @@
     },
     {
       "packetId": "app/components/search/SearchMultiSelect.vue::packet::template-1",
-      "fingerprint": "b4b5bea9098f60e7c4c2a1f8d62fbf512623758de5bf5aae3c75ddb356b5d3e6",
+      "fingerprint": "5d027eb07f700343b480457932d0947585721e2bee9fdc5e37c91d1ad8552167",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/ba40b5a56567a88781f9b36add258f7281bd0816bcc7341f05610ace50824cd6.json",
-      "evidenceHash": "7c364d3fa3fade0ffc559d8ceb75bc14f03a3e819978029b7369af68d3d5e546",
+      "evidenceHash": "6f950114b1b47e43778501e5a58508133f75c96bf77465adb0b696f629defda0",
       "findingIds": [],
       "verification": [
-        "Inspected direct callers app/components/library/LibraryAdvancedFilters.vue and app/pages/sök.vue at SearchMultiSelect call sites.",
-        "Inspected owned unit app/components/search/SearchMultiSelect.vue lines 1-231, including template lines 107-228 and surrounding script state.",
-        "Inspected relevant tests found by repository search: test/unit/search-multi-select.spec.ts, test/e2e/text-search.behavior.spec.ts, and test/e2e/library-multiselect-parity.behavior.spec.ts.",
-        "Inspected vue-multiselect dependency template and mixin behavior for caret, combobox roles, disabled options, selection, removal, and toggle semantics.",
-        "Read packet .quality/semantic-review/packets/ba40b5a56567a88781f9b36add258f7281bd0816bcc7341f05610ace50824cd6.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Used read-only commands only; did not run tests because the review request constrained execution to read-only inspection."
+        "Checked current git status and targeted diff for app/components/search/SearchMultiSelect.vue using read-only git commands; git emitted macOS cache warnings under the read-only sandbox, and the reviewed source diff only changed the empty searchable/nonsearchable caret trigger rendering.",
+        "Inspected discovered relevant tests test/unit/search-multi-select.spec.ts, test/e2e/library-multiselect-parity.behavior.spec.ts, and test/e2e/text-search.behavior.spec.ts for accessibility, selection order, disabled rows, grouped options, route-owned selections, and SSR hydration behavior.",
+        "Inspected owned unit app/components/search/SearchMultiSelect.vue::template::template[1] on current physical lines 107-220, with surrounding script state and emitted value/query boundaries.",
+        "Inspected packet-listed direct callers app/components/library/LibraryAdvancedFilters.vue and app/pages/sök.vue at all SearchMultiSelect call sites and option-shape construction paths.",
+        "Inspected related styling in app/assets/styles/nuxt.scss for hidden trigger rows, native search input substitution, persistent selected-row layout, loading indicator placement, and open dropdown behavior.",
+        "Inspected vue-multiselect dependency template and mixin behavior for caret slot integration, combobox/listbox roles, disabled option handling, pointer selection, toggle, and remove semantics.",
+        "Read exactly one packet JSON at .quality/semantic-review/packets/ba40b5a56567a88781f9b36add258f7281bd0816bcc7341f05610ace50824cd6.json.",
+        "Read review contract at quality/semantic-review-contract.md.",
+        "Used read-only inspection commands only; no repository files were modified and no tests were executed."
       ]
     },
     {
@@ -2087,39 +2091,43 @@
     },
     {
       "packetId": "app/composables/useReaderDictionaryEmbed.ts::packet::module-localParentAllowsHttp",
-      "fingerprint": "c3b41f666dc70c1a567b94595be51c38f41c1c540d1fa26bcaf568c665290be0",
+      "fingerprint": "80d6e136d3660fbe7db7138f28704beb77f17e7660a0af572591de2cb8dca6d8",
       "state": "approved",
-      "reviewer": "semantic-reader-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/f3e77083bf390891b3447f19943e88dfc8dc539e2ab4162f54cd1666087856d8.json",
-      "evidenceHash": "1c45a71f90ff01107a9e2715a4b6d366c7fe03de6eda75791a03394e755db13f",
-      "findingIds": [
-        "SR-f3e7708-minor-001",
-        "SR-f3e7708-minor-002"
-      ],
+      "evidenceHash": "3a3a01dc916ef9fc4067fecefb98671b672bf0fa6614c4a7f9e4dc458506adea",
+      "findingIds": [],
       "verification": [
-        "Inspected all owned units, imports, message/URL/privacy policies, UI consumers, complete lifecycle tests, and real-browser correlation coverage.",
-        "Read the semantic review contract and exact current requested packet.",
-        "Used read-only inspection commands and made no repository edits."
+        "Attempted ./node_modules/.bin/vitest run test/unit/reader-dictionary-embed-lifecycle.spec.ts test/unit/reader-dictionary-embed.spec.ts test/unit/reader-dictionary-lookup.spec.ts; blocked because Vite tried to write node_modules/.vite-temp/vitest.config.ts.timestamp-*.mjs under the read-only sandbox.",
+        "Attempted yarn vitest run test/unit/reader-dictionary-embed-lifecycle.spec.ts test/unit/reader-dictionary-embed.spec.ts test/unit/reader-dictionary-lookup.spec.ts; blocked because read-only sandbox left Yarn with no writable cache folder.",
+        "Inspected direct caller app/components/reader/ReaderDictionaryDialog.vue and related integration caller app/components/reader/ReaderDictionaryLookup.vue.",
+        "Inspected direct imports app/lib/observability/dictionary-lookup.ts and app/lib/reader-dictionary-embed.ts.",
+        "Inspected named test test/unit/reader-dictionary-embed-lifecycle.spec.ts plus adjacent unit coverage test/unit/reader-dictionary-embed.spec.ts and test/unit/reader-dictionary-lookup.spec.ts.",
+        "Inspected owned units in app/composables/useReaderDictionaryEmbed.ts, limited to packet line ranges 27-157.",
+        "Inspected packet .quality/semantic-review/packets/f3e77083bf390891b3447f19943e88dfc8dc539e2ab4162f54cd1666087856d8.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Searched current repository references for useReaderDictionaryEmbed, ReaderDictionaryEmbedLifecycle, buildReaderDictionaryEmbedUrl, parseReaderLookupMessage, svenskaReaderEmbedOrigin, and svenskaReaderEmbed."
       ]
     },
     {
       "packetId": "app/composables/useReaderDictionaryEmbed.ts::packet::useReaderDictionaryEmbed",
-      "fingerprint": "36a5bca5334f0f44d30bb260bbe8c7511422a7858559b694e287ac7c68477eb9",
+      "fingerprint": "2f0f8c73acf2b804154b40b0a3fd8fcd64cf93ec347c148eba0b090182d2d74b",
       "state": "approved",
-      "reviewer": "semantic-reader-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/56df7883c11a21a371b5e1b6e9bdcf98b909c71b5b2635a7cd9883349ffbe21c.json",
-      "evidenceHash": "69da19d722a9571b21d0ade169063bf55c7b4d2bd61e34fa3d0022ef1b578b69",
-      "findingIds": [
-        "SR-56df788-minor-001",
-        "SR-56df788-minor-002",
-        "SR-56df788-minor-003"
-      ],
+      "evidenceHash": "d64985221e09dc5f3a5803b9afaf63b41b001692a408f4c1ee50cf6286a26153",
+      "findingIds": [],
       "verification": [
-        "Inspected all owned callbacks, imports, lifecycle class, production consumers, complete lifecycle tests, and real-browser security and invalidation coverage.",
-        "Read the semantic review contract and exact current requested packet.",
-        "Used read-only inspection commands and made no repository edits."
+        "Checked git status with a read-only command; it completed after macOS cache warnings caused by the read-only sandbox. No repository files were modified by this review.",
+        "Did not run test commands because the request constrained the review to read-only inspection and the test runner may create cache or artifact files.",
+        "Inspected direct callers app/components/reader/ReaderDictionaryDialog.vue and app/components/reader/ReaderDictionaryLookup.vue, including frame ref, close callback, session/status props, route query handling, and fallback URL behavior.",
+        "Inspected direct imports app/lib/observability/dictionary-lookup.ts and app/lib/reader-dictionary-embed.ts.",
+        "Inspected owned unit app/composables/useReaderDictionaryEmbed.ts with physical line numbers, including packet-owned line ranges 160-198, 173-175, 177-181, 182-182, and 183-186.",
+        "Inspected relevant tests named by the packet: test/unit/reader-dictionary-embed-lifecycle.spec.ts; also inspected adjacent protocol tests in test/unit/reader-dictionary-embed.spec.ts.",
+        "Read quality/semantic-review-contract.md and exactly the specified packet JSON .quality/semantic-review/packets/56df7883c11a21a371b5e1b6e9bdcf98b909c71b5b2635a7cd9883349ffbe21c.json.",
+        "Searched current source and tests for useReaderDictionaryEmbed, ReaderDictionaryDialog, frameRef, handleFrameLoad, session/status, selectedDictionary, svenskaReaderEmbedOrigin, and readerDictionaryMode references."
       ]
     },
     {
@@ -4209,152 +4217,196 @@
     },
     {
       "packetId": "app/lib/production-shortcuts.ts::packet::copyProductionValue",
-      "fingerprint": "38fb36035399b84f2609e0415aba16497cd608609ac41034191c2fad9fd9ca82",
+      "fingerprint": "b13d31cede85e35f211ba29bf15b8555594583e1648bc6841311583d66193cb2",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/9e29c243951466ca6a753a0bd88aaeb90d572bef1b8d83f77f3b49ef1868e87b.json",
-      "evidenceHash": "cb13d060b865dd1298a66b4d05f7ca089e8dd4ffddf9757f1bfc9f86881fb606",
+      "evidenceHash": "b8a594965bc05713dd096c95309a9a62f64c4c78d7d94493959482d034a40100",
       "findingIds": [],
       "verification": [
-        "Checked git diff for the owned file, listed test, and direct callers; no local diffs in those files. Did not run tests because the review was constrained to read-only inspection commands.",
-        "Inspected direct callers in app/components/author/AuthorProfileContent.vue, app/components/global/SiteShell.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
-        "Inspected direct import dependency app/lib/library-navigation.ts.",
-        "Inspected owned unit app/lib/production-shortcuts.ts lines 124-132 and surrounding module context.",
-        "Inspected packet-listed test test/unit/production-shortcuts.spec.ts and relevant e2e coverage in test/e2e/reader-production.behavior.spec.ts.",
-        "Read quality/semantic-review-contract.md and the specified packet JSON only.",
-        "Searched repo usage of copyProductionValue, navigator.clipboard, clipboard.writeText, and production shortcut messages."
+        "Inspected direct imports/callers named by the packet: app/lib/library-navigation.ts, app/components/author/AuthorProfileContent.vue, app/components/global/SiteShell.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
+        "Inspected owned unit app/lib/production-shortcuts.ts lines 157-165 plus surrounding shortcut helpers.",
+        "Inspected relevant test file test/unit/production-shortcuts.spec.ts and repository references found via rg for copyProductionValue, navigator.clipboard, shortcut messages, F17, F21, authorid, lbworkid, and urn.",
+        "No unresolved critical or important semantic findings were identified within the owned physical line range. Tests were not executed because the review was constrained to read-only inspection commands.",
+        "Read quality/semantic-review-contract.md and packet .quality/semantic-review/packets/9e29c243951466ca6a753a0bd88aaeb90d572bef1b8d83f77f3b49ef1868e87b.json."
       ]
     },
     {
       "packetId": "app/lib/production-shortcuts.ts::packet::encodedUrnResolverUrl",
-      "fingerprint": "4c5b9adb79f246d7c62a446f117e7a0910e68ac4f8d2912e2130d27f8eb2f245",
+      "fingerprint": "331bb9506094b29c3206af2370da888e81201f50f5c5fd22221b7db1d71e62a8",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/b8b42bb8ed2eb2669a77b2251954b2256f80d1171a6fe5f58c7442961665836b.json",
-      "evidenceHash": "1ae8aa7a13c9b7106b257508fa3dc279a27251b3cce0217d540e7dd58d860283",
+      "evidenceHash": "c46a2dfde130690145430faa4222c72be6ccb023f2a5e3f605bce0fe3dba1430",
       "findingIds": [],
       "verification": [
-        "Inspected direct dependency app/lib/library-navigation.ts and text-safety helpers shared/utils/text-safety.ts.",
-        "Inspected listed callers app/components/author/AuthorProfileContent.vue, app/components/global/SiteShell.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
-        "Inspected named test test/unit/production-shortcuts.spec.ts and relevant caller coverage in test/unit/reader-source-info-dialog.spec.ts.",
-        "Inspected owned unit app/lib/production-shortcuts.ts lines 106-110 with surrounding validation wrapper and imports.",
-        "Read review contract quality/semantic-review-contract.md and packet .quality/semantic-review/packets/b8b42bb8ed2eb2669a77b2251954b2256f80d1171a6fe5f58c7442961665836b.json.",
-        "Searched repository references with rg for encodedUrnResolverUrl, urnResolverUrl, sourceInfo.urn, urn.kb.se, and resolve?urn. No unresolved semantic findings were identified."
+        "Inspected listed direct callers app/components/author/AuthorProfileContent.vue, app/components/global/SiteShell.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
+        "Inspected listed import app/lib/library-navigation.ts.",
+        "Inspected named test test/unit/production-shortcuts.spec.ts plus relevant adjacent coverage in test/unit/reader-source-info-dialog.spec.ts, test/ssr/reader.spec.ts, test/e2e/reader.behavior.spec.ts, and test/e2e/reader-production.behavior.spec.ts.",
+        "Inspected owned unit app/lib/production-shortcuts.ts lines 146-150 plus surrounding validUrn validation and urnResolverUrl delegation.",
+        "Inspected source-info and reader URN type boundaries in shared/types/reader-source-info.ts, shared/types/reader.ts, app/lib/api/generated/lbapi.ts, server/utils/reader-source-info-validation.ts, and server/utils/reader-source-info-projection.ts.",
+        "Read exactly packet .quality/semantic-review/packets/b8b42bb8ed2eb2669a77b2251954b2256f80d1171a6fe5f58c7442961665836b.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Used read-only inspection commands only; no tests were executed because the review was constrained to read-only commands."
       ]
     },
     {
       "packetId": "app/lib/production-shortcuts.ts::packet::isProductionShortcutGuarded",
-      "fingerprint": "666969c1b5041b8a40be0d1206c3c3f70f7e9aa49828533b6b8535a3a9ab32dd",
+      "fingerprint": "3fd077bc46d4a59b0745f579f4773ab067b3ddd89600c9b3c65402449062760b",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/4616b804f1f16fdab843567b8e7293dc591574ecafb43c888ccec3e3a0aaf1ff.json",
-      "evidenceHash": "2ad4108ba39fe0e2a88861fdbb88be1f3a85d02358f08385a33e13712fefcd97",
+      "evidenceHash": "61bd9d26c5c8fcad7a98bd5b6c6b5225837d659ab1a6fc4aa78afe476d958dd5",
       "findingIds": [],
       "verification": [
-        "Inspected direct callers in app/components/author/AuthorProfileContent.vue, app/components/global/SiteShell.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
-        "Inspected direct dependency app/lib/library-navigation.ts.",
-        "Inspected owned unit app/lib/production-shortcuts.ts lines 59-68 with surrounding helper implementations in the same file.",
-        "Inspected relevant test coverage in test/unit/production-shortcuts.spec.ts.",
-        "Read quality/semantic-review-contract.md and the specified packet JSON only.",
-        "Used read-only commands only; did not run tests because the review contract requested read-only inspection commands."
+        "Attempted ./node_modules/.bin/vitest run test/unit/production-shortcuts.spec.ts; blocked by EPERM writing node_modules/.vite-temp/vitest config cache.",
+        "Attempted yarn vitest run test/unit/production-shortcuts.spec.ts; blocked because the read-only environment gave Yarn no writable cache folder.",
+        "Inspected direct callers in app/components/global/SiteShell.vue, app/components/author/AuthorProfileContent.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
+        "Inspected named test test/unit/production-shortcuts.spec.ts and searched app/test references to isProductionShortcutGuarded and related production shortcut keys.",
+        "Inspected owned lines 65-74 in app/lib/production-shortcuts.ts plus direct helper dependencies in the same module and app/lib/library-navigation.ts.",
+        "Read quality/semantic-review-contract.md and packet 4616b804f1f16fdab843567b8e7293dc591574ecafb43c888ccec3e3a0aaf1ff.json."
       ]
     },
     {
       "packetId": "app/lib/production-shortcuts.ts::packet::isPublicShellPasteGuarded",
-      "fingerprint": "c139c84b34db8390b5af71327c45a5512a4dd81237b99b7808b73fbf7e1d2d15",
+      "fingerprint": "5e85a17b651a0005c0bfa4ff30d5f45e23318436509033fb03656364a1b73b0e",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/b9aed1a13d5a1552370f368ed313cc9b8d860d4c67ac855f32a760131fc6be9b.json",
-      "evidenceHash": "5fa05991d010ba4be795881c02f9cd0aec019d0dde5818d6deb01d12fa655eab",
+      "evidenceHash": "cd312fb769a0b33106d521e772f94a78fc51a4525a21b430cce9d38ffaf9b1c5",
       "findingIds": [],
       "verification": [
-        "Inspected direct dependency app/lib/library-navigation.ts.",
-        "Inspected named test test/unit/production-shortcuts.spec.ts.",
-        "Inspected owned unit app/lib/production-shortcuts.ts::function::isPublicShellPasteGuarded lines 70-82.",
-        "Inspected packet-listed callers and repository references to production-shortcuts exports using read-only rg/nl commands.",
-        "Read .quality/semantic-review/packets/b9aed1a13d5a1552370f368ed313cc9b8d860d4c67ac855f32a760131fc6be9b.json.",
-        "Read quality/semantic-review-contract.md."
+        "Checked git status/diff using read-only commands; commands completed but emitted macOS sandbox cache warnings from xcodebuild/git temp cache creation attempts.",
+        "Inspected owned unit app/lib/production-shortcuts.ts lines 76-88 plus surrounding helpers, imports in app/lib/library-navigation.ts, direct caller app/components/global/SiteShell.vue, other listed caller files, and tests in test/unit/production-shortcuts.spec.ts.",
+        "Read quality/semantic-review-contract.md and packet .quality/semantic-review/packets/b9aed1a13d5a1552370f368ed313cc9b8d860d4c67ac855f32a760131fc6be9b.json.",
+        "Searched app and test references for isPublicShellPasteGuarded, pastedLbNavigationDestination, ClipboardEvent, and document paste handling; also inspected relevant e2e coverage in test/e2e/quick-search-developer.behavior.spec.ts."
+      ]
+    },
+    {
+      "packetId": "app/lib/production-shortcuts.ts::packet::legacyEnvironmentShortcutDestination",
+      "fingerprint": "14fa1008f80e663f6ef07146906c42037011939bec4fa77157d143c749b2601a",
+      "state": "approved",
+      "reviewer": "independent-codex-review",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/5b198d13fd77d005309c0501c70cd747c0d8f2a15ce9afc69890c5ebd0ac1f6f.json",
+      "evidenceHash": "8fdaf87ee52e0fdf42b7c94f903947188eef0d0a4a7891af62b29d1e6b4dfbe1",
+      "findingIds": [],
+      "verification": [
+        "Attempted yarn vitest run test/unit/production-shortcuts.spec.ts; not executed because read-only environment left Yarn with no writable cache folder.",
+        "Inspected dependency app/lib/library-navigation.ts.",
+        "Inspected listed direct callers: app/components/global/SiteShell.vue, app/components/author/AuthorProfileContent.vue, app/components/reader/ReaderSourceInfoDialog.vue, app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
+        "Inspected listed test test/unit/production-shortcuts.spec.ts.",
+        "Inspected owned unit app/lib/production-shortcuts.ts lines 103-122 plus surrounding shortcut helpers.",
+        "Read packet .quality/semantic-review/packets/5b198d13fd77d005309c0501c70cd747c0d8f2a15ce9afc69890c5ebd0ac1f6f.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Searched current source for legacyEnvironmentShortcutDestination, production-shortcuts imports, F19, and stage/litteraturbanken shortcut references."
+      ]
+    },
+    {
+      "packetId": "app/lib/production-shortcuts.ts::packet::legacyQuickSearchInfoShortcut",
+      "fingerprint": "97e72bc81c2ff04488f6cf1108e46a134fc1b698b74613ad14713897b19b2208",
+      "state": "approved",
+      "reviewer": "independent-codex-review",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/966eb9ef5201a64f219129ebc753d74c44d43ea03bd6025b8657dabb95356653.json",
+      "evidenceHash": "9f2409a692fc5cc0c44c4a8c6106f983573c034f0fe645be5fb120e275c5b536",
+      "findingIds": [],
+      "verification": [
+        "Inspected dependency app/lib/library-navigation.ts.",
+        "Inspected direct callers named by the packet: app/components/author/AuthorProfileContent.vue, app/components/global/SiteShell.vue, app/components/reader/ReaderSourceInfoDialog.vue, app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
+        "Inspected listed test test/unit/production-shortcuts.spec.ts and related e2e coverage test/e2e/quick-search-developer.behavior.spec.ts.",
+        "Inspected owned unit app/lib/production-shortcuts.ts lines 99-101 and surrounding shortcut guard helpers.",
+        "Inspected relevant quick-search context dependencies app/components/global/QuickSearch.vue and app/composables/useQuickSearchContext.ts.",
+        "Read packet .quality/semantic-review/packets/966eb9ef5201a64f219129ebc753d74c44d43ea03bd6025b8657dabb95356653.json.",
+        "Read review contract quality/semantic-review-contract.md."
       ]
     },
     {
       "packetId": "app/lib/production-shortcuts.ts::packet::module-editableTarget",
-      "fingerprint": "6a3bcf7fabe389530454175da72eb1314f287fa25e5acc636b8f28178c2dd8da",
+      "fingerprint": "36bfb52cfc8069d71e3dddfcf4fd472ab0d6d75c177f259ed207a060cc40be49",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/608a80f8441e18b4305cc4d47bd5b3d3586a37c64abf5247a3d0c16a79648f51.json",
-      "evidenceHash": "ceee4345e9b49304aefa34749bd9b4d1ea2e5876248adf3c65316dfabd452fcc",
+      "evidenceHash": "7623b8594a285c5a809d387361665c256c79b470b189ed160e266a8af05b5ba5",
       "findingIds": [],
       "verification": [
-        "Did not run tests because the review was constrained to read-only commands.",
-        "Inspected direct callers app/components/author/AuthorProfileContent.vue, app/components/global/SiteShell.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
-        "Inspected direct dependency app/lib/library-navigation.ts.",
-        "Inspected named test test/unit/production-shortcuts.spec.ts and related shortcut/dialog coverage references via rg.",
-        "Inspected owned lines 15-57 in app/lib/production-shortcuts.ts.",
-        "Read packet .quality/semantic-review/packets/608a80f8441e18b4305cc4d47bd5b3d3586a37c64abf5247a3d0c16a79648f51.json.",
-        "Read quality/semantic-review-contract.md."
+        "Attempted `./node_modules/.bin/vitest run test/unit/production-shortcuts.spec.ts`; blocked by read-only sandbox because Vite attempted to write node_modules/.vite-temp/vitest.config.ts.timestamp-*.mjs.",
+        "Attempted `yarn vitest run test/unit/production-shortcuts.spec.ts`; blocked by read-only sandbox because Yarn could not create or use a writable cache folder.",
+        "Inspected dependency app/lib/library-navigation.ts and related unit coverage in test/unit/library-navigation.spec.ts.",
+        "Inspected owned source lines in app/lib/production-shortcuts.ts, including editableTarget, dialogTarget, openDialog, hasFocusedPasteOwner, modifiedProductionShortcut, productionShortcutTargetGuarded, and validUrn.",
+        "Inspected packet-listed callers: app/components/author/AuthorProfileContent.vue, app/components/global/SiteShell.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
+        "Inspected packet-listed test: test/unit/production-shortcuts.spec.ts.",
+        "No unresolved Critical or Important findings were identified on the owned physical line ranges.",
+        "Read packet JSON: .quality/semantic-review/packets/608a80f8441e18b4305cc4d47bd5b3d3586a37c64abf5247a3d0c16a79648f51.json.",
+        "Read review contract: quality/semantic-review-contract.md.",
+        "Searched production and test references for production-shortcuts exports to verify direct caller coverage."
       ]
     },
     {
       "packetId": "app/lib/production-shortcuts.ts::packet::pastedLbNavigationDestination",
-      "fingerprint": "821cf7a80a2828913c3d02ca6c3aeec5240ffdd186f27d6cf19b5db9313705c4",
+      "fingerprint": "c9af193724bcb6d797b9ab74a85bf907e3c4098bf718f42cffce059e44a0afcc",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/73506410981063328f64375ee5c7b32e4d0d1a26d38c8dbc5d1e1a1ea1b50ec7.json",
-      "evidenceHash": "d9bdca37ee763344692d8e0f7e962568896cf61a3d1667d6d53c40077e2949d6",
+      "evidenceHash": "8b665ae7c9c99ae057f3822816e476589b1cb9d0fa7afe9f9d66f894898d4271",
       "findingIds": [],
       "verification": [
-        "Inspected dependency app/lib/library-navigation.ts, especially isCanonicalPastedWorkId and libraryWorkIdFilterHref.",
-        "Inspected direct callers/import users listed by the packet: app/components/global/SiteShell.vue, app/components/author/AuthorProfileContent.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
-        "Inspected named tests in test/unit/production-shortcuts.spec.ts and related coverage in test/unit/library-navigation.spec.ts and test/e2e/quick-search-developer.behavior.spec.ts.",
-        "Inspected owned lines app/lib/production-shortcuts.ts:93-104, including nested map callback and some callback.",
-        "Inspected relevant route/type boundary behavior in app/pages/editor/[lbid]/ix/[ix]/[mediatype].vue, shared/utils/editor-route-identity.ts, and app/lib/internal-navigation.ts.",
-        "Read review contract at quality/semantic-review-contract.md and the single requested packet JSON.",
-        "Used read-only commands only; did not run the test suite because the review request constrained execution to read-only inspection."
+        "Checked git status with read-only commands; the working tree is dirty and review reflects the current source. Git emitted macOS sandbox cache warnings while reporting status. Did not run Vitest because this environment is read-only and test execution may create cache or temp artifacts.",
+        "Inspected direct dependency app/lib/library-navigation.ts and related library-navigation unit tests.",
+        "Inspected listed direct callers app/components/global/SiteShell.vue, app/components/author/AuthorProfileContent.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue; only SiteShell directly calls pastedLbNavigationDestination.",
+        "Inspected named test test/unit/production-shortcuts.spec.ts, including single-id, multi-id, maximum-length, Unicode-adjacent invalid content, and oversized paste cases.",
+        "Inspected owned physical lines app/lib/production-shortcuts.ts:124-135, including the nested map callback and some callback line ranges.",
+        "Ran a read-only Node regex probe confirming current Unicode-aware boundaries reject ölburk, ålb123ö, élbTest, and kolbulle while accepting standalone LB8345227 and lbAbC_12.",
+        "Read quality/semantic-review-contract.md and the specified packet JSON.",
+        "Searched repository references for pastedLbNavigationDestination, isCanonicalPastedWorkId, libraryWorkIdFilterHref, pastedLbId, and related paste handling."
       ]
     },
     {
       "packetId": "app/lib/production-shortcuts.ts::packet::publicShellShortcutDestination",
-      "fingerprint": "6037d88bf6f1384b62eeb809d0ea0de48b4575f4ce577305d6f04c3436da19d3",
+      "fingerprint": "67f1a72dac70e7a7a16702da3b1e4b87fcc2e1e40d045272e6f9084ebcf49300",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/78dc5e747eb541bb40ff6942427809473740d916a1cfbfba170024c7af914519.json",
-      "evidenceHash": "99f46580f235f4819e2b3a41cc0f76d4638dee6345238c9004f55d16b93711a6",
+      "evidenceHash": "f11621a42b1dc606d21dc128027bb50ced37532157d91871388ed972cf040811",
       "findingIds": [],
       "verification": [
-        "Inspected composable/source of libraryHref in app/composables/useLibraryNavigation.ts and app/pages/bibliotek.vue.",
-        "Inspected direct dependency app/lib/library-navigation.ts, including DEFAULT_LIBRARY_HREF and rememberedLibraryHref boundaries.",
-        "Inspected listed caller app/components/global/SiteShell.vue where publicShellShortcutDestination is invoked with event.key and libraryHref.value.",
-        "Inspected named unit test test/unit/production-shortcuts.spec.ts and related library boundary test test/unit/library-navigation.spec.ts.",
-        "Inspected other packet-listed production-shortcuts importers app/components/author/AuthorProfileContent.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue for adjacent shortcut interactions.",
-        "Inspected owned unit app/lib/production-shortcuts.ts lines 84-91 with surrounding module context.",
-        "Inspected relevant E2E coverage in test/e2e/quick-search-developer.behavior.spec.ts for public shell shortcut behavior and remembered Library query preservation.",
-        "Read quality/semantic-review-contract.md and the single packet JSON .quality/semantic-review/packets/78dc5e747eb541bb40ff6942427809473740d916a1cfbfba170024c7af914519.json.",
-        "Searched current source with rg for publicShellShortcutDestination, useLibraryNavigation, libraryHref, rememberedLibraryHref, production shortcut keys, and F-key shortcut usages."
+        "Did not run tests because the review request constrained the session to read-only inspection commands.",
+        "Inspected direct dependency app/lib/library-navigation.ts.",
+        "Inspected direct production caller app/components/global/SiteShell.vue and confirmed publicShellShortcutDestination is only called there in app source.",
+        "Inspected library href producer app/composables/useLibraryNavigation.ts and app/pages/bibliotek.vue route.fullPath remembering path.",
+        "Inspected listed packet callers for related shortcut guard interactions: app/components/author/AuthorProfileContent.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
+        "Inspected named test test/unit/production-shortcuts.spec.ts and relevant e2e coverage in test/e2e/quick-search-developer.behavior.spec.ts.",
+        "Inspected owned unit app/lib/production-shortcuts.ts lines 90-97 and surrounding module context.",
+        "Read packet .quality/semantic-review/packets/78dc5e747eb541bb40ff6942427809473740d916a1cfbfba170024c7af914519.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Used rg to check for other publicShellShortcutDestination calls, rememberedLibraryHref/useLibraryNavigation usage, and duplicate /historik mapping context."
       ]
     },
     {
       "packetId": "app/lib/production-shortcuts.ts::packet::urnResolverUrl",
-      "fingerprint": "5f961117fced5f0f207e7baf1bb6c1899f4fa08655c219d6fd443be7a24c98ce",
+      "fingerprint": "ac821ca0bad0091eb7a5f88db0f4a33f04bc3c5c47a028e47259bdf039a0d433",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/0555d127e46bc9970f7377a6f7ce0fe02e1f930265d5516e4010f82fc56a1113.json",
-      "evidenceHash": "c2a54ec37e81508efe45af77ff1fa5fd9fdeff0254ae0f21f9cade74898bca6a",
+      "evidenceHash": "0f866a4c6a7e62bbf0cacfc00d67f96f2465a148684d604938bebc60bb181b6e",
       "findingIds": [],
       "verification": [
-        "Checked git diff for reviewed source/test/caller files; no local diffs were present in those files.",
-        "Inspected direct usage via rg for urnResolverUrl/encodedUrnResolverUrl and reviewed caller code in app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue and app/components/reader/ReaderSourceInfoDialog.vue.",
-        "Inspected owned unit app/lib/production-shortcuts.ts lines 112-122 plus surrounding helpers and imports in app/lib/library-navigation.ts and #shared/utils/text-safety.",
-        "Inspected public type boundaries for urn values in shared/types/reader.ts, shared/types/reader-source-info.ts, and app/lib/api/generated/lbapi.ts.",
-        "Inspected relevant tests named by the packet in test/unit/production-shortcuts.spec.ts and adjacent behavioral coverage in test/e2e/reader-production.behavior.spec.ts and test/unit/reader-source-info-dialog.spec.ts.",
-        "Read quality/semantic-review-contract.md and target packet .quality/semantic-review/packets/0555d127e46bc9970f7377a6f7ce0fe02e1f930265d5516e4010f82fc56a1113.json."
+        "Inspected direct import app/lib/library-navigation.ts.",
+        "Inspected listed callers app/components/author/AuthorProfileContent.vue, app/components/global/SiteShell.vue, app/components/reader/ReaderSourceInfoDialog.vue, and app/pages/författare/[author]/titlar/[title]/sida/[page]/[mediatype].vue.",
+        "Inspected named test test/unit/production-shortcuts.spec.ts and relevant adjacent coverage in test/e2e/reader.behavior.spec.ts, test/e2e/reader-production.behavior.spec.ts, and test/unit/reader-source-info-dialog.spec.ts.",
+        "Inspected owned unit app/lib/production-shortcuts.ts lines 152-155 in full file context.",
+        "Inspected type and validation boundaries in shared/types/reader.ts, shared/types/reader-source-info.ts, app/lib/api/generated/lbapi.ts, server/utils/work-manifest-validation.ts, server/api/reader/[author]/[title]/[page]/[mediatype].get.ts, server/utils/reader-source-info-validation.ts, server/utils/reader-source-info-projection.ts, and server/utils/reader-source.ts.",
+        "Read packet .quality/semantic-review/packets/0555d127e46bc9970f7377a6f7ce0fe02e1f930265d5516e4010f82fc56a1113.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Searched usages with rg for urnResolverUrl, encodedUrnResolverUrl, URN resolver output, and related production shortcut exports."
       ]
     },
     {
@@ -4510,107 +4562,119 @@
     },
     {
       "packetId": "app/lib/reader-dictionary-embed.ts::packet::buildReaderDictionaryEmbedUrl",
-      "fingerprint": "dce8c58c94405e614e3dae1eb4e59e117d868ca06e03ab992303bd016d4454a2",
+      "fingerprint": "b1200f55340808006003ad8af144e0182e6dec1ad085050546c4500d3d440f11",
       "state": "approved",
-      "reviewer": "semantic-reader-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/2959bca68a5f61303d8e281c81c3e4e1acebbe57ed7f9225b0aab9fe373a6f8e.json",
-      "evidenceHash": "52cbd40265d86c892048bba05961bd642bafa17f7dc59cef8f5a215580eefef7",
-      "findingIds": [
-        "reader-word-validation-rule-duplicated"
-      ],
+      "evidenceHash": "00ea0350e8a9008130ca3c82b3acd8a1b025f661c2e2fe1e190dcc00c53ee74e",
+      "findingIds": [],
       "verification": [
-        "Generated and read the exact current packet and complete owned function.",
-        "Inspected origin, UUID and word policies, runtime callers, selection boundary, complete unit tests, production E2E URL assertions, and runtime default.",
-        "Used read-only inspection commands and made no repository edits."
+        "Inspected direct callers app/components/reader/ReaderDictionaryLookup.vue and app/composables/useReaderDictionaryEmbed.ts.",
+        "Inspected listed test test/unit/reader-dictionary-embed.spec.ts.",
+        "Inspected owned unit app/lib/reader-dictionary-embed.ts lines 74-90 and surrounding helper functions it depends on.",
+        "No unresolved critical or important semantic findings found within the owned physical line range.",
+        "Read packet .quality/semantic-review/packets/2959bca68a5f61303d8e281c81c3e4e1acebbe57ed7f9225b0aab9fe373a6f8e.json.",
+        "Read review contract at quality/semantic-review-contract.md."
       ]
     },
     {
       "packetId": "app/lib/reader-dictionary-embed.ts::packet::buildSvenskaDictionaryUrl",
-      "fingerprint": "b0535d7871e7440d18cda93ddcee5af7f22ce632e331c4c0d8e7a54c59338f69",
+      "fingerprint": "cf6d28e930b555eb06fe6254adc6c3bad7b439152c4ffb88939f98ac1200abda",
       "state": "approved",
-      "reviewer": "semantic-reader-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/44cd282b616d25c70866459fa78aac7c4c470d5d66ce0d31fd6994306a22409b.json",
-      "evidenceHash": "fb7dd0212da62d78e70986ec8aeb896d65b45603e5af8277583a539c5badf3c4",
-      "findingIds": [
-        "fallback-reader-word-validation-duplicated"
-      ],
+      "evidenceHash": "e3a972c0566a6f974f35d8736a94eecdd5ad7aff9d067210d9190176f2ee7c71",
+      "findingIds": [],
       "verification": [
-        "Generated and read the exact current packet and adjacent policies.",
-        "Inspected the UI caller, dialog link, duplicate selection policy, complete unit tests, source wiring, and behavioral fallback coverage.",
-        "Used read-only inspection commands and made no repository edits."
+        "Inspected direct callers app/components/reader/ReaderDictionaryLookup.vue and app/composables/useReaderDictionaryEmbed.ts.",
+        "Inspected owned unit app/lib/reader-dictionary-embed.ts lines 92-106, plus adjacent origin and word validation dependencies in the same file and shared/utils/text-safety.ts.",
+        "Inspected packet .quality/semantic-review/packets/44cd282b616d25c70866459fa78aac7c4c470d5d66ce0d31fd6994306a22409b.json.",
+        "Inspected relevant tests test/unit/reader-dictionary-embed.spec.ts and the e2e fallback assertion in test/e2e/reader-production.behavior.spec.ts.",
+        "No unresolved critical or important semantic findings were identified on the owned physical line range.",
+        "Read quality/semantic-review-contract.md and confirmed the one-packet review requirements."
       ]
     },
     {
       "packetId": "app/lib/reader-dictionary-embed.ts::packet::module-readerLookupWord",
-      "fingerprint": "176666878af554225930f79541d291be146e3b3c36ffe4e83d8e502979a3734a",
+      "fingerprint": "3b83bcb974de27da79b0f4324b30e393515bbd89c3f0d3424008f4efff7c4bc4",
       "state": "approved",
-      "reviewer": "semantic-reader-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/1f907c5fd44846a53edee04d4d3e7d842e298e9b511d283abd11114a088e3bb3.json",
-      "evidenceHash": "276ee700ad14e0cadbb57411e753283372769ecdfd98fa5bdf8bf3f79910cf63",
-      "findingIds": [
-        "reader-protocol-enums-have-parallel-runtime-lists",
-        "reader-word-lone-surrogate-normalized-silently",
-        "reader-word-validator-duplicated"
-      ],
+      "evidenceHash": "146922bce9ae7c1eefd92a9817a14405f028ff30f24d69c5b056fcde0cbda65c",
+      "findingIds": [],
       "verification": [
-        "Generated and read every unit in the exact current packet.",
-        "Inspected outgoing and incoming consumers, lifecycle correlation, selection paths, complete protocol tests, shared text-safety helpers, and established surrogate guards.",
-        "Made no repository edits.",
-        "Ran a read-only runtime probe confirming lone-surrogate replacement during URL encoding."
+        "Inspected direct callers app/components/reader/ReaderDictionaryLookup.vue and app/composables/useReaderDictionaryEmbed.ts.",
+        "Inspected named unit test test/unit/reader-dictionary-embed.spec.ts plus related lifecycle and reader production behavior tests for caller/protocol coverage.",
+        "Inspected owned current source lines in app/lib/reader-dictionary-embed.ts, including readerLookupWord, validRequestId, isReaderLookupEvent, hasOnlyKeys, parseDictionaries, parseMessageBase, and parseResultMessage.",
+        "Inspected related boundary component app/components/reader/ReaderDictionaryDialog.vue and fixture protocol in test/fixtures/v2-server.mjs.",
+        "Ran read-only git status/diff inspection; git emitted macOS xcrun cache warnings under the read-only sandbox, but current files were inspected directly with line numbers.",
+        "Read quality/semantic-review-contract.md and the packet manifest for the single requested packet.",
+        "Used rg to check repository references for reader dictionary embed protocol, postMessage usage, origin handling, and dictionary selection fields."
       ]
     },
     {
       "packetId": "app/lib/reader-dictionary-embed.ts::packet::parseReaderLookupMessage",
-      "fingerprint": "b87984800f139f34f4b462dd06868c07eb59a0f99b329f554ecac2c26e85a858",
+      "fingerprint": "eebb4289ada7d97f0eab084d01e7dfe804a0bd124b46276174260f7a8d3a077b",
       "state": "approved",
-      "reviewer": "semantic-reader-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/230bbe8ba1ead77e4705fe3de16b943b4deb462b4033657431ec7476c6c43ca7.json",
-      "evidenceHash": "cdebfbfc20ae194b3110d3f26fe366ada688289bb631d2f98b57c917cc0ca1af",
-      "findingIds": [
-        "reader-message-return-type-not-discriminated"
-      ],
+      "evidenceHash": "8f79f588cee13ab4a06c76b6097e7f10f1f7c74a931176a8e579eead3d4b200c",
+      "findingIds": [],
       "verification": [
-        "Generated and read the exact current parser packet and public protocol type.",
-        "Inspected all parser helpers, lifecycle caller, complete protocol tests, lifecycle correlation tests, production E2E security boundaries, and child fixture protocol.",
-        "Used read-only inspection commands and made no repository edits."
+        "Checked git status with a read-only command; the command completed but emitted macOS cache warnings under the read-only sandbox.",
+        "Inspected direct callers named by the packet: app/components/reader/ReaderDictionaryLookup.vue and app/composables/useReaderDictionaryEmbed.ts.",
+        "Inspected direct dependencies for the owned file, including shared/utils/text-safety.ts and repository references to the imported text-safety helpers.",
+        "Inspected owned unit app/lib/reader-dictionary-embed.ts lines 159-172, with adjacent parser helpers and exported protocol types in the same file.",
+        "Inspected packet-listed test test/unit/reader-dictionary-embed.spec.ts, plus related lifecycle and e2e protocol coverage in test/unit/reader-dictionary-embed-lifecycle.spec.ts, test/e2e/reader-production.behavior.spec.ts, and test/fixtures/v2-server.mjs.",
+        "No tests were executed because the review request required read-only commands and this environment is read-only.",
+        "Read exactly the specified packet JSON at .quality/semantic-review/packets/230bbe8ba1ead77e4705fe3de16b943b4deb462b4033657431ec7476c6c43ca7.json.",
+        "Read review contract at quality/semantic-review-contract.md.",
+        "Searched current source and tests for parseReaderLookupMessage, svenska-reader-lookup, ReaderLookupMessage, reader-dictionary-embed, and readerDictionary references."
       ]
     },
     {
       "packetId": "app/lib/reader-dictionary-embed.ts::packet::readerDictionaryMode",
-      "fingerprint": "af07f0f9ea3cbced6a1e36831227a007f5cb472610d63d08d05c3c0adbb533d7",
+      "fingerprint": "cc06610c5e943644eb9e43cbcc510a59f9aa53d94220f7e2ce4dd656872be55c",
       "state": "approved",
-      "reviewer": "semantic-reader-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/ee9afeb27be67916f9c74864ca9a4eb2757e5f180cf0013cfe90977a4096442b.json",
-      "evidenceHash": "bc831b588c6c3a4ee8e6491cc8d537de157439c87928ff2c2b0b73ff3f39cda3",
+      "evidenceHash": "c261771c28f4ef4cad3413bb02c9d5b54156bc2ea4beea93cc226a11d72e0dda",
       "findingIds": [],
       "verification": [
-        "Confirmed exact embed opt-in with legacy fallback is the smallest fail-closed implementation.",
-        "Generated and read the exact current mode packet and type boundary.",
-        "Inspected the production component consumer, complete mode tests, fail-safe runtime default and tests, evaluated stage environment, and deployment assertions.",
-        "Used read-only inspection commands and made no repository edits."
+        "Checked git status and relevant diff with read-only git commands; git emitted macOS cache warnings under the read-only sandbox, and no repository files were modified by this review.",
+        "Inspected direct callers named by the packet: app/components/reader/ReaderDictionaryLookup.vue and app/composables/useReaderDictionaryEmbed.ts.",
+        "Inspected owned unit app/lib/reader-dictionary-embed.ts lines 32-34 with adjacent exports and helpers in the same file.",
+        "Inspected packet-listed test test/unit/reader-dictionary-embed.spec.ts and related Reader dictionary configuration tests in test/unit/nuxt-config.spec.ts, test/unit/stage-deployment.spec.ts, test/unit/reader-dictionary-lookup.spec.ts, and test/unit/reader-dictionary.spec.ts.",
+        "Inspected runtime configuration boundary in nuxt.config.ts for public readerDictionaryMode and svenskaReaderEmbedOrigin values.",
+        "No test runner was executed because the request required read-only commands and this environment is read-only.",
+        "Read exactly the specified packet JSON at .quality/semantic-review/packets/ee9afeb27be67916f9c74864ca9a4eb2757e5f180cf0013cfe90977a4096442b.json.",
+        "Read review contract at quality/semantic-review-contract.md.",
+        "Searched current repository references for readerDictionaryMode, ReaderDictionaryMode, NUXT_PUBLIC_READER_DICTIONARY_MODE, svenskaReaderEmbedOrigin, and readerDictionary usages."
       ]
     },
     {
       "packetId": "app/lib/reader-dictionary-embed.ts::packet::svenskaReaderEmbedOrigin",
-      "fingerprint": "92f64a28b27b0862da2ea8fb859d88bc29728ff4d41abdb7682cd800dd7d4e69",
+      "fingerprint": "ffdab5de989f34207cf294ca93913fc34fc90995b882ee2b0a6cfec210e40eb8",
       "state": "approved",
-      "reviewer": "semantic-reader-reviewer",
+      "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/281f5edcd6c2e5055f9138489ec8e5f432dfb1593601208e1a59496d1c05fd84.json",
-      "evidenceHash": "08cf92b4ff7a7b7d51ce83c1625a30ffdc6acbb9539c01727371ea6108d43a79",
+      "evidenceHash": "1f605b6fe2fbb21336fb5d8434650bad7aaf8a53116e62b2b793c6f8bd0f95c4",
       "findingIds": [
-        "loopback-host-policy-duplicated"
+        "SR-281f5edc-001"
       ],
       "verification": [
-        "Generated and read the exact current origin packet, options, and loopback policy.",
-        "Inspected both URL builders, runtime config caller, parent capability check, fallback caller, complete origin tests, lifecycle local/production behavior, stage wiring, and configuration tests.",
-        "Made no repository edits.",
-        "Ran read-only URL probes for credentials, IPv6 loopback, and noncanonical forms."
+        "Confirmed the only cited finding line is within the owned unit physical range 36-52.",
+        "Inspected current source for the owned unit, direct callers, dependencies, runtime configuration, and relevant tests named by the packet.",
+        "No tests were executed because the sandbox is read-only and the relevant Vitest/Vite commands can write cache or artifact files.",
+        "Ran read-only inspection commands only: sed, nl, rg, jq, git status, and a node URL probe.",
+        "Read exactly one packet JSON: .quality/semantic-review/packets/281f5edcd6c2e5055f9138489ec8e5f432dfb1593601208e1a59496d1c05fd84.json.",
+        "Read quality/semantic-review-contract.md."
       ]
     },
     {
@@ -7363,79 +7427,83 @@
     },
     {
       "packetId": "app/pages/index.vue::packet::component",
-      "fingerprint": "df2ca51aeebe6d29220a7e5e63c2f66ff783054058bca9942ee8376a2a1712ad",
+      "fingerprint": "6b6b443e8c096e848edf52cc07c57e518a18593482186d1db3ebfa114013cff3",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/9c442c9e34057039dba94158f63fa13414eb07044f93a794e60b911cd2dcd527.json",
-      "evidenceHash": "8d1831cf3f6ce75552826b0afe801be779f6ff0c8653dc7a91ae7e2f6dec6739",
+      "evidenceHash": "cd78fdd4f3c21931d9828ea752532b7c9181cf94872349fa02c086111b1b082a",
       "findingIds": [],
       "verification": [
-        "Checked git diff for reviewed source and direct dependencies; no current source diff was present for those files.",
-        "Inspected direct import app/lib/home-content.ts, managed text boundary shared/utils/managed-text.ts, renderable HTML boundary app/components/global/RenderableHtmlContent.vue, and managed navigation dependency app/composables/useManagedHtmlNavigation.ts.",
-        "Inspected owned source lines in app/pages/index.vue with nl -ba.",
-        "Inspected relevant tests in test/e2e/home-page.behavior.spec.ts, test/ssr/home-page.spec.ts, test/unit/home-page-parser.spec.ts, and test/nuxt/renderable-html-app-contract.ts.",
-        "Read quality/semantic-review-contract.md and packet .quality/semantic-review/packets/9c442c9e34057039dba94158f63fa13414eb07044f93a794e60b911cd2dcd527.json.",
-        "Searched current source and tests for Home page callers, dependencies, type contracts, SSR behavior, client navigation behavior, and parser coverage using rg."
+        "Inspected app/pages/index.vue with line numbers, including all packet-owned ranges.",
+        "Inspected direct dependency app/lib/home-content.ts and managed text/navigation/rendering boundaries in shared/utils/managed-text.ts, app/composables/useManagedHtmlNavigation.ts, and app/components/global/RenderableHtmlContent.vue.",
+        "Inspected Nuxt useAsyncData implementation and local runtime config/proxy behavior relevant to SSR/client state and managed /red fetching.",
+        "Inspected relevant Home SSR/E2E/layout tests: test/ssr/home-page.spec.ts, test/e2e/home-page.behavior.spec.ts, and test/e2e/layout-shift-production.behavior.spec.ts.",
+        "Read quality/semantic-review-contract.md and the packet JSON for scope, owned line ranges, imports, and tests."
       ]
     },
     {
       "packetId": "app/pages/index.vue::packet::script-module",
-      "fingerprint": "38f135ff904143b1e072164c1bb6491b316c4490df69b864a4b71d3b13f9ca28",
+      "fingerprint": "5bc6173ea7b8e7637caf9f7c0a453326d089cd35c9419ef784583629e068646e",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/4fc49300654ba9d7248f90ebf22fc0c6d5e234d70f74c9ad3ed0d509488b8f6a.json",
-      "evidenceHash": "bf133b91e3fc6de499da3f3a899aa78c9cea4257a65660d7f842937d49305e55",
+      "evidenceHash": "50c9dd6edd0c09826521f4377ef62d83e351eb7836db617dc447e1457880fe6b",
       "findingIds": [],
       "verification": [
-        "Inspected dependency shared/utils/managed-text.ts, including fetchManagedText redirect, authority, content-type, byte-limit, and fetcher boundaries.",
-        "Inspected direct analogous callers in app/pages/presentationer/[...segments].vue.",
-        "Inspected imported home parsing dependency app/lib/home-content.ts and relevant home parser behavior.",
-        "Inspected owned unit app/pages/index.vue lines 32-33 in context of the full page script and template.",
-        "Inspected relevant tests: test/ssr/home-page.spec.ts, test/e2e/home-page.behavior.spec.ts, test/unit/managed-text.spec.ts, test/unit/home-page-parser.spec.ts, and test/unit/home-content-fixtures.spec.ts.",
-        "No test commands were run because the review request constrained execution to read-only inspection commands.",
+        "Did not execute test suites because the packet named no tests and the sandbox is read-only; inspection found no unresolved semantic defects within the owned line range.",
+        "Inspected direct dependency app/lib/home-content.ts and shared/utils/managed-text.ts, including managedHomeTextRules, fetchManagedText, client/server fetch paths, redirect validation, final URL validation, response validation, bounded body read, and abort propagation tests.",
+        "Inspected direct references/callers with rg for fetchManagedText, managedHomeTextRules, home-content, and app/pages/index.vue.",
+        "Inspected owned physical lines app/pages/index.vue:33-34 and surrounding useAsyncData setup.",
+        "Inspected relevant home behavior and managed text tests: test/e2e/home-page.behavior.spec.ts, test/unit/home-content-fixtures.spec.ts, and test/unit/managed-text.spec.ts.",
         "Read packet .quality/semantic-review/packets/4fc49300654ba9d7248f90ebf22fc0c6d5e234d70f74c9ad3ed0d509488b8f6a.json.",
-        "Read review contract at quality/semantic-review-contract.md."
+        "Read quality/semantic-review-contract.md."
       ]
     },
     {
       "packetId": "app/pages/index.vue::packet::script-useState.callback[2]@4d04790ecf13#1",
-      "fingerprint": "b2a771be0f163387aae7806177996582d3796c6480ac5d184d3b879b786a0590",
+      "fingerprint": "610e30bfe686cc577e29f88cce3a4ff9fea8961c16bee6c1220f0bfa7dee1e86",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/df248f513086135b4f9bc73cdccc0a34719848ae70c0413d2cbddcb1c8a589c4.json",
-      "evidenceHash": "ca0dfdde11b70e74f36aef64f53b3358479232a7396eb819ef2214753b751296",
+      "evidenceHash": "10984fb0f5d45a9d5d9fe9b979d729522e56cc8f4cd1293c7dde4cc859c833f9",
       "findingIds": [],
       "verification": [
-        "Inspected direct dependency app/lib/home-content.ts.",
-        "Inspected managed text and renderable HTML boundaries in shared/utils/managed-text.ts, shared/utils/renderable-html.ts, app/components/global/RenderableHtmlContent.vue, and app/composables/useManagedHtmlNavigation.ts.",
-        "Inspected owned lines in app/pages/index.vue with nl -ba.",
-        "Inspected relevant Home SSR, parser, fixture, behavior, and visual tests: test/ssr/home-page.spec.ts, test/unit/home-page-parser.spec.ts, test/unit/home-content-fixtures.spec.ts, test/e2e/home-page.behavior.spec.ts, and test/e2e/home-page.visual.spec.ts.",
-        "Read packet .quality/semantic-review/packets/df248f513086135b4f9bc73cdccc0a34719848ae70c0413d2cbddcb1c8a589c4.json.",
+        "Checked scoped git diff for reviewed source, dependencies, and relevant tests; no scoped source diff was emitted, and git only reported read-only sandbox cache warnings.",
+        "Inspected all packet-owned physical line ranges in app/pages/index.vue:20-24, 28-42, 47, 49-51, and 56-74.",
+        "Inspected direct dependency app/lib/home-content.ts, including HomeContent, emptyHomeContent, parseHomeContent, stylesheet extraction, and background extraction.",
+        "Inspected managed text, renderable HTML, and navigation boundaries in shared/utils/managed-text.ts, shared/utils/renderable-html.ts, shared/types/renderable-html.ts, app/components/global/RenderableHtmlContent.vue, and app/composables/useManagedHtmlNavigation.ts.",
+        "Inspected relevant Home SSR, parser, fixture, behavior, visual, and type-contract tests: test/ssr/home-page.spec.ts, test/unit/home-page-parser.spec.ts, test/unit/home-content-fixtures.spec.ts, test/unit/managed-text.spec.ts, test/e2e/home-page.behavior.spec.ts, test/e2e/home-page.visual.spec.ts, and test/nuxt/renderable-html-app-contract.ts.",
+        "Inspected runtime contentBase defaults and proxy wiring in nuxt.config.ts.",
+        "Read exactly the requested packet JSON at .quality/semantic-review/packets/df248f513086135b4f9bc73cdccc0a34719848ae70c0413d2cbddcb1c8a589c4.json.",
         "Read quality/semantic-review-contract.md.",
-        "Used read-only inspection commands only; tests were not executed because the review request constrained commands to read-only."
+        "Searched current source and tests for homeContent, home-content, loadHomePageContent, managedHomeTextRules, fetchManagedText, cancelHomeContent, and Home route references.",
+        "Used read-only inspection commands only; no test suites were executed."
       ]
     },
     {
       "packetId": "app/pages/index.vue::packet::template-1",
-      "fingerprint": "08732acf35b0885692f9bf1f7732c54532d4314b3c1449b2c62f8e02b164621d",
+      "fingerprint": "83a79589c8de75829a17a325569be6cbd2350aeb90307526fed664433c24b34b",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/cfa4e34a93121ce6836b431f536177d0589dcc3873b627be4f07c06edc2e3fc6.json",
-      "evidenceHash": "4126ac4624bc3df0671114de5cb8d91321018bbd977d3fe960abd07fd1874967",
+      "evidenceHash": "0456d32a51931bdd1b326cd4c636d6975bfa5e0502f73b2b3c380b02165a619d",
       "findingIds": [],
       "verification": [
-        "Inspected caller/import usage via rg for homeContent, home-content, RenderableHtmlContent, ManagedAssetHtml, useManagedHtmlNavigation, and related managed HTML patterns.",
-        "Inspected direct dependency app/lib/home-content.ts and raw HTML/type boundary helpers shared/utils/renderable-html.ts, shared/types/renderable-html.ts, shared/utils/managed-text.ts, app/components/global/RenderableHtmlContent.vue, and app/composables/useManagedHtmlNavigation.ts.",
-        "Inspected owned template lines app/pages/index.vue:75-91.",
-        "Inspected relevant tests test/ssr/home-page.spec.ts, test/e2e/home-page.behavior.spec.ts, test/e2e/home-page.visual.spec.ts, test/unit/home-page-parser.spec.ts, test/unit/renderable-html.spec.ts, and renderable HTML contract references.",
-        "Inspected surrounding page script in app/pages/index.vue:1-72 for data, pending state, head state, navigation handling, SSR/client behavior, and cleanup.",
-        "No tests were run; review used read-only source and test inspection only.",
-        "Read packet .quality/semantic-review/packets/cfa4e34a93121ce6836b431f536177d0589dcc3873b627be4f07c06edc2e3fc6.json.",
-        "Read quality/semantic-review-contract.md."
+        "Checked git status and scoped git diff for reviewed source, dependencies, and relevant tests; git emitted read-only sandbox cache warnings, and no scoped diff content was emitted.",
+        "Inspected direct dependency app/lib/home-content.ts, including HomeContent, emptyHomeContent, parseHomeContent, control tag extraction, stylesheet/background validation, and managed HTML issuance.",
+        "Inspected owned template lines app/pages/index.vue:78-94 with physical line numbers.",
+        "Inspected raw HTML and navigation boundaries in shared/utils/managed-text.ts, shared/utils/renderable-html.ts, shared/types/renderable-html.ts, app/components/global/RenderableHtmlContent.vue, and app/composables/useManagedHtmlNavigation.ts plus app/lib/managed-html-navigation.ts.",
+        "Inspected relevant discovered coverage in test/ssr/home-page.spec.ts, test/e2e/home-page.behavior.spec.ts, test/e2e/home-page.visual.spec.ts, test/unit/home-page-parser.spec.ts, test/unit/renderable-html.spec.ts, and test/nuxt/renderable-html-app-contract.ts.",
+        "Inspected shell/layout context in app/components/global/SiteShell.vue and app/app.vue for main landmark, route announcer, and Home-only shell behavior.",
+        "Inspected surrounding page script in app/pages/index.vue:1-74 for async data, fallback content, pending state, head updates, managed navigation, SSR/client behavior, and cleanup.",
+        "Read exactly the requested packet JSON at .quality/semantic-review/packets/cfa4e34a93121ce6836b431f536177d0589dcc3873b627be4f07c06edc2e3fc6.json.",
+        "Read quality/semantic-review-contract.md.",
+        "Searched current source and tests for homeContent, home-content, RenderableHtmlContent, ManagedAssetHtml, managedHomeTextRules, useManagedHtmlNavigation, startsida-ny.html, startsida.css, and Home route references.",
+        "Used read-only inspection commands only; no test suites were executed because the review request constrained commands to read-only inspection."
       ]
     },
     {
@@ -7840,175 +7908,168 @@
     },
     {
       "packetId": "app/pages/sök.vue::packet::component",
-      "fingerprint": "8f083af734d27dfc2cd688084770d3ddc884a4a1593e427cabbecea34353a5c5",
+      "fingerprint": "45091166c1a513dc339729a395437d108b85f2d86d0d92fe037be85059bd2244",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/c621bccf8d179fdac68c9897382fdb36188103b7a974d44cd656ff345717dc4f.json",
-      "evidenceHash": "394eb71b8100877fdd90b1856fb14018d8c649303ecb062182347b078a4dd4e5",
+      "evidenceHash": "49156091c0c481d83b3d08c19113552b32d979f10840c71409689b214a031785",
       "findingIds": [],
       "verification": [
-        "Did not run tests because the review contract required read-only commands and this sandbox is read-only; test execution may write caches, reports, or snapshots.",
-        "Inspected direct dependencies app/lib/text-search.ts, app/lib/text-search-request-owner.ts, and app/components/search/SearchMultiSelect.vue.",
-        "Inspected owned unit app/pages/sök.vue, including script, template, styles, imported request owner and text-search boundary helpers.",
-        "Inspected relevant text search behavior/unit tests by read-only commands: test/e2e/text-search.behavior.spec.ts and test/unit/text-search.spec.ts.",
-        "Read quality/semantic-review-contract.md and packet c621bccf8d179fdac68c9897382fdb36188103b7a974d44cd656ff345717dc4f.json."
-      ]
-    },
-    {
-      "packetId": "app/pages/sök.vue::packet::script-cancelAllMore",
-      "fingerprint": "9e1af9a5473144bc5bf4c5322286462c4c72a76c8e6952fa88a59167a2617415",
-      "state": "approved",
-      "reviewer": "independent-codex-review",
-      "method": "codex-read-only",
-      "evidencePath": "quality/semantic-reviews/7bfc7610abd24b6584e576cd9880227d4a08d78e5955e50a6329c0fc4c933f40.json",
-      "evidenceHash": "bcb30cf526cccf916cee6fbfb07504fca564a0e5eb58e5fd401460a2552919b7",
-      "findingIds": [],
-      "verification": [
-        "Did not run test suites because the review was constrained to read-only commands in a read-only sandbox.",
-        "Inspected direct dependencies: app/lib/text-search-request-owner.ts, app/lib/text-search.ts, app/composables/useLbApiClient.ts, and app/components/search/SearchMultiSelect.vue.",
-        "Inspected owned lines in app/pages/sök.vue:1069-1303 plus surrounding state, template bindings, and lifecycle cleanup.",
-        "Inspected relevant behavioral and visual coverage in test/e2e/text-search.behavior.spec.ts, test/e2e/text-search.visual.spec.ts, and test/unit/text-search.spec.ts. No packet-listed tests were provided.",
-        "Inspected relevant callers/usages in app/pages/sök.vue template for showMore, pagination, goto page, gender, and facet interactions.",
-        "Read quality/semantic-review-contract.md and the exact packet JSON."
-      ]
-    },
-    {
-      "packetId": "app/pages/sök.vue::packet::script-initialPrerequisitesPending",
-      "fingerprint": "64a2aad1b608514ff8500f61acb2a287c940fc074738d1a6eb8e4478bf6195fd",
-      "state": "approved",
-      "reviewer": "independent-codex-review",
-      "method": "codex-read-only",
-      "evidencePath": "quality/semantic-reviews/cc9640fe6fcc5583fd324f28177dc5f08ee178b31cffa79d2c7519309d6c7a69.json",
-      "evidenceHash": "1edf34d48eafe3915ffb16921ab1bce59dffcc1cbe3cd781ee84b44540320968",
-      "findingIds": [],
-      "verification": [
-        "git status --short",
-        "jq -r '.dependencies.nuxt // .devDependencies.nuxt, .dependencies.vue // .devDependencies.vue' package.json",
-        "jq '.' .quality/semantic-review/packets/cc9640fe6fcc5583fd324f28177dc5f08ee178b31cffa79d2c7519309d6c7a69.json",
-        "nl -ba app/components/search/SearchMultiSelect.vue | sed -n '1,260p'",
-        "nl -ba app/composables/useLbApiClient.ts | sed -n '1,220p'",
-        "nl -ba app/lib/reader/work-search.ts | sed -n '1,120p'",
-        "nl -ba app/lib/text-search-request-owner.ts | sed -n '1,220p'",
-        "nl -ba app/lib/text-search.ts | sed -n '1,260p'",
-        "nl -ba app/lib/text-search.ts | sed -n '260,620p'",
-        "nl -ba app/lib/text-search.ts | sed -n '620,760p'",
-        "nl -ba app/pages/sök.vue | sed -n '1,180p'",
-        "nl -ba app/pages/sök.vue | sed -n '1085,1450p'",
-        "nl -ba app/pages/sök.vue | sed -n '1430,1750p'",
-        "nl -ba app/pages/sök.vue | sed -n '180,560p'",
-        "nl -ba app/pages/sök.vue | sed -n '560,1085p'",
-        "nl -ba test/e2e/text-search.behavior.spec.ts | sed -n '1515,1555p'",
-        "nl -ba test/e2e/text-search.behavior.spec.ts | sed -n '1560,1705p'",
-        "nl -ba test/e2e/text-search.behavior.spec.ts | sed -n '2220,2360p'",
-        "nl -ba test/e2e/text-search.behavior.spec.ts | sed -n '380,490p'",
-        "nl -ba test/e2e/text-search.behavior.spec.ts | sed -n '720,810p'",
-        "nl -ba test/e2e/text-search.behavior.spec.ts | sed -n '860,930p'",
-        "nl -ba test/ssr/text-search.spec.ts | sed -n '660,720p'",
-        "rg -n \"ChronologyRangeSlider|defineProps|emit\\(.*commit|@commit\" app/components app/pages --glob '!node_modules'",
-        "rg -n \"function (parseTextSearchRouteQuery|textSearchFilterQuery|textSearchSubmitQuery|buildTextSearchOptionsRequest|acceptTextSearchOptionsResponse|textSearchOptionsRequestIdentity|buildTextSearchResultsRequest|textSearchResultsRequestIdentity|resetTextSearchQuery|textSearchPageQuery)|export function (parseTextSearchRouteQuery|textSearchFilterQuery|textSearchSubmitQuery|buildTextSearchOptionsRequest|acceptTextSearchOptionsResponse|textSearchOptionsRequestIdentity|buildTextSearchResultsRequest|textSearchResultsRequestIdentity|resetTextSearchQuery|textSearchPageQuery)|type TextSearchRouteState|export type TextSearchRouteState\" app/lib/text-search.ts",
-        "rg -n \"function useAsyncData|useAsyncData\" node_modules/nuxt node_modules/@nuxt -g '*.mjs' -g '*.js' | head -80",
-        "rg -n \"INKLUDERA|SÖK EFTER ORD|includeModernized|ej_modern|modernize|selectedMode|SÖK EFTER\" test app -g '*.{ts,vue}'",
-        "rg -n \"interface AsyncData|type AsyncData|execute:|refresh:\" node_modules/nuxt node_modules/@nuxt node_modules/vue -g '*.d.ts' | head -80",
-        "sed -n '1,220p' quality/semantic-review-contract.md"
+        "Checked git status and relevant diffs with read-only commands. The worktree is dirty, including app/pages/sök.vue, app/components/search/SearchMultiSelect.vue, test/e2e/text-search.behavior.spec.ts, and test/ssr/text-search.spec.ts; git emitted macOS cache warnings in the read-only sandbox, and no relevant diff body was returned by the inspected diff commands.",
+        "Inspected owned unit app/pages/sök.vue across the packet-listed physical ranges, including SSR/client state setup, route identity, request ownership, options/count/results loading, chronology state, navigation, search mode handling, pagination shortcuts, mounted cleanup, head metadata, template boundaries, and scoped styles.",
+        "Inspected packet-listed imports and dependencies: app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, and app/lib/text-search.ts.",
+        "Inspected relevant generated API type preservation through app/lib/text-search.ts request/response aliases, validators, request builders, identity helpers, and reader href builders consumed by app/pages/sök.vue.",
+        "Inspected relevant tests discovered by source search: test/e2e/text-search.behavior.spec.ts, test/ssr/text-search.spec.ts, test/unit/text-search.spec.ts, and related SearchMultiSelect test references. The packet itself listed no tests.",
+        "Read quality/semantic-review-contract.md and the exact packet JSON .quality/semantic-review/packets/c621bccf8d179fdac68c9897382fdb36188103b7a974d44cd656ff345717dc4f.json.",
+        "Searched current source, test, quality metadata, and semantic review outputs for text-search, sök, SearchMultiSelect, chronology, options/results/count request flows, SSR, hydration, pagination, and accessibility coverage.",
+        "Used read-only commands only; no tests were executed because the review task was constrained to read-only inspection."
       ]
     },
     {
       "packetId": "app/pages/sök.vue::packet::script-module",
-      "fingerprint": "018f35d6fb59458b4bdcf4665d414d7a10956e1d998568a1283da50d4e5924df",
+      "fingerprint": "dd7594d9ddaac0289b47d243d15796dd13a0a6cb26176b73dba0aa6bfb647575",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/79e3d0e42723b295cb273aa42f4a4745e9e05b84554570dd1a3ac8f1220ab64c.json",
-      "evidenceHash": "c772757443c56c4de5b83edca7970f8d15515f549352868b55aef9014daf19ef",
+      "evidenceHash": "aa71e77ffa0c8feeb598e22e754cf0e880cef3ae4963ba85d8786e3383d1f236",
       "findingIds": [],
       "verification": [
-        "Checked git status and targeted git diff for reviewed source, dependencies, and relevant tests using read-only commands; the reviewed files are currently modified in the worktree, and the review inspected those current modifications rather than baseline contents.",
-        "Inspected current direct usage inside app/pages/sök.vue because the packet has no external callers, including primary search execution, chronology loading, navigator snapshot cancellation, filter navigation, reader return href generation, and chronology draft commit handling.",
-        "Inspected current owned physical lines in app/pages/sök.vue for the packet units at lines 121, 180, 341, and 708, including surrounding route, request, chronology, navigator, and draft-navigation state.",
-        "Inspected packet-listed imports and dependencies: app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, app/lib/text-search.ts, and app/lib/text-search-navigation.ts for API, ownership, SSR/client, accessibility, URL, and type boundaries.",
-        "Inspected relevant discovered tests despite the packet listing no tests: test/e2e/text-search.behavior.spec.ts and test/ssr/text-search.spec.ts, including chronology hydration, advanced/simple chronology transitions, stale chronology draft protection, route-owned controls, result/count request ownership, and reader return-link assertions.",
-        "Read quality/semantic-review-contract.md and exactly one packet JSON at .quality/semantic-review/packets/79e3d0e42723b295cb273aa42f4a4745e9e05b84554570dd1a3ac8f1220ab64c.json.",
-        "Searched current source and tests for text-search, chronology, SearchMultiSelect, pendingChronologyNavigations, findLast, rememberTextSearchHref, and s_return references.",
-        "Used read-only commands only; no tests were executed and no repository files were modified."
+        "Checked current git status and staged/unstaged diffs for the reviewed source, dependencies, and relevant tests using read-only git commands; git emitted sandbox cache warnings but completed.",
+        "Inspected owned source app/pages/sök.vue at the packet-owned physical lines 122, 181, 342, and 692 with surrounding script context for route/fullPath tracking, chronology loading, navigator snapshot cancellation, and chronology draft navigation preservation.",
+        "Inspected packet-listed dependencies app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts usage through typed client calls, app/lib/text-search-request-owner.ts, app/lib/text-search.ts, and generated API type boundaries in app/lib/api/generated/lbapi.ts for text-search chronology, options, count, and results contracts.",
+        "Inspected relevant discovered tests around text-search SSR, hydration, chronology, request ownership, advanced-option gating, and navigation behavior in test/e2e/text-search.behavior.spec.ts, test/ssr/text-search.spec.ts, test/unit/text-search.spec.ts, test/unit/text-search-request-owner.spec.ts, and test/unit/text-search-navigation.spec.ts. The packet itself names no tests.",
+        "Read quality/semantic-review-contract.md and exactly one packet JSON: .quality/semantic-review/packets/79e3d0e42723b295cb273aa42f4a4745e9e05b84554570dd1a3ac8f1220ab64c.json.",
+        "Searched for direct callers; packet lists none for app/pages/sök.vue, and current source inspection found page-level integration through routing rather than component callers.",
+        "Used read-only inspection commands only; no repository files were modified and no test runner was executed."
       ]
     },
     {
       "packetId": "app/pages/sök.vue::packet::script-rawQuery",
-      "fingerprint": "c5d0f6b2d6517dd3cfa39b6f7c08e2f05eff8b3cbda728296317d29c6ce54761",
+      "fingerprint": "18c297629bcf1427a728f0de5444529c8dcb2a5c530c4448620c8be63aa47686",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/f602daa9d06a24ab701b3738264fe3c81fe49242ea9233ab7272196f20afef00.json",
-      "evidenceHash": "eb880805757afdc5b1b0eb34dd42c521a11c6711342aef387e42067b190b204b",
+      "evidenceHash": "d174823060b00a1458e976b5d18b51b8730b25249c3a6c11ea8232595b16724c",
       "findingIds": [],
       "verification": [
-        "Inspected current owned source lines in app/pages/sök.vue, including the packet-owned script units and their template consumers.",
-        "Inspected direct caller context via rg for text-search, route query, useAsyncData, AbortSignal.any, useTextSearchNavigation, and ChronologyRangeSlider references under app/ and test/.",
-        "Inspected listed imports/dependencies: app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, and app/lib/text-search.ts.",
-        "Inspected relevant current tests discovered around the packet behavior: test/e2e/text-search.behavior.spec.ts, test/ssr/text-search.spec.ts, and test/unit/text-search.spec.ts. The packet itself listed no tests.",
-        "Ran only read-only inspection commands. Did not modify files or review any other semantic packet.",
-        "Read quality/semantic-review-contract.md and exactly one packet JSON: .quality/semantic-review/packets/f602daa9d06a24ab701b3738264fe3c81fe49242ea9233ab7272196f20afef00.json."
+        "Inspected direct imports: app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, app/lib/text-search.ts.",
+        "Inspected generated API type boundaries for text-search chronology, count, options, and results schemas in app/lib/api/generated/lbapi.ts.",
+        "Inspected owned source lines in app/pages/sök.vue, including direct continuation needed to understand consumers of owned computed state and helpers.",
+        "Inspected relevant text-search E2E and unit test coverage by read-only file reads; did not run tests because the review request constrained commands to read-only inspection.",
+        "Read packet JSON: .quality/semantic-review/packets/f602daa9d06a24ab701b3738264fe3c81fe49242ea9233ab7272196f20afef00.json",
+        "Read review contract: quality/semantic-review-contract.md"
       ]
     },
     {
-      "packetId": "app/pages/sök.vue::packet::style-1",
-      "fingerprint": "f74e31684c9a2b1f7377758cb8d67eda99d829d637a6df9ad6c912625f46a218",
+      "packetId": "app/pages/sök.vue::packet::script-retryOptions",
+      "fingerprint": "7a9a5fab611db9219eaafbd309b93516b01374f0d1fee3c4c8f077903a808b0d",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
-      "evidencePath": "quality/semantic-reviews/ddfe46f2615c3de2b68a299449027f926ec12b855b1a72ff335d1a79363c3d85.json",
-      "evidenceHash": "f982eda3c7bf0f298b7a6cdde2c8656d8143f337094795147002ab44570cfb78",
-      "findingIds": [
-        "ddfe46f2-dead-pager-button-selector"
-      ],
+      "evidencePath": "quality/semantic-reviews/33987a50d2fd2e398e241a4e1bfff1a0b2bbc46d620c6595e989397f17c18ae4.json",
+      "evidenceHash": "c049843fc9df312c656bcd53869ede8b31734e74ff2155a8e67dcaa91bd87d05",
+      "findingIds": [],
       "verification": [
-        "Inspected current source, direct dependencies, type-adjacent component contracts, and relevant tests named or discoverable from the packet context.",
-        "No tests were executed because the review request was explicitly read-only and local test runners may write cache/temp files.",
-        "No unresolved critical or important findings were identified.",
-        "Reviewed exactly packet `app/pages/sök.vue::packet::style-1`; no other packet was semantically reviewed.",
-        "Used read-only commands only: `sed`, `nl -ba`, `rg`, `find`, `jq`, `git status`, and `git diff`."
+        "Attempted ./node_modules/.bin/vitest run test/unit/text-search.spec.ts test/unit/text-search-request-owner.spec.ts and ./node_modules/.bin/vitest run test/ssr/text-search.spec.ts; both blocked by read-only sandbox when Vite tried to write node_modules/.vite-temp config bundles.",
+        "Attempted ./node_modules/.bin/vitest run with --runInBand; command rejected because this Vitest version does not support --runInBand.",
+        "Attempted yarn vitest run test/ssr/text-search.spec.ts --runInBand; blocked by read-only sandbox because Yarn could not find a writable cache folder.",
+        "Attempted yarn vitest run test/unit/text-search.spec.ts test/unit/text-search-request-owner.spec.ts --runInBand; blocked by read-only sandbox because Yarn could not find a writable cache folder.",
+        "Inspected direct imports and dependencies: app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, app/lib/text-search.ts, and generated TextSearch API schema boundaries in app/lib/api/generated/lbapi.ts.",
+        "Inspected owned source ranges in app/pages/sök.vue, including direct template call sites for retryOptions, executePrimary, chronology draft handlers, title option loading, search mode patching, and more-results cleanup.",
+        "Inspected relevant existing tests around the packet behavior: test/ssr/text-search.spec.ts, test/e2e/text-search.behavior.spec.ts, test/unit/text-search-request-owner.spec.ts, and architecture chronology policy coverage.",
+        "Read quality/semantic-review-contract.md and packet .quality/semantic-review/packets/33987a50d2fd2e398e241a4e1bfff1a0b2bbc46d620c6595e989397f17c18ae4.json."
       ]
     },
     {
-      "packetId": "app/pages/sök.vue::packet::template-1",
-      "fingerprint": "4bf1568284917b91f24f02a350ccf61f4006bb2e180a85ef3f14130e8b2cb20b",
+      "packetId": "app/pages/sök.vue::packet::script-showMore",
+      "fingerprint": "d0fbdf345847047eeb5bf7b62fbef154310f842b504a0c2feb84367e033e7e5a",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
-      "evidencePath": "quality/semantic-reviews/dda5f4a1a1518a260567e0207e4e61988a72b2f51fbdceaa542b9f037defe660.json",
-      "evidenceHash": "ea26b833860fe06ce7791fee385bd70c70c2479401fe65554aeb515fb0e94e7a",
-      "findingIds": [
-        "dda5f4a1-template-1-a11y-gender-label",
-        "dda5f4a1-template-1-a11y-mode-span-button"
-      ],
+      "evidencePath": "quality/semantic-reviews/9354e624eb929fed6f4c1da65f6f802ba96e7d6670707979d405ea778b1ae99d.json",
+      "evidenceHash": "0d5d5de3ec32e3164ecc7defab8c02411da94d87e42fce8187b0e43a9b6f4258",
+      "findingIds": [],
       "verification": [
-        "Did not run tests because the packet listed no tests and the review request restricted commands to read-only inspection.",
-        "Inspected direct imports app/components/search/SearchMultiSelect.vue, app/lib/text-search.ts, and app/lib/text-search-request-owner.ts.",
-        "Inspected relevant existing coverage in test/e2e/text-search.behavior.spec.ts, test/e2e/text-search.visual.spec.ts, test/ssr/text-search.spec.ts, and test/unit/search-multi-select.spec.ts.",
-        "Inspected the owned template range in app/pages/sök.vue lines 1320-1727 and surrounding direct script/template context.",
-        "Read .quality/semantic-review/packets/dda5f4a1a1518a260567e0207e4e61988a72b2f51fbdceaa542b9f037defe660.json.",
+        "Did not run test commands because the review was restricted to read-only commands and the packet listed no tests.",
+        "Inspected direct imports app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, and app/lib/text-search.ts.",
+        "Inspected owned source ranges in app/pages/sök.vue:1070-1293 plus surrounding setup/template usage.",
+        "Inspected page references and direct route callers with rg.",
+        "Inspected relevant text-search tests in test/e2e/text-search.behavior.spec.ts, test/e2e/text-search.visual.spec.ts, test/ssr/text-search.spec.ts, and test/unit/text-search.spec.ts by search and line reads.",
+        "Read .quality/semantic-review/packets/9354e624eb929fed6f4c1da65f6f802ba96e7d6670707979d405ea778b1ae99d.json.",
         "Read quality/semantic-review-contract.md."
       ]
     },
     {
+      "packetId": "app/pages/sök.vue::packet::style-1",
+      "fingerprint": "f8b83da33e37a215dd4d7cc50070dc7dd95776f7db61e0f3ad20f5b75e408cda",
+      "state": "approved",
+      "reviewer": "independent-codex-review",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/ddfe46f2615c3de2b68a299449027f926ec12b855b1a72ff335d1a79363c3d85.json",
+      "evidenceHash": "230020ce9f2f23f3cf0f43106d2756ae1aa88fac35a4a93dfcb586588de366b4",
+      "findingIds": [],
+      "verification": [
+        "Inspected app/pages/sök.vue script, template callers of owned selectors, and owned physical style lines 1809-1975.",
+        "Inspected direct dependency app/components/search/SearchMultiSelect.vue and shared ChronologyRangeSlider behavior relevant to the styled controls.",
+        "Inspected related global style dependencies in app/assets/styles/styles.scss, app/assets/styles/nuxt.scss, app/assets/styles/_mobile.scss, app/assets/styles/reader-base.scss, and LibraryAdvancedFilters chronology styling for duplication and boundary comparison.",
+        "Inspected relevant tests by search, including test/e2e/text-search.behavior.spec.ts, test/e2e/text-search.visual.spec.ts, test/ssr/text-search.spec.ts, test/unit/search-multi-select.spec.ts, test/unit/text-search.spec.ts, and architecture-policy chronology delegation coverage.",
+        "Ran only read-only inspection commands; no tests were executed because the packet listed no tests and the sandbox is read-only.",
+        "Read packet .quality/semantic-review/packets/ddfe46f2615c3de2b68a299449027f926ec12b855b1a72ff335d1a79363c3d85.json and reviewed exactly its owned unit app/pages/sök.vue::style::style[1].",
+        "Read quality/semantic-review-contract.md."
+      ]
+    },
+    {
+      "packetId": "app/pages/sök.vue::packet::template-1",
+      "fingerprint": "343a9e2d4ff7e27c2c51dbd9be4422346dc58fc5de42b92629ecd4ddd578c0eb",
+      "state": "approved",
+      "reviewer": "independent-codex-review",
+      "method": "codex-read-only",
+      "evidencePath": "quality/semantic-reviews/dda5f4a1a1518a260567e0207e4e61988a72b2f51fbdceaa542b9f037defe660.json",
+      "evidenceHash": "cc387d637a585194c8c9f54f457d4e4f5c01427596fcdefdd57b2ad28bda86cf",
+      "findingIds": [],
+      "verification": [
+        "git status was read-only but emitted macOS sandbox cache warnings before completing.",
+        "Inspected current owned template lines 1310-1718 in app/pages/sök.vue.",
+        "Inspected direct dependencies app/components/search/SearchMultiSelect.vue, app/lib/text-search.ts, and app/lib/text-search-request-owner.ts.",
+        "Inspected relevant SSR and E2E text-search tests located by rg; the packet itself named no tests.",
+        "Inspected surrounding script in app/pages/sök.vue for route state, async request ownership, result row construction, pagination, and control handlers used by the owned template.",
+        "No test suite was executed because the packet requested read-only inspection and named no tests.",
+        "Read packet .quality/semantic-review/packets/dda5f4a1a1518a260567e0207e4e61988a72b2f51fbdceaa542b9f037defe660.json.",
+        "Read review contract quality/semantic-review-contract.md.",
+        "Read-only review only; no repository files were modified."
+      ]
+    },
+    {
       "packetId": "app/pages/sök.vue::packet::template-2",
-      "fingerprint": "b814880844b79abe513c5c0c9f00ad82bcbd80c58a2d0e2bbcb13d0b916f9ee3",
+      "fingerprint": "efbbf8cb7d35beb269b6d05f9b7d5b9ba9cab1f1efffbca974fcb821acdca19d",
       "state": "approved",
       "reviewer": "independent-codex-review",
       "method": "codex-read-only",
       "evidencePath": "quality/semantic-reviews/e54dbd2741da2680e8917cd50df6664d660b846d94e10bcfef6f5049afb077ec.json",
-      "evidenceHash": "8dabdf696eea3a90328ed5c6940c05d19f8135a26b6263f85fa48c473ab1bcb0",
-      "findingIds": [
-        "e54dbd27-minor-001"
-      ],
+      "evidenceHash": "c2113c2c54d9d52f80d97d011ce09fe46479852cf0c35c5fabe3e5b227bd25b2",
+      "findingIds": [],
       "verification": [
-        "Inspected current source for the owned template, surrounding script state and handlers, packet-listed imports app/components/search/SearchMultiSelect.vue, app/composables/useLbApiClient.ts, app/lib/text-search-request-owner.ts, and app/lib/text-search.ts.",
-        "Inspected relevant tests discovered for the packet behavior: test/e2e/text-search.behavior.spec.ts, test/ssr/text-search.spec.ts, test/unit/text-search.spec.ts, test/unit/search-multi-select.spec.ts, and test/unit/text-search-request-owner.spec.ts.",
-        "Read packet .quality/semantic-review/packets/e54dbd2741da2680e8917cd50df6664d660b846d94e10bcfef6f5049afb077ec.json.",
-        "Read quality/semantic-review-contract.md.",
-        "Reviewed exactly packet app/pages/sök.vue::packet::template-2 with owned unit app/pages/sök.vue::template::template[2] and owned physical line ranges 1728-1738, 1740-1742, and 1744-1823.",
-        "Used read-only commands only; no tests were executed because the review request was constrained to read-only inspection."
+        "jq '.' .quality/semantic-review/packets/e54dbd2741da2680e8917cd50df6664d660b846d94e10bcfef6f5049afb077ec.json",
+        "nl -ba app/components/search/SearchMultiSelect.vue | sed -n '1,260p'",
+        "nl -ba app/composables/useLbApiClient.ts | sed -n '1,220p'",
+        "nl -ba app/lib/text-search-request-owner.ts | sed -n '1,220p'",
+        "nl -ba app/lib/text-search.ts | sed -n '1,920p'",
+        "nl -ba app/pages/sök.vue | sed -n '1,260p'",
+        "nl -ba app/pages/sök.vue | sed -n '1360,1605p'",
+        "nl -ba app/pages/sök.vue | sed -n '1600,1840p'",
+        "nl -ba app/pages/sök.vue | sed -n '260,620p'",
+        "nl -ba app/pages/sök.vue | sed -n '620,980p'",
+        "nl -ba app/pages/sök.vue | sed -n '980,1360p'",
+        "nl -ba test/e2e/text-search.behavior.spec.ts | sed -n '1680,1770p'",
+        "nl -ba test/e2e/text-search.behavior.spec.ts | sed -n '1880,2160p'",
+        "nl -ba test/e2e/text-search.behavior.spec.ts | sed -n '2240,2365p'",
+        "nl -ba test/e2e/text-search.visual.spec.ts | sed -n '1,260p'",
+        "No tests were executed because the review request required read-only inspection and the packet listed no tests.",
+        "rg -n \"text-search|sök|träffsida|sökträff|navigator|Gå till första|Gå till sista|Visa alla\" test -S",
+        "sed -n '1,240p' quality/semantic-review-contract.md"
       ]
     },
     {

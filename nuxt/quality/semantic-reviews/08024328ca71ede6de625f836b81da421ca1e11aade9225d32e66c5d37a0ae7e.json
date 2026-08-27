@@ -1,15 +1,1 @@
-{
-  "version": 1,
-  "packetId": "app/components/reader/ReaderDictionaryDialog.vue::packet::script-frameTitle",
-  "packetFingerprint": "c7e34dace057ea73a9158abd1402e6b4da09f0ab7c25891b810645c2dd000d63",
-  "author": "implementation-agent",
-  "reviewer": "semantic-reader-reviewer",
-  "method": "codex-read-only",
-  "verdict": "approved",
-  "findings": [],
-  "verification": [
-    "Read the semantic review contract and exact current requested packet.",
-    "Inspected the complete owned unit, iframe consumer, discriminated branches, session-word boundary, parent caller, Reader-word validation, and browser title coverage.",
-    "Used read-only inspection commands and made no repository edits."
-  ]
-}
+{"version":1,"packetId":"app/components/reader/ReaderDictionaryDialog.vue::packet::script-frameTitle","packetFingerprint":"de2f2658ae3e8fcc8882c67f239368df8903fb5f4eea03aed8dae7064a79d861","author":"codex-root","reviewer":"independent-codex-review","method":"codex-read-only","verdict":"approved","findings":[{"id":"SR-08024328-001","severity":"minor","category":"complexity","path":"app/components/reader/ReaderDictionaryDialog.vue","unitId":"app/components/reader/ReaderDictionaryDialog.vue::function::frameTitle","line":29,"summary":"The computed title helper carries a legacy branch for a value only consumed by the embed iframe.","consequence":"This adds a small reactive indirection and an impossible legacy return path without enforcing a policy beyond string formatting.","evidence":"`frameTitle` is defined on lines 29-30, but the only consumer is the iframe title in the embed-only template branch at line 101; the legacy branch never renders that iframe.","recommendation":"Inline the embed title at the iframe binding or replace this with a non-reactive helper that accepts the embed word, eliminating the legacy fallback path.","status":"unresolved","resolution":null,"resolutionCommit":null,"verification":["Read owned unit app/components/reader/ReaderDictionaryDialog.vue lines 1-121 and confirmed the packet-owned physical lines 29-30.","Inspected direct dependency app/composables/useReaderDictionaryEmbed.ts lines 1-198.","Inspected direct caller app/components/reader/ReaderDictionaryLookup.vue lines 1-371, including the embed-only prop flow for `word`.","Inspected app/lib/reader-dictionary-embed.ts lines 1-172 for URL and message boundary behavior.","Searched current source and tests for ReaderDictionaryDialog, frameTitle, iframe title usage, reader dictionary mode, and Svenska embed configuration.","Inspected relevant tests: test/unit/reader-dictionary-embed.spec.ts, test/unit/reader-dictionary-embed-lifecycle.spec.ts, test/unit/reader-dictionary-lookup.spec.ts, test/e2e/reader-production.behavior.spec.ts references, and test/e2e/reader-dictionary-production.behavior.spec.ts."]}],"verification":["Read quality/semantic-review-contract.md and exactly one packet JSON at .quality/semantic-review/packets/08024328ca71ede6de625f836b81da421ca1e11aade9225d32e66c5d37a0ae7e.json.","Used read-only inspection commands only: sed, nl, rg, and find.","Confirmed all cited finding lines are within the owned unit physical line range 29-30.","Did not modify repository files or review any other packet JSON."]}

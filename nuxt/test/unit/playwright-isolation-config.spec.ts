@@ -22,12 +22,14 @@ describe("Playwright shard output isolation", () => {
 
     const config = (await import("../../nuxt.config")).default
     expect(config.vite?.server?.hmr).toBe(false)
+    expect(config.vite?.server?.ws).toBe(false)
     const server = { server: {} }
     await config.hooks?.["vite:extendConfig"]?.(
       server,
       { isClient: false, isServer: true }
     )
-    expect(server.server.hmr).toEqual({ port: 24701 })
+    expect(server.server.hmr).toBe(false)
+    expect(server.server.ws).toBe(false)
   })
 
   test("runs both Playwright web servers through owned pid wrappers", async () => {

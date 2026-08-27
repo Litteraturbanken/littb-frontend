@@ -141,24 +141,16 @@ onMounted(() => {
     >
       <template #caret="{ toggle }">
         <input
-          v-if="selectedOptions.length === 0 && searchable && !isOpen"
+          v-if="selectedOptions.length === 0 && !searchable"
           class="multiselect__input search-multiselect__input-row search-multiselect__main-trigger"
           type="search"
-          role="textbox"
           :placeholder="placeholder"
           readonly
-          :tabindex="searchable && !internalSearch ? -1 : undefined"
-          :aria-hidden="searchable && !internalSearch ? 'true' : undefined"
+          aria-hidden="true"
+          tabindex="-1"
           @mousedown.prevent.stop
           @click.prevent.stop="toggle"
         >
-        <span
-          v-else-if="selectedOptions.length === 0 && !searchable"
-          class="multiselect__input search-multiselect__input-row search-multiselect__main-trigger"
-          aria-hidden="true"
-          @mousedown.prevent.stop
-          @click.prevent.stop="toggle"
-        >{{ placeholder }}</span>
         <button
           type="button"
           class="select2-selection__arrow multiselect__select"

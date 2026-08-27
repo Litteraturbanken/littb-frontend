@@ -9,8 +9,8 @@
   },
   "scripts": {
     "postinstall": "nuxt prepare",
-    "dev": "nuxt dev --host 127.0.0.1 --port 3000",
-    "build": "nuxt build",
+    "dev": "BROWSERSLIST_IGNORE_OLD_DATA=true nuxt dev --host 127.0.0.1 --port 3000",
+    "build": "BROWSERSLIST_IGNORE_OLD_DATA=true nuxt build",
     "preview": "nuxt preview",
     "case-study:embed": "node scripts/embed-case-study.mjs",
     "lighthouse:reader": "node scripts/run-lighthouse-reader.mjs",

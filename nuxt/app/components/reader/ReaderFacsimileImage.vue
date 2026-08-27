@@ -17,6 +17,7 @@ const emit = defineEmits<{
 
 const rotation = ref(0)
 const imageFailed = ref(false)
+const fallbackFacsimileAspect = { width: 625, height: 900 } as const
 
 const selectedSource = computed<ReaderFacsimileSource>(() => {
   const source = props.page.sources.find(item => item.size === props.selectedSize)
@@ -40,6 +41,16 @@ const sourceSet = computed(() => retinaSource.value
   ? `${selectedSource.value.url} 1x, ${retinaSource.value.url} 2x`
   : undefined
 )
+const selectedHeight = computed(() => {
+  const overlay = props.page.ocrOverlay
+  const aspect = overlay && overlay.width > 0 && overlay.height > 0
+    ? overlay
+    : fallbackFacsimileAspect
+  return Math.round(selectedSource.value.width * aspect.height / aspect.width)
+})
+const imageAreaStyle = computed(() => ({
+  width: `${selectedSource.value.width}px`
+}))
 const overlayStyle = computed(() => {
   const overlay = props.page.ocrOverlay
   if (!overlay) return undefined
@@ -68,7 +79,7 @@ watch(selectedSourceIdentity, () => {
 </script>
 
 <template>
-  <div class="img_area" :style="{ width: `${selectedSource.width}px` }">
+  <div class="img_area" :style="imageAreaStyle">
     <div
       v-if="page.ocrOverlay"
       class="reader-ocr-layer absolute left-0 top-0 overflow-hidden h-full w-full"
@@ -87,6 +98,7 @@ watch(selectedSourceIdentity, () => {
       :src="selectedSource.url"
       :srcset="sourceSet"
       :width="selectedSource.width"
+      :height="selectedHeight"
       :alt="`${page.title} av ${page.author.full_name}, sida ${page.pageName}`"
       :style="{
         width: `${selectedSource.width}px`,

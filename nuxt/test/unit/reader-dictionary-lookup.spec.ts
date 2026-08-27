@@ -18,7 +18,16 @@ async function mountLookup() {
     import("../../app/components/global/LegacyNotice.vue"),
     import("../../app/components/reader/ReaderDictionaryLookup.vue")
   ])
-  const route = reactive({ fullPath: "/reader" })
+  const route = reactive({
+    fullPath: "/reader",
+    hash: "",
+    path: "/reader",
+    query: {} as Record<string, string | null>
+  })
+  const router = {
+    push: vi.fn(),
+    replace: vi.fn()
+  }
   const embed = {
     close: vi.fn(),
     frame: ref<HTMLIFrameElement | null>(null),
@@ -36,6 +45,7 @@ async function mountLookup() {
   vi.stubGlobal("useHead", vi.fn())
   vi.stubGlobal("useReaderDictionaryEmbed", () => embed)
   vi.stubGlobal("useRoute", () => route)
+  vi.stubGlobal("useRouter", () => router)
   vi.stubGlobal("useRuntimeConfig", () => ({
     public: { readerDictionaryMode: "legacy" }
   }))
@@ -103,6 +113,7 @@ describe("ReaderDictionaryLookup transient notice lifecycle", () => {
     expect(vi.getTimerCount()).toBe(baselineTimers + 1)
 
     harness.route.fullPath = "/reader?om-boken"
+    harness.route.query = { "om-boken": null }
     await harness.nextTick()
 
     expect(harness.target.querySelector('[role="status"]')?.textContent).toBe("")

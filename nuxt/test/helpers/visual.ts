@@ -24,12 +24,28 @@ export async function waitForVisualAssets(page: Page) {
           image.addEventListener("error", resolve, { once: true })
         }))
     )
+    await Promise.all(
+      [...document.images]
+        .filter(image => image.naturalWidth > 0)
+        .map(image => image.decode())
+    )
     const background = getComputedStyle(document.documentElement).backgroundImage
     const match = background.match(/url\(["']?(.+?)["']?\)/)
     if (match) {
-      const image = new Image()
-      image.src = match[1]
-      await image.decode()
+      let decoded = false
+      let lastError: unknown
+      for (let attempt = 0; attempt < 3 && !decoded; attempt += 1) {
+        const image = new Image()
+        image.src = match[1]
+        try {
+          await image.decode()
+          decoded = true
+        } catch (error) {
+          lastError = error
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+      }
+      if (!decoded) throw lastError
     }
   })
   await page.evaluate(async () => {
@@ -39,6 +55,12 @@ export async function waitForVisualAssets(page: Page) {
     })
     await Promise.all(authorityFaces.map(face => face.load()))
     await document.fonts.ready
+    await new Promise<void>(resolve => {
+      const settle = () => document.documentElement.classList.contains("layout-fonts-loading")
+        ? requestAnimationFrame(settle)
+        : resolve()
+      settle()
+    })
     await new Promise<void>(resolve => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
     })

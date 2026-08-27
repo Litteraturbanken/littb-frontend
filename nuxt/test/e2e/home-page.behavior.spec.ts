@@ -304,7 +304,8 @@ test("client-managed Home content refuses a redirect instead of following it", a
   await expect(page).toHaveURL("/")
   await expect(page.locator("#client-redirect-target")).toHaveCount(0)
   expect(await homeRequests(request)).toEqual([
-    expect.stringMatching(/^\/red\/om\/start\/startsida-ny\.html\?/)
+    expect.stringMatching(/^\/red\/om\/start\/startsida-ny\.html\?/),
+    expect.stringMatching(/^\/red\/css\/startsida\.css\?/)
   ])
 })
 

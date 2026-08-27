@@ -109,7 +109,13 @@ export default defineNuxtConfig({
   },
   hooks: {
     "vite:extendConfig": (config, { isClient }) => {
-      if (isClient || viteServerHmrPort < 1 || !config.server) return
+      if (isClient || !config.server) return
+      if (disableViteHmr) {
+        config.server.hmr = false
+        config.server.ws = false
+        return
+      }
+      if (viteServerHmrPort < 1) return
       config.server.hmr = { port: viteServerHmrPort }
     }
   },
@@ -123,8 +129,27 @@ export default defineNuxtConfig({
     ...(process.env.LITTB_VITE_CACHE_DIR
       ? { cacheDir: process.env.LITTB_VITE_CACHE_DIR }
       : {}),
+    css: {
+      preprocessorOptions: {
+        scss: {
+          quietDeps: true,
+          silenceDeprecations: ["import"]
+        }
+      }
+    },
+    build: {
+      rollupOptions: {
+        onwarn(warning, defaultHandler) {
+          if (
+            warning.code === "SOURCEMAP_BROKEN"
+            && warning.plugin === "nuxt:module-preload-polyfill"
+          ) return
+          defaultHandler(warning)
+        }
+      }
+    },
     server: {
-      ...(disableViteHmr ? { hmr: false } : {}),
+      ...(disableViteHmr ? { hmr: false, ws: false } : {}),
       ...(process.env.LITTB_VITE_FS_ALLOW
         ? { fs: { allow: [process.cwd(), process.env.LITTB_VITE_FS_ALLOW] } }
         : {}),
@@ -159,9 +184,6 @@ export default defineNuxtConfig({
         { rel: "icon", type: "image/png", sizes: "32x32", href: "/assets/img/favicons/favicon-32x32.png" },
         { rel: "icon", type: "image/png", sizes: "16x16", href: "/assets/img/favicons/favicon-16x16.png" }
       ],
-      noscript: [{
-        innerHTML: '<link rel="stylesheet" href="/assets/styles/fonts/601526/FD3D54C3A22C4D32B.css">'
-      }],
       meta: [{ name: "theme-color", content: "#ffffff" }]
     }
   }
