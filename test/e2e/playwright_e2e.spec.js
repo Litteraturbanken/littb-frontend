@@ -383,7 +383,9 @@ test.describe("Nuxt whole-site staging smoke", () => {
         await expect(lookup).toBeVisible()
         await lookup.click()
 
-        const dialog = page.getByRole("dialog", { name: "Slå upp ord" })
+        const dialog = page.getByRole("dialog", {
+            name: "Svenska Akademiens ordbok"
+        })
         const frame = dialog.locator('iframe[title="Slå upp damm i SO och SAOB"]')
         await expect(frame).toBeVisible()
         await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin")
