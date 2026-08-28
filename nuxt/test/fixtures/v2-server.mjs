@@ -4858,6 +4858,18 @@ const handleFixtureRequest = async (request, response) => {
 
   if (
     request.method === "GET"
+    && /^\/txt\/lb-reader-sparse-facsimile-sizes\/ocr_\d{5}\.html$/.test(url.pathname)
+  ) {
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      '<body><div data-size="625x900"></div></body>'
+    )
+  }
+
+  if (
+    request.method === "GET"
     && url.pathname === "/txt/lb-reader-boye-jordiskt/ocr_00001.html"
   ) {
     return sendBody(

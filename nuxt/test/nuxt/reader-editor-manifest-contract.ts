@@ -20,6 +20,7 @@ import type {
   ReaderManifestPath,
   ReaderManifestResponse,
   WorkManifestContributor,
+  WorkManifestFacsimilePage,
   WorkManifestPage,
   WorkManifestPart,
   WorkManifestPartAuthor
@@ -83,7 +84,7 @@ type _ReaderPartsAreGenerated = Expect<Equal<
 >>
 type _ReaderPageMapIsGenerated = Expect<Equal<
   ReaderPage["pageMap"],
-  WorkManifestPage[]
+  WorkManifestPage[] | WorkManifestFacsimilePage[]
 >>
 type _ReaderAuthorContributionIsGenerated = Expect<Equal<
   ReaderAuthorContribution,

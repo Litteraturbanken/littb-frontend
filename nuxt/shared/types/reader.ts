@@ -1,6 +1,7 @@
 import type {
   FacsimileSize,
   WorkManifestContributor,
+  WorkManifestFacsimilePage,
   WorkManifestPage,
   WorkManifestPart,
   WorkManifestPartAuthor
@@ -32,10 +33,12 @@ export interface ReaderAlternateMedia {
   pageName: string
 }
 
-export interface ReaderPageBase {
+export interface ReaderPageBase<Page extends WorkManifestPage = WorkManifestPage> {
   alternateMedia: ReaderAlternateMedia | null
+  alternateMediaPageMap: WorkManifestPage[] | null
   author: WorkManifestContributor
   contributors: WorkManifestContributor[]
+  declaredPageCount: number | null
   description: string
   editorWorkId: string | null
   fullTitle: string
@@ -49,9 +52,10 @@ export interface ReaderPageBase {
   nextPartPageName: string | null
   pageCount: number
   pageIndex: number
-  pageMap: WorkManifestPage[]
+  pageMap: Page[]
   pageName: string
   pageNames: string[]
+  pageStep: number
   parts: WorkManifestPart[]
   previousPageName: string | null
   previousPartPageName: string | null
@@ -73,7 +77,7 @@ export interface ReaderEtextPage extends ReaderPageBase {
   workStylesheetUrl: string
 }
 
-export interface ReaderFacsimilePage extends ReaderPageBase {
+export interface ReaderFacsimilePage extends ReaderPageBase<WorkManifestFacsimilePage> {
   imageNumber: number
   mediaType: "faksimil"
   ocrOverlay: ReaderOcrOverlay | null

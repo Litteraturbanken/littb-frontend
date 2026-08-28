@@ -81,8 +81,10 @@ function commonReaderPage(
   const knownNames = new Set(metadata.pages.map(page => page.page_name))
   return {
     alternateMedia: alternateMediaTarget(metadata, pageName, currentPage.page_index),
+    alternateMediaPageMap: metadata.alternateMedia?.pages ?? null,
     author: metadata.author,
     contributors: metadata.contributors,
+    declaredPageCount: metadata.declaredPageCount ?? null,
     description:
       `${metadata.displayTitle} av ${workContributorText(metadata.contributors)}, ` +
       `sida ${pageName} som ${metadata.mediaType}.`,
@@ -100,12 +102,10 @@ function commonReaderPage(
     nextPartPageName: partNavigation.nextPartPageName,
     pageCount: metadata.pages.length,
     pageIndex: currentPage.page_index,
-    pageMap: metadata.pages.map(page => ({
-      page_index: page.page_index,
-      page_name: page.page_name
-    })),
+    pageMap: metadata.pages.map(page => ({ ...page })),
     pageName,
     pageNames: metadata.pages.map(page => page.page_name),
+    pageStep: metadata.pageStep,
     parts: metadata.parts,
     previousPageName: metadata.pages[currentPosition - metadata.pageStep]?.page_name ?? null,
     previousPartPageName: partNavigation.previousPartPageName,
@@ -137,6 +137,7 @@ async function facsimileReaderPage(
     imageNumber: currentPage.image_number,
     mediaType: "faksimil",
     ocrOverlay,
+    pageMap: metadata.pages.map(page => ({ ...page })),
     preferredSize: metadata.preferredSize,
     sources: buildFacsimileSources(metadata.workId, currentPage.image_number, metadata.sizes)
   }

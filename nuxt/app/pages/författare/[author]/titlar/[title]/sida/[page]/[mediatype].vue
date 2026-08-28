@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type {
+  ReaderFacsimilePage,
   ReaderFacsimileSize,
   ReaderPage
 } from "#shared/types/reader"
@@ -21,6 +22,10 @@ import {
 } from "~/lib/search-hit-highlight"
 import { toBoundedDeveloperValue } from "~/lib/quick-search-developer"
 import { readerMissingPageErrorData } from "~/lib/reader-missing-page"
+import {
+  fetchFacsimileOcr,
+  projectFacsimileReaderPage
+} from "~/lib/reader-facsimile-page"
 import {
   horizontalScrollEdge,
   keyboardNavigationAction,
@@ -467,26 +472,11 @@ const readerRequestIdentity = computed(() => JSON.stringify([
 ]))
 const readerFetchIdentity = ref(readerRequestIdentity.value)
 let readerFetchDebounce: ReturnType<typeof setTimeout> | null = null
-watch(readerRequestIdentity, identity => {
-  if (!import.meta.client) {
-    readerFetchIdentity.value = identity
-    return
-  }
-  if (readerFetchDebounce) clearTimeout(readerFetchDebounce)
-  readerFetchDebounce = setTimeout(() => {
-    readerFetchDebounce = null
-    readerFetchIdentity.value = identity
-  }, 200)
-}, { flush: "sync" })
-onBeforeUnmount(() => {
-  if (readerFetchDebounce) clearTimeout(readerFetchDebounce)
-})
 const requestFetch = useRequestFetch()
 
 type CurrentReaderPage =
   | { status: "success", identity: string, reader: ReaderPage }
   | { status: "error", identity: string }
-type SuccessfulReaderPage = Extract<CurrentReaderPage, { status: "success" }>
 
 const { data, error } = await useAsyncData<CurrentReaderPage>(
   computed(() => `reader:${readerFetchIdentity.value}`),
@@ -636,14 +626,115 @@ const currentReader = computed(() => {
     : null
 })
 const retainedReader = shallowRef<ReaderPage | null>(currentReader.value)
+const retainedReaderOwner = shallowRef(currentReader.value
+  ? sourceInfoRequestIdentity.value
+  : null)
 watch(data, current => {
   if (current?.status === "success" && current.identity === readerRequestIdentity.value) {
     retainedReader.value = current.reader
+    retainedReaderOwner.value = sourceInfoRequestIdentity.value
   } else if (current?.status === "error" && current.identity === readerRequestIdentity.value) {
     retainedReader.value = null
+    retainedReaderOwner.value = null
   }
 }, { immediate: true })
-const reader = computed(() => currentReader.value ?? retainedReader.value)
+watch(readerRequestIdentity, identity => {
+  if (!import.meta.client) {
+    readerFetchIdentity.value = identity
+    return
+  }
+  const retained = retainedReader.value
+  const isKnownFacsimilePage = mediaTypeParam.value === "faksimil"
+    && retained?.mediaType === "faksimil"
+    && retainedReaderOwner.value === sourceInfoRequestIdentity.value
+    && retained.pageMap.some(page => page.page_name === pageParam.value)
+  if (isKnownFacsimilePage) return
+  if (readerFetchDebounce) clearTimeout(readerFetchDebounce)
+  readerFetchDebounce = setTimeout(() => {
+    readerFetchDebounce = null
+    readerFetchIdentity.value = identity
+  }, 200)
+}, { flush: "sync" })
+onBeforeUnmount(() => {
+  if (readerFetchDebounce) clearTimeout(readerFetchDebounce)
+})
+function facsimileOcrIdentity(reader: ReaderFacsimilePage, pageIndex: number): string {
+  return `${reader.workId}:${pageIndex}`
+}
+const initialFacsimileReader = retainedReader.value?.mediaType === "faksimil"
+  ? retainedReader.value
+  : null
+const facsimileOcrCache = shallowRef(new Map<string, ReaderFacsimilePage["ocrOverlay"]>(
+  initialFacsimileReader
+    ? [[
+        facsimileOcrIdentity(initialFacsimileReader, initialFacsimileReader.pageIndex),
+        initialFacsimileReader.ocrOverlay
+      ]]
+    : []
+))
+watch(data, current => {
+  if (current?.status !== "success" || current.reader.mediaType !== "faksimil") return
+  const currentFacsimile = current.reader
+  facsimileOcrCache.value = new Map(facsimileOcrCache.value).set(
+    facsimileOcrIdentity(currentFacsimile, currentFacsimile.pageIndex),
+    currentFacsimile.ocrOverlay
+  )
+}, { immediate: true })
+const facsimileSeed = computed(() => (
+  retainedReader.value?.mediaType === "faksimil"
+  && retainedReaderOwner.value === sourceInfoRequestIdentity.value
+    ? retainedReader.value
+    : null
+))
+const facsimileTarget = computed(() => facsimileSeed.value?.pageMap.find(
+  page => page.page_name === pageParam.value
+) ?? null)
+const projectedFacsimileReader = computed(() => {
+  const seed = facsimileSeed.value
+  const target = facsimileTarget.value
+  if (!seed || !target) return null
+  const overlay = facsimileOcrCache.value.get(
+    facsimileOcrIdentity(seed, target.page_index)
+  ) ?? null
+  return projectFacsimileReaderPage(seed, target.page_name, overlay)
+})
+let facsimileOcrController: AbortController | null = null
+watch(
+  () => {
+    const seed = facsimileSeed.value
+    const target = facsimileTarget.value
+    return seed && target ? facsimileOcrIdentity(seed, target.page_index) : null
+  },
+  async (identity, _previousIdentity, onCleanup) => {
+    facsimileOcrController?.abort()
+    facsimileOcrController = null
+    const seed = facsimileSeed.value
+    const target = facsimileTarget.value
+    if (!import.meta.client || !identity || !seed || !target
+      || facsimileOcrCache.value.has(identity)) return
+    if (!seed.searchable) {
+      facsimileOcrCache.value = new Map(facsimileOcrCache.value).set(identity, null)
+      return
+    }
+    const controller = new AbortController()
+    facsimileOcrController = controller
+    onCleanup(() => controller.abort())
+    try {
+      const overlay = await fetchFacsimileOcr(seed.workId, target.page_index, controller.signal)
+      if (controller.signal.aborted) return
+      facsimileOcrCache.value = new Map(facsimileOcrCache.value).set(identity, overlay)
+    } catch {
+      // Superseded page turns intentionally abort obsolete OCR requests.
+    } finally {
+      if (facsimileOcrController === controller) facsimileOcrController = null
+    }
+  },
+  { immediate: true }
+)
+onBeforeUnmount(() => facsimileOcrController?.abort())
+const reader = computed(() => (
+  projectedFacsimileReader.value ?? currentReader.value ?? retainedReader.value
+))
 const quickSearchReaderContext = computed(() => {
   const current = reader.value
   if (!current) return null
@@ -661,6 +752,7 @@ const quickSearchReaderContext = computed(() => {
 })
 useQuickSearchContextPublisher(quickSearchReaderContext)
 const readerLoadStatus = computed(() => {
+  if (projectedFacsimileReader.value) return "success" as const
   const current = data.value
   return current?.identity === readerRequestIdentity.value ? current.status : null
 })
@@ -991,19 +1083,19 @@ const hitFetch = await useAsyncData(
   computed(() => [
         "reader-hit",
         dialogNeutralIdentity.value,
-        data.value?.identity ?? "pending",
-        data.value?.status === "success" ? data.value.reader.workId : "pending"
+        reader.value?.workId ?? "pending",
+        reader.value?.pageName ?? "pending"
       ].join(":")),
       async (_nuxtApp, { signal }) => {
         activeHitRequestController?.abort()
         activeHitRequestController = null
         const identity = dialogNeutralIdentity.value
         const state = searchState.value
-        const currentReader = data.value
+        const currentReader = reader.value
         if (
           !state ||
-          currentReader?.status !== "success" ||
-          currentReader.identity !== readerRequestIdentity.value
+          !currentReader ||
+          currentReader.pageName !== pageParam.value
         ) {
           return { status: "inactive" as const, identity }
         }
@@ -1015,9 +1107,9 @@ const hitFetch = await useAsyncData(
           const result = await runtimeClient.GET("/works/{work_id}/search-hits", {
             signal: requestSignal,
             params: {
-              path: { work_id: currentReader.reader.workId },
+              path: { work_id: currentReader.workId },
               query: {
-                media_type: currentReader.reader.mediaType,
+                media_type: currentReader.mediaType,
                 query: state.query,
                 offset,
                 limit: 3,
@@ -1032,9 +1124,9 @@ const hitFetch = await useAsyncData(
             result.data,
             state,
             offset,
-            currentReader.reader.workId,
-            currentReader.reader.mediaType,
-            currentReader.reader.pageMap,
+            currentReader.workId,
+            currentReader.mediaType,
+            currentReader.pageMap,
             state.hit
           )) {
             return { status: "error" as const, identity }
@@ -1049,15 +1141,14 @@ const hitFetch = await useAsyncData(
           if (activeHitRequestController === controller) activeHitRequestController = null
         }
       },
-      { watch: [dialogNeutralIdentity, () => data.value?.identity] }
+      { watch: [dialogNeutralIdentity, () => reader.value?.pageName] }
     )
 
 const hitResponse = computed(() => {
   const value = hitFetch.data.value
   return value?.status === "success" &&
     value.identity === dialogNeutralIdentity.value &&
-    data.value?.status === "success" &&
-    data.value.identity === readerRequestIdentity.value
+    reader.value?.pageName === pageParam.value
     ? value.response
     : null
 })
@@ -1193,7 +1284,7 @@ function toggleGotoHitInput(): void {
 type HitLookupContext = Readonly<{
   state: CanonicalSearchState
   response: WorkSearchHitsResponse
-  currentReader: SuccessfulReaderPage
+  currentReader: ReaderPage
   sourceIdentity: string
 }>
 
@@ -1203,9 +1294,8 @@ function hitLookupContext(index: number): HitLookupContext | null {
   if (!state || !response) return null
   if (index < 0 || index >= response.total_hits || index > maximumNavigableHit) return null
 
-  const currentReader = data.value
-  if (currentReader?.status !== "success") return null
-  if (currentReader.identity !== readerRequestIdentity.value) return null
+  const currentReader = reader.value
+  if (!currentReader || currentReader.pageName !== pageParam.value) return null
   return {
     state,
     response,
@@ -1229,9 +1319,11 @@ function sameSearchState(
 
 function hitLookupIsCurrent(context: HitLookupContext): boolean {
   if (dialogNeutralIdentity.value !== context.sourceIdentity) return false
-  const latestReader = data.value
-  if (latestReader?.status !== "success") return false
-  return latestReader.identity === context.currentReader.identity
+  const latestReader = reader.value
+  if (!latestReader) return false
+  return latestReader.workId === context.currentReader.workId
+    && latestReader.mediaType === context.currentReader.mediaType
+    && latestReader.pageName === context.currentReader.pageName
     && sameSearchState(searchState.value, context.state)
 }
 
@@ -1246,9 +1338,9 @@ async function fetchHitAtIndex(
   const result = await runtimeClient.GET("/works/{work_id}/search-hits", {
     signal,
     params: {
-      path: { work_id: currentReader.reader.workId },
+      path: { work_id: currentReader.workId },
       query: {
-        media_type: currentReader.reader.mediaType,
+        media_type: currentReader.mediaType,
         query: state.query,
         offset,
         limit,
@@ -1263,9 +1355,9 @@ async function fetchHitAtIndex(
     result.data,
     state,
     offset,
-    currentReader.reader.workId,
-    currentReader.reader.mediaType,
-    currentReader.reader.pageMap,
+    currentReader.workId,
+    currentReader.mediaType,
+    currentReader.pageMap,
     index,
     limit
   )) return null
@@ -1640,9 +1732,9 @@ onMounted(() => {
   if (currentReader.value) writeLastPageView()
 })
 watch(
-  [dialogNeutralIdentity, () => data.value?.identity, () => data.value?.status],
-  ([_historyIdentity, identity, status]) => {
-    if (status === "success" && identity === readerRequestIdentity.value) {
+  [dialogNeutralIdentity, () => reader.value?.pageName, readerLoadStatus],
+  ([_historyIdentity, pageName, status]) => {
+    if (status === "success" && pageName === pageParam.value) {
       writeLastPageView()
     }
   },

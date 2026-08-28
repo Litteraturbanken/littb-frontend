@@ -2641,14 +2641,20 @@ test("faksimil page navigation preserves queries and restores scan identity", as
 }) => {
   const problems = captureBrowserProblems(page)
   const documentRequests: string[] = []
+  const facsimileAssetRequests: string[] = []
+  const readerApiRequests: string[] = []
   page.on("request", browserRequest => {
-    if (browserRequest.resourceType() === "document") {
-      documentRequests.push(browserRequest.url())
-    }
+    const url = new URL(browserRequest.url())
+    if (browserRequest.resourceType() === "document") documentRequests.push(browserRequest.url())
+    if (url.pathname.startsWith("/nuxt-api/reader/")) readerApiRequests.push(url.pathname)
+    if (/^\/txt\/[^/]+\/(?:ocr_\d{5}\.html|[^/]+_[1-5]\/[^/]+_[1-5]_\d{4}\.jpeg)$/u
+      .test(url.pathname)) facsimileAssetRequests.push(url.pathname)
   })
   const query = "?q=scan&hit=2&s_mode=phrase&repeat=first&repeat=second&unknown=value"
   await page.goto(`${facsimilePath}${query}`, { waitUntil: "networkidle" })
   documentRequests.length = 0
+  facsimileAssetRequests.length = 0
+  readerApiRequests.length = 0
   await request.delete(`${fixture}/_reader_manifest_requests`)
 
   const image = page.locator("img.faksimil")
@@ -2659,6 +2665,10 @@ test("faksimil page navigation preserves queries and restores scan identity", as
     "srcset",
     `${facsimileSource(3, 7)} 1x, ${facsimileSource(5, 7)} 2x`
   )
+  await expect.poll(() => facsimileAssetRequests).toContain(
+    "/txt/lb-reader-gosta-berlings-saga/ocr_00000.html"
+  )
+  expect(facsimileAssetRequests.some(path => path.endsWith("_0007.jpeg"))).toBe(true)
 
   await page.goBack()
   await expect(page).toHaveURL(`${facsimilePath}${query}`)
@@ -2676,9 +2686,8 @@ test("faksimil page navigation preserves queries and restores scan identity", as
   await expect(page.getByRole("link", { name: "Nästa sida" })).toHaveCount(0)
 
   expect(documentRequests).toEqual([])
-  expect(await readerManifestRequests(request)).toEqual(Array(5).fill(
-    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
-  ))
+  expect(readerApiRequests).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([])
   expect(problems).toEqual([])
 })
 
@@ -2798,17 +2807,13 @@ test("sparse faksimil Läsfokus controls select nearest sizes", async ({ page })
   await expect(page).toHaveURL(`${sparseFacsimilePath}?bare&storlek=2&fokus#scan`)
 })
 
-test("retained sparse faksimil controls cannot rewrite a pending page identity", async ({
+test("known sparse faksimil pages project immediately without a Reader API request", async ({
   page
 }) => {
   await page.goto(`${sparseFacsimilePath}?storlek=2`, { waitUntil: "networkidle" })
-  let releaseRequest!: () => void
-  const release = new Promise<void>(resolve => { releaseRequest = resolve })
-  let markRequestStarted!: () => void
-  const requestStarted = new Promise<void>(resolve => { markRequestStarted = resolve })
+  const readerApiRequests: string[] = []
   await page.route("**/nuxt-api/reader/**/5/faksimil", async route => {
-    markRequestStarted()
-    await release
+    readerApiRequests.push(route.request().url())
     await route.continue()
   })
 
@@ -2818,25 +2823,31 @@ test("retained sparse faksimil controls cannot rewrite a pending page identity",
     "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/SparseFacsimileSizes/sida/5/faksimil" +
     "?storlek=2"
   )
-  await requestStarted
   await expect(page).toHaveURL(
     "/författare/LagerlöfS/titlar/SparseFacsimileSizes/sida/5/faksimil?storlek=2"
   )
-  await expect(page.locator("img.faksimil")).toHaveAttribute(
-    "src",
-    sparseFacsimileSource(2, 9)
-  )
-  await page.locator("#toolkit .reader-facsimile-size-controls")
-    .getByRole("button", { name: "Större" }).click()
-  await expect(page).toHaveURL(
-    "/författare/LagerlöfS/titlar/SparseFacsimileSizes/sida/5/faksimil?storlek=2"
-  )
-
-  releaseRequest()
   await expect(page.locator("img.faksimil")).toHaveAttribute(
     "src",
     sparseFacsimileSource(2, 12)
   )
+  expect(readerApiRequests).toEqual([])
+})
+
+test("unknown faksimil pages retain the Reader API validation fallback", async ({ page }) => {
+  await page.goto(`${sparseFacsimilePath}?storlek=2`, { waitUntil: "networkidle" })
+  const apiRequest = page.waitForRequest(request => (
+    new URL(request.url()).pathname.endsWith(
+      "/nuxt-api/reader/Lagerl%C3%B6fS/SparseFacsimileSizes/missing/faksimil"
+    )
+  ))
+
+  await navigateClient(
+    page,
+    "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/SparseFacsimileSizes/sida/missing/faksimil"
+  )
+
+  await apiRequest
+  await expect(page).toHaveURL(/\/sida\/missing\/faksimil$/)
 })
 
 test("faksimil size replacement preserves raw query owners and its fragment", async ({ page }) => {

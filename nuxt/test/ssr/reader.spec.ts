@@ -659,6 +659,7 @@ test("canonical API returns the exact searchable faksimil arm with selectable OC
   expect(response.status()).toBe(200)
   expect(await response.json()).toEqual({
     alternateMedia: null,
+    alternateMediaPageMap: null,
     author: {
       author_id: "LagerlöfS",
       author_type: null,
@@ -671,6 +672,7 @@ test("canonical API returns the exact searchable faksimil arm with selectable OC
       full_name: "Selma Lagerlöf",
       role: null
     }],
+    declaredPageCount: null,
     description: "Gösta Berlings saga av Selma Lagerlöf, sida 3 som faksimil.",
     editorWorkId: null,
     fullTitle: "Gösta Berlings saga. Roman",
@@ -692,12 +694,13 @@ test("canonical API returns the exact searchable faksimil arm with selectable OC
     pageCount: 3,
     pageIndex: 1,
     pageMap: [
-      { page_index: 0, page_name: "1" },
-      { page_index: 1, page_name: "3" },
-      { page_index: 2, page_name: "5" }
+      { image_number: 7, page_index: 0, page_name: "1" },
+      { image_number: 9, page_index: 1, page_name: "3" },
+      { image_number: 12, page_index: 2, page_name: "5" }
     ],
     pageName: "3",
     pageNames: ["1", "3", "5"],
+    pageStep: 1,
     parts: [{
       authors: [{
         author_id: "LagerlöfS",

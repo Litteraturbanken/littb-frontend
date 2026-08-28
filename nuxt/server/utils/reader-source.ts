@@ -2,7 +2,6 @@ import { createError, type H3Event } from "h3"
 
 import type {
   ReaderFacsimileSize,
-  ReaderFacsimileSizeSource,
   ReaderFacsimileSource,
   ReaderMediaType
 } from "../../shared/types/reader"
@@ -201,50 +200,6 @@ export function isReaderMediaType(value: unknown): value is ReaderMediaType {
 
 function isFacsimileSize(value: number): value is ReaderFacsimileSize {
   return Number.isInteger(value) && value >= 1 && value <= 5
-}
-
-function safeNonnegativeInteger(value: unknown): value is number {
-  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
-}
-
-function encodeRfc3986Segment(value: string): string {
-  return encodeURIComponent(value).replace(
-    /[!'()*]/g,
-    character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
-  )
-}
-
-export function facsimileImageUrl(
-  workId: string,
-  size: ReaderFacsimileSize,
-  imageNumber: number
-): string {
-  if (!isFacsimileSize(size) || !safeNonnegativeInteger(imageNumber)) {
-    throw new RangeError("Invalid faksimil source identity")
-  }
-  const encodedWorkId = encodeRfc3986Segment(workId)
-  const encodedImageNumber = encodeRfc3986Segment(String(imageNumber).padStart(4, "0"))
-  return [
-    "",
-    "txt",
-    encodedWorkId,
-    `${encodedWorkId}_${size}`,
-    `${encodedWorkId}_${size}_${encodedImageNumber}.jpeg`
-  ].join("/")
-}
-
-export function buildFacsimileSources(
-  workId: string,
-  imageNumber: number,
-  sizes: readonly ReaderFacsimileSizeSource[]
-): ReaderFacsimileSource[] {
-  return sizes
-    .map(({ size, width }) => ({
-      size,
-      url: facsimileImageUrl(workId, size, imageNumber),
-      width
-    }))
-    .sort((left, right) => left.size - right.size)
 }
 
 export function facsimileSourcePair(

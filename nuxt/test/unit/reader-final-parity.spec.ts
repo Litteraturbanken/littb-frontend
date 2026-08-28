@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test, vi } from "vitest"
 
 import {
-  fetchReaderOcrOverlay,
-  parseReaderOcrOverlay
+  fetchReaderOcrOverlay
 } from "../../server/utils/reader-ocr"
+import { parseReaderOcrOverlay } from "../../shared/utils/reader-ocr"
 import { readerManifestPartAuthorLabel } from "../../shared/utils/reader-author"
 
 const maximumReaderOcrBytes = 512 * 1024

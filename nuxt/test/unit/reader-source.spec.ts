@@ -1,8 +1,6 @@
 import { afterEach, describe, expect, expectTypeOf, test, vi } from "vitest"
 
 import {
-  buildFacsimileSources,
-  facsimileImageUrl,
   facsimileSourcePair,
   fetchReaderPageHtml,
   isReaderMediaType,
@@ -23,6 +21,8 @@ import type { ManagedAssetHtml } from "../../shared/types/renderable-html"
 import type { ReaderEtextPage } from "../../shared/types/reader"
 import {
   adjacentFacsimileSize,
+  buildFacsimileSources,
+  facsimileImageUrl,
   preferredFacsimileSize
 } from "../../shared/utils/facsimile-source"
 import type { transformManagedReaderHtml } from "../../shared/utils/renderable-html"
