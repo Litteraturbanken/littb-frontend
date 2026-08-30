@@ -36,9 +36,12 @@ import {
 import { readerTitleTooltipDirective } from "~/lib/reader-title-tooltip"
 import {
   nextWorkSearchOptions,
+  rememberWorkSearchSnapshot,
+  restoredWorkSearchSnapshot,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
   workSearchPageScope,
+  workSearchSnapshotIdentity,
   workSearchWordPosition,
   type WorkSearchWordPosition,
   type WorkSearchOption
@@ -803,8 +806,8 @@ const focusMode = computed(() => route.query.fokus !== undefined)
 const readerTitleTooltip = computed(() => reader.value
   ? usefulLibraryTooltipText(reader.value.fullTitle, reader.value.title)
   : "")
-const focusHref = computed(() => readerFocusFullPath(rawFullPath.value, true))
-const focusNeutralHref = computed(() => readerFocusFullPath(rawFullPath.value, false))
+const focusHref = computed(() => readerFocusFullPath(searchNavigationFullPath.value, true))
+const focusNeutralHref = computed(() => readerFocusFullPath(searchNavigationFullPath.value, false))
 const focusBarVisible = ref(true)
 const focusStateKey = [authorParam.value, titleParam.value, mediaTypeParam.value].join(":")
 const focusNightMode = useState(`reader-focus-night:${focusStateKey}`, () => false)
@@ -823,10 +826,15 @@ const focusReaderStyle = computed(() => focusMode.value && etextReader.value
 const ocrMode = computed(() => Boolean(
   explicitOcrRequested.value && facsimileReader.value?.ocrOverlay
 ))
-const searchState = computed(() => reader.value?.searchable
-  ? parseCanonicalSearchState()
-  : null
-)
+const searchState = computed(() => {
+  const current = reader.value
+  if (!current?.searchable) return null
+  const state = parseCanonicalSearchState()
+  if (!state || state.snapshot !== null || !import.meta.client) return state
+  const snapshot = restoredWorkSearchSnapshot(window.history.state,
+    workSearchSnapshotIdentity(current.workId, current.mediaType, state))
+  return snapshot ? { ...state, snapshot } : state
+})
 const searchReturnHref = computed(() => parseTextSearchReturnHref(
   rawTextSearchReturnQuery(rawFullPath.value)
 ))
@@ -841,6 +849,12 @@ const pageQuery = computed(() => {
     if (hitResponse.value) query.snapshot = hitResponse.value.snapshot
   }
   return query
+})
+const searchNavigationFullPath = computed(() => {
+  const snapshot = hitResponse.value?.snapshot ?? searchState.value?.snapshot
+  return snapshot && route.query.snapshot === undefined
+    ? readerFullPathWithQueryValue(rawFullPath.value, "snapshot", snapshot)
+    : rawFullPath.value
 })
 const selectedFacsimileSize = computed<ReaderFacsimileSize | null>(() => {
   const currentReader = facsimileReader.value
@@ -873,7 +887,7 @@ const focusParts = computed(() => reader.value?.parts.map(part => ({
 const alternateMediaHref = computed(() => {
   const alternate = reader.value?.alternateMedia
   return alternate
-    ? readerMediaFullPath(rawFullPath.value, alternate.pageName, alternate.mediaType)
+    ? readerMediaFullPath(searchNavigationFullPath.value, alternate.pageName, alternate.mediaType)
     : null
 })
 const pageRouteDraftName = ref(pageParam.value)
@@ -906,6 +920,20 @@ function draftAdjacentPageName(direction: -1 | 1): string | null {
 }
 const draftPreviousPageName = computed(() => draftAdjacentPageName(-1))
 const draftNextPageName = computed(() => draftAdjacentPageName(1))
+async function pushReaderPage(href: string): Promise<void> {
+  const historyState = import.meta.client ? window.history.state : null
+  const previousCurrent = historyState?.current
+  // Router persists this state in its own push commit, with no extra history
+  // write. A rejected/canceled push must leave the original state unchanged.
+  if (historyState) historyState.current = rawFullPath.value
+  try {
+    await router.push(href)
+  } finally {
+    if (historyState && window.history.state === historyState) {
+      historyState.current = previousCurrent
+    }
+  }
+}
 function queueReaderPage(pageName: string): void {
   if (pageNavigationDisposed) return
   const currentReader = reader.value
@@ -918,7 +946,7 @@ function queueReaderPage(pageName: string): void {
     .then(async () => {
       if (pageNavigationDisposed) return
       try {
-        await router.push(href)
+        await pushReaderPage(href)
       } catch {
         if (!pageNavigationDisposed && generation === pageNavigationGeneration) {
           pageRouteDraftName.value = pageParam.value
@@ -1165,6 +1193,14 @@ const hitResponse = computed(() => {
     ? value.response
     : null
 })
+watch(hitResponse, response => {
+  const state = searchState.value
+  const current = reader.value
+  if (import.meta.client && response && state && current && route.query.snapshot === undefined) {
+    rememberWorkSearchSnapshot(window.history,
+      workSearchSnapshotIdentity(current.workId, current.mediaType, state), response.snapshot)
+  }
+}, { immediate: true, flush: "sync" })
 const hitRequestFailed = computed(
   () => (hitFetch.data.value?.status === "error" &&
     hitFetch.data.value.identity === dialogNeutralIdentity.value)
@@ -1861,7 +1897,7 @@ useHead(() => ({
 }))
 
 function pageHref(pageName: string): string {
-  return readerPageFullPath(rawFullPath.value, pageName)
+  return readerPageFullPath(searchNavigationFullPath.value, pageName)
 }
 
 function hitHref(hit: WorkSearchHit): string {
@@ -1885,7 +1921,7 @@ function selectFacsimileSize(size: ReaderFacsimileSize): void {
   ) return
 
   void navigateRawFullPath(
-    readerFullPathWithQueryValue(rawFullPath.value, "storlek", String(size)),
+    readerFullPathWithQueryValue(searchNavigationFullPath.value, "storlek", String(size)),
     true,
     rawFullPath.value
   )
@@ -1938,7 +1974,7 @@ const titleSourceInfoTrigger = ref<HTMLAnchorElement | null>(null)
 const sidebarSourceInfoTrigger = ref<HTMLAnchorElement | null>(null)
 let sourceInfoTrigger: HTMLElement | null = null
 const contentsPartHrefs = computed(() => reader.value?.parts.map(
-  part => readerPageFullPath(rawFullPath.value, part.start_page_name)
+  part => pageHref(part.start_page_name)
 ) ?? [])
 let contentsClosePending = false
 
@@ -2166,7 +2202,7 @@ function selectContentsPage(pageName: string): void {
   const currentReader = reader.value
   if (!currentReader || !currentReader.pageNames.includes(pageName)) return
   void navigateRawFullPath(
-    readerPageFullPath(rawFullPath.value, pageName),
+    pageHref(pageName),
     false,
     rawFullPath.value
   )

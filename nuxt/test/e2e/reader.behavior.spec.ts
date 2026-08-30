@@ -65,6 +65,105 @@ test("snapshot public malformed serialized generation never unpins", async ({ pa
 
 const expiredSnapshotMessage = "Sökresultatet har gått ut. Starta om sökningen för att använda den aktuella textsamlingen."
 
+for (const variant of [
+  { media: "etext", path: "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext",
+    query: "q=doktor%20glas&hit=1", word: "w2_1", nextPage: "-1" },
+  { media: "faksimil", path: "/f%C3%B6rfattare/AarnsethF/titlar/Rallarliv/sida/58/faksimil",
+    query: "q=kyrka&hit=0&traff=w58_123&traffslut=w58_123&hit_index=0", word: "w58_123", nextPage: "99" }
+]) {
+  test(`adopted snapshot survives ordinary ${variant.media} pages keyboard and history`, async ({ page, request }) => {
+    const raw = `?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F&${variant.query}`
+    await page.goto(`${decodeURIComponent(variant.path)}${raw}`, { waitUntil: "networkidle" })
+    const marked = page.locator(`.reader_main ${variant.media === "faksimil" ? ".overlay " : ""}#${variant.word}.markee`).first()
+    await expect(marked).toHaveCount(1)
+    expect(new URL(page.url()).searchParams.has("snapshot")).toBe(false)
+    // Active B is distinguishable: a missing pin now receives B, never A.
+    await page.route("**/api/v2/works/*/search-hits?**", async route => {
+      const response = await route.fetch()
+      const snapshot = new URL(route.request().url()).searchParams.get("snapshot")
+      await route.fulfill({ response, json: { ...await response.json(), snapshot: snapshot ?? "gen-fixture-0002" } })
+    })
+    await request.delete(`${fixture}/_reader_hit_requests`)
+    const next = page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida", exact: true })
+    await expect(next).toHaveAttribute("href", `${variant.path.replace(/\/sida\/[^/]+\//, `/sida/${variant.nextPage}/`)}${raw}&snapshot=gen-fixture-0001`)
+    await next.evaluate((link: HTMLAnchorElement) => link.click())
+    await expect.poll(() => page.evaluate(() => location.search)).toBe(`${raw}&snapshot=gen-fixture-0001`)
+    await expect(page.locator(".reader-page-position")).toContainText(`${variant.nextPage} av `)
+    await page.goBack({ waitUntil: "networkidle" })
+    await expect(marked).toHaveCount(1)
+    expect(await page.evaluate(() => location.search)).toBe(raw)
+    await page.goForward({ waitUntil: "networkidle" })
+    await expect.poll(() => page.evaluate(() => location.search)).toBe(`${raw}&snapshot=gen-fixture-0001`)
+    await expect(page.locator(".reader-page-position")).toContainText(`${variant.nextPage} av `)
+    await page.keyboard.press("ArrowLeft")
+    await expect(marked).toHaveCount(1)
+    await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
+    await expect(page.locator("#search_nav")).toContainText(variant.media === "etext" ? "Träff 3" : "Träff 2")
+    await expect(page.locator(variant.media === "etext" ? "#w2_2.markee" : ".overlay #w99_20.markee").first()).toHaveCount(1)
+    const queries = (await readerHitRequests(request)).map(item => new URLSearchParams(item.query))
+    expect(queries.length).toBeGreaterThanOrEqual(2)
+    expect(queries.every(query => query.get("snapshot") === "gen-fixture-0001")).toBe(true)
+    expect(queries.every(query => query.get("media_type") === variant.media)).toBe(true)
+  })
+}
+
+test("adopted snapshot keeps contents and keyboard part navigation on the same generation", async ({ page, request }) => {
+  const raw = "?bare&repeat=%2f&repeat=%2F&q=inga&hit=0"
+  await page.goto(`${readerPartsPath}${raw}`, { waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav")).toContainText("0 sökträffar")
+  await page.route("**/api/v2/works/*/search-hits?**", async route => {
+    const response = await route.fetch()
+    await route.fulfill({ response, json: { ...await response.json(),
+      snapshot: new URL(route.request().url()).searchParams.get("snapshot") ?? "gen-fixture-0002" } })
+  })
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await page.keyboard.press("Alt+ArrowRight")
+  await expect(page).toHaveURL(/\/sida\/3\/etext/)
+  await expect(page.locator(".reader-page-position")).toHaveText("3 av 9")
+  await expect.poll(async () => (await readerHitRequests(request)).length).toBeGreaterThan(0)
+  await expect.poll(() => page.evaluate(() => location.search)).toBe(`${raw}&snapshot=gen-fixture-0001`)
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 9")
+  await page.getByRole("link", { name: "Innehållsförteckning", exact: true }).first().click()
+  const dialog = page.getByRole("dialog", { name: "Innehållsförteckning" })
+  const part = dialog.getByRole("link", { name: "Mellandelen", exact: true })
+  await expect(part).toHaveAttribute("href", `/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-3/etext${raw}&snapshot=gen-fixture-0001`)
+  await part.click()
+  await expect(page).toHaveURL(/\/sida\/-3\/etext/)
+  await expect(page.locator(".reader-page-position")).toHaveText("-3 av 9")
+  await expect.poll(async () => (await readerHitRequests(request)).length).toBeGreaterThanOrEqual(2)
+  const queries = (await readerHitRequests(request)).map(item => new URLSearchParams(item.query))
+  expect(queries.every(query => query.get("snapshot") === "gen-fixture-0001")).toBe(true)
+})
+
+test("fresh unpinned Reader reload adopts SSR generation without mixing the old history pin", async ({ page, request }) => {
+  try {
+    await request.delete(`${fixture}/_text_search/requests`)
+    await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, { waitUntil: "networkidle" })
+    await expect(page.locator('#search_nav a[rel="next"]')).toHaveAttribute("href", /snapshot=gen-fixture-0001/)
+    await expect.poll(() => page.evaluate(() => history.state.readerSearchSnapshot?.snapshot)).toBe("gen-fixture-0001")
+    const expired = await request.post(`${fixture}/v2/text-search/results`, { data: {
+      query: "frihet", page: 1, page_size: 30, highlight_limit: 5,
+      prefix: false, suffix: false, word_form_only: true, include_modernized: true,
+      snapshot: "gen-expired"
+    } })
+    expect(expired.status()).toBe(409)
+    await request.delete(`${fixture}/_reader_hit_requests`)
+    await page.reload({ waitUntil: "networkidle" })
+    await expect(page.locator('#search_nav a[rel="next"]')).toHaveAttribute("href", /snapshot=gen-fixture-0002/)
+    await expect.poll(() => page.evaluate(() => history.state.readerSearchSnapshot?.snapshot)).toBe("gen-fixture-0002")
+    expect(new URL(page.url()).searchParams.has("snapshot")).toBe(false)
+    await page.locator("#search_nav").getByRole("button", { name: "Gå till sista träffen" }).click()
+    await expect(page.locator("#w3_2.markee")).toHaveCount(1)
+    const queries = (await readerHitRequests(request)).map(item => new URLSearchParams(item.query))
+    expect(queries[0]!.has("snapshot")).toBe(false)
+    expect(queries.slice(1).length).toBeGreaterThan(0)
+    expect(queries.slice(1).every(query => query.get("snapshot") === "gen-fixture-0002")).toBe(true)
+  } finally {
+    await request.delete(`${fixture}/_text_search/requests`)
+  }
+})
+
 test("combined corpus request ledger preserves page two Reader identity through next hit and explicit restart", async ({ page, request }) => {
   try {
     await Promise.all(["requests", "failures", "delays"].map(control => (
@@ -560,7 +659,7 @@ test("part-rich sidebar exposes truthful authors, metadata, and raw-preserving t
 
   const retained =
     "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F" +
-    "&q=inga&hit=0&storlek=3"
+    "&q=inga&hit=0&storlek=3&snapshot=gen-fixture-0001"
   const navigation = context.locator(".reader-navigation")
   await expect(navigation.getByRole("link", { name: "Gå bakåt en del" }))
     .toHaveAttribute(
@@ -688,7 +787,7 @@ for (const closeMethod of ["Escape", "backdrop", "Stäng"] as const) {
     const contentsEncodedPath = `${retainedEncodedPath}&innehall`
     const nextHref =
       "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/1/etext" +
-      retainedQuery
+      `${retainedQuery}&snapshot=gen-fixture-0001`
     await page.goto(retainedPath, { waitUntil: "networkidle" })
     const trigger = page.locator(".reader-context .subnav")
       .getByRole("link", { name: "Innehållsförteckning" })
@@ -1515,10 +1614,10 @@ test("contents rows use surnames and selecting a nested part pushes its raw targ
 
   await rows.nth(1).getByRole("link", { name: "Mellandelen" }).click()
   const selectedPath =
-    `/författare/SöderbergH/titlar/DoktorGlasParts/sida/-3/etext${retainedQuery}`
+    `/författare/SöderbergH/titlar/DoktorGlasParts/sida/-3/etext${retainedQuery}&snapshot=gen-fixture-0001`
   const selectedEncodedPath =
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-3/etext" +
-    retainedQuery
+    `${retainedQuery}&snapshot=gen-fixture-0001`
   await expect(page).toHaveURL(selectedPath)
   expect(await page.evaluate(() => window.history.state.current))
     .toBe(selectedEncodedPath)
@@ -1527,7 +1626,7 @@ test("contents rows use surnames and selecting a nested part pushes its raw targ
   ).toHaveAttribute(
     "href",
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-2/etext" +
-    retainedQuery
+    `${retainedQuery}&snapshot=gen-fixture-0001`
   )
   await expect.poll(async () => (await storedPageViews(page))[0]?.url).toBe(
     selectedEncodedPath
@@ -3235,7 +3334,7 @@ test("faksimil search state requests its own hits and exposes live navigation", 
   expect(await readerHitRequests(request)).toEqual([
     { path: "/private-v2/works/lb3203777/search-hits", query: window0 },
     { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 },
-    { path: "/v2/works/lb3203777/search-hits", query: window0 },
+    { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 },
     { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 },
     { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 },
     { path: "/v2/works/lb3203777/search-hits", query: window1 },
@@ -4254,9 +4353,9 @@ test("previous-hit and ordinary-page links use distinct target pages and preserv
   await activateReaderLink(
     page,
     "Nästa sida",
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=1"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=1&snapshot=gen-fixture-0001"
   )
-  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
+  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1&snapshot=gen-fixture-0001$/)
   await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
   await expect(page.locator(".reader_main .markee")).toHaveCount(0)
   await expect(page.locator("#search_nav")).toContainText("Träff 2, sida -1")
@@ -4290,10 +4389,10 @@ test("a delayed primary Reader request keeps the reader shell mounted until the 
   await activateReaderLink(
     page,
     "Nästa sida",
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor%20glas&hit=1"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor%20glas&hit=1&snapshot=gen-fixture-0001"
   )
   await requestStarted
-  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor%20glas&hit=1$/)
+  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor%20glas&hit=1&snapshot=gen-fixture-0001$/)
   await expect(page.locator(".reader-primary-loading")).toHaveCount(0)
   await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
   await expect(page.locator(".reader-page-position")).toHaveText("-2 av 3")
@@ -4439,10 +4538,10 @@ test("a failed primary Reader client request shows a bounded state without stale
   await activateReaderLink(
     page,
     "Nästa sida",
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor%20glas&hit=1"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor%20glas&hit=1&snapshot=gen-fixture-0001"
   )
   expect((await failedResponse).status()).toBe(503)
-  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor%20glas&hit=1$/)
+  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor%20glas&hit=1&snapshot=gen-fixture-0001$/)
   await expect(page.locator(".reader-primary-error")).toHaveText(
     "Läsarsidan kunde inte hämtas."
   )
@@ -5054,7 +5153,10 @@ test("a rejected queued page push is contained and the next paging intent recove
   page
 }) => {
   const problems = captureBrowserProblems(page)
-  await page.goto(readerPath, { waitUntil: "networkidle" })
+  const rawQuery = "?bare&repeat=%2f&repeat=%2F&q=inga&hit=0"
+  await page.goto(`${readerPath}${rawQuery}`, { waitUntil: "networkidle" })
+  const initialBrowserPath = await page.evaluate(() => window.location.pathname + window.location.search)
+  const historyBefore = await page.evaluate(() => window.history.state)
   await page.evaluate(() => {
     const root = document.querySelector("#__nuxt") as HTMLElement & {
       __vue_app__?: { config: { globalProperties: { $router: {
@@ -5065,7 +5167,7 @@ test("a rejected queued page push is contained and the next paging intent recove
     if (!router) throw new Error("Nuxt client router is unavailable")
     const state = window as typeof window & { __readerRejectedPushAttempted?: boolean }
     const removeGuard = router.beforeEach(to => {
-      if (!to.fullPath.endsWith("/sida/-1/etext")) return
+      if (!to.fullPath.split("?")[0]?.endsWith("/sida/-1/etext")) return
       removeGuard()
       state.__readerRejectedPushAttempted = true
       throw new Error("rejected Reader page push")
@@ -5077,11 +5179,12 @@ test("a rejected queued page push is contained and the next paging intent recove
     __readerRejectedPushAttempted?: boolean
   }).__readerRejectedPushAttempted))).toBe(true)
   await page.waitForTimeout(50)
-  await expect(page).toHaveURL(readerPath)
+  await expect(page).toHaveURL(initialBrowserPath)
+  expect(await page.evaluate(() => window.history.state)).toEqual(historyBefore)
 
   await page.keyboard.press("n")
   await expect(page).toHaveURL(
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
+    `/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext${rawQuery}&snapshot=gen-fixture-0001`
   )
   expect(problems).toEqual([])
 })
@@ -5259,7 +5362,7 @@ test("page-position slider keeps search-hit state and has explicit-count edge be
   await page.keyboard.down("End")
   await page.keyboard.up("End")
   await expect(page).toHaveURL(
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/CountedSliderReader/sida/-1/etext?q=doktor%20glas&hit=1"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/CountedSliderReader/sida/-1/etext?q=doktor%20glas&hit=1&snapshot=gen-fixture-0001"
   )
 
   await page.goto(readerPath, { waitUntil: "networkidle" })

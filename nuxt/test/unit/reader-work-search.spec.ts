@@ -2,9 +2,12 @@ import { describe, expect, test } from "vitest"
 import {
   decodedWorkSearchQueryKey,
   nextWorkSearchOptions,
+  rememberWorkSearchSnapshot,
+  restoredWorkSearchSnapshot,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
   workSearchPageScope,
+  workSearchSnapshotIdentity,
   workSearchWordPosition,
   type WorkSearchOptionsState
 } from "../../app/lib/reader/work-search"
@@ -17,6 +20,30 @@ const initial: WorkSearchOptionsState = {
 }
 
 describe("reader and editor work-search options", () => {
+  test("restores only the same work media phrase and options from its own history entry", () => {
+    const state = { query: " doktor glas ", wordForms: false, includeOlderSpellings: true, prefix: false, suffix: false }
+    const identity = workSearchSnapshotIdentity("work-a", "etext", state)
+    const historyState = { back: "/old", current: "/reader?bare&repeat=%2f&repeat=%2F", position: 3,
+      readerSearchSnapshot: { identity, snapshot: "gen-A" } }
+    expect(restoredWorkSearchSnapshot(historyState, identity)).toBe("gen-A")
+    expect(restoredWorkSearchSnapshot({}, identity)).toBeNull()
+    for (const other of [
+      workSearchSnapshotIdentity("work-b", "etext", state),
+      workSearchSnapshotIdentity("work-a", "faksimil", state),
+      workSearchSnapshotIdentity("work-a", "etext", { ...state, query: "doktor glas" }),
+      workSearchSnapshotIdentity("work-a", "etext", { ...state, prefix: true })
+    ]) expect(restoredWorkSearchSnapshot(historyState, other)).toBeNull()
+    expect(restoredWorkSearchSnapshot({ readerSearchSnapshot: { identity, snapshot: "gen.tmp" } }, identity)).toBeNull()
+  })
+
+  test("adoption preserves router state and raw location without rewriting the entry URL", () => {
+    const existing = { back: "/old", current: "/reader?bare&repeat=%2f&repeat=%2F", forward: null, position: 3, scroll: { left: 0, top: 40 } }
+    const calls: unknown[][] = []
+    const history = { state: existing, replaceState: (...args: unknown[]) => { calls.push(args) } } as unknown as History
+    rememberWorkSearchSnapshot(history, "work-session", "gen-A")
+    expect(calls).toEqual([[{ ...existing, readerSearchSnapshot: { identity: "work-session", snapshot: "gen-A" } }, ""]])
+  })
+
   test.each([
     ["default", { lemma: false, olderSpellings: false, prefix: false, suffix: false }],
     ["lemma", { lemma: true, olderSpellings: false, prefix: false, suffix: false }],

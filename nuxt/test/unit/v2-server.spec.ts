@@ -4402,6 +4402,16 @@ test("generates all text-search operations and title author facet schemas", () =
     }
   })
 
+  test("fresh Reader entries use the active corpus generation while pinned entries retain theirs", async () => {
+    await postTextSearchResults(textSearchResultsRequest("frihet", { snapshot: "gen-expired" }))
+    for (const scope of ["v2", "private-v2"]) {
+      const endpoint = `${origin}/${scope}/works/lb-reader-doktor-glas/search-hits?media_type=etext&query=doktor%20glas`
+      expect(await (await fetch(endpoint)).json()).toMatchObject({ snapshot: "gen-fixture-0002" })
+      expect(await (await fetch(`${endpoint}&snapshot=gen-fixture-0001`)).json())
+        .toMatchObject({ snapshot: "gen-fixture-0001" })
+    }
+  })
+
   test("serves exact public and private Reader hit windows with absolute indices", async () => {
     const publicQuery = "media_type=etext&query=doktor%20glas"
     const privateQuery = [

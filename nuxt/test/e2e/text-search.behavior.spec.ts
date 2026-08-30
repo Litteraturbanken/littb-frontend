@@ -59,8 +59,8 @@ type MoreResponseGate = {
   restore: () => void
 }
 
-async function installMoreResponseGate(page: Page) {
-  await page.evaluate(() => {
+async function installMoreResponseGate(page: Page, navigator = false) {
+  await page.evaluate(navigator => {
     const nativeFetch = window.fetch.bind(window)
     const releases: Array<() => void> = []
     const aborted: boolean[] = []
@@ -89,10 +89,12 @@ async function installMoreResponseGate(page: Page) {
         && new URL(request.url).pathname.endsWith("/text-search/results")
         ? await request.clone().json()
         : null
-      if (body?.highlight_limit !== 100
+      const isNavigator = navigator && typeof body?.snapshot === "string"
+        && !Object.hasOwn(body, "facet_author_id")
+      if (!isNavigator && (body?.highlight_limit !== 100
         || !Array.isArray(body.work_ids)
         || body.work_ids.length !== 1
-        || typeof body.work_ids[0] !== "string") {
+        || typeof body.work_ids[0] !== "string")) {
         return nativeFetch(input, init)
       }
       const response = await nativeFetch(input, init)
@@ -104,7 +106,7 @@ async function installMoreResponseGate(page: Page) {
       }
       const index = requests
       requests += 1
-      workIds[index] = body.work_ids[0]
+      workIds[index] = body.work_ids?.[0] ?? "navigator"
       await new Promise<void>(resolve => {
         releases[index] = resolve
         if (releaseEverything) resolve()
@@ -113,7 +115,7 @@ async function installMoreResponseGate(page: Page) {
       settled += 1
       return new Response(responseBody, responseInit)
     }
-  })
+  }, navigator)
 }
 
 function moreResponseGate(page: Page) {
@@ -1797,6 +1799,76 @@ test("malformed corpus snapshot cannot reuse the same unpinned cached success", 
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
   expect((await requests(request, "results")).at(-1)?.body).toMatchObject({ query: "frihet" })
 })
+
+for (const auxiliary of ["expansion", "navigator"] as const) {
+  test(`auxiliary ${auxiliary} expiry restarts the unchanged unpinned page with fresh results`, async ({ page, request }) => {
+    const origin = "/s%C3%B6k?fras=overflow&forfattare=StrindbergA"
+      + (auxiliary === "navigator" ? "&sok_filter=StrindbergA" : "")
+    let expired = false
+    await page.route("**/api/v2/text-search/results", async route => {
+      const body = route.request().postDataJSON()
+      const response = await route.fetch()
+      if (!expired && body.snapshot === "gen-fixture-0001"
+        && (auxiliary === "expansion" ? body.highlight_limit === 100 : !body.facet_author_id)) {
+        expired = true
+        await route.fulfill({ status: 409, json: {
+          error: { code: "text_search_snapshot_expired", message: "Expired", details: null }
+        } })
+        return
+      }
+      await route.fulfill({ response, json: { ...await response.json(),
+        snapshot: expired ? "gen-fixture-0002" : "gen-fixture-0001" } })
+    })
+    await openSearch(page, origin)
+    if (auxiliary === "expansion") {
+      await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)
+      await page.locator("#results .overflow .more").first()
+        .evaluate((button: HTMLButtonElement) => button.click())
+    }
+    await expect(page.getByRole("alert")).toContainText("Sökresultatet har gått ut")
+    const beforeRestart = await requests(request, "results")
+    expect(beforeRestart.filter(entry => !Object.hasOwn(entry.body, "snapshot"))).toHaveLength(1)
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+    expect(await requests(request, "results")).toHaveLength(beforeRestart.length)
+    await page.getByRole("button", { name: "Starta om sökningen" }).click()
+    await expect(page.getByRole("alert")).toHaveCount(0)
+    await expect(page.locator("#results .match a").first()).toHaveAttribute("href", /snapshot=gen-fixture-0002/)
+    expect(await page.evaluate(() => location.pathname + location.search)).toBe(origin)
+    const fresh = (await requests(request, "results")).slice(beforeRestart.length)
+      .filter(entry => !Object.hasOwn(entry.body, "snapshot"))
+    expect(fresh).toHaveLength(1)
+    expect(fresh[0]!.body).toMatchObject({ query: "overflow", author_ids: ["StrindbergA"], page: 1 })
+    if (auxiliary === "navigator") expect(fresh[0]!.body.facet_author_id).toBe("StrindbergA")
+    await page.getByRole("button", { name: "Nästa träffsida" }).click()
+    await expect(page).toHaveURL(/snapshot=gen-fixture-0002/)
+    await expect.poll(async () => (await requests(request, "results")).at(-1)?.body.snapshot).toBe("gen-fixture-0002")
+  })
+}
+
+for (const navigator of [false, true]) {
+test(`held obsolete auxiliary ${navigator ? "navigator" : "expansion"} expiry cannot override a new primary`, async ({ page }) => {
+  await openSearch(page, navigator ? "/s%C3%B6k" : "/s%C3%B6k?fras=overflow")
+  await installMoreResponseGate(page, navigator)
+  await page.route("**/api/v2/text-search/results", async route => {
+    const body = route.request().postDataJSON()
+    const selected = navigator ? body.snapshot && !body.facet_author_id : body.highlight_limit === 100
+    if (!selected) return route.continue()
+    await route.fulfill({ status: 409, json: {
+      error: { code: "text_search_snapshot_expired", message: "Expired", details: null }
+    } })
+  })
+  if (navigator) await pushRoute(page, "/s%C3%B6k?fras=overflow&sok_filter=StrindbergA")
+  else await page.locator("#results .overflow .more").first()
+    .evaluate((button: HTMLButtonElement) => button.click())
+  await expect.poll(async () => (await moreResponseGate(page)).requests).toBe(1)
+  await submitPhrase(page, "frihet")
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  await page.evaluate(() => (window as typeof window & { __searchMoreGate: MoreResponseGate }).__searchMoreGate.releaseAll())
+  await expect.poll(async () => (await moreResponseGate(page)).settled).toBe(1)
+  await expect(page.getByRole("alert")).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+})
+}
 
 test("an expired generation requires an explicit fresh restart", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=overflow&forfattare=StrindbergA")

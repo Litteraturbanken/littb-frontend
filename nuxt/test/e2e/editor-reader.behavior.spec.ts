@@ -7,6 +7,28 @@ const editorSearchHit = "/editor/lb8345227/ix/4/f?show_search_work&s_query=brev"
   "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
   "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2"
 
+test("adopted Editor snapshot survives ordinary page and Back after active generation changes", async ({ page }) => {
+  const raw = "&bare&repeat=%2f&repeat=%2F"
+  await page.goto(`${editorSearchHit}${raw}`, { waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav")).toContainText("Träff 1")
+  const queries: URLSearchParams[] = []
+  await page.route("**/api/v2/works/*/search-hits?**", async route => {
+    const query = new URL(route.request().url()).searchParams
+    queries.push(query)
+    const response = await route.fetch()
+    await route.fulfill({ response, json: { ...await response.json(), snapshot: query.get("snapshot") ?? "gen-fixture-0002" } })
+  })
+  const next = page.locator('.pager_ctrls a[rel="next"]')
+  await expect(next).toHaveAttribute("href", `${editorSearchHit.replace("/ix/4/", "/ix/5/")}${raw}&s_snapshot=gen-fixture-0001`)
+  await next.evaluate((link: HTMLAnchorElement) => link.click())
+  await expect(page).toHaveURL(/\/ix\/5\/f/)
+  await expect.poll(() => queries.length).toBeGreaterThan(0)
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav")).toContainText("Träff 1")
+  await expect.poll(() => queries.length).toBeGreaterThanOrEqual(2)
+  expect(queries.every(query => query.get("snapshot") === "gen-fixture-0001")).toBe(true)
+})
+
 async function navigateClient(page: import("@playwright/test").Page, path: string): Promise<void> {
   await page.evaluate(async target => {
     const root = document.querySelector("#__nuxt") as HTMLElement & {

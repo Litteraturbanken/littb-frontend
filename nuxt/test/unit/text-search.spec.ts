@@ -887,8 +887,6 @@ describe("text search route state", () => {
       word: "match", page_name: "12", word_id: `w12_${index + 1}`
     }))
     highlight.right_context = []
-    response.works[0]!.occurrence_count = 1000
-    response.works[0]!.has_more_highlights = true
     expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
 
     highlight.match.push({ word: "overflow", page_name: "12", word_id: "w12_1001" })
@@ -900,6 +898,7 @@ describe("text search route state", () => {
       () => structuredClone(highlights.works[0]!.highlights[0]!)
     )
     highlights.works[0]!.occurrence_count = 6
+    highlights.totals.occurrences = 6
     expect(acceptTextSearchResultsResponse(highlights, request, identity)).toBeNull()
   })
 
@@ -915,8 +914,11 @@ describe("text search route state", () => {
       () => structuredClone(response.works[0]!.highlights[0]!)
     )
     response.works[0]!.occurrence_count = 500
+    response.totals.occurrences = 500
     expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
     response.works[0]!.highlights.push(structuredClone(response.works[0]!.highlights[0]!))
+    response.works[0]!.occurrence_count = 501
+    response.totals.occurrences = 501
     expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
   })
 
@@ -929,10 +931,14 @@ describe("text search route state", () => {
     response.author_facets = Array.from({ length: 10_000 }, (_, index) => ({
       author_id: `Author${index}`, name_for_index: `Author ${index}`, count: 1
     }))
+    response.works[0]!.author_id = "Author0"
+    response.works[0]!.author_name = "Author 0"
+    response.totals = { occurrences: 10_000, documents: 10_000, works: 10_000 }
     expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
     response.author_facets.push({
       author_id: "Author10000", name_for_index: "Author 10000", count: 1
     })
+    response.totals = { occurrences: 10_001, documents: 10_001, works: 10_001 }
     expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
   })
 

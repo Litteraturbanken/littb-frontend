@@ -1205,11 +1205,11 @@ test("canonical search state fetches one private hit window and marks its exact 
   expect(html).toContain("Sökträff 2 av 5")
   expect(html).toContain(
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +
-    "?q=doktor%20glas&amp;hit=1&amp;unknown=bevara%20mig\""
+    "?q=doktor%20glas&amp;hit=1&amp;unknown=bevara%20mig&amp;snapshot=gen-fixture-0001\""
   )
   expect(html).toContain(
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext" +
-    "?q=doktor%20glas&amp;hit=1&amp;unknown=bevara%20mig\""
+    "?q=doktor%20glas&amp;hit=1&amp;unknown=bevara%20mig&amp;snapshot=gen-fixture-0001\""
   )
   expect(html).toContain(
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +

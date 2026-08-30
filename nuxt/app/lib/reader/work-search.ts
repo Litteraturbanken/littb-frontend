@@ -1,3 +1,37 @@
+import { isTextSearchSnapshot } from "../text-search"
+
+type SnapshotSearch = Readonly<{
+  query: string
+  wordForms: boolean
+  includeOlderSpellings: boolean
+  prefix: boolean
+  suffix: boolean
+}>
+
+export function workSearchSnapshotIdentity(
+  workId: string,
+  mediaType: string,
+  state: SnapshotSearch
+): string {
+  return JSON.stringify([workId, mediaType, state.query, state.wordForms,
+    state.includeOlderSpellings, state.prefix, state.suffix])
+}
+
+export function restoredWorkSearchSnapshot(historyState: unknown, identity: string): string | null {
+  if (!historyState || typeof historyState !== "object") return null
+  const saved = (historyState as Record<string, unknown>).readerSearchSnapshot
+  if (!saved || typeof saved !== "object") return null
+  const { identity: savedIdentity, snapshot } = saved as Record<string, unknown>
+  return savedIdentity === identity && isTextSearchSnapshot(snapshot) ? snapshot : null
+}
+
+export function rememberWorkSearchSnapshot(history: History, identity: string, snapshot: string): void {
+  if (restoredWorkSearchSnapshot(history.state, identity) === snapshot) return
+  // Store adoption on this entry, without rewriting its raw URL. A different
+  // phrase/work/options identity cannot inherit it on an explicit new search.
+  history.replaceState({ ...history.state, readerSearchSnapshot: { identity, snapshot } }, "")
+}
+
 export type WorkSearchOption =
   | "default"
   | "lemma"

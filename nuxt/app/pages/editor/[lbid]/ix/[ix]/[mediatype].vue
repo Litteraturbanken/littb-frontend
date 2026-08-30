@@ -23,9 +23,12 @@ import {
 } from "~/lib/text-search-navigation"
 import {
   nextWorkSearchOptions,
+  rememberWorkSearchSnapshot,
+  restoredWorkSearchSnapshot,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
   workSearchPageScope,
+  workSearchSnapshotIdentity,
   workSearchWordPosition,
   type WorkSearchOption
 } from "~/lib/reader/work-search"
@@ -33,6 +36,7 @@ import {
   readerContentsHref,
   readerContentsIsOpen,
   readerContentsNeutralFullPath,
+  readerFullPathWithQueryValue,
   readerSourceInfoHref,
   readerSourceInfoIsOpen,
   readerSourceInfoNeutralFullPath
@@ -199,7 +203,7 @@ function rawSuffix(fullPath: string): string {
   return suffix >= 0 ? fullPath.slice(suffix) : ""
 }
 function href(pageIndex: number): string {
-  return `/editor/${encodeURIComponent(workId.value)}/ix/${pageIndex}/${alias.value}${rawSuffix(rawFullPath.value)}`
+  return `/editor/${encodeURIComponent(workId.value)}/ix/${pageIndex}/${alias.value}${rawSuffix(searchNavigationFullPath.value)}`
 }
 function partLabel(): string {
   const part = page.value?.currentPart
@@ -678,7 +682,7 @@ function editorSearchState(current: EditorReaderPage | null | undefined): Editor
   if (!editorSearchMatchesReader(current)) return null
 
   const query = boundedSearchQuery()
-  const snapshot = routeSingleString("s_snapshot")
+  let snapshot = routeSingleString("s_snapshot")
   const hit = boundedSearchHit()
   const fromWordId = boundedSearchWordId("traff")
   const toWordId = boundedSearchWordId("traffslut")
@@ -689,6 +693,12 @@ function editorSearchState(current: EditorReaderPage | null | undefined): Editor
   if (!query || hit === null || !fromWordId || !toWordId ||
     wordFormOnly === null || includeOlderSpellings === null || prefix === null || suffix === null
   ) return null
+  if (snapshot === null && import.meta.client) {
+    snapshot = restoredWorkSearchSnapshot(window.history.state, workSearchSnapshotIdentity(
+      current.workId, current.mediaType,
+      { query, wordForms: !wordFormOnly, includeOlderSpellings, prefix, suffix }
+    ))
+  }
   return Object.freeze({
     fromWordId,
     hit,
@@ -871,6 +881,20 @@ const hitResponse = computed(() => {
     ? current.response
     : null
 })
+const searchNavigationFullPath = computed(() => {
+  const snapshot = hitResponse.value?.snapshot ?? searchState.value?.snapshot
+  return snapshot && route.query.s_snapshot === undefined
+    ? readerFullPathWithQueryValue(rawFullPath.value, "s_snapshot", snapshot)
+    : rawFullPath.value
+})
+watch(hitResponse, response => {
+  const state = searchState.value
+  const current = page.value
+  if (import.meta.client && response && state && current && route.query.s_snapshot === undefined) {
+    rememberWorkSearchSnapshot(window.history,
+      workSearchSnapshotIdentity(current.workId, current.mediaType, state), response.snapshot)
+  }
+}, { immediate: true, flush: "sync" })
 const hitRequestFailed = computed(() => {
   const current = hitFetch.data.value
   return (current?.status === "error" && current.identity === searchRequestIdentity.value)

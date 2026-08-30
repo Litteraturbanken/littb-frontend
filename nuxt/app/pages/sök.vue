@@ -373,7 +373,15 @@ function cancelNavigatorSnapshot() {
 
 watch([primaryIdentity, () => state.value.facetAuthorId], cancelNavigatorSnapshot, { flush: "sync" })
 
+function ownsNavigatorSnapshot(request: TextSearchOwnedRequest, primary: string, snapshot: string): boolean {
+  return primaryIdentity.value === primary
+    && acceptedPrimary.value?.identity === primary
+    && acceptedPrimary.value.results?.snapshot === snapshot
+    && navigatorSnapshotRequestOwner.isCurrent(request, navigatorIdentityFor(snapshot))
+}
+
 async function loadNavigatorSnapshot(snapshot: string) {
+  const primary = primaryIdentity.value
   const requestedState = {
     ...state.value,
     page: 1,
@@ -395,14 +403,15 @@ async function loadNavigatorSnapshot(snapshot: string) {
   const requestIdentity = textSearchResultsRequestIdentity(body)
   try {
     const result = await client.POST("/text-search/results", { body, signal: request.signal })
+    if (!ownsNavigatorSnapshot(request, primary, snapshot)) return
+    if (result.response.status === 409 && result.error?.error.code === "text_search_snapshot_expired") {
+      expirePrimarySnapshot(primary, snapshot)
+      return
+    }
     const accepted = result.response.status === 200
       ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
       : null
-    if (
-      navigatorSnapshotRequestOwner.isCurrent(request, navigatorIdentityFor(snapshot))
-      && results.value?.snapshot === snapshot
-      && accepted
-    ) {
+    if (accepted) {
       const view = resultsView(accepted, requestedState)
       navigatorSnapshot.value = {
         identity,
@@ -454,6 +463,14 @@ const currentPrimaryFacets = computed(() => (
     : []
 ))
 const primaryExpired = computed(() => acceptedPrimary.value?.status === 409)
+function expirePrimarySnapshot(identity: string, snapshot: string): void {
+  if (primaryIdentity.value !== identity || acceptedPrimary.value?.identity !== identity
+    || acceptedPrimary.value.results?.snapshot !== snapshot) return
+  acceptedPrimary.value = { identity, status: 409, results: null }
+  displayPrimary.value = null
+  cancelNavigatorSnapshot()
+  cancelAllMore()
+}
 const primaryFailed = computed(() => acceptedPrimary.value !== null
   && acceptedPrimary.value.status !== 200 && acceptedPrimary.value.status !== 204)
 const primaryLoading = computed(() => Boolean(state.value.phrase)
@@ -918,6 +935,11 @@ function restartExpiredSearch() {
     : "empty"
   freshPrimaryIdentity.value = identity
   clearNuxtData(primaryDataKey(identity))
+  if (identity === primaryIdentity.value) {
+    acceptedPrimary.value = null
+    executePrimary(identity, "refresh:manual")
+    return
+  }
   void router.replace({ name: route.name as string, query: query as LocationQueryRaw })
 }
 
@@ -1123,6 +1145,11 @@ async function showMore(workKey: string) {
       body,
       signal: request.signal
     })
+    if (!owner.isCurrent(request, routeIdentity.value)) return
+    if (result.response.status === 409 && result.error?.error.code === "text_search_snapshot_expired") {
+      expirePrimarySnapshot(expansion.primaryIdentity, expansion.snapshot)
+      return
+    }
     const accepted = result.response.status === 200
       ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
       : null

@@ -6157,7 +6157,7 @@ const handleFixtureRequest = async (request, response) => {
       query.offset,
       query.limit,
       query.mediaType,
-      query
+      { ...query, snapshot: query.snapshot ?? textSearchActiveGeneration }
     ))
   }
 
