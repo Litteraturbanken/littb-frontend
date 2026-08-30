@@ -569,6 +569,18 @@ describe("text search route state", () => {
     )).toEqual(response)
   })
 
+  test("accepts an empty zero-total page", () => {
+    const request = buildTextSearchResultsRequest(parseTextSearchRouteQuery({ fras: "frihet" }))
+    const response = resultsResponse()
+    response.works = []
+    response.author_facets = []
+    response.totals = { occurrences: 0, documents: 0, works: 0 }
+
+    expect(acceptTextSearchResultsResponse(
+      response, request, textSearchResultsRequestIdentity(request)
+    )).toEqual(response)
+  })
+
   test("allows distinct media records for one work ID but rejects their duplicate pair", () => {
     const request = buildTextSearchResultsRequest(parseTextSearchRouteQuery({ fras: "frihet" }))
     const response = resultsResponse()
@@ -693,6 +705,8 @@ describe("text search route state", () => {
     { name: "unsafe totals", mutate: (copy: JsonRecord) => { copy.totals = { occurrences: Number.MAX_SAFE_INTEGER + 1, documents: 1, works: 1 } } },
     { name: "incoherent totals", mutate: (copy: JsonRecord) => { copy.totals = { occurrences: 1, documents: 2, works: 1 } } },
     { name: "incoherent zero totals", mutate: (copy: JsonRecord) => { copy.totals = { occurrences: 0, documents: 0, works: 1 } } },
+    { name: "occurrences without documents or works", mutate: (copy: JsonRecord) => { copy.works = []; copy.author_facets = []; copy.totals = { occurrences: 1, documents: 0, works: 0 } } },
+    { name: "documents without works", mutate: (copy: JsonRecord) => { copy.works = []; copy.author_facets = []; copy.totals = { occurrences: 1, documents: 1, works: 0 } } },
     {
       name: "contradictory work count",
       mutate: (copy: JsonRecord) => {

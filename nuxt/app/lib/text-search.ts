@@ -648,7 +648,10 @@ function isTextSearchResultsResponse(value: unknown): value is TextSearchResults
     !isBoundedArray(value.works, 30, isTextSearchWork) ||
     !isBoundedArray(value.author_facets, 10_000, isAuthorFacet)) return false
   const totals = value.totals
-  return totals.occurrences >= totals.documents && totals.documents >= totals.works &&
+  const zeroTotals = totals.occurrences === 0 && totals.documents === 0 && totals.works === 0
+  const positiveTotals = totals.occurrences > 0 && totals.documents > 0 && totals.works > 0
+  return (zeroTotals || positiveTotals) &&
+    totals.occurrences >= totals.documents && totals.documents >= totals.works &&
     totals.works >= value.works.length &&
     hasDistinctIds(value.works, work => `${work.lbworkid}\0${work.mediatype}`) &&
     hasDistinctIds(value.author_facets, facet => facet.author_id) &&
