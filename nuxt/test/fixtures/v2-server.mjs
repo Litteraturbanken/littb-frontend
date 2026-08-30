@@ -2610,7 +2610,9 @@ function inventoryForTextSearch(body) {
     return pairedMediaWorks(body.query, body.snapshot === "gen-fixture-0002")
   }
   const works = richTextSearchWorks(body.query)
-  if (body.query === "empty-highlights") works[0].visibleHighlights = []
+  if (body.query === "empty-highlights" && body.highlight_limit === 5) {
+    works[0].visibleHighlights = []
+  }
   if (body.query === "five-context") {
     works.splice(1)
     works[0].allHighlights[0].right_context = Array.from({ length: 5 }, (_, index) => ({
@@ -2637,6 +2639,10 @@ function textSearchResultsResponse(body, inventory = null) {
   if (body.work_ids?.length) {
     const workIds = new Set(body.work_ids)
     matchedWorks = matchedWorks.filter(work => workIds.has(work.lbworkid))
+  }
+  if (body.author_ids?.length) {
+    const authorIds = new Set(body.author_ids)
+    matchedWorks = matchedWorks.filter(work => authorIds.has(work.author_id))
   }
   if (body.facet_author_id) {
     matchedWorks = matchedWorks.filter(work => work.author_id === body.facet_author_id)
@@ -2704,7 +2710,11 @@ function authorityTextSearchResultsResponse(body) {
   works[1].allHighlights = [authorityHighlight(
     "3", 6, body.query, ["hon", "sökte", "sin"], ["bortom", "bergen", "."]
   )]
-  return textSearchResultsResponse(body, works)
+  // Authority mode is a frozen presentation fixture, including conflicting
+  // selected filters. Semantic filtering is exercised outside this mode.
+  return textSearchResultsResponse({
+    ...body, author_ids: [], work_ids: [], facet_author_id: null
+  }, works)
 }
 
 const textSearchTitleCatalog = [

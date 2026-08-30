@@ -404,6 +404,8 @@ watch(
     ) return
     const stableIdentity = navigatorIdentityFor(candidate.results.snapshot)
     if (facetAuthorId !== null) {
+      // Let the primary page reconcile before acquiring auxiliary ownership.
+      if (state.value.page > Math.max(1, Math.ceil(candidate.results.totalWorks / 30))) return
       if (import.meta.client && navigatorSnapshot.value?.identity !== stableIdentity) {
         void loadNavigatorSnapshot(candidate.results.snapshot)
       }
@@ -1046,7 +1048,7 @@ async function showMore(workKey: string) {
       && displayPrimary.value.results?.snapshot === snapshot
       && accepted
     ) {
-      const expanded = resultsView(accepted, requestState).works.find(work => (
+      const expanded = resultsView(accepted, requestedState).works.find(work => (
         work.workId === target.workId && work.mediaType === target.mediaType
       ))
       if (expanded) moreHits.value = { ...moreHits.value, [workKey]: expanded.hits }

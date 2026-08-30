@@ -155,6 +155,8 @@ test("hydrated results render combined exact totals from one response", async ({
   page,
   request
 }) => {
+  const browserRequests: string[] = []
+  page.on("request", request => browserRequests.push(new URL(request.url()).pathname))
   const response = await page.goto("/s%C3%B6k?fras=exact-totals")
   expect(response?.status()).toBe(200)
   await expect(page.locator("#results")).toBeVisible()
@@ -162,6 +164,8 @@ test("hydrated results render combined exact totals from one response", async ({
   const resultRequests = await requests(request, "results")
 
   expect(resultRequests).toHaveLength(1)
+  expect(browserRequests.filter(path => path === "/api/v2/text-search/results")).toHaveLength(1)
+  expect(browserRequests.some(path => path.endsWith("/text-search/count"))).toBe(false)
   expect(compactText(document.querySelector(".hits_info")?.textContent)).toContain("17")
   expect(compactText(document.querySelector(".littb_pager")?.textContent))
     .toContain("Visar verk 1-8 av 8")

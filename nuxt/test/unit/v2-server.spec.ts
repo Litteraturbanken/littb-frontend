@@ -2448,10 +2448,71 @@ test("generates all text-search operations and title author facet schemas", () =
       totals: { occurrences: 512, documents: 64, works: 64 }
     })
     expect(overflowBody.works[0]).toMatchObject({ has_more_highlights: true })
-    expect(await exact.json()).toMatchObject({
+    const exactBody = await exact.json() as TextSearchResultsResponse
+    expect(exactBody).toMatchObject({
       snapshot: "gen-fixture-0001",
       totals: { occurrences: 17, documents: 8, works: 8 }
     })
+    expect(exactBody.works).toHaveLength(8)
+    expect(exactBody.works.map(work => work.occurrence_count)).toEqual([3, 2, 2, 2, 2, 2, 2, 2])
+  })
+
+  test("filters the complete occurrence inventory before totals, facets, and pagination", async () => {
+    const author = await postTextSearchResults(textSearchResultsRequest("overflow", {
+      author_ids: ["StrindbergA"], page: 2
+    }))
+    const authorBody = await author.json() as TextSearchResultsResponse
+    expect(authorBody.totals).toEqual({ occurrences: 320, documents: 40, works: 40 })
+    expect(authorBody.author_facets).toEqual([
+      { author_id: "StrindbergA", name_for_index: "Strindberg, August", count: 40 }
+    ])
+    expect(authorBody.works).toHaveLength(10)
+    const intersection = await postTextSearchResults(textSearchResultsRequest("frihet", {
+      author_ids: ["StrindbergA"], work_ids: ["lb278171"]
+    }))
+    expect(await intersection.json()).toMatchObject({
+      totals: { occurrences: 0, documents: 0, works: 0 }, author_facets: [], works: []
+    })
+  })
+
+  test("keeps exact occurrence totals stable when only the highlight limit changes", async () => {
+    const limited = await postTextSearchResults(textSearchResultsRequest("overflow"))
+    const expanded = await postTextSearchResults(textSearchResultsRequest("overflow", {
+      snapshot: "gen-fixture-0001", highlight_limit: 100
+    }))
+    const limitedBody = await limited.json() as TextSearchResultsResponse
+    const expandedBody = await expanded.json() as TextSearchResultsResponse
+    expect(limitedBody.totals).toEqual({ occurrences: 512, documents: 64, works: 64 })
+    expect(expandedBody.totals).toEqual(limitedBody.totals)
+    expect(expandedBody.snapshot).toBe(limitedBody.snapshot)
+    expect(limitedBody.works[0]).toMatchObject({ occurrence_count: 8, has_more_highlights: true })
+    expect(limitedBody.works[0]?.highlights).toHaveLength(5)
+    expect(expandedBody.works[0]).toMatchObject({ occurrence_count: 8, has_more_highlights: false })
+    expect(expandedBody.works[0]?.highlights).toHaveLength(8)
+  })
+
+  test("the removed text-search count endpoint returns 404", async () => {
+    const response = await fetch(`${origin}/v2/text-search/count`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ query: "frihet" })
+    })
+    expect(response.status).toBe(404)
+  })
+
+  test("preserves the complete authority occurrence inventory through expansion", async () => {
+    await fetch(`${origin}/_text_search/authority`, { method: "PUT" })
+    try {
+      const response = await postTextSearchResults(textSearchResultsRequest("frihet", {
+        highlight_limit: 100, author_ids: ["StrindbergA"], work_ids: ["lb238704"],
+        gender: "female", about_author_ids: ["LagerlöfS"]
+      }))
+      const body = await response.json() as TextSearchResultsResponse
+      expect(body.totals).toEqual({ occurrences: 8, documents: 2, works: 2 })
+      expect(body.works.map(work => work.occurrence_count)).toEqual([7, 1])
+      expect(body.works.map(work => work.highlights.length)).toEqual([7, 1])
+    } finally {
+      await fetch(`${origin}/_text_search/authority`, { method: "DELETE" })
+    }
   })
 
   test("serves advanced options, overflow, and selected-title preservation", async () => {

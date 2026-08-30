@@ -1,6 +1,17 @@
 import { expect, test, type APIRequestContext, type Page, type Route } from "@playwright/test"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
+const removedCountRequests = new WeakMap<Page, string[]>()
+
+test.beforeEach(({ page }) => {
+  const observed: string[] = []
+  removedCountRequests.set(page, observed)
+  page.on("request", request => {
+    if (new URL(request.url()).pathname.endsWith("/text-search/count")) {
+      observed.push(request.url())
+    }
+  })
+})
 
 type Operation = "results" | "options" | "chronology"
 type RecordedRequest = {
@@ -497,7 +508,10 @@ async function pushRoute(page: Page, route: string) {
 }
 
 test.beforeEach(async ({ request }) => reset(request))
-test.afterEach(async ({ request }) => reset(request))
+test.afterEach(async ({ page, request }) => {
+  expect(removedCountRequests.get(page)).toEqual([])
+  await reset(request)
+})
 
 test("mounts Search before chronology settles", async ({ page, request }) => {
   await page.goto("/om/ide", { waitUntil: "domcontentloaded" })
@@ -677,7 +691,8 @@ test("advanced route B settles while noncooperative route A options remain held"
       query: "glas",
       author_ids: ["LagerlöfS"]
     })
-    await expect(page.getByRole("link", { name: "Röda rummet" }).first()).toBeVisible()
+    await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
+    await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toHaveCount(0)
     await expect(page.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(0)
     await expect.poll(async () => (await gate()).aReleased).toBe(false)
 
@@ -691,7 +706,8 @@ test("advanced route B settles while noncooperative route A options remain held"
     })
     await page.waitForTimeout(200)
     await expect(page).toHaveURL(/fras=glas/)
-    await expect(page.getByRole("link", { name: "Röda rummet" }).first()).toBeVisible()
+    await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
+    await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toHaveCount(0)
     await expect(page.getByRole("status", { name: "Laddar sökdata" })).toHaveCount(0)
     expect(await requests(request, "results")).toHaveLength(1)
   } finally {
@@ -854,7 +870,8 @@ test("failed advanced options settle to a retryable owner error without forwardi
     query: "frihet",
     author_ids: ["LagerlöfS"]
   })
-  await expect(page.getByRole("link", { name: "Röda rummet" }).first()).toBeVisible()
+  await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toHaveCount(0)
   await expect(error).toHaveCount(0)
 })
 
@@ -1637,7 +1654,8 @@ test("Back and Forward atomically restore route-owned controls and results", asy
   await page.goForward()
   await expect.poll(() => new URL(page.url()).searchParams.get("languages")).toBe("language:swe")
   await expect(page.locator(".lang_select .select2-selection__choice")).toContainText("Svenska")
-  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toHaveCount(0)
 })
 
 test("left and right keyboard pagination updates the canonical page and restores it", async ({ page }) => {
@@ -1867,7 +1885,7 @@ test("author facets and Visa alla own only sok_filter", async ({ page, request }
   await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
 })
 
-test("a direct author-filtered load keeps the unfiltered navigator and pager basis", async ({
+test("a direct author-filtered load keeps the unfiltered navigator and filtered pager", async ({
   page,
   request
 }) => {
@@ -1890,8 +1908,8 @@ test("a direct author-filtered load keeps the unfiltered navigator and pager bas
     .toHaveClass(/selected/)
 
   const pager = page.locator("#toolkit .littb_pager")
-  await expect(pager.locator(".hits")).toHaveText("3")
-  await expect(pager).toContainText("Visar verk 1-2 av 2, sida 1 av 1.")
+  await expect(pager.locator(".hits")).toHaveText("1")
+  await expect(pager).toContainText("Visar verk 1-1 av 1, sida 1 av 1.")
 
   await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
   const resultBodies = (await requests(request, "results")).map(entry => entry.body)
@@ -1904,7 +1922,8 @@ test("a direct author-filtered load keeps the unfiltered navigator and pager bas
     query: "frihet",
     page: 1
   }))
-  expect(resultBodies.filter(body => !Object.hasOwn(body, "facet_author_id"))).toHaveLength(1)
+  expect(resultBodies.filter(body => !Object.hasOwn(body, "facet_author_id")))
+    .toEqual([expect.objectContaining({ snapshot: "gen-fixture-0001" })])
 })
 
 test("a zero-work author facet keeps the unfiltered navigator and Visa alla escape", async ({
@@ -2064,7 +2083,7 @@ test("unmounting a pending direct facet releases auxiliary ownership before re-e
   ))).toHaveLength(2)
 })
 
-test("author filtering renders its accepted primary pager totals", async ({ page, request }) => {
+test("author filtering renders its accepted primary pager totals", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet")
   const pager = page.locator("#toolkit .littb_pager")
   await expect(pager.locator(".hits")).toHaveText("3")
@@ -2077,7 +2096,7 @@ test("author filtering renders its accepted primary pager totals", async ({ page
   await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toHaveCount(0)
   await page.waitForTimeout(100)
 
-  await expect(pager.locator(".hits")).toHaveText("3")
+  await expect(pager.locator(".hits")).toHaveText("1")
   await expect(pager).toContainText("Visar verk 1-1 av 1, sida 1 av 1.")
 })
 
@@ -2131,8 +2150,10 @@ test("Visa fler is scoped to its work and keeps original Reader route ownership"
     page: 1,
     highlight_limit: 100,
     prefix: true,
-    work_ids: ["lb278171"]
+    snapshot: "gen-fixture-0001",
+    work_ids: ["lb-overflow-60"]
   })
+  await expect(page.locator("tr.is_faksimil.sentence .match a")).toHaveCount(78)
   const href = await page.locator("tr.is_faksimil.sentence .match a").last().getAttribute("href")
   const reader = new URL(href!, "http://litteraturbanken.test")
   expect(reader.searchParams.get("s_page")).toBe("2")
@@ -2201,9 +2222,9 @@ test("Visa fler expands two different works concurrently and publishes both", as
 
   try {
     const more = page.locator("#results .overflow .more")
-    await expect(more).toHaveCount(2)
+    await expect(more).toHaveCount(30)
     await more.evaluateAll(
-      buttons => buttons.forEach(button => (button as HTMLButtonElement).click())
+      buttons => buttons.slice(0, 2).forEach(button => (button as HTMLButtonElement).click())
     )
 
     await expect.poll(async () => (await moreResponseGate(page)).workIds.slice().sort())
@@ -2215,16 +2236,17 @@ test("Visa fler expands two different works concurrently and publishes both", as
       window as typeof window & { __searchMoreGate: MoreResponseGate }
     ).__searchMoreGate.releaseWork("lb238704"))
     await expect.poll(async () => (await moreResponseGate(page)).settled).toBe(1)
-    await expect(page.locator("#results tr.sentence .match")).toHaveCount(3)
-    await expect(more).toHaveCount(1)
-    await expect(more).toBeDisabled()
+    await expect(page.locator("#results tr.sentence .match")).toHaveCount(153)
+    await expect(more).toHaveCount(29)
+    await expect(more.first()).toBeDisabled()
 
     await page.evaluate(() => (
       window as typeof window & { __searchMoreGate: MoreResponseGate }
     ).__searchMoreGate.releaseWork("lb278171"))
     await expect.poll(async () => (await moreResponseGate(page)).settled).toBe(2)
-    await expect(page.locator("#results tr.sentence .match")).toHaveCount(4)
-    await expect(more).toHaveCount(0)
+    await expect(page.locator("#results tr.sentence .match")).toHaveCount(156)
+    await expect(more).toHaveCount(28)
+    await expect(more.first()).toBeEnabled()
   } finally {
     await page.evaluate(() => {
       const current = (window as typeof window & { __searchMoreGate?: MoreResponseGate })
@@ -2244,15 +2266,19 @@ test("route changes cancel every expansion without letting late owners erase a r
   try {
     const firstRouteMore = page.locator("#results .overflow .more")
     await firstRouteMore.evaluateAll(
-      buttons => buttons.forEach(button => (button as HTMLButtonElement).click())
+      buttons => buttons.slice(0, 2).forEach(button => (button as HTMLButtonElement).click())
     )
     await expect.poll(async () => (await moreResponseGate(page)).requests).toBe(2)
 
     await page.getByRole("button", { name: "Nästa träffsida" }).click()
     await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+    await expect(page.locator("#toolkit .littb_pager")).toContainText("Visar verk 31-60 av 64")
+    await page.getByRole("button", { name: "Föregående träffsida" }).click()
+    await expect(page.locator("#toolkit .littb_pager")).toContainText("Visar verk 1-30 av 64")
+    await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
     const currentMore = page.locator("#results .overflow .more")
-    await expect(currentMore).toHaveCount(2)
-    await expect(page.locator("#results tr.sentence .match")).toHaveCount(2)
+    await expect(currentMore).toHaveCount(30)
+    await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)
 
     await currentMore.first().click()
     await expect.poll(async () => (await moreResponseGate(page)).requests).toBe(3)
@@ -2269,15 +2295,15 @@ test("route changes cancel every expansion without letting late owners erase a r
       return { settled: current.settled, aborted: current.aborted.slice(0, 2) }
     }).toEqual({ settled: 2, aborted: [true, true] })
     await expect(currentMore.first()).toBeDisabled()
-    await expect(page.locator("#results tr.sentence .match")).toHaveCount(2)
+    await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)
 
     await page.evaluate(() => (
       window as typeof window & { __searchMoreGate: MoreResponseGate }
     ).__searchMoreGate.release(2))
     await expect.poll(async () => (await moreResponseGate(page)).settled).toBe(3)
-    await expect(page.locator("#results tr.sentence .match")).toHaveCount(3)
-    await expect(currentMore).toHaveCount(1)
-    await expect(currentMore).toBeEnabled()
+    await expect(page.locator("#results tr.sentence .match")).toHaveCount(153)
+    await expect(currentMore).toHaveCount(29)
+    await expect(currentMore.first()).toBeEnabled()
   } finally {
     await page.evaluate(() => {
       const current = (window as typeof window & { __searchMoreGate?: MoreResponseGate })
@@ -2526,7 +2552,7 @@ test("primary, options, and more errors remain local and recover on retry", asyn
   await more.evaluate((button: HTMLButtonElement) => button.click())
   expect((await failedMoreResponse).status()).toBe(503)
   await expect(more).not.toHaveAttribute("aria-disabled", "true")
-  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(1)
+  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(75)
   await request.delete(`${fixture}/_text_search/failures/results`)
   const recoveredMoreResponse = page.waitForResponse(response =>
     response.request().method() === "POST"
@@ -2535,7 +2561,7 @@ test("primary, options, and more errors remain local and recover on retry", asyn
   )
   await more.evaluate((button: HTMLButtonElement) => button.click())
   expect((await recoveredMoreResponse).status()).toBe(200)
-  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(2)
+  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(78)
 })
 
 test("a failed primary search can be retried with the same phrase", async ({ page, request }) => {
@@ -2575,7 +2601,7 @@ test("options and more cancellation clear loading and reject stale identity data
   await page.getByRole("button", { name: "Nästa träffsida" }).click()
   await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
   await page.waitForTimeout(1300)
-  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(1)
+  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(75)
   await expect(page.locator("#results .overflow .more").last()).toBeEnabled()
 })
 
@@ -2589,7 +2615,7 @@ test("page-only navigation reuses the request-equivalent advanced options", asyn
 
   await pushRoute(page, "/s%C3%B6k?fras=overflow&avancerad=1&traffsida=2")
   await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
-  await expect(page.locator("#results .overflow")).toHaveCount(2)
+  await expect(page.locator("#results .overflow")).toHaveCount(30)
   await page.getByRole("button", { name: "Visa alternativ för Författarskap" }).click()
   await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(1)
   await page.keyboard.press("Escape")
@@ -2611,7 +2637,7 @@ test("page-only navigation retains an equivalent in-flight options request", asy
   await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
   await pushRoute(page, "/s%C3%B6k?fras=overflow&avancerad=1&traffsida=2")
   await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
-  await expect(page.locator("#results .overflow")).toHaveCount(2)
+  await expect(page.locator("#results .overflow")).toHaveCount(30)
   await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
   await page.getByRole("button", { name: "Visa alternativ för Författarskap" }).click()
   await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(1)
@@ -2632,7 +2658,7 @@ test("page-only navigation retains an equivalent in-flight title-options request
   await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
   await pushRoute(page, "/s%C3%B6k?fras=overflow&avancerad=1&traffsida=2")
   await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
-  await expect(page.locator("#results .overflow")).toHaveCount(2)
+  await expect(page.locator("#results .overflow")).toHaveCount(30)
   await expect(page.getByRole("option", { name: "Gösta Berlings saga" })).toHaveCount(1)
   expect(await requests(request, "options")).toHaveLength(1)
 })
@@ -2735,8 +2761,10 @@ test("empty-highlight work titles stay plain while normal titles keep their firs
     query: "empty-highlights",
     page: 1,
     highlight_limit: 100,
-    work_ids: ["lb278171"]
+    snapshot: "gen-fixture-0001",
+    work_ids: ["lb238704"]
   })
+  await expect(emptyTitle.locator("a")).toHaveCount(1)
   await expect(page.locator("tr.is_faksimil.sentence .match a")).toHaveCount(2)
   await expect(normalTitle).toHaveAttribute("href", reader.pathname + reader.search)
 })
@@ -2766,7 +2794,7 @@ test("renders a phrase hit as one accessible Reader link", async ({ page }) => {
 })
 
 test("Search result return restores the exact origin and Reader hit", async ({ page }) => {
-  const origin = "/s%C3%B6k?fras=overflow&traffsida=2&avancerad=1&forfattare=StrindbergA&utm=a+b&repeat=%2f&repeat=%2F"
+  const origin = "/s%C3%B6k?fras=frihet&traffsida=1&avancerad=1&forfattare=StrindbergA&utm=a+b&repeat=%2f&repeat=%2F"
   await openSearch(page, origin)
   const readerHref = await page.locator("#results .match a").first().getAttribute("href")
   expect(readerHref).not.toBeNull()
@@ -2782,7 +2810,7 @@ test("Search result return restores the exact origin and Reader hit", async ({ p
 
   await page.goBack({ waitUntil: "networkidle" })
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida 1")
-  await expect(page).toHaveURL(/q=overflow&hit=0&traff=w1_11/)
+  await expect(page).toHaveURL(/q=frihet&hit=0&traff=w1_11/)
   await page.reload({ waitUntil: "networkidle" })
   await expect(page.locator("#search_nav").getByRole("link", {
     name: "Tillbaka till sökningen"
