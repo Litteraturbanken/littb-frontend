@@ -615,6 +615,7 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
   const submitted = new URL(page.url())
   expect(Object.fromEntries(submitted.searchParams)).toMatchObject({
     s_query: "brev",
+    s_snapshot: "gen-fixture-0001",
     s_lbworkid: "lb8345227",
     s_mediatype: "faksimil",
     s_word_form_only: "true",
@@ -1027,7 +1028,7 @@ test("editor Reader does not push history for the already-active search hit", as
 
 test("editor Reader aborts a superseded direct-hit lookup", async ({ page, request }) => {
   await request.delete(`${fixture}/_reader_hit_requests`)
-  const slowKey = "lb8345227|brev|235|3|false|true|false|false"
+  const slowKey = "lb8345227|brev|235|3|false|true|false|false|gen-fixture-0001"
   await request.put(`${fixture}/_reader_hit_delays`, { data: { [slowKey]: 600 } })
   try {
     await page.goto(editorSearchHit, { waitUntil: "networkidle" })
@@ -1147,7 +1148,7 @@ test("editor Reader restores live-style bare prefix flags across hydration and r
     "href",
     "/editor/lb8345227/ix/5/f?keep=%2f&keep=%2F&show_search_work" +
       "&s_query=brev&s_lbworkid=lb8345227&s_mediatype=faksimil" +
-      "&s_word_form_only=true&s_include_modernized=true&s_prefix=true" +
+      "&s_word_form_only=true&s_include_modernized=true&s_snapshot=gen-fixture-0001&s_prefix=true" +
       "&hit_index=1&traff=w6_1&traffslut=w6_1#prefix-session"
   )
   expect(await next.evaluate(link => {
@@ -1171,7 +1172,7 @@ test("editor Reader restores live-style bare prefix flags across hydration and r
     "href",
     "/editor/lb8345227/ix/4/f?keep=%2f&keep=%2F&show_search_work" +
       "&s_query=brev&s_lbworkid=lb8345227&s_mediatype=faksimil" +
-      "&s_word_form_only=true&s_include_modernized=true&s_prefix=true" +
+      "&s_word_form_only=true&s_include_modernized=true&s_snapshot=gen-fixture-0001&s_prefix=true" +
       "&hit_index=0&traff=w5_1&traffslut=w5_2#prefix-session"
   )
   await page.goBack()
@@ -1185,7 +1186,7 @@ test("editor Reader restores live-style bare prefix flags across hydration and r
     expect.objectContaining({
       path: "/v2/works/lb8345227/search-hits",
       query: "media_type=faksimil&query=brev&offset=0&limit=3" +
-        "&word_forms=false&include_older_spellings=true&prefix=true&suffix=false"
+        "&word_forms=false&include_older_spellings=true&prefix=true&suffix=false&snapshot=gen-fixture-0001"
     })
   ]))
 })

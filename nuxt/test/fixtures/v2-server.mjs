@@ -802,7 +802,8 @@ function readerHitDelayKey(input) {
     input.wordForms,
     input.includeOlderSpellings,
     input.prefix,
-    input.suffix
+    input.suffix,
+    ...(input.snapshot ? [input.snapshot] : [])
   ].join("|")
 }
 
@@ -2252,7 +2253,8 @@ function parseReaderHitQuery(searchParams) {
     "word_forms",
     "include_older_spellings",
     "prefix",
-    "suffix"
+    "suffix",
+    "snapshot"
   ])
   for (const key of searchParams.keys()) {
     if (!allowed.has(key) || searchParams.getAll(key).length !== 1) return null
@@ -2261,8 +2263,11 @@ function parseReaderHitQuery(searchParams) {
   const mediaType = searchParams.get("media_type")
   const rawQuery = searchParams.get("query")
   if ((mediaType !== "etext" && mediaType !== "faksimil") || rawQuery === null) return null
-  const query = rawQuery.trim()
-  if (query.length < 1 || query.length > 200) return null
+  const query = rawQuery
+  if (query.trim().length < 1 || query.length > 200) return null
+  const snapshot = searchParams.get("snapshot")
+  if (snapshot !== null && (!/^[A-Za-z0-9._-]{1,128}$/u.test(snapshot)
+    || snapshot === "." || snapshot === ".." || snapshot.endsWith(".tmp"))) return null
 
   const integer = (name, fallback, minimum, maximum) => {
     const raw = searchParams.get(name)
@@ -2299,6 +2304,7 @@ function parseReaderHitQuery(searchParams) {
   return {
     mediaType,
     query,
+    snapshot,
     offset,
     limit,
     wordForms,
@@ -6045,6 +6051,13 @@ const handleFixtureRequest = async (request, response) => {
     readerHitRequests.push({ path: rawPathname, query: rawQuery })
     const input = { workId: readerHitWork.workId, ...query }
     await waitForReaderHitDelay(input)
+    if (query.snapshot === "gen-expired" || (
+      query.snapshot === "gen-expired-continuation" && query.offset >= 3
+    )) {
+      return sendJson(response, 409, {
+        error: { code: "text_search_snapshot_expired", message: "Text-search snapshot has expired", details: null }
+      })
+    }
     if (readerHitFailure) {
       return sendJson(response, 503, {
         error: {
@@ -6056,6 +6069,7 @@ const handleFixtureRequest = async (request, response) => {
     }
     if (query.query === "malformed-response") {
       return sendJson(response, 200, {
+        snapshot: query.snapshot ?? "gen-fixture-0001",
         query: query.query,
         media_type: query.mediaType,
         offset: query.offset,
@@ -6066,6 +6080,7 @@ const handleFixtureRequest = async (request, response) => {
     }
     if (query.query === "incomplete-window") {
       return sendJson(response, 200, {
+        snapshot: query.snapshot ?? "gen-fixture-0001",
         query: query.query,
         media_type: query.mediaType,
         offset: query.offset,

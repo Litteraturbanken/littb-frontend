@@ -7,6 +7,155 @@ import {
 } from "@playwright/test"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
+
+test("snapshot pins initial and next public Reader requests", async ({ page, request }) => {
+  await page.goto(`${readerPath}?q=doktor%20glas&hit=1&snapshot=gen-0123456789abcdef`, {
+    waitUntil: "networkidle"
+  })
+  await expect(page.locator("#search_nav")).toContainText("Träff 2, sida -2")
+  await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page.locator("#search_nav")).toContainText("Träff 3, sida -2")
+  const requests = await readerHitRequests(request)
+  expect(requests.length).toBeGreaterThanOrEqual(2)
+  expect(requests.map(item => new URLSearchParams(item.query).get("snapshot")))
+    .toEqual(requests.map(() => "gen-0123456789abcdef"))
+})
+
+test("snapshot mismatch rejects a public Reader response", async ({ page }) => {
+  await page.route("**/api/v2/works/*/search-hits?**", async route => {
+    const response = await route.fetch()
+    await route.fulfill({ json: { ...await response.json(), snapshot: "gen-other" } })
+  })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    const next = `${location.pathname}?q=doktor%20glas&hit=1&snapshot=gen-0123456789abcdef`
+    history.pushState({}, "", next)
+    window.dispatchEvent(new PopStateEvent("popstate"))
+  })
+  await expect(page.locator(".reader-search-message")).toHaveText("Sökträffen kunde inte hämtas.")
+  expect(new URL(page.url()).searchParams.get("hit")).toBe("1")
+  await expect(page.locator(".reader_main .markee")).toHaveCount(0)
+})
+
+test("snapshot public uncached mismatch retains selected hit as an integrity error", async ({ page }) => {
+  await page.goto(`${readerPath}?q=doktor%20glas&hit=1&snapshot=gen-0123456789abcdef`, { waitUntil: "networkidle" })
+  const navigation = page.locator("#search_nav")
+  await expect(navigation).toContainText("Träff 2, sida -2")
+  await page.route("**/api/v2/works/*/search-hits?**", async route => {
+    const response = await route.fetch()
+    await route.fulfill({ json: { ...await response.json(), snapshot: "gen-other" } })
+  })
+  await navigation.getByRole("button", { name: "Gå till sista träffen" }).click()
+  await expect(navigation).toContainText("Sökträffen kunde inte hämtas.")
+  await expect(navigation).toContainText("Träff 2, sida -2")
+  await expect(navigation).not.toContainText(expiredSnapshotMessage)
+  await expect(page.locator("#w2_1.markee")).toHaveCount(1)
+  expect(new URL(page.url()).searchParams.get("snapshot")).toBe("gen-0123456789abcdef")
+  expect(new URL(page.url()).searchParams.get("hit")).toBe("1")
+})
+
+test("snapshot public malformed serialized generation never unpins", async ({ page, request }) => {
+  for (const suffix of ["&snapshot", "&snapshot=", "&snapshot=gen.tmp", "&snapshot=gen/x", "&snapshot=a&snapshot=b"]) {
+    await request.delete(`${fixture}/_reader_hit_requests`)
+    await page.goto(`${readerPath}?q=doktor%20glas&hit=1${suffix}`, { waitUntil: "networkidle" })
+    await expect(page.locator("#search_nav")).toHaveCount(0)
+    expect(await readerHitRequests(request)).toEqual([])
+  }
+})
+
+const expiredSnapshotMessage = "Sökresultatet har gått ut. Starta om sökningen för att använda den aktuella textsamlingen."
+
+test("snapshot comes from the accepted unpinned corpus page one Reader link", async ({ page, request }) => {
+  const origin = "/s%C3%B6k?fras=frihet&forfattare=StrindbergA&prefix=1&utm=a+b&repeat=%2f&repeat=%2F"
+  await page.goto(origin, { waitUntil: "networkidle" })
+  const match = page.locator("#results .match a").first()
+  await expect(match).toBeVisible()
+  const href = new URL((await match.getAttribute("href"))!, page.url())
+  expect(href.searchParams.get("snapshot")).toBe("gen-fixture-0001")
+  expect(href.searchParams.get("traff")).toBe("w1_11")
+  expect(href.searchParams.get("s_author_ids")).toBe("StrindbergA")
+  expect(href.searchParams.get("prefix")).toBe("1")
+  expect(new URL(page.url()).searchParams.has("snapshot")).toBe(false)
+  await match.click()
+  await expect(page.locator("#w1_11.markee")).toHaveCount(1)
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida 1")
+  const queries = (await readerHitRequests(request)).map(item => new URLSearchParams(item.query))
+  expect(queries.length).toBeGreaterThan(0)
+  expect(queries.every(item => item.get("snapshot") === "gen-fixture-0001")).toBe(true)
+  await page.locator("#search_nav").getByRole("link", { name: "Tillbaka till sökningen" }).click()
+  await expect.poll(() => page.evaluate(() => location.pathname + location.search)).toBe(origin)
+})
+
+test("snapshot public restart bypasses an accepted unpinned cache and stale continuation 409", async ({ page, request }) => {
+  const cacheRoute = `${storedReaderPath.replace("/sida/-2/", "/sida/-3/")}?q=doktor+glas&hit=0`
+  await page.goto(cacheRoute, { waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -3")
+  await navigateClient(page, `${cacheRoute}&snapshot=gen-expired-continuation`)
+  await expect(page.locator('#search_nav a[rel="next"]')).toHaveAttribute("href", /snapshot=gen-expired-continuation/)
+  await page.evaluate(() => {
+    const nativeFetch = window.fetch.bind(window)
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const state = { started: false, released: false, release }
+    Object.assign(window, { snapshotGate: state })
+    window.fetch = async (input, init) => {
+      const response = await nativeFetch(input, init)
+      const url = new URL(input instanceof Request ? input.url : String(input), location.href)
+      if (url.pathname.endsWith("/search-hits") && url.searchParams.get("offset") === "3") {
+        const buffered = new Response(await response.text(), { status: response.status, headers: response.headers })
+        if (buffered.status !== 409) throw new Error("Expected a held expired response")
+        state.started = true
+        await gate
+        state.released = true
+        return buffered
+      }
+      return response
+    }
+  })
+  await page.locator("#search_nav").getByRole("button", { name: "Gå till sista träffen" }).click()
+  await page.waitForFunction(() => (window as unknown as { snapshotGate: { started: boolean } }).snapshotGate.started)
+  // Move to an explicitly expired initial state while the older continuation is held.
+  await navigateClient(page, `${cacheRoute}&snapshot=gen-expired`)
+  await expect(page.locator("#search_nav")).toContainText(expiredSnapshotMessage)
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await page.locator("#search_nav").getByRole("button", { name: "Starta om sökningen", exact: true }).click()
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -3")
+  const queries = (await readerHitRequests(request)).map(item => new URLSearchParams(item.query))
+  expect(queries.filter(item => !item.has("snapshot") && item.get("limit") === "1")).toHaveLength(1)
+  await page.evaluate(async () => {
+    (window as unknown as { snapshotGate: { release: () => void } }).snapshotGate.release()
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  })
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -3")
+  await expect(page.locator("#search_nav")).not.toContainText(expiredSnapshotMessage)
+  expect(new URL(page.url()).searchParams.get("snapshot")).toBe("gen-fixture-0001")
+})
+
+for (const continuation of [false, true]) {
+  test(`snapshot expiry ${continuation ? "continuation" : "initial"} requires explicit public restart`, async ({ page, request }) => {
+    const snapshot = continuation ? "gen-expired-continuation" : "gen-expired"
+    await page.goto(`${readerPath}?q=doktor%20glas&hit=1&snapshot=${snapshot}&lemma=1&ej_modern=1&prefix=1&suffix=1`, {
+      waitUntil: "networkidle"
+    })
+    const navigation = page.locator("#search_nav")
+    if (continuation) {
+      await expect(navigation).toContainText("Träff 2, sida -2")
+      await navigation.getByRole("button", { name: "Gå till sista träffen" }).click()
+    }
+    await expect(navigation).toContainText(expiredSnapshotMessage)
+    expect(new URL(page.url()).searchParams.get("hit")).toBe("1")
+    expect((await readerHitRequests(request)).every(item => new URLSearchParams(item.query).get("snapshot") === snapshot)).toBe(true)
+    await navigation.getByRole("button", { name: "Starta om sökningen", exact: true }).click()
+    await expect(navigation).toContainText("Träff 1, sida -3")
+    expect(new URL(page.url()).searchParams.get("snapshot")).toBe("gen-fixture-0001")
+    const queries = (await readerHitRequests(request)).map(item => new URLSearchParams(item.query))
+    const fresh = queries.find(item => !item.has("snapshot"))!
+    expect(Object.fromEntries(fresh)).toMatchObject({ query: "doktor glas", limit: "1", offset: "0", word_forms: "true", include_older_spellings: "false", prefix: "true", suffix: "true" })
+    await navigation.getByRole("link", { name: "Nästa sökträff" }).click()
+    await expect(navigation).toContainText("Träff 2, sida -2")
+    expect(new URLSearchParams((await readerHitRequests(request)).at(-1)!.query).get("snapshot")).toBe("gen-fixture-0001")
+  })
+}
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
 const readerPartsPath = "/författare/SöderbergH/titlar/DoktorGlasParts/sida/-1/etext"
 const workScopedReaderPath = "/författare/SöderbergH/titlar/WorkScopedIdsReader/sida/-2/etext"
@@ -2998,15 +3147,16 @@ test("faksimil search state requests its own hits and exposes live navigation", 
   await expect(toolkit).toContainText("Träff 2, sida 99")
   const window0 = "media_type=faksimil&query=kyrka&offset=0&limit=3" +
     "&word_forms=false&include_older_spellings=true&prefix=false&suffix=false"
-  const window1 = window0.replace("offset=0", "offset=1")
+  const pinnedWindow0 = `${window0}&snapshot=gen-fixture-0001`
+  const window1 = pinnedWindow0.replace("offset=0", "offset=1")
   expect(await readerHitRequests(request)).toEqual([
     { path: "/private-v2/works/lb3203777/search-hits", query: window0 },
+    { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 },
     { path: "/v2/works/lb3203777/search-hits", query: window0 },
-    { path: "/v2/works/lb3203777/search-hits", query: window0 },
-    { path: "/v2/works/lb3203777/search-hits", query: window0 },
-    { path: "/v2/works/lb3203777/search-hits", query: window0 },
+    { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 },
+    { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 },
     { path: "/v2/works/lb3203777/search-hits", query: window1 },
-    { path: "/v2/works/lb3203777/search-hits", query: window0 }
+    { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 }
   ])
   expect(publicHitRequests).toHaveLength(6)
   expect(publicHitRequests.every(url => new URL(url).searchParams.get("media_type") === "faksimil"))
@@ -3043,7 +3193,7 @@ test("leaving delayed faksimil hit mode aborts the obsolete request", async ({
   await request.delete(`${fixture}/_reader_hit_requests`)
   await request.put(`${fixture}/_reader_hit_delays`, {
     data: {
-      ["lb3203777|kyrka|0|3|false|true|false|false"]: 600
+      ["lb3203777|kyrka|0|3|false|true|false|false|gen-fixture-0001"]: 600
     }
   })
   const failedRequests: string[] = []
@@ -3218,9 +3368,9 @@ test("hydrates the SSR phrase marker and active toolkit without a duplicate publ
   await expect(toolkit).toContainText("5 sökträffar")
   await expect(toolkit).toContainText("Träff 2, sida -2")
   await expect(toolkit.getByRole("link", { name: "Föregående sökträff" }))
-    .toHaveAttribute("href", /\/sida\/-3\/etext\?q=doktor\+glas&hit=0$/)
+    .toHaveAttribute("href", /\/sida\/-3\/etext\?q=doktor\+glas&hit=0&snapshot=gen-fixture-0001$/)
   await expect(toolkit.getByRole("link", { name: "Nästa sökträff" }))
-    .toHaveAttribute("href", /\/sida\/-2\/etext\?q=doktor\+glas&hit=2$/)
+    .toHaveAttribute("href", /\/sida\/-2\/etext\?q=doktor\+glas&hit=2&snapshot=gen-fixture-0001$/)
   expect(await readerHitRequests(request)).toHaveLength(1)
   expect((await readerHitRequests(request))[0]?.path).toContain("/private-v2/")
   expect(publicHitRequests).toEqual([])
@@ -3274,7 +3424,7 @@ test("submits a canonical work search, preserves raw owners, and follows History
   await input.fill("  doktor glas  ")
   await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
 
-  const canonicalQuery = `${retained}&q=doktor+glas&hit=0`
+  const canonicalQuery = `${retained}&q=doktor+glas&hit=0&snapshot=gen-fixture-0001`
   await expect(page).toHaveURL(`${firstHitPath}${canonicalQuery}`)
   await expect(page.locator("#search_nav")).toContainText("5 sökträffar")
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -3")
@@ -3323,7 +3473,7 @@ test("validates empty work searches and closes active hits without touching raw 
 
   await input.fill("glas")
   await input.press("Enter")
-  await expect(page).toHaveURL(`${readerPath}${retained}&q=glas&hit=0`)
+  await expect(page).toHaveURL(`${readerPath}${retained}&q=glas&hit=0&snapshot=gen-fixture-0001`)
   await page.locator("#search_nav").getByRole("button", {
     name: "Stäng träffvisningen"
   }).click()
@@ -3374,10 +3524,10 @@ test("a newer work-search submission cancels a delayed first-hit lookup", async 
 
     await input.fill("glas")
     await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
-    await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0`)
+    await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0&snapshot=gen-fixture-0001`)
     await expect(page.locator("#w2_2.markee")).toHaveCount(1)
     await page.waitForTimeout(700)
-    await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0`)
+    await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0&snapshot=gen-fixture-0001`)
   } finally {
     await request.delete(`${fixture}/_reader_hit_delays`)
   }
@@ -3414,7 +3564,7 @@ test("a stale non-abort work-search failure cannot overwrite a newer result", as
 
   await input.fill("glas")
   await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
-  await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0`)
+  await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0&snapshot=gen-fixture-0001`)
   await expect(page.locator("#w2_2.markee")).toHaveCount(1)
   await page.waitForTimeout(700)
   await expect(searchbox.getByRole("status")).toHaveCount(0)
@@ -3513,7 +3663,7 @@ test("projects Angular work-search options onto canonical generated hit flags", 
   await request.delete(`${fixture}/_reader_hit_requests`)
   await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
 
-  await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0&lemma=1&ej_modern=1`)
+  await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0&snapshot=gen-fixture-0001&lemma=1&ej_modern=1`)
   await expect.poll(async () => (await readerHitRequests(request)).length).toBe(2)
   expect(await readerHitRequests(request)).toEqual([
     expect.objectContaining({
@@ -3522,7 +3672,7 @@ test("projects Angular work-search options onto canonical generated hit flags", 
     }),
     expect.objectContaining({
       query: "media_type=etext&query=glas&offset=0&limit=3" +
-        "&word_forms=true&include_older_spellings=false&prefix=false&suffix=false"
+        "&word_forms=true&include_older_spellings=false&prefix=false&suffix=false&snapshot=gen-fixture-0001"
     })
   ])
 })
@@ -3583,7 +3733,7 @@ test("work-scoped live word ids hydrate, highlight, and navigate to the next hit
   await expect(page.locator("#lb7604979_8654.markee")).toHaveCount(1)
   await expect(page.locator("#lb7604979_8658.markee")).toHaveCount(1)
   await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
-  await expect(page).toHaveURL(/\/WorkScopedIdsReader\/sida\/-1\/etext\?q=kyrka&hit=1$/)
+  await expect(page).toHaveURL(/\/WorkScopedIdsReader\/sida\/-1\/etext\?q=kyrka&hit=1&snapshot=gen-fixture-0001$/)
   await expect(page.locator("#lb7604979_8700.markee")).toHaveCount(1)
   await expect(page.locator("#search_nav")).toContainText("Träff 2, sida -1")
   expect(problems).toEqual([])
@@ -3621,7 +3771,7 @@ test("the first of several hits omits previous and keeps the exact next target",
   await expect(toolkit.getByRole("link", { name: "Föregående sökträff" })).toHaveCount(0)
   await expect(toolkit.getByRole("link", { name: "Nästa sökträff" })).toHaveAttribute(
     "href",
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?q=doktor+glas&hit=1"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?q=doktor+glas&hit=1&snapshot=gen-fixture-0001"
   )
   expect(problems).toEqual([])
 })
@@ -3640,7 +3790,7 @@ test("the last of several hits keeps the exact previous target and omits next", 
   await expect(toolkit).toContainText("Träff 5, sida -1")
   await expect(toolkit.getByRole("link", { name: "Föregående sökträff" })).toHaveAttribute(
     "href",
-    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=3"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=3&snapshot=gen-fixture-0001"
   )
   await expect(toolkit.getByRole("link", { name: "Nästa sökträff" })).toHaveCount(0)
   expect(problems).toEqual([])
@@ -3659,7 +3809,7 @@ test("first and last hit controls preserve raw state and push exact Reader histo
 
   const toolkit = page.locator("#search_nav")
   await toolkit.getByRole("button", { name: "Gå till sista träffen" }).click()
-  const lastQuery = `?${rawOwners}&q=doktor%20glas&hit=4`
+  const lastQuery = `?${rawOwners}&q=doktor%20glas&hit=4&snapshot=gen-fixture-0001`
   await expect.poll(() => page.evaluate(() => location.pathname + location.search))
     .toBe(`${storedNextReaderPath}${lastQuery}`)
   await expect(toolkit).toContainText("Träff 5, sida -1")
@@ -3675,7 +3825,7 @@ test("first and last hit controls preserve raw state and push exact Reader histo
   await expect(toolkit).toContainText("Träff 2, sida -2")
 
   await toolkit.getByRole("button", { name: "Gå till första träffen" }).click()
-  const firstQuery = `?${rawOwners}&q=doktor%20glas&hit=0`
+  const firstQuery = `?${rawOwners}&q=doktor%20glas&hit=0&snapshot=gen-fixture-0001`
   await expect.poll(() => page.evaluate(() => location.pathname + location.search))
     .toBe(`${storedReaderPath.replace("/sida/-2/", "/sida/-3/")}${firstQuery}`)
   await expect(toolkit).toContainText("Träff 1, sida -3")
@@ -3743,7 +3893,7 @@ test("direct hit input toggles and focuses, rejects bad ordinals, and pushes a v
 
   await input.fill("4")
   await submit.click()
-  const targetQuery = `?${rawOwners}&q=doktor%20glas&hit=3`
+  const targetQuery = `?${rawOwners}&q=doktor%20glas&hit=3&snapshot=gen-fixture-0001`
   await expect.poll(() => page.evaluate(() => location.pathname + location.search))
     .toBe(`${storedNextReaderPath}${targetQuery}`)
   await expect(page).toHaveURL(`${storedNextReaderPath}${targetQuery}#direct-hit`)
@@ -3803,7 +3953,7 @@ test("direct hit lookup keeps its API window inside the maximum offset", async (
   await input.fill("1000002")
   await input.press("Enter")
 
-  await expect(page).toHaveURL(/\?q=max-direct&hit=1000001$/u)
+  await expect(page).toHaveURL(/\?q=max-direct&hit=1000001&snapshot=gen-fixture-0001$/u)
   await expect(toolkit).toContainText("Träff 1000002, sida -2")
   expect(await readerHitRequests(request)).toEqual([
     expect.objectContaining({
@@ -3832,7 +3982,8 @@ test("an obsolete direct target lookup cannot navigate after an A-B-A route cycl
     "false",
     "true",
     "false",
-    "false"
+    "false",
+    "gen-fixture-0001"
   ].join("|")
   await request.put(`${fixture}/_reader_hit_delays`, {
     data: { [slowTargetKey]: 350 }
@@ -3882,7 +4033,7 @@ test("closing hit view synchronously aborts a pending direct target lookup", asy
   request
 }) => {
   const sourcePath = `${storedReaderPath}?q=doktor%20glas&hit=1`
-  const slowTargetKey = "lb-reader-doktor-glas|doktor glas|3|3|false|true|false|false"
+  const slowTargetKey = "lb-reader-doktor-glas|doktor glas|3|3|false|true|false|false|gen-fixture-0001"
   await request.put(`${fixture}/_reader_hit_delays`, {
     data: { [slowTargetKey]: 600 }
   })
@@ -3943,7 +4094,8 @@ test("opening Reader source information invalidates a delayed target lookup", as
     "false",
     "true",
     "false",
-    "false"
+    "false",
+    "gen-fixture-0001"
   ].join("|")
   await request.put(`${fixture}/_reader_hit_delays`, {
     data: { [slowTargetKey]: 700 }
@@ -3977,12 +4129,12 @@ test("next-hit client navigation updates marker, exact history, and Back restore
   await request.delete(`${fixture}/_reader_hit_requests`)
 
   await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
-  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor\+glas&hit=2$/)
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor\+glas&hit=2&snapshot=gen-fixture-0001$/)
   await expect(page.locator(".reader_main .markee")).toHaveCount(1)
   await expect(page.locator("#w2_2.markee")).toHaveCount(1)
   await expect(page.locator("#search_nav")).toContainText("Träff 3, sida -2")
   await expect.poll(async () => (await storedPageViews(page))[0]?.url).toBe(
-    `${storedReaderPath}?q=doktor+glas&hit=2`
+    `${storedReaderPath}?q=doktor+glas&hit=2&snapshot=gen-fixture-0001`
   )
   expect(await readerHitRequests(request)).toEqual([
     expect.objectContaining({ path: "/v2/works/lb-reader-doktor-glas/search-hits" })
@@ -4006,7 +4158,7 @@ test("previous-hit and ordinary-page links use distinct target pages and preserv
   await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, { waitUntil: "networkidle" })
 
   await page.locator("#search_nav").getByRole("link", { name: "Föregående sökträff" }).click()
-  await expect(page).toHaveURL(/\/sida\/-3\/etext\?q=doktor\+glas&hit=0$/)
+  await expect(page).toHaveURL(/\/sida\/-3\/etext\?q=doktor\+glas&hit=0&snapshot=gen-fixture-0001$/)
   await expect(page.locator(".reader-page-position")).toHaveText("-3 av 3")
   await expect(page.locator("#w1_1.markee")).toHaveCount(1)
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -3")
@@ -4027,11 +4179,11 @@ test("previous-hit and ordinary-page links use distinct target pages and preserv
   await expect(page.locator("#search_nav")).toContainText("Träff 2, sida -1")
 
   await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
-  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor\+glas&hit=2$/)
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor\+glas&hit=2&snapshot=gen-fixture-0001$/)
   await expect(page.locator("#w2_2.markee")).toHaveCount(1)
 
   await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
-  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=3$/)
+  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=3&snapshot=gen-fixture-0001$/)
   await expect(page.locator("#w3_1.markee")).toHaveCount(1)
   expect(problems).toEqual([])
 })
@@ -4226,7 +4378,7 @@ test("a failed primary Reader client request shows a bounded state without stale
 test("a public hit failure stays local to the hydrated Reader", async ({ page, request }) => {
   const failedHitUrl = "/api/v2/works/lb-reader-doktor-glas/search-hits" +
     "?media_type=etext&query=doktor%20glas&offset=1&limit=3" +
-    "&word_forms=false&include_older_spellings=true&prefix=false&suffix=false"
+    "&word_forms=false&include_older_spellings=true&prefix=false&suffix=false&snapshot=gen-fixture-0001"
   const problems = captureBrowserProblems(page, {
     httpErrors: [{ method: "GET", status: 503, url: failedHitUrl }]
   })
@@ -4240,7 +4392,7 @@ test("a public hit failure stays local to the hydrated Reader", async ({ page, r
   })
   await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
   expect((await failedResponse).status()).toBe(503)
-  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor\+glas&hit=2$/)
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor\+glas&hit=2&snapshot=gen-fixture-0001$/)
   await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
   await expect(page.locator(".reader-search-message")).toHaveText(
     "Sökträffen kunde inte hämtas."

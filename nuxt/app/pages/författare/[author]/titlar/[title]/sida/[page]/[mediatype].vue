@@ -15,6 +15,7 @@ import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import type { components } from "~/lib/api/generated/lbapi"
+import { isTextSearchSnapshot } from "~/lib/text-search"
 import { usefulLibraryTooltipText } from "~/lib/library-tooltip"
 import {
   markReaderSearchEtextHtml,
@@ -222,6 +223,7 @@ type SimilarWorksResponse = components["schemas"]["SimilarWorksResponse"]
 type CanonicalSearchState = Readonly<{
   query: string
   hit: number
+  snapshot: string | null
   wordForms: boolean
   includeOlderSpellings: boolean
   prefix: boolean
@@ -231,6 +233,7 @@ type CanonicalSearchState = Readonly<{
 const canonicalSearchKeys = [
   "q",
   "hit",
+  "snapshot",
   "lemma",
   "ej_modern",
   "prefix",
@@ -279,14 +282,17 @@ function parseCanonicalSearchState(): CanonicalSearchState | null {
   const rawHit = route.query.hit
   if (typeof rawQuery !== "string" || typeof rawHit !== "string") return null
 
-  const query = rawQuery.trim()
-  if (query.length < 1 || query.length > 200) return null
+  const query = rawQuery
+  if (query.trim().length < 1 || query.length > 200) return null
+  const snapshot = route.query.snapshot ?? null
+  if (snapshot !== null && !isTextSearchSnapshot(snapshot)) return null
   const hit = canonicalHitIndex(rawHit)
   if (hit === null) return null
 
   return Object.freeze({
     query,
     hit,
+    snapshot,
     wordForms: route.query.lemma === "1",
     includeOlderSpellings: route.query.ej_modern !== "1",
     prefix: route.query.prefix === "1",
@@ -425,6 +431,8 @@ function isExpectedHitResponse(
 ): value is WorkSearchHitsResponse {
   if (!isRecord(value) || !Array.isArray(value.items)) return false
   const metadataMatches = value.query === state.query
+    && isTextSearchSnapshot(value.snapshot)
+    && (state.snapshot === null || value.snapshot === state.snapshot)
     && value.media_type === mediaType
     && value.offset === offset
     && value.limit === limit
@@ -830,6 +838,7 @@ const pageQuery = computed(() => {
   if (searchState.value) {
     query.q = searchState.value.query
     query.hit = String(searchState.value.hit)
+    if (hitResponse.value) query.snapshot = hitResponse.value.snapshot
   }
   return query
 })
@@ -1116,10 +1125,14 @@ const hitFetch = await useAsyncData(
                 word_forms: state.wordForms,
                 include_older_spellings: state.includeOlderSpellings,
                 prefix: state.prefix,
-                suffix: state.suffix
+                suffix: state.suffix,
+                snapshot: state.snapshot ?? undefined
               }
             }
           })
+          if (result.response.status === 409 && result.error?.error.code === "text_search_snapshot_expired") {
+            return { status: "expired" as const, identity }
+          }
           if (result.error || !isExpectedHitResponse(
             result.data,
             state,
@@ -1153,9 +1166,16 @@ const hitResponse = computed(() => {
     : null
 })
 const hitRequestFailed = computed(
-  () => hitFetch.data.value?.status === "error" &&
-    hitFetch.data.value.identity === dialogNeutralIdentity.value
+  () => (hitFetch.data.value?.status === "error" &&
+    hitFetch.data.value.identity === dialogNeutralIdentity.value)
+    || (hitContinuationFailure.value?.identity === dialogNeutralIdentity.value && hitContinuationFailure.value.status === "error")
 )
+const hitContinuationFailure = shallowRef<{ identity: string, status: "error" | "expired" } | null>(null)
+const hitExpired = computed(() => (
+  (hitFetch.data.value?.status === "expired" && hitFetch.data.value.identity === dialogNeutralIdentity.value)
+  || (hitContinuationFailure.value?.identity === dialogNeutralIdentity.value && hitContinuationFailure.value.status === "expired")
+))
+const expiredSnapshotMessage = "Sökresultatet har gått ut. Starta om sökningen för att använda den aktuella textsamlingen."
 const activeHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
   return workSearchHitAt(hitResponse.value.items, searchState.value.hit)
@@ -1254,6 +1274,7 @@ const hitPosition = computed(() => {
 })
 const hitMessage = computed(() => {
   if (!searchState.value) return null
+  if (hitExpired.value) return expiredSnapshotMessage
   if (hitRequestFailed.value) return "Sökträffen kunde inte hämtas."
   if (hitResponse.value && !activeHit.value) return "Ingen sådan sökträff."
   return null
@@ -1272,7 +1293,10 @@ function cancelPendingHitNavigation(): void {
   gotoHitPending.value = false
 }
 
-watch(rawFullPath, cancelPendingHitNavigation, { flush: "sync" })
+watch(rawFullPath, () => {
+  cancelPendingHitNavigation()
+  hitContinuationFailure.value = null
+}, { flush: "sync" })
 
 function toggleGotoHitInput(): void {
   gotoHitInputOpen.value = !gotoHitInputOpen.value
@@ -1311,6 +1335,7 @@ function sameSearchState(
   if (!current) return false
   return current.query === expected.query
     && current.hit === expected.hit
+    && current.snapshot === expected.snapshot
     && current.wordForms === expected.wordForms
     && current.includeOlderSpellings === expected.includeOlderSpellings
     && current.prefix === expected.prefix
@@ -1333,6 +1358,7 @@ async function fetchHitAtIndex(
   signal: AbortSignal
 ): Promise<WorkSearchHit | null> {
   const { currentReader, response, state } = context
+  const pinnedState = { ...state, snapshot: response.snapshot }
   const offset = Math.max(index - 1, 0)
   const limit = 3
   const result = await runtimeClient.GET("/works/{work_id}/search-hits", {
@@ -1347,20 +1373,29 @@ async function fetchHitAtIndex(
         word_forms: state.wordForms,
         include_older_spellings: state.includeOlderSpellings,
         prefix: state.prefix,
-        suffix: state.suffix
+        suffix: state.suffix,
+        snapshot: pinnedState.snapshot
       }
     }
   })
+  if (signal.aborted || !hitLookupIsCurrent(context)) return null
+  if (result.response.status === 409 && result.error?.error.code === "text_search_snapshot_expired") {
+    hitContinuationFailure.value = { identity: context.sourceIdentity, status: "expired" }
+    return null
+  }
   if (result.error || !isExpectedHitResponse(
     result.data,
-    state,
+    pinnedState,
     offset,
     currentReader.workId,
     currentReader.mediaType,
     currentReader.pageMap,
     index,
     limit
-  )) return null
+  )) {
+    hitContinuationFailure.value = { identity: context.sourceIdentity, status: "error" }
+    return null
+  }
   if (result.data.total_hits !== response.total_hits || !hitLookupIsCurrent(context)) return null
   return workSearchHitAt(result.data.items, index)
 }
@@ -1386,6 +1421,9 @@ function rawHitFullPath(hit: WorkSearchHit, sourceFullPath = rawFullPath.value):
   const beforeHash = fragmentIndex < 0 ? pagePath : pagePath.slice(0, fragmentIndex)
   const queryIndex = beforeHash.indexOf("?")
   const replacements = new Map<string, string>([["hit", String(hit.index)]])
+  if (sourceFullPath === rawFullPath.value && hitResponse.value) {
+    replacements.set("snapshot", hitResponse.value.snapshot)
+  }
   if (facsimileReader.value) {
     replacements.set("traff", hit.highlight.from_word_id)
     replacements.set("traffslut", hit.highlight.to_word_id)
@@ -1398,6 +1436,7 @@ function rawHitFullPath(hit: WorkSearchHit, sourceFullPath = rawFullPath.value):
 }
 
 async function navigateToHit(index: number): Promise<void> {
+  if (hitExpired.value) return
   cancelPendingHitNavigation()
   const generation = hitNavigationGeneration
   if (searchState.value?.hit === index) {
@@ -1549,6 +1588,7 @@ const workSearchQueryKeys = new Set<string>([
 
 function appendWorkSearchQuery(segments: string[], state: CanonicalSearchState): void {
   segments.push(new URLSearchParams({ q: state.query }).toString(), "hit=0")
+  if (state.snapshot) segments.push(new URLSearchParams({ snapshot: state.snapshot }).toString())
   if (state.wordForms) segments.push("lemma=1")
   if (!state.includeOlderSpellings) segments.push("ej_modern=1")
   if (state.prefix) segments.push("prefix=1")
@@ -1579,7 +1619,7 @@ const closeWorkSearchHref = computed(() => workSearchFullPath(null))
 type FirstWorkSearchHitResult =
   | Readonly<{ status: "empty" }>
   | Readonly<{ status: "error" }>
-  | Readonly<{ status: "hit", hit: WorkSearchHit }>
+  | Readonly<{ status: "hit", hit: WorkSearchHit, snapshot: string }>
 
 async function requestFirstWorkSearchHit(
   currentReader: ReaderPage,
@@ -1598,7 +1638,8 @@ async function requestFirstWorkSearchHit(
         word_forms: state.wordForms,
         include_older_spellings: state.includeOlderSpellings,
         prefix: state.prefix,
-        suffix: state.suffix
+        suffix: state.suffix,
+        snapshot: state.snapshot ?? undefined
       }
     }
   })
@@ -1613,7 +1654,7 @@ async function requestFirstWorkSearchHit(
     1
   )) return { status: "error" }
   const hit = workSearchHitAt(result.data.items, 0)
-  return hit ? { status: "hit", hit } : { status: "empty" }
+  return hit ? { status: "hit", hit, snapshot: result.data.snapshot } : { status: "empty" }
 }
 
 async function submitWorkSearch(): Promise<void> {
@@ -1633,17 +1674,30 @@ async function submitWorkSearch(): Promise<void> {
   const state: CanonicalSearchState = Object.freeze({
     query,
     hit: 0,
+    snapshot: null,
     wordForms: workSearchLemma.value,
     includeOlderSpellings: workSearchOlderSpellings.value,
     prefix: workSearchPrefix.value,
     suffix: workSearchSuffix.value
   })
+  await runWorkSearch(state)
+}
+
+async function restartWorkSearch(): Promise<void> {
+  const state = searchState.value
+  if (state) await runWorkSearch({ ...state, hit: 0, snapshot: null })
+}
+
+async function runWorkSearch(state: CanonicalSearchState): Promise<void> {
+  const currentReader = reader.value
+  if (!currentReader?.searchable) return
+  cancelPendingHitNavigation()
   cancelPendingWorkSearchSubmission()
   const generation = workSearchSubmissionGeneration
   const controller = new AbortController()
   workSearchSubmissionController = controller
   workSearchMessage.value = ""
-  workSearchQuery.value = query
+  workSearchQuery.value = state.query
   try {
     const result = await requestFirstWorkSearchHit(currentReader, state, controller.signal)
     if (generation !== workSearchSubmissionGeneration) return
@@ -1653,7 +1707,7 @@ async function submitWorkSearch(): Promise<void> {
         : "Sökningen kunde inte genomföras."
       return
     }
-    const searchFullPath = workSearchFullPath(state)
+    const searchFullPath = workSearchFullPath({ ...state, snapshot: result.snapshot })
     await navigateRawFullPath(
       rawHitFullPath(result.hit, searchFullPath),
       false,
@@ -2502,9 +2556,10 @@ watch(readerRequestIdentity, () => {
               Träff <span>{{ activeHit.index + 1 }}</span>, sida {{ reader.pageName }}
             </div>
           </div>
-          <p v-else-if="searchState && hitMessage" class="text">{{ hitMessage }}</p>
+          <p v-if="searchState && hitMessage" class="text">{{ hitMessage }}</p>
           <ul class="ctrls">
-            <template v-if="searchState && hitResponse">
+            <li v-if="hitExpired"><button type="button" class="reader-action-button" @click="restartWorkSearch">Starta om sökningen</button></li>
+            <template v-if="searchState && hitResponse && !hitExpired">
             <li class="arrows">
               <NuxtLink
                 v-if="previousHit"
@@ -2610,6 +2665,8 @@ watch(readerRequestIdentity, () => {
               class="reader-hit-navigation"
               aria-label="Sökträffsnavigering"
             >
+              <p v-if="hitExpired">{{ expiredSnapshotMessage }}</p>
+              <button v-if="hitExpired" type="button" disabled>Starta om sökningen</button>
               <a
                 v-if="previousHit"
                 rel="prev"

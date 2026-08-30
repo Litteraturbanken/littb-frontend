@@ -3,6 +3,143 @@ import { parseHTML } from "linkedom"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 
+const snapshotEditorPath = "/editor/lb8345227/ix/4/f?s_query=brev&s_lbworkid=lb8345227"
+  + "&s_mediatype=faksimil&s_word_form_only=true&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2"
+const expiredSnapshotMessage = "Sökresultatet har gått ut. Starta om sökningen för att använda den aktuella textsamlingen."
+
+test("snapshot Editor SSR pins requests and next links", async ({ request }) => {
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  const response = await request.get(`${snapshotEditorPath}&s_snapshot=gen-0123456789abcdef`)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector("#search_nav")?.textContent).toContain("Träff 1, sida 5")
+  expect(new URL(document.querySelector('#search_nav a[rel="next"]')!.getAttribute("href")!, "https://example.test").searchParams.get("s_snapshot"))
+    .toBe("gen-0123456789abcdef")
+  const ledger = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+  expect(ledger.requests.map((item: { query: string }) => new URLSearchParams(item.query).get("snapshot")))
+    .toEqual(["gen-0123456789abcdef"])
+})
+
+test("snapshot Editor SSR distinguishes expiry from response mismatch", async ({ request }) => {
+  for (const snapshot of ["gen-expired", "gen-mismatch"]) {
+    const response = await request.get(`${snapshotEditorPath}&s_snapshot=${snapshot}`)
+    const { document } = parseHTML(await response.text())
+    expect(document.querySelector("#search_nav")?.textContent).toContain(snapshot === "gen-expired"
+      ? expiredSnapshotMessage : "Sökträffen kunde inte hämtas.")
+    expect(document.querySelector(".editor-reader .markee")).toBeNull()
+  }
+})
+
+test("snapshot Editor rejects malformed serialized generation without an unpinned request", async ({ request }) => {
+  for (const suffix of ["&s_snapshot", "&s_snapshot=", "&s_snapshot=gen.tmp", "&s_snapshot=gen/x", "&s_snapshot=a&s_snapshot=b"]) {
+    await request.delete(`${fixture}/_reader_hit_requests`)
+    const response = await request.get(`${snapshotEditorPath}${suffix}`)
+    const { document } = parseHTML(await response.text())
+    expect(document.querySelector("#search_nav")).toBeNull()
+    expect((await (await request.get(`${fixture}/_reader_hit_requests`)).json()).requests).toEqual([])
+  }
+})
+
+test("snapshot Editor uncached mismatch keeps the active hit and reports integrity failure", async ({ page }) => {
+  await page.goto(`${snapshotEditorPath}&s_snapshot=gen-0123456789abcdef`, { waitUntil: "networkidle" })
+  const navigation = page.locator("#search_nav")
+  await expect(navigation).toContainText("Träff 1, sida 5")
+  await page.route("**/api/v2/works/*/search-hits?**", async route => {
+    const response = await route.fetch()
+    await route.fulfill({ json: { ...await response.json(), snapshot: "gen-other" } })
+  })
+  await navigation.getByRole("button", { name: "Gå till sista träffen" }).click()
+  await expect(navigation).toContainText("Sökträffen kunde inte hämtas.")
+  await expect(navigation).toContainText("Träff 1, sida 5")
+  await expect(navigation).not.toContainText(expiredSnapshotMessage)
+  await expect(page.locator("#w5_1.markee")).toHaveCount(1)
+  expect(new URL(page.url()).searchParams.get("s_snapshot")).toBe("gen-0123456789abcdef")
+  expect(new URL(page.url()).searchParams.get("hit_index")).toBe("0")
+})
+
+test("snapshot Editor restart bypasses old unpinned cache and ignores a held obsolete 409", async ({ page, request }) => {
+  await page.goto(snapshotEditorPath, { waitUntil: "networkidle" })
+  const navigation = page.locator("#search_nav")
+  await expect(navigation).toContainText("Träff 1, sida 5")
+  const navigate = async (snapshot: string) => {
+    await page.evaluate(path => {
+      history.pushState({}, "", path)
+      dispatchEvent(new PopStateEvent("popstate"))
+    }, `${snapshotEditorPath}&s_snapshot=${snapshot}`)
+  }
+  await navigate("gen-expired-continuation")
+  await expect.poll(async () => {
+    const ledger = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    return ledger.requests.some((item: { query: string }) => item.query.includes("snapshot=gen-expired-continuation"))
+  }).toBe(true)
+  await expect(navigation.locator('a[rel="next"]')).toHaveAttribute("href", /s_snapshot=gen-expired-continuation/)
+  await page.evaluate(() => {
+    const nativeFetch = window.fetch.bind(window)
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const state = { started: false, release }
+    Object.assign(window, { snapshotGate: state })
+    window.fetch = async (input, init) => {
+      const response = await nativeFetch(input, init)
+      const url = new URL(input instanceof Request ? input.url : String(input), location.href)
+      if (url.pathname.endsWith("/search-hits") && url.searchParams.get("offset") === "235") {
+        const buffered = new Response(await response.text(), { status: response.status, headers: response.headers })
+        if (buffered.status !== 409) throw new Error("Expected a held expired response")
+        state.started = true
+        await gate
+        return buffered
+      }
+      return response
+    }
+  })
+  await navigation.getByRole("button", { name: "Gå till sista träffen" }).click()
+  await page.waitForFunction(() => (window as unknown as { snapshotGate: { started: boolean } }).snapshotGate.started)
+  await navigate("gen-expired")
+  await expect(navigation).toContainText(expiredSnapshotMessage)
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await navigation.getByRole("button", { name: "Starta om sökningen", exact: true }).click()
+  await expect(navigation).not.toContainText(expiredSnapshotMessage)
+  await expect(navigation).toContainText("Träff 1, sida 5")
+  const ledger = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+  expect(ledger.requests.filter((item: { query: string }) => {
+    const query = new URLSearchParams(item.query)
+    return !query.has("snapshot") && query.get("limit") === "1"
+  })).toHaveLength(1)
+  await page.evaluate(async () => {
+    (window as unknown as { snapshotGate: { release: () => void } }).snapshotGate.release()
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  })
+  await expect(navigation).not.toContainText(expiredSnapshotMessage)
+  expect(new URL(page.url()).searchParams.get("s_snapshot")).toBe("gen-fixture-0001")
+})
+
+for (const continuation of [false, true]) {
+  test(`snapshot Editor ${continuation ? "continuation" : "initial"} expiry restarts explicitly`, async ({ page, request }) => {
+    await request.delete(`${fixture}/_reader_hit_requests`)
+    const snapshot = continuation ? "gen-expired-continuation" : "gen-expired"
+    await page.goto(`${snapshotEditorPath}&s_snapshot=${snapshot}&s_prefix=true&s_suffix=true`, { waitUntil: "networkidle" })
+    const navigation = page.locator("#search_nav")
+    if (continuation) {
+      await expect(navigation).toContainText("Träff 1, sida 5")
+      await navigation.getByRole("button", { name: "Gå till sista träffen" }).click()
+    }
+    await expect(navigation).toContainText(expiredSnapshotMessage)
+    expect(new URL(page.url()).searchParams.get("hit_index")).toBe("0")
+    const before = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    expect(before.requests.every((item: { query: string }) => new URLSearchParams(item.query).get("snapshot") === snapshot)).toBe(true)
+    await navigation.getByRole("button", { name: "Starta om sökningen", exact: true }).click()
+    await expect(navigation).not.toContainText(expiredSnapshotMessage)
+    await expect(navigation).toContainText("Träff 1, sida 5")
+    expect(new URL(page.url()).searchParams.get("s_snapshot")).toBe("gen-fixture-0001")
+    await navigation.getByRole("link", { name: "Nästa sökträff" }).click()
+    await expect(navigation).toContainText("Träff 2, sida 6")
+    const ledger = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    const queries = ledger.requests.map((item: { query: string }) => new URLSearchParams(item.query)) as URLSearchParams[]
+    expect(Object.fromEntries(queries.find(item => !item.has("snapshot"))!))
+      .toMatchObject({ query: "brev", media_type: "faksimil", offset: "0", limit: "1", word_forms: "false", include_older_spellings: "true", prefix: "true", suffix: "true" })
+    expect(queries.at(-1)!.get("snapshot")).toBe("gen-fixture-0001")
+  })
+}
+
 async function resetEditorRequests(request: APIRequestContext): Promise<void> {
   await Promise.all([
     request.delete(`${fixture}/_editor_manifest_requests`),
@@ -577,7 +714,7 @@ test("SSR restores a live-style bare prefix Editor search session", async ({ req
   expect(document.querySelector('#search_nav a[rel="next"]')?.getAttribute("href")).toBe(
     "/editor/lb8345227/ix/5/f?keep=%2f&keep=%2F&show_search_work" +
       "&s_query=brev&s_lbworkid=lb8345227&s_mediatype=faksimil" +
-      "&s_word_form_only=true&s_include_modernized=true&s_prefix=true" +
+      "&s_word_form_only=true&s_include_modernized=true&s_snapshot=gen-fixture-0001&s_prefix=true" +
       "&hit_index=1&traff=w6_1&traffslut=w6_1"
   )
   expect(await requestLedger(request, "/_editor_manifest_requests")).toEqual([

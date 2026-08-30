@@ -4322,6 +4322,30 @@ test("generates all text-search operations and title author facet schemas", () =
     }
   })
 
+  test("Reader snapshots preserve raw query and exact public/private generations", async () => {
+    for (const scope of ["v2", "private-v2"]) {
+      const endpoint = `${origin}/${scope}/works/lb-reader-doktor-glas/search-hits`
+      for (const snapshot of [null, "gen-0123456789abcdef"]) {
+        const params = new URLSearchParams({ media_type: "etext", query: "  doktor glas  " })
+        if (snapshot) params.set("snapshot", snapshot)
+        const response = await fetch(`${endpoint}?${params}`)
+        expect(response.status).toBe(200)
+        expect(await response.json()).toMatchObject({
+          query: "  doktor glas  ", snapshot: snapshot ?? "gen-fixture-0001"
+        })
+      }
+      for (const snapshot of ["", ".", "..", "gen.tmp", "gen/x", "gen x", "x".repeat(129)]) {
+        const params = new URLSearchParams({ media_type: "etext", query: "glas", snapshot })
+        expect((await fetch(`${endpoint}?${params}`)).status).toBe(422)
+      }
+      expect((await fetch(`${endpoint}?media_type=etext&query=glas&snapshot=one&snapshot=two`)).status)
+        .toBe(422)
+      const expired = await fetch(`${endpoint}?media_type=etext&query=glas&snapshot=gen-expired`)
+      expect(expired.status).toBe(409)
+      expect(await expired.json()).toMatchObject({ error: { code: "text_search_snapshot_expired" } })
+    }
+  })
+
   test("serves exact public and private Reader hit windows with absolute indices", async () => {
     const publicQuery = "media_type=etext&query=doktor%20glas"
     const privateQuery = [
@@ -4395,6 +4419,7 @@ test("generates all text-search operations and title author facet schemas", () =
       items: []
     })
     expect(await (await request("malformed-response")).json()).toEqual({
+      snapshot: "gen-fixture-0001",
       query: "malformed-response",
       media_type: "etext",
       offset: 0,
@@ -4466,7 +4491,8 @@ test("generates all text-search operations and title author facet schemas", () =
       "true",
       "false",
       "true",
-      "true"
+      "true",
+      "gen-0123456789abcdef"
     ].join("|")
     await fetch(`${origin}/_reader_hit_delays`, {
       method: "PUT",
@@ -4485,7 +4511,8 @@ test("generates all text-search operations and title author facet schemas", () =
       "word_forms=true",
       "include_older_spellings=false",
       "prefix=true",
-      "suffix=true"
+      "suffix=true",
+      "snapshot=gen-0123456789abcdef"
     ].join("&")
     let delayedSettled = false
     const delayed = fetch(
@@ -4494,8 +4521,9 @@ test("generates all text-search operations and title author facet schemas", () =
       delayedSettled = true
       return response
     })
-    await new Promise(resolve => setTimeout(resolve, 10))
+    await expect.poll(async () => (await readerHitRequests()).requests.length).toBe(1)
     const distinctKeys = [
+      `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("gen-0123456789abcdef", "gen-other")}`,
       `/v2/works/lb-reader-other/search-hits?${delayedParams}`,
       `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("doktor%20glas", "glas")}`,
       `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("offset=1", "offset=0")}`,

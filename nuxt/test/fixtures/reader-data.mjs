@@ -505,6 +505,15 @@ function hitsForQuery(query, workId) {
 }
 
 export function readerSearchHitResponse(
+  workId, query, offset = 0, limit = 3, mediaType = "etext", options = {}
+) {
+  return {
+    ...readerSearchHitWindow(workId, query, offset, limit, mediaType, options),
+    snapshot: options.snapshot === "gen-mismatch" ? "gen-other" : options.snapshot ?? "gen-fixture-0001"
+  }
+}
+
+function readerSearchHitWindow(
   workId,
   query,
   offset = 0,

@@ -1273,6 +1273,7 @@ describe("text search route state", () => {
   test("builds an RFC3986 Reader link with canonical and safe legacy state", () => {
     const state = parseTextSearchRouteQuery({
       fras: "frihet & rätt",
+      snapshot: "gen-0123456789abcdef",
       traffsida: "2",
       forfattare: "AuthorA",
       titlar: "lb1",
@@ -1309,7 +1310,7 @@ describe("text search route state", () => {
       "/f%C3%B6rfattare/Author%21A/titlar/title%2A%28one%29/sida/page%21%20one/etext"
     )
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      q: "frihet & rätt", hit: "0", lemma: "1", ej_modern: "1",
+      q: "frihet & rätt", hit: "0", snapshot: "gen-0123456789abcdef", lemma: "1", ej_modern: "1",
       prefix: "1", suffix: "1", traff: "w12_4", traffslut: "w12_5",
       s_query: "frihet & rätt", s_lbworkid: "lb!1", s_mediatype: "etext",
       s_word_form_only: "false", s_include_modernized: "false", hit_index: "0",

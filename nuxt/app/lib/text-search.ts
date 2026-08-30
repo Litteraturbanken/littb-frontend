@@ -806,6 +806,7 @@ function appendCanonicalReaderSearch(
 ): void {
   appendSearchParam(params, "q", state.phrase)
   appendSearchParam(params, "hit", hitIndex)
+  appendSearchParam(params, "snapshot", state.snapshot)
   if (!state.wordFormOnly) appendSearchParam(params, "lemma", 1)
   if (!state.includeModernized) appendSearchParam(params, "ej_modern", 1)
   if (state.prefix) appendSearchParam(params, "prefix", 1)

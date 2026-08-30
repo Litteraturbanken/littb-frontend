@@ -2378,6 +2378,7 @@ test("Visa fler discloses remaining occurrences at 500 and continues from the la
   const href = new URL((await continuation.getAttribute("href"))!, "http://litteraturbanken.test")
   expect(href.pathname).toContain("/sida/50/faksimil")
   expect(href.searchParams.get("traff")).toBe("w21_4992")
+  expect(href.searchParams.get("snapshot")).toBe("gen-fixture-0001")
   expect(href.searchParams.get("s_return")).toBe(origin)
   expect(href.searchParams.get("s_prefix")).toBe("true")
   await expect(page.locator("tr:not(.is_faksimil).sentence .match")).toHaveCount(5)
@@ -2948,6 +2949,7 @@ test("SSR hydration is single-fetch and Reader hit destination is navigable", as
   const reader = new URL(href!, "http://litteraturbanken.test")
   expect(reader.pathname).toBe("/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/1/etext")
   expect(reader.searchParams.get("hit")).toBe("0")
+  expect(reader.searchParams.get("snapshot")).toBe("gen-fixture-0001")
   expect(reader.searchParams.get("hit_index")).toBe("0")
   expect(reader.searchParams.get("q")).toBe("frihet")
   const response = await page.goto(href!, { waitUntil: "domcontentloaded" })
@@ -3034,7 +3036,7 @@ test("Search result return restores the exact origin and Reader hit", async ({ p
 
   await page.goBack({ waitUntil: "networkidle" })
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida 1")
-  await expect(page).toHaveURL(/q=frihet&hit=0&traff=w1_11/)
+  await expect(page).toHaveURL(/q=frihet&hit=0&snapshot=gen-fixture-0001&traff=w1_11/)
   await page.reload({ waitUntil: "networkidle" })
   await expect(page.locator("#search_nav").getByRole("link", {
     name: "Tillbaka till sökningen"

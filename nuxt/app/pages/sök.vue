@@ -241,7 +241,9 @@ function resultsView(
         hasMore: work.has_more_highlights,
         hits: work.highlights.map(rawHighlight => {
           const highlight = prepareTextSearchHighlight(rawHighlight)
-          const href = buildTextSearchReaderHref(work, highlight, hitIndex, requestedState)
+          const href = buildTextSearchReaderHref(work, highlight, hitIndex, {
+            ...requestedState, snapshot: response.snapshot
+          })
           hitIndex += 1
           return {
             href,
