@@ -2194,6 +2194,87 @@ test("Visa fler pins an accepted generation and expands the requested same-ID me
   await expect(page.locator("tr:not(.is_faksimil).sentence .match")).toHaveCount(5)
 })
 
+test("Visa fler retains 101-occurrence remaining state until the next explicit expansion completes", async ({ page, request }) => {
+  await openSearch(page, "/s%C3%B6k?fras=many-hits-101&prefix=1&forfattare=StrindbergA&utm=keep")
+  const more = page.locator("tr.is_faksimil .overflow .more")
+  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(5)
+  await more.click()
+  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(100)
+  await expect(more).toBeVisible()
+  await expect(more).toBeEnabled()
+  expect((await requests(request, "results")).map(entry => entry.body.highlight_limit)).toEqual([5, 100])
+  await more.click()
+  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(101)
+  await expect(more).toHaveCount(0)
+  await expect(page.locator("tr:not(.is_faksimil).sentence .match")).toHaveCount(5)
+  expect((await requests(request, "results")).slice(1).map(entry => entry.body)).toEqual([
+    expect.objectContaining({ page: 1, highlight_limit: 100, snapshot: "gen-fixture-0001",
+      work_ids: ["lb-same-media"], author_ids: ["StrindbergA"], prefix: true }),
+    expect.objectContaining({ page: 1, highlight_limit: 200, snapshot: "gen-fixture-0001",
+      work_ids: ["lb-same-media"], author_ids: ["StrindbergA"], prefix: true })
+  ])
+})
+
+test("Visa fler discloses remaining occurrences at 500 and continues from the last accepted hit", async ({ page, request }) => {
+  const origin = "/s%C3%B6k?fras=many-hits-501&prefix=1&forfattare=StrindbergA&utm=a+b&repeat=%2f&repeat=%2F"
+  await openSearch(page, origin)
+  const more = page.locator("tr.is_faksimil .overflow .more")
+  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(5)
+  const staleFetchAction = await more.elementHandle()
+  for (const limit of [100, 200, 300, 400, 500]) {
+    await expect(more).toBeVisible()
+    await more.click()
+    await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(limit)
+  }
+  const disclosure = page.locator("tr.is_faksimil .overflow")
+  await expect(disclosure).toContainText("Visar 500 av 501 träffar i verket.")
+  await expect(more).toHaveCount(0)
+  const continuation = disclosure.getByRole("link", { name: "Fortsätt i läsaren" })
+  await expect(continuation).toHaveAttribute("href",
+    (await page.locator("tr.is_faksimil.sentence .match a").last().getAttribute("href"))!)
+  const href = new URL((await continuation.getAttribute("href"))!, "http://litteraturbanken.test")
+  expect(href.pathname).toContain("/sida/50/faksimil")
+  expect(href.searchParams.get("traff")).toBe("w21_4992")
+  expect(href.searchParams.get("s_return")).toBe(origin)
+  expect(href.searchParams.get("s_prefix")).toBe("true")
+  await expect(page.locator("tr:not(.is_faksimil).sentence .match")).toHaveCount(5)
+  const ledger = await requests(request, "results")
+  expect(ledger.map(entry => entry.body.highlight_limit)).toEqual([5, 100, 200, 300, 400, 500])
+  for (const entry of ledger.slice(1)) expect(entry.body).toMatchObject({
+    page: 1, snapshot: "gen-fixture-0001", work_ids: ["lb-same-media"],
+    author_ids: ["StrindbergA"], prefix: true
+  })
+  await staleFetchAction?.evaluate(button => (button as HTMLButtonElement).click())
+  await page.waitForTimeout(200)
+  expect(await requests(request, "results")).toHaveLength(6)
+})
+
+for (const conflictingCount of [100, 102]) {
+  test(`Visa fler rejects a pinned per-work occurrence count changed to ${conflictingCount}`, async ({ page, request }) => {
+    await openSearch(page, "/s%C3%B6k?fras=many-hits-101")
+    await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(5)
+    const contradictCount = async (route: Route) => {
+      const response = await route.fetch()
+      const body = await response.json()
+      body.works[1].occurrence_count = conflictingCount
+      body.works[1].has_more_highlights = conflictingCount > 100
+      body.totals.occurrences = conflictingCount + 7
+      await route.fulfill({ response, json: body })
+    }
+    await page.route("**/api/v2/text-search/results", contradictCount)
+    const more = page.locator("tr.is_faksimil .overflow .more")
+    await more.click()
+    await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
+    await expect(more).toBeEnabled()
+    await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(5)
+    await page.unroute("**/api/v2/text-search/results", contradictCount)
+    await more.click()
+    await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(100)
+    await expect(more).toBeVisible()
+    expect((await requests(request, "results")).map(entry => entry.body.highlight_limit)).toEqual([5, 100, 100])
+  })
+}
+
 test("Visa fler ignores duplicate activation while the same work is loading", async ({
   page,
   request

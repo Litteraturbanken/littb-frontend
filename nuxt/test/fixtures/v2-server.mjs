@@ -2604,6 +2604,14 @@ function pairedMediaWorks(query, changedGeneration = false) {
 
 function inventoryForTextSearch(body) {
   if (body.query === "inga") return []
+  if (["many-hits-101", "many-hits-501"].includes(body.query)) {
+    const works = pairedMediaWorks(body.query)
+    const count = body.query === "many-hits-101" ? 101 : 501
+    works[1].allHighlights = Array.from({ length: count }, (_, hit) => searchHighlight(
+      body.query, 21, hit * 10 + 1, String(Math.floor(hit / 10) + 1)
+    ))
+    return works
+  }
   if (body.query === "overflow") return overflowTextSearchWorks(body.query)
   if (body.query === "exact-totals") return exactTotalsWorks(body.query)
   if (body.query === "same-media") {

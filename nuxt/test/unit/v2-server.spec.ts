@@ -2499,6 +2499,26 @@ test("generates all text-search operations and title author facet schemas", () =
     expect(response.status).toBe(404)
   })
 
+  test.each([101, 501])("keeps the %i-occurrence inventory exact through the public highlight ceiling", async count => {
+    for (const limit of [5, 100, 200, 500]) {
+      const response = await postTextSearchResults(textSearchResultsRequest(`many-hits-${count}`, {
+        snapshot: "gen-fixture-0001", highlight_limit: limit, work_ids: ["lb-same-media"]
+      }))
+      expect(response.status).toBe(200)
+      const body = await response.json() as TextSearchResultsResponse
+      expect(body.totals).toEqual({ occurrences: count + 7, documents: 2, works: 2 })
+      expect(body.works.map(work => work.lbworkid)).toEqual(["lb-same-media", "lb-same-media"])
+      expect(body.works[1]).toMatchObject({
+        mediatype: "faksimil", occurrence_count: count, has_more_highlights: count > limit
+      })
+      expect(body.works[1]?.highlights).toHaveLength(Math.min(count, limit))
+    }
+    const overCeiling = await postTextSearchResults(textSearchResultsRequest(`many-hits-${count}`, {
+      highlight_limit: 501
+    }))
+    expect(overCeiling.status).toBe(422)
+  })
+
   test("preserves the complete authority occurrence inventory through expansion", async () => {
     await fetch(`${origin}/_text_search/authority`, { method: "PUT" })
     try {

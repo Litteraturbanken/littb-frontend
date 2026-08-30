@@ -53,6 +53,7 @@ type SearchWorkView = Readonly<{
   authorName: string
   title: string
   facsimile: boolean
+  occurrenceCount: number
   hasMore: boolean
   hits: readonly SearchHitView[]
 }>
@@ -235,6 +236,7 @@ function resultsView(
         authorName: facetNames.get(work.author_id) ?? work.author_name,
         title: work.title,
         facsimile: work.mediatype === "faksimil",
+        occurrenceCount: work.occurrence_count,
         hasMore: work.has_more_highlights,
         hits: work.highlights.map(rawHighlight => {
           const highlight = prepareTextSearchHighlight(rawHighlight)
@@ -987,7 +989,10 @@ watch([optionsIdentity, () => state.value.advanced], ([identity, advanced], [pre
   if (advanced) void loadOptions()
 }, { flush: "post" })
 
-const moreHits = shallowRef<Record<string, readonly SearchHitView[]>>({})
+type ExpandedSearchWork = Readonly<Pick<SearchWorkView, "hits" | "hasMore" | "occurrenceCount"> & {
+  highlightLimit: number
+}>
+const moreWorks = shallowRef<Record<string, ExpandedSearchWork>>({})
 const moreRequestOwners = new Map<string, TextSearchRequestOwner>()
 const moreLoadingKeys = shallowRef<ReadonlySet<string>>(new Set())
 function setMoreLoading(workKey: string, loading: boolean) {
@@ -999,7 +1004,7 @@ function setMoreLoading(workKey: string, loading: boolean) {
 function cancelAllMore() {
   for (const owner of moreRequestOwners.values()) owner.cancel()
   moreRequestOwners.clear()
-  moreHits.value = {}
+  moreWorks.value = {}
   moreLoadingKeys.value = new Set()
 }
 function finishMoreRequest(
@@ -1020,6 +1025,9 @@ async function showMore(workKey: string) {
     ? primary.results?.works.find(work => work.key === workKey) ?? null
     : null
   if (!requestedState.phrase || !target || !primary?.results) return
+  const previous = moreWorks.value[workKey]
+  if (!(previous?.hasMore ?? target.hasMore) || (previous?.highlightLimit ?? 0) >= 500) return
+  const highlightLimit = Math.min((previous?.highlightLimit ?? 0) + 100, 500)
   const snapshot = primary.results.snapshot
   const identity = textSearchRouteIdentity(requestedState)
   const owner = createTextSearchRequestOwner()
@@ -1032,7 +1040,7 @@ async function showMore(workKey: string) {
     snapshot,
     workIds: [target.workId]
   }
-  const body = buildTextSearchResultsRequest(requestState, 100)
+  const body = buildTextSearchResultsRequest(requestState, highlightLimit)
   const requestIdentity = textSearchResultsRequestIdentity(body)
   try {
     const result = await client.POST("/text-search/results", {
@@ -1051,7 +1059,17 @@ async function showMore(workKey: string) {
       const expanded = resultsView(accepted, requestedState).works.find(work => (
         work.workId === target.workId && work.mediaType === target.mediaType
       ))
-      if (expanded) moreHits.value = { ...moreHits.value, [workKey]: expanded.hits }
+      if (expanded?.occurrenceCount === target.occurrenceCount) {
+        moreWorks.value = {
+          ...moreWorks.value,
+          [workKey]: {
+            hits: expanded.hits,
+            hasMore: expanded.hasMore,
+            occurrenceCount: expanded.occurrenceCount,
+            highlightLimit
+          }
+        }
+      }
     }
   } catch (error) {
     if (!(error instanceof DOMException && error.name === "AbortError")) {
@@ -1062,19 +1080,18 @@ async function showMore(workKey: string) {
   }
 }
 
-function visibleHits(work: SearchWorkView): readonly SearchHitView[] {
-  return moreHits.value[work.key] ?? work.hits
-}
-
 type ResultRowView = Readonly<
   | { key: string, kind: "header", work: SearchWorkView, titleHref: string | null }
   | { key: string, kind: "hit", work: SearchWorkView, hit: SearchHitView }
-  | { key: string, kind: "overflow", work: SearchWorkView }
+  | { key: string, kind: "overflow", work: SearchWorkView,
+    canExpand: boolean, shownHits: number, continuationHref: string | null }
 >
 const resultRows = computed<readonly ResultRowView[]>(() => {
   const rows: ResultRowView[] = []
-  for (const work of results.value?.works ?? []) {
-    const hits = visibleHits(work)
+  for (const primaryWork of results.value?.works ?? []) {
+    const expanded = moreWorks.value[primaryWork.key]
+    const work = expanded ? { ...primaryWork, ...expanded } : primaryWork
+    const hits = work.hits
     rows.push({
       key: `${work.key}:header`,
       kind: "header",
@@ -1084,8 +1101,13 @@ const resultRows = computed<readonly ResultRowView[]>(() => {
     hits.forEach((hit, index) => {
       rows.push({ key: `${work.key}:hit:${index}`, kind: "hit", work, hit })
     })
-    if (work.hasMore && !moreHits.value[work.key]) {
-      rows.push({ key: `${work.key}:overflow`, kind: "overflow", work })
+    if (work.hasMore) {
+      rows.push({
+        key: `${work.key}:overflow`, kind: "overflow", work,
+        canExpand: (expanded?.highlightLimit ?? 0) < 500,
+        shownHits: hits.length,
+        continuationHref: hits.at(-1)?.href ?? null
+      })
     }
   }
   return rows
@@ -1642,11 +1664,19 @@ v-for="item in [
                   <div class="overflow sc">
                     <hr>{{ " " }}
                     <button
+                      v-if="row.canExpand"
                       type="button"
                       class="more"
                       :disabled="moreLoadingKeys.has(row.work.key)"
                       @click="showMore(row.work.key)"
-                    >Visa fler</button>{{ " " }}
+                    >Visa fler</button>
+                    <template v-else>
+                      <span>Visar {{ row.shownHits }} av {{ row.work.occurrenceCount }} träffar i verket.</span>{{ " " }}
+                      <NuxtLink
+                        v-if="row.continuationHref"
+                        :to="readerHrefWithReturn(row.continuationHref)"
+                      >Fortsätt i läsaren</NuxtLink>
+                    </template>{{ " " }}
                     <hr>
                   </div>
                 </td>
