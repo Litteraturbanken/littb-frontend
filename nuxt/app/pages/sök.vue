@@ -15,11 +15,9 @@ import {
   type TextSearchRequestOwner
 } from "~/lib/text-search-request-owner"
 import {
-  acceptTextSearchCountResponse,
   acceptTextSearchOptionsResponse,
   acceptTextSearchResultsResponse,
   attachTextSearchReturnHref,
-  buildTextSearchCountRequest,
   buildTextSearchOptionsRequest,
   buildTextSearchReaderHref,
   buildTextSearchResultsRequest,
@@ -27,7 +25,6 @@ import {
   parseTextSearchRouteQuery,
   prepareTextSearchHighlight,
   resetTextSearchQuery,
-  textSearchCountRequestIdentity,
   textSearchFilterQuery,
   textSearchCategoryOptions,
   textSearchLanguageOptions,
@@ -51,6 +48,8 @@ type SearchHitView = Readonly<{
 }>
 type SearchWorkView = Readonly<{
   key: string
+  workId: string
+  mediaType: "etext" | "faksimil"
   authorName: string
   title: string
   facsimile: boolean
@@ -59,6 +58,9 @@ type SearchWorkView = Readonly<{
 }>
 type SearchFacetView = Readonly<{ key: string, name: string, count: number }>
 type SearchResultsView = Readonly<{
+  snapshot: string
+  totalOccurrences: number
+  totalDocuments: number
   totalWorks: number
   works: readonly SearchWorkView[]
   facets: readonly SearchFacetView[]
@@ -68,7 +70,6 @@ type PrimaryEnvelope = Readonly<{
   status: 200 | 204 | 502
   results: SearchResultsView | null
 }>
-type CountView = Readonly<{ documents: number, hits: number }>
 type ChronologyBounds = Readonly<{ yearFrom: number, yearTo: number }>
 const DEFAULT_CHRONOLOGY_FLOOR = 1800
 const DEFAULT_CHRONOLOGY_CEILING = 1950
@@ -216,7 +217,10 @@ function resultsView(
     facet.name_for_index
   ]))
   return {
-    totalWorks: response.total_work_hits,
+    snapshot: response.snapshot,
+    totalOccurrences: response.totals.occurrences,
+    totalDocuments: response.totals.documents,
+    totalWorks: response.totals.works,
     facets: response.author_facets.map(facet => ({
       key: facet.author_id,
       name: facet.name_for_index,
@@ -225,7 +229,9 @@ function resultsView(
     works: response.works.map(work => {
       let hitIndex = 0
       return {
-        key: work.lbworkid,
+        key: `${encodeURIComponent(work.lbworkid)}:${work.mediatype}`,
+        workId: work.lbworkid,
+        mediaType: work.mediatype,
         authorName: facetNames.get(work.author_id) ?? work.author_name,
         title: work.title,
         facsimile: work.mediatype === "faksimil",
@@ -316,19 +322,22 @@ watch([primaryData, primaryIdentity], ([candidate, identity]) => {
 const results = computed(() => displayPrimary.value?.status === 200
   ? displayPrimary.value.results
   : null)
-const navigatorIdentity = computed(() => {
-  if (!state.value.phrase) return "empty"
+function navigatorIdentityFor(snapshot: string): string {
   const request = buildTextSearchResultsRequest({
     ...state.value,
     page: 1,
-    facetAuthorId: null
+    facetAuthorId: null,
+    snapshot
   })
   return textSearchResultsRequestIdentity(request)
-})
+}
+const navigatorIdentity = computed(() => results.value?.snapshot
+  ? navigatorIdentityFor(results.value.snapshot)
+  : "empty")
 const navigatorSnapshot = shallowRef<Readonly<{
   identity: string
+  snapshot: string
   facets: readonly SearchFacetView[]
-  totalWorks: number
 }> | null>(null)
 const navigatorSnapshotRequestOwner = createTextSearchRequestOwner()
 let navigatorSnapshotInFlight: TextSearchOwnedRequest | null = null
@@ -338,19 +347,17 @@ function cancelNavigatorSnapshot() {
   navigatorSnapshotInFlight = null
 }
 
-watch(navigatorIdentity, cancelNavigatorSnapshot, { flush: "sync" })
-watch(() => state.value.facetAuthorId, facetAuthorId => {
-  if (facetAuthorId === null) cancelNavigatorSnapshot()
-}, { flush: "sync" })
+watch([primaryIdentity, () => state.value.facetAuthorId], cancelNavigatorSnapshot, { flush: "sync" })
 
-async function loadNavigatorSnapshot() {
+async function loadNavigatorSnapshot(snapshot: string) {
   const requestedState = {
     ...state.value,
     page: 1,
-    facetAuthorId: null
+    facetAuthorId: null,
+    snapshot
   }
   if (!requestedState.phrase || state.value.facetAuthorId === null) return
-  const identity = navigatorIdentity.value
+  const identity = navigatorIdentityFor(snapshot)
   if (
     navigatorSnapshot.value?.identity === identity
     || (
@@ -368,14 +375,15 @@ async function loadNavigatorSnapshot() {
       ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
       : null
     if (
-      navigatorSnapshotRequestOwner.isCurrent(request, navigatorIdentity.value)
+      navigatorSnapshotRequestOwner.isCurrent(request, navigatorIdentityFor(snapshot))
+      && results.value?.snapshot === snapshot
       && accepted
     ) {
       const view = resultsView(accepted, requestedState)
       navigatorSnapshot.value = {
         identity,
-        facets: view.facets,
-        totalWorks: view.totalWorks
+        snapshot,
+        facets: view.facets
       }
     }
   } catch {
@@ -387,29 +395,24 @@ async function loadNavigatorSnapshot() {
 }
 
 watch(
-  [navigatorIdentity, () => state.value.facetAuthorId],
-  ([identity, facetAuthorId]) => {
+  [displayPrimary, primaryIdentity, () => state.value.facetAuthorId],
+  ([candidate, identity, facetAuthorId]) => {
     if (
-      import.meta.client
-      && facetAuthorId !== null
-      && navigatorSnapshot.value?.identity !== identity
-    ) void loadNavigatorSnapshot()
-  },
-  { immediate: true, flush: "post" }
-)
-watch(
-  [displayPrimary, primaryIdentity, navigatorIdentity, () => state.value.facetAuthorId],
-  ([candidate, identity, stableIdentity, facetAuthorId]) => {
-    if (
-      facetAuthorId !== null
-      || candidate?.identity !== identity
+      candidate?.identity !== identity
       || candidate.status !== 200
       || candidate.results === null
     ) return
+    const stableIdentity = navigatorIdentityFor(candidate.results.snapshot)
+    if (facetAuthorId !== null) {
+      if (import.meta.client && navigatorSnapshot.value?.identity !== stableIdentity) {
+        void loadNavigatorSnapshot(candidate.results.snapshot)
+      }
+      return
+    }
     navigatorSnapshot.value = {
       identity: stableIdentity,
-      facets: candidate.results.facets,
-      totalWorks: candidate.results.totalWorks
+      snapshot: candidate.results.snapshot,
+      facets: candidate.results.facets
     }
   },
   { immediate: true, flush: "sync" }
@@ -418,11 +421,6 @@ const navigatorFacets = computed(() => (
   navigatorSnapshot.value?.identity === navigatorIdentity.value
     ? navigatorSnapshot.value.facets
     : results.value?.facets ?? []
-))
-const mainSearchTotalWorks = computed(() => (
-  navigatorSnapshot.value?.identity === navigatorIdentity.value
-    ? navigatorSnapshot.value.totalWorks
-    : results.value?.totalWorks ?? 0
 ))
 const currentPrimaryFacets = computed(() => (
   displayPrimary.value?.identity === primaryIdentity.value
@@ -433,57 +431,6 @@ const primaryFailed = computed(() => acceptedPrimary.value?.status === 502)
 const primaryLoading = computed(() => Boolean(state.value.phrase)
   && !optionsFailed.value
   && (primaryPending.value || acceptedPrimary.value === null))
-
-const countCache = useState<Record<string, CountView>>(
-  "text-search-count-cache",
-  () => ({})
-)
-const countIdentity = computed(() => state.value.phrase
-  ? textSearchCountRequestIdentity(buildTextSearchCountRequest({
-      ...state.value,
-      facetAuthorId: null
-    }))
-  : "empty")
-const countInFlight = new Map<string, TextSearchOwnedRequest>()
-const countRequestOwner = createTextSearchRequestOwner()
-
-async function loadCount() {
-  const requestedState = {
-    ...state.value,
-    facetAuthorId: null
-  }
-  if (!requestedState.phrase) return
-  const identity = countIdentity.value
-  if (Object.hasOwn(countCache.value, identity) || countInFlight.has(identity)) return
-  const request = countRequestOwner.start(identity)
-  countInFlight.set(identity, request)
-  const body = buildTextSearchCountRequest(requestedState)
-  const requestIdentity = textSearchCountRequestIdentity(body)
-  try {
-    const result = await client.POST("/text-search/count", { body, signal: request.signal })
-    const accepted = result.response.status === 200
-      ? acceptTextSearchCountResponse(result.data, body, requestIdentity)
-      : null
-    if (countRequestOwner.isCurrent(request, countIdentity.value) && accepted) {
-      countCache.value[identity] = {
-        documents: accepted.total_documents,
-        hits: accepted.total_highlights
-      }
-    }
-  } catch {
-    // Failed and aborted requests remain retryable on identity re-entry.
-  } finally {
-    if (countInFlight.get(identity) === request) countInFlight.delete(identity)
-    countRequestOwner.finish(request)
-  }
-}
-
-const count = computed(() => countCache.value[countIdentity.value] ?? null)
-watch([acceptedPrimary, primaryIdentity], ([candidate, identity]) => {
-  if (import.meta.client && candidate?.status === 200 && candidate.identity === identity) {
-    void loadCount()
-  }
-}, { immediate: true, flush: "post" })
 
 function authorLabel(author: TextSearchOptionsResponse["authors"][number]): string {
   const years = author.birth_year || author.death_year
@@ -1024,10 +971,6 @@ watch(
   },
   { flush: "sync" }
 )
-watch(countIdentity, () => {
-  countRequestOwner.cancel()
-  countInFlight.clear()
-}, { flush: "sync" })
 watch([optionsIdentity, () => state.value.advanced], ([identity, advanced], [previousIdentity]) => {
   if (identity !== previousIdentity || !advanced) {
     optionsRequestOwner.cancel()
@@ -1070,7 +1013,12 @@ watch(routeIdentity, cancelAllMore, { flush: "sync" })
 async function showMore(workKey: string) {
   if (moreRequestOwners.has(workKey)) return
   const requestedState = state.value
-  if (!requestedState.phrase) return
+  const primary = displayPrimary.value
+  const target = primary?.identity === primaryIdentity.value && primary.status === 200
+    ? primary.results?.works.find(work => work.key === workKey) ?? null
+    : null
+  if (!requestedState.phrase || !target || !primary?.results) return
+  const snapshot = primary.results.snapshot
   const identity = textSearchRouteIdentity(requestedState)
   const owner = createTextSearchRequestOwner()
   moreRequestOwners.set(workKey, owner)
@@ -1079,7 +1027,8 @@ async function showMore(workKey: string) {
   const requestState: TextSearchRouteState = {
     ...requestedState,
     page: 1,
-    workIds: [workKey]
+    snapshot,
+    workIds: [target.workId]
   }
   const body = buildTextSearchResultsRequest(requestState, 100)
   const requestIdentity = textSearchResultsRequestIdentity(body)
@@ -1091,9 +1040,15 @@ async function showMore(workKey: string) {
     const accepted = result.response.status === 200
       ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
       : null
-    if (owner.isCurrent(request, routeIdentity.value) && accepted
-      && accepted.works.length === 1 && accepted.works[0]?.lbworkid === workKey) {
-      const expanded = resultsView(accepted, requestedState).works.find(work => work.key === workKey)
+    if (
+      owner.isCurrent(request, routeIdentity.value)
+      && displayPrimary.value?.identity === primary.identity
+      && displayPrimary.value.results?.snapshot === snapshot
+      && accepted
+    ) {
+      const expanded = resultsView(accepted, requestState).works.find(work => (
+        work.workId === target.workId && work.mediaType === target.mediaType
+      ))
       if (expanded) moreHits.value = { ...moreHits.value, [workKey]: expanded.hits }
     }
   } catch (error) {
@@ -1134,13 +1089,10 @@ const resultRows = computed<readonly ResultRowView[]>(() => {
   return rows
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(mainSearchTotalWorks.value / 30)))
-const pagerBasisReady = computed(() => state.value.facetAuthorId === null
-  || navigatorSnapshot.value?.identity === navigatorIdentity.value)
+const totalPages = computed(() => Math.max(1, Math.ceil((results.value?.totalWorks ?? 0) / 30)))
+const pagerBasisReady = computed(() => results.value !== null)
 const displayedPage = computed(() => Math.min(state.value.page, totalPages.value))
-const visibleWorkCount = computed(() => state.value.facetAuthorId === null
-  ? results.value?.works.length ?? 0
-  : Math.min(30, Math.max(0, mainSearchTotalWorks.value - (displayedPage.value - 1) * 30)))
+const visibleWorkCount = computed(() => results.value?.works.length ?? 0)
 const firstVisibleWork = computed(() => visibleWorkCount.value > 0
   ? (displayedPage.value - 1) * 30 + 1
   : 0)
@@ -1284,8 +1236,6 @@ onBeforeUnmount(() => {
   primaryExecutionIdentity.value = null
   primaryInFlightIdentity.value = null
   cancelNavigatorSnapshot()
-  countRequestOwner.cancel()
-  countInFlight.clear()
   optionsRequestOwner.cancel()
   optionsInFlight.clear()
   cancelTitleOptions()
@@ -1717,19 +1667,19 @@ v-for="item in [
         <div>
           <div class="hits_info">
             <div>
-              <div v-show="(count?.hits ?? 0) > 0" class="hits">{{ count?.hits ?? 0 }}</div>{{ " " }}
+              <div v-show="(results?.totalOccurrences ?? 0) > 0" class="hits">{{ results?.totalOccurrences ?? 0 }}</div>{{ " " }}
               <div class="hits_sub">
-                <span v-show="(count?.hits ?? 0) > 1">sökträffar</span>
-                <span v-show="count?.hits === 1">sökträff</span>
+                <span v-show="(results?.totalOccurrences ?? 0) > 1">sökträffar</span>
+                <span v-show="results?.totalOccurrences === 1">sökträff</span>
               </div>
             </div>
           </div>
 
           Visar verk {{ firstVisibleWork }}-{{ lastVisibleWork }} av
-          {{ count?.documents ?? results?.totalWorks ?? 0 }}, sida {{ displayedPage }} av
+          {{ results?.totalWorks ?? 0 }}, sida {{ displayedPage }} av
           {{ totalPages }}.
 
-          <ul v-if="mainSearchTotalWorks > 1" class="ctrl">
+          <ul v-if="(results?.totalWorks ?? 0) > 1" class="ctrl">
             <li class="arrows">
               <button
                 type="button"

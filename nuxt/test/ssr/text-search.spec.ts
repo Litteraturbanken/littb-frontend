@@ -3,7 +3,7 @@ import { parseHTML } from "linkedom"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 
-type TextSearchOperation = "results" | "count" | "options"
+type TextSearchOperation = "results" | "options"
 type RecordedRequest = {
   method: string
   path: string
@@ -78,7 +78,6 @@ test("SSR renders the pristine full form without requesting search results", asy
   expect(document.querySelector("#results .results")).toBeNull()
 
   expect(await requests(request, "results")).toEqual([])
-  expect(await requests(request, "count")).toEqual([])
   expect(html).not.toContain("private-v2")
   expect(html).not.toContain(fixture)
 })
@@ -107,7 +106,6 @@ test("direct result SSR returns the loading shell without starting expensive sea
   expect(globalSearchLink?.getAttribute("href")).toBe("/s%C3%B6k?fras=frihet")
   expect(document.querySelector("[data-search-error]")).toBeNull()
   expect(await requests(request, "results")).toEqual([])
-  expect(await requests(request, "count")).toEqual([])
 })
 
 test("hydrated result sends the exact generated body and renders the legacy rows", async ({
@@ -129,9 +127,9 @@ test("hydrated result sends the exact generated body and renders the legacy rows
     ])
   expect([...document.querySelectorAll("#results tr.sentence .match")].map(node => (
     node.textContent?.trim()
-  ))).toEqual(["frihet", "frihet"])
+  ))).toEqual(["frihet", "frihet", "frihet"])
   expect(document.querySelector("#results tr.is_faksimil")).not.toBeNull()
-  expect(document.querySelector("#results .overflow .more")?.textContent?.trim()).toBe("Visa fler")
+  expect(document.querySelector("#results .overflow .more")).toBeNull()
   const links = [...document.querySelectorAll<HTMLAnchorElement>("#results .match a")]
   expect(links[0]?.getAttribute("href")).toContain(
     "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/1/etext?"
@@ -151,6 +149,22 @@ test("hydrated result sends the exact generated body and renders the legacy rows
   for (const rawField of ["author_id", "word_id", "page_name", "lbworkid", "author_facets"]) {
     expect(html, rawField).not.toContain(`"${rawField}":`)
   }
+})
+
+test("hydrated results render combined exact totals from one response", async ({
+  page,
+  request
+}) => {
+  const response = await page.goto("/s%C3%B6k?fras=exact-totals")
+  expect(response?.status()).toBe(200)
+  await expect(page.locator("#results")).toBeVisible()
+  const { document } = parseHTML(await page.content())
+  const resultRequests = await requests(request, "results")
+
+  expect(resultRequests).toHaveLength(1)
+  expect(compactText(document.querySelector(".hits_info")?.textContent)).toContain("17")
+  expect(compactText(document.querySelector(".littb_pager")?.textContent))
+    .toContain("Visar verk 1-8 av 8")
 })
 
 test("empty-highlight headers have no broken destination and keep normal first-hit links", async ({
@@ -291,20 +305,6 @@ test("advanced SSR preserves chronology endpoints outside option bounds", async 
   })
 })
 
-test("a slow count never gates the hydrated primary result", async ({ page, request }) => {
-  await request.put(`${fixture}/_text_search/delays`, {
-    data: { operation: "count", selector: "frihet", delay: 3000 }
-  })
-  const started = Date.now()
-  const response = await page.goto("/s%C3%B6k?fras=frihet")
-  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
-  const elapsed = Date.now() - started
-
-  expect(response?.status()).toBe(200)
-  expect(elapsed).toBeLessThan(2500)
-  await expect.poll(async () => (await requests(request, "count")).length).toBe(1)
-})
-
 test("hydration starts the deferred primary result without a duplicate request", async ({
   page,
   request
@@ -345,32 +345,22 @@ test("Reader hit indices restart for every work and every hydrated result page",
   ]) {
     const response = await page.goto(route)
     expect(response?.status()).toBe(200)
-    await expect(page.locator("#results .match a")).toHaveCount(2)
+    await expect(page.locator("#results .match a")).toHaveCount(
+      route.includes("overflow") ? 150 : 3
+    )
     const { document } = parseHTML(await page.content())
     const links = [...document.querySelectorAll<HTMLAnchorElement>("#results .match a")]
       .map(link => new URL(link.getAttribute("href")!, "http://litteraturbanken.test"))
 
-    expect(links.map(link => link.searchParams.get("hit"))).toEqual(["0", "0"])
-    expect(links.map(link => link.searchParams.get("hit_index"))).toEqual(["0", "0"])
-    expect(links.map(link => link.searchParams.get("s_page"))).toEqual([
-      route.includes("traffsida=2") ? "2" : "1",
+    const expectedHitIndexes = route.includes("overflow")
+      ? Array.from({ length: 30 }, () => Array.from({ length: 5 }, (_, index) => String(index))).flat()
+      : ["0", "0", "1"]
+    expect(links.map(link => link.searchParams.get("hit"))).toEqual(expectedHitIndexes)
+    expect(links.map(link => link.searchParams.get("hit_index"))).toEqual(expectedHitIndexes)
+    expect(links.every(link => link.searchParams.get("s_page") === (
       route.includes("traffsida=2") ? "2" : "1"
-    ])
+    ))).toBe(true)
   }
-})
-
-test("the client-only count is requested once and displayed after hydration", async ({
-  page,
-  request
-}) => {
-  await request.put(`${fixture}/_text_search/delays`, {
-    data: { operation: "count", selector: "frihet", delay: 1800 }
-  })
-
-  await page.goto("/s%C3%B6k?fras=frihet")
-  await expect(page.locator("#results .match").first()).toHaveText("frihet")
-  await expect(page.locator(".hits_info .hits")).toHaveText("3", { timeout: 6000 })
-  await expect.poll(async () => (await requests(request, "count")).length).toBe(1)
 })
 
 test("failed and aborted options ownership retries on route re-entry", async ({ page, request }) => {
@@ -412,13 +402,13 @@ test("failed and aborted options ownership retries on route re-entry", async ({ 
   await expect.poll(async () => (await requests(request, "options")).length).toBe(2)
 })
 
-test("Visa fler is work-scoped and route changes discard expanded hrefs", async ({
+test("Visa fler pins its accepted snapshot and route changes discard expanded hrefs", async ({
   page,
   request
 }) => {
   await page.goto("/s%C3%B6k?fras=overflow")
   await waitForHydration(page)
-  await page.locator("#results .overflow .more").nth(1).click()
+  await page.locator("#results .overflow .more").first().click()
 
   await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
   expect((await requests(request, "results"))[1]).toEqual({
@@ -433,18 +423,19 @@ test("Visa fler is work-scoped and route changes discard expanded hrefs", async 
       suffix: false,
       word_form_only: true,
       include_modernized: true,
-      work_ids: ["lb278171"]
+      snapshot: "gen-fixture-0001",
+      work_ids: ["lb238704"]
     }
   })
-  await expect(page.locator("#results tr.is_faksimil.sentence .match")).toHaveCount(2)
+  await expect(page.locator("#results tr.sentence .match")).toHaveCount(153)
 
   const nextSearchPage = page.getByRole("button", { name: "Nästa träffsida" })
   await expect(nextSearchPage).not.toHaveAttribute("rel")
   await nextSearchPage.click()
   await expect(page).toHaveURL(/traffsida=2/)
   await expect(page.locator("#results")).not.toHaveClass(/searching/)
-  await expect(page.locator("#results tr.is_faksimil.sentence .match")).toHaveCount(1)
-  const href = await page.locator("#results tr.is_faksimil.sentence .match a").getAttribute("href")
+  await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)
+  const href = await page.locator("#results tr.sentence .match a").first().getAttribute("href")
   const reader = new URL(href!, "http://litteraturbanken.test")
   expect(reader.searchParams.get("hit")).toBe("0")
   expect(reader.searchParams.get("hit_index")).toBe("0")
@@ -537,7 +528,6 @@ test("advanced no-query SSR requests and renders static options", async ({ page,
   await waitForHydration(page)
 
   expect(await requests(request, "results")).toEqual([])
-  expect(await requests(request, "count")).toEqual([])
   expect(await requests(request, "options")).toEqual([{
     method: "POST",
     path: "/private-v2/text-search/options",
@@ -833,7 +823,7 @@ test("absent and explicit all gender both show all authors without a backend fil
   await expect(page.locator(".gender_select")).toHaveAttribute("data-gender-value", "all")
 })
 
-test("result and overflow rows keep flattened Angular parity and media classes", async ({
+test("result rows keep flattened Angular parity and media classes", async ({
   page
 }) => {
   await page.goto("/s%C3%B6k?fras=frihet")
@@ -847,9 +837,7 @@ test("result and overflow rows keep flattened Angular parity and media classes",
     ["is_faksimil", "odd", "sentence"],
     ["even", "is_faksimil", "sentence"]
   ])
-  const more = rows[4]?.querySelector(".overflow .more")
-  expect(more?.tagName).toBe("BUTTON")
-  expect(more?.textContent?.trim()).toBe("Visa fler")
+  expect(document.querySelector(".overflow .more")).toBeNull()
 })
 
 test("zero count preserves hits_info but hides zero hit labels", async ({ page }) => {

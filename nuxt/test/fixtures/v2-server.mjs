@@ -408,9 +408,9 @@ let slaArticleSourceFailure = null
 let slaArticleRedirectTargetRequests = []
 let slaArticleSourceCancellations = []
 let slaArticleRequestHeaders = { descriptor: [], source: [] }
-let textSearchRequests = { results: [], count: [], options: [], chronology: [] }
+let textSearchRequests = { results: [], options: [], chronology: [] }
 let textSearchFailures = new Set()
-let textSearchDelays = { results: {}, count: {}, options: {}, chronology: {} }
+let textSearchDelays = { results: {}, options: {}, chronology: {} }
 let textSearchAuthorityMode = false
 
 const bibliographyEntries = [
@@ -437,7 +437,7 @@ const bibliographyEntries = [
   }
 ]
 
-const textSearchOperations = new Set(["results", "count", "options", "chronology"])
+const textSearchOperations = new Set(["results", "options", "chronology"])
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
@@ -2119,7 +2119,7 @@ const textSearchLegacyFields = new Set([
 const textSearchCommonFields = new Set([
   "about_author_ids", "author_ids", "categories", "facet_author_id", "gender",
   "include_modernized", "languages", "legacy_filters", "prefix", "query",
-  "suffix", "word_form_only", "work_ids", "year_from", "year_to"
+  "snapshot", "suffix", "word_form_only", "work_ids", "year_from", "year_to"
 ])
 
 function validBoundedString(value, maximum = 100, allowEmpty = false) {
@@ -2152,6 +2152,10 @@ function validTextSearchCommon(body) {
   if (
     Object.hasOwn(body, "facet_author_id") && body.facet_author_id !== null
     && !validBoundedString(body.facet_author_id)
+  ) return false
+  if (
+    Object.hasOwn(body, "snapshot") && body.snapshot !== null
+    && !validBoundedString(body.snapshot, 128)
   ) return false
   if (
     Object.hasOwn(body, "gender") && body.gender !== null
@@ -2193,7 +2197,7 @@ function validTextSearchBody(operation, body) {
   if (Object.keys(body).some(field => !allowed.has(field))) return false
   if (!validTextSearchCommon(body)) return false
 
-  if (operation === "results" || operation === "count") {
+  if (operation === "results") {
     if (!validBoundedString(body.query, 200)) return false
   } else if (
     Object.hasOwn(body, "query") && body.query !== null
@@ -2512,152 +2516,151 @@ function isPresentationRequest(pathname) {
     pathname === "/app/style/date.css"
 }
 
-function richTextSearchResponse(body) {
+function searchHighlight(query, row, offset, pageName = "1") {
   return {
-    query: body.query,
-    page: body.page,
-    page_size: 30,
-    total_work_hits: 2,
-    author_facets: [
-      { author_id: "StrindbergA", name_for_index: "Strindberg, August", count: 1 },
-      { author_id: "LagerlöfS", name_for_index: "Lagerlöf, Selma", count: 1 }
-    ],
-    works: [
-      {
-        lbworkid: "lb238704",
-        author_id: "StrindbergA",
-        author_name: "August Strindberg",
-        title: "Röda rummet",
-        title_id: "RodaRummet",
-        mediatype: "etext",
-        has_more_highlights: false,
-        highlights: [{
-          left_context: [{ word: "ropade", word_id: "w1_10", page_name: "1" }],
-          match: [{ word: "frihet", word_id: "w1_11", page_name: "1" }],
-          right_context: [{ word: "och", word_id: "w1_12", page_name: "1" }]
-        }]
-      },
-      {
-        lbworkid: "lb278171",
-        author_id: "LagerlöfS",
-        author_name: "Selma Lagerlöf",
-        title: "Gösta Berlings saga",
-        title_id: "GostaBerlingsSaga",
-        mediatype: "faksimil",
-        has_more_highlights: true,
-        highlights: [{
-          left_context: [{ word: "sin", word_id: "w3_20", page_name: "3" }],
-          match: [{ word: "frihet", word_id: "w3_21", page_name: "3" }],
-          right_context: [{ word: "sökte", word_id: "w3_22", page_name: "3" }]
-        }]
-      }
-    ]
+    left_context: [{ word: "vänster", word_id: `w${row}_${offset}`, page_name: pageName }],
+    match: [{ word: query, word_id: `w${row}_${offset + 1}`, page_name: pageName }],
+    right_context: [{ word: "höger", word_id: `w${row}_${offset + 2}`, page_name: pageName }]
   }
 }
 
-function textSearchResultsResponse(body) {
-  if (body.query === "inga") {
-    return {
-      query: body.query,
-      page: body.page,
-      page_size: 30,
-      total_work_hits: 0,
-      author_facets: [],
-      works: []
+function richTextSearchWorks(query) {
+  return [
+    {
+      lbworkid: "lb238704", author_id: "StrindbergA", author_name: "August Strindberg",
+      title: "Röda rummet", title_id: "RodaRummet", mediatype: "etext",
+      allHighlights: [{
+        left_context: [{ word: "ropade", word_id: "w1_10", page_name: "1" }],
+        match: [{ word: query, word_id: "w1_11", page_name: "1" }],
+        right_context: [{ word: "och", word_id: "w1_12", page_name: "1" }]
+      }]
+    },
+    {
+      lbworkid: "lb278171", author_id: "LagerlöfS", author_name: "Selma Lagerlöf",
+      title: "Gösta Berlings saga", title_id: "GostaBerlingsSaga", mediatype: "faksimil",
+      allHighlights: [{
+        left_context: [{ word: "sin", word_id: "w3_20", page_name: "3" }],
+        match: [{ word: query, word_id: "w3_21", page_name: "3" }],
+        right_context: [{ word: "sökte", word_id: "w3_22", page_name: "3" }]
+      }, {
+        left_context: [{ word: "drömde", word_id: "w4_30", page_name: "4" }],
+        match: [{ word: query, word_id: "w4_31", page_name: "4" }],
+        right_context: [{ word: "vidare", word_id: "w4_32", page_name: "4" }]
+      }]
     }
-  }
-  const rich = richTextSearchResponse(body)
-  if (body.query === "empty-highlights") {
-    rich.works[0].highlights = []
-    rich.works[1].highlights[0].match[0].word = body.query
-  }
-  if (body.query === "frihet" && body.page > 1 && hasExactFields(body, [
-    "query", "page", "page_size", "highlight_limit", "prefix", "suffix",
-    "word_form_only", "include_modernized"
-  ])) {
-    rich.works = []
-    return rich
-  }
-  if (body.query === "overflow") {
-    rich.total_work_hits = 64
-    rich.works[0].has_more_highlights = true
-    rich.author_facets[0].count = 41
-    rich.author_facets[1].count = 23
-  }
+  ]
+}
+
+function overflowTextSearchWorks(query) {
+  return Array.from({ length: 64 }, (_, index) => {
+    const number = index + 1
+    const strindberg = index === 1 ? false : index < 41
+    const legacyWork = index === 0
+      ? { lbworkid: "lb238704", title: "Röda rummet", title_id: "RodaRummet" }
+      : index === 1
+        ? { lbworkid: "lb278171", title: "Gösta Berlings saga", title_id: "GostaBerlingsSaga" }
+        : null
+    return {
+      lbworkid: legacyWork?.lbworkid ?? `lb-overflow-${number}`,
+      author_id: strindberg ? "StrindbergA" : "LagerlöfS",
+      author_name: strindberg ? "August Strindberg" : "Selma Lagerlöf",
+      title: legacyWork?.title ?? `Överflödesverk ${number}`,
+      title_id: legacyWork?.title_id ?? `Overflow${number}`,
+      mediatype: number % 2 ? "etext" : "faksimil",
+      allHighlights: Array.from({ length: 8 }, (_, hit) => searchHighlight(query, number, hit * 10 + 1))
+    }
+  })
+}
+
+function exactTotalsWorks(query) {
+  return Array.from({ length: 8 }, (_, index) => {
+    const number = index + 1
+    const occurrenceCount = number === 1 ? 3 : 2
+    return {
+      lbworkid: `lb-exact-${number}`,
+      author_id: `ExactAuthor${number}`,
+      author_name: `Exakt Författare ${number}`,
+      title: `Exakt verk ${number}`,
+      title_id: `Exact${number}`,
+      mediatype: number % 2 ? "etext" : "faksimil",
+      allHighlights: Array.from({ length: occurrenceCount }, (_, hit) => searchHighlight(query, number, hit * 10 + 1))
+    }
+  })
+}
+
+function pairedMediaWorks(query) {
+  return ["etext", "faksimil"].map((mediatype, index) => ({
+    lbworkid: "lb-same-media",
+    author_id: "StrindbergA",
+    author_name: "August Strindberg",
+    title: `Samma media ${mediatype}`,
+    title_id: `SameMedia${mediatype}`,
+    mediatype,
+    allHighlights: Array.from({ length: 7 }, (_, hit) => searchHighlight(
+      query, index + 20, hit * 10 + 1
+    ))
+  }))
+}
+
+function inventoryForTextSearch(body) {
+  if (body.query === "inga") return []
+  if (body.query === "overflow") return overflowTextSearchWorks(body.query)
+  if (body.query === "exact-totals") return exactTotalsWorks(body.query)
+  if (body.query === "same-media") return pairedMediaWorks(body.query)
+  const works = richTextSearchWorks(body.query)
+  if (body.query === "empty-highlights") works[0].visibleHighlights = []
   if (body.query === "five-context") {
-    rich.total_work_hits = 1
-    rich.author_facets = [{ ...rich.author_facets[0], count: 1 }]
-    rich.works = [rich.works[0]]
-    rich.works[0].highlights[0].match[0].word = body.query
-    rich.works[0].highlights[0].right_context = Array.from({ length: 5 }, (_, index) => ({
-      word: String(index + 1).repeat(29),
-      word_id: `w1_${index + 12}`,
-      page_name: "1"
+    works.splice(1)
+    works[0].allHighlights[0].right_context = Array.from({ length: 5 }, (_, index) => ({
+      word: String(index + 1).repeat(29), word_id: `w1_${index + 12}`, page_name: "1"
     }))
   }
   if (body.query === "phrase-hit") {
-    rich.total_work_hits = 1
-    rich.author_facets = [{ ...rich.author_facets[0], count: 1 }]
-    rich.works = [rich.works[0]]
-    rich.works[0].highlights[0].match = [
+    works.splice(1)
+    works[0].allHighlights[0].match = [
       { word: "frihet", word_id: "w1_11", page_name: "1" },
       { word: "nu", word_id: "w1_12", page_name: "1" }
     ]
   }
-  if (body.work_ids?.length) {
-    const workIds = new Set(body.work_ids)
-    rich.works = rich.works.filter(work => workIds.has(work.lbworkid))
-    const authorIds = new Set(rich.works.map(work => work.author_id))
-    rich.author_facets = rich.author_facets
-      .filter(facet => authorIds.has(facet.author_id))
-      .map(facet => ({ ...facet, count: 1 }))
-    rich.total_work_hits = rich.works.length
-  }
-  if (body.facet_author_id) {
-    rich.works = rich.works.filter(work => work.author_id === body.facet_author_id)
-    rich.author_facets = rich.author_facets
-      .filter(facet => facet.author_id === body.facet_author_id)
-      .map(facet => ({ ...facet, count: rich.works.length }))
-    rich.total_work_hits = rich.works.length
-  }
-  if (body.highlight_limit === 100) {
-    for (const work of rich.works) {
-      work.has_more_highlights = false
-      if (work.lbworkid === "lb238704") {
-        work.highlights.push({
-          left_context: [{ word: "svarade", word_id: "w2_20", page_name: "2" }],
-          match: [{ word: body.query, word_id: "w2_21", page_name: "2" }],
-          right_context: [{ word: "lugnt", word_id: "w2_22", page_name: "2" }]
-        })
-      } else if (work.lbworkid === "lb278171") {
-        work.highlights.push({
-          left_context: [{ word: "drömde", word_id: "w4_30", page_name: "4" }],
-          match: [{ word: body.query, word_id: "w4_31", page_name: "4" }],
-          right_context: [{ word: "vidare", word_id: "w4_32", page_name: "4" }]
-        })
-      }
-    }
-  }
-  return rich
+  return works
 }
 
-function textSearchCountResponse(body) {
-  if (body.query === "inga") {
-    return { query: body.query, total_documents: 0, total_highlights: 0 }
-  }
-  if (body.query === "overflow") {
-    return { query: body.query, total_documents: 64, total_highlights: 512 }
-  }
-  if (body.query === "five-context") {
-    return { query: body.query, total_documents: 1, total_highlights: 1 }
-  }
-  if (body.query === "phrase-hit") {
-    return { query: body.query, total_documents: 1, total_highlights: 1 }
+function textSearchResultsResponse(body, inventory = inventoryForTextSearch(body)) {
+  let matchedWorks = inventory
+  if (body.work_ids?.length) {
+    const workIds = new Set(body.work_ids)
+    matchedWorks = matchedWorks.filter(work => workIds.has(work.lbworkid))
   }
   if (body.facet_author_id) {
-    return { query: body.query, total_documents: 1, total_highlights: 1 }
+    matchedWorks = matchedWorks.filter(work => work.author_id === body.facet_author_id)
   }
-  return { query: body.query, total_documents: 2, total_highlights: 3 }
+  const authorFacets = [...new Map(matchedWorks.map(work => [work.author_id, {
+    author_id: work.author_id,
+    name_for_index: work.author_id === "StrindbergA" ? "Strindberg, August"
+      : work.author_id === "LagerlöfS" ? "Lagerlöf, Selma" : work.author_name,
+    count: matchedWorks.filter(candidate => candidate.author_id === work.author_id).length
+  }])).values()]
+  const totals = {
+    occurrences: matchedWorks.reduce((total, work) => total + work.allHighlights.length, 0),
+    documents: matchedWorks.length,
+    works: matchedWorks.length
+  }
+  const pageStart = (body.page - 1) * body.page_size
+  return {
+    query: body.query,
+    page: body.page,
+    page_size: 30,
+    snapshot: body.snapshot ?? "gen-fixture-0001",
+    totals,
+    author_facets: authorFacets,
+    works: matchedWorks.slice(pageStart, pageStart + body.page_size).map(({ allHighlights, visibleHighlights, ...work }) => ({
+      ...work,
+      occurrence_count: allHighlights.length,
+      highlights: visibleHighlights ?? allHighlights.slice(0, body.highlight_limit),
+      has_more_highlights: visibleHighlights !== undefined
+        || allHighlights.length > body.highlight_limit
+    }))
+  }
 }
 
 function authorityWords(pageName, row, words, offset) {
@@ -2679,23 +2682,22 @@ function authorityHighlight(pageName, index, query, left, right) {
 
 function authorityTextSearchResultsResponse(body) {
   if (body.query === "inga") return textSearchResultsResponse(body)
-  const response = richTextSearchResponse(body)
-  response.total_work_hits = 2
-  response.works[0].highlights = [
+  const works = richTextSearchWorks(body.query)
+  works[0].allHighlights = [
     authorityHighlight("1", 1, body.query, ["det", "är", "icke", "blott"], ["för", "människan", "."]),
     authorityHighlight("2", 2, body.query, ["han", "ropade", "högt", ","], ["för", "människan", "."]),
     authorityHighlight("3", 3, body.query, ["och", "drömmen", "om"], ["för", "människan", "."]),
     authorityHighlight("4", 4, body.query, ["den", "nya", "tiden", "gav"], ["för", "människan", "."]),
     authorityHighlight("5", 5, body.query, ["att", "vinna", "sin"], ["för", "människan", "."])
   ]
-  response.works[0].has_more_highlights = true
-  response.works[1].highlights = [authorityHighlight(
+  works[0].allHighlights.push(
+    authorityHighlight("6", 7, body.query, ["fritt", "i", "vinden"], ["på", "nytt", "."]),
+    authorityHighlight("7", 8, body.query, ["mellan", "husen"], ["och", "gatorna", "."])
+  )
+  works[1].allHighlights = [authorityHighlight(
     "3", 6, body.query, ["hon", "sökte", "sin"], ["bortom", "bergen", "."]
   )]
-  response.works[1].has_more_highlights = false
-  response.author_facets[0].count = 1
-  response.author_facets[1].count = 1
-  return response
+  return textSearchResultsResponse(body, works)
 }
 
 const textSearchTitleCatalog = [
@@ -2819,13 +2821,6 @@ function textSearchOptionsResponse(body) {
 function textSearchResponse(operation, body) {
   if (textSearchAuthorityMode) {
     if (operation === "results") return authorityTextSearchResultsResponse(body)
-    if (operation === "count") {
-      return {
-        query: body.query,
-        total_documents: body.query === "inga" ? 0 : 2,
-        total_highlights: body.query === "inga" ? 0 : 8
-      }
-    }
     const options = textSearchOptionsResponse(body)
     return {
       ...options,
@@ -2852,7 +2847,6 @@ function textSearchResponse(operation, body) {
     }
   }
   if (operation === "results") return textSearchResultsResponse(body)
-  if (operation === "count") return textSearchCountResponse(body)
   return textSearchOptionsResponse(body)
 }
 
@@ -3063,7 +3057,7 @@ const handleFixtureRequest = async (request, response) => {
       }
       if (request.method === "DELETE") {
         if (selectedOperation) textSearchRequests[selectedOperation] = []
-        else textSearchRequests = { results: [], count: [], options: [], chronology: [] }
+        else textSearchRequests = { results: [], options: [], chronology: [] }
         return selectedOperation
           ? sendJson(response, 200, { requests: textSearchRequests[selectedOperation] })
           : sendJson(response, 200, textSearchRequests)
@@ -3115,7 +3109,7 @@ const handleFixtureRequest = async (request, response) => {
       }
       if (request.method === "DELETE") {
         if (selectedOperation) textSearchDelays[selectedOperation] = {}
-        else textSearchDelays = { results: {}, count: {}, options: {}, chronology: {} }
+        else textSearchDelays = { results: {}, options: {}, chronology: {} }
         return sendJson(response, 200, { delays: textSearchDelays })
       }
     }
@@ -5478,7 +5472,7 @@ const handleFixtureRequest = async (request, response) => {
       : { year_from: 1248, year_to: 2026 })
   }
 
-  const textSearchMatch = /^\/v2\/text-search\/(results|count|options)$/.exec(apiPathname)
+  const textSearchMatch = /^\/v2\/text-search\/(results|options)$/.exec(apiPathname)
   if (textSearchMatch) {
     const operation = textSearchMatch[1]
     if (request.method !== "POST") {
@@ -5508,7 +5502,6 @@ const handleFixtureRequest = async (request, response) => {
     if (textSearchFailures.has(operation)) {
       const messages = {
         results: "Unable to load text-search results",
-        count: "Unable to count text-search results",
         options: "Unable to load text-search options"
       }
       return sendJson(response, 503, {

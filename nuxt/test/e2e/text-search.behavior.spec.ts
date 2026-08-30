@@ -2,7 +2,7 @@ import { expect, test, type APIRequestContext, type Page, type Route } from "@pl
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 
-type Operation = "results" | "count" | "options" | "chronology"
+type Operation = "results" | "options" | "chronology"
 type RecordedRequest = {
   method: string
   path: string
@@ -844,7 +844,6 @@ test("failed advanced options settle to a retryable owner error without forwardi
   await expect(search.locator("#results")).toHaveCount(0)
   await expect(search.locator(".submit_form .top_row .spinner")).toBeHidden()
   expect(await requests(request, "results")).toEqual([])
-  expect(await requests(request, "count")).toEqual([])
 
   await request.delete(`${fixture}/_text_search/failures/options`)
   await error.getByRole("button", { name: "Försök igen" }).click()
@@ -989,9 +988,7 @@ test("submit and advanced toggle preserve unrelated query while reset clears eve
 test("advanced mode does not refetch an unchanged primary search", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet")
   await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
-  await expect.poll(async () => (await requests(request, "count")).length).toBeGreaterThan(0)
   await page.waitForTimeout(100)
-  const initialCountRequests = (await requests(request, "count")).length
 
   const disclosure = page.locator("[data-search-advanced]")
   await expect(disclosure).toHaveAttribute("aria-expanded", "false")
@@ -1005,7 +1002,6 @@ test("advanced mode does not refetch an unchanged primary search", async ({ page
   await page.waitForTimeout(100)
 
   expect(await requests(request, "results")).toHaveLength(1)
-  expect(await requests(request, "count")).toHaveLength(initialCountRequests)
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
 })
 
@@ -1083,44 +1079,14 @@ test("direct search hydrates its loading shell before rendering one client resul
   await expect(page.locator(".submit_form .top_row .spinner")).toBeVisible()
   await expect(page.locator("#results table.results")).toHaveCount(0)
   await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
-  expect(await requests(request, "count")).toEqual([])
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true }))
     .toBeVisible({ timeout: 9000 })
   await expect(page.locator(".submit_form .top_row .spinner")).toBeHidden()
   expect(await requests(request, "results")).toHaveLength(1)
-  expect(await requests(request, "count")).toHaveLength(1)
   expect(problems).toEqual([])
 })
 
-test("a failed deferred count retries when its accepted primary identity is revisited", async ({
-  page,
-  request
-}) => {
-  await request.put(`${fixture}/_text_search/failures`, { data: { operation: "count" } })
-  const failedCountResponse = page.waitForResponse(response =>
-    response.request().method() === "POST"
-    && new URL(response.url()).pathname === "/api/v2/text-search/count"
-  )
-  await openSearch(page, "/s%C3%B6k?fras=frihet")
-  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
-  await expect.poll(async () => (await requests(request, "count")).length).toBe(1)
-  expect((await failedCountResponse).status()).toBe(503)
-  await expect(page.locator(".hits_info .hits")).toBeHidden()
-
-  await request.delete(`${fixture}/_text_search/failures/count`)
-  await pushRoute(page, "/s%C3%B6k?fras=inga")
-  await expect(page.getByText("Din sökning gav inga träffar", { exact: true })).toBeVisible()
-  await expect.poll(async () => (await requests(request, "count")).length).toBe(2)
-  await request.delete(`${fixture}/_text_search/requests/count`)
-
-  await page.goBack()
-  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
-  await expect.poll(async () => (await requests(request, "count")).length).toBe(1)
-  expect((await requests(request, "count"))[0]?.body.query).toBe("frihet")
-  await expect(page.locator(".hits_info .hits")).toHaveText("3")
-})
-
-test("rapid history changes launch a count only for the finally accepted primary", async ({
+test("rapid history changes retain only the finally accepted primary", async ({
   page,
   request
 }) => {
@@ -1141,9 +1107,6 @@ test("rapid history changes launch a count only for the finally accepted primary
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true }))
     .toBeVisible({ timeout: 5000 })
   await expect(page.locator(".hits_info .hits")).toHaveText("3")
-  await expect.poll(async () => (await requests(request, "count")).length).toBe(1)
-  await page.waitForTimeout(1300)
-  expect((await requests(request, "count")).map(item => item.body.query)).toEqual(["frihet"])
 })
 
 test("failed chronology is serialized once and is not retried during hydration", async ({
@@ -1964,7 +1927,7 @@ test("a zero-work author facet keeps the unfiltered navigator and Visa alla esca
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
 })
 
-test("author-filtered reconciliation waits for the unfiltered pager basis", async ({
+test("author-filtered reconciliation uses the accepted filtered result total", async ({
   page,
   request
 }) => {
@@ -1978,14 +1941,14 @@ test("author-filtered reconciliation waits for the unfiltered pager basis", asyn
 
   await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
   await expect(page.locator("#toolkit .littb_pager"))
-    .toContainText("Visar verk 31-60 av 64, sida 2 av 3.")
+    .toContainText("Visar verk 31-40 av 40, sida 2 av 2.")
   await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
   await page.waitForTimeout(200)
   expect(new URL(page.url()).searchParams.get("traffsida")).toBe("2")
   expect((await requests(request, "results")).map(entry => entry.body.page).sort()).toEqual([1, 2])
 })
 
-test("author-filtered out-of-range reconciliation reacts when its pager basis becomes ready", async ({
+test("author-filtered out-of-range reconciliation uses the accepted primary total", async ({
   page,
   request
 }) => {
@@ -1999,7 +1962,7 @@ test("author-filtered out-of-range reconciliation reacts when its pager basis be
 
   await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
   await expect(page.locator("#toolkit .littb_pager"))
-    .toContainText("Visar verk 1-2 av 2, sida 1 av 1.")
+    .toContainText("Visar verk 1-1 av 1, sida 1 av 1.")
   await expect.poll(async () => (await requests(request, "results")).length).toBe(3)
   await page.waitForTimeout(200)
   expect((await requests(request, "results")).map(entry => entry.body.page).sort())
@@ -2101,12 +2064,11 @@ test("unmounting a pending direct facet releases auxiliary ownership before re-e
   ))).toHaveLength(2)
 })
 
-test("author filtering keeps the main search pager totals", async ({ page, request }) => {
+test("author filtering renders its accepted primary pager totals", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet")
   const pager = page.locator("#toolkit .littb_pager")
   await expect(pager.locator(".hits")).toHaveText("3")
   await expect(pager).toContainText("Visar verk 1-2 av 2, sida 1 av 1.")
-  await expect.poll(async () => (await requests(request, "count")).length).toBe(1)
 
   await page.locator(".navigator")
     .getByRole("button", { name: "Strindberg, August" })
@@ -2116,9 +2078,7 @@ test("author filtering keeps the main search pager totals", async ({ page, reque
   await page.waitForTimeout(100)
 
   await expect(pager.locator(".hits")).toHaveText("3")
-  await expect(pager).toContainText("Visar verk 1-2 av 2, sida 1 av 1.")
-  expect(await requests(request, "count")).toHaveLength(1)
-  expect((await requests(request, "count"))[0]?.body).not.toHaveProperty("facet_author_id")
+  await expect(pager).toContainText("Visar verk 1-1 av 1, sida 1 av 1.")
 })
 
 test("author navigator remains available in the narrow desktop search layout", async ({
@@ -2177,6 +2137,27 @@ test("Visa fler is scoped to its work and keeps original Reader route ownership"
   const reader = new URL(href!, "http://litteraturbanken.test")
   expect(reader.searchParams.get("s_page")).toBe("2")
   expect(reader.searchParams.get("s_prefix")).toBe("true")
+})
+
+test("Visa fler pins an accepted generation and expands the requested same-ID media row", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=same-media")
+  const more = page.locator("#results .overflow .more")
+  await expect(more).toHaveCount(2)
+  await more.nth(1).click()
+
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
+  expect((await requests(request, "results"))[1]?.body).toMatchObject({
+    query: "same-media",
+    page: 1,
+    highlight_limit: 100,
+    snapshot: "gen-fixture-0001",
+    work_ids: ["lb-same-media"]
+  })
+  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(7)
+  await expect(page.locator("tr:not(.is_faksimil).sentence .match")).toHaveCount(5)
 })
 
 test("Visa fler ignores duplicate activation while the same work is loading", async ({
@@ -2464,16 +2445,13 @@ test("title option retry repeats the exact failed filter and limit", async ({
   await expect(page.getByRole("option", { name: "Gösta Berlings saga" })).toBeVisible()
 })
 
-test("primary and count owners cancel stale work and recover independently", async ({
+test("primary ownership cancels stale work and recovers independently", async ({
   page,
   request
 }) => {
   await openSearch(page)
   await request.put(`${fixture}/_text_search/delays`, {
     data: { operation: "results", selector: "frihet", delay: 1200 }
-  })
-  await request.put(`${fixture}/_text_search/delays`, {
-    data: { operation: "count", selector: "frihet", delay: 1200 }
   })
   await submitPhrase(page, "frihet")
   await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
@@ -2483,10 +2461,6 @@ test("primary and count owners cancel stale work and recover independently", asy
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toHaveCount(0)
   await expect(page.locator(".hits_info .hits")).toBeHidden()
 
-  await request.put(`${fixture}/_text_search/failures`, { data: { operation: "count" } })
-  await submitPhrase(page, "count-failure")
-  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
-  await request.delete(`${fixture}/_text_search/failures/count`)
   await submitPhrase(page, "overflow")
   await expect(page.locator(".hits_info .hits")).toHaveText("512")
 })

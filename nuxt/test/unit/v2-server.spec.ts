@@ -88,11 +88,9 @@ type LegacyAuthorRouteOperation = paths["/legacy-author-routes/resolve"]["post"]
 type AuthorDocumentDescriptor = components["schemas"]["AuthorDocumentDescriptor"]
 type LegacyAuthorRouteResolution = components["schemas"]["LegacyAuthorRouteResolution"]
 type TextSearchResultsRequest = components["schemas"]["TextSearchResultsRequest"]
-type TextSearchCountRequest = components["schemas"]["TextSearchCountRequest"]
 type TextSearchOptionsRequest = components["schemas"]["TextSearchOptionsRequest"]
 type TextSearchOptionsResponse = components["schemas"]["TextSearchOptionsResponse"]
 type TextSearchResultsOperation = paths["/text-search/results"]["post"]
-type TextSearchCountOperation = paths["/text-search/count"]["post"]
 type TextSearchOptionsOperation = paths["/text-search/options"]["post"]
 type SourceInfoOperation = paths["/works/{author_id}/{title_path}/source-info"]["get"]
 type SourceInfoResponse = components["schemas"]["WorkSourceInfoResponse"]
@@ -116,8 +114,6 @@ const generatedLegacyAuthorRouteContract: LegacyAuthorRouteOperation = null as u
   operations["v2_post_legacy_author_route_resolve"]
 const generatedTextSearchResultsContract: TextSearchResultsOperation = null as unknown as
   operations["v2_post_text_search_results"]
-const generatedTextSearchCountContract: TextSearchCountOperation = null as unknown as
-  operations["v2_post_text_search_count"]
 const generatedTextSearchOptionsContract: TextSearchOptionsOperation = null as unknown as
   operations["v2_post_text_search_options"]
 const generatedSourceInfoContract: SourceInfoOperation = null as unknown as
@@ -399,8 +395,8 @@ async function postTextSearchResults(body: TextSearchResultsRequest) {
 }
 
 async function postTextSearch(
-  operation: "results" | "count" | "options",
-  body: TextSearchResultsRequest | TextSearchCountRequest | TextSearchOptionsRequest
+  operation: "results" | "options",
+  body: TextSearchResultsRequest | TextSearchOptionsRequest
 ) {
   return await fetch(`${origin}/v2/text-search/${operation}`, {
     method: "POST",
@@ -426,20 +422,6 @@ function textSearchResultsRequest(
   }
 }
 
-function textSearchCountRequest(
-  query: string,
-  overrides: Partial<TextSearchCountRequest> = {}
-): TextSearchCountRequest {
-  return {
-    query,
-    include_modernized: true,
-    prefix: false,
-    suffix: false,
-    word_form_only: true,
-    ...overrides
-  }
-}
-
 function textSearchOptionsRequest(
   titleFilter: string,
   overrides: Partial<TextSearchOptionsRequest> = {}
@@ -459,7 +441,6 @@ function textSearchOptionsRequest(
 async function textSearchRequests() {
   return await (await fetch(`${origin}/_text_search/requests`)).json() as {
     results: Array<{ method: string, path: string, body: unknown }>
-    count: Array<{ method: string, path: string, body: unknown }>
     options: Array<{ method: string, path: string, body: unknown }>
   }
 }
@@ -2382,7 +2363,8 @@ describe("v2 fixture server operations", () => {
       query: "frihet",
       page: 1,
       page_size: 30,
-      total_work_hits: 2,
+      snapshot: "gen-fixture-0001",
+      totals: { occurrences: 3, documents: 2, works: 2 },
       author_facets: [
         { author_id: "StrindbergA", name_for_index: "Strindberg, August", count: 1 },
         { author_id: "LagerlöfS", name_for_index: "Lagerlöf, Selma", count: 1 }
@@ -2395,6 +2377,7 @@ describe("v2 fixture server operations", () => {
           title: "Röda rummet",
           title_id: "RodaRummet",
           mediatype: "etext",
+          occurrence_count: 1,
           has_more_highlights: false,
           highlights: [{
             left_context: [{ word: "ropade", word_id: "w1_10", page_name: "1" }],
@@ -2409,21 +2392,25 @@ describe("v2 fixture server operations", () => {
           title: "Gösta Berlings saga",
           title_id: "GostaBerlingsSaga",
           mediatype: "faksimil",
-          has_more_highlights: true,
+          occurrence_count: 2,
+          has_more_highlights: false,
           highlights: [{
             left_context: [{ word: "sin", word_id: "w3_20", page_name: "3" }],
             match: [{ word: "frihet", word_id: "w3_21", page_name: "3" }],
             right_context: [{ word: "sökte", word_id: "w3_22", page_name: "3" }]
+          }, {
+            left_context: [{ word: "drömde", word_id: "w4_30", page_name: "4" }],
+            match: [{ word: "frihet", word_id: "w4_31", page_name: "4" }],
+            right_context: [{ word: "vidare", word_id: "w4_32", page_name: "4" }]
           }]
         }
       ]
     })
   })
 
-  test("generates all text-search operations and title author facet schemas", () => {
-    expect(generatedTextSearchResultsContract).toBeNull()
-    expect(generatedTextSearchCountContract).toBeNull()
-    expect(generatedTextSearchOptionsContract).toBeNull()
+test("generates all text-search operations and title author facet schemas", () => {
+  expect(generatedTextSearchResultsContract).toBeNull()
+  expect(generatedTextSearchOptionsContract).toBeNull()
 
     const options: TextSearchOptionsResponse = {
       authors: [],
@@ -2441,41 +2428,29 @@ describe("v2 fixture server operations", () => {
     expect(options.title_author_facets[0]?.author_id).toBe("StrindbergA")
   })
 
-  test("serves zero and overflow results plus deterministic counts", async () => {
+  test("serves zero, overflow, and exact combined result totals", async () => {
     const empty = await postTextSearchResults(textSearchResultsRequest("inga"))
     const overflow = await postTextSearchResults(textSearchResultsRequest("overflow"))
-    const richCount = await postTextSearch("count", textSearchCountRequest("frihet"))
-    const emptyCount = await postTextSearch("count", textSearchCountRequest("inga"))
-    const overflowCount = await postTextSearch("count", textSearchCountRequest("overflow"))
+    const exact = await postTextSearchResults(textSearchResultsRequest("exact-totals"))
 
     expect(await empty.json()).toEqual({
       query: "inga",
       page: 1,
       page_size: 30,
-      total_work_hits: 0,
+      snapshot: "gen-fixture-0001",
+      totals: { occurrences: 0, documents: 0, works: 0 },
       author_facets: [],
       works: []
     })
     const overflowBody = await overflow.json()
     expect(overflowBody).toMatchObject({
       query: "overflow",
-      total_work_hits: 64
+      totals: { occurrences: 512, documents: 64, works: 64 }
     })
     expect(overflowBody.works[0]).toMatchObject({ has_more_highlights: true })
-    expect(await richCount.json()).toEqual({
-      query: "frihet",
-      total_documents: 2,
-      total_highlights: 3
-    })
-    expect(await emptyCount.json()).toEqual({
-      query: "inga",
-      total_documents: 0,
-      total_highlights: 0
-    })
-    expect(await overflowCount.json()).toEqual({
-      query: "overflow",
-      total_documents: 64,
-      total_highlights: 512
+    expect(await exact.json()).toMatchObject({
+      snapshot: "gen-fixture-0001",
+      totals: { occurrences: 17, documents: 8, works: 8 }
     })
   })
 
@@ -2545,11 +2520,9 @@ describe("v2 fixture server operations", () => {
 
   test("logs exact text-search method, path, body, and order with isolated resets", async () => {
     const resultsBody = textSearchResultsRequest("frihet", { author_ids: ["StrindbergA"] })
-    const countBody = textSearchCountRequest("frihet")
     const optionsBody = textSearchOptionsRequest("lager")
     await postTextSearchResults(resultsBody)
     await postTextSearch("results", textSearchResultsRequest("inga"))
-    await postTextSearch("count", countBody)
     await postTextSearch("options", optionsBody)
 
     expect(await textSearchRequests()).toEqual({
@@ -2561,7 +2534,6 @@ describe("v2 fixture server operations", () => {
           body: textSearchResultsRequest("inga")
         }
       ],
-      count: [{ method: "POST", path: "/v2/text-search/count", body: countBody }],
       options: [{ method: "POST", path: "/v2/text-search/options", body: optionsBody }],
       chronology: []
     })
@@ -2569,26 +2541,25 @@ describe("v2 fixture server operations", () => {
     await fetch(`${origin}/_text_search/requests/results`, { method: "DELETE" })
     expect(await textSearchRequests()).toEqual({
       results: [],
-      count: [{ method: "POST", path: "/v2/text-search/count", body: countBody }],
       options: [{ method: "POST", path: "/v2/text-search/options", body: optionsBody }],
       chronology: []
     })
   })
 
-  test.each(["results", "count", "options"])(
+  test.each(["results", "options"])(
     "requires POST for the text-search %s operation",
     async (operation) => {
       const response = await fetch(`${origin}/v2/text-search/${operation}`)
 
       expect(response.status).toBe(405)
       expect(await textSearchRequests()).toEqual({
-        results: [], count: [], options: [], chronology: []
+        results: [], options: [], chronology: []
       })
     }
   )
 
   test("rejects malformed or structurally invalid JSON without ledgering", async () => {
-    const malformedJson = await fetch(`${origin}/v2/text-search/count`, {
+    const malformedJson = await fetch(`${origin}/v2/text-search/results`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: "{"
@@ -2602,7 +2573,7 @@ describe("v2 fixture server operations", () => {
     expect(malformedJson.status).toBe(400)
     expect(unknownField.status).toBe(422)
     expect(await textSearchRequests()).toEqual({
-      results: [], count: [], options: [], chronology: []
+      results: [], options: [], chronology: []
     })
   })
 
@@ -2613,7 +2584,7 @@ describe("v2 fixture server operations", () => {
 
     expect(response.status).toBe(422)
     expect(await textSearchRequests()).toEqual({
-      results: [], count: [], options: [], chronology: []
+      results: [], options: [], chronology: []
     })
   })
 
@@ -2628,7 +2599,7 @@ describe("v2 fixture server operations", () => {
 
       expect(response.status).toBe(422)
       expect(await textSearchRequests()).toEqual({
-        results: [], count: [], options: [], chronology: []
+        results: [], options: [], chronology: []
       })
     }
   )
@@ -2647,19 +2618,17 @@ describe("v2 fixture server operations", () => {
     const configured = await fetch(`${origin}/_text_search/failures`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ operation: "count" })
+      body: JSON.stringify({ operation: "results" })
     })
     expect(configured.status).toBe(200)
 
     const results = await postTextSearchResults(textSearchResultsRequest("frihet"))
-    const count = await postTextSearch("count", textSearchCountRequest("frihet"))
     const options = await postTextSearch("options", textSearchOptionsRequest(""))
-    expect(results.status).toBe(200)
-    expect(count.status).toBe(503)
-    expect(await count.json()).toEqual({
+    expect(results.status).toBe(503)
+    expect(await results.json()).toEqual({
       error: {
-        code: "text_search_count_unavailable",
-        message: "Unable to count text-search results",
+        code: "text_search_results_unavailable",
+        message: "Unable to load text-search results",
         details: null
       }
     })
@@ -2672,7 +2641,7 @@ describe("v2 fixture server operations", () => {
     })
     expect(unknown.status).toBe(422)
     expect(await (await fetch(`${origin}/_text_search/failures`)).json()).toEqual({
-      failures: ["count"]
+      failures: ["results"]
     })
   })
 
@@ -2716,7 +2685,6 @@ describe("v2 fixture server operations", () => {
     expect(await (await fetch(`${origin}/_text_search/delays`)).json()).toEqual({
       delays: {
         results: {},
-        count: {},
         options: { lager: 70 },
         chronology: {}
       }
