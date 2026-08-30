@@ -1714,36 +1714,78 @@ test("pagination cannot reuse a previous response while a new primary request is
   request
 }) => {
   await openSearch(page, "/s%C3%B6k?fras=overflow")
-  await request.put(`${fixture}/_text_search/delays`, {
-    data: { operation: "results", selector: "frihet", delay: 1200 }
+  await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)
+  let releaseResponse!: () => void
+  let markRequestHeld!: () => void
+  const responseHeld = new Promise<void>(resolve => { releaseResponse = resolve })
+  const requestHeld = new Promise<void>(resolve => { markRequestHeld = resolve })
+  let heldRequests = 0
+  await page.route("**/api/v2/text-search/results", async route => {
+    const body = route.request().postDataJSON()
+    if (body.query !== "frihet" || body.highlight_limit !== 5 || body.work_ids) {
+      await route.continue()
+      return
+    }
+    heldRequests += 1
+    markRequestHeld()
+    const response = await route.fetch()
+    await responseHeld
+    await route.fulfill({ response })
   })
   await submitPhrase(page, "frihet")
+  await requestHeld
+  await expect(page.locator("#results")).toHaveClass(/searching/)
+  await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)
   const next = page.getByRole("button", { name: "Nästa träffsida" })
   await expect(next).toBeDisabled()
+  const beforePagination = await requests(request, "results")
+  await next.dispatchEvent("click")
   await page.locator("h1").click()
   await page.keyboard.press("ArrowRight")
   await expect(page).toHaveURL(/fras=frihet/)
   await expect(page).not.toHaveURL(/snapshot=/)
   await expect(page).not.toHaveURL(/traffsida=/)
+  expect(heldRequests).toBe(1)
+  expect(await requests(request, "results")).toHaveLength(beforePagination.length)
+  releaseResponse()
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
 })
 
 test("an expired generation requires an explicit fresh restart", async ({ page, request }) => {
-  await openSearch(page, "/s%C3%B6k?fras=overflow")
-  await pushRoute(page, "/s%C3%B6k?fras=overflow&traffsida=2&snapshot=gen-expired")
+  await openSearch(page, "/s%C3%B6k?fras=overflow&forfattare=StrindbergA")
+  await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)
+  const acceptedA = await requests(request, "results")
+  const unpinnedA = acceptedA.filter(entry => (
+    entry.body.query === "overflow"
+    && entry.body.author_ids?.includes("StrindbergA")
+    && !Object.hasOwn(entry.body, "snapshot")
+  ))
+  expect(unpinnedA).toHaveLength(1)
+  await pushRoute(page,
+    "/s%C3%B6k?fras=overflow&forfattare=StrindbergA&traffsida=2&snapshot=gen-expired")
   await expect(page.getByRole("alert")).toContainText("Sökresultatet har gått ut")
   const beforeRestart = await requests(request, "results")
-  expect(beforeRestart.at(-1)?.body).toMatchObject({ page: 2, snapshot: "gen-expired" })
-  await page.waitForTimeout(150)
+  expect(beforeRestart.at(-1)?.body).toMatchObject({
+    query: "overflow", author_ids: ["StrindbergA"], page: 2, snapshot: "gen-expired"
+  })
+  await page.evaluate(() => new Promise<void>(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  }))
   expect(await requests(request, "results")).toHaveLength(beforeRestart.length)
   await page.getByRole("button", { name: "Starta om sökningen" }).click()
   await expect(page).not.toHaveURL(/snapshot=/)
   await expect(page).not.toHaveURL(/traffsida=/)
-  const restarted = await requests(request, "results")
-  expect(restarted.at(-1)?.body).not.toHaveProperty("snapshot")
+  await expect.poll(async () => (await requests(request, "results")).filter(entry => (
+    entry.body.query === "overflow"
+    && entry.body.author_ids?.includes("StrindbergA")
+    && !Object.hasOwn(entry.body, "snapshot")
+  )).length).toBe(unpinnedA.length + 1)
+  expect(new URL(page.url()).searchParams.get("fras")).toBe("overflow")
+  expect(new URL(page.url()).searchParams.get("forfattare")).toBe("StrindbergA")
   await page.getByRole("button", { name: "Nästa träffsida" }).click()
   await expect(page).toHaveURL(/snapshot=gen-fixture-0002/)
   expect((await requests(request, "results")).at(-1)?.body).toMatchObject({
-    page: 2, snapshot: "gen-fixture-0002"
+    query: "overflow", author_ids: ["StrindbergA"], page: 2, snapshot: "gen-fixture-0002"
   })
 })
 
