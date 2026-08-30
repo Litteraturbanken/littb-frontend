@@ -2588,12 +2588,12 @@ function exactTotalsWorks(query) {
   })
 }
 
-function pairedMediaWorks(query) {
+function pairedMediaWorks(query, changedGeneration = false) {
   return ["etext", "faksimil"].map((mediatype, index) => ({
     lbworkid: "lb-same-media",
     author_id: "StrindbergA",
     author_name: "August Strindberg",
-    title: `Samma media ${mediatype}`,
+    title: changedGeneration ? `Förändrad media ${mediatype}` : `Samma media ${mediatype}`,
     title_id: `SameMedia${mediatype}`,
     mediatype,
     allHighlights: Array.from({ length: 7 }, (_, hit) => searchHighlight(
@@ -2606,7 +2606,9 @@ function inventoryForTextSearch(body) {
   if (body.query === "inga") return []
   if (body.query === "overflow") return overflowTextSearchWorks(body.query)
   if (body.query === "exact-totals") return exactTotalsWorks(body.query)
-  if (body.query === "same-media") return pairedMediaWorks(body.query)
+  if (body.query === "same-media") {
+    return pairedMediaWorks(body.query, body.snapshot === "gen-fixture-0002")
+  }
   const works = richTextSearchWorks(body.query)
   if (body.query === "empty-highlights") works[0].visibleHighlights = []
   if (body.query === "five-context") {
@@ -2625,8 +2627,13 @@ function inventoryForTextSearch(body) {
   return works
 }
 
-function textSearchResultsResponse(body, inventory = inventoryForTextSearch(body)) {
-  let matchedWorks = inventory
+function textSearchResultsResponse(body, inventory = null) {
+  const snapshot = body.snapshot ?? (body.query === "same-media"
+    && textSearchRequests.results.filter(request => request.body.query === "same-media").length > 1
+    ? "gen-fixture-0002"
+    : "gen-fixture-0001")
+  const completeInventory = inventory ?? inventoryForTextSearch({ ...body, snapshot })
+  let matchedWorks = completeInventory
   if (body.work_ids?.length) {
     const workIds = new Set(body.work_ids)
     matchedWorks = matchedWorks.filter(work => workIds.has(work.lbworkid))
@@ -2650,7 +2657,7 @@ function textSearchResultsResponse(body, inventory = inventoryForTextSearch(body
     query: body.query,
     page: body.page,
     page_size: 30,
-    snapshot: body.snapshot ?? "gen-fixture-0001",
+    snapshot,
     totals,
     author_facets: authorFacets,
     works: matchedWorks.slice(pageStart, pageStart + body.page_size).map(({ allHighlights, visibleHighlights, ...work }) => ({

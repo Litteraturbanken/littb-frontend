@@ -2146,10 +2146,23 @@ test("Visa fler pins an accepted generation and expands the requested same-ID me
   await openSearch(page, "/s%C3%B6k?fras=same-media")
   const more = page.locator("#results .overflow .more")
   await expect(more).toHaveCount(2)
+  const activeGeneration = await request.post(`${fixture}/v2/text-search/results`, {
+    data: {
+      query: "same-media", page: 1, page_size: 30, highlight_limit: 5,
+      prefix: false, suffix: false, word_form_only: true, include_modernized: true
+    }
+  })
+  expect(activeGeneration.status()).toBe(200)
+  const activeGenerationBody = await activeGeneration.json() as {
+    snapshot: string, works: Array<{ title: string }>
+  }
+  expect(activeGenerationBody.snapshot).toBe("gen-fixture-0002")
+  expect(activeGenerationBody.works.some(work => work.title === "Förändrad media etext"))
+    .toBe(true)
   await more.nth(1).click()
 
-  await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
-  expect((await requests(request, "results"))[1]?.body).toMatchObject({
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(3)
+  expect((await requests(request, "results"))[2]?.body).toMatchObject({
     query: "same-media",
     page: 1,
     highlight_limit: 100,
