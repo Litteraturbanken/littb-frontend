@@ -1668,6 +1668,107 @@ test("left and right keyboard pagination updates the canonical page and restores
   await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
 })
 
+test("pagination keeps every page in the accepted generation and drops it for filters", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow")
+  const next = page.getByRole("button", { name: "Nästa träffsida" })
+  await next.click()
+  await expect(page).toHaveURL(/traffsida=2/)
+  await expect(page).toHaveURL(/snapshot=gen-fixture-0001/)
+  expect((await requests(request, "results")).at(-1)?.body).toMatchObject({
+    page: 2, snapshot: "gen-fixture-0001"
+  })
+
+  await page.reload()
+  await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)
+  expect((await requests(request, "results")).at(-1)?.body).toMatchObject({
+    page: 2, snapshot: "gen-fixture-0001"
+  })
+  await page.goBack()
+  await expect(page).not.toHaveURL(/traffsida=2/)
+  await page.goForward()
+  await expect(page).toHaveURL(/traffsida=2/)
+
+  await page.getByRole("button", { name: "Gå till sista träffen" }).click()
+  await expect(page).toHaveURL(/traffsida=3/)
+  await page.getByRole("button", { name: "Gå till första träffen" }).click()
+  await expect(page).not.toHaveURL(/traffsida=/)
+  await page.getByRole("button", { name: "Gå till träffsida . . ." }).click()
+  await page.getByRole("textbox", { name: "Träffsida" }).fill("2")
+  await page.getByRole("textbox", { name: "Träffsida" }).press("Enter")
+  await expect(page).toHaveURL(/traffsida=2/)
+  await page.locator("h1").click()
+  await page.keyboard.press("ArrowRight")
+  await expect(page).toHaveURL(/traffsida=3/)
+  await expect(page).toHaveURL(/snapshot=gen-fixture-0001/)
+
+  await page.locator(".navigator").getByRole("button", { name: "Strindberg, August" }).click()
+  await expect(page).not.toHaveURL(/snapshot=/)
+  expect((await requests(request, "results")).at(-1)?.body).not.toHaveProperty("snapshot")
+})
+
+test("pagination cannot reuse a previous response while a new primary request is pending", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow")
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "frihet", delay: 1200 }
+  })
+  await submitPhrase(page, "frihet")
+  const next = page.getByRole("button", { name: "Nästa träffsida" })
+  await expect(next).toBeDisabled()
+  await page.locator("h1").click()
+  await page.keyboard.press("ArrowRight")
+  await expect(page).toHaveURL(/fras=frihet/)
+  await expect(page).not.toHaveURL(/snapshot=/)
+  await expect(page).not.toHaveURL(/traffsida=/)
+})
+
+test("an expired generation requires an explicit fresh restart", async ({ page, request }) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow")
+  await pushRoute(page, "/s%C3%B6k?fras=overflow&traffsida=2&snapshot=gen-expired")
+  await expect(page.getByRole("alert")).toContainText("Sökresultatet har gått ut")
+  const beforeRestart = await requests(request, "results")
+  expect(beforeRestart.at(-1)?.body).toMatchObject({ page: 2, snapshot: "gen-expired" })
+  await page.waitForTimeout(150)
+  expect(await requests(request, "results")).toHaveLength(beforeRestart.length)
+  await page.getByRole("button", { name: "Starta om sökningen" }).click()
+  await expect(page).not.toHaveURL(/snapshot=/)
+  await expect(page).not.toHaveURL(/traffsida=/)
+  const restarted = await requests(request, "results")
+  expect(restarted.at(-1)?.body).not.toHaveProperty("snapshot")
+  await page.getByRole("button", { name: "Nästa träffsida" }).click()
+  await expect(page).toHaveURL(/snapshot=gen-fixture-0002/)
+  expect((await requests(request, "results")).at(-1)?.body).toMatchObject({
+    page: 2, snapshot: "gen-fixture-0002"
+  })
+})
+
+for (const status of [422, 503, 502]) {
+  test(`a non-expired primary status ${status} stays local without retrying`, async ({ page }) => {
+    let calls = 0
+    await page.route("**/api/v2/text-search/results", async route => {
+      calls += 1
+      await route.fulfill({
+        status,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: { code: `text_search_${status}`, message: "Unavailable", details: null }
+        })
+      })
+    })
+    await openSearch(page, "/s%C3%B6k?fras=frihet")
+    await expect(page.locator("[data-search-error]")).toHaveText(
+      "Sökresultatet kan inte visas just nu."
+    )
+    await page.waitForTimeout(150)
+    expect(calls).toBe(1)
+  })
+}
+
 test("zero-result pager uses guarded one-page bounds", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?fras=inga")
 

@@ -2658,6 +2658,29 @@ test("generates all text-search operations and title author facet schemas", () =
     })
   })
 
+  test("accepts snapshots only on results requests and reports expired snapshots", async () => {
+    const results = await postTextSearchResults(textSearchResultsRequest("frihet", {
+      snapshot: "gen-fixture-0001"
+    }))
+    const options = await postTextSearch("options", {
+      ...textSearchOptionsRequest(""), snapshot: "gen-fixture-0001"
+    } as TextSearchOptionsRequest)
+    const expired = await postTextSearchResults(textSearchResultsRequest("frihet", {
+      snapshot: "gen-expired"
+    }))
+
+    expect(results.status).toBe(200)
+    expect(options.status).toBe(422)
+    expect(expired.status).toBe(409)
+    expect(await expired.json()).toEqual({
+      error: {
+        code: "text_search_snapshot_expired",
+        message: "Text-search snapshot has expired",
+        details: null
+      }
+    })
+  })
+
   test("rejects legacy text-search filter values longer than 100 characters", async () => {
     const response = await postTextSearchResults(textSearchResultsRequest("frihet", {
       legacy_filters: [{ field: "keyword", value: "x".repeat(101) }]

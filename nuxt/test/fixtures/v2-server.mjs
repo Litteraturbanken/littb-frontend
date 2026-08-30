@@ -412,6 +412,7 @@ let textSearchRequests = { results: [], options: [], chronology: [] }
 let textSearchFailures = new Set()
 let textSearchDelays = { results: {}, options: {}, chronology: {} }
 let textSearchAuthorityMode = false
+let textSearchActiveGeneration = "gen-fixture-0001"
 
 const bibliographyEntries = [
   {
@@ -2119,7 +2120,7 @@ const textSearchLegacyFields = new Set([
 const textSearchCommonFields = new Set([
   "about_author_ids", "author_ids", "categories", "facet_author_id", "gender",
   "include_modernized", "languages", "legacy_filters", "prefix", "query",
-  "snapshot", "suffix", "word_form_only", "work_ids", "year_from", "year_to"
+  "suffix", "word_form_only", "work_ids", "year_from", "year_to"
 ])
 
 function validBoundedString(value, maximum = 100, allowEmpty = false) {
@@ -2154,10 +2155,6 @@ function validTextSearchCommon(body) {
     && !validBoundedString(body.facet_author_id)
   ) return false
   if (
-    Object.hasOwn(body, "snapshot") && body.snapshot !== null
-    && !validBoundedString(body.snapshot, 128)
-  ) return false
-  if (
     Object.hasOwn(body, "gender") && body.gender !== null
     && body.gender !== "female" && body.gender !== "male"
   ) return false
@@ -2187,6 +2184,7 @@ function validTextSearchBody(operation, body) {
     allowed.add("highlight_limit")
     allowed.add("page")
     allowed.add("page_size")
+    allowed.add("snapshot")
   }
   if (operation === "options") {
     allowed.add("include_static_options")
@@ -2205,7 +2203,9 @@ function validTextSearchBody(operation, body) {
   ) return false
 
   if (operation === "results") {
-    return Number.isInteger(body.highlight_limit) && body.highlight_limit >= 5
+    return (!Object.hasOwn(body, "snapshot") || body.snapshot === null
+      || validBoundedString(body.snapshot, 128))
+      && Number.isInteger(body.highlight_limit) && body.highlight_limit >= 5
       && body.highlight_limit <= 500 && Number.isInteger(body.page)
       && body.page >= 1 && body.page <= 10_000 && body.page_size === 30
   }
@@ -2641,7 +2641,7 @@ function textSearchResultsResponse(body, inventory = null) {
   const snapshot = body.snapshot ?? (body.query === "same-media"
     && textSearchRequests.results.filter(request => request.body.query === "same-media").length > 1
     ? "gen-fixture-0002"
-    : "gen-fixture-0001")
+    : textSearchActiveGeneration)
   const completeInventory = inventory ?? inventoryForTextSearch({ ...body, snapshot })
   let matchedWorks = completeInventory
   if (body.work_ids?.length) {
@@ -3082,7 +3082,10 @@ const handleFixtureRequest = async (request, response) => {
       }
       if (request.method === "DELETE") {
         if (selectedOperation) textSearchRequests[selectedOperation] = []
-        else textSearchRequests = { results: [], options: [], chronology: [] }
+        else {
+          textSearchRequests = { results: [], options: [], chronology: [] }
+          textSearchActiveGeneration = "gen-fixture-0001"
+        }
         return selectedOperation
           ? sendJson(response, 200, { requests: textSearchRequests[selectedOperation] })
           : sendJson(response, 200, textSearchRequests)
@@ -5524,6 +5527,16 @@ const handleFixtureRequest = async (request, response) => {
 
     textSearchRequests[operation].push({ method: request.method, path: url.pathname, body })
     await waitForTextSearchDelay(operation, body)
+    if (operation === "results" && body.snapshot === "gen-expired") {
+      textSearchActiveGeneration = "gen-fixture-0002"
+      return sendJson(response, 409, {
+        error: {
+          code: "text_search_snapshot_expired",
+          message: "Text-search snapshot has expired",
+          details: null
+        }
+      })
+    }
     if (textSearchFailures.has(operation)) {
       const messages = {
         results: "Unable to load text-search results",

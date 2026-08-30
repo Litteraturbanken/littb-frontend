@@ -68,7 +68,7 @@ type SearchResultsView = Readonly<{
 }>
 type PrimaryEnvelope = Readonly<{
   identity: string
-  status: 200 | 204 | 502
+  status: 200 | 204 | 409 | 422 | 503 | 502
   results: SearchResultsView | null
 }>
 type ChronologyBounds = Readonly<{ yearFrom: number, yearTo: number }>
@@ -189,6 +189,7 @@ watch(() => state.value.advanced, advanced => {
 const primaryRequestOwner = createTextSearchRequestOwner()
 const primaryExecutionIdentity = shallowRef<string | null>(null)
 const primaryInFlightIdentity = shallowRef<string | null>(null)
+const freshPrimaryIdentity = shallowRef<string | null>(null)
 const primaryClientMounted = ref(false)
 watch(primaryIdentity, (_identity, previousIdentity) => {
   primaryRequestOwner.cancel()
@@ -278,7 +279,14 @@ const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
         : null
       return accepted
         ? { identity, status: 200, results: resultsView(accepted, requestedState) }
-        : { identity, status: 502, results: null }
+        : {
+            identity,
+            status: result.response.status === 409 || result.response.status === 422
+              || result.response.status === 503
+              ? result.response.status
+              : 502,
+            results: null
+          }
     } catch {
       if (requestSignal.aborted) {
         throw requestSignal.reason ?? new DOMException("Search request aborted", "AbortError")
@@ -295,8 +303,10 @@ const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
     // Nuxt's reactive-key default may execute before route prerequisites are accepted.
     ...{ _keyTriggersExecute: false },
     getCachedData: (key, nuxtApp) => {
+      if (freshPrimaryIdentity.value === primaryIdentity.value) return undefined
       const cached = nuxtApp.payload.data[key] as PrimaryEnvelope | undefined
-      return cached?.identity === primaryIdentity.value && cached.status !== 502
+      return cached?.identity === primaryIdentity.value
+        && (cached.status === 200 || cached.status === 204)
         ? cached
         : undefined
     }
@@ -431,7 +441,9 @@ const currentPrimaryFacets = computed(() => (
     ? displayPrimary.value.results?.facets ?? []
     : []
 ))
-const primaryFailed = computed(() => acceptedPrimary.value?.status === 502)
+const primaryExpired = computed(() => acceptedPrimary.value?.status === 409)
+const primaryFailed = computed(() => acceptedPrimary.value !== null
+  && acceptedPrimary.value.status !== 200 && acceptedPrimary.value.status !== 204)
 const primaryLoading = computed(() => Boolean(state.value.phrase)
   && !optionsFailed.value
   && (primaryPending.value || acceptedPrimary.value === null))
@@ -584,6 +596,7 @@ function executePrimary(identity: string, cause: "initial" | "refresh:manual"): 
     if (primaryInFlightIdentity.value === identity) {
       primaryInFlightIdentity.value = null
     }
+    if (freshPrimaryIdentity.value === identity) freshPrimaryIdentity.value = null
   })
 }
 const lastAcceptedAdvancedChronologyBounds = shallowRef({
@@ -882,6 +895,20 @@ function submitSearch() {
   void navigate(query)
 }
 
+function restartExpiredSearch() {
+  if (!primaryExpired.value) return
+  const query = { ...rawQuery.value }
+  delete query.snapshot
+  delete query.traffsida
+  const restartedState = parseTextSearchRouteQuery(query)
+  const identity = restartedState.phrase
+    ? textSearchResultsRequestIdentity(buildTextSearchResultsRequest(restartedState))
+    : "empty"
+  freshPrimaryIdentity.value = identity
+  clearNuxtData(primaryDataKey(identity))
+  void router.replace({ name: route.name as string, query: query as LocationQueryRaw })
+}
+
 async function resetSearch() {
   await navigate(resetTextSearchQuery(rawQuery.value))
   await nextTick()
@@ -1115,6 +1142,11 @@ const resultRows = computed<readonly ResultRowView[]>(() => {
 
 const totalPages = computed(() => Math.max(1, Math.ceil((results.value?.totalWorks ?? 0) / 30)))
 const pagerBasisReady = computed(() => results.value !== null)
+const paginationReady = computed(() => {
+  const primary = acceptedPrimary.value
+  return primary?.identity === primaryIdentity.value && primary.status === 200
+    && primary.results !== null
+})
 const displayedPage = computed(() => Math.min(state.value.page, totalPages.value))
 const visibleWorkCount = computed(() => results.value?.works.length ?? 0)
 const firstVisibleWork = computed(() => visibleWorkCount.value > 0
@@ -1124,8 +1156,16 @@ const lastVisibleWork = computed(() => visibleWorkCount.value > 0
   ? firstVisibleWork.value + visibleWorkCount.value - 1
   : 0)
 
+function pageQuery(page: number) {
+  const primary = acceptedPrimary.value
+  if (primary?.identity !== primaryIdentity.value || primary.status !== 200
+    || !primary.results) return null
+  return textSearchPageQuery({ ...rawQuery.value, snapshot: primary.results.snapshot }, page)
+}
+
 function replacePage(page: number) {
-  const query = textSearchPageQuery(rawQuery.value, page)
+  const query = pageQuery(page)
+  if (!query) return
   const mutableQuery: LocationQueryRaw = {}
   for (const [key, value] of Object.entries(query)) {
     mutableQuery[key] = typeof value === "string" || value == null ? value : [...value]
@@ -1145,7 +1185,8 @@ watch(
 )
 
 function goToPage(page: number) {
-  void navigate(textSearchPageQuery(rawQuery.value, page))
+  const query = pageQuery(page)
+  if (query) void navigate(query)
 }
 
 const paginationShortcutRoles = new Set([
@@ -1687,6 +1728,10 @@ v-for="item in [
         </div>
       </div>
     </div>
+    <div v-else-if="primaryExpired" data-search-error class="error" role="alert">
+      Sökresultatet har gått ut. Starta om sökningen för att använda den aktuella textsamlingen.{{ " " }}
+      <button class="link-control" type="button" @click="restartExpiredSearch">Starta om sökningen</button>
+    </div>
     <div v-else-if="primaryFailed" data-search-error class="error" role="alert">
       Sökresultatet kan inte visas just nu.
     </div>
@@ -1717,7 +1762,7 @@ v-for="item in [
                 type="button"
                 class="submit btn navicon left"
                 aria-label="Föregående träffsida"
-                :disabled="state.page <= 1"
+                :disabled="!paginationReady || state.page <= 1"
                 @click="goToPage(state.page - 1)"
               >
                 <i class="fa fa-angle-left" />
@@ -1726,17 +1771,17 @@ v-for="item in [
                 type="button"
                 class="submit btn navicon"
                 aria-label="Nästa träffsida"
-                :disabled="state.page >= totalPages"
+                :disabled="!paginationReady || state.page >= totalPages"
                 @click="goToPage(state.page + 1)"
               >
                 <i class="fa fa-angle-right" />
               </button>
             </li>
             <li>
-              <button class="link-control" type="button" @click="goToPage(1)">Gå till första träffen</button>
+              <button class="link-control" type="button" :disabled="!paginationReady" @click="goToPage(1)">Gå till första träffen</button>
             </li>
             <li>
-              <button class="link-control" type="button" @click="goToPage(totalPages)">Gå till sista träffen</button>
+              <button class="link-control" type="button" :disabled="!paginationReady" @click="goToPage(totalPages)">Gå till sista träffen</button>
             </li>
             <li
               :class="{ open: showGotoPageInput }"
@@ -1745,7 +1790,7 @@ v-for="item in [
               <button
                 class="link-control"
                 type="button"
-                :disabled="totalPages === 1"
+                :disabled="!paginationReady || totalPages === 1"
                 @click="toggleGotoPageInput"
               >Gå till träffsida . . .</button>
               <form v-if="showGotoPageInput" @submit.prevent="submitGotoPage">
