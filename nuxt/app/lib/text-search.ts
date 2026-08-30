@@ -6,14 +6,13 @@ export {
 } from "./text-search-navigation"
 
 export type TextSearchResultsRequest = components["schemas"]["TextSearchResultsRequest"]
-export type TextSearchCountRequest = components["schemas"]["TextSearchCountRequest"]
 export type TextSearchOptionsRequest = components["schemas"]["TextSearchOptionsRequest"]
 export type TextSearchResultsResponse = components["schemas"]["TextSearchResponse"]
-export type TextSearchCountResponse = components["schemas"]["TextSearchCountResponse"]
 export type TextSearchOptionsResponse = components["schemas"]["TextSearchOptionsResponse"]
 type TextSearchWord = components["schemas"]["TextSearchWord"]
 type TextSearchHighlight = components["schemas"]["TextSearchHighlight"]
 type TextSearchWork = components["schemas"]["TextSearchWork"]
+type TextSearchTotals = components["schemas"]["TextSearchTotals"]
 type TextSearchAuthorFacet = components["schemas"]["TextSearchAuthorFacet"]
 type TextSearchTitleOption = components["schemas"]["TextSearchTitleOption"]
 type TextSearchAuthorOption = components["schemas"]["TextSearchAuthorOption"]
@@ -106,12 +105,13 @@ const legacyFilterFields = new Set<SearchLegacyFilter["field"]>(
 const textSearchRouteKeys = [
   "fras", "traffsida", "avancerad", "forfattare", "titlar", "kön",
   "languages", "keywords", "authorkeyword", "intervall", "sok_filter",
-  "prefix", "suffix", "infix", "lemma", "ej_modern", "fuzzy", "keyword"
+  "prefix", "suffix", "infix", "lemma", "ej_modern", "fuzzy", "keyword", "snapshot"
 ] as const
 const textSearchRouteKeySet = new Set<string>(textSearchRouteKeys)
 
 export type TextSearchRouteState = Readonly<{
   phrase: string | null
+  snapshot: string | null
   page: number
   advanced: boolean
   authorIds: readonly string[]
@@ -170,6 +170,14 @@ function isSafeIdentifier(value: string): boolean {
   return value.length >= 1 && value.length <= 100 && value !== "." && value !== ".." &&
     value === value.trim() && !/[\s%/\\,]/u.test(value) &&
     ![...value].some(character => /[\p{Cc}\p{Cs}]/u.test(character))
+}
+
+export function isTextSearchSnapshot(value: unknown): value is string {
+  return typeof value === "string" &&
+    value.length >= 1 && value.length <= 128 &&
+    value !== "." && value !== ".." &&
+    !value.endsWith(".tmp") &&
+    /^[A-Za-z0-9._-]+$/u.test(value)
 }
 
 function identifierList(query: TextSearchRouteQuery, key: string): string[] {
@@ -233,6 +241,11 @@ function routeFacetAuthorId(query: TextSearchRouteQuery): string | null {
   return typeof raw === "string" && isSafeIdentifier(raw) ? raw : null
 }
 
+function routeSnapshot(query: TextSearchRouteQuery): string | null {
+  const raw = query.snapshot
+  return isTextSearchSnapshot(raw) ? raw : null
+}
+
 export function parseTextSearchRouteQuery(
   query: TextSearchRouteQuery
 ): TextSearchRouteState {
@@ -242,6 +255,7 @@ export function parseTextSearchRouteQuery(
 
   return Object.freeze({
     phrase: phrase.length >= 1 && phrase.length <= 200 ? phrase : null,
+    snapshot: routeSnapshot(query),
     page: routePage(query),
     advanced: present(query, "avancerad"),
     authorIds: identifierList(query, "forfattare"),
@@ -311,6 +325,7 @@ export function serializeTextSearchRouteState(
     if (value !== null) serialized[key] = value
   }
   set("fras", state.phrase)
+  set("snapshot", state.snapshot)
   if (state.page !== 1) set("traffsida", String(state.page))
   if (state.advanced) set("avancerad", "1")
   serializeTextSearchSelections(state, set)
@@ -333,6 +348,7 @@ export function textSearchSubmitQuery(
   }
   delete next.traffsida
   delete next.sok_filter
+  delete next.snapshot
   return next
 }
 
@@ -349,7 +365,7 @@ export function textSearchFilterQuery(
   patch: TextSearchFilterPatch
 ): Record<string, string | readonly string[] | null | undefined> {
   const current = parseTextSearchRouteQuery(raw)
-  return serializeTextSearchRouteState({ ...current, ...patch, page: 1 }, raw)
+  return serializeTextSearchRouteState({ ...current, ...patch, page: 1, snapshot: null }, raw)
 }
 
 export function textSearchPageQuery(
@@ -371,11 +387,12 @@ export function resetTextSearchQuery(
   return {}
 }
 
-function commonRequest(state: TextSearchRouteState): Omit<
-  TextSearchCountRequest,
-  "query"
-> {
-  const request: Omit<TextSearchCountRequest, "query"> = {
+type TextSearchFilters = Omit<TextSearchResultsRequest,
+  "query" | "page" | "page_size" | "highlight_limit" | "snapshot"
+>
+
+function commonRequest(state: TextSearchRouteState): TextSearchFilters {
+  const request: TextSearchFilters = {
     prefix: state.prefix,
     suffix: state.suffix,
     word_form_only: state.wordFormOnly,
@@ -415,14 +432,9 @@ export function buildTextSearchResultsRequest(
     page: state.page,
     page_size: 30,
     highlight_limit: highlightLimit,
-    ...commonRequest(state)
+    ...commonRequest(state),
+    ...(state.snapshot ? { snapshot: state.snapshot } : {})
   }
-}
-
-export function buildTextSearchCountRequest(
-  state: TextSearchRouteState
-): TextSearchCountRequest {
-  return { query: requiredPhrase(state), ...commonRequest(state) }
 }
 
 export type TextSearchOptionsInput = Readonly<{
@@ -474,10 +486,6 @@ export function textSearchRouteIdentity(state: TextSearchRouteState): string {
 
 export function textSearchResultsRequestIdentity(request: TextSearchResultsRequest): string {
   return `results:${stableValue(request)}`
-}
-
-export function textSearchCountRequestIdentity(request: TextSearchCountRequest): string {
-  return `count:${stableValue(request)}`
 }
 
 export function textSearchOptionsRequestIdentity(request: TextSearchOptionsRequest): string {
@@ -553,16 +561,26 @@ function isWordList(value: unknown, workId: string): value is TextSearchWord[] {
 }
 
 function isTextSearchHighlight(value: unknown, workId: string): value is TextSearchHighlight {
-  if (!isRecord(value) ||
-    !hasExactKeys(value, ["left_context", "match", "right_context"]) ||
-    !isWordList(value.left_context, workId) || !isWordList(value.match, workId) ||
-    !isWordList(value.right_context, workId) || value.left_context.length > 5 ||
-    value.right_context.length > 5 || value.match.length === 0) return false
-  if (new Set(value.match.map(word => word.page_name)).size !== 1) return false
-  const positions = value.match.map(word => wordPosition(word.word_id, workId)!)
-  return positions.every((position, index) => index === 0 ||
-    position[1] > positions[index - 1]![1]) &&
-    positions.every(position => position[0] === positions[0]![0])
+  if (!isRecord(value) || !hasExactKeys(value, ["left_context", "match", "right_context"])) {
+    return false
+  }
+  const { left_context: leftContext, match, right_context: rightContext } = value
+  if (!isWordList(leftContext, workId) || !isWordList(match, workId) ||
+    !isWordList(rightContext, workId) || leftContext.length > 5 ||
+    rightContext.length > 5 || match.length === 0) return false
+  if (new Set(match.map(word => word.page_name)).size !== 1) return false
+  const positions = match.map(word => wordPosition(word.word_id, workId)!)
+  return positions.every((position, index) => {
+    if (index === 0) return true
+    const previous = positions[index - 1]!
+    const previousWord = match[index - 1]!
+    const word = match[index]!
+    return position[0] === previous[0] && (
+      position[1] > previous[1] ||
+      (position[1] === previous[1] && word.word_id === previousWord.word_id &&
+        word.page_name === previousWord.page_name)
+    )
+  })
 }
 
 function hasTextSearchWorkIdentity(value: Record<string, unknown>): boolean {
@@ -584,14 +602,17 @@ function hasTextSearchWorkLabels(value: Record<string, unknown>): boolean {
 function isTextSearchWork(value: unknown): value is TextSearchWork {
   if (!isRecord(value) || !hasExactKeys(value, [
     "lbworkid", "author_id", "author_name", "title", "title_id", "mediatype",
-    "highlights", "has_more_highlights"
+    "occurrence_count", "highlights", "has_more_highlights"
   ])) return false
   if (typeof value.lbworkid !== "string" ||
     !hasTextSearchWorkIdentity(value) || !hasTextSearchWorkLabels(value)) return false
   const workId = value.lbworkid
-  return Array.isArray(value.highlights)
+  return isSafeInteger(value.occurrence_count, 1) &&
+    Array.isArray(value.highlights)
     && value.highlights.length <= 500
-    && value.highlights.every(highlight => isTextSearchHighlight(highlight, workId))
+    && value.highlights.every(highlight => isTextSearchHighlight(highlight, workId)) &&
+    value.occurrence_count >= value.highlights.length &&
+    value.has_more_highlights === (value.occurrence_count > value.highlights.length)
 }
 
 function isAuthorFacet(value: unknown): value is TextSearchAuthorFacet {
@@ -612,18 +633,26 @@ function isBoundedArray<T>(
   return Array.isArray(value) && value.length <= maximum && value.every(itemGuard)
 }
 
+function isTextSearchTotals(value: unknown): value is TextSearchTotals {
+  return isRecord(value) && hasExactKeys(value, ["occurrences", "documents", "works"]) &&
+    isSafeInteger(value.occurrences) && isSafeInteger(value.documents) &&
+    isSafeInteger(value.works)
+}
+
 function isTextSearchResultsResponse(value: unknown): value is TextSearchResultsResponse {
   if (!isRecord(value) || !hasExactKeys(value, [
-    "query", "page", "page_size", "total_work_hits", "works", "author_facets"
+    "query", "page", "page_size", "snapshot", "totals", "works", "author_facets"
   ]) || !isBoundedString(value.query, 1, 200) ||
     !isSafeInteger(value.page, 1, 10_000) || value.page_size !== 30 ||
-    !isSafeInteger(value.total_work_hits) || !isBoundedArray(value.works, 30, isTextSearchWork) ||
+    !isTextSearchSnapshot(value.snapshot) || !isTextSearchTotals(value.totals) ||
+    !isBoundedArray(value.works, 30, isTextSearchWork) ||
     !isBoundedArray(value.author_facets, 10_000, isAuthorFacet)) return false
-  const totalWorkHits = value.total_work_hits
-  return totalWorkHits >= value.works.length &&
-    hasDistinctIds(value.works, work => work.lbworkid) &&
+  const totals = value.totals
+  return totals.occurrences >= totals.documents && totals.documents >= totals.works &&
+    totals.works >= value.works.length &&
+    hasDistinctIds(value.works, work => `${work.lbworkid}\0${work.mediatype}`) &&
     hasDistinctIds(value.author_facets, facet => facet.author_id) &&
-    value.author_facets.every(facet => facet.count <= totalWorkHits)
+    value.author_facets.every(facet => facet.count <= totals.works)
 }
 
 export function acceptTextSearchResultsResponse(
@@ -634,24 +663,8 @@ export function acceptTextSearchResultsResponse(
   if (responseRequestIdentity !== textSearchResultsRequestIdentity(request) ||
     !isTextSearchResultsResponse(value) || value.query !== request.query ||
     value.page !== request.page ||
+    (request.snapshot !== null && request.snapshot !== undefined && value.snapshot !== request.snapshot) ||
     value.works.some(work => work.highlights.length > request.highlight_limit)) return null
-  return value
-}
-
-function isTextSearchCountResponse(value: unknown): value is TextSearchCountResponse {
-  return isRecord(value) && hasExactKeys(value, [
-    "query", "total_documents", "total_highlights"
-  ]) && isBoundedString(value.query, 1, 200) &&
-    isSafeInteger(value.total_documents) && isSafeInteger(value.total_highlights)
-}
-
-export function acceptTextSearchCountResponse(
-  value: unknown,
-  request: TextSearchCountRequest,
-  responseRequestIdentity: string
-): TextSearchCountResponse | null {
-  if (responseRequestIdentity !== textSearchCountRequestIdentity(request) ||
-    !isTextSearchCountResponse(value) || value.query !== request.query) return null
   return value
 }
 

@@ -1,23 +1,21 @@
 import { describe, expect, test } from "vitest"
 
 import {
-  acceptTextSearchCountResponse,
   acceptTextSearchOptionsResponse,
   acceptTextSearchResultsResponse,
   attachTextSearchReturnHref,
-  buildTextSearchCountRequest,
   buildTextSearchOptionsRequest,
   buildTextSearchReaderHref,
   buildTextSearchResultsRequest,
   compactTextSearchLeftContext,
   compactTextSearchRightContext,
   isTextSearchPunctuation,
+  isTextSearchSnapshot,
   parseTextSearchRouteQuery,
   parseTextSearchReturnHref,
   prepareTextSearchHighlight,
   resetTextSearchQuery,
   serializeTextSearchRouteState,
-  textSearchCountRequestIdentity,
   textSearchFilterQuery,
   textSearchOptionsRequestIdentity,
   textSearchPageQuery,
@@ -36,11 +34,14 @@ import {
 
 function resultsResponse() {
   return {
-    query: "frihet", page: 1, page_size: 30, total_work_hits: 1,
+    query: "frihet", page: 1, page_size: 30,
+    snapshot: "gen-0123456789abcdef",
+    totals: { occurrences: 1, documents: 1, works: 1 },
     author_facets: [{ author_id: "AuthorA", name_for_index: "A, Author", count: 1 }],
     works: [{
       lbworkid: "lb1", author_id: "AuthorA", author_name: "Author A",
       title: "Work", title_id: "work", mediatype: "etext",
+      occurrence_count: 1,
       has_more_highlights: false,
       highlights: [{
         left_context: [{ word: "i", page_name: "12", word_id: "w12_3" }],
@@ -131,6 +132,27 @@ describe("text search filter option contracts", () => {
 })
 
 describe("text search route state", () => {
+  test("parses, forwards, retains, and clears a safe generation snapshot", () => {
+    const raw = { fras: "hus", traffsida: "2", snapshot: "gen-0123456789abcdef" }
+    const state = parseTextSearchRouteQuery(raw)
+
+    expect(state.snapshot).toBe("gen-0123456789abcdef")
+    expect(buildTextSearchResultsRequest(state).snapshot).toBe("gen-0123456789abcdef")
+    expect(textSearchPageQuery(raw, 3).snapshot).toBe("gen-0123456789abcdef")
+    expect(textSearchSubmitQuery(raw, "hem")).not.toHaveProperty("snapshot")
+    expect(textSearchFilterQuery(raw, { prefix: true })).not.toHaveProperty("snapshot")
+  })
+
+  test.each(["", ".", "..", "generation.tmp", "a/b", "a%2Fb", "å", "x".repeat(129)])(
+    "rejects unsafe snapshot %j",
+    snapshot => expect(parseTextSearchRouteQuery({ fras: "hus", snapshot }).snapshot).toBeNull()
+  )
+
+  test("recognizes only safe scalar generation snapshots", () => {
+    expect(isTextSearchSnapshot("gen_0123-abc.1")).toBe(true)
+    expect(isTextSearchSnapshot(["gen-0123456789abcdef"])).toBe(false)
+  })
+
   test("parses, bounds, deduplicates, and independently resets malformed route fields", () => {
     const state = parseTextSearchRouteQuery({
       fras: "  frihet  ",
@@ -153,6 +175,7 @@ describe("text search route state", () => {
 
     expect(state).toEqual({
       phrase: "frihet",
+      snapshot: null,
       page: 1,
       advanced: true,
       authorIds: ["StrindbergA", "LagerlöfS"],
@@ -427,14 +450,6 @@ describe("text search route state", () => {
       legacy_filters: [{ field: "source", value: "sol" }],
       facet_author_id: "AuthorC", year_from: 1850, year_to: 1950
     })
-    expect(buildTextSearchCountRequest(state)).toEqual({
-      query: "frihet", prefix: true, suffix: true,
-      word_form_only: false, include_modernized: false,
-      author_ids: ["AuthorA"], about_author_ids: ["AuthorB"], work_ids: ["lb1"],
-      languages: ["language:swe"], categories: ["texttype:roman"],
-      legacy_filters: [{ field: "source", value: "sol" }],
-      facet_author_id: "AuthorC", year_from: 1850, year_to: 1950
-    })
     expect(buildTextSearchOptionsRequest(state, {
       titleFilter: "  lager  ", titleLimit: 500, includeStaticOptions: false,
       selectedWorkIds: ["lb2", "lb2", "bad/id"]
@@ -506,11 +521,8 @@ describe("text search route state", () => {
     expect(textSearchResultsRequestIdentity({ ...results, page: 2 })).not.toBe(
       textSearchResultsRequestIdentity(results)
     )
-    expect(textSearchCountRequestIdentity(buildTextSearchCountRequest(state))).not.toBe(
-      textSearchResultsRequestIdentity(results)
-    )
     expect(textSearchOptionsRequestIdentity(buildTextSearchOptionsRequest(state))).not.toBe(
-      textSearchCountRequestIdentity(buildTextSearchCountRequest(state))
+      textSearchResultsRequestIdentity(results)
     )
     expect(textSearchRouteIdentity({ ...state, fuzzy: true })).not.toBe(
       textSearchRouteIdentity(state)
@@ -529,6 +541,70 @@ describe("text search route state", () => {
 
   })
 
+  test("requires a pinned request snapshot to match the returned generation", () => {
+    const request = buildTextSearchResultsRequest(parseTextSearchRouteQuery({
+      fras: "frihet", snapshot: "gen-0123456789abcdef"
+    }))
+    const response = resultsResponse()
+
+    expect(acceptTextSearchResultsResponse(
+      response, request, textSearchResultsRequestIdentity(request)
+    )).toEqual(response)
+    response.snapshot = "gen-other"
+    expect(acceptTextSearchResultsResponse(
+      response, request, textSearchResultsRequestIdentity(request)
+    )).toBeNull()
+  })
+
+  test("allows an empty out-of-range page while retaining nonzero totals", () => {
+    const request = buildTextSearchResultsRequest(parseTextSearchRouteQuery({
+      fras: "frihet", traffsida: "2"
+    }))
+    const response = resultsResponse()
+    response.page = 2
+    response.works = []
+
+    expect(acceptTextSearchResultsResponse(
+      response, request, textSearchResultsRequestIdentity(request)
+    )).toEqual(response)
+  })
+
+  test("allows distinct media records for one work ID but rejects their duplicate pair", () => {
+    const request = buildTextSearchResultsRequest(parseTextSearchRouteQuery({ fras: "frihet" }))
+    const response = resultsResponse()
+    const facsimile = structuredClone(response.works[0]!)
+    facsimile.mediatype = "faksimil"
+    response.works.push(facsimile)
+    response.totals = { occurrences: 2, documents: 2, works: 2 }
+
+    expect(acceptTextSearchResultsResponse(
+      response, request, textSearchResultsRequestIdentity(request)
+    )).toEqual(response)
+    response.works.push(structuredClone(facsimile))
+    response.totals = { occurrences: 3, documents: 3, works: 3 }
+    expect(acceptTextSearchResultsResponse(
+      response, request, textSearchResultsRequestIdentity(request)
+    )).toBeNull()
+  })
+
+  test("preserves adjacent match tokens sharing one Reader word ID", () => {
+    const request = buildTextSearchResultsRequest(parseTextSearchRouteQuery({ fras: "hus -" }))
+    const response = resultsResponse()
+    response.query = "hus -"
+    response.works[0]!.highlights[0] = {
+      left_context: [],
+      match: [
+        { word: "hus", page_name: "75", word_id: "w75_189" },
+        { word: "-", page_name: "75", word_id: "w75_189" }
+      ],
+      right_context: []
+    }
+
+    expect(acceptTextSearchResultsResponse(
+      response, request, textSearchResultsRequestIdentity(request)
+    )).toEqual(response)
+  })
+
   test("accepts a backend-valid work with no highlights", () => {
     const request = buildTextSearchResultsRequest(
       parseTextSearchRouteQuery({ fras: "frihet" })
@@ -536,6 +612,7 @@ describe("text search route state", () => {
     const identity = textSearchResultsRequestIdentity(request)
     const response = resultsResponse()
     response.works[0]!.highlights = []
+    response.works[0]!.has_more_highlights = true
 
     expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
   })
@@ -574,11 +651,11 @@ describe("text search route state", () => {
       }
     },
     {
-      name: "duplicate work ID",
+      name: "duplicate work-media pair",
       mutate: (copy: JsonRecord) => {
         const works = requiredArray(copy, "works")
         works.push(structuredClone(works[0]))
-        copy.total_work_hits = 2
+        copy.totals = { occurrences: 2, documents: 2, works: 2 }
       }
     },
     {
@@ -610,7 +687,25 @@ describe("text search route state", () => {
         requiredArray(highlight, "match").push({ word: "nu", page_name: "13", word_id: "w12_5" })
       }
     },
-    { name: "incoherent total", mutate: (copy: JsonRecord) => { copy.total_work_hits = 0 } }
+    { name: "missing totals field", mutate: (copy: JsonRecord) => { copy.totals = { occurrences: 1, works: 1 } } },
+    { name: "extra totals field", mutate: (copy: JsonRecord) => { copy.totals = { occurrences: 1, documents: 1, works: 1, raw: true } } },
+    { name: "fractional totals", mutate: (copy: JsonRecord) => { copy.totals = { occurrences: 1.5, documents: 1, works: 1 } } },
+    { name: "unsafe totals", mutate: (copy: JsonRecord) => { copy.totals = { occurrences: Number.MAX_SAFE_INTEGER + 1, documents: 1, works: 1 } } },
+    { name: "incoherent totals", mutate: (copy: JsonRecord) => { copy.totals = { occurrences: 1, documents: 2, works: 1 } } },
+    { name: "incoherent zero totals", mutate: (copy: JsonRecord) => { copy.totals = { occurrences: 0, documents: 0, works: 1 } } },
+    {
+      name: "contradictory work count",
+      mutate: (copy: JsonRecord) => {
+        requiredRecord({ work: requiredArray(copy, "works")[0] }, "work").occurrence_count = 0
+      }
+    },
+    {
+      name: "false more-highlights flag",
+      mutate: (copy: JsonRecord) => {
+        const work = requiredRecord({ work: requiredArray(copy, "works")[0] }, "work")
+        work.occurrence_count = 2
+      }
+    }
   ])("rejects result responses with $name", ({ mutate }) => {
     const request = buildTextSearchResultsRequest(
       parseTextSearchRouteQuery({ fras: "frihet" })
@@ -724,7 +819,7 @@ describe("text search route state", () => {
       lbworkid: `lb${index}`,
       title_id: `work${index}`
     }))
-    response.total_work_hits = 30
+    response.totals = { occurrences: 30, documents: 30, works: 30 }
     expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
 
     response.works.push({
@@ -732,7 +827,7 @@ describe("text search route state", () => {
       lbworkid: "lb30",
       title_id: "work30"
     })
-    response.total_work_hits = 31
+    response.totals = { occurrences: 31, documents: 31, works: 31 }
     expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
   })
 
@@ -778,6 +873,8 @@ describe("text search route state", () => {
       word: "match", page_name: "12", word_id: `w12_${index + 1}`
     }))
     highlight.right_context = []
+    response.works[0]!.occurrence_count = 1000
+    response.works[0]!.has_more_highlights = true
     expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
 
     highlight.match.push({ word: "overflow", page_name: "12", word_id: "w12_1001" })
@@ -788,6 +885,7 @@ describe("text search route state", () => {
       { length: 6 },
       () => structuredClone(highlights.works[0]!.highlights[0]!)
     )
+    highlights.works[0]!.occurrence_count = 6
     expect(acceptTextSearchResultsResponse(highlights, request, identity)).toBeNull()
   })
 
@@ -802,6 +900,7 @@ describe("text search route state", () => {
       { length: 500 },
       () => structuredClone(response.works[0]!.highlights[0]!)
     )
+    response.works[0]!.occurrence_count = 500
     expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
     response.works[0]!.highlights.push(structuredClone(response.works[0]!.highlights[0]!))
     expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
@@ -821,45 +920,6 @@ describe("text search route state", () => {
       author_id: "Author10000", name_for_index: "Author 10000", count: 1
     })
     expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
-  })
-
-  test("accepts count totals through the safe-integer cap", () => {
-    const state = parseTextSearchRouteQuery({ fras: "frihet" })
-    const countRequest = buildTextSearchCountRequest(state)
-    const countIdentity = textSearchCountRequestIdentity(countRequest)
-    const count = {
-      query: "frihet",
-      total_documents: Number.MAX_SAFE_INTEGER,
-      total_highlights: Number.MAX_SAFE_INTEGER
-    }
-    expect(acceptTextSearchCountResponse(count, countRequest, countIdentity)).toEqual(count)
-  })
-
-  test.each([
-    { name: "extra key", value: { query: "frihet", total_documents: 2, total_highlights: 3, raw: true } },
-    { name: "wrong query", value: { query: "other", total_documents: 2, total_highlights: 3 } },
-    { name: "negative documents", value: { query: "frihet", total_documents: -1, total_highlights: 3 } },
-    { name: "boolean highlights", value: { query: "frihet", total_documents: 2, total_highlights: true } },
-    {
-      name: "unsafe integer",
-      value: { query: "frihet", total_documents: Number.MAX_SAFE_INTEGER + 1, total_highlights: 3 }
-    }
-  ])("rejects count responses with $name", ({ value }) => {
-    const request = buildTextSearchCountRequest(parseTextSearchRouteQuery({ fras: "frihet" }))
-    expect(acceptTextSearchCountResponse(
-      value,
-      request,
-      textSearchCountRequestIdentity(request)
-    )).toBeNull()
-  })
-
-  test("rejects count responses from a stale request", () => {
-    const request = buildTextSearchCountRequest(parseTextSearchRouteQuery({ fras: "frihet" }))
-    expect(acceptTextSearchCountResponse(
-      { query: "frihet", total_documents: 2, total_highlights: 3 },
-      request,
-      "stale"
-    )).toBeNull()
   })
 
   test("accepts strict options and the 50 selected plus 500 ordinary boundary", () => {
