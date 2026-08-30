@@ -1751,6 +1751,53 @@ test("pagination cannot reuse a previous response while a new primary request is
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
 })
 
+const malformedSnapshotSuffixes = [
+  "&snapshot", "&snapshot=", "&snapshot=gen.tmp", "&snapshot=gen/x",
+  "&snapshot=a&snapshot=b", "&snapshot=gen-fixture-0001&snapshot=gen-fixture-0001"
+]
+
+async function expectInvalidSnapshot(page: Page) {
+  await expect(page.locator("[data-search-error]")).toHaveText(
+    "Sökresultatet kan inte visas just nu."
+  )
+  await expect(page.locator("#results")).toHaveCount(0)
+  await expect(page.locator('#toolkit .littb_pager button:enabled')).toHaveCount(0)
+  const url = page.url()
+  await page.locator("h1").click()
+  await page.keyboard.press("ArrowRight")
+  await expect(page).toHaveURL(url)
+}
+
+for (const suffix of malformedSnapshotSuffixes) {
+  test(`malformed corpus snapshot direct entry rejects ${suffix}`, async ({ page, request }) => {
+    await openSearch(page, `/s%C3%B6k?fras=overflow${suffix}`)
+    await expectInvalidSnapshot(page)
+    expect(await requests(request, "results")).toEqual([])
+  })
+}
+
+test("malformed corpus snapshot cannot reuse the same unpinned cached success", async ({ page, request }) => {
+  const unpinned = "/s%C3%B6k?fras=overflow"
+  await openSearch(page, unpinned)
+  await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)
+  const accepted = await requests(request, "results")
+  expect(accepted).toHaveLength(1)
+  for (const suffix of malformedSnapshotSuffixes) {
+    await pushRoute(page, `${unpinned}${suffix}`)
+    await expectInvalidSnapshot(page)
+    expect(await requests(request, "results")).toEqual(accepted)
+    await pushRoute(page, unpinned)
+    await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)
+    expect(await requests(request, "results")).toEqual(accepted)
+  }
+  await pushRoute(page, `${unpinned}&snapshot=gen/x`)
+  await expectInvalidSnapshot(page)
+  await submitPhrase(page, "frihet")
+  await expect(page).not.toHaveURL(/snapshot=/)
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  expect((await requests(request, "results")).at(-1)?.body).toMatchObject({ query: "frihet" })
+})
+
 test("an expired generation requires an explicit fresh restart", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=overflow&forfattare=StrindbergA")
   await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)

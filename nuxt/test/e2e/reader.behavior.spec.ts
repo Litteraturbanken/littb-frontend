@@ -65,6 +65,89 @@ test("snapshot public malformed serialized generation never unpins", async ({ pa
 
 const expiredSnapshotMessage = "Sökresultatet har gått ut. Starta om sökningen för att använda den aktuella textsamlingen."
 
+test("combined corpus request ledger preserves page two Reader identity through next hit and explicit restart", async ({ page, request }) => {
+  try {
+    await Promise.all(["requests", "failures", "delays"].map(control => (
+      request.delete(`${fixture}/_text_search/${control}`)
+    )))
+    const ledger: Array<{ path: string, query: Record<string, string>, body: Record<string, unknown> | null }> = []
+    page.on("request", item => {
+      const url = new URL(item.url())
+      if (!url.pathname.startsWith("/api/v2/")) return
+      ledger.push({
+        path: url.pathname, query: Object.fromEntries(url.searchParams),
+        body: item.method() === "POST" ? item.postDataJSON() : null
+      })
+    })
+    await page.goto("/s%C3%B6k?avancerad=1", { waitUntil: "networkidle" })
+    await page.getByLabel("Sökfras").fill("doktor glas")
+    await page.locator(".submit_form").evaluate(form => (form as HTMLFormElement).requestSubmit())
+    await expect(page.locator("#toolkit .littb_pager")).toContainText("Visar verk 1-30 av 33, sida 1 av 2.")
+    const language = page.locator(".lang_select")
+    await language.getByRole("button", { name: "Visa alternativ för Språk …" }).click()
+    await language.getByRole("option", { name: "Svenska", exact: true }).click()
+    await page.keyboard.press("Escape")
+    await expect.poll(() => new URL(page.url()).searchParams.get("languages")).toBe("language:swe")
+    await expect(page.locator("#results")).not.toHaveClass(/searching/)
+    await page.locator(".navigator").getByRole("button", { name: "Hjalmar Söderberg" }).click()
+    await expect(page.locator("#toolkit .littb_pager")).toContainText("Visar verk 1-30 av 32, sida 1 av 2.")
+    await page.getByRole("button", { name: "Nästa träffsida" }).click()
+    await expect(page.locator("#toolkit .littb_pager")).toContainText("Visar verk 31-32 av 32, sida 2 av 2.")
+    const origin = new URL(page.url()).pathname + new URL(page.url()).search
+    const match = page.locator("#results .match a").first()
+    const href = new URL((await match.getAttribute("href"))!, page.url())
+    expect(decodeURIComponent(href.pathname)).toBe("/författare/SöderbergH/titlar/CorpusFlow/sida/1/etext")
+    expect(Object.fromEntries(href.searchParams)).toMatchObject({
+      snapshot: "gen-fixture-0001", traff: "w1_1", s_languages: "language:swe",
+      s_facet_author_id: "SöderbergH"
+    })
+    await expect(match.locator(".word")).toHaveText(["DOKTOR", "GLAS"])
+    await expect(page.locator("#results .right_context .punct").first()).toHaveText(",")
+    await match.click()
+    await expect(page.locator("#search_nav")).toContainText("Träff 1, sida 1")
+    await expect(page.locator("#w1_1.markee, #w1_2.markee")).toHaveCount(2)
+    await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
+    await expect(page.locator("#search_nav")).toContainText("Träff 2, sida 2")
+    await expect(page.locator("#w2_1.markee, #w2_2.markee")).toHaveCount(2)
+    await page.locator("#search_nav").getByRole("link", { name: "Tillbaka till sökningen" }).click()
+    await expect.poll(() => new URL(page.url()).pathname + new URL(page.url()).search).toBe(origin)
+    await navigateClient(page, origin.replace("snapshot=gen-fixture-0001", "snapshot=gen-expired"))
+    await expect(page.getByRole("alert")).toContainText(expiredSnapshotMessage)
+    const primaryRequests = () => ledger.filter(item => item.path === "/api/v2/text-search/results")
+    const beforeRestart = primaryRequests().length
+    expect(primaryRequests().at(-1)?.body).toMatchObject({
+      query: "doktor glas", page: 2, snapshot: "gen-expired",
+      languages: ["language:swe"], facet_author_id: "SöderbergH"
+    })
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+    expect(primaryRequests()).toHaveLength(beforeRestart)
+    await page.getByRole("button", { name: "Starta om sökningen", exact: true }).click()
+    await expect(page.locator("#toolkit .littb_pager")).toContainText("Visar verk 1-30 av 32, sida 1 av 2.")
+    await expect(page.locator("#results .match a").first()).toHaveAttribute("href", /snapshot=gen-fixture-0002/)
+    expect(primaryRequests().slice(beforeRestart).filter(item => !Object.hasOwn(item.body!, "snapshot")))
+      .toEqual([expect.objectContaining({ body: expect.objectContaining({
+        query: "doktor glas", page: 1, languages: ["language:swe"], facet_author_id: "SöderbergH"
+      }) })])
+    expect(ledger.some(item => item.path === "/api/v2/text-search/count")).toBe(false)
+    expect(primaryRequests()).not.toHaveLength(0)
+    const hits = ledger.filter(item => item.path.includes("/search-hits"))
+    expect(hits.length).toBeGreaterThanOrEqual(2)
+    expect(hits.every(item => item.query.snapshot === "gen-fixture-0001")).toBe(true)
+    expect(hits.every(item => item.path === "/api/v2/works/lb-reader-corpus-flow/search-hits"))
+      .toBe(true)
+    expect(hits.every(item => item.query.query === "doktor glas")).toBe(true)
+    expect(primaryRequests().map(item => item.body)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ query: "doktor glas", page: 1 }),
+      expect.objectContaining({ query: "doktor glas", languages: ["language:swe"], page: 1 }),
+      expect.objectContaining({ facet_author_id: "SöderbergH", page: 1 }),
+      expect.objectContaining({ facet_author_id: "SöderbergH", page: 2, snapshot: "gen-fixture-0001" })
+    ]))
+  } finally {
+    // Expiry advances the fixture generation; never leak it to the next test.
+    await request.delete(`${fixture}/_text_search/requests`)
+  }
+})
+
 test("snapshot comes from the accepted unpinned corpus page one Reader link", async ({ page, request }) => {
   const origin = "/s%C3%B6k?fras=frihet&forfattare=StrindbergA&prefix=1&utm=a+b&repeat=%2f&repeat=%2F"
   await page.goto(origin, { waitUntil: "networkidle" })

@@ -69,7 +69,7 @@ async function expectNoFanOut(request: APIRequestContext) {
     const payload = await response.json()
     if (ledger.field === "textSearchOperations") {
       expect(payload, ledger.path).toEqual({
-        results: [], count: [], options: [], chronology: []
+        results: [], options: [], chronology: []
       })
     } else {
       expect(payload[ledger.field], ledger.path).toEqual([])

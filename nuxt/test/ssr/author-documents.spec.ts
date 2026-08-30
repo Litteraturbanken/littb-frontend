@@ -86,7 +86,6 @@ async function expectAdjacentLedgersEmpty(request: APIRequestContext) {
     if (ledger.field === "textSearchOperations") {
       expect(payload, ledger.path).toEqual({
         results: [],
-        count: [],
         options: [],
         chronology: []
       })

@@ -40,6 +40,38 @@ export const readerWorkInfoResponse = {
   ]
 }
 
+// A separate, coherent source for corpus page-two -> Reader integration.
+// Existing Reader/default/visual fixtures deliberately remain unchanged.
+export const corpusFlowReaderWorkInfoResponse = {
+  hits: 1,
+  data: [{
+    ...structuredClone(readerWorkInfoResponse.data[0]),
+    lbworkid: "lb-reader-corpus-flow",
+    titlepath: "CorpusFlow",
+    title: "Doktor Glas – sökflöde",
+    shorttitle: "Doktor Glas – sökflöde",
+    pages: [{ pagename: "1", pageindex: 1 }, { pagename: "2", pageindex: 2 }],
+    startpagename: "1", endpagename: "2", parts: []
+  }]
+}
+
+export const corpusFlowHighlights = [1, 2].map(page => ({
+  left_context: [],
+  match: [
+    { word: "DOKTOR", word_id: `w${page}_1`, page_name: String(page) },
+    { word: "GLAS", word_id: `w${page}_2`, page_name: String(page) }
+  ],
+  right_context: [{ word: page === 1 ? "," : ".", word_id: `w${page}_3`, page_name: String(page) }]
+}))
+
+export const corpusFlowReaderPageHtmlByIndex = Object.fromEntries(corpusFlowHighlights.map(
+  (highlight, index) => [index + 1, `<div class="pname" pname="${index + 1}">
+    <div class="_p">${[...highlight.match, ...highlight.right_context].map(token => (
+      `<span class="w" id="${token.word_id}">${token.word}</span>`
+    )).join(" ")}</div>
+  </div>`]
+))
+
 export const readerFacsimileWorkInfoResponse = {
   hits: 1,
   data: [
@@ -366,6 +398,16 @@ const phraseHits = [
 ]
 
 function hitsForQuery(query, workId) {
+  if (workId === "lb-reader-corpus-flow") {
+    if (query !== "doktor glas") return []
+    return corpusFlowHighlights.map((highlight, index) => ({
+      index, page_name: String(index + 1), page_index: index + 1,
+      highlight: {
+        from_word_id: highlight.match[0].word_id,
+        to_word_id: highlight.match.at(-1).word_id
+      }
+    }))
+  }
   if ((query === "frihet" || query === "overflow") && workId === "lb238704") {
     return [{
       index: 0,

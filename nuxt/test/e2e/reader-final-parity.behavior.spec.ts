@@ -140,7 +140,7 @@ test("normal faksimil OCR inspection fetches the page-index overlay and preserve
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html",
     "/txt/lb-reader-gosta-berlings-saga/ocr_00002.html"
   ])
-  expect(await fixtureRequests(request, "manifest")).toEqual(Array(2).fill(
+  expect(await fixtureRequests(request, "manifest")).toEqual(Array(1).fill(
     "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
   ))
   expect(problems).toEqual([])
@@ -185,7 +185,7 @@ test("ordinary searchable faksimil keeps a transparent selectable OCR layer thro
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html",
     "/txt/lb-reader-gosta-berlings-saga/ocr_00002.html"
   ])
-  expect(await fixtureRequests(request, "manifest")).toEqual(Array(2).fill(
+  expect(await fixtureRequests(request, "manifest")).toEqual(Array(1).fill(
     "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
   ))
   expect(problems).toEqual([])

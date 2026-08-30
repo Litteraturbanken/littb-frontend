@@ -34,10 +34,11 @@ async function fixtureRequests(request: APIRequestContext, path: string) {
 async function expectEmptyDataLedgers(request: APIRequestContext) {
   for (const path of emptyDataLedgers) {
     const payload = await (await request.get(`${fixture}${path}`)).json()
-    const requests = path === "/_text_search/requests"
-      ? [...payload.results, ...payload.count, ...payload.options]
-      : payload.requests
-    expect(requests, path).toEqual([])
+    if (path === "/_text_search/requests") {
+      expect(payload, path).toEqual({ results: [], options: [], chronology: [] })
+    } else {
+      expect(payload.requests, path).toEqual([])
+    }
   }
 }
 

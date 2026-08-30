@@ -35,6 +35,9 @@ import {
   slaArticleFixtures
 } from "./sla-article-data.mjs"
 import {
+  corpusFlowHighlights,
+  corpusFlowReaderPageHtmlByIndex,
+  corpusFlowReaderWorkInfoResponse,
   editorMetadataResponse,
   editorManifestResponse,
   readerAarnsethFacsimileWorkInfoResponse,
@@ -892,6 +895,8 @@ function readerLocalPartAuthorRepresentation(titlePath, author) {
 
 function readerMetadataResponse(titlePath) {
   switch (titlePath) {
+    case "CorpusFlow":
+      return corpusFlowReaderWorkInfoResponse
     case "DoktorGlas": {
       const etext = readerRepresentation(titlePath, {
         editor_lbworkid: "lb-editor-doktor-glas",
@@ -2608,7 +2613,26 @@ function pairedMediaWorks(query, changedGeneration = false) {
   }))
 }
 
+function corpusFlowWorks() {
+  const works = Array.from({ length: 32 }, (_, index) => ({
+    lbworkid: `lb-corpus-flow-${index + 1}`,
+    author_id: "SöderbergH", author_name: "Hjalmar Söderberg",
+    title: `Sökflödesverk ${index + 1}`, title_id: `CorpusFlow${index + 1}`,
+    mediatype: "etext", allHighlights: [searchHighlight("doktor glas", index + 1, 1)]
+  }))
+  works[30] = {
+    lbworkid: "lb-reader-corpus-flow", author_id: "SöderbergH", author_name: "Hjalmar Söderberg",
+    title: "Doktor Glas – sökflöde", title_id: "CorpusFlow", mediatype: "etext",
+    allHighlights: corpusFlowHighlights
+  }
+  works.push(richTextSearchWorks("doktor glas")[1])
+  // One occurrence in the other author's work keeps the inventory hand-countable.
+  works.at(-1).allHighlights = works.at(-1).allHighlights.slice(0, 1)
+  return works
+}
+
 function inventoryForTextSearch(body) {
+  if (body.query === "doktor glas") return corpusFlowWorks()
   if (body.query === "inga") return []
   if (["many-hits-101", "many-hits-501"].includes(body.query)) {
     const works = pairedMediaWorks(body.query)
@@ -4672,6 +4696,18 @@ const handleFixtureRequest = async (request, response) => {
       return validationError(response)
     }
     return sendJson(response, 200, readerAarnsethFacsimileWorkInfoResponse)
+  }
+
+  const corpusFlowPageMatch = request.method === "GET"
+    ? /^\/txt\/lb-reader-corpus-flow\/res_0000([12])\.html$/.exec(url.pathname)
+    : null
+  if (corpusFlowPageMatch) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerHtmlRequests.push(recordedRequest)
+    if (url.searchParams.get("username") !== "app") return sendBody(response, 403, "text/plain", "forbidden")
+    return sendBody(response, 200, "text/html; charset=utf-8",
+      corpusFlowReaderPageHtmlByIndex[Number(corpusFlowPageMatch[1])])
   }
 
   const readerPageMatch = request.method === "GET"

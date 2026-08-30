@@ -1213,11 +1213,11 @@ test("canonical search state fetches one private hit window and marks its exact 
   )
   expect(html).toContain(
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +
-    "?q=doktor+glas&amp;hit=0&amp;unknown=bevara+mig\""
+    "?q=doktor+glas&amp;hit=0&amp;unknown=bevara+mig&amp;snapshot=gen-fixture-0001\""
   )
   expect(html).toContain(
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext" +
-    "?q=doktor+glas&amp;hit=2&amp;unknown=bevara+mig\""
+    "?q=doktor+glas&amp;hit=2&amp;unknown=bevara+mig&amp;snapshot=gen-fixture-0001\""
   )
   expect(await readerManifestRequests(request)).toEqual([
     expectedReaderManifest("SöderbergH", "DoktorGlas")
@@ -1241,7 +1241,7 @@ test("work-scoped word ids are bound to the Reader work and mark the exact live 
   expect(html).toContain("Sökträff 1 av 2")
   expect(html).toContain(
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/WorkScopedIdsReader/sida/-1/etext" +
-    "?q=kyrka&amp;hit=1\""
+    "?q=kyrka&amp;hit=1&amp;snapshot=gen-fixture-0001\""
   )
   expect(await readerManifestRequests(request)).toEqual([
     expectedReaderManifest("SöderbergH", "WorkScopedIdsReader")

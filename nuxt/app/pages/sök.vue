@@ -22,6 +22,7 @@ import {
   buildTextSearchReaderHref,
   buildTextSearchResultsRequest,
   isTextSearchPunctuation,
+  isTextSearchSnapshot,
   parseTextSearchRouteQuery,
   prepareTextSearchHighlight,
   resetTextSearchQuery,
@@ -103,6 +104,8 @@ const requestUrl = useRequestURL()
 const client = useLbApiClient()
 const rawQuery = computed(() => route.query as unknown as TextSearchRouteQuery)
 const state = computed(() => parseTextSearchRouteQuery(rawQuery.value))
+const invalidSnapshot = computed(() => Object.hasOwn(rawQuery.value, "snapshot")
+  && !isTextSearchSnapshot(rawQuery.value.snapshot))
 const initialSearchFullPath = useState(
   `text-search-initial-full-path:${route.path}`,
   () => `${requestUrl.pathname}${requestUrl.search}`
@@ -129,9 +132,13 @@ watch(() => route.fullPath, () => {
 }, { flush: "sync" })
 
 const routeIdentity = computed(() => textSearchRouteIdentity(state.value))
-const primaryIdentity = computed(() => state.value.phrase
-  ? textSearchResultsRequestIdentity(buildTextSearchResultsRequest(state.value))
-  : "empty")
+const primaryIdentity = computed(() => {
+  const identity = state.value.phrase
+    ? textSearchResultsRequestIdentity(buildTextSearchResultsRequest(state.value))
+    : "empty"
+  // A present invalid pin is never the same owner as the unpinned request.
+  return invalidSnapshot.value ? `invalid-snapshot:${identity}` : identity
+})
 function primaryDataKey(identity: string): string {
   return `text-search-primary:${identity}`
 }
@@ -257,11 +264,16 @@ function resultsView(
   }
 }
 
+function primaryFailureStatus(status: number): PrimaryEnvelope["status"] {
+  return status === 409 || status === 422 || status === 503 ? status : 502
+}
+
 const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
   primaryKey,
   async (_nuxtApp, { signal }) => {
     const requestedState = state.value
     const identity = primaryIdentity.value
+    if (invalidSnapshot.value) return { identity, status: 422, results: null }
     if (!requestedState.phrase) return { identity, status: 204, results: null }
     const body = buildTextSearchResultsRequest(requestedState)
     const requestIdentity = textSearchResultsRequestIdentity(body)
@@ -283,10 +295,7 @@ const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
         ? { identity, status: 200, results: resultsView(accepted, requestedState) }
         : {
             identity,
-            status: result.response.status === 409 || result.response.status === 422
-              || result.response.status === 503
-              ? result.response.status
-              : 502,
+            status: primaryFailureStatus(result.response.status),
             results: null
           }
     } catch {
@@ -305,6 +314,7 @@ const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
     // Nuxt's reactive-key default may execute before route prerequisites are accepted.
     ...{ _keyTriggersExecute: false },
     getCachedData: (key, nuxtApp) => {
+      if (invalidSnapshot.value) return undefined
       if (freshPrimaryIdentity.value === primaryIdentity.value) return undefined
       const cached = nuxtApp.payload.data[key] as PrimaryEnvelope | undefined
       return cached?.identity === primaryIdentity.value
@@ -1046,18 +1056,55 @@ function finishMoreRequest(
   setMoreLoading(workKey, false)
 }
 watch(routeIdentity, cancelAllMore, { flush: "sync" })
+
+type SearchExpansion = Readonly<{
+  target: SearchWorkView
+  primaryIdentity: string
+  snapshot: string
+  highlightLimit: number
+}>
+
+function searchExpansion(workKey: string): SearchExpansion | null {
+  const primary = displayPrimary.value
+  if (primary?.identity !== primaryIdentity.value || primary.status !== 200
+    || !primary.results) return null
+  const target = primary.results.works.find(work => work.key === workKey)
+  if (!target) return null
+  const previous = moreWorks.value[workKey]
+  const previousLimit = previous?.highlightLimit ?? 0
+  if (!(previous?.hasMore ?? target.hasMore) || previousLimit >= 500) return null
+  return {
+    target, primaryIdentity: primary.identity, snapshot: primary.results.snapshot,
+    highlightLimit: Math.min(previousLimit + 100, 500)
+  }
+}
+
+function acceptSearchExpansion(
+  expansion: SearchExpansion,
+  accepted: TextSearchResultsResponse,
+  requestedState: TextSearchRouteState
+): void {
+  if (displayPrimary.value?.identity !== expansion.primaryIdentity
+    || displayPrimary.value.results?.snapshot !== expansion.snapshot) return
+  const { target, highlightLimit } = expansion
+  const expanded = resultsView(accepted, requestedState).works.find(work => (
+    work.workId === target.workId && work.mediaType === target.mediaType
+  ))
+  if (expanded?.occurrenceCount !== target.occurrenceCount) return
+  moreWorks.value = {
+    ...moreWorks.value,
+    [target.key]: {
+      hits: expanded.hits, hasMore: expanded.hasMore,
+      occurrenceCount: expanded.occurrenceCount, highlightLimit
+    }
+  }
+}
+
 async function showMore(workKey: string) {
   if (moreRequestOwners.has(workKey)) return
   const requestedState = state.value
-  const primary = displayPrimary.value
-  const target = primary?.identity === primaryIdentity.value && primary.status === 200
-    ? primary.results?.works.find(work => work.key === workKey) ?? null
-    : null
-  if (!requestedState.phrase || !target || !primary?.results) return
-  const previous = moreWorks.value[workKey]
-  if (!(previous?.hasMore ?? target.hasMore) || (previous?.highlightLimit ?? 0) >= 500) return
-  const highlightLimit = Math.min((previous?.highlightLimit ?? 0) + 100, 500)
-  const snapshot = primary.results.snapshot
+  const expansion = searchExpansion(workKey)
+  if (!requestedState.phrase || !expansion) return
   const identity = textSearchRouteIdentity(requestedState)
   const owner = createTextSearchRequestOwner()
   moreRequestOwners.set(workKey, owner)
@@ -1066,10 +1113,10 @@ async function showMore(workKey: string) {
   const requestState: TextSearchRouteState = {
     ...requestedState,
     page: 1,
-    snapshot,
-    workIds: [target.workId]
+    snapshot: expansion.snapshot,
+    workIds: [expansion.target.workId]
   }
-  const body = buildTextSearchResultsRequest(requestState, highlightLimit)
+  const body = buildTextSearchResultsRequest(requestState, expansion.highlightLimit)
   const requestIdentity = textSearchResultsRequestIdentity(body)
   try {
     const result = await client.POST("/text-search/results", {
@@ -1079,31 +1126,11 @@ async function showMore(workKey: string) {
     const accepted = result.response.status === 200
       ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
       : null
-    if (
-      owner.isCurrent(request, routeIdentity.value)
-      && displayPrimary.value?.identity === primary.identity
-      && displayPrimary.value.results?.snapshot === snapshot
-      && accepted
-    ) {
-      const expanded = resultsView(accepted, requestedState).works.find(work => (
-        work.workId === target.workId && work.mediaType === target.mediaType
-      ))
-      if (expanded?.occurrenceCount === target.occurrenceCount) {
-        moreWorks.value = {
-          ...moreWorks.value,
-          [workKey]: {
-            hits: expanded.hits,
-            hasMore: expanded.hasMore,
-            occurrenceCount: expanded.occurrenceCount,
-            highlightLimit
-          }
-        }
-      }
+    if (owner.isCurrent(request, routeIdentity.value) && accepted) {
+      acceptSearchExpansion(expansion, accepted, requestedState)
     }
-  } catch (error) {
-    if (!(error instanceof DOMException && error.name === "AbortError")) {
-      // Keep the accepted primary rows when expansion fails.
-    }
+  } catch {
+    // Keep the accepted primary rows when expansion fails or is aborted.
   } finally {
     finishMoreRequest(workKey, owner, request)
   }

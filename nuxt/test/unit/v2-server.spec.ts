@@ -2428,6 +2428,62 @@ test("generates all text-search operations and title author facet schemas", () =
     expect(options.title_author_facets[0]?.author_id).toBe("StrindbergA")
   })
 
+  test("corpus flow page two has exact totals and its own matching Reader source and hits", async () => {
+    const first = await postTextSearchResults(textSearchResultsRequest("doktor glas"))
+    expect(await first.json()).toMatchObject({
+      snapshot: "gen-fixture-0001",
+      totals: { occurrences: 34, documents: 33, works: 33 },
+      author_facets: [
+        { author_id: "SöderbergH", count: 32 },
+        { author_id: "LagerlöfS", count: 1 }
+      ]
+    })
+    const second = await postTextSearchResults(textSearchResultsRequest("doktor glas", {
+      page: 2, snapshot: "gen-fixture-0001", languages: ["language:swe"],
+      facet_author_id: "SöderbergH"
+    }))
+    const body = await second.json()
+    expect(body.totals).toEqual({ occurrences: 33, documents: 32, works: 32 })
+    expect(body.works).toHaveLength(2)
+    expect(body.works[0]).toMatchObject({
+      lbworkid: "lb-reader-corpus-flow", author_id: "SöderbergH",
+      title_id: "CorpusFlow", title: "Doktor Glas – sökflöde", mediatype: "etext",
+      occurrence_count: 2, has_more_highlights: false,
+      highlights: [
+        { match: [
+          { word: "DOKTOR", word_id: "w1_1", page_name: "1" },
+          { word: "GLAS", word_id: "w1_2", page_name: "1" }
+        ], right_context: [{ word: ",", word_id: "w1_3", page_name: "1" }] },
+        { match: [
+          { word: "DOKTOR", word_id: "w2_1", page_name: "2" },
+          { word: "GLAS", word_id: "w2_2", page_name: "2" }
+        ], right_context: [{ word: ".", word_id: "w2_3", page_name: "2" }] }
+      ]
+    })
+    const manifest = await (await fetch(
+      `${origin}/v2/works/S%C3%B6derbergH/CorpusFlow/manifest?media_type=etext`
+    )).json() as ReaderManifestResponse
+    expect(manifest).toMatchObject({ work_id: "lb-reader-corpus-flow", title_path: "CorpusFlow" })
+    for (const page of [1, 2]) {
+      const html = await (await fetch(
+        `${origin}/txt/lb-reader-corpus-flow/res_0000${page}.html?username=app`
+      )).text()
+      expect(html).toContain(`id="w${page}_1">DOKTOR</span>`)
+      expect(html).toContain(`id="w${page}_2">GLAS</span>`)
+    }
+    const hits = await (await fetch(`${origin}/v2/works/lb-reader-corpus-flow/search-hits?`
+      + "media_type=etext&query=doktor%20glas&snapshot=gen-fixture-0001")).json()
+    expect(hits).toMatchObject({
+      snapshot: "gen-fixture-0001", total_hits: 2,
+      items: [
+        { index: 0, page_name: "1", page_index: 1,
+          highlight: { from_word_id: "w1_1", to_word_id: "w1_2" } },
+        { index: 1, page_name: "2", page_index: 2,
+          highlight: { from_word_id: "w2_1", to_word_id: "w2_2" } }
+      ]
+    })
+  })
+
   test("serves zero, overflow, and exact combined result totals", async () => {
     const empty = await postTextSearchResults(textSearchResultsRequest("inga"))
     const overflow = await postTextSearchResults(textSearchResultsRequest("overflow"))
