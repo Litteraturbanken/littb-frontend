@@ -78,13 +78,12 @@ export function workSearchWordPosition(
     : null
 }
 
-export function workSearchPageScope(
+export function workSearchPositionMatchesHitPage(
+  position: WorkSearchWordPosition,
   pageIndex: number,
-  pageName: string,
   mediaType: "etext" | "faksimil"
-): string | null {
-  if (mediaType === "etext") return `page:${pageIndex}`
-  return /^[0-9]+$/.test(pageName) ? `page:${pageName}` : null
+): boolean {
+  return position.pageIndex === null || mediaType === "faksimil" || position.scope === `page:${pageIndex}`
 }
 
 const clearedOptions: WorkSearchOptionsState = {

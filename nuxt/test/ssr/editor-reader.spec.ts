@@ -767,13 +767,6 @@ for (const invalidResponse of [
     mediaType: "faksimil",
     route: "/editor/lb-editor-sparse/ix/12/f",
     range: "w14_1"
-  },
-  {
-    query: "editor-leading-zero-page",
-    workId: "lb8345227",
-    mediaType: "faksimil",
-    route: "/editor/lb8345227/ix/4/f",
-    range: "w05_1"
   }
 ] as const) {
   test(`SSR rejects an Editor ${invalidResponse.query} hit response`, async ({ request }) => {
@@ -790,6 +783,21 @@ for (const invalidResponse of [
       .toContain("Sökträffen kunde inte hämtas.")
   })
 }
+
+test("SSR accepts an Editor facsimile word prefix independent of its page index", async ({ request }) => {
+  const response = await request.get(
+    "/editor/lb8345227/ix/4/f?s_query=editor-leading-zero-page" +
+    "&s_lbworkid=lb8345227&s_mediatype=faksimil" +
+    "&s_word_form_only=true&s_include_modernized=true&hit_index=0" +
+    "&traff=w05_1&traffslut=w05_1"
+  )
+
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector("#search_nav")?.textContent).toContain("Träff 1, sida 5")
+  expect(document.querySelector("#search_nav")?.textContent)
+    .not.toContain("Sökträffen kunde inte hämtas.")
+})
 
 test("SSR rejects partial Editor contributor and part metadata atomically", async ({ request }) => {
   for (const workId of [

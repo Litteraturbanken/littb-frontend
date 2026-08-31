@@ -1387,16 +1387,6 @@ for (const mismatch of [
     query: "etext-name-word",
     mediaType: "etext",
     stableContent: ["DOKTOR"]
-  },
-  {
-    label: "faksimil index-scoped word id",
-    path: "/f%C3%B6rfattare/AarnsethF/titlar/Rallarliv/sida/58/faksimil",
-    query: "faksimil-index-word",
-    mediaType: "faksimil",
-    stableContent: [
-      "<title>Rallarliv sida 58 faksimil | Litteraturbanken</title>",
-      'src="/txt/lb3203777/lb3203777_3/lb3203777_3_0058.jpeg"'
-    ]
   }
 ]) {
   test(`${mismatch.label} is rejected before hit presentation`, async ({ request }) => {
@@ -1427,6 +1417,25 @@ for (const mismatch of [
     ])
   })
 }
+
+test("faksimil word identity may differ from the physical page index", async ({ request }) => {
+  const response = await request.get(
+    "/författare/AarnsethF/titlar/Rallarliv/sida/58/faksimil" +
+    "?q=faksimil-index-word&hit=0"
+  )
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expect(html).toContain("Sökträff 1 av 1")
+  expect(html).not.toContain("Sökträffen kunde inte hämtas.")
+  expect(html).toContain('id="w58_123"')
+  expect(await readerHitRequests(request)).toEqual([expect.objectContaining({
+    path: expect.stringContaining("/works/"),
+    query: expect.stringContaining("media_type=faksimil&query=faksimil-index-word")
+  })])
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("AarnsethF", "Rallarliv", "faksimil")
+  ])
+})
 
 test("page-mismatch preserves the original Reader HTML without a marker", async ({
   request

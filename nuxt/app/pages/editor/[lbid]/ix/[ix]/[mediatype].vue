@@ -27,7 +27,7 @@ import {
   restoredWorkSearchSnapshot,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
-  workSearchPageScope,
+  workSearchPositionMatchesHitPage,
   workSearchSnapshotIdentity,
   workSearchWordPosition,
   type WorkSearchOption
@@ -759,7 +759,7 @@ function hitMatchesEditorPageRange(hit: WorkSearchHit, current: EditorReaderPage
   const from = workSearchWordPosition(hit.highlight.from_word_id, current.workId)
   if (!from) return false
   if (from.pageIndex === null) return true
-  return from.scope === workSearchPageScope(hit.page_index, hit.page_name, current.mediaType)
+  return workSearchPositionMatchesHitPage(from, hit.page_index, current.mediaType)
 }
 
 function isWorkSearchHit(value: unknown, current: EditorReaderPage): value is WorkSearchHit {

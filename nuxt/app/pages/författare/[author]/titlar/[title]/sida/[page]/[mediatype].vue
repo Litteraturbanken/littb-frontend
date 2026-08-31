@@ -40,10 +40,9 @@ import {
   restoredWorkSearchSnapshot,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
-  workSearchPageScope,
+  workSearchPositionMatchesHitPage,
   workSearchSnapshotIdentity,
   workSearchWordPosition,
-  type WorkSearchWordPosition,
   type WorkSearchOption
 } from "~/lib/reader/work-search"
 import {
@@ -385,10 +384,6 @@ function workSearchHitFields(value: unknown): value is WorkSearchHit {
     && value.highlight.to_word_id.length <= 100
 }
 
-function positionMatchesPage(position: WorkSearchWordPosition, pageScope: string | null): boolean {
-  return position.pageIndex === null || position.scope === pageScope
-}
-
 function isWorkSearchHit(
   value: unknown,
   workId: string,
@@ -400,9 +395,8 @@ function isWorkSearchHit(
   if (!fromPosition || !toPosition || fromPosition.scope !== toPosition.scope ||
     fromPosition.ordinal > toPosition.ordinal) return false
 
-  const pageScope = workSearchPageScope(value.page_index, value.page_name, mediaType)
-  return positionMatchesPage(fromPosition, pageScope) &&
-    positionMatchesPage(toPosition, pageScope)
+  return workSearchPositionMatchesHitPage(fromPosition, value.page_index, mediaType) &&
+    workSearchPositionMatchesHitPage(toPosition, value.page_index, mediaType)
 }
 
 function isExpectedHitItem(

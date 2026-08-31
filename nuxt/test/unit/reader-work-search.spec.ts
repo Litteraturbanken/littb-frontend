@@ -6,7 +6,7 @@ import {
   restoredWorkSearchSnapshot,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
-  workSearchPageScope,
+  workSearchPositionMatchesHitPage,
   workSearchSnapshotIdentity,
   workSearchWordPosition,
   type WorkSearchOptionsState
@@ -126,10 +126,19 @@ describe("reader and editor work-search options", () => {
     expect(workSearchWordPosition("missing", "lb-work")).toBeNull()
   })
 
-  test("derives the same canonical page scope for Reader and Editor hit validation", () => {
-    expect(workSearchPageScope(1, "01", "etext")).toBe("page:1")
-    expect(workSearchPageScope(1, "01", "faksimil")).toBe("page:01")
-    expect(workSearchPageScope(1, "-2", "faksimil")).toBeNull()
+  test("keeps facsimile word scope independent of physical and printed page identity", () => {
+    const facsimile = workSearchWordPosition("w40_263", "lb-work")
+    const conventional = workSearchWordPosition("w75_189", "lb-work")
+    const etext = workSearchWordPosition("w40_263", "lb-work")
+
+    expect(facsimile).toEqual({ scope: "page:40", ordinal: 263, pageIndex: 40 })
+    expect(conventional).toEqual({ scope: "page:75", ordinal: 189, pageIndex: 75 })
+    expect(facsimile && workSearchPositionMatchesHitPage(facsimile, 40, "faksimil")).toBe(true)
+    expect(conventional && workSearchPositionMatchesHitPage(conventional, 74, "faksimil")).toBe(true)
+    expect(etext && workSearchPositionMatchesHitPage(etext, 17, "etext")).toBe(false)
+    expect(workSearchPositionMatchesHitPage(
+      workSearchWordPosition("w01_4", "lb-work")!, 1, "etext"
+    )).toBe(false)
   })
 
 })
