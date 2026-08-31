@@ -126,11 +126,11 @@ export function isWorkSearchHit(
     !isReaderTargetStatus(hit.reader_target_status)) return false
   if ((hit.page_name === null) !== (hit.reader_target_status === "unmapped_page")) return false
   if (hit.page_name !== null && !isRawSourceString(hit.page_name)) return false
+  if ((hit.source_end as number) - (hit.source_start as number) === 1 &&
+    hit.start_word_id !== hit.end_word_id) return false
   const candidate = hit as unknown as WorkSearchHit
   if (candidate.reader_target_status === "exact") {
     if (!isRawHighlight(hit.highlight)) return false
-    if ((hit.source_end as number) - (hit.source_start as number) === 1 &&
-      hit.start_word_id !== hit.end_word_id) return false
     if (!isExactWorkSearchHit(candidate)) return false
     if (candidate.highlight.from_word_id !== candidate.start_word_id ||
       candidate.highlight.to_word_id !== candidate.end_word_id) return false

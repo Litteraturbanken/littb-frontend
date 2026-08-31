@@ -911,3 +911,135 @@ test("source-quality Editor browser traversal keeps ix for unavailable then mark
   expect(new URL(page.url()).pathname).toBe("/editor/lb8345227/ix/6/f")
   await expect(page.locator(".markee")).toHaveCount(1)
 })
+
+test("source-quality Editor submits a first unavailable occurrence through its search controls", async ({ page }) => {
+  const editorPath = "/editor/lb8345227/ix/4/f"
+  await page.goto(editorPath, { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Sök i verket" }).click()
+  await page.locator('input[aria-label="Sök i verket"]:visible').fill("source-quality-first-unavailable")
+  await page.getByRole("button", { name: "Sök", exact: true }).click()
+
+  await expect(page.locator("#search_nav")).toContainText("Träff 1")
+  await expect(page.locator("#search_nav")).toContainText("Träffen kan inte öppnas exakt i läsaren.")
+  expect(new URL(page.url()).pathname).toBe(editorPath)
+  expect(new URL(page.url()).searchParams.get("s_query")).toBe("source-quality-first-unavailable")
+  expect(new URL(page.url()).searchParams.get("hit_index")).toBe("0")
+  expect(new URL(page.url()).searchParams.get("s_snapshot")).toBe("gen-fixture-0001")
+  expect(new URL(page.url()).searchParams.has("traff")).toBe(false)
+  await expect(page.locator(".markee")).toHaveCount(0)
+})
+
+test("source-quality Editor go-to fetches an uncached unavailable hit with its pinned snapshot", async ({
+  page,
+  request
+}) => {
+  const start = "/editor/lb8345227/ix/4/f?s_query=source-quality-uncached&s_lbworkid=lb8345227"
+    + "&s_mediatype=faksimil&s_word_form_only=true&s_include_modernized=true&hit_index=0"
+    + "&traff=w5_1&traffslut=w5_1"
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await page.goto(start, { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Gå direkt till träff . . ." }).click()
+  await page.getByLabel("Träffnummer").fill("5")
+  await page.getByLabel("Träffnummer").press("Enter")
+
+  await expect(page.locator("#search_nav")).toContainText("Träff 5")
+  await expect(page.locator("#search_nav")).toContainText("Träffen kan inte öppnas exakt i läsaren.")
+  expect(new URL(page.url()).pathname).toBe("/editor/lb8345227/ix/4/f")
+  expect(new URL(page.url()).searchParams.get("hit_index")).toBe("4")
+  expect(new URL(page.url()).searchParams.has("traff")).toBe(false)
+  await expect(page.locator(".markee")).toHaveCount(0)
+  await expect.poll(async () => {
+    const ledger = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    return ledger.requests.some((item: { query: string }) => {
+      const query = new URLSearchParams(item.query)
+      return query.get("query") === "source-quality-uncached" &&
+        query.get("offset") === "3" && query.get("limit") === "3" &&
+        query.get("snapshot") === "gen-fixture-0001"
+    })
+  }).toBe(true)
+})
+
+test("source-quality Editor keeps an unavailable selection through reload, history, and cached previous", async ({
+  page
+}) => {
+  const start = "/editor/lb8345227/ix/4/f?s_query=source-quality-mixed&s_lbworkid=lb8345227"
+    + "&s_mediatype=faksimil&s_word_form_only=true&s_include_modernized=true&hit_index=0"
+    + "&traff=w5_1&traffslut=w5_1"
+  await page.goto(start, { waitUntil: "networkidle" })
+  await page.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page.locator(".markee")).toHaveCount(0)
+  await page.reload({ waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav")).toContainText("Träff 2")
+  await expect(page.locator(".markee")).toHaveCount(0)
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page.locator(".markee")).toHaveCount(1)
+  await page.goForward({ waitUntil: "networkidle" })
+  await expect(page.locator(".markee")).toHaveCount(0)
+  await page.getByRole("link", { name: "Föregående sökträff" }).click()
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida 5")
+  await expect(page.locator(".markee")).toHaveCount(1)
+})
+
+for (const staleStatus of [200, 409]) {
+  test(`source-quality Editor ignores a held obsolete ${staleStatus} after selection and search changes`, async ({
+    page
+  }) => {
+    const start = "/editor/lb8345227/ix/4/f?s_query=source-quality-uncached&s_lbworkid=lb8345227"
+      + "&s_mediatype=faksimil&s_word_form_only=true&s_include_modernized=true&hit_index=0"
+      + "&traff=w5_1&traffslut=w5_1"
+    await page.goto(start, { waitUntil: "networkidle" })
+    await page.evaluate(status => {
+      const nativeFetch = window.fetch.bind(window)
+      let release!: () => void
+      const gate = new Promise<void>(resolve => { release = resolve })
+      const state = { started: false, release }
+      Object.assign(window, { sourceQualityGate: state })
+      window.fetch = async (input, init) => {
+        const url = new URL(input instanceof Request ? input.url : String(input), location.href)
+        if (url.pathname.endsWith("/search-hits") &&
+          url.searchParams.get("query") === "source-quality-uncached" &&
+          url.searchParams.get("offset") === "3") {
+          const response = await nativeFetch(input, init)
+          state.started = true
+          await gate
+          if (status === 409) {
+            return new Response(JSON.stringify({
+              error: {
+                code: "text_search_snapshot_expired",
+                message: "Text-search snapshot has expired",
+                details: null
+              }
+            }), { status: 409, headers: { "content-type": "application/json" } })
+          }
+          return response
+        }
+        return nativeFetch(input, init)
+      }
+    }, staleStatus)
+    await page.getByRole("button", { name: "Gå direkt till träff . . ." }).click()
+    await page.getByLabel("Träffnummer").fill("5")
+    await page.getByLabel("Träffnummer").press("Enter")
+    await page.waitForFunction(() => (
+      window as unknown as { sourceQualityGate: { started: boolean } }
+    ).sourceQualityGate.started)
+
+    await page.getByRole("link", { name: "Nästa sökträff" }).click()
+    await expect(page.locator("#search_nav")).toContainText("Träff 2")
+    await expect(page.locator(".markee")).toHaveCount(0)
+    await page.evaluate(path => {
+      history.pushState({}, "", path)
+      dispatchEvent(new PopStateEvent("popstate"))
+    }, "/editor/lb8345227/ix/4/f?s_query=source-quality-first-unavailable&s_lbworkid=lb8345227"
+      + "&s_mediatype=faksimil&s_word_form_only=true&s_include_modernized=true&hit_index=0")
+    await expect(page.locator("#search_nav")).toContainText("Träff 1")
+    await expect(page.locator("#search_nav")).toContainText("Träffen kan inte öppnas exakt i läsaren.")
+
+    await page.evaluate(async () => {
+      ;(window as unknown as { sourceQualityGate: { release: () => void } }).sourceQualityGate.release()
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    })
+    await expect(page.locator("#search_nav")).toContainText("Träff 1")
+    expect(new URL(page.url()).searchParams.get("s_query")).toBe("source-quality-first-unavailable")
+    await expect(page.locator(".markee")).toHaveCount(0)
+  })
+}

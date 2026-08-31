@@ -636,6 +636,23 @@ describe("text search route state", () => {
     expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
   })
 
+  test("retains a long raw mapped label for an explicitly unavailable occurrence", () => {
+    const request = buildTextSearchResultsRequest(parseTextSearchRouteQuery({ fras: "frihet" }))
+    const response = resultsResponse()
+    const highlight = response.works[0]!.highlights[0]!
+    const rawPage = "p".repeat(101)
+    highlight.reader_target_status = "unsupported_reader_identity"
+    for (const word of [
+      ...highlight.left_context,
+      ...highlight.match,
+      ...highlight.right_context
+    ]) word.page_name = rawPage
+
+    expect(acceptTextSearchResultsResponse(
+      response, request, textSearchResultsRequestIdentity(request)
+    )).toEqual(response)
+  })
+
   test.each([
     { name: "extra root key", mutate: (copy: JsonRecord) => { copy.raw = true } },
     {

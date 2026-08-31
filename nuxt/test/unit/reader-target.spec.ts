@@ -58,4 +58,13 @@ describe("Reader source-quality targets", () => {
     expect(() => isWorkSearchHit(hit, "lb1", "etext")).not.toThrow()
     expect(isWorkSearchHit(hit, "lb1", "etext")).toBe(false)
   })
+
+  test("rejects an unavailable one-token occurrence with unequal raw endpoints", () => {
+    const hit = {
+      index: 0, source_identity: "lb1:etext:0", source_start: 0, source_end: 1,
+      start_word_id: "w1_1", end_word_id: "w1_2", page_index: 1, page_name: "1",
+      reader_target_status: "ambiguous_word_id", highlight: null
+    }
+    expect(isWorkSearchHit(hit, "lb1", "etext")).toBe(false)
+  })
 })
