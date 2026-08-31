@@ -678,6 +678,12 @@ function editorSearchMatchesReader(
     && (route.query.s_snapshot === undefined || isTextSearchSnapshot(route.query.s_snapshot))
 }
 
+function editorHistorySearchSnapshot(identity: string): string | null {
+  // SSR owns initial hydration; history adoption only owns later SPA restores.
+  if (!import.meta.client || nuxtApp.isHydrating) return null
+  return restoredWorkSearchSnapshot(window.history.state, identity)
+}
+
 function editorSearchState(current: EditorReaderPage | null | undefined): EditorSearchState | null {
   if (!editorSearchMatchesReader(current)) return null
 
@@ -693,8 +699,8 @@ function editorSearchState(current: EditorReaderPage | null | undefined): Editor
   if (!query || hit === null || !fromWordId || !toWordId ||
     wordFormOnly === null || includeOlderSpellings === null || prefix === null || suffix === null
   ) return null
-  if (snapshot === null && import.meta.client) {
-    snapshot = restoredWorkSearchSnapshot(window.history.state, workSearchSnapshotIdentity(
+  if (snapshot === null) {
+    snapshot = editorHistorySearchSnapshot(workSearchSnapshotIdentity(
       current.workId, current.mediaType,
       { query, wordForms: !wordFormOnly, includeOlderSpellings, prefix, suffix }
     ))

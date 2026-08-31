@@ -7,6 +7,47 @@ const editorSearchHit = "/editor/lb8345227/ix/4/f?show_search_work&s_query=brev"
   "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
   "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2"
 
+test("fresh unpinned Editor reload keeps the SSR generation through hydration", async ({ page, request }) => {
+  try {
+    await request.delete(`${fixture}/_text_search/requests`)
+    await page.goto(editorSearchHit, { waitUntil: "networkidle" })
+    await expect.poll(() => page.evaluate(() => history.state.readerSearchSnapshot?.snapshot))
+      .toBe("gen-fixture-0001")
+    const expired = await request.post(`${fixture}/v2/text-search/results`, { data: {
+      query: "frihet", page: 1, page_size: 30, highlight_limit: 5,
+      prefix: false, suffix: false, word_form_only: true, include_modernized: true,
+      snapshot: "gen-expired"
+    } })
+    expect(expired.status()).toBe(409)
+    await request.delete(`${fixture}/_reader_hit_requests`)
+
+    const reloaded = await page.reload({ waitUntil: "networkidle" })
+    expect(reloaded?.status()).toBe(200)
+    expect(await reloaded!.text()).toContain("s_snapshot=gen-fixture-0002")
+    const ledger = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    expect(ledger.requests).toEqual([{
+      path: "/private-v2/works/lb8345227/search-hits",
+      query: "media_type=faksimil&query=brev&offset=0&limit=3&word_forms=false" +
+        "&include_older_spellings=true&prefix=false&suffix=false"
+    }])
+    await expect(page).toHaveURL(editorSearchHit)
+    await expect(page.locator('.pager_ctrls a[rel="next"]')).toHaveAttribute("href",
+      `${editorSearchHit.replace("/ix/4/", "/ix/5/")}&s_snapshot=gen-fixture-0002`)
+    await expect.poll(() => page.evaluate(() => history.state.readerSearchSnapshot?.snapshot))
+      .toBe("gen-fixture-0002")
+    await expect(page.locator("#w5_1.markee")).toHaveCount(1)
+    await expect(page.locator("#w5_2.markee.flip")).toHaveCount(1)
+    await page.getByRole("button", { name: "Gå till sista träffen" }).click()
+    await expect(page.locator("#w7_1.markee")).toHaveCount(1)
+    const continued = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    const queries = continued.requests.slice(1).map((entry: { query: string }) => new URLSearchParams(entry.query))
+    expect(queries.length).toBeGreaterThan(0)
+    expect(queries.every((query: URLSearchParams) => query.get("snapshot") === "gen-fixture-0002")).toBe(true)
+  } finally {
+    await request.delete(`${fixture}/_text_search/requests`)
+  }
+})
+
 test("adopted Editor snapshot survives ordinary page and Back after active generation changes", async ({ page }) => {
   const raw = "&bare&repeat=%2f&repeat=%2F"
   await page.goto(`${editorSearchHit}${raw}`, { waitUntil: "networkidle" })
