@@ -15,6 +15,7 @@ import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import type { components } from "~/lib/api/generated/lbapi"
+import { isSnapshotUnavailable } from "~/lib/api/snapshot"
 import { isTextSearchSnapshot } from "~/lib/text-search"
 import { usefulLibraryTooltipText } from "~/lib/library-tooltip"
 import {
@@ -1126,7 +1127,7 @@ const hitFetch = await useAsyncData(
               }
             }
           })
-          if (result.response.status === 409 && result.error?.error.code === "text_search_snapshot_expired") {
+          if (isSnapshotUnavailable(result)) {
             return { status: "expired" as const, identity }
           }
           if (result.error || !isExpectedHitResponse(
@@ -1398,7 +1399,7 @@ async function fetchHitAtIndex(
     }
   })
   if (signal.aborted || !hitLookupIsCurrent(context)) return null
-  if (result.response.status === 409 && result.error?.error.code === "text_search_snapshot_expired") {
+  if (isSnapshotUnavailable(result)) {
     hitContinuationFailure.value = { identity: context.sourceIdentity, status: "expired" }
     return null
   }

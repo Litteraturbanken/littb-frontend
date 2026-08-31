@@ -9,6 +9,7 @@ import type {
 } from "~/components/search/SearchMultiSelect.vue"
 import SearchMultiSelect from "~/components/search/SearchMultiSelect.vue"
 import { useLbApiClient } from "~/composables/useLbApiClient"
+import { isSnapshotUnavailable } from "~/lib/api/snapshot"
 import {
   createTextSearchRequestOwner,
   type TextSearchOwnedRequest,
@@ -406,7 +407,7 @@ async function loadNavigatorSnapshot(snapshot: string) {
   try {
     const result = await client.POST("/text-search/results", { body, signal: request.signal })
     if (!ownsNavigatorSnapshot(request, primary, snapshot)) return
-    if (result.response.status === 409 && result.error?.error.code === "text_search_snapshot_expired") {
+    if (isSnapshotUnavailable(result)) {
       expirePrimarySnapshot(primary, snapshot)
       return
     }
@@ -1148,7 +1149,7 @@ async function showMore(workKey: string) {
       signal: request.signal
     })
     if (!owner.isCurrent(request, routeIdentity.value)) return
-    if (result.response.status === 409 && result.error?.error.code === "text_search_snapshot_expired") {
+    if (isSnapshotUnavailable(result)) {
       expirePrimarySnapshot(expansion.primaryIdentity, expansion.snapshot)
       return
     }

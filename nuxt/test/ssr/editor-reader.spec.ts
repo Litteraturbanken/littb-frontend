@@ -1005,11 +1005,13 @@ for (const staleStatus of [200, 409]) {
           if (status === 409) {
             return new Response(JSON.stringify({
               error: {
-                code: "text_search_snapshot_expired",
-                message: "Text-search snapshot has expired",
+                code: "snapshot_unavailable",
+                message: "Search snapshot unavailable",
                 details: null
-              }
-            }), { status: 409, headers: { "content-type": "application/json" } })
+              },
+              request_id: "fa781be9-6f29-4696-9aee-2bd75f2b32cb"
+            }), { status: 409, headers: { "content-type": "application/json",
+              "X-Request-ID": "fa781be9-6f29-4696-9aee-2bd75f2b32cb" } })
           }
           return response
         }

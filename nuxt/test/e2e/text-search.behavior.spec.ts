@@ -1802,6 +1802,11 @@ test("malformed corpus snapshot cannot reuse the same unpinned cached success", 
 
 for (const auxiliary of ["expansion", "navigator"] as const) {
   test(`auxiliary ${auxiliary} expiry restarts the unchanged unpinned page with fresh results`, async ({ page, request }) => {
+    const legacyRequests: string[] = []
+    page.on("request", request => {
+      if (["fetch", "xhr"].includes(request.resourceType())
+        && /\/(?:search|search_count|page_search)\//u.test(new URL(request.url()).pathname)) legacyRequests.push(request.url())
+    })
     const origin = "/s%C3%B6k?fras=overflow&forfattare=StrindbergA"
       + (auxiliary === "navigator" ? "&sok_filter=StrindbergA" : "")
     let expired = false
@@ -1811,8 +1816,9 @@ for (const auxiliary of ["expansion", "navigator"] as const) {
       if (!expired && body.snapshot === "gen-fixture-0001"
         && (auxiliary === "expansion" ? body.highlight_limit === 100 : !body.facet_author_id)) {
         expired = true
-        await route.fulfill({ status: 409, json: {
-          error: { code: "text_search_snapshot_expired", message: "Expired", details: null }
+        await route.fulfill({ status: 409, headers: { "X-Request-ID": "fa781be9-6f29-4696-9aee-2bd75f2b32cb" }, json: {
+          error: { code: "snapshot_unavailable", message: "Search snapshot unavailable", details: null },
+          request_id: "fa781be9-6f29-4696-9aee-2bd75f2b32cb"
         } })
         return
       }
@@ -1826,6 +1832,7 @@ for (const auxiliary of ["expansion", "navigator"] as const) {
         .evaluate((button: HTMLButtonElement) => button.click())
     }
     await expect(page.getByRole("alert")).toContainText("Sökresultatet har gått ut")
+    await expect(page.locator("#results .match a")).toHaveCount(0)
     const beforeRestart = await requests(request, "results")
     expect(beforeRestart.filter(entry => !Object.hasOwn(entry.body, "snapshot"))).toHaveLength(1)
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
@@ -1842,6 +1849,7 @@ for (const auxiliary of ["expansion", "navigator"] as const) {
     await page.getByRole("button", { name: "Nästa träffsida" }).click()
     await expect(page).toHaveURL(/snapshot=gen-fixture-0002/)
     await expect.poll(async () => (await requests(request, "results")).at(-1)?.body.snapshot).toBe("gen-fixture-0002")
+    expect(legacyRequests).toEqual([])
   })
 }
 
@@ -1853,8 +1861,9 @@ test(`held obsolete auxiliary ${navigator ? "navigator" : "expansion"} expiry ca
     const body = route.request().postDataJSON()
     const selected = navigator ? body.snapshot && !body.facet_author_id : body.highlight_limit === 100
     if (!selected) return route.continue()
-    await route.fulfill({ status: 409, json: {
-      error: { code: "text_search_snapshot_expired", message: "Expired", details: null }
+    await route.fulfill({ status: 409, headers: { "X-Request-ID": "fa781be9-6f29-4696-9aee-2bd75f2b32cb" }, json: {
+      error: { code: "snapshot_unavailable", message: "Search snapshot unavailable", details: null },
+      request_id: "fa781be9-6f29-4696-9aee-2bd75f2b32cb"
     } })
   })
   if (navigator) await pushRoute(page, "/s%C3%B6k?fras=overflow&sok_filter=StrindbergA")

@@ -5606,12 +5606,15 @@ const handleFixtureRequest = async (request, response) => {
     await waitForTextSearchDelay(operation, body)
     if (operation === "results" && body.snapshot === "gen-expired") {
       textSearchActiveGeneration = "gen-fixture-0002"
+      const requestId = request.headers["x-request-id"] ?? "fa781be9-6f29-4696-9aee-2bd75f2b32cb"
+      response.setHeader("X-Request-ID", requestId)
       return sendJson(response, 409, {
         error: {
-          code: "text_search_snapshot_expired",
-          message: "Text-search snapshot has expired",
+          code: "snapshot_unavailable",
+          message: "Search snapshot unavailable",
           details: null
-        }
+        },
+        request_id: requestId
       })
     }
     if (textSearchFailures.has(operation)) {
@@ -6125,8 +6128,11 @@ const handleFixtureRequest = async (request, response) => {
     if (query.snapshot === "gen-expired" || (
       query.snapshot === "gen-expired-continuation" && query.offset >= 3
     )) {
+      const requestId = request.headers["x-request-id"] ?? "fa781be9-6f29-4696-9aee-2bd75f2b32cb"
+      response.setHeader("X-Request-ID", requestId)
       return sendJson(response, 409, {
-        error: { code: "text_search_snapshot_expired", message: "Text-search snapshot has expired", details: null }
+        error: { code: "snapshot_unavailable", message: "Search snapshot unavailable", details: null },
+        request_id: requestId
       })
     }
     if (readerHitFailure) {

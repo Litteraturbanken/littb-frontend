@@ -6,6 +6,7 @@ import { preferredFacsimileSize } from "#shared/utils/facsimile-source"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import type { components } from "~/lib/api/generated/lbapi"
+import { isSnapshotUnavailable } from "~/lib/api/snapshot"
 import { isTextSearchSnapshot } from "~/lib/text-search"
 import {
   markEditorEtextHtml,
@@ -849,7 +850,7 @@ const hitFetch = await useAsyncData(
           }
         }
       })
-      if (result.response.status === 409 && result.error?.error.code === "text_search_snapshot_expired") {
+      if (isSnapshotUnavailable(result)) {
         return { status: "expired" as const, identity }
       }
       if (result.error || !isExpectedHitResponse(
@@ -1206,7 +1207,7 @@ async function fetchEditorHitAtIndex(
     }
   })
   if (signal.aborted || sourceIdentity !== searchRequestIdentity.value) return null
-  if (result.response.status === 409 && result.error?.error.code === "text_search_snapshot_expired") {
+  if (isSnapshotUnavailable(result)) {
     hitContinuationFailure.value = { identity: sourceIdentity, status: "expired" }
     return null
   }

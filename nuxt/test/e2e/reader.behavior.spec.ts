@@ -315,6 +315,11 @@ test("snapshot public restart bypasses an accepted unpinned cache and stale cont
 
 for (const continuation of [false, true]) {
   test(`snapshot expiry ${continuation ? "continuation" : "initial"} requires explicit public restart`, async ({ page, request }) => {
+    const legacyRequests: string[] = []
+    page.on("request", request => {
+      if (["fetch", "xhr"].includes(request.resourceType())
+        && /\/(?:search|search_count|page_search)\//u.test(new URL(request.url()).pathname)) legacyRequests.push(request.url())
+    })
     const snapshot = continuation ? "gen-expired-continuation" : "gen-expired"
     await page.goto(`${readerPath}?q=doktor%20glas&hit=1&snapshot=${snapshot}&lemma=1&ej_modern=1&prefix=1&suffix=1`, {
       waitUntil: "networkidle"
@@ -325,7 +330,9 @@ for (const continuation of [false, true]) {
       await navigation.getByRole("button", { name: "Gå till sista träffen" }).click()
     }
     await expect(navigation).toContainText(expiredSnapshotMessage)
+    await expect(navigation.getByRole("link", { name: "Nästa sökträff" })).toHaveCount(0)
     expect(new URL(page.url()).searchParams.get("hit")).toBe("1")
+    expect(new URL(page.url()).searchParams.get("snapshot")).toBe(snapshot)
     expect((await readerHitRequests(request)).every(item => new URLSearchParams(item.query).get("snapshot") === snapshot)).toBe(true)
     await navigation.getByRole("button", { name: "Starta om sökningen", exact: true }).click()
     await expect(navigation).toContainText("Träff 1, sida -3")
@@ -336,6 +343,7 @@ for (const continuation of [false, true]) {
     await navigation.getByRole("link", { name: "Nästa sökträff" }).click()
     await expect(navigation).toContainText("Träff 2, sida -2")
     expect(new URLSearchParams((await readerHitRequests(request)).at(-1)!.query).get("snapshot")).toBe("gen-fixture-0001")
+    expect(legacyRequests).toEqual([])
   })
 }
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"

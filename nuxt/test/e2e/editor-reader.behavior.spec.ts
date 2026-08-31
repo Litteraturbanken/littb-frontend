@@ -7,6 +7,44 @@ const editorSearchHit = "/editor/lb8345227/ix/4/f?show_search_work&s_query=brev"
   "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
   "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2"
 
+for (const continuation of [false, true]) {
+  test(`snapshot expiry ${continuation ? "continuation" : "initial"} requires explicit Editor restart`, async ({ page, request }) => {
+    const legacyRequests: string[] = []
+    page.on("request", request => {
+      if (["fetch", "xhr"].includes(request.resourceType())
+        && /\/(?:search|search_count|page_search)\//u.test(new URL(request.url()).pathname)) legacyRequests.push(request.url())
+    })
+    await request.delete(`${fixture}/_reader_hit_requests`)
+    const snapshot = continuation ? "gen-expired-continuation" : "gen-expired"
+    const original = `${editorSearchHit}&s_snapshot=${snapshot}`
+    await page.goto(original, { waitUntil: "networkidle" })
+    const navigation = page.locator("#search_nav")
+    if (continuation) {
+      await expect(navigation).toContainText("Träff 1")
+      await navigation.getByRole("button", { name: "Gå till sista träffen" }).click()
+    }
+    await expect(navigation).toContainText("Sökresultatet har gått ut. Starta om sökningen")
+    await expect(page).toHaveURL(original)
+    await expect(navigation.getByRole("link", { name: "Nästa sökträff" })).toHaveCount(0)
+    const before = (await (await request.get(`${fixture}/_reader_hit_requests`)).json()).requests
+    expect(before.length).toBeGreaterThan(0)
+    expect(before.every((item: { query: string }) => new URLSearchParams(item.query).get("snapshot") === snapshot)).toBe(true)
+    await navigation.getByRole("button", { name: "Starta om sökningen", exact: true }).click()
+    await expect(navigation).toContainText("Träff 1")
+    await expect(navigation).not.toContainText("Sökresultatet har gått ut")
+    expect(new URL(page.url()).searchParams.get("s_snapshot")).toBe("gen-fixture-0001")
+    await navigation.getByRole("link", { name: "Nästa sökträff" }).click()
+    await expect(navigation).toContainText("Träff 2")
+    const after = (await (await request.get(`${fixture}/_reader_hit_requests`)).json()).requests.slice(before.length)
+      .map((item: { query: string }) => new URLSearchParams(item.query))
+    expect(after.filter((query: URLSearchParams) => !query.has("snapshot"))).toHaveLength(1)
+    expect(Object.fromEntries(after[0])).toMatchObject({ query: "brev", offset: "0", limit: "1",
+      word_forms: "false", include_older_spellings: "true" })
+    expect(after.slice(1).every((query: URLSearchParams) => query.get("snapshot") === "gen-fixture-0001")).toBe(true)
+    expect(legacyRequests).toEqual([])
+  })
+}
+
 test("fresh unpinned Editor reload keeps the SSR generation through hydration", async ({ page, request }) => {
   try {
     await request.delete(`${fixture}/_text_search/requests`)

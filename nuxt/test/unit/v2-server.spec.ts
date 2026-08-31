@@ -2380,6 +2380,11 @@ describe("v2 fixture server operations", () => {
           occurrence_count: 1,
           has_more_highlights: false,
           highlights: [{
+            source_identity: "lb238704:etext:fixture",
+            source_start: 0,
+            source_end: 1,
+            page_index: 1,
+            reader_target_status: "exact",
             left_context: [{ word: "ropade", word_id: "w1_10", page_name: "1" }],
             match: [{ word: "frihet", word_id: "w1_11", page_name: "1" }],
             right_context: [{ word: "och", word_id: "w1_12", page_name: "1" }]
@@ -2395,10 +2400,20 @@ describe("v2 fixture server operations", () => {
           occurrence_count: 2,
           has_more_highlights: false,
           highlights: [{
+            source_identity: "lb278171:faksimil:fixture",
+            source_start: 0,
+            source_end: 1,
+            page_index: 3,
+            reader_target_status: "exact",
             left_context: [{ word: "sin", word_id: "w3_20", page_name: "3" }],
             match: [{ word: "frihet", word_id: "w3_21", page_name: "3" }],
             right_context: [{ word: "sökte", word_id: "w3_22", page_name: "3" }]
           }, {
+            source_identity: "lb278171:faksimil:fixture",
+            source_start: 10,
+            source_end: 11,
+            page_index: 4,
+            reader_target_status: "exact",
             left_context: [{ word: "drömde", word_id: "w4_30", page_name: "4" }],
             match: [{ word: "frihet", word_id: "w4_31", page_name: "4" }],
             right_context: [{ word: "vidare", word_id: "w4_32", page_name: "4" }]
@@ -2728,12 +2743,14 @@ test("generates all text-search operations and title author facet schemas", () =
     expect(results.status).toBe(200)
     expect(options.status).toBe(422)
     expect(expired.status).toBe(409)
+    expect(expired.headers.get("x-request-id")).toBe("fa781be9-6f29-4696-9aee-2bd75f2b32cb")
     expect(await expired.json()).toEqual({
       error: {
-        code: "text_search_snapshot_expired",
-        message: "Text-search snapshot has expired",
+        code: "snapshot_unavailable",
+        message: "Search snapshot unavailable",
         details: null
-      }
+      },
+      request_id: "fa781be9-6f29-4696-9aee-2bd75f2b32cb"
     })
   })
 
@@ -4396,9 +4413,15 @@ test("generates all text-search operations and title author facet schemas", () =
       }
       expect((await fetch(`${endpoint}?media_type=etext&query=glas&snapshot=one&snapshot=two`)).status)
         .toBe(422)
-      const expired = await fetch(`${endpoint}?media_type=etext&query=glas&snapshot=gen-expired`)
+      const requestId = "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d"
+      const expired = await fetch(`${endpoint}?media_type=etext&query=glas&snapshot=gen-expired`, {
+        headers: { "X-Request-ID": requestId }
+      })
       expect(expired.status).toBe(409)
-      expect(await expired.json()).toMatchObject({ error: { code: "text_search_snapshot_expired" } })
+      expect(expired.headers.get("x-request-id")).toBe(requestId)
+      expect(await expired.json()).toEqual({ error: {
+        code: "snapshot_unavailable", message: "Search snapshot unavailable", details: null
+      }, request_id: requestId })
     }
   })
 
@@ -4474,6 +4497,12 @@ test("generates all text-search operations and title author facet schemas", () =
         index: 0,
         page_name: "-2",
         page_index: 2,
+        source_identity: "lb-reader-doktor-glas:etext:fixture",
+        source_start: 0,
+        source_end: 1,
+        start_word_id: "w2_2",
+        end_word_id: "w2_2",
+        reader_target_status: "exact",
         highlight: { from_word_id: "w2_2", to_word_id: "w2_2" }
       }
     ])
