@@ -1674,3 +1674,53 @@ test("source-quality Reader browser traversal clears unavailable marks and resto
   expect(new URL(page.url()).pathname).toContain("/titlar/DoktorGlas/sida/-1/etext")
   await expect(page.locator(".markee")).toHaveCount(1)
 })
+
+test("source-quality Reader keeps an unavailable selection through reload and history", async ({ page }) => {
+  await page.goto(`${readerPath.replace("/sida/-2/", "/sida/-3/")}?q=source-quality-mixed&hit=0`, {
+    waitUntil: "networkidle"
+  })
+  await page.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page.locator(".markee")).toHaveCount(0)
+  await page.reload({ waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav")).toContainText("Träff 2")
+  await expect(page.locator(".markee")).toHaveCount(0)
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page.locator(".markee")).toHaveCount(1)
+  await page.goForward({ waitUntil: "networkidle" })
+  await expect(page.locator(".markee")).toHaveCount(0)
+})
+
+test("source-quality Reader fetches an uncached unavailable go-to hit on its current page", async ({ page }) => {
+  await page.goto(`${readerPath.replace("/sida/-2/", "/sida/-3/")}?q=source-quality-mixed&hit=0`, {
+    waitUntil: "networkidle"
+  })
+  await page.getByRole("button", { name: "Gå direkt till träff . . ." }).click()
+  await page.getByLabel("Träffnummer").fill("2")
+  await page.getByLabel("Träffnummer").press("Enter")
+  await expect(page.locator("#search_nav")).toContainText("Träff 2")
+  expect(new URL(page.url()).pathname).toContain("/titlar/DoktorGlas/sida/-3/etext")
+  expect(new URL(page.url()).searchParams.get("hit")).toBe("1")
+  await expect(page.locator(".markee")).toHaveCount(0)
+})
+
+for (const query of ["source-quality-first-unavailable", "source-quality-ambiguous", "source-quality-unsupported"]) {
+  test(`source-quality Reader accepts a first ${query} occurrence without a marker`, async ({ request }) => {
+    const response = await request.get(`${readerPath}?q=${query}&hit=0&snapshot=gen-fixture-0001`)
+    const { document } = parseHTML(await response.text())
+    expect(response.status()).toBe(200)
+    expect(document.querySelector(".reader-search-state")?.textContent)
+      .toContain("Träffen kan inte öppnas exakt i läsaren.")
+    expect(document.querySelector(".markee")).toBeNull()
+  })
+}
+
+test("source-quality Reader keeps a faksimil occurrence markerless on its existing page", async ({ request }) => {
+  const response = await request.get(
+    `${facsimilePath}?q=source-quality-first-unavailable&hit=0&snapshot=gen-fixture-0001`
+  )
+  const { document } = parseHTML(await response.text())
+  expect(response.status()).toBe(200)
+  expect(document.querySelector(".reader-search-state")?.textContent)
+    .toContain("Träffen kan inte öppnas exakt i läsaren.")
+  expect(document.querySelector(".markee")).toBeNull()
+})

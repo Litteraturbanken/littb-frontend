@@ -94,6 +94,18 @@ function isRawSourceString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0
 }
 
+function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  const actual = Object.keys(value)
+  return actual.length === keys.length && keys.every(key => Object.hasOwn(value, key))
+}
+
+function isRawHighlight(value: unknown): value is { from_word_id: string, to_word_id: string } {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value) &&
+    hasExactKeys(value as Record<string, unknown>, ["from_word_id", "to_word_id"]) &&
+    isRawSourceString((value as Record<string, unknown>).from_word_id) &&
+    isRawSourceString((value as Record<string, unknown>).to_word_id)
+}
+
 export function isWorkSearchHit(
   value: unknown,
   workId: string,
@@ -101,6 +113,10 @@ export function isWorkSearchHit(
 ): value is WorkSearchHit {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false
   const hit = value as Record<string, unknown>
+  if (!hasExactKeys(hit, [
+    "index", "source_identity", "source_start", "source_end", "start_word_id",
+    "end_word_id", "page_index", "page_name", "reader_target_status", "highlight"
+  ])) return false
   if (!Number.isSafeInteger(hit.index) || (hit.index as number) < 0 ||
     !isRawSourceString(hit.source_identity) ||
     !Number.isSafeInteger(hit.source_start) || !Number.isSafeInteger(hit.source_end) ||
@@ -111,16 +127,21 @@ export function isWorkSearchHit(
   if ((hit.page_name === null) !== (hit.reader_target_status === "unmapped_page")) return false
   if (hit.page_name !== null && !isRawSourceString(hit.page_name)) return false
   const candidate = hit as unknown as WorkSearchHit
-  if (isExactWorkSearchHit(candidate)) {
+  if (candidate.reader_target_status === "exact") {
+    if (!isRawHighlight(hit.highlight)) return false
+    if ((hit.source_end as number) - (hit.source_start as number) === 1 &&
+      hit.start_word_id !== hit.end_word_id) return false
+    if (!isExactWorkSearchHit(candidate)) return false
     if (candidate.highlight.from_word_id !== candidate.start_word_id ||
       candidate.highlight.to_word_id !== candidate.end_word_id) return false
     const from = workSearchWordPosition(candidate.start_word_id, workId)
     const to = workSearchWordPosition(candidate.end_word_id, workId)
     return Boolean(from && to && from.scope === to.scope && from.ordinal <= to.ordinal &&
+      (from.ordinal !== to.ordinal || candidate.start_word_id === candidate.end_word_id) &&
       workSearchPositionMatchesHitPage(from, candidate.page_index, mediaType) &&
       workSearchPositionMatchesHitPage(to, candidate.page_index, mediaType))
   }
-  return candidate.highlight === null
+  return hit.highlight === null
 }
 
 const clearedOptions: WorkSearchOptionsState = {

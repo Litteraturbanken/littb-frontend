@@ -24,5 +24,7 @@ export function isReaderTargetStatus(value: unknown): value is ReaderTargetStatu
 
 export function isExactWorkSearchHit(hit: WorkSearchHit): hit is ExactWorkSearchHit {
   return hit.reader_target_status === "exact" && typeof hit.page_name === "string"
-    && hit.highlight !== null
+    && hit.highlight !== null && typeof hit.highlight === "object"
+    && typeof hit.highlight.from_word_id === "string"
+    && typeof hit.highlight.to_word_id === "string"
 }

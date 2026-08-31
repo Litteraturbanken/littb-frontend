@@ -870,6 +870,29 @@ test("source-quality Editor SSR accepts only markerless unavailable selection", 
     .toContain("Sökträffen kunde inte hämtas.")
 })
 
+for (const [label, markers, exposesError] of [
+  ["exact markerless", "", true],
+  ["lone marker", "&traff=w5_1", false],
+  ["empty marker", "&traff=&traffslut=w5_1", false],
+  ["duplicate marker", "&traff=w5_1&traff=w5_1&traffslut=w5_1", false],
+]) {
+  test(`source-quality Editor rejects ${label} route state`, async ({ request }) => {
+  const base = "/editor/lb8345227/ix/4/f?s_query=source-quality-mixed&s_lbworkid=lb8345227"
+    + "&s_mediatype=faksimil&s_word_form_only=true&s_include_modernized=true&hit_index=0"
+    + "&s_snapshot=gen-source-quality-0001"
+  const response = await request.get(`${base}${markers}`)
+  const { document } = parseHTML(await response.text())
+  expect(response.status()).toBe(200)
+  if (exposesError) {
+    expect(document.querySelector("#search_nav")?.textContent)
+      .toContain("Sökträffen kunde inte hämtas.")
+  } else {
+    expect(document.querySelector("#search_nav")).toBeNull()
+  }
+  expect(document.querySelector(".markee")).toBeNull()
+  })
+}
+
 test("source-quality Editor browser traversal keeps ix for unavailable then marks exact", async ({ page }) => {
   const start = "/editor/lb8345227/ix/4/f?s_query=source-quality-mixed&s_lbworkid=lb8345227"
     + "&s_mediatype=faksimil&s_word_form_only=true&s_include_modernized=true&hit_index=0"

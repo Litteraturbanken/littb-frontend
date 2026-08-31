@@ -22,6 +22,7 @@ import {
   buildTextSearchReaderHref,
   buildTextSearchResultsRequest,
   isTextSearchPunctuation,
+  isSafeTextSearchIdentifier,
   isTextSearchSnapshot,
   parseTextSearchRouteQuery,
   prepareTextSearchHighlight,
@@ -849,7 +850,7 @@ const authorChoices = computed<SearchMultiSelectOption[]>(() => {
     choices.set(choice.value, choice)
   }
   for (const facet of currentPrimaryFacets.value) {
-    if (!choices.has(facet.key)) {
+    if (isSafeTextSearchIdentifier(facet.key) && !choices.has(facet.key)) {
       choices.set(facet.key, {
         value: facet.key,
         label: facet.name,
@@ -1342,6 +1343,7 @@ function setGender(value: string) {
 }
 
 function setFacet(authorId: string | null) {
+  if (authorId !== null && !isSafeTextSearchIdentifier(authorId)) return
   patchFilters({ facetAuthorId: authorId })
 }
 
@@ -1750,7 +1752,7 @@ v-for="item in [
                     <span
                       v-for="(word, wordIndex) in row.hit.match"
                       :key="`match-${wordIndex}`"
-                      class="search-hit-word"
+                    class="word"
                       :class="{ punct: word.punct }"
                     >{{ word.text }}</span>
                     <span class="sr-only">{{ readerTargetUnavailableMessage }}</span>
@@ -1886,12 +1888,14 @@ v-for="item in [
         </li>
         <li v-for="facet in navigatorFacets" :key="facet.key">
           <button
+            v-if="isSafeTextSearchIdentifier(facet.key)"
             class="link-control"
             type="button"
             :class="{ selected: state.facetAuthorId === facet.key }"
             :aria-pressed="state.facetAuthorId === facet.key"
             @click="setFacet(facet.key)"
           >{{ facet.name }}</button>
+          <span v-else class="link-control" aria-disabled="true">{{ facet.name }}</span>
         </li>
       </ul>
     </Teleport>

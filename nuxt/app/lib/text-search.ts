@@ -167,10 +167,15 @@ function distinctBounded<T>(items: readonly T[], maximum: number): T[] {
   return [...new Set(items)].slice(0, maximum)
 }
 
-function isSafeIdentifier(value: string): boolean {
+export function isSafeTextSearchIdentifier(value: unknown): value is string {
+  if (typeof value !== "string") return false
   return value.length >= 1 && value.length <= 100 && value !== "." && value !== ".." &&
     value === value.trim() && !/[\s%/\\,]/u.test(value) &&
     ![...value].some(character => /[\p{Cc}\p{Cs}]/u.test(character))
+}
+
+function isSafeIdentifier(value: string): boolean {
+  return isSafeTextSearchIdentifier(value)
 }
 
 export function isTextSearchSnapshot(value: unknown): value is string {
@@ -525,6 +530,7 @@ function isSafeInteger(value: unknown, minimum = 0, maximum = Number.MAX_SAFE_IN
 type WordPosition = readonly [scope: string, ordinal: number]
 
 function wordPosition(value: string, workId: string): WordPosition | null {
+  if (value.length < 1 || value.length > 100) return null
   const match = /^w(\d+)_(\d+)$/.exec(value)
   let scope: string
   let rawOrdinal: string
@@ -551,7 +557,7 @@ function isSafePageName(value: unknown): value is string {
 function isTextSearchWord(value: unknown): value is TextSearchWord {
   return isRecord(value) && hasExactKeys(value, ["word", "page_name", "word_id"]) &&
     isBoundedString(value.word, 1, 10_000) &&
-    (value.page_name === null || typeof value.page_name === "string") &&
+    (value.page_name === null || isBoundedString(value.page_name, 1, 100)) &&
     typeof value.word_id === "string" && value.word_id.length > 0
 }
 
@@ -560,7 +566,11 @@ function isWordList(value: unknown): value is TextSearchWord[] {
     value.every(isTextSearchWord)
 }
 
-function isTextSearchHighlight(value: unknown, workId: string): value is TextSearchHighlight {
+function isTextSearchHighlight(
+  value: unknown,
+  workId: string,
+  mediaType: "etext" | "faksimil"
+): value is TextSearchHighlight {
   if (!isRecord(value) || !hasExactKeys(value, [
     "left_context", "match", "right_context", "source_identity", "source_start",
     "source_end", "page_index", "reader_target_status"
@@ -575,13 +585,17 @@ function isTextSearchHighlight(value: unknown, workId: string): value is TextSea
     !isSafeInteger(value.source_start, 0) || !isSafeInteger(value.source_end, 1) ||
     value.source_end - value.source_start !== match.length ||
     !isSafeInteger(value.page_index, 0) || !isReaderTargetStatus(value.reader_target_status)) return false
-  if (new Set(match.map(word => word.page_name)).size !== 1 ||
-    (match[0]!.page_name === null) !== (value.reader_target_status === "unmapped_page")) return false
+  const sourceWords = [...leftContext, ...match, ...rightContext]
+  if (new Set(sourceWords.map(word => word.page_name)).size !== 1 ||
+    (sourceWords[0]!.page_name === null) !==
+      (value.reader_target_status === "unmapped_page")) return false
   if (value.reader_target_status !== "exact") return true
-  if (!isSafePageName(match[0]!.page_name)) return false
+  if (!match.every(word => isSafePageName(word.page_name))) return false
   const positions = match.map(word => wordPosition(word.word_id, workId))
   if (positions.some(position => position === null)) return false
   return positions.every((position, index) => {
+    if (mediaType === "etext" && position![0].startsWith("page:") &&
+      position![0] !== `page:${value.page_index}`) return false
     if (index === 0) return true
     const previous = positions[index - 1]!
     const previousWord = match[index - 1]!
@@ -618,10 +632,11 @@ function isTextSearchWork(value: unknown): value is TextSearchWork {
     !hasTextSearchWorkIdentity(value) || !hasTextSearchWorkLabels(value) ||
     (value.author_id === null) !== (value.author_name === null)) return false
   const workId = value.lbworkid
+  const mediaType = value.mediatype as "etext" | "faksimil"
   return isSafeInteger(value.occurrence_count, 1) &&
     Array.isArray(value.highlights)
     && value.highlights.length <= 500
-    && value.highlights.every(highlight => isTextSearchHighlight(highlight, workId)) &&
+    && value.highlights.every(highlight => isTextSearchHighlight(highlight, workId, mediaType)) &&
     value.occurrence_count >= value.highlights.length &&
     value.has_more_highlights === (value.occurrence_count > value.highlights.length)
 }
@@ -877,8 +892,7 @@ export function buildTextSearchReaderHref(
   if (!Number.isSafeInteger(hitIndex) || hitIndex < 0 || hitIndex > 1_000_001) {
     throw new RangeError("Reader hit index is out of range")
   }
-  if ((highlight as Partial<TextSearchHighlight>).reader_target_status !== undefined &&
-    highlight.reader_target_status !== "exact") return null
+  if (highlight.reader_target_status !== "exact") return null
   const firstMatch = highlight.match[0]!
   const lastMatch = highlight.match.at(-1)!
   if (wordPosition(firstMatch.word_id, work.lbworkid) === null ||

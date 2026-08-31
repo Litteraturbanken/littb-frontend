@@ -604,11 +604,15 @@ function sourceQualityHit(hit, workId, mediaType) {
   const highlight = hit.highlight ?? null
   const startWordId = hit.start_word_id ?? highlight?.from_word_id
   const endWordId = hit.end_word_id ?? highlight?.to_word_id
+  const sourceStart = hit.source_start ?? hit.index * 10
+  // These fixture hits model one source token per distinct endpoint.  Build a
+  // valid raw interval before individual tests deliberately corrupt it.
+  const sourceLength = startWordId === endWordId ? 1 : 2
   return {
     ...hit,
     source_identity: hit.source_identity ?? `${workId}:${mediaType}:fixture`,
-    source_start: hit.source_start ?? hit.index * 10,
-    source_end: hit.source_end ?? hit.index * 10 + 1,
+    source_start: sourceStart,
+    source_end: hit.source_end ?? sourceStart + sourceLength,
     start_word_id: startWordId,
     end_word_id: endWordId,
     reader_target_status: status,

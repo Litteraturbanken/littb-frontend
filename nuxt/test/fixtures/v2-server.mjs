@@ -2649,6 +2649,13 @@ function inventoryForTextSearch(body) {
       ]
     }]
   }
+  if (body.query === "source-quality-unsafe-facet") {
+    return [{
+      lbworkid: "lb-unsafe-facet", author_id: "a/1", author_name: "Unsafe, Author",
+      title: "Rå författare", title_id: "RawAuthor", mediatype: "etext",
+      allHighlights: [searchHighlight(body.query, 1, 1)]
+    }]
+  }
   if (body.query === "inga") return []
   if (["many-hits-101", "many-hits-501"].includes(body.query)) {
     const works = pairedMediaWorks(body.query)
@@ -2730,7 +2737,9 @@ function textSearchResultsResponse(body, inventory = null) {
           source_identity: highlight.source_identity ?? `${work.lbworkid}:${work.mediatype}:fixture`,
           source_start: highlight.source_start ?? index * 10,
           source_end: highlight.source_end ?? index * 10 + highlight.match.length,
-          page_index: highlight.page_index ?? index,
+          page_index: highlight.page_index ?? Number(
+            /^w(\d+)_/.exec(highlight.match[0]?.word_id ?? "")?.[1] ?? index
+          ),
           reader_target_status: highlight.reader_target_status ?? "exact"
         })),
         has_more_highlights: visibleHighlights !== undefined

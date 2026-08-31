@@ -798,6 +798,15 @@ test("pager and author facet actions use native button semantics", async ({ page
     .toHaveCount(0)
 })
 
+test("raw unsafe author facets remain visible but cannot become filter actions", async ({ page }) => {
+  await page.goto("/s%C3%B6k?fras=source-quality-unsafe-facet")
+  await waitForHydration(page)
+  const facet = page.locator(".navigator li").filter({ hasText: "Unsafe, Author" })
+  await expect(facet.locator("button")).toHaveCount(0)
+  await expect(facet.locator("span")).toHaveAttribute("aria-disabled", "true")
+  expect(new URL(page.url()).searchParams.has("sok_filter")).toBe(false)
+})
+
 test("absent and explicit all gender both show all authors without a backend filter", async ({
   page,
   request
@@ -862,4 +871,13 @@ test("source-quality corpus occurrence remains visible without a Reader link", a
   await expect(unavailable).toContainText("Träffen kan inte öppnas exakt i läsaren.")
   await expect(unavailable.locator(".match a")).toHaveCount(0)
   await expect(unavailable.locator(".match")).toContainText("source-quality-mixed")
+})
+
+test("source-quality exact corpus hit retains the rendered Reader-link word treatment", async ({ page }) => {
+  await page.goto("/s%C3%B6k?fras=source-quality-mixed")
+  const exact = page.locator("#results tr.sentence").first().locator(".match a")
+  await expect(exact).toHaveCount(1)
+  await expect(exact.locator(".word")).toHaveClass(/word/)
+  await expect(exact).toContainText("source-quality-mixed")
+  await expect(exact).toHaveAttribute("href", /\/f%C3%B6rfattare\/StrindbergA\/titlar\/RodaRummet\//)
 })

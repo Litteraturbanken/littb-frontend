@@ -753,7 +753,7 @@ describe("text search route state", () => {
     expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
   })
 
-  test("accepts context crossing a page boundary", () => {
+  test("rejects source contexts with a different page mapping", () => {
     const request = buildTextSearchResultsRequest(
       parseTextSearchRouteQuery({ fras: "frihet" })
     )
@@ -764,7 +764,30 @@ describe("text search route state", () => {
       response,
       request,
       textSearchResultsRequestIdentity(request)
-    )).toEqual(response)
+    )).toBeNull()
+  })
+
+  test.each([
+    ["an unmapped match with a mapped context", (response: ReturnType<typeof resultsResponse>) => {
+      response.works[0]!.highlights[0]!.reader_target_status = "unmapped_page"
+      response.works[0]!.highlights[0]!.match[0]!.page_name = null
+    }],
+    ["an ambiguous match with an empty mapped page", (response: ReturnType<typeof resultsResponse>) => {
+      response.works[0]!.highlights[0]!.reader_target_status = "ambiguous_word_id"
+      response.works[0]!.highlights[0]!.match[0]!.page_name = ""
+      response.works[0]!.highlights[0]!.left_context[0]!.page_name = ""
+      response.works[0]!.highlights[0]!.right_context[0]!.page_name = ""
+    }],
+    ["an exact etext marker on another page index", (response: ReturnType<typeof resultsResponse>) => {
+      response.works[0]!.highlights[0]!.page_index = 119
+    }]
+  ])("rejects %s", (_label, mutate) => {
+    const request = buildTextSearchResultsRequest(parseTextSearchRouteQuery({ fras: "frihet" }))
+    const response = resultsResponse()
+    mutate(response)
+    expect(acceptTextSearchResultsResponse(
+      response, request, textSearchResultsRequestIdentity(request)
+    )).toBeNull()
   })
 
   test("accepts work-scoped word IDs for the matching work", () => {
@@ -1312,6 +1335,7 @@ describe("text search route state", () => {
       has_more_highlights: false, highlights: []
     }
     const highlight = {
+      reader_target_status: "exact" as const,
       left_context: [],
       match: [
         { word: "frihet", page_name: "page! one", word_id: "w12_4" },
@@ -1355,6 +1379,7 @@ describe("text search route state", () => {
       has_more_highlights: false, highlights: []
     }
     const highlight = {
+      reader_target_status: "exact" as const,
       left_context: [],
       match: [
         { word: "kyrka", page_name: "13", word_id: "lb7604979_8654" },
@@ -1381,6 +1406,7 @@ describe("text search route state", () => {
       has_more_highlights: false, highlights: []
     }
     const highlight = {
+      reader_target_status: "exact" as const,
       left_context: [],
       match: [{ word: "frihet", page_name: "12", word_id: "w12_4" }],
       right_context: []
@@ -1436,5 +1462,20 @@ describe("text search route state", () => {
       }
       expect(buildTextSearchReaderHref(work, highlight, 0, state)).toBeNull()
     }
+  })
+
+  test("requires an explicit exact status before creating a Reader link", () => {
+    const state = parseTextSearchRouteQuery({ fras: "frihet" })
+    const work = {
+      lbworkid: "lb1", author_id: "AuthorA", author_name: "Author A",
+      title: "Work", title_id: "work", mediatype: "etext" as const,
+      has_more_highlights: false, highlights: []
+    }
+    const highlight = {
+      left_context: [],
+      match: [{ word: "frihet", page_name: "1", word_id: "w1_1" }],
+      right_context: []
+    }
+    expect(buildTextSearchReaderHref(work, highlight, 0, state)).toBeNull()
   })
 })
