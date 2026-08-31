@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { components } from "~/lib/api/generated/lbapi"
+import { isExactWorkSearchHit, readerTargetUnavailableMessage } from "~/lib/reader-target"
 
 type WorkSearchHit = components["schemas"]["WorkSearchHit"]
 
@@ -68,10 +69,12 @@ function closeNavigation(event: MouseEvent): void {
     <nav id="search_nav" class="active" aria-label="Sökträffsnavigering">
       <div v-if="totalHits !== null" class="text">
         <div><span class="num">{{ totalHits }}</span> {{ totalHits === 1 ? "sökträff" : "sökträffar" }}</div>
-        <div v-if="activeHit">Träff <span>{{ activeHit.index + 1 }}</span>, sida {{ currentPageName }}</div>
+        <div v-if="activeHit && isExactWorkSearchHit(activeHit)">Träff <span>{{ activeHit.index + 1 }}</span>, sida {{ currentPageName }}</div>
+        <div v-else-if="activeHit">Träff <span>{{ activeHit.index + 1 }}</span></div>
       </div>
       <p v-if="failed" class="text">Sökträffen kunde inte hämtas.</p>
       <p v-if="expired" class="text">Sökresultatet har gått ut. Starta om sökningen för att använda den aktuella textsamlingen.</p>
+      <p v-if="activeHit && !isExactWorkSearchHit(activeHit)" class="text">{{ readerTargetUnavailableMessage }}</p>
       <ul class="ctrls">
         <li v-if="expired"><button type="button" class="reader-action-button" :disabled="!interactive" @click="emit('restart')">Starta om sökningen</button></li>
         <li class="arrows">

@@ -6,6 +6,7 @@ import {
   restoredWorkSearchSnapshot,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
+  isWorkSearchHit,
   workSearchPositionMatchesHitPage,
   workSearchSnapshotIdentity,
   workSearchWordPosition,
@@ -139,6 +140,14 @@ describe("reader and editor work-search options", () => {
     expect(workSearchPositionMatchesHitPage(
       workSearchWordPosition("w01_4", "lb-work")!, 1, "etext"
     )).toBe(false)
+  })
+
+  test("validates raw source coordinates without applying Reader page maps to unavailable hits", () => {
+    expect(isWorkSearchHit({
+      index: 1, source_identity: "lb1:faksimil:0", source_start: 9, source_end: 10,
+      start_word_id: "w119_1", end_word_id: "w119_1", page_index: 119,
+      page_name: null, reader_target_status: "unmapped_page", highlight: null
+    }, "lb1", "faksimil")).toBe(true)
   })
 
 })

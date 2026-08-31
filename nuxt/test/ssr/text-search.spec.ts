@@ -854,3 +854,12 @@ test("zero count preserves hits_info but hides zero hit labels", async ({ page }
   await expect(page.locator(".hits_info .hits")).toBeHidden()
   await expect(page.locator(".hits_info .hits_sub")).toBeHidden()
 })
+
+test("source-quality corpus occurrence remains visible without a Reader link", async ({ page }) => {
+  await page.goto("/s%C3%B6k?fras=source-quality-mixed")
+  await expect(page.locator("#results")).toBeVisible()
+  const unavailable = page.locator("#results tr.sentence").nth(1)
+  await expect(unavailable).toContainText("Träffen kan inte öppnas exakt i läsaren.")
+  await expect(unavailable.locator(".match a")).toHaveCount(0)
+  await expect(unavailable.locator(".match")).toContainText("source-quality-mixed")
+})

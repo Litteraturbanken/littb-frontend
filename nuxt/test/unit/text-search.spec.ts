@@ -46,7 +46,12 @@ function resultsResponse() {
       highlights: [{
         left_context: [{ word: "i", page_name: "12", word_id: "w12_3" }],
         match: [{ word: "frihet", page_name: "12", word_id: "w12_4" }],
-        right_context: [{ word: ".", page_name: "12", word_id: "w12_5" }]
+        right_context: [{ word: ".", page_name: "12", word_id: "w12_5" }],
+        source_identity: "lb1:etext:0",
+        source_start: 0,
+        source_end: 1,
+        page_index: 12,
+        reader_target_status: "exact"
       }]
     }]
   }
@@ -609,7 +614,9 @@ describe("text search route state", () => {
         { word: "hus", page_name: "75", word_id: "w75_189" },
         { word: "-", page_name: "75", word_id: "w75_189" }
       ],
-      right_context: []
+      right_context: [],
+      source_identity: "lb1:etext:75", source_start: 0, source_end: 2,
+      page_index: 75, reader_target_status: "exact"
     }
 
     expect(acceptTextSearchResultsResponse(
@@ -657,7 +664,7 @@ describe("text search route state", () => {
       }
     },
     {
-      name: "unsafe work ID",
+      name: "raw but unrouteable work ID",
       mutate: (copy: JsonRecord) => {
         requiredRecord({ work: requiredArray(copy, "works")[0] }, "work").lbworkid = "bad/id"
       }
@@ -720,7 +727,7 @@ describe("text search route state", () => {
         work.occurrence_count = 2
       }
     }
-  ])("rejects result responses with $name", ({ mutate }) => {
+  ])("validates result responses with $name", ({ mutate, name }) => {
     const request = buildTextSearchResultsRequest(
       parseTextSearchRouteQuery({ fras: "frihet" })
     )
@@ -730,11 +737,11 @@ describe("text search route state", () => {
       response,
       request,
       textSearchResultsRequestIdentity(request)
-    )).toBeNull()
+    )).toEqual(name === "raw but unrouteable work ID" ? response : null)
   })
 
   test.each([
-    "w4", "", "w_4", "w4_", "w4_x", "w4_5/path", `w${"1".repeat(99)}_1`
+    "w4", "", "w_4", "w4_", "w4_x", "w4_5/path"
   ])("rejects malformed word ID %j", wordId => {
     const request = buildTextSearchResultsRequest(
       parseTextSearchRouteQuery({ fras: "frihet" })
@@ -776,7 +783,9 @@ describe("text search route state", () => {
       ],
       right_context: [
         { word: "i", page_name: "13", word_id: "lb7604979_8658" }
-      ]
+      ],
+      source_identity: "lb7604979:etext:13", source_start: 0, source_end: 1,
+      page_index: 13, reader_target_status: "exact"
     }
 
     expect(acceptTextSearchResultsResponse(
@@ -886,6 +895,7 @@ describe("text search route state", () => {
     highlight.match = Array.from({ length: 1000 }, (_, index) => ({
       word: "match", page_name: "12", word_id: `w12_${index + 1}`
     }))
+    highlight.source_end = 1000
     highlight.right_context = []
     expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
 
@@ -1407,7 +1417,7 @@ describe("text search route state", () => {
       match: [{ word: "frihet", page_name: "12", word_id: "w4" }],
       right_context: []
     }
-    expect(() => buildTextSearchReaderHref(work, highlight, 0, state)).toThrow(TypeError)
+    expect(buildTextSearchReaderHref(work, highlight, 0, state)).toBeNull()
   })
 
   test("refuses Reader links with dot-segment page names", () => {
@@ -1424,7 +1434,7 @@ describe("text search route state", () => {
         match: [{ word: "frihet", page_name: pageName, word_id: "w12_4" }],
         right_context: []
       }
-      expect(() => buildTextSearchReaderHref(work, highlight, 0, state)).toThrow(TypeError)
+      expect(buildTextSearchReaderHref(work, highlight, 0, state)).toBeNull()
     }
   })
 })

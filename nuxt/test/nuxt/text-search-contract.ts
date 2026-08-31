@@ -17,7 +17,11 @@ const work: components["schemas"]["TextSearchWork"] = {
   lbworkid: "lb1", author_id: "A", author_name: "A",
   title: "Hus", title_id: "Hus", mediatype: "etext",
   occurrence_count: 1,
-  highlights: [{ left_context: [], match: [{ word: "hus", page_name: "1", word_id: "lb1_1" }], right_context: [] }],
+  highlights: [{
+    left_context: [], match: [{ word: "hus", page_name: "1", word_id: "lb1_1" }], right_context: [],
+    source_identity: "lb1:etext:0", source_start: 0, source_end: 1,
+    page_index: 1, reader_target_status: "exact"
+  }],
   has_more_highlights: false
 }
 const response: Response = {

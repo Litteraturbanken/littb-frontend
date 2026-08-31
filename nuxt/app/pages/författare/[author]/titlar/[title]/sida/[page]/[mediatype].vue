@@ -40,11 +40,13 @@ import {
   restoredWorkSearchSnapshot,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
+  isWorkSearchHit,
   workSearchPositionMatchesHitPage,
   workSearchSnapshotIdentity,
   workSearchWordPosition,
   type WorkSearchOption
 } from "~/lib/reader/work-search"
+import { isExactWorkSearchHit, readerTargetUnavailableMessage } from "~/lib/reader-target"
 import {
   copyProductionValue,
   isProductionShortcutGuarded,
@@ -371,34 +373,6 @@ function isSimilarWorksResponse(value: unknown): value is SimilarWorksResponse {
     && value.items.every(isSimilarWork)
 }
 
-function workSearchHitFields(value: unknown): value is WorkSearchHit {
-  if (!isRecord(value) || !isRecord(value.highlight)) return false
-  return isSafeInteger(value.index)
-    && typeof value.page_name === "string"
-    && value.page_name.trim().length >= 1
-    && value.page_name.length <= 100
-    && isSafeInteger(value.page_index)
-    && typeof value.highlight.from_word_id === "string"
-    && typeof value.highlight.to_word_id === "string"
-    && value.highlight.from_word_id.length <= 100
-    && value.highlight.to_word_id.length <= 100
-}
-
-function isWorkSearchHit(
-  value: unknown,
-  workId: string,
-  mediaType: "etext" | "faksimil"
-): value is WorkSearchHit {
-  if (!workSearchHitFields(value)) return false
-  const fromPosition = workSearchWordPosition(value.highlight.from_word_id, workId)
-  const toPosition = workSearchWordPosition(value.highlight.to_word_id, workId)
-  if (!fromPosition || !toPosition || fromPosition.scope !== toPosition.scope ||
-    fromPosition.ordinal > toPosition.ordinal) return false
-
-  return workSearchPositionMatchesHitPage(fromPosition, value.page_index, mediaType) &&
-    workSearchPositionMatchesHitPage(toPosition, value.page_index, mediaType)
-}
-
 function isExpectedHitItem(
   item: unknown,
   position: number,
@@ -411,9 +385,9 @@ function isExpectedHitItem(
   return isWorkSearchHit(item, workId, mediaType)
     && item.index === offset + position
     && item.index < totalHits
-    && pageMap.some(page =>
+    && (!isExactWorkSearchHit(item) || pageMap.some(page =>
       page.page_name === item.page_name && page.page_index === item.page_index
-    )
+    ))
 }
 
 function isExpectedHitResponse(
@@ -1223,7 +1197,14 @@ function selectedHitRouteMatchesReader(currentReader: ReaderPage): boolean {
     || route.query.s_mediatype === currentReader.mediaType
 }
 
-const selectedSearchHit = computed<WorkSearchHit | null>(() => {
+type LegacyHighlightTarget = Readonly<{
+  fromWordId: string
+  pageIndex: number
+  pageName: string
+  toWordId: string
+}>
+
+const selectedSearchHit = computed<LegacyHighlightTarget | null>(() => {
   const currentReader = reader.value
   if (!currentReader?.searchable) return null
   if (route.query.q !== undefined || route.query.hit !== undefined) return null
@@ -1238,16 +1219,12 @@ const selectedSearchHit = computed<WorkSearchHit | null>(() => {
     !selectedHitRouteMatchesReader(currentReader) ||
     typeof fromWordId !== "string" || typeof toWordId !== "string"
   ) return null
-  const hit: WorkSearchHit = {
-    index: hitIndex,
-    page_name: currentReader.pageName,
-    page_index: currentReader.pageIndex,
-    highlight: {
-      from_word_id: fromWordId,
-      to_word_id: toWordId
-    }
-  }
-  return isWorkSearchHit(hit, currentReader.workId, currentReader.mediaType) ? hit : null
+  const from = workSearchWordPosition(fromWordId, currentReader.workId)
+  const to = workSearchWordPosition(toWordId, currentReader.workId)
+  if (!from || !to || from.scope !== to.scope || from.ordinal > to.ordinal ||
+    !workSearchPositionMatchesHitPage(from, currentReader.pageIndex, currentReader.mediaType) ||
+    !workSearchPositionMatchesHitPage(to, currentReader.pageIndex, currentReader.mediaType)) return null
+  return { fromWordId, toWordId, pageIndex: currentReader.pageIndex, pageName: currentReader.pageName }
 })
 const previousHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
@@ -1259,25 +1236,36 @@ const nextHit = computed(() => {
   const index = searchState.value.hit + 1
   return index <= maximumNavigableHit ? workSearchHitAt(hitResponse.value.items, index) : null
 })
+const highlightHit = computed(() => {
+  if (selectedSearchHit.value) return selectedSearchHit.value
+  return activeHit.value && isExactWorkSearchHit(activeHit.value)
+    ? {
+        fromWordId: activeHit.value.highlight.from_word_id,
+        toWordId: activeHit.value.highlight.to_word_id,
+        pageIndex: activeHit.value.page_index,
+        pageName: activeHit.value.page_name
+      }
+    : null
+})
 const markedReaderHtml = computed<ManagedAssetHtml<"reader-etext">>(() => {
   const currentReader = etextReader.value
   if (!currentReader) return emptyRenderableHtml()
-  const hit = selectedSearchHit.value ?? activeHit.value
+  const hit = highlightHit.value
   if (!hit) return currentReader.html
   return markReaderSearchEtextHtml(currentReader.html, {
-    fromWordId: hit.highlight.from_word_id,
-    hitPageIndex: hit.page_index,
-    hitPageName: hit.page_name,
+    fromWordId: hit.fromWordId,
+    hitPageIndex: hit.pageIndex,
+    hitPageName: hit.pageName,
     pageIndex: currentReader.pageIndex,
     pageName: currentReader.pageName,
-    toWordId: hit.highlight.to_word_id
+    toWordId: hit.toWordId
   })
 })
 const markedFacsimileReader = computed(() => {
   const currentReader = facsimileReader.value
   if (!currentReader) return null
   const overlay = currentReader?.ocrOverlay
-  const hit = selectedSearchHit.value ?? activeHit.value
+  const hit = highlightHit.value
   if (!overlay || !hit) return currentReader
 
   return {
@@ -1287,12 +1275,12 @@ const markedFacsimileReader = computed(() => {
       html: markReaderSearchOcrHtml(
         overlay.html,
         {
-          fromWordId: hit.highlight.from_word_id,
-          hitPageIndex: hit.page_index,
-          hitPageName: hit.page_name,
+          fromWordId: hit.fromWordId,
+          hitPageIndex: hit.pageIndex,
+          hitPageName: hit.pageName,
           pageIndex: currentReader.pageIndex,
           pageName: currentReader.pageName,
-          toWordId: hit.highlight.to_word_id
+          toWordId: hit.toWordId
         }
       )
     }
@@ -1307,6 +1295,7 @@ const hitMessage = computed(() => {
   if (hitExpired.value) return expiredSnapshotMessage
   if (hitRequestFailed.value) return "Sökträffen kunde inte hämtas."
   if (hitResponse.value && !activeHit.value) return "Ingen sådan sökträff."
+  if (activeHit.value && !isExactWorkSearchHit(activeHit.value)) return readerTargetUnavailableMessage
   return null
 })
 
@@ -1445,7 +1434,9 @@ async function hitAtIndex(index: number, signal: AbortSignal): Promise<WorkSearc
 }
 
 function rawHitFullPath(hit: WorkSearchHit, sourceFullPath = rawFullPath.value): string {
-  const pagePath = readerPageFullPath(sourceFullPath, hit.page_name)
+  const pagePath = isExactWorkSearchHit(hit)
+    ? readerPageFullPath(sourceFullPath, hit.page_name)
+    : sourceFullPath
   const fragmentIndex = pagePath.indexOf("#")
   const fragment = fragmentIndex < 0 ? "" : pagePath.slice(fragmentIndex)
   const beforeHash = fragmentIndex < 0 ? pagePath : pagePath.slice(0, fragmentIndex)
@@ -1454,14 +1445,18 @@ function rawHitFullPath(hit: WorkSearchHit, sourceFullPath = rawFullPath.value):
   if (sourceFullPath === rawFullPath.value && hitResponse.value) {
     replacements.set("snapshot", hitResponse.value.snapshot)
   }
-  if (facsimileReader.value) {
+  if (facsimileReader.value && isExactWorkSearchHit(hit)) {
     replacements.set("traff", hit.highlight.from_word_id)
     replacements.set("traffslut", hit.highlight.to_word_id)
     replacements.set("hit_index", String(hit.index))
   }
   const path = queryIndex < 0 ? beforeHash : beforeHash.slice(0, queryIndex)
   const segments = queryIndex < 0 ? [] : beforeHash.slice(queryIndex + 1).split("&")
-  const query = replaceWorkSearchQuerySegments(segments, new Set(), replacements)
+  const query = replaceWorkSearchQuerySegments(
+    segments,
+    isExactWorkSearchHit(hit) ? new Set() : new Set(["traff", "traffslut", "hit_index"]),
+    replacements
+  )
   return `${path}?${query.join("&")}${fragment}`
 }
 
@@ -1895,6 +1890,7 @@ function pageHref(pageName: string): string {
 }
 
 function hitHref(hit: WorkSearchHit): string {
+  if (!isExactWorkSearchHit(hit)) return rawHitFullPath(hit)
   return facsimileReader.value
     ? rawHitFullPath(hit)
     : readerHitHref({
@@ -2582,8 +2578,11 @@ watch(readerRequestIdentity, () => {
               <span class="num">{{ hitResponse.total_hits }}</span>
               {{ hitResponse.total_hits === 1 ? "sökträff" : "sökträffar" }}
             </div>
-            <div v-if="activeHit">
+            <div v-if="activeHit && isExactWorkSearchHit(activeHit)">
               Träff <span>{{ activeHit.index + 1 }}</span>, sida {{ reader.pageName }}
+            </div>
+            <div v-else-if="activeHit">
+              Träff <span>{{ activeHit.index + 1 }}</span>
             </div>
           </div>
           <p v-if="searchState && hitMessage" class="text">{{ hitMessage }}</p>

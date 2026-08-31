@@ -844,3 +844,47 @@ test("SSR rejects partial Editor contributor and part metadata atomically", asyn
     "/v2/works/lb-editor-malformed-part/editor-manifest?media_type=faksimil"
   ])
 })
+
+test("source-quality Editor SSR accepts only markerless unavailable selection", async ({ request }) => {
+  const base = "/editor/lb8345227/ix/4/f?s_query=source-quality-mixed&s_lbworkid=lb8345227"
+    + "&s_mediatype=faksimil&s_word_form_only=true&s_include_modernized=true&hit_index=1"
+    + "&s_snapshot=gen-source-quality-0001"
+  const response = await request.get(base)
+  const { document } = parseHTML(await response.text())
+  const navigation = document.querySelector("#search_nav")
+
+  expect(navigation?.textContent).toContain("Träff 2")
+  expect(navigation?.textContent).not.toContain("sida 5")
+  expect(navigation?.textContent).toContain("Träffen kan inte öppnas exakt i läsaren.")
+  expect(document.querySelector(".markee")).toBeNull()
+  const nextHref = navigation?.querySelector('a[rel="next"]')?.getAttribute("href")
+  expect(nextHref).toBeTruthy()
+  const next = new URL(nextHref ?? "", "https://example.test")
+  expect(next.pathname).toBe("/editor/lb8345227/ix/6/f")
+  expect(next.searchParams.get("hit_index")).toBe("2")
+  expect(next.searchParams.get("traff")).toBe("w7_1")
+  expect(next.searchParams.get("traffslut")).toBe("w7_1")
+
+  const stale = await request.get(`${base}&traff=w5_1&traffslut=w5_1`)
+  expect(parseHTML(await stale.text()).document.querySelector("#search_nav")?.textContent)
+    .toContain("Sökträffen kunde inte hämtas.")
+})
+
+test("source-quality Editor browser traversal keeps ix for unavailable then marks exact", async ({ page }) => {
+  const start = "/editor/lb8345227/ix/4/f?s_query=source-quality-mixed&s_lbworkid=lb8345227"
+    + "&s_mediatype=faksimil&s_word_form_only=true&s_include_modernized=true&hit_index=0"
+    + "&traff=w5_1&traffslut=w5_1"
+  await page.goto(start, { waitUntil: "networkidle" })
+  await expect(page.locator(".markee")).toHaveCount(1)
+  await page.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page.locator("#search_nav")).toContainText("Träff 2")
+  await expect(page.locator("#search_nav")).toContainText("Träffen kan inte öppnas exakt i läsaren.")
+  expect(new URL(page.url()).pathname).toBe("/editor/lb8345227/ix/4/f")
+  expect(new URL(page.url()).searchParams.has("traff")).toBe(false)
+  expect(new URL(page.url()).searchParams.has("traffslut")).toBe(false)
+  await expect(page.locator(".markee")).toHaveCount(0)
+  await page.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page.locator("#search_nav")).toContainText("Träff 3, sida 7")
+  expect(new URL(page.url()).pathname).toBe("/editor/lb8345227/ix/6/f")
+  await expect(page.locator(".markee")).toHaveCount(1)
+})

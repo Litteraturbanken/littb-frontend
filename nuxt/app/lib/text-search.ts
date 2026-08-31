@@ -1,4 +1,5 @@
 import type { components } from "./api/generated/lbapi"
+import { isReaderTargetStatus } from "./reader-target"
 
 export {
   attachTextSearchReturnHref,
@@ -547,37 +548,47 @@ function isSafePageName(value: unknown): value is string {
     ![...value].some(character => /[\p{Cc}\p{Cs}]/u.test(character))
 }
 
-function isTextSearchWord(value: unknown, workId: string): value is TextSearchWord {
+function isTextSearchWord(value: unknown): value is TextSearchWord {
   return isRecord(value) && hasExactKeys(value, ["word", "page_name", "word_id"]) &&
     isBoundedString(value.word, 1, 10_000) &&
-    isSafePageName(value.page_name) &&
-    typeof value.word_id === "string" && value.word_id.length <= 100 &&
-    wordPosition(value.word_id, workId) !== null
+    (value.page_name === null || typeof value.page_name === "string") &&
+    typeof value.word_id === "string" && value.word_id.length > 0
 }
 
-function isWordList(value: unknown, workId: string): value is TextSearchWord[] {
+function isWordList(value: unknown): value is TextSearchWord[] {
   return Array.isArray(value) && value.length <= 1_000 &&
-    value.every(word => isTextSearchWord(word, workId))
+    value.every(isTextSearchWord)
 }
 
 function isTextSearchHighlight(value: unknown, workId: string): value is TextSearchHighlight {
-  if (!isRecord(value) || !hasExactKeys(value, ["left_context", "match", "right_context"])) {
+  if (!isRecord(value) || !hasExactKeys(value, [
+    "left_context", "match", "right_context", "source_identity", "source_start",
+    "source_end", "page_index", "reader_target_status"
+  ])) {
     return false
   }
   const { left_context: leftContext, match, right_context: rightContext } = value
-  if (!isWordList(leftContext, workId) || !isWordList(match, workId) ||
-    !isWordList(rightContext, workId) || leftContext.length > 5 ||
+  if (!isWordList(leftContext) || !isWordList(match) ||
+    !isWordList(rightContext) || leftContext.length > 5 ||
     rightContext.length > 5 || match.length === 0) return false
-  if (new Set(match.map(word => word.page_name)).size !== 1) return false
-  const positions = match.map(word => wordPosition(word.word_id, workId)!)
+  if (typeof value.source_identity !== "string" || value.source_identity.length === 0 ||
+    !isSafeInteger(value.source_start, 0) || !isSafeInteger(value.source_end, 1) ||
+    value.source_end - value.source_start !== match.length ||
+    !isSafeInteger(value.page_index, 0) || !isReaderTargetStatus(value.reader_target_status)) return false
+  if (new Set(match.map(word => word.page_name)).size !== 1 ||
+    (match[0]!.page_name === null) !== (value.reader_target_status === "unmapped_page")) return false
+  if (value.reader_target_status !== "exact") return true
+  if (!isSafePageName(match[0]!.page_name)) return false
+  const positions = match.map(word => wordPosition(word.word_id, workId))
+  if (positions.some(position => position === null)) return false
   return positions.every((position, index) => {
     if (index === 0) return true
     const previous = positions[index - 1]!
     const previousWord = match[index - 1]!
     const word = match[index]!
-    return position[0] === previous[0] && (
-      position[1] > previous[1] ||
-      (position[1] === previous[1] && word.word_id === previousWord.word_id &&
+    return position![0] === previous[0] && (
+      position![1] > previous[1] ||
+      (position![1] === previous[1] && word.word_id === previousWord.word_id &&
         word.page_name === previousWord.page_name)
     )
   })
@@ -585,15 +596,14 @@ function isTextSearchHighlight(value: unknown, workId: string): value is TextSea
 
 function hasTextSearchWorkIdentity(value: Record<string, unknown>): boolean {
   return typeof value.lbworkid === "string"
-    && isSafeIdentifier(value.lbworkid)
-    && typeof value.author_id === "string"
-    && isSafeIdentifier(value.author_id)
+    && value.lbworkid.length > 0
+    && (value.author_id === null || (typeof value.author_id === "string" && value.author_id.length > 0))
     && typeof value.title_id === "string"
-    && isSafeIdentifier(value.title_id)
+    && value.title_id.length > 0
 }
 
 function hasTextSearchWorkLabels(value: Record<string, unknown>): boolean {
-  return isBoundedString(value.author_name, 1, 1_000)
+  return (value.author_name === null || isBoundedString(value.author_name, 1, 1_000))
     && isBoundedString(value.title, 1, 10_000)
     && (value.mediatype === "etext" || value.mediatype === "faksimil")
     && typeof value.has_more_highlights === "boolean"
@@ -605,7 +615,8 @@ function isTextSearchWork(value: unknown): value is TextSearchWork {
     "occurrence_count", "highlights", "has_more_highlights"
   ])) return false
   if (typeof value.lbworkid !== "string" ||
-    !hasTextSearchWorkIdentity(value) || !hasTextSearchWorkLabels(value)) return false
+    !hasTextSearchWorkIdentity(value) || !hasTextSearchWorkLabels(value) ||
+    (value.author_id === null) !== (value.author_name === null)) return false
   const workId = value.lbworkid
   return isSafeInteger(value.occurrence_count, 1) &&
     Array.isArray(value.highlights)
@@ -617,7 +628,7 @@ function isTextSearchWork(value: unknown): value is TextSearchWork {
 
 function isAuthorFacet(value: unknown): value is TextSearchAuthorFacet {
   return isRecord(value) && hasExactKeys(value, ["author_id", "name_for_index", "count"]) &&
-    typeof value.author_id === "string" && isSafeIdentifier(value.author_id) &&
+    typeof value.author_id === "string" && value.author_id.length > 0 &&
     isBoundedString(value.name_for_index, 1, 1_000) && isSafeInteger(value.count)
 }
 
@@ -769,6 +780,7 @@ export function prepareTextSearchHighlight(
   highlight: TextSearchHighlight
 ): TextSearchHighlight {
   return {
+    ...highlight,
     left_context: compactTextSearchLeftContext(highlight.left_context),
     match: [...highlight.match],
     right_context: compactTextSearchRightContext(highlight.right_context)
@@ -786,16 +798,20 @@ function appendSearchParam(params: URLSearchParams, key: string, value: unknown)
   }
 }
 
-function textSearchReaderPath(work: TextSearchWork, highlight: TextSearchHighlight): string {
-  if (!isSafeIdentifier(work.author_id) || !isSafeIdentifier(work.title_id) ||
+function textSearchReaderPath(work: TextSearchWork, highlight: TextSearchHighlight): string | null {
+  const firstMatch = highlight.match[0]
+  if (typeof work.author_id !== "string" || !isSafeIdentifier(work.author_id) || !isSafeIdentifier(work.title_id) ||
     !isSafeIdentifier(work.lbworkid) ||
     (work.mediatype !== "etext" && work.mediatype !== "faksimil") ||
-    !isTextSearchHighlight(highlight, work.lbworkid)) {
-    throw new TypeError("Cannot build a Reader link from malformed search data")
+    !firstMatch || !isSafePageName(firstMatch.page_name)) {
+    return null
   }
+  const authorId = work.author_id
+  const pageName = firstMatch.page_name
+  if (authorId === null || pageName === null) return null
   return [
-    "", "författare", work.author_id, "titlar", work.title_id, "sida",
-    highlight.match[0]!.page_name, work.mediatype
+    "", "författare", authorId, "titlar", work.title_id, "sida",
+    pageName, work.mediatype
   ].map(rfc3986Segment).join("/")
 }
 
@@ -856,14 +872,19 @@ export function buildTextSearchReaderHref(
   highlight: TextSearchHighlight,
   hitIndex: number,
   state: TextSearchRouteState
-): string {
+): string | null {
   if (!state.phrase) throw new TypeError("Reader search links require a phrase")
   if (!Number.isSafeInteger(hitIndex) || hitIndex < 0 || hitIndex > 1_000_001) {
     throw new RangeError("Reader hit index is out of range")
   }
+  if ((highlight as Partial<TextSearchHighlight>).reader_target_status !== undefined &&
+    highlight.reader_target_status !== "exact") return null
   const firstMatch = highlight.match[0]!
   const lastMatch = highlight.match.at(-1)!
+  if (wordPosition(firstMatch.word_id, work.lbworkid) === null ||
+    wordPosition(lastMatch.word_id, work.lbworkid) === null) return null
   const path = textSearchReaderPath(work, highlight)
+  if (path === null) return null
   const params = new URLSearchParams()
   appendCanonicalReaderSearch(params, state, hitIndex)
   appendSearchParam(params, "traff", firstMatch.word_id)

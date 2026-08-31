@@ -1633,3 +1633,44 @@ test("an empty 200 Reader manifest stays inside the generic 502 boundary", async
     expectedReaderManifest("SöderbergH", "EmptyManifestReader")
   ])
 })
+
+test("source-quality Reader SSR retains an unavailable occurrence on the current page", async ({
+  request
+}) => {
+  const response = await request.get(
+    `${readerPath}?q=source-quality-mixed&hit=1&snapshot=gen-fixture-0001`
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const navigation = document.querySelector(".reader-hit-navigation")
+  const state = document.querySelector(".reader-search-state")
+
+  expect(state?.textContent).toContain("Sökträff 2 av 3")
+  expect(state?.textContent).toContain("Träffen kan inte öppnas exakt i läsaren.")
+  expect(document.querySelector(".markee")).toBeNull()
+  const nextHref = navigation?.querySelector('a[rel="next"]')?.getAttribute("href")
+  expect(nextHref).toBeTruthy()
+  const next = new URL(nextHref ?? "", "https://example.test")
+  expect(next.pathname).toContain("/titlar/DoktorGlas/sida/-1/etext")
+  expect(next.searchParams.get("hit")).toBe("2")
+  expect(next.searchParams.get("snapshot")).toBe("gen-fixture-0001")
+})
+
+test("source-quality Reader browser traversal clears unavailable marks and restores an exact target", async ({
+  page
+}) => {
+  await page.goto(`${readerPath.replace("/sida/-2/", "/sida/-3/")}?q=source-quality-mixed&hit=0`, {
+    waitUntil: "networkidle"
+  })
+  await expect(page.locator(".markee")).toHaveCount(1)
+  await page.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page.locator("#search_nav")).toContainText("Träff 2")
+  await expect(page.locator("#search_nav")).toContainText("Träffen kan inte öppnas exakt i läsaren.")
+  expect(new URL(page.url()).pathname).toContain("/titlar/DoktorGlas/sida/-3/etext")
+  expect(new URL(page.url()).searchParams.get("hit")).toBe("1")
+  await expect(page.locator(".markee")).toHaveCount(0)
+  await page.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page.locator("#search_nav")).toContainText("Träff 3, sida -1")
+  expect(new URL(page.url()).pathname).toContain("/titlar/DoktorGlas/sida/-1/etext")
+  await expect(page.locator(".markee")).toHaveCount(1)
+})

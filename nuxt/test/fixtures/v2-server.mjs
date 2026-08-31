@@ -2633,6 +2633,22 @@ function corpusFlowWorks() {
 
 function inventoryForTextSearch(body) {
   if (body.query === "doktor glas") return corpusFlowWorks()
+  if (body.query === "source-quality-mixed") {
+    return [{
+      lbworkid: "lb238704", author_id: "StrindbergA", author_name: "August Strindberg",
+      title: "Röda rummet", title_id: "RodaRummet", mediatype: "etext",
+      allHighlights: [
+        searchHighlight(body.query, 1, 1),
+        {
+          left_context: [{ word: "vänster", word_id: "w119_1", page_name: null }],
+          match: [{ word: body.query, word_id: "w119_2", page_name: null }],
+          right_context: [{ word: "höger", word_id: "w119_3", page_name: null }],
+          reader_target_status: "unmapped_page"
+        },
+        searchHighlight(body.query, 3, 1)
+      ]
+    }]
+  }
   if (body.query === "inga") return []
   if (["many-hits-101", "many-hits-501"].includes(body.query)) {
     const works = pairedMediaWorks(body.query)
@@ -2704,13 +2720,23 @@ function textSearchResultsResponse(body, inventory = null) {
     snapshot,
     totals,
     author_facets: authorFacets,
-    works: matchedWorks.slice(pageStart, pageStart + body.page_size).map(({ allHighlights, visibleHighlights, ...work }) => ({
-      ...work,
-      occurrence_count: allHighlights.length,
-      highlights: visibleHighlights ?? allHighlights.slice(0, body.highlight_limit),
-      has_more_highlights: visibleHighlights !== undefined
-        || allHighlights.length > body.highlight_limit
-    }))
+    works: matchedWorks.slice(pageStart, pageStart + body.page_size).map(({ allHighlights, visibleHighlights, ...work }) => {
+      const visible = visibleHighlights ?? allHighlights.slice(0, body.highlight_limit)
+      return {
+        ...work,
+        occurrence_count: allHighlights.length,
+        highlights: visible.map((highlight, index) => ({
+          ...highlight,
+          source_identity: highlight.source_identity ?? `${work.lbworkid}:${work.mediatype}:fixture`,
+          source_start: highlight.source_start ?? index * 10,
+          source_end: highlight.source_end ?? index * 10 + highlight.match.length,
+          page_index: highlight.page_index ?? index,
+          reader_target_status: highlight.reader_target_status ?? "exact"
+        })),
+        has_more_highlights: visibleHighlights !== undefined
+          || allHighlights.length > body.highlight_limit
+      }
+    })
   }
 }
 

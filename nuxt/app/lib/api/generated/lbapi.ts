@@ -2733,6 +2733,11 @@ export interface components {
             trace_id: string | null;
         };
         /**
+         * ReaderTargetStatus
+         * @enum {string}
+         */
+        ReaderTargetStatus: "exact" | "unmapped_page" | "ambiguous_word_id" | "unsupported_reader_identity";
+        /**
          * RequestCompletedEvent
          * @description Represent a successfully completed application request.
          */
@@ -3169,8 +3174,17 @@ export interface components {
             left_context: components["schemas"]["TextSearchWord"][];
             /** Match */
             match: components["schemas"]["TextSearchWord"][];
+            /** Page Index */
+            page_index: number;
+            reader_target_status: components["schemas"]["ReaderTargetStatus"];
             /** Right Context */
             right_context: components["schemas"]["TextSearchWord"][];
+            /** Source End */
+            source_end: number;
+            /** Source Identity */
+            source_identity: string;
+            /** Source Start */
+            source_start: number;
         };
         /** TextSearchOptionsRequest */
         TextSearchOptionsRequest: {
@@ -3355,7 +3369,7 @@ export interface components {
         /** TextSearchWord */
         TextSearchWord: {
             /** Page Name */
-            page_name: string;
+            page_name: string | null;
             /** Word */
             word: string;
             /** Word Id */
@@ -3364,9 +3378,9 @@ export interface components {
         /** TextSearchWork */
         TextSearchWork: {
             /** Author Id */
-            author_id: string;
+            author_id: string | null;
             /** Author Name */
-            author_name: string;
+            author_name: string | null;
             /** Has More Highlights */
             has_more_highlights: boolean;
             /** Highlights */
@@ -3738,13 +3752,24 @@ export interface components {
         };
         /** WorkSearchHit */
         WorkSearchHit: {
-            highlight: components["schemas"]["SearchHitHighlight"];
+            /** End Word Id */
+            end_word_id: string;
+            highlight: components["schemas"]["SearchHitHighlight"] | null;
             /** Index */
             index: number;
             /** Page Index */
             page_index: number;
             /** Page Name */
-            page_name: string;
+            page_name: string | null;
+            reader_target_status: components["schemas"]["ReaderTargetStatus"];
+            /** Source End */
+            source_end: number;
+            /** Source Identity */
+            source_identity: string;
+            /** Source Start */
+            source_start: number;
+            /** Start Word Id */
+            start_word_id: string;
         };
         /** WorkSearchHitsResponse */
         WorkSearchHitsResponse: {

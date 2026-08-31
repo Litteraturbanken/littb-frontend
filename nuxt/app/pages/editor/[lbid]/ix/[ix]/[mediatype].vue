@@ -27,11 +27,13 @@ import {
   restoredWorkSearchSnapshot,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
+  isWorkSearchHit as isRawWorkSearchHit,
   workSearchPositionMatchesHitPage,
   workSearchSnapshotIdentity,
   workSearchWordPosition,
   type WorkSearchOption
 } from "~/lib/reader/work-search"
+import { isExactWorkSearchHit } from "~/lib/reader-target"
 import {
   readerContentsHref,
   readerContentsIsOpen,
@@ -562,14 +564,14 @@ function adjustFocusText(delta: number): void {
 type WorkSearchHit = components["schemas"]["WorkSearchHit"]
 type WorkSearchHitsResponse = components["schemas"]["WorkSearchHitsResponse"]
 type EditorSearchState = Readonly<{
-  fromWordId: string
+  fromWordId: string | null
   hit: number
   includeOlderSpellings: boolean
   prefix: boolean
   query: string
   snapshot: string | null
   suffix: boolean
-  toWordId: string
+  toWordId: string | null
   wordForms: boolean
 }>
 type WorkSearchSubmission = Readonly<Pick<
@@ -690,13 +692,16 @@ function editorSearchState(current: EditorReaderPage | null | undefined): Editor
   const query = boundedSearchQuery()
   let snapshot = routeSingleString("s_snapshot")
   const hit = boundedSearchHit()
-  const fromWordId = boundedSearchWordId("traff")
-  const toWordId = boundedSearchWordId("traffslut")
+  const hasFromWordId = Object.hasOwn(route.query, "traff")
+  const hasToWordId = Object.hasOwn(route.query, "traffslut")
+  const fromWordId = hasFromWordId ? boundedSearchWordId("traff") : null
+  const toWordId = hasToWordId ? boundedSearchWordId("traffslut") : null
   const wordFormOnly = routeBoolean("s_word_form_only", false)
   const includeOlderSpellings = routeBoolean("s_include_modernized", true)
   const prefix = routeBoolean("s_prefix", false)
   const suffix = routeBoolean("s_suffix", false)
-  if (!query || hit === null || !fromWordId || !toWordId ||
+  if (!query || hit === null || hasFromWordId !== hasToWordId ||
+    (hasFromWordId && (!fromWordId || !toWordId)) ||
     wordFormOnly === null || includeOlderSpellings === null || prefix === null || suffix === null
   ) return null
   if (snapshot === null) {
@@ -728,30 +733,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value)
 }
 
-function isSafeInteger(value: unknown): value is number {
-  return typeof value === "number" && Number.isSafeInteger(value)
-}
-
-function isBoundedString(value: unknown, minimum: number): value is string {
-  return typeof value === "string" && value.length >= minimum && value.length <= 100
-}
-
-function isWorkSearchHitShape(value: unknown): value is WorkSearchHit {
-  if (!isRecord(value) || !isRecord(value.highlight)) return false
-  return isSafeInteger(value.index)
-    && isBoundedString(value.page_name, 1)
-    && isSafeInteger(value.page_index)
-    && isBoundedString(value.highlight.from_word_id, 0)
-    && isBoundedString(value.highlight.to_word_id, 0)
-}
-
 function hitRangeIsValid(hit: WorkSearchHit, currentWorkId: string): boolean {
+  if (!isExactWorkSearchHit(hit)) return false
   const from = workSearchWordPosition(hit.highlight.from_word_id, currentWorkId)
   const to = workSearchWordPosition(hit.highlight.to_word_id, currentWorkId)
   return Boolean(from && to && from.scope === to.scope && from.ordinal <= to.ordinal)
 }
 
 function hitMatchesEditorPageRange(hit: WorkSearchHit, current: EditorReaderPage): boolean {
+  if (!isExactWorkSearchHit(hit)) return false
   const pageIndexIsValid = current.pageIndexes
     ? current.pageIndexes.includes(hit.page_index)
     : hit.page_index >= 0 && hit.page_index < (current.pageCount ?? 0)
@@ -763,9 +753,10 @@ function hitMatchesEditorPageRange(hit: WorkSearchHit, current: EditorReaderPage
 }
 
 function isWorkSearchHit(value: unknown, current: EditorReaderPage): value is WorkSearchHit {
-  return isWorkSearchHitShape(value)
-    && hitRangeIsValid(value, current.workId)
-    && hitMatchesEditorPageRange(value, current)
+  return isRawWorkSearchHit(value, current.workId, current.mediaType) &&
+    (!isExactWorkSearchHit(value) || (
+      hitRangeIsValid(value, current.workId) && hitMatchesEditorPageRange(value, current)
+    ))
 }
 
 function hasExpectedHitEnvelope(
@@ -812,12 +803,15 @@ function responseHitMatchesRoute(
   current: EditorReaderPage,
   expectedHitIndex: number
 ): boolean {
-  return value.items.some(item =>
-    isRecord(item) && item.index === expectedHitIndex && item.page_index === current.pageIndex &&
-    isRecord(item.highlight) &&
-    item.highlight.from_word_id === state.fromWordId &&
-    item.highlight.to_word_id === state.toWordId
-  )
+  return value.items.some(item => {
+    if (item.index !== expectedHitIndex) return false
+    if (!isExactWorkSearchHit(item)) {
+      return state.fromWordId === null && state.toWordId === null
+    }
+    return item.page_index === current.pageIndex &&
+      item.highlight.from_word_id === state.fromWordId &&
+      item.highlight.to_word_id === state.toWordId
+  })
 }
 
 const searchRequestIdentity = computed(() => JSON.stringify([
@@ -915,7 +909,11 @@ const activeHit = computed(() => {
   const state = searchState.value
   if (!state || !hitResponse.value) return null
   const hit = workSearchHitAt(hitResponse.value.items, state.hit)
-  return hit && hit.highlight.from_word_id === state.fromWordId &&
+  if (!hit) return null
+  if (!isExactWorkSearchHit(hit)) {
+    return state.fromWordId === null && state.toWordId === null ? hit : null
+  }
+  return hit.highlight.from_word_id === state.fromWordId &&
     hit.highlight.to_word_id === state.toWordId ? hit : null
 })
 const previousHit = computed(() => {
@@ -936,7 +934,7 @@ function markEditorHtml(
   hit: WorkSearchHit | null
 ): NonNullable<EditorReaderPage["html"]> {
   const current = page.value
-  if (!hit || !current || hit.page_index !== current.pageIndex) return html
+  if (!hit || !isExactWorkSearchHit(hit) || !current || hit.page_index !== current.pageIndex) return html
   return markEditorEtextHtml(
     html,
     hit.highlight.from_word_id,
@@ -947,7 +945,7 @@ const markedEditorHtml = computed(() => page.value?.html
   ? markEditorHtml(page.value.html, activeHit.value)
   : null)
 const markedOverlayHtml = computed(() => page.value?.overlayHtml
-  ? activeHit.value && page.value && activeHit.value.page_index === page.value.pageIndex
+  ? activeHit.value && isExactWorkSearchHit(activeHit.value) && page.value && activeHit.value.page_index === page.value.pageIndex
     ? markReaderOcrHtml(
         page.value.overlayHtml,
         activeHit.value.highlight.from_word_id,
@@ -979,7 +977,7 @@ function searchNeutralHref(fullPath: string): string {
 }
 
 function workSearchHitHref(hit: WorkSearchHit, submission: WorkSearchSubmission): string {
-  const target = href(hit.page_index)
+  const target = isExactWorkSearchHit(hit) ? href(hit.page_index) : rawFullPath.value
   const fragmentIndex = target.indexOf("#")
   const fragment = fragmentIndex < 0 ? "" : target.slice(fragmentIndex)
   const beforeHash = fragmentIndex < 0 ? target : target.slice(0, fragmentIndex)
@@ -998,11 +996,15 @@ function workSearchHitHref(hit: WorkSearchHit, submission: WorkSearchSubmission)
   if (submission.prefix) replacements.set("s_prefix", "true")
   if (submission.suffix) replacements.set("s_suffix", "true")
   replacements.set("hit_index", String(hit.index))
-  replacements.set("traff", hit.highlight.from_word_id)
-  replacements.set("traffslut", hit.highlight.to_word_id)
+  if (isExactWorkSearchHit(hit)) {
+    replacements.set("traff", hit.highlight.from_word_id)
+    replacements.set("traffslut", hit.highlight.to_word_id)
+  }
   const withoutSearchState = replaceWorkSearchQuerySegments(
     rawQuery.length === 0 ? [] : rawQuery.split("&"),
-    editorSearchKeys,
+    isExactWorkSearchHit(hit)
+      ? editorSearchKeys
+      : new Set([...editorSearchKeys, "traff", "traffslut"]),
     new Map()
   )
   const retained = replaceWorkSearchQuerySegments(

@@ -39,10 +39,11 @@ import {
   type TextSearchRouteQuery,
   type TextSearchRouteState
 } from "~/lib/text-search"
+import { readerTargetUnavailableMessage } from "~/lib/reader-target"
 
 type SearchWordView = Readonly<{ text: string, punct: boolean }>
 type SearchHitView = Readonly<{
-  href: string
+  href: string | null
   left: readonly SearchWordView[]
   match: readonly SearchWordView[]
   right: readonly SearchWordView[]
@@ -51,7 +52,7 @@ type SearchWorkView = Readonly<{
   key: string
   workId: string
   mediaType: "etext" | "faksimil"
-  authorName: string
+  authorName: string | null
   title: string
   facsimile: boolean
   occurrenceCount: number
@@ -241,7 +242,7 @@ function resultsView(
         key: `${encodeURIComponent(work.lbworkid)}:${work.mediatype}`,
         workId: work.lbworkid,
         mediaType: work.mediatype,
-        authorName: facetNames.get(work.author_id) ?? work.author_name,
+        authorName: work.author_id === null ? null : (facetNames.get(work.author_id) ?? work.author_name),
         title: work.title,
         facsimile: work.mediatype === "faksimil",
         occurrenceCount: work.occurrence_count,
@@ -1719,7 +1720,7 @@ v-for="item in [
               <template v-if="row.kind === 'header'">
                 <td class="header" colspan="4">
                   <div class="header_content" :title="row.work.title">
-                    <span class="author">{{ row.work.authorName }}</span>{{ " " }}
+                    <span v-if="row.work.authorName" class="author">{{ row.work.authorName }}</span>{{ " " }}
                     <span class="title">
                       <NuxtLink v-if="row.titleHref" :to="readerHrefWithReturn(row.titleHref)">{{ row.work.title }}</NuxtLink>
                       <template v-else>{{ row.work.title }}</template>
@@ -1737,7 +1738,7 @@ v-for="item in [
                   >{{ `${word.text} ` }}</span>
                 </td>
                 <td class="match w-px whitespace-nowrap">
-                  <NuxtLink :to="readerHrefWithReturn(row.hit.href)">
+                  <NuxtLink v-if="row.hit.href" :to="readerHrefWithReturn(row.hit.href)">
                     <span
                       v-for="(word, wordIndex) in row.hit.match"
                       :key="wordIndex"
@@ -1745,6 +1746,15 @@ v-for="item in [
                       :class="{ punct: word.punct }"
                     >{{ word.text }}</span>
                   </NuxtLink>
+                  <template v-else>
+                    <span
+                      v-for="(word, wordIndex) in row.hit.match"
+                      :key="`match-${wordIndex}`"
+                      class="search-hit-word"
+                      :class="{ punct: word.punct }"
+                    >{{ word.text }}</span>
+                    <span class="sr-only">{{ readerTargetUnavailableMessage }}</span>
+                  </template>
                 </td>
                 <td class="right_context">
                   <span
