@@ -557,7 +557,7 @@ function isSafePageName(value: unknown): value is string {
 function isTextSearchWord(value: unknown): value is TextSearchWord {
   return isRecord(value) && hasExactKeys(value, ["word", "page_name", "word_id"]) &&
     isBoundedString(value.word, 1, 10_000) &&
-    (value.page_name === null || isBoundedString(value.page_name, 1, 10_000)) &&
+    (value.page_name === null || (typeof value.page_name === "string" && value.page_name.length > 0)) &&
     typeof value.word_id === "string" && value.word_id.length > 0
 }
 

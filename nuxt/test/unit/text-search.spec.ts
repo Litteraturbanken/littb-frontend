@@ -640,7 +640,7 @@ describe("text search route state", () => {
     const request = buildTextSearchResultsRequest(parseTextSearchRouteQuery({ fras: "frihet" }))
     const response = resultsResponse()
     const highlight = response.works[0]!.highlights[0]!
-    const rawPage = "p".repeat(101)
+    const rawPage = "p".repeat(10_001)
     highlight.reader_target_status = "unsupported_reader_identity"
     for (const word of [
       ...highlight.left_context,
