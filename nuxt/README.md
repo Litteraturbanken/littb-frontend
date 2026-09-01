@@ -51,6 +51,7 @@ captures a receipt, and records the verified deployment in `lb-infra`:
 
 ```sh
 export LB_INFRA_REPOSITORY=/path/to/lb-infra/.worktrees/stage
+export WAIT_FOR_BUILD=1
 scripts/deploy-stage.sh
 nomad job status lb-frontend-stage
 nomad job history -p lb-frontend-stage

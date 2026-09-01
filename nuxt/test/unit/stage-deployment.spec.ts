@@ -111,10 +111,15 @@ type DeployStageOptions = {
   failPreflightAt?: number
   changeLeaseAt?: number
   recordFails?: boolean
+  arguments?: string[]
+  environment?: Record<string, string>
+  lockAlreadyHeld?: boolean
+  mutateJobspecAfterMaterialization?: boolean
+  stageAllocations?: "complete" | "historical-stopped" | "incomplete"
 }
 
 function runDeployStage(
-  waitForBuild: string,
+  waitForBuild: string | undefined,
   plan: DeployStagePlan = {
     status: 0,
     output: "Job Modify Index: 41",
@@ -124,12 +129,17 @@ function runDeployStage(
 ) {
   const directory = mkdtempSync(resolve(tmpdir(), "littb-stage-deploy-"))
   const tracePath = resolve(directory, "trace")
+  const jobspecPath = resolve(directory, "lb-frontend-stage.nomad")
+  writeFileSync(jobspecPath, readRepositoryFile("jobs/lb-frontend-stage.nomad"))
   writeExecutable(directory, "git", `#!/bin/sh
 case "$1" in
   rev-parse) printf '%s\\n' '${gitSha}' ;;
   branch) printf '%s\\n' "\${DEPLOY_BRANCH:-stage}" ;;
   status|merge-base) ;;
-  show) cat "$JOBSPEC_PATH" ;;
+  show)
+    cat "$JOBSPEC_PATH"
+    printf '%s\\n' 'jobspec materialized' >> "$TRACE_FILE"
+    ;;
   push) printf '%s\\n' 'git push' >> "$TRACE_FILE" ;;
   *) exit 64 ;;
 esac
@@ -137,17 +147,22 @@ esac
   writeExecutable(directory, "nomad", `#!/bin/sh
 case "$1 $2" in
   "job validate")
-    case "$*" in
-      "job validate -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} jobs/lb-frontend-stage.nomad"|"job validate -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} -var jobspec_blob_sha256=${jobspecHash} jobs/lb-frontend-stage.nomad") ;;
-      *) exit 65 ;;
-    esac
+    for argument in "$@"; do jobspec_path="$argument"; done
+    [ "$jobspec_path" != "$JOBSPEC_PATH" ] || exit 65
+    printf '%s' "$jobspec_path" > "$TRACE_FILE.jobspec-path"
+    [ "$(shasum -a 256 "$jobspec_path" | awk '{print $1}')" = "$JOBSPEC_HASH" ] || exit 65
+    [ "$*" = "job validate -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} -var jobspec_blob_sha256=$JOBSPEC_HASH $jobspec_path" ] || exit 65
+    if [ "\${MUTATE_JOBSPEC_AFTER_MATERIALIZATION:-0}" = 1 ]; then
+      printf '%s\\n' 'mutated worktree jobspec' > "$JOBSPEC_PATH"
+      printf '%s\\n' 'worktree jobspec mutated' >> "$TRACE_FILE"
+    fi
     printf '%s\\n' 'nomad validate' >> "$TRACE_FILE"
     ;;
   "job plan")
-    case "$*" in
-      "job plan -no-color -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} jobs/lb-frontend-stage.nomad"|"job plan -no-color -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} -var jobspec_blob_sha256=${jobspecHash} jobs/lb-frontend-stage.nomad") ;;
-      *) exit 65 ;;
-    esac
+    for argument in "$@"; do jobspec_path="$argument"; done
+    [ "$jobspec_path" = "$(cat "$TRACE_FILE.jobspec-path")" ] || exit 65
+    [ "$(shasum -a 256 "$jobspec_path" | awk '{print $1}')" = "$JOBSPEC_HASH" ] || exit 65
+    [ "$*" = "job plan -no-color -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} -var jobspec_blob_sha256=$JOBSPEC_HASH $jobspec_path" ] || exit 65
     printf '%s\\n' 'nomad plan' >> "$TRACE_FILE"
     printf '%s\\n' "$PLAN_OUTPUT"
     exit "$PLAN_STATUS"
@@ -161,30 +176,57 @@ case "$1 $2" in
       printf '%s\\n' '[]'
     else
       printf '%s\\n' 'stage allocs' >> "$TRACE_FILE"
-      printf '%s\\n' '[{"TaskGroup":"frontend","JobVersion":61,"DesiredStatus":"run","ClientStatus":"running","DeploymentStatus":{"Healthy":true,"Canary":false}},{"TaskGroup":"frontend","JobVersion":61,"DesiredStatus":"run","ClientStatus":"running","DeploymentStatus":{"Healthy":true,"Canary":false}}]'
+      case "\${STAGE_ALLOCATIONS:-complete}" in
+        complete)
+          printf '%s\\n' '[{"TaskGroup":"frontend","JobVersion":61,"DesiredStatus":"run","ClientStatus":"running","DeploymentStatus":{"Healthy":true,"Canary":false}},{"TaskGroup":"frontend","JobVersion":61,"DesiredStatus":"run","ClientStatus":"running","DeploymentStatus":{"Healthy":true,"Canary":false}}]'
+          ;;
+        historical-stopped)
+          printf '%s\\n' '[{"TaskGroup":"frontend","JobVersion":61,"DesiredStatus":"run","ClientStatus":"running","DeploymentStatus":{"Healthy":true,"Canary":false}},{"TaskGroup":"frontend","JobVersion":61,"DesiredStatus":"run","ClientStatus":"running","DeploymentStatus":{"Healthy":true,"Canary":false}},{"TaskGroup":"frontend","JobVersion":61,"DesiredStatus":"stop","ClientStatus":"complete","DeploymentStatus":{"Healthy":false,"Canary":false}}]'
+          ;;
+        incomplete)
+          printf '%s\\n' '[{"TaskGroup":"frontend","JobVersion":61,"DesiredStatus":"run","ClientStatus":"running","DeploymentStatus":{"Healthy":true,"Canary":false}}]'
+          ;;
+        *) exit 65 ;;
+      esac
     fi
     ;;
   "job status") printf '%s\\n' 'nomad status' >> "$TRACE_FILE" ;;
   "run -check-index")
-    case "$*" in
-      "run -check-index $EXPECTED_PLAN_INDEX -detach -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} jobs/lb-frontend-stage.nomad"|"run -check-index $EXPECTED_PLAN_INDEX -detach -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} -var jobspec_blob_sha256=${jobspecHash} jobs/lb-frontend-stage.nomad") ;;
-      *) exit 65 ;;
-    esac
+    for argument in "$@"; do jobspec_path="$argument"; done
+    [ "$jobspec_path" = "$(cat "$TRACE_FILE.jobspec-path")" ] || exit 65
+    [ "$(shasum -a 256 "$jobspec_path" | awk '{print $1}')" = "$JOBSPEC_HASH" ] || exit 65
+    [ "$*" = "run -check-index $EXPECTED_PLAN_INDEX -detach -var image=registry.test:5000/lb-frontend@${imageDigest} -var image_digest=${imageDigest} -var git_sha=${gitSha} -var jobspec_blob_sha256=$JOBSPEC_HASH $jobspec_path" ] || exit 65
     printf '%s\\n' 'nomad run' >> "$TRACE_FILE"
     ;;
   *) exit 64 ;;
 esac
 `)
   writeExecutable(directory, "yarn", `#!/bin/sh
+[ "$LITTB_EXPECTED_GIT_SHA" = "${gitSha}" ] || exit 65
+[ "$LITTB_EXPECTED_IMAGE_DIGEST" = "${imageDigest}" ] || exit 65
+[ "$LITTB_NUXT_LIVE_ORIGIN" = "https://stage.litteraturbanken.se" ] || exit 65
 printf '%s\\n' 'public identity verified' >> "$TRACE_FILE"
 `)
   writeExecutable(directory, "python3", `#!/bin/sh
 if [ "$1" = "-" ] && [ "\${2##*/}" = "deploy-stage.sh" ]; then
+  if [ "\${LOCK_ALREADY_HELD:-0}" = 1 ]; then
+    printf '%s\\n' 'stage lock contested' >> "$TRACE_FILE"
+    exit 2
+  fi
   printf '%s\\n' 'stage lock' >> "$TRACE_FILE"
   shift
   deploy_script="$1"
   shift
-  STAGE_DEPLOYMENT_LOCK_HELD=1 "$deploy_script" "$@"
+  LB_STAGE_LOCK_HANDOFF_FAKE=1 \
+  LB_STAGE_LOCK_FD=9 \
+  LB_STAGE_LOCK_PROOF_FD=10 \
+  LB_STAGE_LOCK_PARENT_PID=$$ \
+    "$deploy_script" --stage-lock-child "$@"
+  status=$?
+  printf '%s\\n' 'stage lock released' >> "$TRACE_FILE"
+  exit "$status"
+elif [ "$1" = "-" ] && [ "\${LB_STAGE_LOCK_HANDOFF_FAKE:-0}" = 1 ] && [ -n "$2" ] && [ "$2" = "\${LB_STAGE_LOCK_FD:-}" ]; then
+  printf '%s\\n' 'stage lock verified' >> "$TRACE_FILE"
 elif [ "\${1##*/}" = "stage.py" ]; then
   case "$2" in
     preflight)
@@ -209,10 +251,34 @@ elif [ "\${1##*/}" = "stage.py" ]; then
       printf '%s\\n' "{\\\"candidate_sha\\\":\\\"${gitSha}\\\",\\\"component\\\":\\\"frontend\\\",\\\"live_identity_sha256\\\":\\\"$lease_hash\\\",\\\"live_job_modify_index\\\":41,\\\"manifest_component_sha256\\\":\\\"${"e".repeat(64)}\\\",\\\"origin_stage_sha\\\":\\\"${gitSha}\\\"}"
       ;;
     capture)
+      receipt=""
+      previous=""
+      for argument in "$@"; do
+        if [ "$previous" = "--receipt" ]; then receipt="$argument"; fi
+        previous="$argument"
+      done
+      [ -n "$receipt" ] || exit 65
+      printf '%s\\n' '{"schema_version":"lb.stage.receipt.v1","component":"frontend","lease":{"component":"frontend","candidate_sha":"${gitSha}","origin_stage_sha":"${gitSha}","manifest_component_sha256":"${"e".repeat(64)}","live_job_modify_index":41,"live_identity_sha256":"${"c".repeat(64)}"},"deployment":{"source":{"repository":"littb","git_sha":"${gitSha}"},"image":{"reference":"registry.test:5000/lb-frontend@${imageDigest}","digest":"${imageDigest}"},"jobspec":{"repository":"littb","git_sha":"${gitSha}","path":"jobs/lb-frontend-stage.nomad","blob_sha256":"${jobspecHash}"},"nomad":{"job_id":"lb-frontend-stage","job_version":61,"job_modify_index":42},"verification":{"verified_at":"2026-09-01T12:15:33Z","identity_endpoint":"https://stage.litteraturbanken.se/_deployment"}}}' > "$receipt"
       printf '%s\\n' 'capture' >> "$TRACE_FILE"
       printf '%s\\n' '{"receipt":"captured"}'
       ;;
     record)
+      receipt=""
+      previous=""
+      for argument in "$@"; do
+        if [ "$previous" = "--receipt" ]; then receipt="$argument"; fi
+        previous="$argument"
+      done
+      /usr/bin/python3 - "$receipt" <<'PY'
+import json
+import sys
+
+document = json.load(open(sys.argv[1]))
+if document.get("schema_version") != "lb.stage.receipt.v1" or document.get("component") != "frontend":
+    raise SystemExit(65)
+if set(document) != {"schema_version", "component", "lease", "deployment"}:
+    raise SystemExit(65)
+PY
       printf '%s\\n' 'record' >> "$TRACE_FILE"
       if [ "\${RECORD_FAIL:-0}" = 1 ]; then
         echo 'stage: record failed' >&2
@@ -239,32 +305,42 @@ elif printf '%s' "\${2:-}" | grep -q 'candidate_sha'; then
 elif printf '%s' "\${2:-}" | grep -q 'JobModifyIndex'; then
   printf '%s\\n' '61 42'
 elif [ "$1" = "-" ]; then
-  printf '%s\\n' 'stage healthy' >> "$TRACE_FILE"
-  printf '%s\\n' healthy
+  /usr/bin/python3 "$@"
+  status=$?
+  [ "$status" -eq 0 ] && printf '%s\\n' 'stage healthy' >> "$TRACE_FILE"
+  exit "$status"
 else
   exit 64
 fi
 `)
 
   try {
-    const result = spawnSync(resolve(repositoryRoot, "scripts/deploy-stage.sh"), [], {
+    const result = spawnSync(
+      resolve(repositoryRoot, "scripts/deploy-stage.sh"),
+      options.arguments ?? [],
+      {
       encoding: "utf8",
       env: {
         ...process.env,
         PATH: `${directory}:${process.env.PATH || ""}`,
         TRACE_FILE: tracePath,
-        WAIT_FOR_BUILD: waitForBuild,
+        ...(waitForBuild === undefined ? {} : { WAIT_FOR_BUILD: waitForBuild }),
         PLAN_STATUS: String(plan.status),
         PLAN_OUTPUT: plan.output,
         EXPECTED_PLAN_INDEX: plan.expectedIndex,
         BUILD_TIMEOUT_SECONDS: "5",
         REGISTRY_HOST: "registry.test:5000",
         LB_INFRA_REPOSITORY: directory,
-        JOBSPEC_PATH: resolve(repositoryRoot, "jobs/lb-frontend-stage.nomad"),
+        JOBSPEC_PATH: jobspecPath,
+        JOBSPEC_HASH: jobspecHash,
         DEPLOY_BRANCH: options.branch,
         FAIL_PREFLIGHT_AT: options.failPreflightAt === undefined ? undefined : String(options.failPreflightAt),
         CHANGE_LEASE_AT: options.changeLeaseAt === undefined ? undefined : String(options.changeLeaseAt),
         RECORD_FAIL: options.recordFails ? "1" : undefined,
+        LOCK_ALREADY_HELD: options.lockAlreadyHeld ? "1" : undefined,
+        MUTATE_JOBSPEC_AFTER_MATERIALIZATION: options.mutateJobspecAfterMaterialization ? "1" : undefined,
+        STAGE_ALLOCATIONS: options.stageAllocations,
+        ...options.environment,
       }
     })
     const trace = existsSync(tracePath)
@@ -720,7 +796,8 @@ test("staging deploy resolves the built manifest digest before planned detached 
   expect(script).toContain(': "${LB_INFRA_REPOSITORY:?set to the persistent lb-infra stage checkout}"')
   expect(script).toContain('StageDeploymentLock.acquire("lb-frontend-stage", repository=infra_repository)')
   expect(script).toContain('"${stage_cli[@]}" preflight frontend --source-repository "$repo_root" >"$lease_file"')
-  expect(script).toContain('git show "$git_sha:jobs/lb-frontend-stage.nomad" | shasum -a 256')
+  expect(script).toContain('git show "$git_sha:jobs/lb-frontend-stage.nomad" >"$jobspec_file"')
+  expect(script).toContain('shasum -a 256 "$jobspec_file"')
   expect(script).toContain('recheck_lease "before Nomad planning"')
   expect(script).toContain('recheck_lease "before Nomad registration"')
   expect(script).toContain('"IdempotencyToken": f"lb-frontend-stage-{git_sha}"')
@@ -730,9 +807,9 @@ test("staging deploy resolves the built manifest digest before planned detached 
   expect(script).not.toContain('"NOMAD_TOKEN":')
   expect(script).toContain('image_digest="$(resolve_registry_digest "$image_ref")"')
   expect(script).toContain('immutable_image_ref="${registry_host}/${image_name}@${image_digest}"')
-  const validateCommand = 'nomad job validate "${nomad_identity_vars[@]}" jobs/lb-frontend-stage.nomad'
-  const planCommand = 'nomad job plan -no-color "${nomad_identity_vars[@]}" jobs/lb-frontend-stage.nomad'
-  const runCommand = 'nomad run -check-index "$plan_modify_index" -detach "${nomad_identity_vars[@]}" jobs/lb-frontend-stage.nomad'
+  const validateCommand = 'nomad job validate "${nomad_identity_vars[@]}" "$jobspec_file"'
+  const planCommand = 'nomad job plan -no-color "${nomad_identity_vars[@]}" "$jobspec_file"'
+  const runCommand = 'nomad run -check-index "$plan_modify_index" -detach "${nomad_identity_vars[@]}" "$jobspec_file"'
   expect(script).toContain(validateCommand)
   expect(script).toContain(planCommand)
   expect(script).toContain(runCommand)
@@ -806,18 +883,81 @@ test("staging retains its receipt without redeploying when record fails", () => 
   expect(trace.filter(entry => entry === "nomad run")).toHaveLength(1)
 })
 
-test("staging no-wait mode dispatches the build without resolving or deploying", () => {
-  const { result, trace } = runDeployStage("0")
+test.each([
+  ["absent", undefined],
+  ["no-wait", "0"],
+  ["invalid", "sometimes"]
+])("staging rejects %s wait mode before any deployment mutation", (_name, waitForBuild) => {
+  const { result, trace } = runDeployStage(waitForBuild)
 
-  expect(result.status, result.stderr).toBe(0)
-  expect(trace).toEqual(["stage lock", "preflight 1", "dispatch"])
+  expect(result.status, result.stderr).toBe(2)
+  expect(trace).toEqual([])
 })
 
-test("staging rejects unsupported wait modes without resolving or deploying", () => {
-  const { result, trace } = runDeployStage("sometimes")
+test("staging rejects the retired public lock sentinel before builder dispatch", () => {
+  const { result, trace } = runDeployStage("1", undefined, {
+    environment: { STAGE_DEPLOYMENT_LOCK_HELD: "1" }
+  })
 
   expect(result.status).toBe(2)
-  expect(trace).toEqual(["stage lock", "preflight 1", "dispatch"])
+  expect(trace).toEqual([])
+})
+
+test("staging rejects a direct lock-child argument before builder dispatch", () => {
+  const { result, trace } = runDeployStage("1", undefined, {
+    arguments: ["--stage-lock-child"]
+  })
+
+  expect(result.status).toBe(2)
+  expect(trace).toEqual([])
+})
+
+test("staging refuses a same-job deployment while its lock is held", () => {
+  const { result, trace } = runDeployStage("1", undefined, {
+    lockAlreadyHeld: true
+  })
+
+  expect(result.status).toBe(2)
+  expect(trace).toEqual(["stage lock contested"])
+})
+
+test("staging submits the one materialized committed jobspec after a worktree race", () => {
+  const { result, trace } = runDeployStage("1", undefined, {
+    mutateJobspecAfterMaterialization: true
+  })
+
+  expect(result.status, result.stderr).toBe(0)
+  expect(trace).toEqual(expect.arrayContaining([
+    "jobspec materialized",
+    "worktree jobspec mutated",
+    "nomad validate",
+    "nomad plan",
+    "nomad run"
+  ]))
+})
+
+test("staging ignores stopped historical allocations when current frontend is healthy", () => {
+  const { result, trace } = runDeployStage("1", undefined, {
+    stageAllocations: "historical-stopped"
+  })
+
+  expect(result.status, result.stderr).toBe(0)
+  expect(trace).toContain("stage healthy")
+})
+
+test("staging does not capture an incomplete current frontend allocation set", () => {
+  const { result, trace } = runDeployStage("1", undefined, {
+    stageAllocations: "incomplete",
+    environment: {
+      STAGE_HEALTH_TIMEOUT_SECONDS: "1",
+      STAGE_HEALTH_POLL_SECONDS: "1"
+    }
+  })
+
+  expect(result.status).toBe(2)
+  expect(trace).toContain("stage allocs")
+  expect(trace).not.toContain("capture")
+  expect(trace).not.toContain("record")
 })
 
 test("staging wait mode resolves and deploys only after builder completion", () => {
@@ -826,7 +966,9 @@ test("staging wait mode resolves and deploys only after builder completion", () 
   expect(result.status, result.stderr).toBe(0)
   expect(trace).toEqual([
     "stage lock",
+    "stage lock verified",
     "preflight 1",
+    "jobspec materialized",
     "dispatch",
     "nomad allocs",
     "build complete",
@@ -840,7 +982,8 @@ test("staging wait mode resolves and deploys only after builder completion", () 
     "stage healthy",
     "public identity verified",
     "capture",
-    "record"
+    "record",
+    "stage lock released"
   ])
 })
 

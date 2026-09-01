@@ -4,10 +4,82 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$repo_root"
 
+case "${WAIT_FOR_BUILD-}" in
+  1)
+    ;;
+  *)
+    echo "WAIT_FOR_BUILD must be explicitly set to 1; staging was not deployed." >&2
+    exit 2
+    ;;
+esac
+
+if [ -n "${STAGE_DEPLOYMENT_LOCK_HELD+x}" ]; then
+  echo "STAGE_DEPLOYMENT_LOCK_HELD is not a valid Stage deployment handoff." >&2
+  exit 2
+fi
+
 : "${LB_INFRA_REPOSITORY:?set to the persistent lb-infra stage checkout}"
 
-if [ "${STAGE_DEPLOYMENT_LOCK_HELD:-}" != "1" ]; then
-  export STAGE_DEPLOYMENT_LOCK_HELD=1
+if [ "${1:-}" = "--stage-lock-child" ]; then
+  shift
+  if [ "${LB_STAGE_LOCK_PARENT_PID:-}" != "$PPID" ]; then
+    echo "Stage deployment lock handoff parent does not match." >&2
+    exit 2
+  fi
+  python3 - "${LB_STAGE_LOCK_FD:-}" "${LB_STAGE_LOCK_PROOF_FD:-}" "$LB_INFRA_REPOSITORY" <<'PY'
+import fcntl
+import hashlib
+import os
+from pathlib import Path
+import stat
+import subprocess
+import sys
+
+try:
+    lock_fd = int(sys.argv[1])
+    proof_fd = int(sys.argv[2])
+    infra_repository = Path(sys.argv[3]).resolve()
+    common = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=infra_repository,
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    if common.returncode != 0 or not common.stdout.strip():
+        raise OSError("Git common directory is unavailable")
+    expected = Path(common.stdout.strip()) / (
+        ".stage-deployment-"
+        + hashlib.sha256(b"lb-frontend-stage").hexdigest()
+        + ".lock"
+    )
+    inherited = os.fstat(lock_fd)
+    if not stat.S_ISREG(inherited.st_mode) or inherited.st_nlink != 1:
+        raise OSError("inherited lock descriptor is not a safe regular file")
+    probe_flags = os.O_RDONLY
+    if hasattr(os, "O_NOFOLLOW"):
+        probe_flags |= os.O_NOFOLLOW
+    probe_fd = os.open(expected, probe_flags)
+    try:
+        observed = os.fstat(probe_fd)
+        if (observed.st_dev, observed.st_ino) != (inherited.st_dev, inherited.st_ino):
+            raise OSError("inherited lock descriptor does not identify the frontend lock")
+        try:
+            fcntl.flock(probe_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            pass
+        else:
+            raise OSError("frontend Stage lock is not held by the parent")
+    finally:
+        os.close(probe_fd)
+    proof = os.read(proof_fd, 32)
+    if len(proof) != 32 or os.read(proof_fd, 1):
+        raise OSError("Stage lock handoff proof is invalid")
+except (OSError, ValueError) as error:
+    raise SystemExit(f"Stage deployment lock handoff failed: {error}") from None
+PY
+  unset LB_STAGE_LOCK_FD LB_STAGE_LOCK_PROOF_FD LB_STAGE_LOCK_PARENT_PID
+else
   exec python3 - "$repo_root/scripts/deploy-stage.sh" "$@" <<'PY'
 import os
 from pathlib import Path
@@ -21,8 +93,27 @@ if str(infra_repository) not in sys.path:
 from scripts.stage_guard import StageDeploymentLock, StageGuardError
 
 try:
-    with StageDeploymentLock.acquire("lb-frontend-stage", repository=infra_repository):
-        completed = subprocess.run([sys.argv[1], *sys.argv[2:]], check=False)
+    with StageDeploymentLock.acquire("lb-frontend-stage", repository=infra_repository) as lock:
+        proof_read, proof_write = os.pipe()
+        try:
+            os.write(proof_write, os.urandom(32))
+        finally:
+            os.close(proof_write)
+        environment = os.environ.copy()
+        environment.update({
+            "LB_STAGE_LOCK_FD": str(lock.descriptor),
+            "LB_STAGE_LOCK_PROOF_FD": str(proof_read),
+            "LB_STAGE_LOCK_PARENT_PID": str(os.getpid()),
+        })
+        try:
+            completed = subprocess.run(
+                [sys.argv[1], "--stage-lock-child", *sys.argv[2:]],
+                check=False,
+                env=environment,
+                pass_fds=(lock.descriptor, proof_read),
+            )
+        finally:
+            os.close(proof_read)
 except (OSError, StageGuardError) as error:
     raise SystemExit(f"Cannot acquire Stage deployment lock: {error}") from None
 
@@ -36,9 +127,10 @@ requested_git_sha="$(git rev-parse --verify "${requested_ref}^{commit}")"
 lease_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-lease.XXXXXX")"
 recheck_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-recheck.XXXXXX")"
 deployment_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-deployment.XXXXXX")"
+jobspec_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-jobspec.XXXXXX")"
 stage_job_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-job.XXXXXX")"
 stage_allocations_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-allocations.XXXXXX")"
-trap 'rm -f "$lease_file" "$recheck_file" "$deployment_file" "$stage_job_file" "$stage_allocations_file"' EXIT
+trap 'rm -f "$lease_file" "$recheck_file" "$deployment_file" "$jobspec_file" "$stage_job_file" "$stage_allocations_file"' EXIT
 
 stage_cli=(python3 "$LB_INFRA_REPOSITORY/scripts/stage.py")
 "${stage_cli[@]}" preflight frontend --source-repository "$repo_root" >"$lease_file"
@@ -49,7 +141,8 @@ if [ "$requested_git_sha" != "$git_sha" ]; then
   exit 2
 fi
 
-jobspec_blob_sha256="$(git show "$git_sha:jobs/lb-frontend-stage.nomad" | shasum -a 256 | awk '{print $1}')"
+git show "$git_sha:jobs/lb-frontend-stage.nomad" >"$jobspec_file"
+jobspec_blob_sha256="$(shasum -a 256 "$jobspec_file" | awk '{print $1}')"
 if [[ ! "$jobspec_blob_sha256" =~ ^[0-9a-f]{64}$ ]]; then
   echo "Committed Stage jobspec did not produce a lowercase SHA-256; staging was not deployed." >&2
   exit 1
@@ -65,8 +158,9 @@ recheck_lease() {
 }
 
 wait_for_healthy_stage_allocations() {
-  local timeout_seconds deadline allocation_state
+  local timeout_seconds poll_seconds deadline allocation_state
   timeout_seconds="${STAGE_HEALTH_TIMEOUT_SECONDS:-600}"
+  poll_seconds="${STAGE_HEALTH_POLL_SECONDS:-10}"
   deadline=$((SECONDS + timeout_seconds))
 
   while [ "$SECONDS" -lt "$deadline" ]; do
@@ -89,21 +183,21 @@ expected = sum(
     if isinstance(group, dict) and group.get("Name") == "frontend"
     and isinstance(group.get("Count"), int)
 )
-current = [
+active = [
     allocation for allocation in allocations
     if isinstance(allocation, dict)
     and allocation.get("TaskGroup") == "frontend"
     and allocation.get("JobVersion") == version
+    and allocation.get("DesiredStatus") == "run"
 ]
-if any(allocation.get("ClientStatus") == "failed" for allocation in current):
+if any(allocation.get("ClientStatus") == "failed" for allocation in active):
     print("failed")
-elif len(current) == expected and expected > 0 and all(
-    allocation.get("DesiredStatus") == "run"
-    and allocation.get("ClientStatus") == "running"
+elif len(active) == expected and expected > 0 and all(
+    allocation.get("ClientStatus") == "running"
     and isinstance(allocation.get("DeploymentStatus"), dict)
     and allocation["DeploymentStatus"].get("Healthy") is True
     and allocation["DeploymentStatus"].get("Canary") is False
-    for allocation in current
+    for allocation in active
 ):
     print("healthy")
 else:
@@ -119,7 +213,7 @@ PY
         exit 1
         ;;
       pending)
-        sleep 10
+        sleep "$poll_seconds"
         ;;
       *)
         echo "Could not determine current Stage frontend allocation health; staging was not recorded." >&2
@@ -388,10 +482,10 @@ nomad_identity_vars=(
 )
 
 recheck_lease "before Nomad planning"
-nomad job validate "${nomad_identity_vars[@]}" jobs/lb-frontend-stage.nomad
+nomad job validate "${nomad_identity_vars[@]}" "$jobspec_file"
 
 set +e
-plan_output="$(nomad job plan -no-color "${nomad_identity_vars[@]}" jobs/lb-frontend-stage.nomad)"
+plan_output="$(nomad job plan -no-color "${nomad_identity_vars[@]}" "$jobspec_file")"
 plan_status=$?
 set -e
 printf '%s\n' "$plan_output"
@@ -436,7 +530,7 @@ case "$plan_modify_index" in
 esac
 
 recheck_lease "before Nomad registration"
-nomad run -check-index "$plan_modify_index" -detach "${nomad_identity_vars[@]}" jobs/lb-frontend-stage.nomad
+nomad run -check-index "$plan_modify_index" -detach "${nomad_identity_vars[@]}" "$jobspec_file"
 
 wait_for_healthy_stage_allocations
 read -r stage_job_version stage_job_modify_index <<EOF
