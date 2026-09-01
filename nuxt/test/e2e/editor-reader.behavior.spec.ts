@@ -7,6 +7,107 @@ const editorSearchHit = "/editor/lb8345227/ix/4/f?show_search_work&s_query=brev"
   "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
   "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2"
 
+for (const continuation of [false, true]) {
+  test(`snapshot expiry ${continuation ? "continuation" : "initial"} requires explicit Editor restart`, async ({ page, request }) => {
+    const legacyRequests: string[] = []
+    page.on("request", request => {
+      if (["fetch", "xhr"].includes(request.resourceType())
+        && /\/(?:search|search_count|page_search)\//u.test(new URL(request.url()).pathname)) legacyRequests.push(request.url())
+    })
+    await request.delete(`${fixture}/_reader_hit_requests`)
+    const snapshot = continuation ? "gen-expired-continuation" : "gen-expired"
+    const original = `${editorSearchHit}&s_snapshot=${snapshot}`
+    await page.goto(original, { waitUntil: "networkidle" })
+    const navigation = page.locator("#search_nav")
+    if (continuation) {
+      await expect(navigation).toContainText("Träff 1")
+      await navigation.getByRole("button", { name: "Gå till sista träffen" }).click()
+    }
+    await expect(navigation).toContainText("Sökresultatet har gått ut. Starta om sökningen")
+    await expect(page).toHaveURL(original)
+    await expect(navigation.getByRole("link", { name: "Nästa sökträff" })).toHaveCount(0)
+    const before = (await (await request.get(`${fixture}/_reader_hit_requests`)).json()).requests
+    expect(before.length).toBeGreaterThan(0)
+    expect(before.every((item: { query: string }) => new URLSearchParams(item.query).get("snapshot") === snapshot)).toBe(true)
+    await navigation.getByRole("button", { name: "Starta om sökningen", exact: true }).click()
+    await expect(navigation).toContainText("Träff 1")
+    await expect(navigation).not.toContainText("Sökresultatet har gått ut")
+    expect(new URL(page.url()).searchParams.get("s_snapshot")).toBe("gen-fixture-0001")
+    await navigation.getByRole("link", { name: "Nästa sökträff" }).click()
+    await expect(navigation).toContainText("Träff 2")
+    const after = (await (await request.get(`${fixture}/_reader_hit_requests`)).json()).requests.slice(before.length)
+      .map((item: { query: string }) => new URLSearchParams(item.query))
+    expect(after.filter((query: URLSearchParams) => !query.has("snapshot"))).toHaveLength(1)
+    expect(Object.fromEntries(after[0])).toMatchObject({ query: "brev", offset: "0", limit: "1",
+      word_forms: "false", include_older_spellings: "true" })
+    expect(after.slice(1).every((query: URLSearchParams) => query.get("snapshot") === "gen-fixture-0001")).toBe(true)
+    expect(legacyRequests).toEqual([])
+  })
+}
+
+test("fresh unpinned Editor reload keeps the SSR generation through hydration", async ({ page, request }) => {
+  try {
+    await request.delete(`${fixture}/_text_search/requests`)
+    await page.goto(editorSearchHit, { waitUntil: "networkidle" })
+    await expect.poll(() => page.evaluate(() => history.state.readerSearchSnapshot?.snapshot))
+      .toBe("gen-fixture-0001")
+    const expired = await request.post(`${fixture}/v2/text-search/results`, { data: {
+      query: "frihet", page: 1, page_size: 30, highlight_limit: 5,
+      prefix: false, suffix: false, word_form_only: true, include_modernized: true,
+      snapshot: "gen-expired"
+    } })
+    expect(expired.status()).toBe(409)
+    await request.delete(`${fixture}/_reader_hit_requests`)
+
+    const reloaded = await page.reload({ waitUntil: "networkidle" })
+    expect(reloaded?.status()).toBe(200)
+    expect(await reloaded!.text()).toContain("s_snapshot=gen-fixture-0002")
+    const ledger = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    expect(ledger.requests).toEqual([{
+      path: "/private-v2/works/lb8345227/search-hits",
+      query: "media_type=faksimil&query=brev&offset=0&limit=3&word_forms=false" +
+        "&include_older_spellings=true&prefix=false&suffix=false"
+    }])
+    await expect(page).toHaveURL(editorSearchHit)
+    await expect(page.locator('.pager_ctrls a[rel="next"]')).toHaveAttribute("href",
+      `${editorSearchHit.replace("/ix/4/", "/ix/5/")}&s_snapshot=gen-fixture-0002`)
+    await expect.poll(() => page.evaluate(() => history.state.readerSearchSnapshot?.snapshot))
+      .toBe("gen-fixture-0002")
+    await expect(page.locator("#w5_1.markee")).toHaveCount(1)
+    await expect(page.locator("#w5_2.markee.flip")).toHaveCount(1)
+    await page.getByRole("button", { name: "Gå till sista träffen" }).click()
+    await expect(page.locator("#w7_1.markee")).toHaveCount(1)
+    const continued = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    const queries = continued.requests.slice(1).map((entry: { query: string }) => new URLSearchParams(entry.query))
+    expect(queries.length).toBeGreaterThan(0)
+    expect(queries.every((query: URLSearchParams) => query.get("snapshot") === "gen-fixture-0002")).toBe(true)
+  } finally {
+    await request.delete(`${fixture}/_text_search/requests`)
+  }
+})
+
+test("adopted Editor snapshot survives ordinary page and Back after active generation changes", async ({ page }) => {
+  const raw = "&bare&repeat=%2f&repeat=%2F"
+  await page.goto(`${editorSearchHit}${raw}`, { waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav")).toContainText("Träff 1")
+  const queries: URLSearchParams[] = []
+  await page.route("**/api/v2/works/*/search-hits?**", async route => {
+    const query = new URL(route.request().url()).searchParams
+    queries.push(query)
+    const response = await route.fetch()
+    await route.fulfill({ response, json: { ...await response.json(), snapshot: query.get("snapshot") ?? "gen-fixture-0002" } })
+  })
+  const next = page.locator('.pager_ctrls a[rel="next"]')
+  await expect(next).toHaveAttribute("href", `${editorSearchHit.replace("/ix/4/", "/ix/5/")}${raw}&s_snapshot=gen-fixture-0001`)
+  await next.evaluate((link: HTMLAnchorElement) => link.click())
+  await expect(page).toHaveURL(/\/ix\/5\/f/)
+  await expect.poll(() => queries.length).toBeGreaterThan(0)
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav")).toContainText("Träff 1")
+  await expect.poll(() => queries.length).toBeGreaterThanOrEqual(2)
+  expect(queries.every(query => query.get("snapshot") === "gen-fixture-0001")).toBe(true)
+})
+
 async function navigateClient(page: import("@playwright/test").Page, path: string): Promise<void> {
   await page.evaluate(async target => {
     const root = document.querySelector("#__nuxt") as HTMLElement & {
@@ -615,6 +716,7 @@ test("editor Reader work search restores reloadable hit state, marquee, and hist
   const submitted = new URL(page.url())
   expect(Object.fromEntries(submitted.searchParams)).toMatchObject({
     s_query: "brev",
+    s_snapshot: "gen-fixture-0001",
     s_lbworkid: "lb8345227",
     s_mediatype: "faksimil",
     s_word_form_only: "true",
@@ -1027,7 +1129,7 @@ test("editor Reader does not push history for the already-active search hit", as
 
 test("editor Reader aborts a superseded direct-hit lookup", async ({ page, request }) => {
   await request.delete(`${fixture}/_reader_hit_requests`)
-  const slowKey = "lb8345227|brev|235|3|false|true|false|false"
+  const slowKey = "lb8345227|brev|235|3|false|true|false|false|gen-fixture-0001"
   await request.put(`${fixture}/_reader_hit_delays`, { data: { [slowKey]: 600 } })
   try {
     await page.goto(editorSearchHit, { waitUntil: "networkidle" })
@@ -1147,7 +1249,7 @@ test("editor Reader restores live-style bare prefix flags across hydration and r
     "href",
     "/editor/lb8345227/ix/5/f?keep=%2f&keep=%2F&show_search_work" +
       "&s_query=brev&s_lbworkid=lb8345227&s_mediatype=faksimil" +
-      "&s_word_form_only=true&s_include_modernized=true&s_prefix=true" +
+      "&s_word_form_only=true&s_include_modernized=true&s_snapshot=gen-fixture-0001&s_prefix=true" +
       "&hit_index=1&traff=w6_1&traffslut=w6_1#prefix-session"
   )
   expect(await next.evaluate(link => {
@@ -1171,7 +1273,7 @@ test("editor Reader restores live-style bare prefix flags across hydration and r
     "href",
     "/editor/lb8345227/ix/4/f?keep=%2f&keep=%2F&show_search_work" +
       "&s_query=brev&s_lbworkid=lb8345227&s_mediatype=faksimil" +
-      "&s_word_form_only=true&s_include_modernized=true&s_prefix=true" +
+      "&s_word_form_only=true&s_include_modernized=true&s_snapshot=gen-fixture-0001&s_prefix=true" +
       "&hit_index=0&traff=w5_1&traffslut=w5_2#prefix-session"
   )
   await page.goBack()
@@ -1185,7 +1287,7 @@ test("editor Reader restores live-style bare prefix flags across hydration and r
     expect.objectContaining({
       path: "/v2/works/lb8345227/search-hits",
       query: "media_type=faksimil&query=brev&offset=0&limit=3" +
-        "&word_forms=false&include_older_spellings=true&prefix=true&suffix=false"
+        "&word_forms=false&include_older_spellings=true&prefix=true&suffix=false&snapshot=gen-fixture-0001"
     })
   ]))
 })

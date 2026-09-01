@@ -43,10 +43,11 @@ async function expectNoDataRequests(
   for (const path of requestLedgers) {
     if (allowed.includes(path)) continue
     const payload = await (await request.get(`${fixture}${path}`)).json()
-    const values = path === "/_text_search/requests"
-      ? [...payload.results, ...payload.count, ...payload.options]
-      : payload.requests
-    expect(values, path).toEqual([])
+    if (path === "/_text_search/requests") {
+      expect(payload, path).toEqual({ results: [], options: [], chronology: [] })
+    } else {
+      expect(payload.requests, path).toEqual([])
+    }
   }
 }
 

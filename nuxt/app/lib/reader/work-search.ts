@@ -1,3 +1,41 @@
+import { isTextSearchSnapshot } from "../text-search"
+import type { components } from "../api/generated/lbapi"
+import { isExactWorkSearchHit, isReaderTargetStatus } from "../reader-target"
+
+type WorkSearchHit = components["schemas"]["WorkSearchHit"]
+
+type SnapshotSearch = Readonly<{
+  query: string
+  wordForms: boolean
+  includeOlderSpellings: boolean
+  prefix: boolean
+  suffix: boolean
+}>
+
+export function workSearchSnapshotIdentity(
+  workId: string,
+  mediaType: string,
+  state: SnapshotSearch
+): string {
+  return JSON.stringify([workId, mediaType, state.query, state.wordForms,
+    state.includeOlderSpellings, state.prefix, state.suffix])
+}
+
+export function restoredWorkSearchSnapshot(historyState: unknown, identity: string): string | null {
+  if (!historyState || typeof historyState !== "object") return null
+  const saved = (historyState as Record<string, unknown>).readerSearchSnapshot
+  if (!saved || typeof saved !== "object") return null
+  const { identity: savedIdentity, snapshot } = saved as Record<string, unknown>
+  return savedIdentity === identity && isTextSearchSnapshot(snapshot) ? snapshot : null
+}
+
+export function rememberWorkSearchSnapshot(history: History, identity: string, snapshot: string): void {
+  if (restoredWorkSearchSnapshot(history.state, identity) === snapshot) return
+  // Store adoption on this entry, without rewriting its raw URL. A different
+  // phrase/work/options identity cannot inherit it on an explicit new search.
+  history.replaceState({ ...history.state, readerSearchSnapshot: { identity, snapshot } }, "")
+}
+
 export type WorkSearchOption =
   | "default"
   | "lemma"
@@ -44,13 +82,66 @@ export function workSearchWordPosition(
     : null
 }
 
-export function workSearchPageScope(
+export function workSearchPositionMatchesHitPage(
+  position: WorkSearchWordPosition,
   pageIndex: number,
-  pageName: string,
   mediaType: "etext" | "faksimil"
-): string | null {
-  if (mediaType === "etext") return `page:${pageIndex}`
-  return /^[0-9]+$/.test(pageName) ? `page:${pageName}` : null
+): boolean {
+  return position.pageIndex === null || mediaType === "faksimil" || position.scope === `page:${pageIndex}`
+}
+
+function isRawSourceString(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0
+}
+
+function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  const actual = Object.keys(value)
+  return actual.length === keys.length && keys.every(key => Object.hasOwn(value, key))
+}
+
+function isRawHighlight(value: unknown): value is { from_word_id: string, to_word_id: string } {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value) &&
+    hasExactKeys(value as Record<string, unknown>, ["from_word_id", "to_word_id"]) &&
+    isRawSourceString((value as Record<string, unknown>).from_word_id) &&
+    isRawSourceString((value as Record<string, unknown>).to_word_id)
+}
+
+export function isWorkSearchHit(
+  value: unknown,
+  workId: string,
+  mediaType: "etext" | "faksimil"
+): value is WorkSearchHit {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const hit = value as Record<string, unknown>
+  if (!hasExactKeys(hit, [
+    "index", "source_identity", "source_start", "source_end", "start_word_id",
+    "end_word_id", "page_index", "page_name", "reader_target_status", "highlight"
+  ])) return false
+  if (!Number.isSafeInteger(hit.index) || (hit.index as number) < 0 ||
+    !isRawSourceString(hit.source_identity) ||
+    !Number.isSafeInteger(hit.source_start) || !Number.isSafeInteger(hit.source_end) ||
+    (hit.source_start as number) < 0 || (hit.source_end as number) <= (hit.source_start as number) ||
+    !isRawSourceString(hit.start_word_id) || !isRawSourceString(hit.end_word_id) ||
+    !Number.isSafeInteger(hit.page_index) || (hit.page_index as number) < 0 ||
+    !isReaderTargetStatus(hit.reader_target_status)) return false
+  if ((hit.page_name === null) !== (hit.reader_target_status === "unmapped_page")) return false
+  if (hit.page_name !== null && !isRawSourceString(hit.page_name)) return false
+  if ((hit.source_end as number) - (hit.source_start as number) === 1 &&
+    hit.start_word_id !== hit.end_word_id) return false
+  const candidate = hit as unknown as WorkSearchHit
+  if (candidate.reader_target_status === "exact") {
+    if (!isRawHighlight(hit.highlight)) return false
+    if (!isExactWorkSearchHit(candidate)) return false
+    if (candidate.highlight.from_word_id !== candidate.start_word_id ||
+      candidate.highlight.to_word_id !== candidate.end_word_id) return false
+    const from = workSearchWordPosition(candidate.start_word_id, workId)
+    const to = workSearchWordPosition(candidate.end_word_id, workId)
+    return Boolean(from && to && from.scope === to.scope && from.ordinal <= to.ordinal &&
+      (from.ordinal !== to.ordinal || candidate.start_word_id === candidate.end_word_id) &&
+      workSearchPositionMatchesHitPage(from, candidate.page_index, mediaType) &&
+      workSearchPositionMatchesHitPage(to, candidate.page_index, mediaType))
+  }
+  return hit.highlight === null
 }
 
 const clearedOptions: WorkSearchOptionsState = {

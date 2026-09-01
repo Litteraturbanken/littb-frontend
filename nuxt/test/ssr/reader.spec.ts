@@ -1208,19 +1208,19 @@ test("canonical search state fetches one private hit window and marks its exact 
   expect(html).toContain("Sökträff 2 av 5")
   expect(html).toContain(
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +
-    "?q=doktor%20glas&amp;hit=1&amp;unknown=bevara%20mig\""
+    "?q=doktor%20glas&amp;hit=1&amp;unknown=bevara%20mig&amp;snapshot=gen-fixture-0001\""
   )
   expect(html).toContain(
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext" +
-    "?q=doktor%20glas&amp;hit=1&amp;unknown=bevara%20mig\""
+    "?q=doktor%20glas&amp;hit=1&amp;unknown=bevara%20mig&amp;snapshot=gen-fixture-0001\""
   )
   expect(html).toContain(
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +
-    "?q=doktor+glas&amp;hit=0&amp;unknown=bevara+mig\""
+    "?q=doktor+glas&amp;hit=0&amp;unknown=bevara+mig&amp;snapshot=gen-fixture-0001\""
   )
   expect(html).toContain(
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext" +
-    "?q=doktor+glas&amp;hit=2&amp;unknown=bevara+mig\""
+    "?q=doktor+glas&amp;hit=2&amp;unknown=bevara+mig&amp;snapshot=gen-fixture-0001\""
   )
   expect(await readerManifestRequests(request)).toEqual([
     expectedReaderManifest("SöderbergH", "DoktorGlas")
@@ -1244,7 +1244,7 @@ test("work-scoped word ids are bound to the Reader work and mark the exact live 
   expect(html).toContain("Sökträff 1 av 2")
   expect(html).toContain(
     "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/WorkScopedIdsReader/sida/-1/etext" +
-    "?q=kyrka&amp;hit=1\""
+    "?q=kyrka&amp;hit=1&amp;snapshot=gen-fixture-0001\""
   )
   expect(await readerManifestRequests(request)).toEqual([
     expectedReaderManifest("SöderbergH", "WorkScopedIdsReader")
@@ -1390,16 +1390,6 @@ for (const mismatch of [
     query: "etext-name-word",
     mediaType: "etext",
     stableContent: ["DOKTOR"]
-  },
-  {
-    label: "faksimil index-scoped word id",
-    path: "/f%C3%B6rfattare/AarnsethF/titlar/Rallarliv/sida/58/faksimil",
-    query: "faksimil-index-word",
-    mediaType: "faksimil",
-    stableContent: [
-      "<title>Rallarliv sida 58 faksimil | Litteraturbanken</title>",
-      'src="/txt/lb3203777/lb3203777_3/lb3203777_3_0058.jpeg"'
-    ]
   }
 ]) {
   test(`${mismatch.label} is rejected before hit presentation`, async ({ request }) => {
@@ -1430,6 +1420,25 @@ for (const mismatch of [
     ])
   })
 }
+
+test("faksimil word identity may differ from the physical page index", async ({ request }) => {
+  const response = await request.get(
+    "/författare/AarnsethF/titlar/Rallarliv/sida/58/faksimil" +
+    "?q=faksimil-index-word&hit=0"
+  )
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expect(html).toContain("Sökträff 1 av 1")
+  expect(html).not.toContain("Sökträffen kunde inte hämtas.")
+  expect(html).toContain('id="w58_123"')
+  expect(await readerHitRequests(request)).toEqual([expect.objectContaining({
+    path: expect.stringContaining("/works/"),
+    query: expect.stringContaining("media_type=faksimil&query=faksimil-index-word")
+  })])
+  expect(await readerManifestRequests(request)).toEqual([
+    expectedReaderManifest("AarnsethF", "Rallarliv", "faksimil")
+  ])
+})
 
 test("page-mismatch preserves the original Reader HTML without a marker", async ({
   request
@@ -1626,4 +1635,220 @@ test("an empty 200 Reader manifest stays inside the generic 502 boundary", async
   expect(await readerManifestRequests(request)).toEqual([
     expectedReaderManifest("SöderbergH", "EmptyManifestReader")
   ])
+})
+
+test("source-quality Reader SSR retains an unavailable occurrence on the current page", async ({
+  request
+}) => {
+  const response = await request.get(
+    `${readerPath}?q=source-quality-mixed&hit=1&snapshot=gen-fixture-0001`
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const navigation = document.querySelector(".reader-hit-navigation")
+  const state = document.querySelector(".reader-search-state")
+
+  expect(state?.textContent).toContain("Sökträff 2 av 3")
+  expect(state?.textContent).toContain("Träffen kan inte öppnas exakt i läsaren.")
+  expect(document.querySelector(".markee")).toBeNull()
+  const nextHref = navigation?.querySelector('a[rel="next"]')?.getAttribute("href")
+  expect(nextHref).toBeTruthy()
+  const next = new URL(nextHref ?? "", "https://example.test")
+  expect(next.pathname).toContain("/titlar/DoktorGlas/sida/-1/etext")
+  expect(next.searchParams.get("hit")).toBe("2")
+  expect(next.searchParams.get("snapshot")).toBe("gen-fixture-0001")
+})
+
+test("source-quality Reader browser traversal clears unavailable marks and restores an exact target", async ({
+  page
+}) => {
+  await page.goto(`${readerPath.replace("/sida/-2/", "/sida/-3/")}?q=source-quality-mixed&hit=0`, {
+    waitUntil: "networkidle"
+  })
+  await expect(page.locator(".markee")).toHaveCount(1)
+  await page.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page.locator("#search_nav")).toContainText("Träff 2")
+  await expect(page.locator("#search_nav")).toContainText("Träffen kan inte öppnas exakt i läsaren.")
+  expect(new URL(page.url()).pathname).toContain("/titlar/DoktorGlas/sida/-3/etext")
+  expect(new URL(page.url()).searchParams.get("hit")).toBe("1")
+  await expect(page.locator(".markee")).toHaveCount(0)
+  await page.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page.locator("#search_nav")).toContainText("Träff 3, sida -1")
+  expect(new URL(page.url()).pathname).toContain("/titlar/DoktorGlas/sida/-1/etext")
+  await expect(page.locator(".markee")).toHaveCount(1)
+})
+
+test("source-quality Reader keeps an unavailable selection through reload and history", async ({ page }) => {
+  await page.goto(`${readerPath.replace("/sida/-2/", "/sida/-3/")}?q=source-quality-mixed&hit=0`, {
+    waitUntil: "networkidle"
+  })
+  await page.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page.locator(".markee")).toHaveCount(0)
+  await page.reload({ waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav")).toContainText("Träff 2")
+  await expect(page.locator(".markee")).toHaveCount(0)
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page.locator(".markee")).toHaveCount(1)
+  await page.goForward({ waitUntil: "networkidle" })
+  await expect(page.locator(".markee")).toHaveCount(0)
+})
+
+test("source-quality Reader fetches an uncached unavailable go-to hit on its current page", async ({ page }) => {
+  await page.goto(`${readerPath.replace("/sida/-2/", "/sida/-3/")}?q=source-quality-mixed&hit=0`, {
+    waitUntil: "networkidle"
+  })
+  await page.getByRole("button", { name: "Gå direkt till träff . . ." }).click()
+  await page.getByLabel("Träffnummer").fill("2")
+  await page.getByLabel("Träffnummer").press("Enter")
+  await expect(page.locator("#search_nav")).toContainText("Träff 2")
+  expect(new URL(page.url()).pathname).toContain("/titlar/DoktorGlas/sida/-3/etext")
+  expect(new URL(page.url()).searchParams.get("hit")).toBe("1")
+  await expect(page.locator(".markee")).toHaveCount(0)
+})
+
+test("source-quality Reader submits a first unavailable occurrence through its search controls", async ({ page }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Sök i verket" }).click()
+  await page.locator('input[aria-label="Sök i verket"]:visible').fill("source-quality-first-unavailable")
+  await page.getByRole("button", { name: "Sök", exact: true }).click()
+
+  await expect(page.locator("#search_nav")).toContainText("Träff 1")
+  await expect(page.locator("#search_nav")).toContainText("Träffen kan inte öppnas exakt i läsaren.")
+  const url = new URL(page.url())
+  expect(decodeURIComponent(url.pathname)).toBe(readerPath)
+  expect(url.searchParams.get("q")).toBe("source-quality-first-unavailable")
+  expect(url.searchParams.get("hit")).toBe("0")
+  expect(url.searchParams.get("snapshot")).toBe("gen-fixture-0001")
+  await expect(page.locator(".markee")).toHaveCount(0)
+})
+
+test("source-quality Reader go-to fetches an uncached unavailable hit with its pinned snapshot", async ({
+  page,
+  request
+}) => {
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await page.goto(`${readerPath.replace("/sida/-2/", "/sida/-3/")}?q=source-quality-uncached&hit=0`, {
+    waitUntil: "networkidle"
+  })
+  await page.getByRole("button", { name: "Gå direkt till träff . . ." }).click()
+  await page.getByLabel("Träffnummer").fill("5")
+  await page.getByLabel("Träffnummer").press("Enter")
+
+  await expect(page.locator("#search_nav")).toContainText("Träff 5")
+  await expect(page.locator("#search_nav")).toContainText("Träffen kan inte öppnas exakt i läsaren.")
+  expect(new URL(page.url()).pathname).toContain("/titlar/DoktorGlas/sida/-3/etext")
+  expect(new URL(page.url()).searchParams.get("hit")).toBe("4")
+  await expect(page.locator(".markee")).toHaveCount(0)
+  await expect.poll(async () => (await readerHitRequests(request)).some(item => {
+    const query = new URLSearchParams(item.query)
+    return query.get("query") === "source-quality-uncached" &&
+      query.get("offset") === "3" && query.get("limit") === "3" &&
+      query.get("snapshot") === "gen-fixture-0001"
+  })).toBe(true)
+})
+
+for (const staleStatus of [200, 409]) {
+  test(`source-quality Reader ignores a held obsolete ${staleStatus} after selection and search changes`, async ({
+    page
+  }) => {
+    await page.goto(`${readerPath.replace("/sida/-2/", "/sida/-3/")}?q=source-quality-uncached&hit=0`, {
+      waitUntil: "networkidle"
+    })
+    await page.evaluate(status => {
+      const nativeFetch = window.fetch.bind(window)
+      let release!: () => void
+      const gate = new Promise<void>(resolve => { release = resolve })
+      const state = { started: false, release }
+      Object.assign(window, { sourceQualityGate: state })
+      window.fetch = async (input, init) => {
+        const url = new URL(input instanceof Request ? input.url : String(input), location.href)
+        if (url.pathname.endsWith("/search-hits") &&
+          url.searchParams.get("query") === "source-quality-uncached" &&
+          url.searchParams.get("offset") === "3") {
+          const response = await nativeFetch(input, init)
+          state.started = true
+          await gate
+          if (status === 409) {
+            return new Response(JSON.stringify({
+              error: {
+                code: "snapshot_unavailable",
+                message: "Search snapshot unavailable",
+                details: null
+              },
+              request_id: "fa781be9-6f29-4696-9aee-2bd75f2b32cb"
+            }), { status: 409, headers: { "content-type": "application/json",
+              "X-Request-ID": "fa781be9-6f29-4696-9aee-2bd75f2b32cb" } })
+          }
+          return response
+        }
+        return nativeFetch(input, init)
+      }
+    }, staleStatus)
+    await page.getByRole("button", { name: "Gå direkt till träff . . ." }).click()
+    await page.getByLabel("Träffnummer").fill("5")
+    await page.getByLabel("Träffnummer").press("Enter")
+    await page.waitForFunction(() => (
+      window as unknown as { sourceQualityGate: { started: boolean } }
+    ).sourceQualityGate.started)
+
+    await page.getByRole("link", { name: "Nästa sökträff" }).click()
+    await expect(page.locator("#search_nav")).toContainText("Träff 2")
+    await expect(page.locator(".markee")).toHaveCount(0)
+    await page.getByRole("button", { name: "Sök i verket" }).click()
+    await page.locator('input[aria-label="Sök i verket"]:visible').fill("source-quality-first-unavailable")
+    await page.getByRole("button", { name: "Sök", exact: true }).click()
+    await expect(page.locator("#search_nav")).toContainText("Träff 1")
+    await expect(page.locator("#search_nav")).toContainText("Träffen kan inte öppnas exakt i läsaren.")
+
+    await page.evaluate(async () => {
+      ;(window as unknown as { sourceQualityGate: { release: () => void } }).sourceQualityGate.release()
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    })
+    await expect(page.locator("#search_nav")).toContainText("Träff 1")
+    expect(new URL(page.url()).searchParams.get("q")).toBe("source-quality-first-unavailable")
+    await expect(page.locator(".markee")).toHaveCount(0)
+  })
+}
+
+for (const query of ["source-quality-first-unavailable", "source-quality-ambiguous", "source-quality-unsupported"]) {
+  test(`source-quality Reader accepts a first ${query} occurrence without a marker`, async ({ request }) => {
+    const response = await request.get(`${readerPath}?q=${query}&hit=0&snapshot=gen-fixture-0001`)
+    const { document } = parseHTML(await response.text())
+    expect(response.status()).toBe(200)
+    expect(document.querySelector(".reader-search-state")?.textContent)
+      .toContain("Träffen kan inte öppnas exakt i läsaren.")
+    expect(document.querySelector(".markee")).toBeNull()
+  })
+}
+
+test("source-quality Reader keeps a faksimil occurrence markerless on its existing page", async ({ request }) => {
+  const response = await request.get(
+    `${facsimilePath}?q=source-quality-first-unavailable&hit=0&snapshot=gen-fixture-0001`
+  )
+  const { document } = parseHTML(await response.text())
+  expect(response.status()).toBe(200)
+  expect(document.querySelector(".reader-search-state")?.textContent)
+    .toContain("Träffen kan inte öppnas exakt i läsaren.")
+  expect(document.querySelector(".markee")).toBeNull()
+})
+
+test("source-quality Reader faksimil browser traversal changes image and raw marker only for exact hits", async ({
+  page
+}) => {
+  await page.goto(`${facsimilePath}?q=source-quality-mixed&hit=0`, { waitUntil: "networkidle" })
+  await expect(page.locator("img.faksimil")).toHaveAttribute("src", facsimileImagePath)
+  expect(new URL(page.url()).searchParams.has("traff")).toBe(false)
+
+  await page.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page.locator("#search_nav")).toContainText("Träffen kan inte öppnas exakt i läsaren.")
+  expect(new URL(page.url()).pathname).toContain("/sida/3/faksimil")
+  expect(new URL(page.url()).searchParams.has("traff")).toBe(false)
+  expect(new URL(page.url()).searchParams.has("traffslut")).toBe(false)
+  await expect(page.locator("img.faksimil")).toHaveAttribute("src", facsimileImagePath)
+
+  await page.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page.locator("#search_nav")).toContainText("Träff 3, sida 5")
+  expect(new URL(page.url()).pathname).toContain("/sida/5/faksimil")
+  expect(new URL(page.url()).searchParams.get("traff")).toBe("w5_1")
+  await expect(page.locator("img.faksimil")).toHaveAttribute("src", /_3_0012\.jpeg$/)
 })

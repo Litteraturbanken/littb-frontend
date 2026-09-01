@@ -333,23 +333,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/text-search/count": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Post Text Search Count */
-        post: operations["v2_post_text_search_count"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/text-search/options": {
         parameters: {
             query?: never;
@@ -522,7 +505,7 @@ export interface components {
             /** Code */
             code: string;
             /** Details */
-            details: components["schemas"]["ErrorDetail"][] | null;
+            details: (components["schemas"]["ErrorDetail"] | components["schemas"]["QueryErrorDetail"])[] | null;
             /** Message */
             message: string;
         };
@@ -2436,6 +2419,27 @@ export interface components {
             /** Trace Id */
             trace_id: string | null;
         };
+        /** QueryErrorDetail */
+        QueryErrorDetail: {
+            /**
+             * Field
+             * @constant
+             */
+            field: "query";
+            /** Message */
+            message: string;
+            source_span: components["schemas"]["QuerySourceSpan"];
+        };
+        /**
+         * QuerySourceSpan
+         * @description Half-open UTF-8 byte offsets within the submitted query.
+         */
+        QuerySourceSpan: {
+            /** End */
+            end: number;
+            /** Start */
+            start: number;
+        };
         /** QuickSearchItem */
         QuickSearchItem: {
             /**
@@ -2728,6 +2732,11 @@ export interface components {
             /** Trace Id */
             trace_id: string | null;
         };
+        /**
+         * ReaderTargetStatus
+         * @enum {string}
+         */
+        ReaderTargetStatus: "exact" | "unmapped_page" | "ambiguous_word_id" | "unsupported_reader_identity";
         /**
          * RequestCompletedEvent
          * @description Represent a successfully completed application request.
@@ -3159,68 +3168,23 @@ export interface components {
             /** Year To */
             year_to: number | null;
         };
-        /** TextSearchCountRequest */
-        TextSearchCountRequest: {
-            /** About Author Ids */
-            about_author_ids?: string[];
-            /** Author Ids */
-            author_ids?: string[];
-            /** Categories */
-            categories?: ("texttype:brev;brevsamling" | "texttype:drama;dramasamling" | "texttype:essä;essäsamling" | "texttype:novellsamling;novell" | "texttype:diktsamling;dikt" | "texttype:roman" | "texttype:sakprosa;kringtexter;avhandling;referensverk" | "keyword:Barnlitteratur" | "keyword:Biografika|texttype:brev;brevsamling" | "keyword:Finlandssvenskt" | "keyword:Flickböcker" | "texttype:herdaminne" | "keyword:Humor" | "texttype:kistebrev" | "texttype:kringtext" | "texttype:kåseri;kåserisamling" | "texttype:reseskildring" | "keyword:Rösträtt" | "keyword:Sapmi" | "keyword:Folktryck" | "keyword:sentpajorden" | "keyword:OrdenPrövas" | "keyword:LB-antologi" | "keyword:1800" | "source:bibliotekariesidor" | "source:diktensmuseum" | "keyword:Dramawebben" | "source:skolan" | "source:litteraturkartan" | "source:ljudochbild" | "source:sol" | "keyword:SLS-FI" | "provenance.library:SVELITT" | "provenance.library:SA" | "provenance.library:SFS" | "provenance.library:SVA" | "author_ids:KunglSamfundet" | "provenance.library:SVS")[];
-            /** Facet Author Id */
-            facet_author_id?: string | null;
-            /** Gender */
-            gender?: ("female" | "male") | null;
-            /**
-             * Include Modernized
-             * @default true
-             */
-            include_modernized: boolean;
-            /** Languages */
-            languages?: ("modernized:true" | "modernized:false" | "translation:true" | "original:true" | "language:swe" | "foreign:true" | "language:eng" | "language:deu" | "language:fra" | "language:lat" | "language:smi" | "proofread:true" | "proofread:false")[];
-            /** Legacy Filters */
-            legacy_filters?: components["schemas"]["SearchLegacyFilter"][];
-            /**
-             * Prefix
-             * @default false
-             */
-            prefix: boolean;
-            /** Query */
-            query: string;
-            /**
-             * Suffix
-             * @default false
-             */
-            suffix: boolean;
-            /**
-             * Word Form Only
-             * @default true
-             */
-            word_form_only: boolean;
-            /** Work Ids */
-            work_ids?: string[];
-            /** Year From */
-            year_from?: number | null;
-            /** Year To */
-            year_to?: number | null;
-        };
-        /** TextSearchCountResponse */
-        TextSearchCountResponse: {
-            /** Query */
-            query: string;
-            /** Total Documents */
-            total_documents: number;
-            /** Total Highlights */
-            total_highlights: number;
-        };
         /** TextSearchHighlight */
         TextSearchHighlight: {
             /** Left Context */
             left_context: components["schemas"]["TextSearchWord"][];
             /** Match */
             match: components["schemas"]["TextSearchWord"][];
+            /** Page Index */
+            page_index: number;
+            reader_target_status: components["schemas"]["ReaderTargetStatus"];
             /** Right Context */
             right_context: components["schemas"]["TextSearchWord"][];
+            /** Source End */
+            source_end: number;
+            /** Source Identity */
+            source_identity: string;
+            /** Source Start */
+            source_start: number;
         };
         /** TextSearchOptionsRequest */
         TextSearchOptionsRequest: {
@@ -3315,8 +3279,9 @@ export interface components {
             page_size: 30;
             /** Query */
             query: string;
-            /** Total Work Hits */
-            total_work_hits: number;
+            /** Snapshot */
+            snapshot: string;
+            totals: components["schemas"]["TextSearchTotals"];
             /** Works */
             works: components["schemas"]["TextSearchWork"][];
         };
@@ -3364,6 +3329,8 @@ export interface components {
             prefix: boolean;
             /** Query */
             query: string;
+            /** Snapshot */
+            snapshot?: string | null;
             /**
              * Suffix
              * @default false
@@ -3390,10 +3357,19 @@ export interface components {
             /** Work Id */
             work_id: string;
         };
+        /** TextSearchTotals */
+        TextSearchTotals: {
+            /** Documents */
+            documents: number;
+            /** Occurrences */
+            occurrences: number;
+            /** Works */
+            works: number;
+        };
         /** TextSearchWord */
         TextSearchWord: {
             /** Page Name */
-            page_name: string;
+            page_name: string | null;
             /** Word */
             word: string;
             /** Word Id */
@@ -3402,9 +3378,9 @@ export interface components {
         /** TextSearchWork */
         TextSearchWork: {
             /** Author Id */
-            author_id: string;
+            author_id: string | null;
             /** Author Name */
-            author_name: string;
+            author_name: string | null;
             /** Has More Highlights */
             has_more_highlights: boolean;
             /** Highlights */
@@ -3416,6 +3392,8 @@ export interface components {
              * @enum {string}
              */
             mediatype: "etext" | "faksimil";
+            /** Occurrence Count */
+            occurrence_count: number;
             /** Title */
             title: string;
             /** Title Id */
@@ -3774,13 +3752,24 @@ export interface components {
         };
         /** WorkSearchHit */
         WorkSearchHit: {
-            highlight: components["schemas"]["SearchHitHighlight"];
+            /** End Word Id */
+            end_word_id: string;
+            highlight: components["schemas"]["SearchHitHighlight"] | null;
             /** Index */
             index: number;
             /** Page Index */
             page_index: number;
             /** Page Name */
-            page_name: string;
+            page_name: string | null;
+            reader_target_status: components["schemas"]["ReaderTargetStatus"];
+            /** Source End */
+            source_end: number;
+            /** Source Identity */
+            source_identity: string;
+            /** Source Start */
+            source_start: number;
+            /** Start Word Id */
+            start_word_id: string;
         };
         /** WorkSearchHitsResponse */
         WorkSearchHitsResponse: {
@@ -3797,6 +3786,8 @@ export interface components {
             offset: number;
             /** Query */
             query: string;
+            /** Snapshot */
+            snapshot: string;
             /** Total Hits */
             total_hits: number;
         };
@@ -3890,6 +3881,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -3942,6 +3942,15 @@ export interface operations {
             };
             /** @description Author document not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4008,6 +4017,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -4066,6 +4084,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -4115,6 +4142,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuthorSummariesResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Invalid request */
@@ -4167,6 +4203,15 @@ export interface operations {
                     "application/json": components["schemas"]["BibliographyEntriesResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -4216,6 +4261,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContactAcceptedResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Invalid request */
@@ -4276,6 +4330,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -4323,6 +4386,15 @@ export interface operations {
                     "application/json": components["schemas"]["DramawebbenCatalogResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Unexpected server error */
             500: {
                 headers: {
@@ -4367,6 +4439,15 @@ export interface operations {
             };
             /** @description Legacy route not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4421,6 +4502,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PopularEpubsResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Invalid request */
@@ -4570,6 +4660,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -4621,6 +4720,15 @@ export interface operations {
                     "application/json": components["schemas"]["LibraryDownloadCountResponse"] | components["schemas"]["LibraryBrowseCountResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -4666,6 +4774,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LibraryOptionsResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Invalid request */
@@ -4719,6 +4836,15 @@ export interface operations {
                     "application/json": components["schemas"]["LibraryAllSearchResponse"] | components["schemas"]["LibraryAuthorsSearchResponse"] | components["schemas"]["LibraryWorksSearchResponse"] | components["schemas"]["LibraryPartsSearchResponse"] | components["schemas"]["LibraryLatestSearchResponse"] | components["schemas"]["LibraryEpubSearchResponse"] | components["schemas"]["LibraryPdfSearchResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -4768,6 +4894,15 @@ export interface operations {
                     "application/json": components["schemas"]["QuickSearchResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -4815,6 +4950,15 @@ export interface operations {
                     "application/json": components["schemas"]["StatsResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Unexpected server error */
             500: {
                 headers: {
@@ -4853,55 +4997,13 @@ export interface operations {
                     "application/json": components["schemas"]["TextSearchChronologyResponse"];
                 };
             };
-            /** @description Invalid request */
-            422: {
+            /** @description Search snapshot unavailable */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-            /** @description Unexpected server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-            /** @description Search backend unavailable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-        };
-    };
-    v2_post_text_search_count: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TextSearchCountRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TextSearchCountResponse"];
                 };
             };
             /** @description Invalid request */
@@ -4955,6 +5057,15 @@ export interface operations {
                     "application/json": components["schemas"]["TextSearchOptionsResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -5004,6 +5115,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TextSearchResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Invalid request */
@@ -5060,6 +5180,15 @@ export interface operations {
             };
             /** @description Work manifest not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5128,6 +5257,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -5188,6 +5326,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -5226,6 +5373,7 @@ export interface operations {
                 offset?: number;
                 prefix?: boolean;
                 query: string;
+                snapshot?: string | null;
                 suffix?: boolean;
                 word_forms?: boolean;
             };
@@ -5244,6 +5392,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkSearchHitsResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Invalid request */
@@ -5297,6 +5454,15 @@ export interface operations {
                     "application/json": components["schemas"]["SimilarWorksResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -5348,6 +5514,15 @@ export interface operations {
                     "application/json": components["schemas"]["WorkLookupResponse"];
                 };
             };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Invalid request */
             422: {
                 headers: {
@@ -5395,6 +5570,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PopularWorksResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Invalid request */

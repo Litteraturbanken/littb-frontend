@@ -35,6 +35,9 @@ import {
   slaArticleFixtures
 } from "./sla-article-data.mjs"
 import {
+  corpusFlowHighlights,
+  corpusFlowReaderPageHtmlByIndex,
+  corpusFlowReaderWorkInfoResponse,
   editorMetadataResponse,
   editorManifestResponse,
   readerAarnsethFacsimileWorkInfoResponse,
@@ -408,10 +411,11 @@ let slaArticleSourceFailure = null
 let slaArticleRedirectTargetRequests = []
 let slaArticleSourceCancellations = []
 let slaArticleRequestHeaders = { descriptor: [], source: [] }
-let textSearchRequests = { results: [], count: [], options: [], chronology: [] }
+let textSearchRequests = { results: [], options: [], chronology: [] }
 let textSearchFailures = new Set()
-let textSearchDelays = { results: {}, count: {}, options: {}, chronology: {} }
+let textSearchDelays = { results: {}, options: {}, chronology: {} }
 let textSearchAuthorityMode = false
+let textSearchActiveGeneration = "gen-fixture-0001"
 
 const bibliographyEntries = [
   {
@@ -437,7 +441,7 @@ const bibliographyEntries = [
   }
 ]
 
-const textSearchOperations = new Set(["results", "count", "options", "chronology"])
+const textSearchOperations = new Set(["results", "options", "chronology"])
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
@@ -801,7 +805,8 @@ function readerHitDelayKey(input) {
     input.wordForms,
     input.includeOlderSpellings,
     input.prefix,
-    input.suffix
+    input.suffix,
+    ...(input.snapshot ? [input.snapshot] : [])
   ].join("|")
 }
 
@@ -890,6 +895,8 @@ function readerLocalPartAuthorRepresentation(titlePath, author) {
 
 function readerMetadataResponse(titlePath) {
   switch (titlePath) {
+    case "CorpusFlow":
+      return corpusFlowReaderWorkInfoResponse
     case "DoktorGlas": {
       const etext = readerRepresentation(titlePath, {
         editor_lbworkid: "lb-editor-doktor-glas",
@@ -2183,6 +2190,7 @@ function validTextSearchBody(operation, body) {
     allowed.add("highlight_limit")
     allowed.add("page")
     allowed.add("page_size")
+    allowed.add("snapshot")
   }
   if (operation === "options") {
     allowed.add("include_static_options")
@@ -2193,7 +2201,7 @@ function validTextSearchBody(operation, body) {
   if (Object.keys(body).some(field => !allowed.has(field))) return false
   if (!validTextSearchCommon(body)) return false
 
-  if (operation === "results" || operation === "count") {
+  if (operation === "results") {
     if (!validBoundedString(body.query, 200)) return false
   } else if (
     Object.hasOwn(body, "query") && body.query !== null
@@ -2201,7 +2209,9 @@ function validTextSearchBody(operation, body) {
   ) return false
 
   if (operation === "results") {
-    return Number.isInteger(body.highlight_limit) && body.highlight_limit >= 5
+    return (!Object.hasOwn(body, "snapshot") || body.snapshot === null
+      || validBoundedString(body.snapshot, 128))
+      && Number.isInteger(body.highlight_limit) && body.highlight_limit >= 5
       && body.highlight_limit <= 500 && Number.isInteger(body.page)
       && body.page >= 1 && body.page <= 10_000 && body.page_size === 30
   }
@@ -2248,7 +2258,8 @@ function parseReaderHitQuery(searchParams) {
     "word_forms",
     "include_older_spellings",
     "prefix",
-    "suffix"
+    "suffix",
+    "snapshot"
   ])
   for (const key of searchParams.keys()) {
     if (!allowed.has(key) || searchParams.getAll(key).length !== 1) return null
@@ -2257,8 +2268,11 @@ function parseReaderHitQuery(searchParams) {
   const mediaType = searchParams.get("media_type")
   const rawQuery = searchParams.get("query")
   if ((mediaType !== "etext" && mediaType !== "faksimil") || rawQuery === null) return null
-  const query = rawQuery.trim()
-  if (query.length < 1 || query.length > 200) return null
+  const query = rawQuery
+  if (query.trim().length < 1 || query.length > 200) return null
+  const snapshot = searchParams.get("snapshot")
+  if (snapshot !== null && (!/^[A-Za-z0-9._-]{1,128}$/u.test(snapshot)
+    || snapshot === "." || snapshot === ".." || snapshot.endsWith(".tmp"))) return null
 
   const integer = (name, fallback, minimum, maximum) => {
     const raw = searchParams.get(name)
@@ -2295,6 +2309,7 @@ function parseReaderHitQuery(searchParams) {
   return {
     mediaType,
     query,
+    snapshot,
     offset,
     limit,
     wordForms,
@@ -2512,152 +2527,226 @@ function isPresentationRequest(pathname) {
     pathname === "/app/style/date.css"
 }
 
-function richTextSearchResponse(body) {
+function searchHighlight(query, row, offset, pageName = "1") {
   return {
-    query: body.query,
-    page: body.page,
-    page_size: 30,
-    total_work_hits: 2,
-    author_facets: [
-      { author_id: "StrindbergA", name_for_index: "Strindberg, August", count: 1 },
-      { author_id: "LagerlöfS", name_for_index: "Lagerlöf, Selma", count: 1 }
-    ],
-    works: [
-      {
-        lbworkid: "lb238704",
-        author_id: "StrindbergA",
-        author_name: "August Strindberg",
-        title: "Röda rummet",
-        title_id: "RodaRummet",
-        mediatype: "etext",
-        has_more_highlights: false,
-        highlights: [{
-          left_context: [{ word: "ropade", word_id: "w1_10", page_name: "1" }],
-          match: [{ word: "frihet", word_id: "w1_11", page_name: "1" }],
-          right_context: [{ word: "och", word_id: "w1_12", page_name: "1" }]
-        }]
-      },
-      {
-        lbworkid: "lb278171",
-        author_id: "LagerlöfS",
-        author_name: "Selma Lagerlöf",
-        title: "Gösta Berlings saga",
-        title_id: "GostaBerlingsSaga",
-        mediatype: "faksimil",
-        has_more_highlights: true,
-        highlights: [{
-          left_context: [{ word: "sin", word_id: "w3_20", page_name: "3" }],
-          match: [{ word: "frihet", word_id: "w3_21", page_name: "3" }],
-          right_context: [{ word: "sökte", word_id: "w3_22", page_name: "3" }]
-        }]
-      }
-    ]
+    left_context: [{ word: "vänster", word_id: `w${row}_${offset}`, page_name: pageName }],
+    match: [{ word: query, word_id: `w${row}_${offset + 1}`, page_name: pageName }],
+    right_context: [{ word: "höger", word_id: `w${row}_${offset + 2}`, page_name: pageName }]
   }
 }
 
-function textSearchResultsResponse(body) {
-  if (body.query === "inga") {
-    return {
-      query: body.query,
-      page: body.page,
-      page_size: 30,
-      total_work_hits: 0,
-      author_facets: [],
-      works: []
+function richTextSearchWorks(query) {
+  return [
+    {
+      lbworkid: "lb238704", author_id: "StrindbergA", author_name: "August Strindberg",
+      title: "Röda rummet", title_id: "RodaRummet", mediatype: "etext",
+      allHighlights: [{
+        left_context: [{ word: "ropade", word_id: "w1_10", page_name: "1" }],
+        match: [{ word: query, word_id: "w1_11", page_name: "1" }],
+        right_context: [{ word: "och", word_id: "w1_12", page_name: "1" }]
+      }]
+    },
+    {
+      lbworkid: "lb278171", author_id: "LagerlöfS", author_name: "Selma Lagerlöf",
+      title: "Gösta Berlings saga", title_id: "GostaBerlingsSaga", mediatype: "faksimil",
+      allHighlights: [{
+        left_context: [{ word: "sin", word_id: "w3_20", page_name: "3" }],
+        match: [{ word: query, word_id: "w3_21", page_name: "3" }],
+        right_context: [{ word: "sökte", word_id: "w3_22", page_name: "3" }]
+      }, {
+        left_context: [{ word: "drömde", word_id: "w4_30", page_name: "4" }],
+        match: [{ word: query, word_id: "w4_31", page_name: "4" }],
+        right_context: [{ word: "vidare", word_id: "w4_32", page_name: "4" }]
+      }]
     }
+  ]
+}
+
+function overflowTextSearchWorks(query) {
+  return Array.from({ length: 64 }, (_, index) => {
+    const number = index + 1
+    const strindberg = index === 1 ? false : index < 41
+    const legacyWork = index === 0
+      ? { lbworkid: "lb238704", title: "Röda rummet", title_id: "RodaRummet" }
+      : index === 1
+        ? { lbworkid: "lb278171", title: "Gösta Berlings saga", title_id: "GostaBerlingsSaga" }
+        : null
+    return {
+      lbworkid: legacyWork?.lbworkid ?? `lb-overflow-${number}`,
+      author_id: strindberg ? "StrindbergA" : "LagerlöfS",
+      author_name: strindberg ? "August Strindberg" : "Selma Lagerlöf",
+      title: legacyWork?.title ?? `Överflödesverk ${number}`,
+      title_id: legacyWork?.title_id ?? `Overflow${number}`,
+      mediatype: number % 2 ? "etext" : "faksimil",
+      allHighlights: Array.from({ length: 8 }, (_, hit) => searchHighlight(query, number, hit * 10 + 1))
+    }
+  })
+}
+
+function exactTotalsWorks(query) {
+  return Array.from({ length: 8 }, (_, index) => {
+    const number = index + 1
+    const occurrenceCount = number === 1 ? 3 : 2
+    return {
+      lbworkid: `lb-exact-${number}`,
+      author_id: `ExactAuthor${number}`,
+      author_name: `Exakt Författare ${number}`,
+      title: `Exakt verk ${number}`,
+      title_id: `Exact${number}`,
+      mediatype: number % 2 ? "etext" : "faksimil",
+      allHighlights: Array.from({ length: occurrenceCount }, (_, hit) => searchHighlight(query, number, hit * 10 + 1))
+    }
+  })
+}
+
+function pairedMediaWorks(query, changedGeneration = false) {
+  return ["etext", "faksimil"].map((mediatype, index) => ({
+    lbworkid: "lb-same-media",
+    author_id: "StrindbergA",
+    author_name: "August Strindberg",
+    title: changedGeneration ? `Förändrad media ${mediatype}` : `Samma media ${mediatype}`,
+    title_id: `SameMedia${mediatype}`,
+    mediatype,
+    allHighlights: Array.from({ length: 7 }, (_, hit) => searchHighlight(
+      query, index + 20, hit * 10 + 1
+    ))
+  }))
+}
+
+function corpusFlowWorks() {
+  const works = Array.from({ length: 32 }, (_, index) => ({
+    lbworkid: `lb-corpus-flow-${index + 1}`,
+    author_id: "SöderbergH", author_name: "Hjalmar Söderberg",
+    title: `Sökflödesverk ${index + 1}`, title_id: `CorpusFlow${index + 1}`,
+    mediatype: "etext", allHighlights: [searchHighlight("doktor glas", index + 1, 1)]
+  }))
+  works[30] = {
+    lbworkid: "lb-reader-corpus-flow", author_id: "SöderbergH", author_name: "Hjalmar Söderberg",
+    title: "Doktor Glas – sökflöde", title_id: "CorpusFlow", mediatype: "etext",
+    allHighlights: corpusFlowHighlights
   }
-  const rich = richTextSearchResponse(body)
-  if (body.query === "empty-highlights") {
-    rich.works[0].highlights = []
-    rich.works[1].highlights[0].match[0].word = body.query
+  works.push(richTextSearchWorks("doktor glas")[1])
+  // One occurrence in the other author's work keeps the inventory hand-countable.
+  works.at(-1).allHighlights = works.at(-1).allHighlights.slice(0, 1)
+  return works
+}
+
+function inventoryForTextSearch(body) {
+  if (body.query === "doktor glas") return corpusFlowWorks()
+  if (body.query === "source-quality-mixed") {
+    return [{
+      lbworkid: "lb238704", author_id: "StrindbergA", author_name: "August Strindberg",
+      title: "Röda rummet", title_id: "RodaRummet", mediatype: "etext",
+      allHighlights: [
+        searchHighlight(body.query, 1, 1),
+        {
+          left_context: [{ word: "vänster", word_id: "w119_1", page_name: null }],
+          match: [{ word: body.query, word_id: "w119_2", page_name: null }],
+          right_context: [{ word: "höger", word_id: "w119_3", page_name: null }],
+          reader_target_status: "unmapped_page"
+        },
+        searchHighlight(body.query, 3, 1)
+      ]
+    }]
   }
-  if (body.query === "frihet" && body.page > 1 && hasExactFields(body, [
-    "query", "page", "page_size", "highlight_limit", "prefix", "suffix",
-    "word_form_only", "include_modernized"
-  ])) {
-    rich.works = []
-    return rich
+  if (body.query === "source-quality-unsafe-facet") {
+    return [{
+      lbworkid: "lb-unsafe-facet", author_id: "a/1", author_name: "Unsafe, Author",
+      title: "Rå författare", title_id: "RawAuthor", mediatype: "etext",
+      allHighlights: [searchHighlight(body.query, 1, 1)]
+    }]
   }
-  if (body.query === "overflow") {
-    rich.total_work_hits = 64
-    rich.works[0].has_more_highlights = true
-    rich.author_facets[0].count = 41
-    rich.author_facets[1].count = 23
+  if (body.query === "inga") return []
+  if (["many-hits-101", "many-hits-501"].includes(body.query)) {
+    const works = pairedMediaWorks(body.query)
+    const count = body.query === "many-hits-101" ? 101 : 501
+    works[1].allHighlights = Array.from({ length: count }, (_, hit) => searchHighlight(
+      body.query, 21, hit * 10 + 1, String(Math.floor(hit / 10) + 1)
+    ))
+    return works
+  }
+  if (body.query === "overflow") return overflowTextSearchWorks(body.query)
+  if (body.query === "exact-totals") return exactTotalsWorks(body.query)
+  if (body.query === "same-media") {
+    return pairedMediaWorks(body.query, body.snapshot === "gen-fixture-0002")
+  }
+  const works = richTextSearchWorks(body.query)
+  if (body.query === "empty-highlights" && body.highlight_limit === 5) {
+    works[0].visibleHighlights = []
   }
   if (body.query === "five-context") {
-    rich.total_work_hits = 1
-    rich.author_facets = [{ ...rich.author_facets[0], count: 1 }]
-    rich.works = [rich.works[0]]
-    rich.works[0].highlights[0].match[0].word = body.query
-    rich.works[0].highlights[0].right_context = Array.from({ length: 5 }, (_, index) => ({
-      word: String(index + 1).repeat(29),
-      word_id: `w1_${index + 12}`,
-      page_name: "1"
+    works.splice(1)
+    works[0].allHighlights[0].right_context = Array.from({ length: 5 }, (_, index) => ({
+      word: String(index + 1).repeat(29), word_id: `w1_${index + 12}`, page_name: "1"
     }))
   }
   if (body.query === "phrase-hit") {
-    rich.total_work_hits = 1
-    rich.author_facets = [{ ...rich.author_facets[0], count: 1 }]
-    rich.works = [rich.works[0]]
-    rich.works[0].highlights[0].match = [
+    works.splice(1)
+    works[0].allHighlights[0].match = [
       { word: "frihet", word_id: "w1_11", page_name: "1" },
       { word: "nu", word_id: "w1_12", page_name: "1" }
     ]
   }
-  if (body.work_ids?.length) {
-    const workIds = new Set(body.work_ids)
-    rich.works = rich.works.filter(work => workIds.has(work.lbworkid))
-    const authorIds = new Set(rich.works.map(work => work.author_id))
-    rich.author_facets = rich.author_facets
-      .filter(facet => authorIds.has(facet.author_id))
-      .map(facet => ({ ...facet, count: 1 }))
-    rich.total_work_hits = rich.works.length
-  }
-  if (body.facet_author_id) {
-    rich.works = rich.works.filter(work => work.author_id === body.facet_author_id)
-    rich.author_facets = rich.author_facets
-      .filter(facet => facet.author_id === body.facet_author_id)
-      .map(facet => ({ ...facet, count: rich.works.length }))
-    rich.total_work_hits = rich.works.length
-  }
-  if (body.highlight_limit === 100) {
-    for (const work of rich.works) {
-      work.has_more_highlights = false
-      if (work.lbworkid === "lb238704") {
-        work.highlights.push({
-          left_context: [{ word: "svarade", word_id: "w2_20", page_name: "2" }],
-          match: [{ word: body.query, word_id: "w2_21", page_name: "2" }],
-          right_context: [{ word: "lugnt", word_id: "w2_22", page_name: "2" }]
-        })
-      } else if (work.lbworkid === "lb278171") {
-        work.highlights.push({
-          left_context: [{ word: "drömde", word_id: "w4_30", page_name: "4" }],
-          match: [{ word: body.query, word_id: "w4_31", page_name: "4" }],
-          right_context: [{ word: "vidare", word_id: "w4_32", page_name: "4" }]
-        })
-      }
-    }
-  }
-  return rich
+  return works
 }
 
-function textSearchCountResponse(body) {
-  if (body.query === "inga") {
-    return { query: body.query, total_documents: 0, total_highlights: 0 }
+function textSearchResultsResponse(body, inventory = null) {
+  const snapshot = body.snapshot ?? (body.query === "same-media"
+    && textSearchRequests.results.filter(request => request.body.query === "same-media").length > 1
+    ? "gen-fixture-0002"
+    : textSearchActiveGeneration)
+  const completeInventory = inventory ?? inventoryForTextSearch({ ...body, snapshot })
+  let matchedWorks = completeInventory
+  if (body.work_ids?.length) {
+    const workIds = new Set(body.work_ids)
+    matchedWorks = matchedWorks.filter(work => workIds.has(work.lbworkid))
   }
-  if (body.query === "overflow") {
-    return { query: body.query, total_documents: 64, total_highlights: 512 }
-  }
-  if (body.query === "five-context") {
-    return { query: body.query, total_documents: 1, total_highlights: 1 }
-  }
-  if (body.query === "phrase-hit") {
-    return { query: body.query, total_documents: 1, total_highlights: 1 }
+  if (body.author_ids?.length) {
+    const authorIds = new Set(body.author_ids)
+    matchedWorks = matchedWorks.filter(work => authorIds.has(work.author_id))
   }
   if (body.facet_author_id) {
-    return { query: body.query, total_documents: 1, total_highlights: 1 }
+    matchedWorks = matchedWorks.filter(work => work.author_id === body.facet_author_id)
   }
-  return { query: body.query, total_documents: 2, total_highlights: 3 }
+  const authorFacets = [...new Map(matchedWorks.map(work => [work.author_id, {
+    author_id: work.author_id,
+    name_for_index: work.author_id === "StrindbergA" ? "Strindberg, August"
+      : work.author_id === "LagerlöfS" ? "Lagerlöf, Selma" : work.author_name,
+    count: matchedWorks.filter(candidate => candidate.author_id === work.author_id).length
+  }])).values()]
+  const totals = {
+    occurrences: matchedWorks.reduce((total, work) => total + work.allHighlights.length, 0),
+    documents: matchedWorks.length,
+    works: matchedWorks.length
+  }
+  const pageStart = (body.page - 1) * body.page_size
+  return {
+    query: body.query,
+    page: body.page,
+    page_size: 30,
+    snapshot,
+    totals,
+    author_facets: authorFacets,
+    works: matchedWorks.slice(pageStart, pageStart + body.page_size).map(({ allHighlights, visibleHighlights, ...work }) => {
+      const visible = visibleHighlights ?? allHighlights.slice(0, body.highlight_limit)
+      return {
+        ...work,
+        occurrence_count: allHighlights.length,
+        highlights: visible.map((highlight, index) => ({
+          ...highlight,
+          source_identity: highlight.source_identity ?? `${work.lbworkid}:${work.mediatype}:fixture`,
+          source_start: highlight.source_start ?? index * 10,
+          source_end: highlight.source_end ?? index * 10 + highlight.match.length,
+          page_index: highlight.page_index ?? Number(
+            /^w(\d+)_/.exec(highlight.match[0]?.word_id ?? "")?.[1] ?? index
+          ),
+          reader_target_status: highlight.reader_target_status ?? "exact"
+        })),
+        has_more_highlights: visibleHighlights !== undefined
+          || allHighlights.length > body.highlight_limit
+      }
+    })
+  }
 }
 
 function authorityWords(pageName, row, words, offset) {
@@ -2679,23 +2768,26 @@ function authorityHighlight(pageName, index, query, left, right) {
 
 function authorityTextSearchResultsResponse(body) {
   if (body.query === "inga") return textSearchResultsResponse(body)
-  const response = richTextSearchResponse(body)
-  response.total_work_hits = 2
-  response.works[0].highlights = [
+  const works = richTextSearchWorks(body.query)
+  works[0].allHighlights = [
     authorityHighlight("1", 1, body.query, ["det", "är", "icke", "blott"], ["för", "människan", "."]),
     authorityHighlight("2", 2, body.query, ["han", "ropade", "högt", ","], ["för", "människan", "."]),
     authorityHighlight("3", 3, body.query, ["och", "drömmen", "om"], ["för", "människan", "."]),
     authorityHighlight("4", 4, body.query, ["den", "nya", "tiden", "gav"], ["för", "människan", "."]),
     authorityHighlight("5", 5, body.query, ["att", "vinna", "sin"], ["för", "människan", "."])
   ]
-  response.works[0].has_more_highlights = true
-  response.works[1].highlights = [authorityHighlight(
+  works[0].allHighlights.push(
+    authorityHighlight("6", 7, body.query, ["fritt", "i", "vinden"], ["på", "nytt", "."]),
+    authorityHighlight("7", 8, body.query, ["mellan", "husen"], ["och", "gatorna", "."])
+  )
+  works[1].allHighlights = [authorityHighlight(
     "3", 6, body.query, ["hon", "sökte", "sin"], ["bortom", "bergen", "."]
   )]
-  response.works[1].has_more_highlights = false
-  response.author_facets[0].count = 1
-  response.author_facets[1].count = 1
-  return response
+  // Authority mode is a frozen presentation fixture, including conflicting
+  // selected filters. Semantic filtering is exercised outside this mode.
+  return textSearchResultsResponse({
+    ...body, author_ids: [], work_ids: [], facet_author_id: null
+  }, works)
 }
 
 const textSearchTitleCatalog = [
@@ -2819,13 +2911,6 @@ function textSearchOptionsResponse(body) {
 function textSearchResponse(operation, body) {
   if (textSearchAuthorityMode) {
     if (operation === "results") return authorityTextSearchResultsResponse(body)
-    if (operation === "count") {
-      return {
-        query: body.query,
-        total_documents: body.query === "inga" ? 0 : 2,
-        total_highlights: body.query === "inga" ? 0 : 8
-      }
-    }
     const options = textSearchOptionsResponse(body)
     return {
       ...options,
@@ -2852,7 +2937,6 @@ function textSearchResponse(operation, body) {
     }
   }
   if (operation === "results") return textSearchResultsResponse(body)
-  if (operation === "count") return textSearchCountResponse(body)
   return textSearchOptionsResponse(body)
 }
 
@@ -3063,7 +3147,10 @@ const handleFixtureRequest = async (request, response) => {
       }
       if (request.method === "DELETE") {
         if (selectedOperation) textSearchRequests[selectedOperation] = []
-        else textSearchRequests = { results: [], count: [], options: [], chronology: [] }
+        else {
+          textSearchRequests = { results: [], options: [], chronology: [] }
+          textSearchActiveGeneration = "gen-fixture-0001"
+        }
         return selectedOperation
           ? sendJson(response, 200, { requests: textSearchRequests[selectedOperation] })
           : sendJson(response, 200, textSearchRequests)
@@ -3115,7 +3202,7 @@ const handleFixtureRequest = async (request, response) => {
       }
       if (request.method === "DELETE") {
         if (selectedOperation) textSearchDelays[selectedOperation] = {}
-        else textSearchDelays = { results: {}, count: {}, options: {}, chronology: {} }
+        else textSearchDelays = { results: {}, options: {}, chronology: {} }
         return sendJson(response, 200, { delays: textSearchDelays })
       }
     }
@@ -4646,6 +4733,18 @@ const handleFixtureRequest = async (request, response) => {
     return sendJson(response, 200, readerAarnsethFacsimileWorkInfoResponse)
   }
 
+  const corpusFlowPageMatch = request.method === "GET"
+    ? /^\/txt\/lb-reader-corpus-flow\/res_0000([12])\.html$/.exec(url.pathname)
+    : null
+  if (corpusFlowPageMatch) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerHtmlRequests.push(recordedRequest)
+    if (url.searchParams.get("username") !== "app") return sendBody(response, 403, "text/plain", "forbidden")
+    return sendBody(response, 200, "text/html; charset=utf-8",
+      corpusFlowReaderPageHtmlByIndex[Number(corpusFlowPageMatch[1])])
+  }
+
   const readerPageMatch = request.method === "GET"
     ? /^\/txt\/lb-reader-doktor-glas\/res_0000([123])\.html$/.exec(url.pathname)
     : null
@@ -5478,7 +5577,7 @@ const handleFixtureRequest = async (request, response) => {
       : { year_from: 1248, year_to: 2026 })
   }
 
-  const textSearchMatch = /^\/v2\/text-search\/(results|count|options)$/.exec(apiPathname)
+  const textSearchMatch = /^\/v2\/text-search\/(results|options)$/.exec(apiPathname)
   if (textSearchMatch) {
     const operation = textSearchMatch[1]
     if (request.method !== "POST") {
@@ -5505,10 +5604,22 @@ const handleFixtureRequest = async (request, response) => {
 
     textSearchRequests[operation].push({ method: request.method, path: url.pathname, body })
     await waitForTextSearchDelay(operation, body)
+    if (operation === "results" && body.snapshot === "gen-expired") {
+      textSearchActiveGeneration = "gen-fixture-0002"
+      const requestId = request.headers["x-request-id"] ?? "fa781be9-6f29-4696-9aee-2bd75f2b32cb"
+      response.setHeader("X-Request-ID", requestId)
+      return sendJson(response, 409, {
+        error: {
+          code: "snapshot_unavailable",
+          message: "Search snapshot unavailable",
+          details: null
+        },
+        request_id: requestId
+      })
+    }
     if (textSearchFailures.has(operation)) {
       const messages = {
         results: "Unable to load text-search results",
-        count: "Unable to count text-search results",
         options: "Unable to load text-search options"
       }
       return sendJson(response, 503, {
@@ -6014,6 +6125,16 @@ const handleFixtureRequest = async (request, response) => {
     readerHitRequests.push({ path: rawPathname, query: rawQuery })
     const input = { workId: readerHitWork.workId, ...query }
     await waitForReaderHitDelay(input)
+    if (query.snapshot === "gen-expired" || (
+      query.snapshot === "gen-expired-continuation" && query.offset >= 3
+    )) {
+      const requestId = request.headers["x-request-id"] ?? "fa781be9-6f29-4696-9aee-2bd75f2b32cb"
+      response.setHeader("X-Request-ID", requestId)
+      return sendJson(response, 409, {
+        error: { code: "snapshot_unavailable", message: "Search snapshot unavailable", details: null },
+        request_id: requestId
+      })
+    }
     if (readerHitFailure) {
       return sendJson(response, 503, {
         error: {
@@ -6025,6 +6146,7 @@ const handleFixtureRequest = async (request, response) => {
     }
     if (query.query === "malformed-response") {
       return sendJson(response, 200, {
+        snapshot: query.snapshot ?? "gen-fixture-0001",
         query: query.query,
         media_type: query.mediaType,
         offset: query.offset,
@@ -6035,6 +6157,7 @@ const handleFixtureRequest = async (request, response) => {
     }
     if (query.query === "incomplete-window") {
       return sendJson(response, 200, {
+        snapshot: query.snapshot ?? "gen-fixture-0001",
         query: query.query,
         media_type: query.mediaType,
         offset: query.offset,
@@ -6075,7 +6198,7 @@ const handleFixtureRequest = async (request, response) => {
       query.offset,
       query.limit,
       query.mediaType,
-      query
+      { ...query, snapshot: query.snapshot ?? textSearchActiveGeneration }
     ))
   }
 

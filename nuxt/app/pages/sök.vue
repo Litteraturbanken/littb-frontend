@@ -9,25 +9,25 @@ import type {
 } from "~/components/search/SearchMultiSelect.vue"
 import SearchMultiSelect from "~/components/search/SearchMultiSelect.vue"
 import { useLbApiClient } from "~/composables/useLbApiClient"
+import { isSnapshotUnavailable } from "~/lib/api/snapshot"
 import {
   createTextSearchRequestOwner,
   type TextSearchOwnedRequest,
   type TextSearchRequestOwner
 } from "~/lib/text-search-request-owner"
 import {
-  acceptTextSearchCountResponse,
   acceptTextSearchOptionsResponse,
   acceptTextSearchResultsResponse,
   attachTextSearchReturnHref,
-  buildTextSearchCountRequest,
   buildTextSearchOptionsRequest,
   buildTextSearchReaderHref,
   buildTextSearchResultsRequest,
   isTextSearchPunctuation,
+  isSafeTextSearchIdentifier,
+  isTextSearchSnapshot,
   parseTextSearchRouteQuery,
   prepareTextSearchHighlight,
   resetTextSearchQuery,
-  textSearchCountRequestIdentity,
   textSearchFilterQuery,
   textSearchCategoryOptions,
   textSearchLanguageOptions,
@@ -41,34 +41,40 @@ import {
   type TextSearchRouteQuery,
   type TextSearchRouteState
 } from "~/lib/text-search"
+import { readerTargetUnavailableMessage } from "~/lib/reader-target"
 
 type SearchWordView = Readonly<{ text: string, punct: boolean }>
 type SearchHitView = Readonly<{
-  href: string
+  href: string | null
   left: readonly SearchWordView[]
   match: readonly SearchWordView[]
   right: readonly SearchWordView[]
 }>
 type SearchWorkView = Readonly<{
   key: string
-  authorName: string
+  workId: string
+  mediaType: "etext" | "faksimil"
+  authorName: string | null
   title: string
   facsimile: boolean
+  occurrenceCount: number
   hasMore: boolean
   hits: readonly SearchHitView[]
 }>
 type SearchFacetView = Readonly<{ key: string, name: string, count: number }>
 type SearchResultsView = Readonly<{
+  snapshot: string
+  totalOccurrences: number
+  totalDocuments: number
   totalWorks: number
   works: readonly SearchWorkView[]
   facets: readonly SearchFacetView[]
 }>
 type PrimaryEnvelope = Readonly<{
   identity: string
-  status: 200 | 204 | 502
+  status: 200 | 204 | 409 | 422 | 503 | 502
   results: SearchResultsView | null
 }>
-type CountView = Readonly<{ documents: number, hits: number }>
 type ChronologyBounds = Readonly<{ yearFrom: number, yearTo: number }>
 const DEFAULT_CHRONOLOGY_FLOOR = 1800
 const DEFAULT_CHRONOLOGY_CEILING = 1950
@@ -101,6 +107,8 @@ const requestUrl = useRequestURL()
 const client = useLbApiClient()
 const rawQuery = computed(() => route.query as unknown as TextSearchRouteQuery)
 const state = computed(() => parseTextSearchRouteQuery(rawQuery.value))
+const invalidSnapshot = computed(() => Object.hasOwn(rawQuery.value, "snapshot")
+  && !isTextSearchSnapshot(rawQuery.value.snapshot))
 const initialSearchFullPath = useState(
   `text-search-initial-full-path:${route.path}`,
   () => `${requestUrl.pathname}${requestUrl.search}`
@@ -127,9 +135,13 @@ watch(() => route.fullPath, () => {
 }, { flush: "sync" })
 
 const routeIdentity = computed(() => textSearchRouteIdentity(state.value))
-const primaryIdentity = computed(() => state.value.phrase
-  ? textSearchResultsRequestIdentity(buildTextSearchResultsRequest(state.value))
-  : "empty")
+const primaryIdentity = computed(() => {
+  const identity = state.value.phrase
+    ? textSearchResultsRequestIdentity(buildTextSearchResultsRequest(state.value))
+    : "empty"
+  // A present invalid pin is never the same owner as the unpinned request.
+  return invalidSnapshot.value ? `invalid-snapshot:${identity}` : identity
+})
 function primaryDataKey(identity: string): string {
   return `text-search-primary:${identity}`
 }
@@ -187,6 +199,7 @@ watch(() => state.value.advanced, advanced => {
 const primaryRequestOwner = createTextSearchRequestOwner()
 const primaryExecutionIdentity = shallowRef<string | null>(null)
 const primaryInFlightIdentity = shallowRef<string | null>(null)
+const freshPrimaryIdentity = shallowRef<string | null>(null)
 const primaryClientMounted = ref(false)
 watch(primaryIdentity, (_identity, previousIdentity) => {
   primaryRequestOwner.cancel()
@@ -216,7 +229,10 @@ function resultsView(
     facet.name_for_index
   ]))
   return {
-    totalWorks: response.total_work_hits,
+    snapshot: response.snapshot,
+    totalOccurrences: response.totals.occurrences,
+    totalDocuments: response.totals.documents,
+    totalWorks: response.totals.works,
     facets: response.author_facets.map(facet => ({
       key: facet.author_id,
       name: facet.name_for_index,
@@ -225,14 +241,19 @@ function resultsView(
     works: response.works.map(work => {
       let hitIndex = 0
       return {
-        key: work.lbworkid,
-        authorName: facetNames.get(work.author_id) ?? work.author_name,
+        key: `${encodeURIComponent(work.lbworkid)}:${work.mediatype}`,
+        workId: work.lbworkid,
+        mediaType: work.mediatype,
+        authorName: work.author_id === null ? null : (facetNames.get(work.author_id) ?? work.author_name),
         title: work.title,
         facsimile: work.mediatype === "faksimil",
+        occurrenceCount: work.occurrence_count,
         hasMore: work.has_more_highlights,
         hits: work.highlights.map(rawHighlight => {
           const highlight = prepareTextSearchHighlight(rawHighlight)
-          const href = buildTextSearchReaderHref(work, highlight, hitIndex, requestedState)
+          const href = buildTextSearchReaderHref(work, highlight, hitIndex, {
+            ...requestedState, snapshot: response.snapshot
+          })
           hitIndex += 1
           return {
             href,
@@ -246,11 +267,16 @@ function resultsView(
   }
 }
 
+function primaryFailureStatus(status: number): PrimaryEnvelope["status"] {
+  return status === 409 || status === 422 || status === 503 ? status : 502
+}
+
 const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
   primaryKey,
   async (_nuxtApp, { signal }) => {
     const requestedState = state.value
     const identity = primaryIdentity.value
+    if (invalidSnapshot.value) return { identity, status: 422, results: null }
     if (!requestedState.phrase) return { identity, status: 204, results: null }
     const body = buildTextSearchResultsRequest(requestedState)
     const requestIdentity = textSearchResultsRequestIdentity(body)
@@ -270,7 +296,11 @@ const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
         : null
       return accepted
         ? { identity, status: 200, results: resultsView(accepted, requestedState) }
-        : { identity, status: 502, results: null }
+        : {
+            identity,
+            status: primaryFailureStatus(result.response.status),
+            results: null
+          }
     } catch {
       if (requestSignal.aborted) {
         throw requestSignal.reason ?? new DOMException("Search request aborted", "AbortError")
@@ -287,8 +317,11 @@ const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
     // Nuxt's reactive-key default may execute before route prerequisites are accepted.
     ...{ _keyTriggersExecute: false },
     getCachedData: (key, nuxtApp) => {
+      if (invalidSnapshot.value) return undefined
+      if (freshPrimaryIdentity.value === primaryIdentity.value) return undefined
       const cached = nuxtApp.payload.data[key] as PrimaryEnvelope | undefined
-      return cached?.identity === primaryIdentity.value && cached.status !== 502
+      return cached?.identity === primaryIdentity.value
+        && (cached.status === 200 || cached.status === 204)
         ? cached
         : undefined
     }
@@ -316,19 +349,22 @@ watch([primaryData, primaryIdentity], ([candidate, identity]) => {
 const results = computed(() => displayPrimary.value?.status === 200
   ? displayPrimary.value.results
   : null)
-const navigatorIdentity = computed(() => {
-  if (!state.value.phrase) return "empty"
+function navigatorIdentityFor(snapshot: string): string {
   const request = buildTextSearchResultsRequest({
     ...state.value,
     page: 1,
-    facetAuthorId: null
+    facetAuthorId: null,
+    snapshot
   })
   return textSearchResultsRequestIdentity(request)
-})
+}
+const navigatorIdentity = computed(() => results.value?.snapshot
+  ? navigatorIdentityFor(results.value.snapshot)
+  : "empty")
 const navigatorSnapshot = shallowRef<Readonly<{
   identity: string
+  snapshot: string
   facets: readonly SearchFacetView[]
-  totalWorks: number
 }> | null>(null)
 const navigatorSnapshotRequestOwner = createTextSearchRequestOwner()
 let navigatorSnapshotInFlight: TextSearchOwnedRequest | null = null
@@ -338,19 +374,25 @@ function cancelNavigatorSnapshot() {
   navigatorSnapshotInFlight = null
 }
 
-watch(navigatorIdentity, cancelNavigatorSnapshot, { flush: "sync" })
-watch(() => state.value.facetAuthorId, facetAuthorId => {
-  if (facetAuthorId === null) cancelNavigatorSnapshot()
-}, { flush: "sync" })
+watch([primaryIdentity, () => state.value.facetAuthorId], cancelNavigatorSnapshot, { flush: "sync" })
 
-async function loadNavigatorSnapshot() {
+function ownsNavigatorSnapshot(request: TextSearchOwnedRequest, primary: string, snapshot: string): boolean {
+  return primaryIdentity.value === primary
+    && acceptedPrimary.value?.identity === primary
+    && acceptedPrimary.value.results?.snapshot === snapshot
+    && navigatorSnapshotRequestOwner.isCurrent(request, navigatorIdentityFor(snapshot))
+}
+
+async function loadNavigatorSnapshot(snapshot: string) {
+  const primary = primaryIdentity.value
   const requestedState = {
     ...state.value,
     page: 1,
-    facetAuthorId: null
+    facetAuthorId: null,
+    snapshot
   }
   if (!requestedState.phrase || state.value.facetAuthorId === null) return
-  const identity = navigatorIdentity.value
+  const identity = navigatorIdentityFor(snapshot)
   if (
     navigatorSnapshot.value?.identity === identity
     || (
@@ -364,18 +406,20 @@ async function loadNavigatorSnapshot() {
   const requestIdentity = textSearchResultsRequestIdentity(body)
   try {
     const result = await client.POST("/text-search/results", { body, signal: request.signal })
+    if (!ownsNavigatorSnapshot(request, primary, snapshot)) return
+    if (isSnapshotUnavailable(result)) {
+      expirePrimarySnapshot(primary, snapshot)
+      return
+    }
     const accepted = result.response.status === 200
       ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
       : null
-    if (
-      navigatorSnapshotRequestOwner.isCurrent(request, navigatorIdentity.value)
-      && accepted
-    ) {
+    if (accepted) {
       const view = resultsView(accepted, requestedState)
       navigatorSnapshot.value = {
         identity,
-        facets: view.facets,
-        totalWorks: view.totalWorks
+        snapshot,
+        facets: view.facets
       }
     }
   } catch {
@@ -387,29 +431,26 @@ async function loadNavigatorSnapshot() {
 }
 
 watch(
-  [navigatorIdentity, () => state.value.facetAuthorId],
-  ([identity, facetAuthorId]) => {
+  [displayPrimary, primaryIdentity, () => state.value.facetAuthorId],
+  ([candidate, identity, facetAuthorId]) => {
     if (
-      import.meta.client
-      && facetAuthorId !== null
-      && navigatorSnapshot.value?.identity !== identity
-    ) void loadNavigatorSnapshot()
-  },
-  { immediate: true, flush: "post" }
-)
-watch(
-  [displayPrimary, primaryIdentity, navigatorIdentity, () => state.value.facetAuthorId],
-  ([candidate, identity, stableIdentity, facetAuthorId]) => {
-    if (
-      facetAuthorId !== null
-      || candidate?.identity !== identity
+      candidate?.identity !== identity
       || candidate.status !== 200
       || candidate.results === null
     ) return
+    const stableIdentity = navigatorIdentityFor(candidate.results.snapshot)
+    if (facetAuthorId !== null) {
+      // Let the primary page reconcile before acquiring auxiliary ownership.
+      if (state.value.page > Math.max(1, Math.ceil(candidate.results.totalWorks / 30))) return
+      if (import.meta.client && navigatorSnapshot.value?.identity !== stableIdentity) {
+        void loadNavigatorSnapshot(candidate.results.snapshot)
+      }
+      return
+    }
     navigatorSnapshot.value = {
       identity: stableIdentity,
-      facets: candidate.results.facets,
-      totalWorks: candidate.results.totalWorks
+      snapshot: candidate.results.snapshot,
+      facets: candidate.results.facets
     }
   },
   { immediate: true, flush: "sync" }
@@ -419,71 +460,25 @@ const navigatorFacets = computed(() => (
     ? navigatorSnapshot.value.facets
     : results.value?.facets ?? []
 ))
-const mainSearchTotalWorks = computed(() => (
-  navigatorSnapshot.value?.identity === navigatorIdentity.value
-    ? navigatorSnapshot.value.totalWorks
-    : results.value?.totalWorks ?? 0
-))
 const currentPrimaryFacets = computed(() => (
   displayPrimary.value?.identity === primaryIdentity.value
     ? displayPrimary.value.results?.facets ?? []
     : []
 ))
-const primaryFailed = computed(() => acceptedPrimary.value?.status === 502)
+const primaryExpired = computed(() => acceptedPrimary.value?.status === 409)
+function expirePrimarySnapshot(identity: string, snapshot: string): void {
+  if (primaryIdentity.value !== identity || acceptedPrimary.value?.identity !== identity
+    || acceptedPrimary.value.results?.snapshot !== snapshot) return
+  acceptedPrimary.value = { identity, status: 409, results: null }
+  displayPrimary.value = null
+  cancelNavigatorSnapshot()
+  cancelAllMore()
+}
+const primaryFailed = computed(() => acceptedPrimary.value !== null
+  && acceptedPrimary.value.status !== 200 && acceptedPrimary.value.status !== 204)
 const primaryLoading = computed(() => Boolean(state.value.phrase)
   && !optionsFailed.value
   && (primaryPending.value || acceptedPrimary.value === null))
-
-const countCache = useState<Record<string, CountView>>(
-  "text-search-count-cache",
-  () => ({})
-)
-const countIdentity = computed(() => state.value.phrase
-  ? textSearchCountRequestIdentity(buildTextSearchCountRequest({
-      ...state.value,
-      facetAuthorId: null
-    }))
-  : "empty")
-const countInFlight = new Map<string, TextSearchOwnedRequest>()
-const countRequestOwner = createTextSearchRequestOwner()
-
-async function loadCount() {
-  const requestedState = {
-    ...state.value,
-    facetAuthorId: null
-  }
-  if (!requestedState.phrase) return
-  const identity = countIdentity.value
-  if (Object.hasOwn(countCache.value, identity) || countInFlight.has(identity)) return
-  const request = countRequestOwner.start(identity)
-  countInFlight.set(identity, request)
-  const body = buildTextSearchCountRequest(requestedState)
-  const requestIdentity = textSearchCountRequestIdentity(body)
-  try {
-    const result = await client.POST("/text-search/count", { body, signal: request.signal })
-    const accepted = result.response.status === 200
-      ? acceptTextSearchCountResponse(result.data, body, requestIdentity)
-      : null
-    if (countRequestOwner.isCurrent(request, countIdentity.value) && accepted) {
-      countCache.value[identity] = {
-        documents: accepted.total_documents,
-        hits: accepted.total_highlights
-      }
-    }
-  } catch {
-    // Failed and aborted requests remain retryable on identity re-entry.
-  } finally {
-    if (countInFlight.get(identity) === request) countInFlight.delete(identity)
-    countRequestOwner.finish(request)
-  }
-}
-
-const count = computed(() => countCache.value[countIdentity.value] ?? null)
-watch([acceptedPrimary, primaryIdentity], ([candidate, identity]) => {
-  if (import.meta.client && candidate?.status === 200 && candidate.identity === identity) {
-    void loadCount()
-  }
-}, { immediate: true, flush: "post" })
 
 function authorLabel(author: TextSearchOptionsResponse["authors"][number]): string {
   const years = author.birth_year || author.death_year
@@ -633,6 +628,7 @@ function executePrimary(identity: string, cause: "initial" | "refresh:manual"): 
     if (primaryInFlightIdentity.value === identity) {
       primaryInFlightIdentity.value = null
     }
+    if (freshPrimaryIdentity.value === identity) freshPrimaryIdentity.value = null
   })
 }
 const lastAcceptedAdvancedChronologyBounds = shallowRef({
@@ -855,7 +851,7 @@ const authorChoices = computed<SearchMultiSelectOption[]>(() => {
     choices.set(choice.value, choice)
   }
   for (const facet of currentPrimaryFacets.value) {
-    if (!choices.has(facet.key)) {
+    if (isSafeTextSearchIdentifier(facet.key) && !choices.has(facet.key)) {
       choices.set(facet.key, {
         value: facet.key,
         label: facet.name,
@@ -929,6 +925,25 @@ function submitSearch() {
     return
   }
   void navigate(query)
+}
+
+function restartExpiredSearch() {
+  if (!primaryExpired.value) return
+  const query = { ...rawQuery.value }
+  delete query.snapshot
+  delete query.traffsida
+  const restartedState = parseTextSearchRouteQuery(query)
+  const identity = restartedState.phrase
+    ? textSearchResultsRequestIdentity(buildTextSearchResultsRequest(restartedState))
+    : "empty"
+  freshPrimaryIdentity.value = identity
+  clearNuxtData(primaryDataKey(identity))
+  if (identity === primaryIdentity.value) {
+    acceptedPrimary.value = null
+    executePrimary(identity, "refresh:manual")
+    return
+  }
+  void router.replace({ name: route.name as string, query: query as LocationQueryRaw })
 }
 
 async function resetSearch() {
@@ -1024,10 +1039,6 @@ watch(
   },
   { flush: "sync" }
 )
-watch(countIdentity, () => {
-  countRequestOwner.cancel()
-  countInFlight.clear()
-}, { flush: "sync" })
 watch([optionsIdentity, () => state.value.advanced], ([identity, advanced], [previousIdentity]) => {
   if (identity !== previousIdentity || !advanced) {
     optionsRequestOwner.cancel()
@@ -1042,7 +1053,10 @@ watch([optionsIdentity, () => state.value.advanced], ([identity, advanced], [pre
   if (advanced) void loadOptions()
 }, { flush: "post" })
 
-const moreHits = shallowRef<Record<string, readonly SearchHitView[]>>({})
+type ExpandedSearchWork = Readonly<Pick<SearchWorkView, "hits" | "hasMore" | "occurrenceCount"> & {
+  highlightLimit: number
+}>
+const moreWorks = shallowRef<Record<string, ExpandedSearchWork>>({})
 const moreRequestOwners = new Map<string, TextSearchRequestOwner>()
 const moreLoadingKeys = shallowRef<ReadonlySet<string>>(new Set())
 function setMoreLoading(workKey: string, loading: boolean) {
@@ -1054,7 +1068,7 @@ function setMoreLoading(workKey: string, loading: boolean) {
 function cancelAllMore() {
   for (const owner of moreRequestOwners.values()) owner.cancel()
   moreRequestOwners.clear()
-  moreHits.value = {}
+  moreWorks.value = {}
   moreLoadingKeys.value = new Set()
 }
 function finishMoreRequest(
@@ -1067,10 +1081,55 @@ function finishMoreRequest(
   setMoreLoading(workKey, false)
 }
 watch(routeIdentity, cancelAllMore, { flush: "sync" })
+
+type SearchExpansion = Readonly<{
+  target: SearchWorkView
+  primaryIdentity: string
+  snapshot: string
+  highlightLimit: number
+}>
+
+function searchExpansion(workKey: string): SearchExpansion | null {
+  const primary = displayPrimary.value
+  if (primary?.identity !== primaryIdentity.value || primary.status !== 200
+    || !primary.results) return null
+  const target = primary.results.works.find(work => work.key === workKey)
+  if (!target) return null
+  const previous = moreWorks.value[workKey]
+  const previousLimit = previous?.highlightLimit ?? 0
+  if (!(previous?.hasMore ?? target.hasMore) || previousLimit >= 500) return null
+  return {
+    target, primaryIdentity: primary.identity, snapshot: primary.results.snapshot,
+    highlightLimit: Math.min(previousLimit + 100, 500)
+  }
+}
+
+function acceptSearchExpansion(
+  expansion: SearchExpansion,
+  accepted: TextSearchResultsResponse,
+  requestedState: TextSearchRouteState
+): void {
+  if (displayPrimary.value?.identity !== expansion.primaryIdentity
+    || displayPrimary.value.results?.snapshot !== expansion.snapshot) return
+  const { target, highlightLimit } = expansion
+  const expanded = resultsView(accepted, requestedState).works.find(work => (
+    work.workId === target.workId && work.mediaType === target.mediaType
+  ))
+  if (expanded?.occurrenceCount !== target.occurrenceCount) return
+  moreWorks.value = {
+    ...moreWorks.value,
+    [target.key]: {
+      hits: expanded.hits, hasMore: expanded.hasMore,
+      occurrenceCount: expanded.occurrenceCount, highlightLimit
+    }
+  }
+}
+
 async function showMore(workKey: string) {
   if (moreRequestOwners.has(workKey)) return
   const requestedState = state.value
-  if (!requestedState.phrase) return
+  const expansion = searchExpansion(workKey)
+  if (!requestedState.phrase || !expansion) return
   const identity = textSearchRouteIdentity(requestedState)
   const owner = createTextSearchRequestOwner()
   moreRequestOwners.set(workKey, owner)
@@ -1079,45 +1138,46 @@ async function showMore(workKey: string) {
   const requestState: TextSearchRouteState = {
     ...requestedState,
     page: 1,
-    workIds: [workKey]
+    snapshot: expansion.snapshot,
+    workIds: [expansion.target.workId]
   }
-  const body = buildTextSearchResultsRequest(requestState, 100)
+  const body = buildTextSearchResultsRequest(requestState, expansion.highlightLimit)
   const requestIdentity = textSearchResultsRequestIdentity(body)
   try {
     const result = await client.POST("/text-search/results", {
       body,
       signal: request.signal
     })
+    if (!owner.isCurrent(request, routeIdentity.value)) return
+    if (isSnapshotUnavailable(result)) {
+      expirePrimarySnapshot(expansion.primaryIdentity, expansion.snapshot)
+      return
+    }
     const accepted = result.response.status === 200
       ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
       : null
-    if (owner.isCurrent(request, routeIdentity.value) && accepted
-      && accepted.works.length === 1 && accepted.works[0]?.lbworkid === workKey) {
-      const expanded = resultsView(accepted, requestedState).works.find(work => work.key === workKey)
-      if (expanded) moreHits.value = { ...moreHits.value, [workKey]: expanded.hits }
+    if (owner.isCurrent(request, routeIdentity.value) && accepted) {
+      acceptSearchExpansion(expansion, accepted, requestedState)
     }
-  } catch (error) {
-    if (!(error instanceof DOMException && error.name === "AbortError")) {
-      // Keep the accepted primary rows when expansion fails.
-    }
+  } catch {
+    // Keep the accepted primary rows when expansion fails or is aborted.
   } finally {
     finishMoreRequest(workKey, owner, request)
   }
 }
 
-function visibleHits(work: SearchWorkView): readonly SearchHitView[] {
-  return moreHits.value[work.key] ?? work.hits
-}
-
 type ResultRowView = Readonly<
   | { key: string, kind: "header", work: SearchWorkView, titleHref: string | null }
   | { key: string, kind: "hit", work: SearchWorkView, hit: SearchHitView }
-  | { key: string, kind: "overflow", work: SearchWorkView }
+  | { key: string, kind: "overflow", work: SearchWorkView,
+    canExpand: boolean, shownHits: number, continuationHref: string | null }
 >
 const resultRows = computed<readonly ResultRowView[]>(() => {
   const rows: ResultRowView[] = []
-  for (const work of results.value?.works ?? []) {
-    const hits = visibleHits(work)
+  for (const primaryWork of results.value?.works ?? []) {
+    const expanded = moreWorks.value[primaryWork.key]
+    const work = expanded ? { ...primaryWork, ...expanded } : primaryWork
+    const hits = work.hits
     rows.push({
       key: `${work.key}:header`,
       kind: "header",
@@ -1127,20 +1187,27 @@ const resultRows = computed<readonly ResultRowView[]>(() => {
     hits.forEach((hit, index) => {
       rows.push({ key: `${work.key}:hit:${index}`, kind: "hit", work, hit })
     })
-    if (work.hasMore && !moreHits.value[work.key]) {
-      rows.push({ key: `${work.key}:overflow`, kind: "overflow", work })
+    if (work.hasMore) {
+      rows.push({
+        key: `${work.key}:overflow`, kind: "overflow", work,
+        canExpand: (expanded?.highlightLimit ?? 0) < 500,
+        shownHits: hits.length,
+        continuationHref: hits.at(-1)?.href ?? null
+      })
     }
   }
   return rows
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(mainSearchTotalWorks.value / 30)))
-const pagerBasisReady = computed(() => state.value.facetAuthorId === null
-  || navigatorSnapshot.value?.identity === navigatorIdentity.value)
+const totalPages = computed(() => Math.max(1, Math.ceil((results.value?.totalWorks ?? 0) / 30)))
+const pagerBasisReady = computed(() => results.value !== null)
+const paginationReady = computed(() => {
+  const primary = acceptedPrimary.value
+  return primary?.identity === primaryIdentity.value && primary.status === 200
+    && primary.results !== null
+})
 const displayedPage = computed(() => Math.min(state.value.page, totalPages.value))
-const visibleWorkCount = computed(() => state.value.facetAuthorId === null
-  ? results.value?.works.length ?? 0
-  : Math.min(30, Math.max(0, mainSearchTotalWorks.value - (displayedPage.value - 1) * 30)))
+const visibleWorkCount = computed(() => results.value?.works.length ?? 0)
 const firstVisibleWork = computed(() => visibleWorkCount.value > 0
   ? (displayedPage.value - 1) * 30 + 1
   : 0)
@@ -1148,8 +1215,16 @@ const lastVisibleWork = computed(() => visibleWorkCount.value > 0
   ? firstVisibleWork.value + visibleWorkCount.value - 1
   : 0)
 
+function pageQuery(page: number) {
+  const primary = acceptedPrimary.value
+  if (primary?.identity !== primaryIdentity.value || primary.status !== 200
+    || !primary.results) return null
+  return textSearchPageQuery({ ...rawQuery.value, snapshot: primary.results.snapshot }, page)
+}
+
 function replacePage(page: number) {
-  const query = textSearchPageQuery(rawQuery.value, page)
+  const query = pageQuery(page)
+  if (!query) return
   const mutableQuery: LocationQueryRaw = {}
   for (const [key, value] of Object.entries(query)) {
     mutableQuery[key] = typeof value === "string" || value == null ? value : [...value]
@@ -1169,7 +1244,8 @@ watch(
 )
 
 function goToPage(page: number) {
-  void navigate(textSearchPageQuery(rawQuery.value, page))
+  const query = pageQuery(page)
+  if (query) void navigate(query)
 }
 
 const paginationShortcutRoles = new Set([
@@ -1268,6 +1344,7 @@ function setGender(value: string) {
 }
 
 function setFacet(authorId: string | null) {
+  if (authorId !== null && !isSafeTextSearchIdentifier(authorId)) return
   patchFilters({ facetAuthorId: authorId })
 }
 
@@ -1284,8 +1361,6 @@ onBeforeUnmount(() => {
   primaryExecutionIdentity.value = null
   primaryInFlightIdentity.value = null
   cancelNavigatorSnapshot()
-  countRequestOwner.cancel()
-  countInFlight.clear()
   optionsRequestOwner.cancel()
   optionsInFlight.clear()
   cancelTitleOptions()
@@ -1653,7 +1728,7 @@ v-for="item in [
               <template v-if="row.kind === 'header'">
                 <td class="header" colspan="4">
                   <div class="header_content" :title="row.work.title">
-                    <span class="author">{{ row.work.authorName }}</span>{{ " " }}
+                    <span v-if="row.work.authorName" class="author">{{ row.work.authorName }}</span>{{ " " }}
                     <span class="title">
                       <NuxtLink v-if="row.titleHref" :to="readerHrefWithReturn(row.titleHref)">{{ row.work.title }}</NuxtLink>
                       <template v-else>{{ row.work.title }}</template>
@@ -1671,7 +1746,7 @@ v-for="item in [
                   >{{ `${word.text} ` }}</span>
                 </td>
                 <td class="match w-px whitespace-nowrap">
-                  <NuxtLink :to="readerHrefWithReturn(row.hit.href)">
+                  <NuxtLink v-if="row.hit.href" :to="readerHrefWithReturn(row.hit.href)">
                     <span
                       v-for="(word, wordIndex) in row.hit.match"
                       :key="wordIndex"
@@ -1679,6 +1754,15 @@ v-for="item in [
                       :class="{ punct: word.punct }"
                     >{{ word.text }}</span>
                   </NuxtLink>
+                  <template v-else>
+                    <span
+                      v-for="(word, wordIndex) in row.hit.match"
+                      :key="`match-${wordIndex}`"
+                    class="word"
+                      :class="{ punct: word.punct }"
+                    >{{ word.text }}</span>
+                    <span class="sr-only">{{ readerTargetUnavailableMessage }}</span>
+                  </template>
                 </td>
                 <td class="right_context">
                   <span
@@ -1695,11 +1779,19 @@ v-for="item in [
                   <div class="overflow sc">
                     <hr>{{ " " }}
                     <button
+                      v-if="row.canExpand"
                       type="button"
                       class="more"
                       :disabled="moreLoadingKeys.has(row.work.key)"
                       @click="showMore(row.work.key)"
-                    >Visa fler</button>{{ " " }}
+                    >Visa fler</button>
+                    <template v-else>
+                      <span>Visar {{ row.shownHits }} av {{ row.work.occurrenceCount }} träffar i verket.</span>{{ " " }}
+                      <NuxtLink
+                        v-if="row.continuationHref"
+                        :to="readerHrefWithReturn(row.continuationHref)"
+                      >Fortsätt i läsaren</NuxtLink>
+                    </template>{{ " " }}
                     <hr>
                   </div>
                 </td>
@@ -1709,6 +1801,10 @@ v-for="item in [
           </table>
         </div>
       </div>
+    </div>
+    <div v-else-if="primaryExpired" data-search-error class="error" role="alert">
+      Sökresultatet har gått ut. Starta om sökningen för att använda den aktuella textsamlingen.{{ " " }}
+      <button class="link-control" type="button" @click="restartExpiredSearch">Starta om sökningen</button>
     </div>
     <div v-else-if="primaryFailed" data-search-error class="error" role="alert">
       Sökresultatet kan inte visas just nu.
@@ -1722,25 +1818,25 @@ v-for="item in [
         <div>
           <div class="hits_info">
             <div>
-              <div v-show="(count?.hits ?? 0) > 0" class="hits">{{ count?.hits ?? 0 }}</div>{{ " " }}
+              <div v-show="(results?.totalOccurrences ?? 0) > 0" class="hits">{{ results?.totalOccurrences ?? 0 }}</div>{{ " " }}
               <div class="hits_sub">
-                <span v-show="(count?.hits ?? 0) > 1">sökträffar</span>
-                <span v-show="count?.hits === 1">sökträff</span>
+                <span v-show="(results?.totalOccurrences ?? 0) > 1">sökträffar</span>
+                <span v-show="results?.totalOccurrences === 1">sökträff</span>
               </div>
             </div>
           </div>
 
           Visar verk {{ firstVisibleWork }}-{{ lastVisibleWork }} av
-          {{ count?.documents ?? results?.totalWorks ?? 0 }}, sida {{ displayedPage }} av
+          {{ results?.totalWorks ?? 0 }}, sida {{ displayedPage }} av
           {{ totalPages }}.
 
-          <ul v-if="mainSearchTotalWorks > 1" class="ctrl">
+          <ul v-if="(results?.totalWorks ?? 0) > 1" class="ctrl">
             <li class="arrows">
               <button
                 type="button"
                 class="submit btn navicon left"
                 aria-label="Föregående träffsida"
-                :disabled="state.page <= 1"
+                :disabled="!paginationReady || state.page <= 1"
                 @click="goToPage(state.page - 1)"
               >
                 <i class="fa fa-angle-left" />
@@ -1749,17 +1845,17 @@ v-for="item in [
                 type="button"
                 class="submit btn navicon"
                 aria-label="Nästa träffsida"
-                :disabled="state.page >= totalPages"
+                :disabled="!paginationReady || state.page >= totalPages"
                 @click="goToPage(state.page + 1)"
               >
                 <i class="fa fa-angle-right" />
               </button>
             </li>
             <li>
-              <button class="link-control" type="button" @click="goToPage(1)">Gå till första träffen</button>
+              <button class="link-control" type="button" :disabled="!paginationReady" @click="goToPage(1)">Gå till första träffen</button>
             </li>
             <li>
-              <button class="link-control" type="button" @click="goToPage(totalPages)">Gå till sista träffen</button>
+              <button class="link-control" type="button" :disabled="!paginationReady" @click="goToPage(totalPages)">Gå till sista träffen</button>
             </li>
             <li
               :class="{ open: showGotoPageInput }"
@@ -1768,7 +1864,7 @@ v-for="item in [
               <button
                 class="link-control"
                 type="button"
-                :disabled="totalPages === 1"
+                :disabled="!paginationReady || totalPages === 1"
                 @click="toggleGotoPageInput"
               >Gå till träffsida . . .</button>
               <form v-if="showGotoPageInput" @submit.prevent="submitGotoPage">
@@ -1798,12 +1894,14 @@ v-for="item in [
         </li>
         <li v-for="facet in navigatorFacets" :key="facet.key">
           <button
+            v-if="isSafeTextSearchIdentifier(facet.key)"
             class="link-control"
             type="button"
             :class="{ selected: state.facetAuthorId === facet.key }"
             :aria-pressed="state.facetAuthorId === facet.key"
             @click="setFacet(facet.key)"
           >{{ facet.name }}</button>
+          <span v-else class="link-control" aria-disabled="true">{{ facet.name }}</span>
         </li>
       </ul>
     </Teleport>

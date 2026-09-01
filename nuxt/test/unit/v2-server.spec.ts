@@ -88,11 +88,9 @@ type LegacyAuthorRouteOperation = paths["/legacy-author-routes/resolve"]["post"]
 type AuthorDocumentDescriptor = components["schemas"]["AuthorDocumentDescriptor"]
 type LegacyAuthorRouteResolution = components["schemas"]["LegacyAuthorRouteResolution"]
 type TextSearchResultsRequest = components["schemas"]["TextSearchResultsRequest"]
-type TextSearchCountRequest = components["schemas"]["TextSearchCountRequest"]
 type TextSearchOptionsRequest = components["schemas"]["TextSearchOptionsRequest"]
 type TextSearchOptionsResponse = components["schemas"]["TextSearchOptionsResponse"]
 type TextSearchResultsOperation = paths["/text-search/results"]["post"]
-type TextSearchCountOperation = paths["/text-search/count"]["post"]
 type TextSearchOptionsOperation = paths["/text-search/options"]["post"]
 type SourceInfoOperation = paths["/works/{author_id}/{title_path}/source-info"]["get"]
 type SourceInfoResponse = components["schemas"]["WorkSourceInfoResponse"]
@@ -116,8 +114,6 @@ const generatedLegacyAuthorRouteContract: LegacyAuthorRouteOperation = null as u
   operations["v2_post_legacy_author_route_resolve"]
 const generatedTextSearchResultsContract: TextSearchResultsOperation = null as unknown as
   operations["v2_post_text_search_results"]
-const generatedTextSearchCountContract: TextSearchCountOperation = null as unknown as
-  operations["v2_post_text_search_count"]
 const generatedTextSearchOptionsContract: TextSearchOptionsOperation = null as unknown as
   operations["v2_post_text_search_options"]
 const generatedSourceInfoContract: SourceInfoOperation = null as unknown as
@@ -399,8 +395,8 @@ async function postTextSearchResults(body: TextSearchResultsRequest) {
 }
 
 async function postTextSearch(
-  operation: "results" | "count" | "options",
-  body: TextSearchResultsRequest | TextSearchCountRequest | TextSearchOptionsRequest
+  operation: "results" | "options",
+  body: TextSearchResultsRequest | TextSearchOptionsRequest
 ) {
   return await fetch(`${origin}/v2/text-search/${operation}`, {
     method: "POST",
@@ -426,20 +422,6 @@ function textSearchResultsRequest(
   }
 }
 
-function textSearchCountRequest(
-  query: string,
-  overrides: Partial<TextSearchCountRequest> = {}
-): TextSearchCountRequest {
-  return {
-    query,
-    include_modernized: true,
-    prefix: false,
-    suffix: false,
-    word_form_only: true,
-    ...overrides
-  }
-}
-
 function textSearchOptionsRequest(
   titleFilter: string,
   overrides: Partial<TextSearchOptionsRequest> = {}
@@ -459,7 +441,6 @@ function textSearchOptionsRequest(
 async function textSearchRequests() {
   return await (await fetch(`${origin}/_text_search/requests`)).json() as {
     results: Array<{ method: string, path: string, body: unknown }>
-    count: Array<{ method: string, path: string, body: unknown }>
     options: Array<{ method: string, path: string, body: unknown }>
   }
 }
@@ -2382,7 +2363,8 @@ describe("v2 fixture server operations", () => {
       query: "frihet",
       page: 1,
       page_size: 30,
-      total_work_hits: 2,
+      snapshot: "gen-fixture-0001",
+      totals: { occurrences: 3, documents: 2, works: 2 },
       author_facets: [
         { author_id: "StrindbergA", name_for_index: "Strindberg, August", count: 1 },
         { author_id: "LagerlöfS", name_for_index: "Lagerlöf, Selma", count: 1 }
@@ -2395,8 +2377,14 @@ describe("v2 fixture server operations", () => {
           title: "Röda rummet",
           title_id: "RodaRummet",
           mediatype: "etext",
+          occurrence_count: 1,
           has_more_highlights: false,
           highlights: [{
+            source_identity: "lb238704:etext:fixture",
+            source_start: 0,
+            source_end: 1,
+            page_index: 1,
+            reader_target_status: "exact",
             left_context: [{ word: "ropade", word_id: "w1_10", page_name: "1" }],
             match: [{ word: "frihet", word_id: "w1_11", page_name: "1" }],
             right_context: [{ word: "och", word_id: "w1_12", page_name: "1" }]
@@ -2409,21 +2397,35 @@ describe("v2 fixture server operations", () => {
           title: "Gösta Berlings saga",
           title_id: "GostaBerlingsSaga",
           mediatype: "faksimil",
-          has_more_highlights: true,
+          occurrence_count: 2,
+          has_more_highlights: false,
           highlights: [{
+            source_identity: "lb278171:faksimil:fixture",
+            source_start: 0,
+            source_end: 1,
+            page_index: 3,
+            reader_target_status: "exact",
             left_context: [{ word: "sin", word_id: "w3_20", page_name: "3" }],
             match: [{ word: "frihet", word_id: "w3_21", page_name: "3" }],
             right_context: [{ word: "sökte", word_id: "w3_22", page_name: "3" }]
+          }, {
+            source_identity: "lb278171:faksimil:fixture",
+            source_start: 10,
+            source_end: 11,
+            page_index: 4,
+            reader_target_status: "exact",
+            left_context: [{ word: "drömde", word_id: "w4_30", page_name: "4" }],
+            match: [{ word: "frihet", word_id: "w4_31", page_name: "4" }],
+            right_context: [{ word: "vidare", word_id: "w4_32", page_name: "4" }]
           }]
         }
       ]
     })
   })
 
-  test("generates all text-search operations and title author facet schemas", () => {
-    expect(generatedTextSearchResultsContract).toBeNull()
-    expect(generatedTextSearchCountContract).toBeNull()
-    expect(generatedTextSearchOptionsContract).toBeNull()
+test("generates all text-search operations and title author facet schemas", () => {
+  expect(generatedTextSearchResultsContract).toBeNull()
+  expect(generatedTextSearchOptionsContract).toBeNull()
 
     const options: TextSearchOptionsResponse = {
       authors: [],
@@ -2441,42 +2443,167 @@ describe("v2 fixture server operations", () => {
     expect(options.title_author_facets[0]?.author_id).toBe("StrindbergA")
   })
 
-  test("serves zero and overflow results plus deterministic counts", async () => {
+  test("corpus flow page two has exact totals and its own matching Reader source and hits", async () => {
+    const first = await postTextSearchResults(textSearchResultsRequest("doktor glas"))
+    expect(await first.json()).toMatchObject({
+      snapshot: "gen-fixture-0001",
+      totals: { occurrences: 34, documents: 33, works: 33 },
+      author_facets: [
+        { author_id: "SöderbergH", count: 32 },
+        { author_id: "LagerlöfS", count: 1 }
+      ]
+    })
+    const second = await postTextSearchResults(textSearchResultsRequest("doktor glas", {
+      page: 2, snapshot: "gen-fixture-0001", languages: ["language:swe"],
+      facet_author_id: "SöderbergH"
+    }))
+    const body = await second.json()
+    expect(body.totals).toEqual({ occurrences: 33, documents: 32, works: 32 })
+    expect(body.works).toHaveLength(2)
+    expect(body.works[0]).toMatchObject({
+      lbworkid: "lb-reader-corpus-flow", author_id: "SöderbergH",
+      title_id: "CorpusFlow", title: "Doktor Glas – sökflöde", mediatype: "etext",
+      occurrence_count: 2, has_more_highlights: false,
+      highlights: [
+        { match: [
+          { word: "DOKTOR", word_id: "w1_1", page_name: "1" },
+          { word: "GLAS", word_id: "w1_2", page_name: "1" }
+        ], right_context: [{ word: ",", word_id: "w1_3", page_name: "1" }] },
+        { match: [
+          { word: "DOKTOR", word_id: "w2_1", page_name: "2" },
+          { word: "GLAS", word_id: "w2_2", page_name: "2" }
+        ], right_context: [{ word: ".", word_id: "w2_3", page_name: "2" }] }
+      ]
+    })
+    const manifest = await (await fetch(
+      `${origin}/v2/works/S%C3%B6derbergH/CorpusFlow/manifest?media_type=etext`
+    )).json() as ReaderManifestResponse
+    expect(manifest).toMatchObject({ work_id: "lb-reader-corpus-flow", title_path: "CorpusFlow" })
+    for (const page of [1, 2]) {
+      const html = await (await fetch(
+        `${origin}/txt/lb-reader-corpus-flow/res_0000${page}.html?username=app`
+      )).text()
+      expect(html).toContain(`id="w${page}_1">DOKTOR</span>`)
+      expect(html).toContain(`id="w${page}_2">GLAS</span>`)
+    }
+    const hits = await (await fetch(`${origin}/v2/works/lb-reader-corpus-flow/search-hits?`
+      + "media_type=etext&query=doktor%20glas&snapshot=gen-fixture-0001")).json()
+    expect(hits).toMatchObject({
+      snapshot: "gen-fixture-0001", total_hits: 2,
+      items: [
+        { index: 0, page_name: "1", page_index: 1,
+          highlight: { from_word_id: "w1_1", to_word_id: "w1_2" } },
+        { index: 1, page_name: "2", page_index: 2,
+          highlight: { from_word_id: "w2_1", to_word_id: "w2_2" } }
+      ]
+    })
+  })
+
+  test("serves zero, overflow, and exact combined result totals", async () => {
     const empty = await postTextSearchResults(textSearchResultsRequest("inga"))
     const overflow = await postTextSearchResults(textSearchResultsRequest("overflow"))
-    const richCount = await postTextSearch("count", textSearchCountRequest("frihet"))
-    const emptyCount = await postTextSearch("count", textSearchCountRequest("inga"))
-    const overflowCount = await postTextSearch("count", textSearchCountRequest("overflow"))
+    const exact = await postTextSearchResults(textSearchResultsRequest("exact-totals"))
 
     expect(await empty.json()).toEqual({
       query: "inga",
       page: 1,
       page_size: 30,
-      total_work_hits: 0,
+      snapshot: "gen-fixture-0001",
+      totals: { occurrences: 0, documents: 0, works: 0 },
       author_facets: [],
       works: []
     })
     const overflowBody = await overflow.json()
     expect(overflowBody).toMatchObject({
       query: "overflow",
-      total_work_hits: 64
+      totals: { occurrences: 512, documents: 64, works: 64 }
     })
     expect(overflowBody.works[0]).toMatchObject({ has_more_highlights: true })
-    expect(await richCount.json()).toEqual({
-      query: "frihet",
-      total_documents: 2,
-      total_highlights: 3
+    const exactBody = await exact.json() as TextSearchResultsResponse
+    expect(exactBody).toMatchObject({
+      snapshot: "gen-fixture-0001",
+      totals: { occurrences: 17, documents: 8, works: 8 }
     })
-    expect(await emptyCount.json()).toEqual({
-      query: "inga",
-      total_documents: 0,
-      total_highlights: 0
+    expect(exactBody.works).toHaveLength(8)
+    expect(exactBody.works.map(work => work.occurrence_count)).toEqual([3, 2, 2, 2, 2, 2, 2, 2])
+  })
+
+  test("filters the complete occurrence inventory before totals, facets, and pagination", async () => {
+    const author = await postTextSearchResults(textSearchResultsRequest("overflow", {
+      author_ids: ["StrindbergA"], page: 2
+    }))
+    const authorBody = await author.json() as TextSearchResultsResponse
+    expect(authorBody.totals).toEqual({ occurrences: 320, documents: 40, works: 40 })
+    expect(authorBody.author_facets).toEqual([
+      { author_id: "StrindbergA", name_for_index: "Strindberg, August", count: 40 }
+    ])
+    expect(authorBody.works).toHaveLength(10)
+    const intersection = await postTextSearchResults(textSearchResultsRequest("frihet", {
+      author_ids: ["StrindbergA"], work_ids: ["lb278171"]
+    }))
+    expect(await intersection.json()).toMatchObject({
+      totals: { occurrences: 0, documents: 0, works: 0 }, author_facets: [], works: []
     })
-    expect(await overflowCount.json()).toEqual({
-      query: "overflow",
-      total_documents: 64,
-      total_highlights: 512
+  })
+
+  test("keeps exact occurrence totals stable when only the highlight limit changes", async () => {
+    const limited = await postTextSearchResults(textSearchResultsRequest("overflow"))
+    const expanded = await postTextSearchResults(textSearchResultsRequest("overflow", {
+      snapshot: "gen-fixture-0001", highlight_limit: 100
+    }))
+    const limitedBody = await limited.json() as TextSearchResultsResponse
+    const expandedBody = await expanded.json() as TextSearchResultsResponse
+    expect(limitedBody.totals).toEqual({ occurrences: 512, documents: 64, works: 64 })
+    expect(expandedBody.totals).toEqual(limitedBody.totals)
+    expect(expandedBody.snapshot).toBe(limitedBody.snapshot)
+    expect(limitedBody.works[0]).toMatchObject({ occurrence_count: 8, has_more_highlights: true })
+    expect(limitedBody.works[0]?.highlights).toHaveLength(5)
+    expect(expandedBody.works[0]).toMatchObject({ occurrence_count: 8, has_more_highlights: false })
+    expect(expandedBody.works[0]?.highlights).toHaveLength(8)
+  })
+
+  test("the removed text-search count endpoint returns 404", async () => {
+    const response = await fetch(`${origin}/v2/text-search/count`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ query: "frihet" })
     })
+    expect(response.status).toBe(404)
+  })
+
+  test.each([101, 501])("keeps the %i-occurrence inventory exact through the public highlight ceiling", async count => {
+    for (const limit of [5, 100, 200, 500]) {
+      const response = await postTextSearchResults(textSearchResultsRequest(`many-hits-${count}`, {
+        snapshot: "gen-fixture-0001", highlight_limit: limit, work_ids: ["lb-same-media"]
+      }))
+      expect(response.status).toBe(200)
+      const body = await response.json() as TextSearchResultsResponse
+      expect(body.totals).toEqual({ occurrences: count + 7, documents: 2, works: 2 })
+      expect(body.works.map(work => work.lbworkid)).toEqual(["lb-same-media", "lb-same-media"])
+      expect(body.works[1]).toMatchObject({
+        mediatype: "faksimil", occurrence_count: count, has_more_highlights: count > limit
+      })
+      expect(body.works[1]?.highlights).toHaveLength(Math.min(count, limit))
+    }
+    const overCeiling = await postTextSearchResults(textSearchResultsRequest(`many-hits-${count}`, {
+      highlight_limit: 501
+    }))
+    expect(overCeiling.status).toBe(422)
+  })
+
+  test("preserves the complete authority occurrence inventory through expansion", async () => {
+    await fetch(`${origin}/_text_search/authority`, { method: "PUT" })
+    try {
+      const response = await postTextSearchResults(textSearchResultsRequest("frihet", {
+        highlight_limit: 100, author_ids: ["StrindbergA"], work_ids: ["lb238704"],
+        gender: "female", about_author_ids: ["LagerlöfS"]
+      }))
+      const body = await response.json() as TextSearchResultsResponse
+      expect(body.totals).toEqual({ occurrences: 8, documents: 2, works: 2 })
+      expect(body.works.map(work => work.occurrence_count)).toEqual([7, 1])
+      expect(body.works.map(work => work.highlights.length)).toEqual([7, 1])
+    } finally {
+      await fetch(`${origin}/_text_search/authority`, { method: "DELETE" })
+    }
   })
 
   test("serves advanced options, overflow, and selected-title preservation", async () => {
@@ -2545,11 +2672,9 @@ describe("v2 fixture server operations", () => {
 
   test("logs exact text-search method, path, body, and order with isolated resets", async () => {
     const resultsBody = textSearchResultsRequest("frihet", { author_ids: ["StrindbergA"] })
-    const countBody = textSearchCountRequest("frihet")
     const optionsBody = textSearchOptionsRequest("lager")
     await postTextSearchResults(resultsBody)
     await postTextSearch("results", textSearchResultsRequest("inga"))
-    await postTextSearch("count", countBody)
     await postTextSearch("options", optionsBody)
 
     expect(await textSearchRequests()).toEqual({
@@ -2561,7 +2686,6 @@ describe("v2 fixture server operations", () => {
           body: textSearchResultsRequest("inga")
         }
       ],
-      count: [{ method: "POST", path: "/v2/text-search/count", body: countBody }],
       options: [{ method: "POST", path: "/v2/text-search/options", body: optionsBody }],
       chronology: []
     })
@@ -2569,26 +2693,25 @@ describe("v2 fixture server operations", () => {
     await fetch(`${origin}/_text_search/requests/results`, { method: "DELETE" })
     expect(await textSearchRequests()).toEqual({
       results: [],
-      count: [{ method: "POST", path: "/v2/text-search/count", body: countBody }],
       options: [{ method: "POST", path: "/v2/text-search/options", body: optionsBody }],
       chronology: []
     })
   })
 
-  test.each(["results", "count", "options"])(
+  test.each(["results", "options"])(
     "requires POST for the text-search %s operation",
     async (operation) => {
       const response = await fetch(`${origin}/v2/text-search/${operation}`)
 
       expect(response.status).toBe(405)
       expect(await textSearchRequests()).toEqual({
-        results: [], count: [], options: [], chronology: []
+        results: [], options: [], chronology: []
       })
     }
   )
 
   test("rejects malformed or structurally invalid JSON without ledgering", async () => {
-    const malformedJson = await fetch(`${origin}/v2/text-search/count`, {
+    const malformedJson = await fetch(`${origin}/v2/text-search/results`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: "{"
@@ -2602,7 +2725,32 @@ describe("v2 fixture server operations", () => {
     expect(malformedJson.status).toBe(400)
     expect(unknownField.status).toBe(422)
     expect(await textSearchRequests()).toEqual({
-      results: [], count: [], options: [], chronology: []
+      results: [], options: [], chronology: []
+    })
+  })
+
+  test("accepts snapshots only on results requests and reports expired snapshots", async () => {
+    const results = await postTextSearchResults(textSearchResultsRequest("frihet", {
+      snapshot: "gen-fixture-0001"
+    }))
+    const options = await postTextSearch("options", {
+      ...textSearchOptionsRequest(""), snapshot: "gen-fixture-0001"
+    } as TextSearchOptionsRequest)
+    const expired = await postTextSearchResults(textSearchResultsRequest("frihet", {
+      snapshot: "gen-expired"
+    }))
+
+    expect(results.status).toBe(200)
+    expect(options.status).toBe(422)
+    expect(expired.status).toBe(409)
+    expect(expired.headers.get("x-request-id")).toBe("fa781be9-6f29-4696-9aee-2bd75f2b32cb")
+    expect(await expired.json()).toEqual({
+      error: {
+        code: "snapshot_unavailable",
+        message: "Search snapshot unavailable",
+        details: null
+      },
+      request_id: "fa781be9-6f29-4696-9aee-2bd75f2b32cb"
     })
   })
 
@@ -2613,7 +2761,7 @@ describe("v2 fixture server operations", () => {
 
     expect(response.status).toBe(422)
     expect(await textSearchRequests()).toEqual({
-      results: [], count: [], options: [], chronology: []
+      results: [], options: [], chronology: []
     })
   })
 
@@ -2628,7 +2776,7 @@ describe("v2 fixture server operations", () => {
 
       expect(response.status).toBe(422)
       expect(await textSearchRequests()).toEqual({
-        results: [], count: [], options: [], chronology: []
+        results: [], options: [], chronology: []
       })
     }
   )
@@ -2647,19 +2795,17 @@ describe("v2 fixture server operations", () => {
     const configured = await fetch(`${origin}/_text_search/failures`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ operation: "count" })
+      body: JSON.stringify({ operation: "results" })
     })
     expect(configured.status).toBe(200)
 
     const results = await postTextSearchResults(textSearchResultsRequest("frihet"))
-    const count = await postTextSearch("count", textSearchCountRequest("frihet"))
     const options = await postTextSearch("options", textSearchOptionsRequest(""))
-    expect(results.status).toBe(200)
-    expect(count.status).toBe(503)
-    expect(await count.json()).toEqual({
+    expect(results.status).toBe(503)
+    expect(await results.json()).toEqual({
       error: {
-        code: "text_search_count_unavailable",
-        message: "Unable to count text-search results",
+        code: "text_search_results_unavailable",
+        message: "Unable to load text-search results",
         details: null
       }
     })
@@ -2672,7 +2818,7 @@ describe("v2 fixture server operations", () => {
     })
     expect(unknown.status).toBe(422)
     expect(await (await fetch(`${origin}/_text_search/failures`)).json()).toEqual({
-      failures: ["count"]
+      failures: ["results"]
     })
   })
 
@@ -2716,7 +2862,6 @@ describe("v2 fixture server operations", () => {
     expect(await (await fetch(`${origin}/_text_search/delays`)).json()).toEqual({
       delays: {
         results: {},
-        count: {},
         options: { lager: 70 },
         chronology: {}
       }
@@ -4250,6 +4395,46 @@ describe("v2 fixture server operations", () => {
     }
   })
 
+  test("Reader snapshots preserve raw query and exact public/private generations", async () => {
+    for (const scope of ["v2", "private-v2"]) {
+      const endpoint = `${origin}/${scope}/works/lb-reader-doktor-glas/search-hits`
+      for (const snapshot of [null, "gen-0123456789abcdef"]) {
+        const params = new URLSearchParams({ media_type: "etext", query: "  doktor glas  " })
+        if (snapshot) params.set("snapshot", snapshot)
+        const response = await fetch(`${endpoint}?${params}`)
+        expect(response.status).toBe(200)
+        expect(await response.json()).toMatchObject({
+          query: "  doktor glas  ", snapshot: snapshot ?? "gen-fixture-0001"
+        })
+      }
+      for (const snapshot of ["", ".", "..", "gen.tmp", "gen/x", "gen x", "x".repeat(129)]) {
+        const params = new URLSearchParams({ media_type: "etext", query: "glas", snapshot })
+        expect((await fetch(`${endpoint}?${params}`)).status).toBe(422)
+      }
+      expect((await fetch(`${endpoint}?media_type=etext&query=glas&snapshot=one&snapshot=two`)).status)
+        .toBe(422)
+      const requestId = "018f47c0-4d5b-7a62-8f41-a04b5df3fd8d"
+      const expired = await fetch(`${endpoint}?media_type=etext&query=glas&snapshot=gen-expired`, {
+        headers: { "X-Request-ID": requestId }
+      })
+      expect(expired.status).toBe(409)
+      expect(expired.headers.get("x-request-id")).toBe(requestId)
+      expect(await expired.json()).toEqual({ error: {
+        code: "snapshot_unavailable", message: "Search snapshot unavailable", details: null
+      }, request_id: requestId })
+    }
+  })
+
+  test("fresh Reader entries use the active corpus generation while pinned entries retain theirs", async () => {
+    await postTextSearchResults(textSearchResultsRequest("frihet", { snapshot: "gen-expired" }))
+    for (const scope of ["v2", "private-v2"]) {
+      const endpoint = `${origin}/${scope}/works/lb-reader-doktor-glas/search-hits?media_type=etext&query=doktor%20glas`
+      expect(await (await fetch(endpoint)).json()).toMatchObject({ snapshot: "gen-fixture-0002" })
+      expect(await (await fetch(`${endpoint}&snapshot=gen-fixture-0001`)).json())
+        .toMatchObject({ snapshot: "gen-fixture-0001" })
+    }
+  })
+
   test("serves exact public and private Reader hit windows with absolute indices", async () => {
     const publicQuery = "media_type=etext&query=doktor%20glas"
     const privateQuery = [
@@ -4312,6 +4497,12 @@ describe("v2 fixture server operations", () => {
         index: 0,
         page_name: "-2",
         page_index: 2,
+        source_identity: "lb-reader-doktor-glas:etext:fixture",
+        source_start: 0,
+        source_end: 1,
+        start_word_id: "w2_2",
+        end_word_id: "w2_2",
+        reader_target_status: "exact",
         highlight: { from_word_id: "w2_2", to_word_id: "w2_2" }
       }
     ])
@@ -4323,6 +4514,7 @@ describe("v2 fixture server operations", () => {
       items: []
     })
     expect(await (await request("malformed-response")).json()).toEqual({
+      snapshot: "gen-fixture-0001",
       query: "malformed-response",
       media_type: "etext",
       offset: 0,
@@ -4394,7 +4586,8 @@ describe("v2 fixture server operations", () => {
       "true",
       "false",
       "true",
-      "true"
+      "true",
+      "gen-0123456789abcdef"
     ].join("|")
     await fetch(`${origin}/_reader_hit_delays`, {
       method: "PUT",
@@ -4413,7 +4606,8 @@ describe("v2 fixture server operations", () => {
       "word_forms=true",
       "include_older_spellings=false",
       "prefix=true",
-      "suffix=true"
+      "suffix=true",
+      "snapshot=gen-0123456789abcdef"
     ].join("&")
     let delayedSettled = false
     const delayed = fetch(
@@ -4422,8 +4616,9 @@ describe("v2 fixture server operations", () => {
       delayedSettled = true
       return response
     })
-    await new Promise(resolve => setTimeout(resolve, 10))
+    await expect.poll(async () => (await readerHitRequests()).requests.length).toBe(1)
     const distinctKeys = [
+      `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("gen-0123456789abcdef", "gen-other")}`,
       `/v2/works/lb-reader-other/search-hits?${delayedParams}`,
       `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("doktor%20glas", "glas")}`,
       `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("offset=1", "offset=0")}`,

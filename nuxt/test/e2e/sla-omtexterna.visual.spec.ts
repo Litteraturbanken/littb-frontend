@@ -91,7 +91,7 @@ async function expectExactLedgers(request: APIRequestContext) {
     const payload = await fixtureRequests(request, ledger.path)
     if (ledger.field === "textSearchOperations") {
       expect(payload, ledger.path).toEqual({
-        results: [], count: [], options: [], chronology: []
+        results: [], options: [], chronology: []
       })
     } else {
       expect(payload[ledger.field], ledger.path).toEqual([])

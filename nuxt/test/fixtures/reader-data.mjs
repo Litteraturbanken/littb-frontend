@@ -40,6 +40,38 @@ export const readerWorkInfoResponse = {
   ]
 }
 
+// A separate, coherent source for corpus page-two -> Reader integration.
+// Existing Reader/default/visual fixtures deliberately remain unchanged.
+export const corpusFlowReaderWorkInfoResponse = {
+  hits: 1,
+  data: [{
+    ...structuredClone(readerWorkInfoResponse.data[0]),
+    lbworkid: "lb-reader-corpus-flow",
+    titlepath: "CorpusFlow",
+    title: "Doktor Glas – sökflöde",
+    shorttitle: "Doktor Glas – sökflöde",
+    pages: [{ pagename: "1", pageindex: 1 }, { pagename: "2", pageindex: 2 }],
+    startpagename: "1", endpagename: "2", parts: []
+  }]
+}
+
+export const corpusFlowHighlights = [1, 2].map(page => ({
+  left_context: [],
+  match: [
+    { word: "DOKTOR", word_id: `w${page}_1`, page_name: String(page) },
+    { word: "GLAS", word_id: `w${page}_2`, page_name: String(page) }
+  ],
+  right_context: [{ word: page === 1 ? "," : ".", word_id: `w${page}_3`, page_name: String(page) }]
+}))
+
+export const corpusFlowReaderPageHtmlByIndex = Object.fromEntries(corpusFlowHighlights.map(
+  (highlight, index) => [index + 1, `<div class="pname" pname="${index + 1}">
+    <div class="_p">${[...highlight.match, ...highlight.right_context].map(token => (
+      `<span class="w" id="${token.word_id}">${token.word}</span>`
+    )).join(" ")}</div>
+  </div>`]
+))
+
 export const readerFacsimileWorkInfoResponse = {
   hits: 1,
   data: [
@@ -366,6 +398,108 @@ const phraseHits = [
 ]
 
 function hitsForQuery(query, workId) {
+  if (query === "source-quality-mixed") {
+    const exactPages = sourceQualityExactPages(workId)
+    return [
+      {
+        index: 0,
+        page_name: exactPages[0].page_name,
+        page_index: exactPages[0].page_index,
+        highlight: { from_word_id: exactPages[0].word_id, to_word_id: exactPages[0].word_id }
+      },
+      {
+        index: 1,
+        page_name: null,
+        page_index: 119,
+        start_word_id: "w119_1",
+        end_word_id: "w119_1",
+        reader_target_status: "unmapped_page",
+        highlight: null
+      },
+      {
+        index: 2,
+        page_name: exactPages[1].page_name,
+        page_index: exactPages[1].page_index,
+        highlight: { from_word_id: exactPages[1].word_id, to_word_id: exactPages[1].word_id }
+      }
+    ]
+  }
+  if (query === "source-quality-uncached") {
+    const exactPages = sourceQualityExactPages(workId)
+    return [
+      {
+        index: 0,
+        page_name: exactPages[0].page_name,
+        page_index: exactPages[0].page_index,
+        highlight: { from_word_id: exactPages[0].word_id, to_word_id: exactPages[0].word_id }
+      },
+      {
+        index: 1,
+        page_name: null,
+        page_index: 119,
+        start_word_id: "w119_1",
+        end_word_id: "w119_1",
+        reader_target_status: "unmapped_page",
+        highlight: null
+      },
+      {
+        index: 2,
+        page_name: exactPages[1].page_name,
+        page_index: exactPages[1].page_index,
+        highlight: { from_word_id: exactPages[1].word_id, to_word_id: exactPages[1].word_id }
+      },
+      {
+        index: 3,
+        page_name: exactPages[0].page_name,
+        page_index: exactPages[0].page_index,
+        highlight: { from_word_id: exactPages[0].word_id, to_word_id: exactPages[0].word_id }
+      },
+      {
+        index: 4,
+        page_name: null,
+        page_index: 129,
+        start_word_id: "w129_1",
+        end_word_id: "w129_1",
+        reader_target_status: "unmapped_page",
+        highlight: null
+      }
+    ]
+  }
+  if (query === "source-quality-first-unavailable") {
+    return [{
+      index: 0,
+      page_name: null,
+      page_index: 119,
+      start_word_id: "w119_1",
+      end_word_id: "w119_1",
+      reader_target_status: "unmapped_page",
+      highlight: null
+    }]
+  }
+  if (query === "source-quality-ambiguous" || query === "source-quality-unsupported") {
+    const status = query === "source-quality-ambiguous"
+      ? "ambiguous_word_id"
+      : "unsupported_reader_identity"
+    return [{
+      index: 0,
+      page_name: "5",
+      page_index: 4,
+      start_word_id: "w5_1",
+      end_word_id: "w5_1",
+      reader_target_status: status,
+      highlight: null
+    }]
+  }
+  if (workId === "lb-reader-corpus-flow") {
+    if (query !== "doktor glas") return []
+    return corpusFlowHighlights.map((highlight, index) => ({
+      index, page_name: String(index + 1), page_index: index + 1,
+      highlight: {
+        from_word_id: highlight.match[0].word_id,
+        to_word_id: highlight.match.at(-1).word_id
+      }
+    }))
+  }
   if ((query === "frihet" || query === "overflow") && workId === "lb238704") {
     return [{
       index: 0,
@@ -504,7 +638,49 @@ function hitsForQuery(query, workId) {
   }))
 }
 
+function sourceQualityExactPages(workId) {
+  if (workId === "lb8345227") {
+    return [{ page_name: "5", page_index: 4, word_id: "w5_1" }, { page_name: "7", page_index: 6, word_id: "w7_1" }]
+  }
+  if (workId === "lb-reader-gosta-berlings-saga") {
+    return [{ page_name: "3", page_index: 1, word_id: "w3_1" }, { page_name: "5", page_index: 2, word_id: "w5_1" }]
+  }
+  return [{ page_name: "-3", page_index: 1, word_id: "w1_1" }, { page_name: "-1", page_index: 3, word_id: "w3_1" }]
+}
+
+function sourceQualityHit(hit, workId, mediaType) {
+  const status = hit.reader_target_status ?? "exact"
+  const highlight = hit.highlight ?? null
+  const startWordId = hit.start_word_id ?? highlight?.from_word_id
+  const endWordId = hit.end_word_id ?? highlight?.to_word_id
+  const sourceStart = hit.source_start ?? hit.index * 10
+  // These fixture hits model one source token per distinct endpoint.  Build a
+  // valid raw interval before individual tests deliberately corrupt it.
+  const sourceLength = startWordId === endWordId ? 1 : 2
+  return {
+    ...hit,
+    source_identity: hit.source_identity ?? `${workId}:${mediaType}:fixture`,
+    source_start: sourceStart,
+    source_end: hit.source_end ?? sourceStart + sourceLength,
+    start_word_id: startWordId,
+    end_word_id: endWordId,
+    reader_target_status: status,
+    highlight
+  }
+}
+
 export function readerSearchHitResponse(
+  workId, query, offset = 0, limit = 3, mediaType = "etext", options = {}
+) {
+  const window = readerSearchHitWindow(workId, query, offset, limit, mediaType, options)
+  return {
+    ...window,
+    items: window.items.map(hit => sourceQualityHit(hit, workId, mediaType)),
+    snapshot: options.snapshot === "gen-mismatch" ? "gen-other" : options.snapshot ?? "gen-fixture-0001"
+  }
+}
+
+function readerSearchHitWindow(
   workId,
   query,
   offset = 0,

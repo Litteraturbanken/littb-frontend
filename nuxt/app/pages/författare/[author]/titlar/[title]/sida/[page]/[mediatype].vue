@@ -15,6 +15,8 @@ import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import type { components } from "~/lib/api/generated/lbapi"
+import { isSnapshotUnavailable } from "~/lib/api/snapshot"
+import { isTextSearchSnapshot } from "~/lib/text-search"
 import { usefulLibraryTooltipText } from "~/lib/library-tooltip"
 import {
   markReaderSearchEtextHtml,
@@ -36,13 +38,17 @@ import {
 import { readerTitleTooltipDirective } from "~/lib/reader-title-tooltip"
 import {
   nextWorkSearchOptions,
+  rememberWorkSearchSnapshot,
+  restoredWorkSearchSnapshot,
   replaceWorkSearchQuerySegments,
   workSearchHitAt,
-  workSearchPageScope,
+  isWorkSearchHit,
+  workSearchPositionMatchesHitPage,
+  workSearchSnapshotIdentity,
   workSearchWordPosition,
-  type WorkSearchWordPosition,
   type WorkSearchOption
 } from "~/lib/reader/work-search"
+import { isExactWorkSearchHit, readerTargetUnavailableMessage } from "~/lib/reader-target"
 import {
   copyProductionValue,
   isProductionShortcutGuarded,
@@ -223,6 +229,7 @@ type SimilarWorksResponse = components["schemas"]["SimilarWorksResponse"]
 type CanonicalSearchState = Readonly<{
   query: string
   hit: number
+  snapshot: string | null
   wordForms: boolean
   includeOlderSpellings: boolean
   prefix: boolean
@@ -232,6 +239,7 @@ type CanonicalSearchState = Readonly<{
 const canonicalSearchKeys = [
   "q",
   "hit",
+  "snapshot",
   "lemma",
   "ej_modern",
   "prefix",
@@ -280,14 +288,17 @@ function parseCanonicalSearchState(): CanonicalSearchState | null {
   const rawHit = route.query.hit
   if (typeof rawQuery !== "string" || typeof rawHit !== "string") return null
 
-  const query = rawQuery.trim()
-  if (query.length < 1 || query.length > 200) return null
+  const query = rawQuery
+  if (query.trim().length < 1 || query.length > 200) return null
+  const snapshot = route.query.snapshot ?? null
+  if (snapshot !== null && !isTextSearchSnapshot(snapshot)) return null
   const hit = canonicalHitIndex(rawHit)
   if (hit === null) return null
 
   return Object.freeze({
     query,
     hit,
+    snapshot,
     wordForms: route.query.lemma === "1",
     includeOlderSpellings: route.query.ej_modern !== "1",
     prefix: route.query.prefix === "1",
@@ -364,39 +375,6 @@ function isSimilarWorksResponse(value: unknown): value is SimilarWorksResponse {
     && value.items.every(isSimilarWork)
 }
 
-function workSearchHitFields(value: unknown): value is WorkSearchHit {
-  if (!isRecord(value) || !isRecord(value.highlight)) return false
-  return isSafeInteger(value.index)
-    && typeof value.page_name === "string"
-    && value.page_name.trim().length >= 1
-    && value.page_name.length <= 100
-    && isSafeInteger(value.page_index)
-    && typeof value.highlight.from_word_id === "string"
-    && typeof value.highlight.to_word_id === "string"
-    && value.highlight.from_word_id.length <= 100
-    && value.highlight.to_word_id.length <= 100
-}
-
-function positionMatchesPage(position: WorkSearchWordPosition, pageScope: string | null): boolean {
-  return position.pageIndex === null || position.scope === pageScope
-}
-
-function isWorkSearchHit(
-  value: unknown,
-  workId: string,
-  mediaType: "etext" | "faksimil"
-): value is WorkSearchHit {
-  if (!workSearchHitFields(value)) return false
-  const fromPosition = workSearchWordPosition(value.highlight.from_word_id, workId)
-  const toPosition = workSearchWordPosition(value.highlight.to_word_id, workId)
-  if (!fromPosition || !toPosition || fromPosition.scope !== toPosition.scope ||
-    fromPosition.ordinal > toPosition.ordinal) return false
-
-  const pageScope = workSearchPageScope(value.page_index, value.page_name, mediaType)
-  return positionMatchesPage(fromPosition, pageScope) &&
-    positionMatchesPage(toPosition, pageScope)
-}
-
 function isExpectedHitItem(
   item: unknown,
   position: number,
@@ -409,9 +387,9 @@ function isExpectedHitItem(
   return isWorkSearchHit(item, workId, mediaType)
     && item.index === offset + position
     && item.index < totalHits
-    && pageMap.some(page =>
+    && (!isExactWorkSearchHit(item) || pageMap.some(page =>
       page.page_name === item.page_name && page.page_index === item.page_index
-    )
+    ))
 }
 
 function isExpectedHitResponse(
@@ -426,6 +404,8 @@ function isExpectedHitResponse(
 ): value is WorkSearchHitsResponse {
   if (!isRecord(value) || !Array.isArray(value.items)) return false
   const metadataMatches = value.query === state.query
+    && isTextSearchSnapshot(value.snapshot)
+    && (state.snapshot === null || value.snapshot === state.snapshot)
     && value.media_type === mediaType
     && value.offset === offset
     && value.limit === limit
@@ -808,8 +788,8 @@ const focusMode = computed(() => route.query.fokus !== undefined)
 const readerTitleTooltip = computed(() => reader.value
   ? usefulLibraryTooltipText(reader.value.fullTitle, reader.value.title)
   : "")
-const focusHref = computed(() => readerFocusFullPath(rawFullPath.value, true))
-const focusNeutralHref = computed(() => readerFocusFullPath(rawFullPath.value, false))
+const focusHref = computed(() => readerFocusFullPath(searchNavigationFullPath.value, true))
+const focusNeutralHref = computed(() => readerFocusFullPath(searchNavigationFullPath.value, false))
 const focusBarVisible = ref(true)
 const focusStateKey = [authorParam.value, titleParam.value, mediaTypeParam.value].join(":")
 const focusNightMode = useState(`reader-focus-night:${focusStateKey}`, () => false)
@@ -828,10 +808,15 @@ const focusReaderStyle = computed(() => focusMode.value && etextReader.value
 const ocrMode = computed(() => Boolean(
   explicitOcrRequested.value && facsimileReader.value?.ocrOverlay
 ))
-const searchState = computed(() => reader.value?.searchable
-  ? parseCanonicalSearchState()
-  : null
-)
+const searchState = computed(() => {
+  const current = reader.value
+  if (!current?.searchable) return null
+  const state = parseCanonicalSearchState()
+  if (!state || state.snapshot !== null || !import.meta.client) return state
+  const snapshot = restoredWorkSearchSnapshot(window.history.state,
+    workSearchSnapshotIdentity(current.workId, current.mediaType, state))
+  return snapshot ? { ...state, snapshot } : state
+})
 const searchReturnHref = computed(() => parseTextSearchReturnHref(
   rawTextSearchReturnQuery(rawFullPath.value)
 ))
@@ -843,8 +828,15 @@ const pageQuery = computed(() => {
   if (searchState.value) {
     query.q = searchState.value.query
     query.hit = String(searchState.value.hit)
+    if (hitResponse.value) query.snapshot = hitResponse.value.snapshot
   }
   return query
+})
+const searchNavigationFullPath = computed(() => {
+  const snapshot = hitResponse.value?.snapshot ?? searchState.value?.snapshot
+  return snapshot && route.query.snapshot === undefined
+    ? readerFullPathWithQueryValue(rawFullPath.value, "snapshot", snapshot)
+    : rawFullPath.value
 })
 const selectedFacsimileSize = computed<ReaderFacsimileSize | null>(() => {
   const currentReader = facsimileReader.value
@@ -877,7 +869,7 @@ const focusParts = computed(() => reader.value?.parts.map(part => ({
 const alternateMediaHref = computed(() => {
   const alternate = reader.value?.alternateMedia
   return alternate
-    ? readerMediaFullPath(rawFullPath.value, alternate.pageName, alternate.mediaType)
+    ? readerMediaFullPath(searchNavigationFullPath.value, alternate.pageName, alternate.mediaType)
     : null
 })
 const pageRouteDraftName = ref(pageParam.value)
@@ -914,6 +906,20 @@ function draftAdjacentPageName(direction: -1 | 1): string | null {
 }
 const draftPreviousPageName = computed(() => draftAdjacentPageName(-1))
 const draftNextPageName = computed(() => draftAdjacentPageName(1))
+async function pushReaderPage(href: string): Promise<void> {
+  const historyState = import.meta.client ? window.history.state : null
+  const previousCurrent = historyState?.current
+  // Router persists this state in its own push commit, with no extra history
+  // write. A rejected/canceled push must leave the original state unchanged.
+  if (historyState) historyState.current = rawFullPath.value
+  try {
+    await router.push(href)
+  } finally {
+    if (historyState && window.history.state === historyState) {
+      historyState.current = previousCurrent
+    }
+  }
+}
 function queueReaderPage(pageName: string): void {
   if (pageNavigationDisposed) return
   const currentReader = reader.value
@@ -926,7 +932,7 @@ function queueReaderPage(pageName: string): void {
     .then(async () => {
       if (pageNavigationDisposed) return
       try {
-        await router.push(href)
+        await pushReaderPage(href)
       } catch {
         if (!pageNavigationDisposed && generation === pageNavigationGeneration) {
           pageRouteDraftName.value = pageParam.value
@@ -1133,10 +1139,14 @@ const hitFetch = await useAsyncData(
                 word_forms: state.wordForms,
                 include_older_spellings: state.includeOlderSpellings,
                 prefix: state.prefix,
-                suffix: state.suffix
+                suffix: state.suffix,
+                snapshot: state.snapshot ?? undefined
               }
             }
           })
+          if (isSnapshotUnavailable(result)) {
+            return { status: "expired" as const, identity }
+          }
           if (result.error || !isExpectedHitResponse(
             result.data,
             state,
@@ -1169,10 +1179,25 @@ const hitResponse = computed(() => {
     ? value.response
     : null
 })
+watch(hitResponse, response => {
+  const state = searchState.value
+  const current = reader.value
+  if (import.meta.client && response && state && current && route.query.snapshot === undefined) {
+    rememberWorkSearchSnapshot(window.history,
+      workSearchSnapshotIdentity(current.workId, current.mediaType, state), response.snapshot)
+  }
+}, { immediate: true, flush: "sync" })
 const hitRequestFailed = computed(
-  () => hitFetch.data.value?.status === "error" &&
-    hitFetch.data.value.identity === dialogNeutralIdentity.value
+  () => (hitFetch.data.value?.status === "error" &&
+    hitFetch.data.value.identity === dialogNeutralIdentity.value)
+    || (hitContinuationFailure.value?.identity === dialogNeutralIdentity.value && hitContinuationFailure.value.status === "error")
 )
+const hitContinuationFailure = shallowRef<{ identity: string, status: "error" | "expired" } | null>(null)
+const hitExpired = computed(() => (
+  (hitFetch.data.value?.status === "expired" && hitFetch.data.value.identity === dialogNeutralIdentity.value)
+  || (hitContinuationFailure.value?.identity === dialogNeutralIdentity.value && hitContinuationFailure.value.status === "expired")
+))
+const expiredSnapshotMessage = "Sökresultatet har gått ut. Starta om sökningen för att använda den aktuella textsamlingen."
 const activeHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
   return workSearchHitAt(hitResponse.value.items, searchState.value.hit)
@@ -1190,7 +1215,14 @@ function selectedHitRouteMatchesReader(currentReader: ReaderPage): boolean {
     || route.query.s_mediatype === currentReader.mediaType
 }
 
-const selectedSearchHit = computed<WorkSearchHit | null>(() => {
+type LegacyHighlightTarget = Readonly<{
+  fromWordId: string
+  pageIndex: number
+  pageName: string
+  toWordId: string
+}>
+
+const selectedSearchHit = computed<LegacyHighlightTarget | null>(() => {
   const currentReader = reader.value
   if (!currentReader?.searchable) return null
   if (route.query.q !== undefined || route.query.hit !== undefined) return null
@@ -1205,16 +1237,12 @@ const selectedSearchHit = computed<WorkSearchHit | null>(() => {
     !selectedHitRouteMatchesReader(currentReader) ||
     typeof fromWordId !== "string" || typeof toWordId !== "string"
   ) return null
-  const hit: WorkSearchHit = {
-    index: hitIndex,
-    page_name: currentReader.pageName,
-    page_index: currentReader.pageIndex,
-    highlight: {
-      from_word_id: fromWordId,
-      to_word_id: toWordId
-    }
-  }
-  return isWorkSearchHit(hit, currentReader.workId, currentReader.mediaType) ? hit : null
+  const from = workSearchWordPosition(fromWordId, currentReader.workId)
+  const to = workSearchWordPosition(toWordId, currentReader.workId)
+  if (!from || !to || from.scope !== to.scope || from.ordinal > to.ordinal ||
+    !workSearchPositionMatchesHitPage(from, currentReader.pageIndex, currentReader.mediaType) ||
+    !workSearchPositionMatchesHitPage(to, currentReader.pageIndex, currentReader.mediaType)) return null
+  return { fromWordId, toWordId, pageIndex: currentReader.pageIndex, pageName: currentReader.pageName }
 })
 const previousHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
@@ -1226,25 +1254,36 @@ const nextHit = computed(() => {
   const index = searchState.value.hit + 1
   return index <= maximumNavigableHit ? workSearchHitAt(hitResponse.value.items, index) : null
 })
+const highlightHit = computed(() => {
+  if (selectedSearchHit.value) return selectedSearchHit.value
+  return activeHit.value && isExactWorkSearchHit(activeHit.value)
+    ? {
+        fromWordId: activeHit.value.highlight.from_word_id,
+        toWordId: activeHit.value.highlight.to_word_id,
+        pageIndex: activeHit.value.page_index,
+        pageName: activeHit.value.page_name
+      }
+    : null
+})
 const markedReaderHtml = computed<ManagedAssetHtml<"reader-etext">>(() => {
   const currentReader = etextReader.value
   if (!currentReader) return emptyRenderableHtml()
-  const hit = selectedSearchHit.value ?? activeHit.value
+  const hit = highlightHit.value
   if (!hit) return currentReader.html
   return markReaderSearchEtextHtml(currentReader.html, {
-    fromWordId: hit.highlight.from_word_id,
-    hitPageIndex: hit.page_index,
-    hitPageName: hit.page_name,
+    fromWordId: hit.fromWordId,
+    hitPageIndex: hit.pageIndex,
+    hitPageName: hit.pageName,
     pageIndex: currentReader.pageIndex,
     pageName: currentReader.pageName,
-    toWordId: hit.highlight.to_word_id
+    toWordId: hit.toWordId
   })
 })
 const markedFacsimileReader = computed(() => {
   const currentReader = facsimileReader.value
   if (!currentReader) return null
   const overlay = currentReader?.ocrOverlay
-  const hit = selectedSearchHit.value ?? activeHit.value
+  const hit = highlightHit.value
   if (!overlay || !hit) return currentReader
 
   return {
@@ -1254,12 +1293,12 @@ const markedFacsimileReader = computed(() => {
       html: markReaderSearchOcrHtml(
         overlay.html,
         {
-          fromWordId: hit.highlight.from_word_id,
-          hitPageIndex: hit.page_index,
-          hitPageName: hit.page_name,
+          fromWordId: hit.fromWordId,
+          hitPageIndex: hit.pageIndex,
+          hitPageName: hit.pageName,
           pageIndex: currentReader.pageIndex,
           pageName: currentReader.pageName,
-          toWordId: hit.highlight.to_word_id
+          toWordId: hit.toWordId
         }
       )
     }
@@ -1272,10 +1311,12 @@ const hitPosition = computed(() => {
 const hitNavigationFailed = ref(false)
 const hitMessage = computed(() => {
   if (!searchState.value) return null
+  if (hitExpired.value) return expiredSnapshotMessage
   if (hitRequestFailed.value || hitNavigationFailed.value) {
     return "Sökträffen kunde inte hämtas."
   }
   if (hitResponse.value && !activeHit.value) return "Ingen sådan sökträff."
+  if (activeHit.value && !isExactWorkSearchHit(activeHit.value)) return readerTargetUnavailableMessage
   return null
 })
 
@@ -1293,7 +1334,10 @@ function cancelPendingHitNavigation(): void {
   hitNavigationFailed.value = false
 }
 
-watch(rawFullPath, cancelPendingHitNavigation, { flush: "sync" })
+watch(rawFullPath, () => {
+  cancelPendingHitNavigation()
+  hitContinuationFailure.value = null
+}, { flush: "sync" })
 
 function toggleGotoHitInput(): void {
   gotoHitInputOpen.value = !gotoHitInputOpen.value
@@ -1332,6 +1376,7 @@ function sameSearchState(
   if (!current) return false
   return current.query === expected.query
     && current.hit === expected.hit
+    && current.snapshot === expected.snapshot
     && current.wordForms === expected.wordForms
     && current.includeOlderSpellings === expected.includeOlderSpellings
     && current.prefix === expected.prefix
@@ -1354,6 +1399,7 @@ async function fetchHitAtIndex(
   signal: AbortSignal
 ): Promise<WorkSearchHit | null> {
   const { currentReader, response, state } = context
+  const pinnedState = { ...state, snapshot: response.snapshot }
   const offset = Math.max(index - 1, 0)
   const limit = 3
   const result = await runtimeClient.GET("/works/{work_id}/search-hits", {
@@ -1368,20 +1414,29 @@ async function fetchHitAtIndex(
         word_forms: state.wordForms,
         include_older_spellings: state.includeOlderSpellings,
         prefix: state.prefix,
-        suffix: state.suffix
+        suffix: state.suffix,
+        snapshot: pinnedState.snapshot
       }
     }
   })
+  if (signal.aborted || !hitLookupIsCurrent(context)) return null
+  if (isSnapshotUnavailable(result)) {
+    hitContinuationFailure.value = { identity: context.sourceIdentity, status: "expired" }
+    return null
+  }
   if (result.error || !isExpectedHitResponse(
     result.data,
-    state,
+    pinnedState,
     offset,
     currentReader.workId,
     currentReader.mediaType,
     currentReader.pageMap,
     index,
     limit
-  )) return null
+  )) {
+    hitContinuationFailure.value = { identity: context.sourceIdentity, status: "error" }
+    return null
+  }
   if (result.data.total_hits !== response.total_hits || !hitLookupIsCurrent(context)) return null
   return workSearchHitAt(result.data.items, index)
 }
@@ -1401,24 +1456,34 @@ async function hitAtIndex(index: number, signal: AbortSignal): Promise<WorkSearc
 }
 
 function rawHitFullPath(hit: WorkSearchHit, sourceFullPath = rawFullPath.value): string {
-  const pagePath = readerPageFullPath(sourceFullPath, hit.page_name)
+  const pagePath = isExactWorkSearchHit(hit)
+    ? readerPageFullPath(sourceFullPath, hit.page_name)
+    : sourceFullPath
   const fragmentIndex = pagePath.indexOf("#")
   const fragment = fragmentIndex < 0 ? "" : pagePath.slice(fragmentIndex)
   const beforeHash = fragmentIndex < 0 ? pagePath : pagePath.slice(0, fragmentIndex)
   const queryIndex = beforeHash.indexOf("?")
   const replacements = new Map<string, string>([["hit", String(hit.index)]])
-  if (facsimileReader.value) {
+  if (sourceFullPath === rawFullPath.value && hitResponse.value) {
+    replacements.set("snapshot", hitResponse.value.snapshot)
+  }
+  if (facsimileReader.value && isExactWorkSearchHit(hit)) {
     replacements.set("traff", hit.highlight.from_word_id)
     replacements.set("traffslut", hit.highlight.to_word_id)
     replacements.set("hit_index", String(hit.index))
   }
   const path = queryIndex < 0 ? beforeHash : beforeHash.slice(0, queryIndex)
   const segments = queryIndex < 0 ? [] : beforeHash.slice(queryIndex + 1).split("&")
-  const query = replaceWorkSearchQuerySegments(segments, new Set(), replacements)
+  const query = replaceWorkSearchQuerySegments(
+    segments,
+    isExactWorkSearchHit(hit) ? new Set() : new Set(["traff", "traffslut", "hit_index"]),
+    replacements
+  )
   return `${path}?${query.join("&")}${fragment}`
 }
 
 async function navigateToHit(index: number): Promise<void> {
+  if (hitExpired.value) return
   cancelPendingHitNavigation()
   const generation = hitNavigationGeneration
   if (searchState.value?.hit === index) {
@@ -1602,6 +1667,7 @@ const workSearchQueryKeys = new Set<string>([
 
 function appendWorkSearchQuery(segments: string[], state: CanonicalSearchState): void {
   segments.push(new URLSearchParams({ q: state.query }).toString(), "hit=0")
+  if (state.snapshot) segments.push(new URLSearchParams({ snapshot: state.snapshot }).toString())
   if (state.wordForms) segments.push("lemma=1")
   if (!state.includeOlderSpellings) segments.push("ej_modern=1")
   if (state.prefix) segments.push("prefix=1")
@@ -1635,7 +1701,7 @@ const closeWorkSearchHref = computed(() => workSearchFullPath(null))
 type FirstWorkSearchHitResult =
   | Readonly<{ status: "empty" }>
   | Readonly<{ status: "error" }>
-  | Readonly<{ status: "hit", hit: WorkSearchHit }>
+  | Readonly<{ status: "hit", hit: WorkSearchHit, snapshot: string }>
 
 async function requestFirstWorkSearchHit(
   currentReader: ReaderPage,
@@ -1654,7 +1720,8 @@ async function requestFirstWorkSearchHit(
         word_forms: state.wordForms,
         include_older_spellings: state.includeOlderSpellings,
         prefix: state.prefix,
-        suffix: state.suffix
+        suffix: state.suffix,
+        snapshot: state.snapshot ?? undefined
       }
     }
   })
@@ -1669,7 +1736,7 @@ async function requestFirstWorkSearchHit(
     1
   )) return { status: "error" }
   const hit = workSearchHitAt(result.data.items, 0)
-  return hit ? { status: "hit", hit } : { status: "empty" }
+  return hit ? { status: "hit", hit, snapshot: result.data.snapshot } : { status: "empty" }
 }
 
 async function submitWorkSearch(): Promise<void> {
@@ -1689,18 +1756,31 @@ async function submitWorkSearch(): Promise<void> {
   const state: CanonicalSearchState = Object.freeze({
     query,
     hit: 0,
+    snapshot: null,
     wordForms: workSearchLemma.value,
     includeOlderSpellings: workSearchOlderSpellings.value,
     prefix: workSearchPrefix.value,
     suffix: workSearchSuffix.value
   })
+  await runWorkSearch(state)
+}
+
+async function restartWorkSearch(): Promise<void> {
+  const state = searchState.value
+  if (state) await runWorkSearch({ ...state, hit: 0, snapshot: null })
+}
+
+async function runWorkSearch(state: CanonicalSearchState): Promise<void> {
+  const currentReader = reader.value
+  if (!currentReader?.searchable) return
+  cancelPendingHitNavigation()
   cancelPendingWorkSearchSubmission()
   const generation = workSearchSubmissionGeneration
   const controller = new AbortController()
   workSearchSubmissionController = controller
   workSearchPending.value = true
   workSearchMessage.value = ""
-  workSearchQuery.value = query
+  workSearchQuery.value = state.query
   try {
     const result = await requestFirstWorkSearchHit(currentReader, state, controller.signal)
     if (generation !== workSearchSubmissionGeneration) return
@@ -1710,7 +1790,7 @@ async function submitWorkSearch(): Promise<void> {
         : "Sökningen kunde inte genomföras."
       return
     }
-    const searchFullPath = workSearchFullPath(state)
+    const searchFullPath = workSearchFullPath({ ...state, snapshot: result.snapshot })
     await navigateRawFullPath(
       rawHitFullPath(result.hit, searchFullPath),
       false,
@@ -1865,10 +1945,11 @@ useHead(() => ({
 }))
 
 function pageHref(pageName: string): string {
-  return readerPageFullPath(rawFullPath.value, pageName)
+  return readerPageFullPath(searchNavigationFullPath.value, pageName)
 }
 
 function hitHref(hit: WorkSearchHit): string {
+  if (!isExactWorkSearchHit(hit)) return rawHitFullPath(hit)
   return facsimileReader.value
     ? rawHitFullPath(hit)
     : readerHitHref({
@@ -1889,7 +1970,7 @@ function selectFacsimileSize(size: ReaderFacsimileSize): void {
   ) return
 
   void navigateRawFullPath(
-    readerFullPathWithQueryValue(rawFullPath.value, "storlek", String(size)),
+    readerFullPathWithQueryValue(searchNavigationFullPath.value, "storlek", String(size)),
     true,
     rawFullPath.value
   )
@@ -1942,7 +2023,7 @@ const titleSourceInfoTrigger = ref<HTMLAnchorElement | null>(null)
 const sidebarSourceInfoTrigger = ref<HTMLAnchorElement | null>(null)
 let sourceInfoTrigger: HTMLElement | null = null
 const contentsPartHrefs = computed(() => reader.value?.parts.map(
-  part => readerPageFullPath(rawFullPath.value, part.start_page_name)
+  part => pageHref(part.start_page_name)
 ) ?? [])
 let contentsClosePending = false
 
@@ -2176,7 +2257,7 @@ function selectContentsPage(pageName: string): void {
   const currentReader = reader.value
   if (!currentReader || !currentReader.pageNames.includes(pageName)) return
   void navigateRawFullPath(
-    readerPageFullPath(rawFullPath.value, pageName),
+    pageHref(pageName),
     false,
     rawFullPath.value
   )
@@ -2563,13 +2644,17 @@ watch(readerRequestIdentity, () => {
               <span class="num">{{ hitResponse.total_hits }}</span>
               {{ hitResponse.total_hits === 1 ? "sökträff" : "sökträffar" }}
             </div>
-            <div v-if="activeHit">
+            <div v-if="activeHit && isExactWorkSearchHit(activeHit)">
               Träff <span>{{ activeHit.index + 1 }}</span>, sida {{ reader.pageName }}
             </div>
+            <div v-else-if="activeHit">
+              Träff <span>{{ activeHit.index + 1 }}</span>
+            </div>
           </div>
-          <p v-else-if="searchState && hitMessage" class="text">{{ hitMessage }}</p>
+          <p v-if="searchState && hitMessage" class="text">{{ hitMessage }}</p>
           <ul class="ctrls">
-            <template v-if="searchState && hitResponse">
+            <li v-if="hitExpired"><button type="button" class="reader-action-button" @click="restartWorkSearch">Starta om sökningen</button></li>
+            <template v-if="searchState && hitResponse && !hitExpired">
             <li class="arrows">
               <NuxtLink
                 v-if="previousHit"
@@ -2680,6 +2765,8 @@ watch(readerRequestIdentity, () => {
               class="reader-hit-navigation"
               aria-label="Sökträffsnavigering"
             >
+              <p v-if="hitExpired">{{ expiredSnapshotMessage }}</p>
+              <button v-if="hitExpired" type="button" disabled>Starta om sökningen</button>
               <a
                 v-if="previousHit"
                 rel="prev"
