@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import VueMultiselect from "vue-multiselect"
 
 defineOptions({ inheritAttrs: false })
@@ -40,6 +40,7 @@ const props = withDefaults(defineProps<{
   loading?: boolean
   spaceAfterRemove?: boolean
   persistentInputRow?: boolean
+  hideSelected?: boolean
 }>(), {
   optionGroups: () => [],
   accessibleName: undefined,
@@ -47,7 +48,8 @@ const props = withDefaults(defineProps<{
   internalSearch: false,
   loading: false,
   spaceAfterRemove: true,
-  persistentInputRow: false
+  persistentInputRow: false,
+  hideSelected: false
 })
 
 const emit = defineEmits<{
@@ -61,6 +63,12 @@ const controlName = computed(() => props.accessibleName ?? props.placeholder)
 const flatOptions = computed(() => props.optionGroups.length > 0
   ? props.optionGroups.flatMap(group => group.options)
   : props.options)
+const knownOptions = new Map<string, SearchMultiSelectOption>()
+watch(flatOptions, (options) => {
+  for (const option of options) {
+    rememberOption(option)
+  }
+}, { immediate: true })
 const multiselectOptions = computed<VueMultiselectOption[] | VueMultiselectOptionGroup[]>(() => {
   const mapOption = (option: SearchMultiSelectOption): VueMultiselectOption => ({
     ...option,
@@ -70,15 +78,28 @@ const multiselectOptions = computed<VueMultiselectOption[] | VueMultiselectOptio
     ? props.optionGroups.map(group => ({ label: group.label, options: group.options.map(mapOption) }))
     : props.options.map(mapOption)
 })
-const selectedOptions = computed<VueMultiselectOption[]>(() => props.modelValue.map(value => (
-  flatOptions.value.find(option => option.value === value) ?? { value, label: value }
-)))
+const selectedOptions = computed<VueMultiselectOption[]>(() => props.modelValue.map((value) => {
+  const current = flatOptions.value.find(option => option.value === value)
+  const remembered = knownOptions.get(value)
+  if (current?.label === value && remembered && remembered.label !== value) return remembered
+  return current ?? remembered ?? { value, label: value }
+}))
 
 function selectedLabel(option: SearchMultiSelectOption): string {
   return option.selectionLabel ?? option.label
 }
 
+function rememberOption(option: SearchMultiSelectOption) {
+  const remembered = knownOptions.get(option.value)
+  if (option.label !== option.value || !remembered) {
+    knownOptions.set(option.value, option)
+  }
+}
+
 function update(value: readonly VueMultiselectOption[] | null) {
+  for (const option of value ?? []) {
+    knownOptions.set(option.value, option)
+  }
   const selected = new Set((value ?? []).map(option => option.value))
   const known = flatOptions.value
     .filter(option => selected.has(option.value))
@@ -131,10 +152,11 @@ onMounted(() => {
       track-by="value"
       label="label"
       :close-on-select="false"
-      :hide-selected="false"
+      :hide-selected="hideSelected"
       :show-labels="false"
       :allow-empty="true"
       @update:model-value="update"
+      @select="rememberOption"
       @search-change="emit('query', $event)"
       @open="isOpen = true"
       @close="isOpen = false"
@@ -192,7 +214,8 @@ onMounted(() => {
               :aria-label="`Ta bort ${selectedLabel(option)}`"
               @mousedown.prevent.stop
               @click.prevent.stop="remove(option)"
-            >{{ "×" }}</button>{{ spaceAfterRemove ? " " : "" }}{{ selectedLabel(option) }}
+            >{{ "×" }}</button>
+            <span class="select2-selection__choice-label">{{ spaceAfterRemove ? " " : "" }}{{ selectedLabel(option) }}</span>
           </span>
         </div>
       </template>

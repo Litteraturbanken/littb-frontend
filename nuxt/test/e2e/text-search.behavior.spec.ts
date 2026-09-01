@@ -203,11 +203,88 @@ test("a selected title does not prevent searching for and selecting another titl
     .toBe("lb238704,lb278171")
 })
 
-test("selected dropdown rows use the neutral site hover color", async ({ page }) => {
+test("a selected title keeps its title while refreshed options are pending", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+  const title = page.locator(".title_select")
+  await title.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
+  const input = title.locator("input.select2-search__field")
+  await input.fill("röda")
+  const option = title.getByRole("option", { name: "Röda rummet", exact: true })
+  await expect(option).toBeVisible()
+
+  let releaseOptions = () => {}
+  let markHeld = () => {}
+  const optionsGate = new Promise<void>(resolve => { releaseOptions = resolve })
+  const optionsHeld = new Promise<void>(resolve => { markHeld = resolve })
+  const holdOptions = async (route: Route) => {
+    markHeld()
+    await optionsGate
+    await route.continue().catch((error: Error) => {
+      if (!error.message.includes("Route is already handled")) throw error
+    })
+  }
+  await page.route("**/api/v2/text-search/options", holdOptions)
+
+  try {
+    await option.click()
+    await expect.poll(() => new URL(page.url()).searchParams.get("titlar")).toBe("lb238704")
+    await optionsHeld
+    const chip = title.locator(".select2-selection__choice")
+    await expect(chip).toContainText("Röda rummet")
+    await expect(chip).not.toContainText("lb238704")
+  } finally {
+    releaseOptions()
+    await page.unroute("**/api/v2/text-search/options", holdOptions)
+  }
+})
+
+test("long selected title labels stay on one ellipsized line", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1&titlar=lb238704")
+  const title = page.locator(".title_select")
+  const chip = title.locator(".select2-selection__choice")
+  const label = chip.locator(".select2-selection__choice-label")
+  await label.evaluate(element => {
+    element.textContent = "En synnerligen lång titel som inte får brytas över flera rader i titelbrickan"
+  })
+
+  const metrics = await label.evaluate(element => {
+    const chip = element.parentElement!
+    const style = getComputedStyle(chip)
+    return {
+      overflow: style.overflow,
+      textOverflow: style.textOverflow,
+      whiteSpace: style.whiteSpace,
+      scrollWidth: chip.scrollWidth,
+      clientWidth: chip.clientWidth,
+      chipWidth: chip.getBoundingClientRect().width,
+      chipHeight: chip.getBoundingClientRect().height
+    }
+  })
+  expect(metrics).toMatchObject({
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap"
+  })
+  expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth)
+  expect(metrics.chipWidth).toBeLessThanOrEqual(350)
+  expect(metrics.chipHeight).toBeLessThan(21)
+})
+
+test("selected titles are absent from the open title menu", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?avancerad=1&titlar=lb238704")
   const title = page.locator(".title_select")
   await title.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
-  const selected = title.getByRole("option", { name: "Röda rummet", exact: true })
+
+  await expect(title.getByRole("option", { name: "Röda rummet", exact: true })).toHaveCount(0)
+  await expect(title.getByRole("option", { name: "Gösta Berlings saga", exact: true }))
+    .toBeVisible()
+})
+
+test("selected dropdown rows use the neutral site hover color", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1&languages=language:swe")
+  const language = page.locator(".lang_select")
+  await language.getByRole("button", { name: "Visa alternativ för Språk …" }).click()
+  const selected = language.getByRole("option", { name: "Svenska", exact: true })
 
   await selected.hover()
 
@@ -215,6 +292,23 @@ test("selected dropdown rows use the neutral site hover color", async ({ page })
     const style = getComputedStyle(element)
     return { background: style.backgroundColor, color: style.color }
   })).toEqual({ background: "rgb(233, 233, 233)", color: "rgb(0, 0, 0)" })
+})
+
+test("inactive author filters retain their production placeholder padding", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+
+  for (const control of [
+    { selector: ".author_select", name: "Författarskap" },
+    { selector: ".about_select", name: "Om ett författarskap" }
+  ]) {
+    const root = page.locator(control.selector)
+    const input = root.locator("input.select2-search__field")
+    await expect(input).toHaveCSS("padding-left", "10px")
+    await root.getByRole("button", { name: `Visa alternativ för ${control.name}` }).click()
+    await expect(input).toHaveCSS("padding-left", "10px")
+    await input.press("Escape")
+    await expect(input).toHaveCSS("padding-left", "10px")
+  }
 })
 
 test("keeps accepted results visible while a dropdown filter refreshes", async ({

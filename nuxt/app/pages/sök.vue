@@ -1538,6 +1538,7 @@ v-for="item in [
               :options="titleChoices"
               placeholder="Titlar"
               searchable
+              hide-selected
               :loading="titleLoading"
               @query="queueTitleOptions"
               @update:model-value="patchFilters({ workIds: $event })"

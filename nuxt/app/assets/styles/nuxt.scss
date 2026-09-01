@@ -620,8 +620,12 @@
     }
 
     &.title_select .select2-selection__choice {
+        max-width: 350px;
+        overflow: hidden;
         font-family: "Requiem Text A", "Requiem Text B";
+        text-overflow: ellipsis;
         text-transform: uppercase;
+        white-space: nowrap;
     }
 
     .select2-selection__choice__remove {
@@ -672,6 +676,11 @@
     .multiselect__input::placeholder {
         color: #9e9e9e;
         opacity: 1;
+    }
+
+    &.author_select input.multiselect__input,
+    &.about_select input.multiselect__input {
+        padding: 5px 5px 5px 10px !important;
     }
 
     .multiselect__placeholder:not(.search-multiselect__input-row) {
