@@ -389,10 +389,10 @@ test("vue-multiselect names each real keyboard control without a searchbox suffi
   await openSearch(page, "/s%C3%B6k?avancerad=1")
 
   for (const control of [
-    page.getByRole("combobox", { name: "Författarskap", exact: true }),
+    page.getByRole("textbox", { name: "Författarskap", exact: true }),
     page.getByRole("textbox", { name: "Titlar", exact: true }),
     page.getByRole("combobox", { name: "Språk …", exact: true }),
-    page.getByRole("combobox", { name: "Om ett författarskap", exact: true }),
+    page.getByRole("textbox", { name: "Om ett författarskap", exact: true }),
     page.getByRole("combobox", {
       name: "Filtrera: Kategorier / Utgivare", exact: true
     })
@@ -444,6 +444,91 @@ test("vue-multiselect accepts Enter selection and keeps legacy dropdown geometry
   await expect(option).toHaveCSS("padding-top", "6px")
   await expect(option).toHaveCSS("min-height", "0px")
   await expect(option).toHaveCSS("line-height", "normal")
+})
+
+test("advanced multiselects reserve small caps for their filter inputs", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+  const authors = page.locator(".author_select")
+  const selection = authors.locator(".multiselect")
+
+  await expect(selection).toHaveCSS(
+    "font-family",
+    '"Requiem Text A", "Requiem Text B", georgia, serif'
+  )
+  await expect(selection).toHaveCSS("font-size", "17px")
+  await expect(selection).toHaveCSS("text-transform", "none")
+
+  const input = authors.locator("input.multiselect__input")
+  await expect(input).toHaveCSS(
+    "font-family",
+    '"Requiem Text SC A", "Requiem Text SC B"'
+  )
+  await expect(input).toHaveCSS("font-size", "13.6px")
+  await expect(input).toHaveCSS("text-transform", "lowercase")
+})
+
+test("both author multiselects filter their existing options locally", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+
+  for (const control of [
+    {
+      selector: ".author_select",
+      name: "Författarskap",
+      query: "lagerlöf",
+      expected: "Lagerlöf, Selma (1858-1940)",
+      excluded: "Strindberg, August (1849-1912)"
+    },
+    {
+      selector: ".about_select",
+      name: "Om ett författarskap",
+      query: "strindberg",
+      expected: "Strindberg, August (1849-1912)",
+      excluded: "Lagerlöf, Selma (1858-1940)"
+    }
+  ]) {
+    const root = page.locator(control.selector)
+    await root.getByRole("button", { name: `Visa alternativ för ${control.name}` }).click()
+    const input = root.locator("input.select2-search__field")
+    await expect(input).toBeVisible()
+    await input.fill(control.query)
+    await expect(root.getByRole("option", { name: control.expected })).toBeVisible()
+    await expect(root.getByRole("option", { name: control.excluded })).toBeHidden()
+    await input.press("Escape")
+  }
+})
+
+test("gender dropdown matches the production trigger and open menu", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+  const gender = page.locator(".gender_select")
+  const trigger = gender.getByRole("button")
+
+  await expect(trigger).toHaveCSS(
+    "font-family",
+    '"Requiem Text A", "Requiem Text B", georgia, serif'
+  )
+  await expect(trigger).toHaveCSS("font-size", "13.6px")
+  await expect(trigger).toHaveCSS("text-transform", "none")
+
+  await trigger.click()
+  const menu = gender.getByRole("listbox")
+  const first = gender.getByRole("option", { name: "Alla författare" })
+  await expect(menu).toBeVisible()
+  await expect(menu).toHaveCSS("top", "26px")
+  await expect(menu).toHaveCSS("width", "350px")
+  await expect(menu).toHaveCSS("border-left", "1px solid rgb(170, 170, 170)")
+  await expect(menu).toHaveCSS("border-right", "1px solid rgb(170, 170, 170)")
+  await expect(menu).toHaveCSS("border-bottom", "1px solid rgb(170, 170, 170)")
+  await expect(first).toHaveCSS(
+    "font-family",
+    '"Requiem Text A", "Requiem Text B", georgia, serif'
+  )
+  await expect(first).toHaveCSS("font-size", "16px")
+  await expect(first).toHaveCSS("line-height", "19.2px")
+  await expect(first).toHaveCSS("padding", "6px")
+  await expect(first).toHaveCSS("background-color", "rgb(237, 237, 237)")
+
+  await trigger.click()
+  await expect(menu).toBeHidden()
 })
 
 test("advanced vue-multiselect SSR hydration renders without browser warnings", async ({ page }) => {

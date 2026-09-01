@@ -1496,6 +1496,8 @@ v-for="item in [
               :model-value="state.authorIds"
               :options="authorChoices"
               placeholder="Författarskap"
+              searchable
+              internal-search
               @update:model-value="patchFilters({ authorIds: $event })"
             />
           </div>
@@ -1562,6 +1564,8 @@ v-for="item in [
               :model-value="state.aboutAuthorIds"
               :options="aboutAuthorChoices"
               placeholder="Om ett författarskap"
+              searchable
+              internal-search
               @update:model-value="patchFilters({ aboutAuthorIds: $event })"
             />
           </div>
@@ -1870,10 +1874,10 @@ v-for="item in [
   border-radius: 0;
   background: white;
   color: #444;
-  font-family: "Requiem Text SC A", "Requiem Text SC B";
+  font-family: "Requiem Text A", "Requiem Text B", georgia, serif;
   font-size: 0.8em;
   text-align: left;
-  text-transform: lowercase;
+  text-transform: none;
   user-select: none;
 }
 
@@ -1910,16 +1914,28 @@ v-for="item in [
 }
 
 .gender_select_options {
+  box-sizing: border-box;
   position: absolute;
   z-index: 1051;
-  top: 28px;
+  top: 26px;
   left: 0;
   width: 350px;
   max-height: 350px;
   overflow-y: auto;
+  border: 1px solid #aaa;
+  border-top: 0;
   background: white;
   color: #333;
-  font-size: 0.8em;
+  font-family: "Requiem Text A", "Requiem Text B", georgia, serif;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.gender_select_options .select2-results__option {
+  box-sizing: border-box;
+  min-height: 0;
+  padding: 6px;
+  line-height: 1.2;
 }
 
 .bottom_row {

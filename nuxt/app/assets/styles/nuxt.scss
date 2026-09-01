@@ -573,6 +573,15 @@
         min-height: 28px;
         border: 0 !important;
         background: transparent;
+        font-family: "Requiem Text A", "Requiem Text B", georgia, serif;
+        font-size: inherit;
+        text-transform: none;
+    }
+
+    .multiselect__content-wrapper {
+        font-family: "Requiem Text A", "Requiem Text B", georgia, serif;
+        font-size: 1rem;
+        text-transform: none;
     }
 
     .multiselect__tags {

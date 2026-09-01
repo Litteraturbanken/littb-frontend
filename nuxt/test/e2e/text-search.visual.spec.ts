@@ -76,7 +76,7 @@ async function expectReady(page: Page, visualCase: typeof visualCases[number]) {
     })
 
     for (const selector of [".author_select", ".about_select"]) {
-      const placeholder = page.locator(`${selector} input[placeholder]`)
+      const placeholder = page.locator(`${selector} input.search-multiselect__input-row`)
       await expect(placeholder).toHaveCount(1)
       await expect(placeholder).toHaveCSS("font-weight", "400")
       expect(await placeholder.evaluate(element => (
