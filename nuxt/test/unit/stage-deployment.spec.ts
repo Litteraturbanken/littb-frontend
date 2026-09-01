@@ -114,6 +114,8 @@ type DeployStageOptions = {
   arguments?: string[]
   environment?: Record<string, string>
   lockAlreadyHeld?: boolean
+  lockHandoff?: "normal" | "unlocked-same-inode"
+  assertLockDescriptorsClosed?: boolean
   mutateJobspecAfterMaterialization?: boolean
   stageAllocations?: "complete" | "historical-stopped" | "incomplete"
 }
@@ -133,7 +135,12 @@ function runDeployStage(
   writeFileSync(jobspecPath, readRepositoryFile("jobs/lb-frontend-stage.nomad"))
   writeExecutable(directory, "git", `#!/bin/sh
 case "$1" in
-  rev-parse) printf '%s\\n' '${gitSha}' ;;
+  rev-parse)
+    case "$*" in
+      *--git-common-dir*) printf '%s\\n' "$GIT_COMMON_DIR" ;;
+      *) printf '%s\\n' '${gitSha}' ;;
+    esac
+    ;;
   branch) printf '%s\\n' "\${DEPLOY_BRANCH:-stage}" ;;
   status|merge-base) ;;
   show)
@@ -209,24 +216,100 @@ printf '%s\\n' 'public identity verified' >> "$TRACE_FILE"
 `)
   writeExecutable(directory, "python3", `#!/bin/sh
 if [ "$1" = "-" ] && [ "\${2##*/}" = "deploy-stage.sh" ]; then
-  if [ "\${LOCK_ALREADY_HELD:-0}" = 1 ]; then
-    printf '%s\\n' 'stage lock contested' >> "$TRACE_FILE"
-    exit 2
-  fi
-  printf '%s\\n' 'stage lock' >> "$TRACE_FILE"
-  shift
-  deploy_script="$1"
-  shift
-  LB_STAGE_LOCK_HANDOFF_FAKE=1 \
-  LB_STAGE_LOCK_FD=9 \
-  LB_STAGE_LOCK_PROOF_FD=10 \
-  LB_STAGE_LOCK_PARENT_PID=$$ \
-    "$deploy_script" --stage-lock-child "$@"
+  exec /usr/bin/python3 "$@" <<'PY'
+import fcntl
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+script = sys.argv[1]
+arguments = sys.argv[2:]
+trace_path = Path(os.environ["TRACE_FILE"])
+lock_path = Path(os.environ["TEST_STAGE_LOCK_PATH"])
+lock_path.parent.mkdir(parents=True, exist_ok=True)
+
+def trace(line):
+    with trace_path.open("a") as stream:
+        stream.write(line + "\\n")
+
+holder = None
+try:
+    if os.environ.get("LOCK_ALREADY_HELD") == "1":
+        holder = subprocess.Popen(
+            [
+                sys.executable,
+                "-c",
+                "import fcntl, os, sys, time; fd = os.open(sys.argv[1], os.O_RDWR | os.O_CREAT, 0o600); fcntl.flock(fd, fcntl.LOCK_EX); print('locked', flush=True); time.sleep(60)",
+                str(lock_path),
+            ],
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+        if holder.stdout.readline() != "locked\\n":
+            raise OSError("test lock holder did not start")
+        contender = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
+        try:
+            try:
+                fcntl.flock(contender, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                trace("stage lock contested")
+                raise SystemExit(2)
+            raise OSError("test lock contention unexpectedly succeeded")
+        finally:
+            os.close(contender)
+
+    held_fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
+    fcntl.flock(held_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    child_fd = held_fd
+    if os.environ.get("LOCK_HANDOFF") == "unlocked-same-inode":
+        child_fd = os.open(lock_path, os.O_RDWR)
+    proof_read, proof_write = os.pipe()
+    try:
+        os.write(proof_write, os.urandom(32))
+    finally:
+        os.close(proof_write)
+    environment = os.environ.copy()
+    environment.update({
+        "LB_STAGE_LOCK_FD": str(child_fd),
+        "LB_STAGE_LOCK_PROOF_FD": str(proof_read),
+        "LB_STAGE_LOCK_PARENT_PID": str(os.getpid()),
+        "TEST_STAGE_LOCK_FD_IDENTITIES": ",".join(
+            f"{fd}:{os.fstat(fd).st_dev}:{os.fstat(fd).st_ino}"
+            for fd in (child_fd, proof_read)
+        ),
+    })
+    trace("stage lock")
+    try:
+        completed = subprocess.run(
+            [script, "--stage-lock-child", *arguments],
+            check=False,
+            env=environment,
+            pass_fds=(child_fd, proof_read),
+        )
+    finally:
+        os.close(proof_read)
+        if child_fd != held_fd:
+            os.close(child_fd)
+        os.close(held_fd)
+    release_probe = os.open(lock_path, os.O_RDWR)
+    try:
+        fcntl.flock(release_probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    finally:
+        os.close(release_probe)
+    trace("stage lock release verified")
+    trace("stage lock released")
+    raise SystemExit(completed.returncode)
+finally:
+    if holder is not None:
+        holder.terminate()
+        holder.wait()
+PY
+elif [ "$1" = "-" ] && [ -n "$2" ] && [ "$2" = "\${LB_STAGE_LOCK_FD:-}" ]; then
+  /usr/bin/python3 "$@"
   status=$?
-  printf '%s\\n' 'stage lock released' >> "$TRACE_FILE"
+  [ "$status" -eq 0 ] && printf '%s\\n' 'stage lock verified' >> "$TRACE_FILE"
   exit "$status"
-elif [ "$1" = "-" ] && [ "\${LB_STAGE_LOCK_HANDOFF_FAKE:-0}" = 1 ] && [ -n "$2" ] && [ "$2" = "\${LB_STAGE_LOCK_FD:-}" ]; then
-  printf '%s\\n' 'stage lock verified' >> "$TRACE_FILE"
 elif [ "\${1##*/}" = "stage.py" ]; then
   case "$2" in
     preflight)
@@ -289,6 +372,23 @@ PY
     *) exit 64 ;;
   esac
 elif [ -n "\${DISPATCH_BUILDER_JOB:-}" ]; then
+  if [ "\${ASSERT_LOCK_DESCRIPTORS_CLOSED:-0}" = 1 ]; then
+    /usr/bin/python3 - "$TEST_STAGE_LOCK_FD_IDENTITIES" <<'PY'
+import os
+import sys
+
+for descriptor in sys.argv[1].split(","):
+    fd, device, inode = map(int, descriptor.split(":"))
+    try:
+        observed = os.fstat(fd)
+    except OSError:
+        continue
+    if (observed.st_dev, observed.st_ino) == (device, inode):
+        raise SystemExit(f"Stage lock descriptor {fd} leaked into deployment descendant")
+PY
+    status=$?
+    [ "$status" -eq 0 ] || exit "$status"
+  fi
   printf '%s\\n' 'dispatch' >> "$TRACE_FILE"
   printf '%s\\n' '{"DispatchedJobID":"builder/test"}'
 elif [ -n "\${RESOLVE_IMAGE_REF:-}" ]; then
@@ -338,8 +438,16 @@ fi
         CHANGE_LEASE_AT: options.changeLeaseAt === undefined ? undefined : String(options.changeLeaseAt),
         RECORD_FAIL: options.recordFails ? "1" : undefined,
         LOCK_ALREADY_HELD: options.lockAlreadyHeld ? "1" : undefined,
+        LOCK_HANDOFF: options.lockHandoff,
+        ASSERT_LOCK_DESCRIPTORS_CLOSED: options.assertLockDescriptorsClosed ? "1" : undefined,
         MUTATE_JOBSPEC_AFTER_MATERIALIZATION: options.mutateJobspecAfterMaterialization ? "1" : undefined,
         STAGE_ALLOCATIONS: options.stageAllocations,
+        GIT_COMMON_DIR: resolve(directory, ".git"),
+        TEST_STAGE_LOCK_PATH: resolve(
+          directory,
+          ".git",
+          `.stage-deployment-${createHash("sha256").update("lb-frontend-stage").digest("hex")}.lock`
+        ),
         ...options.environment,
       }
     })
@@ -894,6 +1002,23 @@ test.each([
   expect(trace).toEqual([])
 })
 
+test.each([
+  ["zero build timeout", { BUILD_TIMEOUT_SECONDS: "0" }],
+  ["negative build timeout", { BUILD_TIMEOUT_SECONDS: "-1" }],
+  ["non-numeric build timeout", { BUILD_TIMEOUT_SECONDS: "soon" }],
+  ["zero health timeout", { STAGE_HEALTH_TIMEOUT_SECONDS: "0" }],
+  ["negative health timeout", { STAGE_HEALTH_TIMEOUT_SECONDS: "-1" }],
+  ["non-numeric health timeout", { STAGE_HEALTH_TIMEOUT_SECONDS: "soon" }],
+  ["zero health poll", { STAGE_HEALTH_POLL_SECONDS: "0" }],
+  ["negative health poll", { STAGE_HEALTH_POLL_SECONDS: "-1" }],
+  ["non-numeric health poll", { STAGE_HEALTH_POLL_SECONDS: "soon" }]
+])("staging rejects $0 before any deployment mutation", (_name, environment) => {
+  const { result, trace } = runDeployStage("1", undefined, { environment })
+
+  expect(result.status, result.stderr).toBe(2)
+  expect(trace).toEqual([])
+})
+
 test("staging rejects the retired public lock sentinel before builder dispatch", () => {
   const { result, trace } = runDeployStage("1", undefined, {
     environment: { STAGE_DEPLOYMENT_LOCK_HELD: "1" }
@@ -919,6 +1044,29 @@ test("staging refuses a same-job deployment while its lock is held", () => {
 
   expect(result.status).toBe(2)
   expect(trace).toEqual(["stage lock contested"])
+})
+
+test("staging rejects an unlocked same-inode lock handoff before builder dispatch", () => {
+  const { result, trace } = runDeployStage("1", undefined, {
+    lockHandoff: "unlocked-same-inode"
+  })
+
+  expect(result.status, result.stderr).not.toBe(0)
+  expect(trace).toEqual([
+    "stage lock",
+    "stage lock release verified",
+    "stage lock released"
+  ])
+})
+
+test("staging closes lock handoff descriptors before builder dispatch", () => {
+  const { result, trace } = runDeployStage("1", undefined, {
+    assertLockDescriptorsClosed: true
+  })
+
+  expect(result.status, result.stderr).toBe(0)
+  expect(trace).toContain("dispatch")
+  expect(trace).toContain("stage lock release verified")
 })
 
 test("staging submits the one materialized committed jobspec after a worktree race", () => {
@@ -983,6 +1131,7 @@ test("staging wait mode resolves and deploys only after builder completion", () 
     "public identity verified",
     "capture",
     "record",
+    "stage lock release verified",
     "stage lock released"
   ])
 })

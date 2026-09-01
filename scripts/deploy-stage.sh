@@ -18,6 +18,21 @@ if [ -n "${STAGE_DEPLOYMENT_LOCK_HELD+x}" ]; then
   exit 2
 fi
 
+validate_positive_integer() {
+  local name="$1" default_value="$2" value
+  value="${!name-$default_value}"
+  if [[ ! "$value" =~ ^[1-9][0-9]*$ ]]; then
+    echo "$name must be a positive canonical integer; staging was not deployed." >&2
+    exit 2
+  fi
+  printf -v "$name" '%s' "$value"
+  export "$name"
+}
+
+validate_positive_integer BUILD_TIMEOUT_SECONDS 1800
+validate_positive_integer STAGE_HEALTH_TIMEOUT_SECONDS 600
+validate_positive_integer STAGE_HEALTH_POLL_SECONDS 10
+
 : "${LB_INFRA_REPOSITORY:?set to the persistent lb-infra stage checkout}"
 
 if [ "${1:-}" = "--stage-lock-child" ]; then
@@ -64,20 +79,28 @@ try:
         observed = os.fstat(probe_fd)
         if (observed.st_dev, observed.st_ino) != (inherited.st_dev, inherited.st_ino):
             raise OSError("inherited lock descriptor does not identify the frontend lock")
-        try:
-            fcntl.flock(probe_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            pass
-        else:
-            raise OSError("frontend Stage lock is not held by the parent")
     finally:
         os.close(probe_fd)
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        raise OSError("inherited lock descriptor does not carry the parent lock") from None
     proof = os.read(proof_fd, 32)
     if len(proof) != 32 or os.read(proof_fd, 1):
         raise OSError("Stage lock handoff proof is invalid")
 except (OSError, ValueError) as error:
     raise SystemExit(f"Stage deployment lock handoff failed: {error}") from None
 PY
+  lock_fd="${LB_STAGE_LOCK_FD:-}"
+  proof_fd="${LB_STAGE_LOCK_PROOF_FD:-}"
+  case "$lock_fd:$proof_fd" in
+    *[!0-9:]*|:*|*:)
+      echo "Stage deployment lock handoff descriptors are invalid." >&2
+      exit 2
+      ;;
+  esac
+  eval "exec ${lock_fd}<&-"
+  eval "exec ${proof_fd}<&-"
   unset LB_STAGE_LOCK_FD LB_STAGE_LOCK_PROOF_FD LB_STAGE_LOCK_PARENT_PID
 else
   exec python3 - "$repo_root/scripts/deploy-stage.sh" "$@" <<'PY'
