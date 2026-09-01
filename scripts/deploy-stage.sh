@@ -410,20 +410,6 @@ dispatch_id="$(
   printf '%s\n' "$dispatch_output" | python3 -c 'import json, sys; print(json.load(sys.stdin)["DispatchedJobID"])'
 )"
 
-case "${WAIT_FOR_BUILD:-1}" in
-  0)
-    echo
-    echo "Dispatched image build as $dispatch_id; staging was not deployed."
-    exit 0
-    ;;
-  1)
-    ;;
-  *)
-    echo "WAIT_FOR_BUILD must be 0 or 1; staging was not deployed." >&2
-    exit 2
-    ;;
-esac
-
 if [ -z "$dispatch_id" ]; then
   echo "Builder dispatch did not return a job ID; staging was not deployed." >&2
   exit 1
