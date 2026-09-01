@@ -93,6 +93,8 @@ class InvokeTaskTests(unittest.TestCase):
         self.assertIn('stage_tmpdir="${TMPDIR:-/tmp}"', script)
         self.assertIn('stage_tmpdir="${stage_tmpdir%/}"', script)
         self.assertNotIn('${TMPDIR:-/tmp}/lb-stage-', script)
+        self.assertIn('cd "$repo_root"', script)
+        self.assertNotIn('cd "$repo_root/nuxt"', script)
 
     def test_visual_baseline_gate_uses_the_review_manifest_without_a_historical_authority(self) -> None:
         parameters = inspect.signature(tasks._verify_visual_baselines).parameters

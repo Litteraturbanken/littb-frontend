@@ -147,7 +147,8 @@ class SearchSurfaceHandler(BaseHTTPRequestHandler):
                     "query": "kyrka",
                     "page": 1,
                     "page_size": 30,
-                    "total_work_hits": 0,
+                    "snapshot": "test-snapshot",
+                    "totals": {"occurrences": 0, "documents": 0, "works": 0},
                     "author_facets": [],
                     "works": [],
                 }

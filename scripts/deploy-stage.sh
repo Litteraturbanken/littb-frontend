@@ -571,7 +571,7 @@ verification:
 EOF
 
 (
-  cd "$repo_root/nuxt"
+  cd "$repo_root"
   LITTB_EXPECTED_GIT_SHA="$git_sha" \
   LITTB_EXPECTED_IMAGE_DIGEST="$image_digest" \
   LITTB_NUXT_LIVE_ORIGIN=https://stage.litteraturbanken.se \
