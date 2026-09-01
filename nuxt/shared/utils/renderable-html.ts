@@ -35,10 +35,6 @@ export function issueReaderOcrHtml(value: string): SanitizedHtml<"reader-ocr"> {
   return capability<SanitizedHtml<"reader-ocr">>(value)
 }
 
-export function issueReaderSourceInfoHtml(value: string): SanitizedHtml<"reader-source-info"> {
-  return capability<SanitizedHtml<"reader-source-info">>(value)
-}
-
 export function issueEditorEtextHtml(value: string): SanitizedHtml<"editor-etext"> {
   return capability<SanitizedHtml<"editor-etext">>(value)
 }

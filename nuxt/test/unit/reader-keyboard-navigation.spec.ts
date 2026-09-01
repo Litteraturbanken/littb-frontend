@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest"
 
 import {
+  adjacentReaderPageName,
   horizontalScrollEdge,
   keyboardNavigationAction,
   type KeyboardNavigationOptions
@@ -18,6 +19,13 @@ function options(
 }
 
 describe("reader keyboard navigation", () => {
+  test("adjacent navigation honors the manifest page step", () => {
+    const pages = ["1", "2", "3", "4"].map(page_name => ({ page_name }))
+    expect(adjacentReaderPageName(pages, "1", 2, "next")).toBe("3")
+    expect(adjacentReaderPageName(pages, "3", 2, "previous")).toBe("1")
+    expect(adjacentReaderPageName(pages, "3", 2, "next")).toBeNull()
+  })
+
   test.each([
     ["previous", { contentWidth: 1000, scrollLeft: 9.75, viewportWidth: 600 }, true],
     ["previous", { contentWidth: 1000, scrollLeft: 10, viewportWidth: 600 }, false],

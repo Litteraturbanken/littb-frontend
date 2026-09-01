@@ -2528,6 +2528,7 @@ test("hydrates a fixed-width faksimil scan with legacy size and rotation control
 }, testInfo) => {
   const problems = captureBrowserProblems(page)
   const response = await page.goto(facsimilePath, { waitUntil: "networkidle" })
+  await expect(page.locator(".reader-ocr-layer")).toHaveAttribute("aria-hidden", "true")
 
   expect(response?.status()).toBe(200)
   await expect(page).toHaveTitle(
@@ -2810,31 +2811,85 @@ test("sparse faksimil Läsfokus controls select nearest sizes", async ({ page })
 test("known sparse faksimil pages project immediately without a Reader API request", async ({
   page
 }) => {
-  await page.goto(`${sparseFacsimilePath}?storlek=2`, { waitUntil: "networkidle" })
+  const rawQuery = "?bare&space=a%20b&repeat=%2f&repeat=%2F&storlek=2"
+  await page.goto(`${sparseFacsimilePath}${rawQuery}`, { waitUntil: "networkidle" })
   const readerApiRequests: string[] = []
   await page.route("**/nuxt-api/reader/**/5/faksimil", async route => {
     readerApiRequests.push(route.request().url())
     await route.continue()
+  })
+  await page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: {
+        $nuxt?: { hooks: { hook: (
+          name: string,
+          callback: (fullPath: string, successful: boolean) => void
+        ) => void } }
+      } } }
+    }
+    const readyPages: Array<[string, boolean]> = []
+    Object.assign(window, { __readerReadyPages: readyPages })
+    root.__vue_app__?.config.globalProperties.$nuxt?.hooks.hook(
+      "reader:page-ready",
+      (fullPath, successful) => readyPages.push([fullPath, successful])
+    )
   })
 
   await activateReaderLink(
     page,
     "Nästa sida",
     "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/SparseFacsimileSizes/sida/5/faksimil" +
-    "?storlek=2"
+    rawQuery
   )
   await expect(page).toHaveURL(
-    "/författare/LagerlöfS/titlar/SparseFacsimileSizes/sida/5/faksimil?storlek=2"
+    `/författare/LagerlöfS/titlar/SparseFacsimileSizes/sida/5/faksimil${rawQuery}`
   )
   await expect(page.locator("img.faksimil")).toHaveAttribute(
     "src",
     sparseFacsimileSource(2, 12)
+  )
+  const routerFullPath = await page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: {
+        $router?: { currentRoute: { value: { fullPath: string } } }
+      } } }
+    }
+    return root.__vue_app__?.config.globalProperties.$router?.currentRoute.value.fullPath
+  })
+  await expect.poll(() => page.evaluate(() => (
+    window as typeof window & { __readerReadyPages?: Array<[string, boolean]> }
+  ).__readerReadyPages)).toContainEqual([routerFullPath, true])
+  await page.locator("#toolkit .reader-facsimile-size-controls")
+    .getByRole("button", { name: "Större" }).click()
+  await expect(page).toHaveURL(
+    "/författare/LagerlöfS/titlar/SparseFacsimileSizes/sida/5/faksimil" +
+    "?bare&space=a%20b&repeat=%2f&repeat=%2F&storlek=4"
+  )
+  await expect(page.locator("img.faksimil")).toHaveAttribute(
+    "src",
+    sparseFacsimileSource(4, 12)
   )
   expect(readerApiRequests).toEqual([])
 })
 
 test("unknown faksimil pages retain the Reader API validation fallback", async ({ page }) => {
   await page.goto(`${sparseFacsimilePath}?storlek=2`, { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: {
+        $nuxt?: { hooks: { hook: (
+          name: string,
+          callback: (fullPath: string, successful: boolean) => void
+        ) => void } }
+      } } }
+    }
+    const readyPages: Array<[string, boolean]> = []
+    Object.assign(window, { __readerReadyPages: readyPages })
+    root.__vue_app__?.config.globalProperties.$nuxt?.hooks.hook(
+      "reader:page-ready",
+      (fullPath, successful) => readyPages.push([fullPath, successful])
+    )
+  })
   const apiRequest = page.waitForRequest(request => (
     new URL(request.url()).pathname.endsWith(
       "/nuxt-api/reader/Lagerl%C3%B6fS/SparseFacsimileSizes/missing/faksimil"
@@ -2848,6 +2903,14 @@ test("unknown faksimil pages retain the Reader API validation fallback", async (
 
   await apiRequest
   await expect(page).toHaveURL(/\/sida\/missing\/faksimil$/)
+  await expect(page.locator(".reader_main")).toHaveCount(0)
+  await expect(page.getByRole("alert")).toHaveText("Läsarsidan kunde inte hämtas.")
+  await expect.poll(() => page.evaluate(() => (
+    window as typeof window & { __readerReadyPages?: Array<[string, boolean]> }
+  ).__readerReadyPages)).toContainEqual([
+    "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/SparseFacsimileSizes/sida/missing/faksimil",
+    false
+  ])
 })
 
 test("faksimil size replacement preserves raw query owners and its fragment", async ({ page }) => {
@@ -3246,12 +3309,82 @@ test("opens the Angular Reader search panel, focuses it, and guards paging keys"
   await expect(input).toBeFocused()
   await input.fill("glas")
   await input.press("ArrowRight")
-  await expect(page).toHaveURL(readerPath)
+  await expect(page).toHaveURL(`${readerPath}?show_search_work`)
   await expect(page.locator(".reader-page-position")).toHaveText("-2 av 3")
 
   await trigger.click()
   await expect(searchbox).toBeHidden()
+  await expect(page).toHaveURL(readerPath)
   expect(problems).toEqual([])
+})
+
+test("matches the production work-search disclosure presentation", async ({ page }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.locator(".reader-context .subnav")
+    .getByRole("button", { name: "Sök i verket", exact: true }).click()
+
+  const searchbox = page.locator(".reader-context .searchbox")
+  await expect(searchbox).toHaveCSS("background-color", "rgb(255, 255, 255)")
+  await expect(searchbox).toHaveCSS("border", "1px solid rgb(169, 169, 169)")
+  await expect(searchbox).toHaveCSS("margin", "9px 0px")
+  await expect(searchbox.locator(".collapse-content")).toHaveCSS("padding", "21.6px")
+  await expect(searchbox.locator(".header")).toHaveCSS("font-size", "14.4px")
+  await expect(searchbox.locator(".header .title")).toHaveCSS(
+    "font-family",
+    '"Requiem Text A", "Requiem Text B"'
+  )
+  await expect(searchbox.locator(".ctrls")).toHaveCSS("font-size", "12.6px")
+})
+
+test("deep-links the work-search disclosure while preserving raw query owners", async ({
+  page
+}) => {
+  const retained = "?bare&repeat=%2f&repeat=%2F"
+  await page.goto(`${readerPath}${retained}&show_search_work`, { waitUntil: "networkidle" })
+
+  const trigger = page.locator(".reader-context .subnav")
+    .getByRole("button", { name: "Sök i verket", exact: true })
+  const searchbox = page.locator(".reader-context .searchbox")
+  await expect(searchbox).toBeVisible()
+
+  await trigger.click()
+  await expect(searchbox).toBeHidden()
+  await expect(page).toHaveURL(`${readerPath}${retained}`)
+
+  await trigger.click()
+  await expect(searchbox).toBeVisible()
+  await expect(page).toHaveURL(`${readerPath}${retained}&show_search_work`)
+  await page.reload({ waitUntil: "networkidle" })
+  await expect(searchbox).toBeVisible()
+})
+
+test("shows the work-search spinner only while its own request is pending", async ({
+  page,
+  request
+}) => {
+  const delayedKey = "lb-reader-doktor-glas|doktor glas|0|1|false|true|false|false"
+  await request.put(`${fixture}/_reader_hit_delays`, { data: { [delayedKey]: 600 } })
+  try {
+    await page.goto(readerPath, { waitUntil: "networkidle" })
+    await page.locator(".reader-context .subnav")
+      .getByRole("button", { name: "Sök i verket", exact: true }).click()
+    const searchbox = page.locator(".reader-context .searchbox")
+    const spinner = searchbox.locator(".spinner")
+    const submit = searchbox.getByRole("button", { name: "Sök", exact: true })
+    await expect(spinner).toBeHidden()
+    await expect(submit).toBeVisible()
+
+    await searchbox.getByRole("searchbox").fill("doktor glas")
+    await submit.click()
+    await expect(spinner).toBeVisible()
+    await expect(submit).toBeHidden()
+
+    await expect(page).toHaveURL(`${readerPath.replace("sida/-2", "sida/-3")}`
+      + "?show_search_work&q=doktor+glas&hit=0")
+    await expect(spinner).toBeHidden()
+  } finally {
+    await request.delete(`${fixture}/_reader_hit_delays`)
+  }
 })
 
 test("submits a canonical work search, preserves raw owners, and follows History", async ({
@@ -3274,7 +3407,7 @@ test("submits a canonical work search, preserves raw owners, and follows History
   await input.fill("  doktor glas  ")
   await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
 
-  const canonicalQuery = `${retained}&q=doktor+glas&hit=0`
+  const canonicalQuery = `${retained}&show_search_work&q=doktor+glas&hit=0`
   await expect(page).toHaveURL(`${firstHitPath}${canonicalQuery}`)
   await expect(page.locator("#search_nav")).toContainText("5 sökträffar")
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -3")
@@ -3287,7 +3420,7 @@ test("submits a canonical work search, preserves raw owners, and follows History
   ]))
 
   await page.goBack({ waitUntil: "networkidle" })
-  await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
+  await expect(page).toHaveURL(`${readerPath}${rawQuery}&show_search_work`)
   await expect(input).toHaveValue("old")
   await page.goForward({ waitUntil: "networkidle" })
   await expect(page).toHaveURL(`${firstHitPath}${canonicalQuery}`)
@@ -3310,20 +3443,20 @@ test("validates empty work searches and closes active hits without touching raw 
   const input = searchbox.getByRole("searchbox")
   await input.fill("   ")
   await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
-  await expect(page).toHaveURL(`${readerPath}${retained}`)
+  await expect(page).toHaveURL(`${readerPath}${retained}&show_search_work`)
   await expect(searchbox.getByRole("status")).toHaveText("Ange ett sökord eller en fras.")
   expect(await readerHitRequests(request)).toEqual([])
 
   await input.fill("x".repeat(201))
   await input.press("Enter")
-  await expect(page).toHaveURL(`${readerPath}${retained}`)
+  await expect(page).toHaveURL(`${readerPath}${retained}&show_search_work`)
   await expect(searchbox.getByRole("status"))
     .toHaveText("Sökningen får vara högst 200 tecken.")
   expect(await readerHitRequests(request)).toEqual([])
 
   await input.fill("glas")
   await input.press("Enter")
-  await expect(page).toHaveURL(`${readerPath}${retained}&q=glas&hit=0`)
+  await expect(page).toHaveURL(`${readerPath}${retained}&show_search_work&q=glas&hit=0`)
   await page.locator("#search_nav").getByRole("button", {
     name: "Stäng träffvisningen"
   }).click()
@@ -3346,12 +3479,12 @@ test("keeps work-search submission on the current page for empty or invalid hit 
   await input.fill("inga")
   await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
   await expect(searchbox.getByRole("status")).toHaveText("Inga träffar.")
-  await expect(page).toHaveURL(readerPath)
+  await expect(page).toHaveURL(`${readerPath}?show_search_work`)
 
   await input.fill("malformed-response")
   await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
   await expect(searchbox.getByRole("status")).toHaveText("Sökningen kunde inte genomföras.")
-  await expect(page).toHaveURL(readerPath)
+  await expect(page).toHaveURL(`${readerPath}?show_search_work`)
 })
 
 test("a newer work-search submission cancels a delayed first-hit lookup", async ({
@@ -3373,11 +3506,11 @@ test("a newer work-search submission cancels a delayed first-hit lookup", async 
     )).toBe(true)
 
     await input.fill("glas")
-    await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
-    await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0`)
+    await input.press("Enter")
+    await expect(page).toHaveURL(`${readerPath}?show_search_work&q=glas&hit=0`)
     await expect(page.locator("#w2_2.markee")).toHaveCount(1)
     await page.waitForTimeout(700)
-    await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0`)
+    await expect(page).toHaveURL(`${readerPath}?show_search_work&q=glas&hit=0`)
   } finally {
     await request.delete(`${fixture}/_reader_hit_delays`)
   }
@@ -3413,8 +3546,8 @@ test("a stale non-abort work-search failure cannot overwrite a newer result", as
   ).__staleWorkSearchStarted)).toBe(true)
 
   await input.fill("glas")
-  await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
-  await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0`)
+  await input.press("Enter")
+  await expect(page).toHaveURL(`${readerPath}?show_search_work&q=glas&hit=0`)
   await expect(page.locator("#w2_2.markee")).toHaveCount(1)
   await page.waitForTimeout(700)
   await expect(searchbox.getByRole("status")).toHaveCount(0)
@@ -3513,7 +3646,9 @@ test("projects Angular work-search options onto canonical generated hit flags", 
   await request.delete(`${fixture}/_reader_hit_requests`)
   await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
 
-  await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0&lemma=1&ej_modern=1`)
+  await expect(page).toHaveURL(
+    `${readerPath}?show_search_work&q=glas&hit=0&lemma=1&ej_modern=1`
+  )
   await expect.poll(async () => (await readerHitRequests(request)).length).toBe(2)
   expect(await readerHitRequests(request)).toEqual([
     expect.objectContaining({
@@ -3684,6 +3819,23 @@ test("first and last hit controls preserve raw state and push exact Reader histo
   await toolkit.getByRole("button", { name: "Gå till första träffen" }).click()
   await expect.poll(() => page.evaluate(() => window.history.length)).toBe(historyLength)
   expect(problems).toEqual([])
+})
+
+test("an uncached hit-control failure reports the error without navigating", async ({
+  page,
+  request
+}) => {
+  await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, { waitUntil: "networkidle" })
+  await request.put(`${fixture}/_reader_hit_failure`)
+
+  const toolkit = page.locator("#search_nav")
+  const initialUrl = page.url()
+  await toolkit.getByRole("button", { name: "Gå till sista träffen" }).click()
+
+  await expect(page).toHaveURL(initialUrl)
+  await expect(page.locator(".reader-search-message")).toHaveText(
+    "Sökträffen kunde inte hämtas."
+  )
 })
 
 test("direct hit input toggles and focuses, rejects bad ordinals, and pushes a valid hit", async ({

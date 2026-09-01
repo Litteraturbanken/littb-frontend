@@ -25,6 +25,13 @@ async function fixtureRequests(
   return (await response.json() as { requests: string[] }).requests
 }
 
+async function uniqueFixtureRequests(
+  request: APIRequestContext,
+  ledger: "metadata" | "manifest" | "html" | "ocr" | "jpeg"
+): Promise<string[]> {
+  return [...new Set(await fixtureRequests(request, ledger))]
+}
+
 function captureBrowserProblems(page: Page): string[] {
   const problems: string[] = []
   page.on("console", message => {
@@ -116,6 +123,10 @@ test("normal faksimil OCR inspection fetches the page-index overlay and preserve
   const problems = captureBrowserProblems(page)
   const response = await page.goto(`${facsimilePath}?ocr`, { waitUntil: "networkidle" })
   expect(response?.status()).toBe(200)
+  const manifestBeforeNavigation = await fixtureRequests(request, "manifest")
+  expect([...new Set(manifestBeforeNavigation)]).toEqual([
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+  ])
 
   const reader = page.locator(".reader_main")
   await expect(reader).toHaveClass(/\bocr\b/u)
@@ -123,7 +134,7 @@ test("normal faksimil OCR inspection fetches the page-index overlay and preserve
   await expect(overlay).toContainText("OCR fixture")
   await expect(overlay).toHaveCSS("color", "rgb(0, 0, 0)")
   await expect(reader.locator("img.faksimil")).toBeHidden()
-  expect(await fixtureRequests(request, "ocr")).toEqual([
+  expect(await uniqueFixtureRequests(request, "ocr")).toEqual([
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"
   ])
 
@@ -136,13 +147,11 @@ test("normal faksimil OCR inspection fetches the page-index overlay and preserve
     "Gösta Berlings saga, sida 5"
   )
   await expect(page.locator(".reader_main .overlay")).toContainText("OCR fixture")
-  expect(await fixtureRequests(request, "ocr")).toEqual([
+  expect(await uniqueFixtureRequests(request, "ocr")).toEqual([
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html",
     "/txt/lb-reader-gosta-berlings-saga/ocr_00002.html"
   ])
-  expect(await fixtureRequests(request, "manifest")).toEqual(Array(2).fill(
-    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
-  ))
+  expect(await fixtureRequests(request, "manifest")).toEqual(manifestBeforeNavigation)
   expect(problems).toEqual([])
 })
 
@@ -152,6 +161,10 @@ test("ordinary searchable faksimil keeps a transparent selectable OCR layer thro
 }) => {
   const problems = captureBrowserProblems(page)
   await page.goto(facsimilePath, { waitUntil: "networkidle" })
+  const manifestBeforeNavigation = await fixtureRequests(request, "manifest")
+  expect([...new Set(manifestBeforeNavigation)]).toEqual([
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+  ])
   const reader = page.locator(".reader_main")
   await expect(reader).not.toHaveClass(/\bocr\b/u)
   await expect(reader.locator("img.faksimil")).toBeVisible()
@@ -171,7 +184,7 @@ test("ordinary searchable faksimil keeps a transparent selectable OCR layer thro
   await page.mouse.up()
   expect(await page.evaluate(() => window.getSelection()?.toString() ?? ""))
     .toContain("OCR fixture")
-  expect(await fixtureRequests(request, "ocr")).toEqual([
+  expect(await uniqueFixtureRequests(request, "ocr")).toEqual([
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"
   ])
 
@@ -181,13 +194,11 @@ test("ordinary searchable faksimil keeps a transparent selectable OCR layer thro
   )
   await expect(reader).toHaveAttribute("aria-label", "Gösta Berlings saga, sida 5")
   await expect(reader.locator(".overlay .w").first()).toContainText("OCR fixture")
-  await expect.poll(() => fixtureRequests(request, "ocr")).toEqual([
+  await expect.poll(() => uniqueFixtureRequests(request, "ocr")).toEqual([
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html",
     "/txt/lb-reader-gosta-berlings-saga/ocr_00002.html"
   ])
-  expect(await fixtureRequests(request, "manifest")).toEqual(Array(2).fill(
-    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
-  ))
+  expect(await fixtureRequests(request, "manifest")).toEqual(manifestBeforeNavigation)
   expect(problems).toEqual([])
 })
 

@@ -172,13 +172,13 @@ const reviewedDomSources: Readonly<Record<string, string>> = {
   ].join("\n"),
   "server/utils/reader-source-info-sanitizer.ts": [
     "import { parseHTML } from \"linkedom\"",
-    "import { issueReaderSourceInfoHtml } from \"#shared/utils/renderable-html\"",
+    "import type { SanitizedHtml } from \"#shared/types/renderable-html\"",
     "export function sanitizeReaderSourceInfoHtml(source: string) {",
     "  let document: ParsedDocument",
     "  ({ document } = parseHTML(source) as unknown as { document: ParsedDocument })",
     "  const bodies = [...document.querySelectorAll(\"body\")]",
     "  const body = bodies[0]!",
-    `  return issueReaderSourceInfoHtml(body.${domHtmlProperty})`,
+    `  return body.${domHtmlProperty} as SanitizedHtml<"reader-source-info">`,
     "}"
   ].join("\n"),
   "server/utils/reader-source-info-projection.ts": [
@@ -215,7 +215,6 @@ function reviewedCapabilityModule(): string {
     `export function issueSlaArticleHtml(value: string): ${sanitizedHtmlType}<"sla-article"> { return capability<${sanitizedHtmlType}<"sla-article">>(value) }`,
     `export function issueDictionaryArticleHtml(value: string): ${sanitizedHtmlType}<"dictionary-article"> { return capability<${sanitizedHtmlType}<"dictionary-article">>(value) }`,
     `export function issueReaderOcrHtml(value: string): ${sanitizedHtmlType}<"reader-ocr"> { return capability<${sanitizedHtmlType}<"reader-ocr">>(value) }`,
-    `export function issueReaderSourceInfoHtml(value: string): ${sanitizedHtmlType}<"reader-source-info"> { return capability<${sanitizedHtmlType}<"reader-source-info">>(value) }`,
     `export function issueEditorEtextHtml(value: string): ${sanitizedHtmlType}<"editor-etext"> { return capability<${sanitizedHtmlType}<"editor-etext">>(value) }`,
     `export function issueManagedReaderHtml(value: string): ${managedAssetHtmlType}<"reader-etext"> { return capability<${managedAssetHtmlType}<"reader-etext">>(value) }`,
     `export function issueManagedReaderStyle(value: string): ${managedStyleTextType}<"reader-etext"> { return capability<${managedStyleTextType}<"reader-etext">>(value) }`,

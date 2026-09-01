@@ -22,6 +22,19 @@ export type HorizontalScrollMetrics = {
 
 const horizontalEdgeTolerance = 10
 
+export function adjacentReaderPageName(
+  pages: readonly { page_name: string }[],
+  currentPageName: string,
+  pageStep: number,
+  direction: KeyboardNavigationDirection
+): string | null {
+  if (!Number.isInteger(pageStep) || pageStep < 1) return null
+  const position = pages.findIndex(page => page.page_name === currentPageName)
+  if (position < 0) return null
+  const offset = direction === "next" ? pageStep : -pageStep
+  return pages[position + offset]?.page_name ?? null
+}
+
 export function horizontalScrollEdge(
   direction: KeyboardNavigationDirection,
   metrics: HorizontalScrollMetrics

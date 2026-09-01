@@ -509,6 +509,23 @@ describe("Reader source-information request boundary", () => {
 })
 
 describe("Reader source-information sanitizer", () => {
+  test("rejects mixed-case policy attributes and unbounded image dimensions", () => {
+    const html = sanitizeReaderSourceInfoHtml([
+      '<a HREF="javascript:bad()" TARGET="frame" REL="opener">farlig</a>',
+      '<img src="/red/bilder/gemensamt/safe.png" width="999999" height="nope">',
+      '<img src="/red/bilder/gemensamt/sized.png" width="004" height="32">',
+      '<img SRC="/red/bilder/gemensamt/uppercase.png" alt="mixed">'
+    ].join(""), "editorial")
+
+    expect(html).not.toContain("javascript:")
+    expect(html).not.toContain("TARGET")
+    expect(html).toContain('<img src="/red/bilder/gemensamt/safe.png">')
+    expect(html).toContain(
+      '<img src="/red/bilder/gemensamt/sized.png" width="4" height="32">'
+    )
+    expect(html).not.toContain("uppercase.png")
+  })
+
   test("removes delimiter-hidden image traversal without rejecting encoded filenames", () => {
     const html = sanitizeReaderSourceInfoHtml([
       '<img src="/red/bilder/gemensamt/%3F/../evil.png" alt="evil">',

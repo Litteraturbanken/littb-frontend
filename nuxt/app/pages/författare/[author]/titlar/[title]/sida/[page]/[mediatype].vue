@@ -27,6 +27,7 @@ import {
   projectFacsimileReaderPage
 } from "~/lib/reader-facsimile-page"
 import {
+  adjacentReaderPageName,
   horizontalScrollEdge,
   keyboardNavigationAction,
   type KeyboardNavigationAction,
@@ -648,11 +649,14 @@ watch(readerRequestIdentity, identity => {
     && retained?.mediaType === "faksimil"
     && retainedReaderOwner.value === sourceInfoRequestIdentity.value
     && retained.pageMap.some(page => page.page_name === pageParam.value)
+  if (readerFetchDebounce) {
+    clearTimeout(readerFetchDebounce)
+    readerFetchDebounce = null
+  }
   if (isKnownFacsimilePage) return
-  if (readerFetchDebounce) clearTimeout(readerFetchDebounce)
   readerFetchDebounce = setTimeout(() => {
     readerFetchDebounce = null
-    readerFetchIdentity.value = identity
+    if (identity === readerRequestIdentity.value) readerFetchIdentity.value = identity
   }, 200)
 }, { flush: "sync" })
 onBeforeUnmount(() => {
@@ -756,24 +760,33 @@ const readerLoadStatus = computed(() => {
   const current = data.value
   return current?.identity === readerRequestIdentity.value ? current.status : null
 })
-watch(readerLoadStatus, (status, _previousStatus, onCleanup) => {
-  if (!import.meta.client || !status) return
-  const fullPath = route.fullPath
-  let cancelled = false
-  let frame = 0
-  onCleanup(() => {
-    cancelled = true
-    if (frame) cancelAnimationFrame(frame)
-  })
-  void nextTick().then(() => {
-    if (cancelled) return
-    frame = requestAnimationFrame(() => {
-      if (!cancelled) {
-        void nuxtApp.callHook("reader:page-ready", fullPath, status === "success")
-      }
+watch(() => [
+  rawFullPath.value,
+  route.fullPath,
+  readerLoadStatus.value,
+  reader.value?.pageName
+] as const,
+  ([_rawFullPath, routeFullPath, status, readerPageName], _previousState, onCleanup) => {
+    if (
+      !import.meta.client
+      || !status
+      || (status === "success" && readerPageName !== pageParam.value)
+    ) return
+    let cancelled = false
+    let frame = 0
+    onCleanup(() => {
+      cancelled = true
+      if (frame) cancelAnimationFrame(frame)
     })
-  })
-}, { flush: "post", immediate: true })
+    void nextTick().then(() => {
+      if (cancelled) return
+      frame = requestAnimationFrame(() => {
+        if (!cancelled) {
+          void nuxtApp.callHook("reader:page-ready", routeFullPath, status === "success")
+        }
+      })
+    })
+  }, { flush: "post", immediate: true })
 const contentsOpen = computed(
   () => !sourceInfoRequested.value
     && contentsRequested.value
@@ -892,8 +905,12 @@ watch(pageParam, pageName => {
 function draftAdjacentPageName(direction: -1 | 1): string | null {
   const currentReader = reader.value
   if (!currentReader) return null
-  const position = currentReader.pageMap.findIndex(page => page.page_name === pageRouteDraftName.value)
-  return currentReader.pageMap[position + direction]?.page_name ?? null
+  return adjacentReaderPageName(
+    currentReader.pageMap,
+    pageRouteDraftName.value,
+    currentReader.pageStep,
+    direction === 1 ? "next" : "previous"
+  )
 }
 const draftPreviousPageName = computed(() => draftAdjacentPageName(-1))
 const draftNextPageName = computed(() => draftAdjacentPageName(1))
@@ -1252,9 +1269,12 @@ const hitPosition = computed(() => {
   if (!searchState.value || !activeHit.value || !hitResponse.value) return null
   return `Sökträff ${searchState.value.hit + 1} av ${hitResponse.value.total_hits}`
 })
+const hitNavigationFailed = ref(false)
 const hitMessage = computed(() => {
   if (!searchState.value) return null
-  if (hitRequestFailed.value) return "Sökträffen kunde inte hämtas."
+  if (hitRequestFailed.value || hitNavigationFailed.value) {
+    return "Sökträffen kunde inte hämtas."
+  }
   if (hitResponse.value && !activeHit.value) return "Ingen sådan sökträff."
   return null
 })
@@ -1270,6 +1290,7 @@ function cancelPendingHitNavigation(): void {
   hitNavigationController?.abort()
   hitNavigationController = null
   gotoHitPending.value = false
+  hitNavigationFailed.value = false
 }
 
 watch(rawFullPath, cancelPendingHitNavigation, { flush: "sync" })
@@ -1412,6 +1433,7 @@ async function navigateToHit(index: number): Promise<void> {
     const hit = await hitAtIndex(index, controller.signal)
     if (generation !== hitNavigationGeneration) return
     if (!hit) {
+      hitNavigationFailed.value = true
       gotoHitInput.value?.focus()
       return
     }
@@ -1441,6 +1463,7 @@ function submitGotoHit(): void {
 const workSearchOpen = ref(false)
 const workSearchQuery = ref("")
 const workSearchMessage = ref("")
+const workSearchPending = ref(false)
 const workSearchInput = ref<HTMLInputElement | null>(null)
 let workSearchSubmissionController: AbortController | null = null
 let workSearchSubmissionGeneration = 0
@@ -1449,6 +1472,7 @@ function cancelPendingWorkSearchSubmission(): void {
   workSearchSubmissionGeneration += 1
   workSearchSubmissionController?.abort()
   workSearchSubmissionController = null
+  workSearchPending.value = false
 }
 
 watch(rawFullPath, cancelPendingWorkSearchSubmission, { flush: "sync" })
@@ -1517,14 +1541,42 @@ watch(
   { immediate: true }
 )
 
-function toggleWorkSearch(): void {
+watch(() => route.query.show_search_work, value => {
+  workSearchOpen.value = value !== undefined
+}, { immediate: true })
+
+function workSearchDisclosureFullPath(enabled: boolean): string {
+  const fragmentIndex = rawFullPath.value.indexOf("#")
+  const fragment = fragmentIndex < 0 ? "" : rawFullPath.value.slice(fragmentIndex)
+  const beforeFragment = fragmentIndex < 0
+    ? rawFullPath.value
+    : rawFullPath.value.slice(0, fragmentIndex)
+  const queryIndex = beforeFragment.indexOf("?")
+  const path = queryIndex < 0 ? beforeFragment : beforeFragment.slice(0, queryIndex)
+  const rawQuery = queryIndex < 0 ? "" : beforeFragment.slice(queryIndex + 1)
+  const retained = replaceWorkSearchQuerySegments(
+    rawQuery.length === 0 ? [] : rawQuery.split("&"),
+    new Set(["show_search_work"]),
+    new Map()
+  )
+  if (enabled) retained.push("show_search_work")
+  return `${path}${retained.length > 0 ? `?${retained.join("&")}` : ""}${fragment}`
+}
+
+async function toggleWorkSearch(): Promise<void> {
   if (!etextReader.value) return
-  workSearchOpen.value = !workSearchOpen.value
-  if (!workSearchOpen.value) cancelPendingWorkSearchSubmission()
+  const enabled = !workSearchOpen.value
+  if (!enabled) cancelPendingWorkSearchSubmission()
   workSearchMessage.value = ""
-  if (workSearchOpen.value) {
+  await navigateRawFullPath(
+    workSearchDisclosureFullPath(enabled),
+    true,
+    rawFullPath.value
+  )
+  if (enabled) {
     syncWorkSearchFromRoute()
-    void nextTick(() => workSearchInput.value?.focus())
+    await nextTick()
+    workSearchInput.value?.focus()
   }
 }
 
@@ -1544,7 +1596,8 @@ function chooseWorkSearchOption(option: WorkSearchOption): void {
 
 const workSearchQueryKeys = new Set<string>([
   ...canonicalSearchKeys,
-  ...legacySearchMarkerKeys
+  ...legacySearchMarkerKeys,
+  "show_search_work"
 ])
 
 function appendWorkSearchQuery(segments: string[], state: CanonicalSearchState): void {
@@ -1570,7 +1623,10 @@ function workSearchFullPath(state: CanonicalSearchState | null): string {
     new Map()
   )
 
-  if (state !== null) appendWorkSearchQuery(retained, state)
+  if (state !== null) {
+    if (workSearchOpen.value) retained.push("show_search_work")
+    appendWorkSearchQuery(retained, state)
+  }
   return `${path}${retained.length > 0 ? `?${retained.join("&")}` : ""}${fragment}`
 }
 
@@ -1642,6 +1698,7 @@ async function submitWorkSearch(): Promise<void> {
   const generation = workSearchSubmissionGeneration
   const controller = new AbortController()
   workSearchSubmissionController = controller
+  workSearchPending.value = true
   workSearchMessage.value = ""
   workSearchQuery.value = query
   try {
@@ -1666,6 +1723,7 @@ async function submitWorkSearch(): Promise<void> {
   } finally {
     if (workSearchSubmissionController === controller) {
       workSearchSubmissionController = null
+      workSearchPending.value = false
     }
   }
 }
@@ -1824,7 +1882,7 @@ function hitHref(hit: WorkSearchHit): string {
 }
 
 function selectFacsimileSize(size: ReaderFacsimileSize): void {
-  const identityMatchedReader = currentReader.value
+  const identityMatchedReader = reader.value
   if (
     identityMatchedReader?.mediaType !== "faksimil"
     || !identityMatchedReader.sources.some(source => source.size === size)
@@ -2007,6 +2065,7 @@ function handleReaderPagingKeydown(event: KeyboardEvent): void {
 
 const productionShortcutMessage = ref("")
 let productionShortcutMessageTimer: ReturnType<typeof setTimeout> | null = null
+let productionShortcutCopyQueue = Promise.resolve()
 
 function showProductionShortcutMessage(message: string): void {
   productionShortcutMessage.value = message
@@ -2035,18 +2094,23 @@ async function copyReaderUrn(currentReader: ReaderPage): Promise<void> {
   )
 }
 
+async function queueProductionShortcutCopy(action: () => Promise<void>): Promise<void> {
+  productionShortcutCopyQueue = productionShortcutCopyQueue.then(action)
+  await productionShortcutCopyQueue
+}
+
 async function handleProductionShortcutKeydown(event: KeyboardEvent): Promise<void> {
   const currentReader = reader.value
   if (!currentReader || isProductionShortcutGuarded(event)) return
 
   if (event.key === "i" || event.key === "F17") {
     event.preventDefault()
-    await copyReaderWorkId(currentReader)
+    await queueProductionShortcutCopy(() => copyReaderWorkId(currentReader))
     return
   }
   if (event.key === "u" || event.key === "F21") {
     event.preventDefault()
-    await copyReaderUrn(currentReader)
+    await queueProductionShortcutCopy(() => copyReaderUrn(currentReader))
     return
   }
   if (event.key === "å" || event.key === "[") {
@@ -2166,6 +2230,7 @@ watch(readerRequestIdentity, () => {
         />
         <ReaderFacsimileImage
           v-else-if="markedFacsimileReader && selectedFacsimileSize"
+          :ocr-mode="ocrMode"
           :page="markedFacsimileReader"
           :selected-size="selectedFacsimileSize"
           @select-size="selectFacsimileSize"
@@ -2423,7 +2488,7 @@ watch(readerRequestIdentity, () => {
                       </div>
                       <div
                         class="ctrls"
-                        :class="{ searching: hitFetch.status.value === 'pending' }"
+                        :class="{ searching: workSearchPending }"
                       >
                         <form @submit.prevent="submitWorkSearch">
                           <input
@@ -2591,9 +2656,14 @@ watch(readerRequestIdentity, () => {
             >Innehållsförteckning</a>
             <a :href="sourceInfoHref">{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a>
             <a :href="focusHref">Läsfokus</a>
-            <span
+            <a
+              v-if="reader.searchable && etextReader"
               class="reader-work-search-trigger"
-              :class="{ disabled: !reader.searchable || !etextReader }"
+              :href="workSearchDisclosureFullPath(true)"
+            >Sök i verket</a>
+            <span
+              v-else
+              class="reader-work-search-trigger disabled"
             >Sök i verket</span>
             <!-- Progressive-enhancement fallback: native before hydration. -->
             <LazyReaderDramawebbenLink

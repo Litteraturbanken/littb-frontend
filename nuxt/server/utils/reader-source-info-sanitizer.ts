@@ -1,7 +1,6 @@
 import { parseHTML } from "linkedom"
 
 import type { SanitizedHtml } from "../../shared/types/renderable-html"
-import { issueReaderSourceInfoHtml } from "../../shared/utils/renderable-html"
 import {
   boundedHtmlString,
   encodeReaderSourceSegment,
@@ -97,10 +96,18 @@ function sanitizeClassAttribute(
   else element.setAttribute("class", value)
 }
 
-function sanitizeSpanAttributes(element: SanitizableElement): void {
-  for (const attributeName of ["colspan", "rowspan"]) {
+function sanitizeIntegerAttributes(
+  element: SanitizableElement,
+  attributeNames: readonly string[],
+  maximum: number
+): void {
+  for (const attributeName of attributeNames) {
     if (!element.hasAttribute(attributeName)) continue
-    const value = sanitizeIntegerAttribute(element.getAttribute(attributeName) ?? "", 1, 100)
+    const value = sanitizeIntegerAttribute(
+      element.getAttribute(attributeName) ?? "",
+      1,
+      maximum
+    )
     if (value === null) element.removeAttribute(attributeName)
     else element.setAttribute(attributeName, value)
   }
@@ -113,13 +120,14 @@ function sanitizeAllowedAttributes(
 ): void {
   for (const attribute of [...element.attributes]) {
     const attributeName = attribute.name.toLowerCase()
-    if (!globalAttributes.has(attributeName)
-      && !elementAttributes[name]?.has(attributeName)) {
+    if (attribute.name !== attributeName
+      || (!globalAttributes.has(attributeName)
+      && !elementAttributes[name]?.has(attributeName))) {
       element.removeAttribute(attribute.name)
     }
   }
   sanitizeClassAttribute(element, context)
-  sanitizeSpanAttributes(element)
+  sanitizeIntegerAttributes(element, ["colspan", "rowspan"], 100)
 }
 
 function sanitizeLink(element: SanitizableElement): void {
@@ -151,6 +159,7 @@ function sanitizeImage(
   element: SanitizableElement,
   context: "editorial" | "inline" | "license"
 ): void {
+  sanitizeIntegerAttributes(element, ["height", "width"], 4096)
   let src = element.getAttribute("src")
   if (src !== null && context === "license" && safeStaticFilename(src)) {
     src = `/red/bilder/gemensamt/${encodeReaderSourceSegment(src)}`
@@ -210,5 +219,6 @@ export function sanitizeReaderSourceInfoHtml(
   if (bodies.length !== 1) invalidSourceInfo()
   const body = bodies[0]!
   for (const child of [...body.childNodes]) sanitizeNode(child, context)
-  return issueReaderSourceInfoHtml(body.innerHTML)
+  // Keep the sole reader-source-info capability assertion inside its sanitizer authority.
+  return body.innerHTML as SanitizedHtml<"reader-source-info">
 }

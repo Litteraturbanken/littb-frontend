@@ -8,6 +8,7 @@ import ts from "typescript"
 const root = resolve(process.argv[2] ?? process.cwd())
 const sourceExtensions = new Set([".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx", ".vue"])
 const capabilityPath = "shared/utils/renderable-html.ts"
+const readerSourceInfoSanitizerPath = "server/utils/reader-source-info-sanitizer.ts"
 const rendererPath = "app/components/global/RenderableHtmlContent.vue"
 const chronologyRangeOwnerByConsumerPath = new Map([
   ["app/pages/bibliotek.vue", "LibraryAdvancedFilters"],
@@ -89,7 +90,6 @@ const capabilityIssuers = new Set([
   "issueSlaArticleHtml",
   "issueDictionaryArticleHtml",
   "issueReaderOcrHtml",
-  "issueReaderSourceInfoHtml",
   "issueEditorEtextHtml",
   "issueManagedReaderHtml",
   "issueManagedReaderStyle",
@@ -106,7 +106,6 @@ const capabilityIssuerReturnTypes = new Map([
   ["issueSlaArticleHtml", 'SanitizedHtml<"sla-article">'],
   ["issueDictionaryArticleHtml", 'SanitizedHtml<"dictionary-article">'],
   ["issueReaderOcrHtml", 'SanitizedHtml<"reader-ocr">'],
-  ["issueReaderSourceInfoHtml", 'SanitizedHtml<"reader-source-info">'],
   ["issueEditorEtextHtml", 'SanitizedHtml<"editor-etext">'],
   ["issueManagedReaderHtml", 'ManagedAssetHtml<"reader-etext">'],
   ["issueManagedReaderStyle", 'ManagedStyleText<"reader-etext">'],
@@ -149,7 +148,7 @@ const reviewedDomPolicies = new Map([
     { functionName: "sanitizeEditorEtextHtml", kind: "read", base: "document", count: 1 }
   ]],
   ["server/utils/reader-source-info-sanitizer.ts", [
-    { functionName: "sanitizeReaderSourceInfoHtml", kind: "read", base: "body", issuer: "issueReaderSourceInfoHtml", count: 1 }
+    { functionName: "sanitizeReaderSourceInfoHtml", kind: "read", base: "body", count: 1 }
   ]],
   ["server/utils/reader-source-info-projection.ts", [
     { functionName: "unwrapLicenseText", kind: "read", base: "texts", count: 1 }
@@ -2822,6 +2821,11 @@ function auditCapabilityAssertions(record, registry) {
     visitAst(unit.sourceFile, node => {
       if (!ts.isAsExpression(node) && !ts.isTypeAssertionExpression(node)) return
       if (!registry.typeCarries(node.type, unit, node)) return
+      if (
+        record.relativePath === readerSourceInfoSanitizerPath
+        && compactNodeText(node, unit.sourceFile)
+          === 'body.innerHTMLasSanitizedHtml<"reader-source-info">'
+      ) return
       addViolation(
         record.relativePath,
         lineNumberAt(

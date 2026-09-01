@@ -10,6 +10,7 @@ import {
   maximumReaderOcrBytes,
   parseReaderOcrOverlay
 } from "#shared/utils/reader-ocr"
+import { resolveReaderPartNavigation } from "#shared/utils/reader-part-navigation"
 
 function contributorLabel(
   contributor: ReaderFacsimilePage["contributors"][number]
@@ -38,27 +39,6 @@ function alternateMediaTarget(
     : null
 }
 
-function partNavigation(page: ReaderFacsimilePage, pageIndex: number): {
-  currentPartIndex: number | null
-  previousPartPageName: string | null
-  nextPartPageName: string | null
-} {
-  const ordered = [...page.parts].sort((left, right) => (
-    left.start_page_index - right.start_page_index || left.source_index - right.source_index
-  ))
-  const starting = ordered.find(part => part.start_page_index === pageIndex)
-  const active = ordered.filter(part => (
-    part.start_page_index <= pageIndex && pageIndex <= part.end_page_index
-  ))
-  const previous = ordered.filter(part => part.start_page_index <= pageIndex - 1).at(-1)
-  const next = ordered.find(part => part.start_page_index >= pageIndex + 1)
-  return {
-    currentPartIndex: (starting ?? active.at(-1))?.source_index ?? null,
-    previousPartPageName: previous?.start_page_name ?? null,
-    nextPartPageName: next?.start_page_name ?? null
-  }
-}
-
 function sliderPercent(pageIndex: number, declaredPageCount: number | null): number {
   if (declaredPageCount === null || declaredPageCount <= 1) return 0
   return Math.min(100, Math.max(0, pageIndex / (declaredPageCount - 1) * 100))
@@ -72,7 +52,7 @@ export function projectFacsimileReaderPage(
   const position = source.pageMap.findIndex(page => page.page_name === pageName)
   const target = source.pageMap[position]
   if (!target) return null
-  const navigation = partNavigation(source, target.page_index)
+  const navigation = resolveReaderPartNavigation(source.parts, target.page_index)
   const knownNames = new Set(source.pageMap.map(page => page.page_name))
   const sizes = source.sources.map(({ size, width }) => ({ size, width }))
   return {

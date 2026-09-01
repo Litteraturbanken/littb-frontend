@@ -32,7 +32,6 @@ import {
   issueManagedReaderHtml,
   issueManagedReaderStyle,
   issueReaderOcrHtml,
-  issueReaderSourceInfoHtml,
   issueSlaArticleHtml,
   joinReaderSourceRows,
   transformManagedReaderHtml
@@ -46,8 +45,7 @@ const slaArticle: SanitizedHtml<"sla-article"> = issueSlaArticleHtml("<p>SLA</p>
 const dictionaryArticle: SanitizedHtml<"dictionary-article">
   = issueDictionaryArticleHtml("<p>Dictionary</p>")
 const readerOcr: SanitizedHtml<"reader-ocr"> = issueReaderOcrHtml("<span>OCR</span>")
-const readerSourceInfo: SanitizedHtml<"reader-source-info">
-  = issueReaderSourceInfoHtml("<p>Source</p>")
+declare const readerSourceInfo: SanitizedHtml<"reader-source-info">
 const editorEtext: SanitizedHtml<"editor-etext"> = issueEditorEtextHtml("<span>Editor</span>")
 
 const managedReader: ManagedAssetHtml<"reader-etext"> = issueManagedReaderHtml("<p>Reader</p>")

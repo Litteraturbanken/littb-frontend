@@ -8,9 +8,9 @@ import {
   maximumReaderEtextBytes,
   rebaseRelativeStylesheetReferences,
   readerCommonMetadata,
-  readerFacsimileMetadata,
-  resolveReaderPartNavigation
+  readerFacsimileMetadata
 } from "../../server/utils/reader-source"
+import { resolveReaderPartNavigation } from "../../shared/utils/reader-part-navigation"
 
 import type { H3Event } from "h3"
 import type {

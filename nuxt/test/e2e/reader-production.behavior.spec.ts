@@ -787,6 +787,48 @@ test("Reader production keys copy typed values and push alternate media history"
   ])
 })
 
+test("Reader production copy shortcuts preserve request order", async ({ page }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    const scope = window as typeof window & {
+      __copiedValues?: string[]
+      __releaseFirstCopy?: () => void
+    }
+    scope.__copiedValues = []
+    let releaseFirstCopy: (() => void) | null = null
+    const firstCopy = new Promise<void>(resolve => {
+      releaseFirstCopy = resolve
+    })
+    scope.__releaseFirstCopy = () => releaseFirstCopy?.()
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value: string) => {
+          if (value === "lb-editor-doktor-glas") await firstCopy
+          scope.__copiedValues?.push(value)
+        }
+      }
+    })
+  })
+
+  await page.keyboard.press("i")
+  await page.keyboard.press("u")
+  await page.waitForTimeout(100)
+  expect(await page.evaluate(() => (
+    window as typeof window & { __copiedValues?: string[] }
+  ).__copiedValues)).toEqual([])
+
+  await page.evaluate(() => (
+    window as typeof window & { __releaseFirstCopy?: () => void }
+  ).__releaseFirstCopy?.())
+  await expect.poll(() => page.evaluate(() => (
+    window as typeof window & { __copiedValues?: string[] }
+  ).__copiedValues)).toEqual([
+    "lb-editor-doktor-glas",
+    "https://urn.kb.se/resolve?urn=urn:nbn:se:lb-lb-reader-doktor-glas"
+  ])
+})
+
 test("editable fields guard Reader keys and author i copies the normalized id", async ({
   page,
   request

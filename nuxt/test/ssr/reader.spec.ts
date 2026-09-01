@@ -182,7 +182,10 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   expect(html).toContain('class="reader-context-ssr"')
   expect(html).not.toContain('class="reader-context-ssr sr-only"')
   expect(html).toContain("Sök i verket")
-  expect(html).toContain('class="reader-work-search-trigger"')
+  expect(html).toContain(
+    'class="reader-work-search-trigger" href="/f%C3%B6rfattare/' +
+    'S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?show_search_work"'
+  )
 
   const { document } = parseHTML(html)
   const notices = [...document.querySelectorAll(

@@ -1904,6 +1904,25 @@ test("author facets and Visa alla own only sok_filter", async ({ page, request }
   await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
 })
 
+test("author facet and pager controls inherit production small-caps casing", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+
+  const controls = [
+    page.locator(".navigator").getByRole("button", { name: "Visa alla" }),
+    page.locator(".littb_pager").getByRole("button", { name: "Gå till första träffen" })
+  ]
+
+  for (const control of controls) {
+    await expect(control).toHaveCSS(
+      "font-family",
+      '"Requiem Text SC A", "Requiem Text SC B"'
+    )
+    await expect(control).toHaveCSS("text-transform", "lowercase")
+  }
+})
+
 test("a direct author-filtered load keeps the unfiltered navigator and pager basis", async ({
   page,
   request

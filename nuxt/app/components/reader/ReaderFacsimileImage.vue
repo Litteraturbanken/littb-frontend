@@ -7,6 +7,7 @@ import type {
 import { adjacentFacsimileSize } from "#shared/utils/facsimile-source"
 
 const props = defineProps<{
+  ocrMode: boolean
   page: ReaderFacsimilePage
   selectedSize: ReaderFacsimileSize
 }>()
@@ -83,6 +84,7 @@ watch(selectedSourceIdentity, () => {
     <div
       v-if="page.ocrOverlay"
       class="reader-ocr-layer absolute left-0 top-0 overflow-hidden h-full w-full"
+      :aria-hidden="!ocrMode"
     >
       <RenderableHtmlContent
         as="div"
@@ -95,8 +97,8 @@ watch(selectedSourceIdentity, () => {
       v-show="!imageFailed"
       :key="selectedSourceIdentity"
       class="faksimil"
-      :src="selectedSource.url"
       :srcset="sourceSet"
+      :src="selectedSource.url"
       :width="selectedSource.width"
       :height="selectedHeight"
       :alt="`${page.title} av ${page.author.full_name}, sida ${page.pageName}`"

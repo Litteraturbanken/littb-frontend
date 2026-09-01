@@ -145,6 +145,14 @@ export function createPlaywrightConfig({
         ...devices["Desktop Safari"],
         viewport: { width: 1440, height: 1000 }
       }
+    },
+    {
+      name: "webkit-reader-faksimil",
+      testMatch: /e2e\/reader-faksimil-webkit\.behavior\.spec\.ts/,
+      use: {
+        ...devices["Desktop Safari"],
+        viewport: { width: 1440, height: 1000 }
+      }
     }
     ] : [])
   ],

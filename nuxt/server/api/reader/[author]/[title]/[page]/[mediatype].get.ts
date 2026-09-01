@@ -1,6 +1,7 @@
 import type { ReaderPage } from "#shared/types/reader"
 import { readerAuthorContributionSuffix } from "#shared/utils/reader-author"
 import { issueManagedReaderHtml } from "#shared/utils/renderable-html"
+import { resolveReaderPartNavigation } from "#shared/utils/reader-part-navigation"
 import { fetchReaderOcrOverlay } from "#server/utils/reader-ocr"
 import type {
   ReaderEtextWorkMetadata,
