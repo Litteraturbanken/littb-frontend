@@ -147,12 +147,14 @@ fi
 requested_ref="${1:-HEAD}"
 requested_git_sha="$(git rev-parse --verify "${requested_ref}^{commit}")"
 
-lease_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-lease.XXXXXX")"
-recheck_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-recheck.XXXXXX")"
-deployment_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-deployment.XXXXXX")"
-jobspec_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-jobspec.XXXXXX")"
-stage_job_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-job.XXXXXX")"
-stage_allocations_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-allocations.XXXXXX")"
+stage_tmpdir="${TMPDIR:-/tmp}"
+stage_tmpdir="${stage_tmpdir%/}"
+lease_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-lease.XXXXXX")"
+recheck_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-recheck.XXXXXX")"
+deployment_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-deployment.XXXXXX")"
+jobspec_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-jobspec.XXXXXX")"
+stage_job_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-job.XXXXXX")"
+stage_allocations_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-allocations.XXXXXX")"
 trap 'rm -f "$lease_file" "$recheck_file" "$deployment_file" "$jobspec_file" "$stage_job_file" "$stage_allocations_file"' EXIT
 
 stage_cli=(python3 "$LB_INFRA_REPOSITORY/scripts/stage.py")

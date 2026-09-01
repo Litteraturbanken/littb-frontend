@@ -87,6 +87,13 @@ def initialize_visual_repository(repository: Path) -> str:
 
 
 class InvokeTaskTests(unittest.TestCase):
+    def test_stage_deploy_normalizes_tmpdir_before_creating_nomad_jobspec(self) -> None:
+        script = (ROOT / "scripts" / "deploy-stage.sh").read_text()
+
+        self.assertIn('stage_tmpdir="${TMPDIR:-/tmp}"', script)
+        self.assertIn('stage_tmpdir="${stage_tmpdir%/}"', script)
+        self.assertNotIn('${TMPDIR:-/tmp}/lb-stage-', script)
+
     def test_visual_baseline_gate_uses_the_review_manifest_without_a_historical_authority(self) -> None:
         parameters = inspect.signature(tasks._verify_visual_baselines).parameters
 
