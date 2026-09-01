@@ -24,6 +24,15 @@ variable "image_digest" {
   type = string
 }
 
+variable "jobspec_blob_sha256" {
+  type = string
+
+  validation {
+    condition     = strlen(var.jobspec_blob_sha256) == 64 && replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(var.jobspec_blob_sha256, "0", ""), "1", ""), "2", ""), "3", ""), "4", ""), "5", ""), "6", ""), "7", ""), "8", ""), "9", ""), "a", ""), "b", ""), "c", ""), "d", ""), "e", ""), "f", "") == ""
+    error_message = "jobspec_blob_sha256 must be a lowercase SHA-256."
+  }
+}
+
 variable "caddy_host" {
   type    = string
   default = "lb-frontend.pub.lb.se"
@@ -39,8 +48,9 @@ job "lb-frontend-stage" {
   datacenters = var.datacenters
 
   meta {
-    git_sha      = var.git_sha
-    image_digest = var.image_digest
+    git_sha              = var.git_sha
+    image_digest         = var.image_digest
+    jobspec_blob_sha256  = var.jobspec_blob_sha256
   }
 
   group "frontend" {
@@ -129,6 +139,7 @@ job "lb-frontend-stage" {
       }
 
       env {
+        STAGE_COMPONENT                         = "frontend"
         GIT_SHA                                 = var.git_sha
         IMAGE_DIGEST                            = var.image_digest
         IMAGE_REF                               = var.image

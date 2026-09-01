@@ -4,27 +4,133 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$repo_root"
 
+: "${LB_INFRA_REPOSITORY:?set to the persistent lb-infra stage checkout}"
+
+if [ "${STAGE_DEPLOYMENT_LOCK_HELD:-}" != "1" ]; then
+  export STAGE_DEPLOYMENT_LOCK_HELD=1
+  exec python3 - "$repo_root/scripts/deploy-stage.sh" "$@" <<'PY'
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+infra_repository = Path(os.environ["LB_INFRA_REPOSITORY"]).resolve()
+if str(infra_repository) not in sys.path:
+    sys.path.insert(0, str(infra_repository))
+
+from scripts.stage_guard import StageDeploymentLock, StageGuardError
+
+try:
+    with StageDeploymentLock.acquire("lb-frontend-stage", repository=infra_repository):
+        completed = subprocess.run([sys.argv[1], *sys.argv[2:]], check=False)
+except (OSError, StageGuardError) as error:
+    raise SystemExit(f"Cannot acquire Stage deployment lock: {error}") from None
+
+raise SystemExit(completed.returncode)
+PY
+fi
+
 requested_ref="${1:-HEAD}"
-git_sha="$(git rev-parse --verify "${requested_ref}^{commit}")"
-current_branch="$(git branch --show-current)"
+requested_git_sha="$(git rev-parse --verify "${requested_ref}^{commit}")"
 
-if [ -z "$current_branch" ]; then
-  echo "Detached HEAD is not supported; check out a branch before deploying staging." >&2
+lease_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-lease.XXXXXX")"
+recheck_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-recheck.XXXXXX")"
+deployment_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-deployment.XXXXXX")"
+stage_job_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-job.XXXXXX")"
+stage_allocations_file="$(mktemp "${TMPDIR:-/tmp}/lb-stage-frontend-allocations.XXXXXX")"
+trap 'rm -f "$lease_file" "$recheck_file" "$deployment_file" "$stage_job_file" "$stage_allocations_file"' EXIT
+
+stage_cli=(python3 "$LB_INFRA_REPOSITORY/scripts/stage.py")
+"${stage_cli[@]}" preflight frontend --source-repository "$repo_root" >"$lease_file"
+git_sha="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["candidate_sha"])' "$lease_file")"
+
+if [ "$requested_git_sha" != "$git_sha" ]; then
+  echo "Requested ref $requested_ref does not match the guarded origin/stage candidate $git_sha." >&2
   exit 2
 fi
 
-if [ -n "$(git status --porcelain)" ]; then
-  echo "Working tree has uncommitted changes; commit them before building a pinned staging image." >&2
-  exit 2
+jobspec_blob_sha256="$(git show "$git_sha:jobs/lb-frontend-stage.nomad" | shasum -a 256 | awk '{print $1}')"
+if [[ ! "$jobspec_blob_sha256" =~ ^[0-9a-f]{64}$ ]]; then
+  echo "Committed Stage jobspec did not produce a lowercase SHA-256; staging was not deployed." >&2
+  exit 1
 fi
 
-if ! git merge-base --is-ancestor "$git_sha" HEAD; then
-  echo "Requested ref $requested_ref resolves to $git_sha, which is not reachable from HEAD." >&2
-  echo "Check out the branch containing that commit before deploying staging." >&2
-  exit 2
-fi
+recheck_lease() {
+  local boundary="$1"
+  "${stage_cli[@]}" preflight frontend --source-repository "$repo_root" >"$recheck_file"
+  if ! cmp -s "$lease_file" "$recheck_file"; then
+    echo "Stage lease changed $boundary; staging was not deployed." >&2
+    exit 1
+  fi
+}
 
-git push origin "$current_branch"
+wait_for_healthy_stage_allocations() {
+  local timeout_seconds deadline allocation_state
+  timeout_seconds="${STAGE_HEALTH_TIMEOUT_SECONDS:-600}"
+  deadline=$((SECONDS + timeout_seconds))
+
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    nomad job inspect -json lb-frontend-stage >"$stage_job_file"
+    nomad job allocs -json lb-frontend-stage >"$stage_allocations_file"
+    allocation_state="$(python3 - "$stage_job_file" "$stage_allocations_file" <<'PY'
+import json
+import sys
+
+job = json.load(open(sys.argv[1]))
+allocations = json.load(open(sys.argv[2]))
+version = job.get("Version")
+groups = job.get("TaskGroups")
+if not isinstance(version, int) or not isinstance(groups, list):
+    print("failed")
+    raise SystemExit()
+expected = sum(
+    group.get("Count", 0)
+    for group in groups
+    if isinstance(group, dict) and group.get("Name") == "frontend"
+    and isinstance(group.get("Count"), int)
+)
+current = [
+    allocation for allocation in allocations
+    if isinstance(allocation, dict)
+    and allocation.get("TaskGroup") == "frontend"
+    and allocation.get("JobVersion") == version
+]
+if any(allocation.get("ClientStatus") == "failed" for allocation in current):
+    print("failed")
+elif len(current) == expected and expected > 0 and all(
+    allocation.get("DesiredStatus") == "run"
+    and allocation.get("ClientStatus") == "running"
+    and isinstance(allocation.get("DeploymentStatus"), dict)
+    and allocation["DeploymentStatus"].get("Healthy") is True
+    and allocation["DeploymentStatus"].get("Canary") is False
+    for allocation in current
+):
+    print("healthy")
+else:
+    print("pending")
+PY
+)"
+    case "$allocation_state" in
+      healthy)
+        return
+        ;;
+      failed)
+        echo "Current Stage frontend allocations are unhealthy; staging was not recorded." >&2
+        exit 1
+        ;;
+      pending)
+        sleep 10
+        ;;
+      *)
+        echo "Could not determine current Stage frontend allocation health; staging was not recorded." >&2
+        exit 1
+        ;;
+    esac
+  done
+
+  echo "Timed out waiting for healthy current Stage frontend allocations; staging was not recorded." >&2
+  exit 2
+}
 
 git_url="${GIT_URL:-https://github.com/Litteraturbanken/littb-frontend.git}"
 registry_host="${REGISTRY_HOST:-registry.service.consul:5000}"
@@ -274,11 +380,18 @@ fi
 
 image_digest="$(resolve_registry_digest "$image_ref")"
 immutable_image_ref="${registry_host}/${image_name}@${image_digest}"
+nomad_identity_vars=(
+  -var "image=$immutable_image_ref"
+  -var "image_digest=$image_digest"
+  -var "git_sha=$git_sha"
+  -var "jobspec_blob_sha256=$jobspec_blob_sha256"
+)
 
-nomad job validate -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad
+recheck_lease "before Nomad planning"
+nomad job validate "${nomad_identity_vars[@]}" jobs/lb-frontend-stage.nomad
 
 set +e
-plan_output="$(nomad job plan -no-color -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad)"
+plan_output="$(nomad job plan -no-color "${nomad_identity_vars[@]}" jobs/lb-frontend-stage.nomad)"
 plan_status=$?
 set -e
 printf '%s\n' "$plan_output"
@@ -322,10 +435,63 @@ case "$plan_modify_index" in
     ;;
 esac
 
-nomad run -check-index "$plan_modify_index" -detach -var "image=$immutable_image_ref" -var "image_digest=$image_digest" -var "git_sha=$git_sha" jobs/lb-frontend-stage.nomad
+recheck_lease "before Nomad registration"
+nomad run -check-index "$plan_modify_index" -detach "${nomad_identity_vars[@]}" jobs/lb-frontend-stage.nomad
+
+wait_for_healthy_stage_allocations
+read -r stage_job_version stage_job_modify_index <<EOF
+$(python3 -c 'import json,sys; job=json.load(open(sys.argv[1])); print(job["Version"], job["JobModifyIndex"])' "$stage_job_file")
+EOF
+
+verified_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+cat >"$deployment_file" <<EOF
+source:
+  repository: littb
+  git_sha: $git_sha
+image:
+  reference: $immutable_image_ref
+  digest: $image_digest
+jobspec:
+  repository: littb
+  git_sha: $git_sha
+  path: jobs/lb-frontend-stage.nomad
+  blob_sha256: $jobspec_blob_sha256
+nomad:
+  job_id: lb-frontend-stage
+  job_version: $stage_job_version
+  job_modify_index: $stage_job_modify_index
+verification:
+  verified_at: "$verified_at"
+  identity_endpoint: https://stage.litteraturbanken.se/_deployment
+EOF
+
+(
+  cd "$repo_root/nuxt"
+  LITTB_EXPECTED_GIT_SHA="$git_sha" \
+  LITTB_EXPECTED_IMAGE_DIGEST="$image_digest" \
+  LITTB_NUXT_LIVE_ORIGIN=https://stage.litteraturbanken.se \
+    yarn test:e2e:nuxt-live
+)
+
+receipt_file="$repo_root/.stage-receipts/frontend-$git_sha.json"
+"${stage_cli[@]}" capture frontend \
+  --lease "$lease_file" \
+  --deployment "$deployment_file" \
+  --source-repository "$repo_root" \
+  --receipt "$receipt_file"
+
+set +e
+record_output="$("${stage_cli[@]}" record frontend --receipt "$receipt_file" --infra-repository "$LB_INFRA_REPOSITORY")"
+record_status=$?
+set -e
+if [ "$record_status" -ne 0 ]; then
+  echo "Stage frontend is live but its receipt was not recorded. Retained receipt: $receipt_file" >&2
+  exit "$record_status"
+fi
 
 echo
 echo "Deployed lb-frontend-stage from git_sha=$git_sha"
 echo "Image: $immutable_image_ref"
-echo "Route: https://lb-frontend.pub.lb.se/"
-nomad job status lb-frontend-stage
+echo "Receipt: $receipt_file"
+echo "Manifest commit: $record_output"
+echo "Route: https://stage.litteraturbanken.se/"
