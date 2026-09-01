@@ -31,11 +31,27 @@ current lint baseline, and the full parity gate.
 
 ## Staging deployment
 
-Run the deployment from the repository root. The script refuses a dirty tree,
-pushes the current branch, builds the exact commit with the shared multi-arch
-builder, waits for the build, validates the job, and deploys it:
+Run the deployment only from this repository's persistent Stage checkout:
+
+```text
+<littb>/.worktrees/stage
+```
+
+Set `LB_INFRA_REPOSITORY` to the persistent `lb-infra` Stage checkout. The
+script acquires the shared Stage job lock, and the guard then requires a clean
+local `stage` branch whose `HEAD` exactly matches freshly fetched
+`origin/stage`. It refuses feature worktrees, stale Stage sources, and any
+lease movement before planning or Nomad registration.
+
+The guarded sequence builds the exact Stage commit with the shared multi-arch
+builder, resolves the immutable registry digest, computes the committed
+jobspec SHA-256, validates and CAS-registers Nomad, waits for every current
+frontend allocation to be healthy, runs the public identity-bound smoke suite,
+captures a receipt, and records the verified deployment in `lb-infra`:
 
 ```sh
+export LB_INFRA_REPOSITORY=/path/to/lb-infra/.worktrees/stage
+export WAIT_FOR_BUILD=1
 scripts/deploy-stage.sh
 nomad job status lb-frontend-stage
 nomad job history -p lb-frontend-stage
@@ -60,11 +76,10 @@ response is successful, nonempty, `text/css`, and no larger than 1 MiB. Logs
 contain only status, normalized content type, and byte count. The job keeps two
 allocations on distinct hosts and rolls one healthy allocation at a time.
 
-After deployment, run the identity-bound live suite against the canonical Stage
-route with the exact Git SHA and image digest used by the deployment. Its
-Playwright configuration uses up to four workers. Set the two `DEPLOYED_*`
-shell variables from the deploy script's `git_sha` and `Image` summary, then
-run:
+The deploy script runs the identity-bound live suite against the canonical
+Stage route before it captures the receipt. Its Playwright configuration uses
+up to four workers. To repeat the smoke suite manually, set the two
+`DEPLOYED_*` shell variables from the deploy summary and run:
 
 ```sh
 : "${DEPLOYED_GIT_SHA:?set from the deploy summary}"
@@ -82,3 +97,10 @@ previous_version="$(nomad job history -json lb-frontend-stage | jq -r 'map(.Vers
 test "$previous_version" != null
 nomad job revert -detach lb-frontend-stage "$previous_version"
 ```
+
+Do not run the deploy script again if capture succeeded but manifest recording
+fails. The script reports the retained receipt below
+`.stage-receipts/frontend-<git-sha>.json`; investigate the record failure and
+use `lb-infra/scripts/stage.py reconcile frontend` with that receipt. The
+shared guard prevents the script from silently redeploying an already-live
+identity.
