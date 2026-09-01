@@ -14,6 +14,7 @@ const viteServerHmrPort = Number(process.env.LITTB_VITE_SERVER_HMR_PORT || 0)
 
 export default defineNuxtConfig({
   buildDir: process.env.NUXT_BUILD_DIR || ".nuxt",
+  buildId: process.env.NUXT_BUILD_ID,
   compatibilityDate: "2025-07-15",
   ssr: true,
   modules: ["@nuxt/eslint"],

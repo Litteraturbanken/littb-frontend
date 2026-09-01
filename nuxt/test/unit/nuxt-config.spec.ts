@@ -9,6 +9,7 @@ type ProxyRule = {
 
 type NuxtConfig = {
   buildDir: string
+  buildId?: string
   nitro: {
     apiBaseURL: string
     imports: {
@@ -114,6 +115,14 @@ describe("local legacy library API defaults", () => {
     const config = await loadConfig()
 
     expect(config.buildDir).toBe("/tmp/littb-playwright/shard-1/nuxt")
+  })
+
+  test("uses the deployment-provided build id for reproducible multi-architecture images", async () => {
+    vi.stubEnv("NUXT_BUILD_ID", "a".repeat(40))
+
+    const config = await loadConfig()
+
+    expect(config.buildId).toBe("a".repeat(40))
   })
 
   test("honors an isolated Vite dependency cache", async () => {

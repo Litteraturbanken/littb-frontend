@@ -181,6 +181,7 @@ payload = {
         "CONTEXT_DIR": "nuxt",
         "IMAGE": os.environ["DISPATCH_IMAGE"],
         "TAG": git_sha,
+        "BUILD_ARGS": f"NUXT_BUILD_ID={git_sha}",
         "REGISTRY_HOST": os.environ["DISPATCH_REGISTRY_HOST"],
         "PUSH_GHCR": "false",
     },
