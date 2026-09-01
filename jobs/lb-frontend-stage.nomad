@@ -29,7 +29,7 @@ variable "jobspec_blob_sha256" {
 
   validation {
     condition     = strlen(var.jobspec_blob_sha256) == 64 && replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(var.jobspec_blob_sha256, "0", ""), "1", ""), "2", ""), "3", ""), "4", ""), "5", ""), "6", ""), "7", ""), "8", ""), "9", ""), "a", ""), "b", ""), "c", ""), "d", ""), "e", ""), "f", "") == ""
-    error_message = "jobspec_blob_sha256 must be a lowercase SHA-256."
+    error_message = "The jobspec_blob_sha256 value must be a lowercase SHA-256."
   }
 }
 
