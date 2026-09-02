@@ -339,6 +339,10 @@
         color: black;
     }
 
+    .multiselect__option:has(.select2-results__group) {
+        background: transparent !important;
+    }
+
     .multiselect__option--highlight::after {
         display: none;
     }

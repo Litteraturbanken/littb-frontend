@@ -892,12 +892,7 @@ const titleChoices = computed<SearchMultiSelectOption[]>(() => {
   return [...choices.values()]
 })
 const languageChoices = textSearchLanguageOptions.map(([value, label]) => ({ value, label }))
-const categoryChoices = textSearchCategoryOptions.map(([value, label]) => ({
-  value,
-  label,
-  disabled: value === "texttype:drama;dramasamling"
-    || value === "texttype:essä;essäsamling"
-}))
+const categoryChoices = textSearchCategoryOptions.map(([value, label]) => ({ value, label }))
 const categoryChoiceGroups: readonly SearchMultiSelectOptionGroup[] = [
   { label: "Kategorier", options: categoryChoices.slice(0, 20) },
   { label: "Projekt", options: categoryChoices.slice(20, 24) },
