@@ -104,6 +104,25 @@ test("Library multiselect main area opens without a close-reopen flicker", async
   await expect(keywords.locator(".multiselect__content-wrapper")).toBeVisible()
 })
 
+test("Library searchable author multiselect closes when its active area is clicked again", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+
+  const root = page.locator("[data-library-about-authors]")
+  const control = root.locator(".multiselect")
+  const activeArea = root.getByRole("textbox", {
+    name: "Om ett författarskap",
+    exact: true
+  })
+
+  await activeArea.click()
+  await expect(control).toHaveClass(/multiselect--active/)
+  await activeArea.click()
+  await expect(control).not.toHaveClass(/multiselect--active/)
+})
+
 test("Library multiselect selected main area toggles the dropdown closed", async ({ page }) => {
   await page.goto(
     "/bibliotek?avancerat=1&keywords=" +

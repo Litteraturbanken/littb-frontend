@@ -61,8 +61,8 @@ test("behavior and visual lanes are a complete disjoint E2E partition", () => {
   const overlap = new Set([...behavior].filter(identity => visual.has(identity)))
   const combined = new Set([...behavior, ...visual])
 
-  expect(baseline.size).toBe(1_149)
-  expect(behavior.size).toBe(993)
+  expect(baseline.size).toBe(1_150)
+  expect(behavior.size).toBe(994)
   expect(visual.size).toBe(156)
   expect(overlap).toEqual(new Set())
   expect(combined).toEqual(baseline)
