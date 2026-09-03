@@ -1031,6 +1031,57 @@ test("delayed Works and Dikt transitions never relabel rows owned by the other m
   await expect(page.locator("[data-library-work-row]")).toHaveCount(0)
 })
 
+test("tab transitions never render an empty result before the destination request settles", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?visa=works&sort=popularitet", { waitUntil: "networkidle" })
+  await expect(page.locator("[data-library-work-row]").first()).toBeVisible()
+
+  await page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: {
+        config: {
+          globalProperties: {
+            $router: { beforeEach: (guard: () => Promise<boolean>) => () => void }
+          }
+        }
+      }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    const state = window as typeof window & {
+      __libraryNavigationRelease?: () => void
+      __libraryNavigationRemove?: () => void
+    }
+    const blocked = new Promise<boolean>(resolve => {
+      state.__libraryNavigationRelease = () => resolve(true)
+    })
+    state.__libraryNavigationRemove = router.beforeEach(() => blocked)
+  })
+
+  try {
+    await page.locator('[data-library-tab="parts"]').click()
+    await expect(page.locator('[data-library-loading][role="status"]')).toHaveCount(1)
+    await expect(page.locator("[data-library-empty]")).toHaveCount(0)
+
+    await page.evaluate(() => (
+      window as typeof window & { __libraryNavigationRelease?: () => void }
+    ).__libraryNavigationRelease?.())
+    await expect(page.locator("[data-library-part-row]").first()).toBeVisible()
+  } finally {
+    await page.evaluate(() => {
+      const state = window as typeof window & {
+        __libraryNavigationRelease?: () => void
+        __libraryNavigationRemove?: () => void
+      }
+      state.__libraryNavigationRelease?.()
+      state.__libraryNavigationRemove?.()
+      delete state.__libraryNavigationRelease
+      delete state.__libraryNavigationRemove
+    })
+  }
+})
+
 test("replacement loading removes stale Works and Dikt controls until results settle", async ({
   page,
   request

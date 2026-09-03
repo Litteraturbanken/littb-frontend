@@ -4,6 +4,23 @@ import type { LibraryModeTab } from "~/lib/library/component-models"
 defineProps<{
     tabs: readonly LibraryModeTab[]
 }>()
+
+const emit = defineEmits<{
+    navigate: []
+}>()
+
+function navigateTab(
+    event: MouseEvent,
+    tab: LibraryModeTab,
+    navigate: (event: MouseEvent) => void
+) {
+    if (tab.disabled) {
+        event.preventDefault()
+        return
+    }
+    if (!tab.active) emit("navigate")
+    navigate(event)
+}
 </script>
 
 <template>
@@ -28,7 +45,7 @@ defineProps<{
                     'relevance-unavailable':
                         tab.disabledLook && (tab.mode === 'epub' || tab.mode === 'pdf')
                 }"
-                @click="tab.disabled ? $event.preventDefault() : navigate($event)"
+                @click="navigateTab($event, tab, navigate)"
                 >{{ tab.label }}<span
                     v-if="tab.count !== null"
                     class="num_hits"
