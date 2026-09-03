@@ -58,7 +58,7 @@ async function successfulJsonResponse(page, responsePromise, pathname) {
 
 function expectDefiningTextSearchResults(body) {
     expect(body).toMatchObject({ query: "kyrka", page: 1, page_size: 30 })
-    expect(body.total_work_hits).toBeGreaterThan(0)
+    expect(body.totals.works).toBeGreaterThan(0)
     expect(body.works.length).toBeGreaterThan(0)
     expect(body.works.some(work => work.highlights.some(highlight =>
         highlight.match.some(word => word.word.toLocaleLowerCase("sv") === "kyrka")
