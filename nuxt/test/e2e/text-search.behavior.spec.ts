@@ -511,7 +511,7 @@ test("vue-multiselect names each real keyboard control without a searchbox suffi
   await expect(page.getByLabel(/-searchbox$/)).toHaveCount(0)
 })
 
-test("vue-multiselect preserves declared option order, unknown selections, labels, and disabled rows", async ({
+test("vue-multiselect preserves declared option order, unknown selections, and labels", async ({
   page
 }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1&forfattare=missing,StrindbergA")
@@ -528,13 +528,36 @@ test("vue-multiselect preserves declared option order, unknown selections, label
   await categories.getByRole("button", {
     name: "Visa alternativ för Filtrera: Kategorier / Utgivare"
   }).click()
-  await expect(categories.getByText("Dramatik", { exact: true })).toBeVisible()
-  await expect(categories.getByRole("option", { name: "Dramatik" })).toHaveCount(0)
+  await expect(categories.getByRole("option", { name: "Dramatik", exact: true })).toBeVisible()
+  await expect(categories.getByRole("option", { name: "Essäer", exact: true })).toBeVisible()
 
   await page.reload({ waitUntil: "domcontentloaded" })
   await expect(authors.getByRole("button", { name: "Ta bort Lagerlöf" })).toBeVisible()
   await expect(authors.getByRole("button", { name: "Ta bort Strindberg" })).toBeVisible()
   await expect(authors.getByRole("button", { name: "Ta bort missing" })).toBeVisible()
+})
+
+test("every advanced multiselect closes when its control surface is clicked again", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+
+  for (const selector of [
+    ".author_select",
+    ".title_select",
+    ".lang_select",
+    ".about_select",
+    ".keyword_select"
+  ]) {
+    const root = page.locator(selector)
+    const control = root.locator(".multiselect")
+    const point = { x: 100, y: 14 }
+
+    await control.click({ position: point })
+    await expect(control).toHaveClass(/multiselect--active/)
+    await control.click({ position: point })
+    await expect(control).not.toHaveClass(/multiselect--active/)
+  }
 })
 
 test("vue-multiselect accepts Enter selection and keeps legacy dropdown geometry", async ({ page }) => {
@@ -1139,18 +1162,29 @@ test("category multiselect exposes legacy groups and canonicalizes selections fr
 
   const headings = categories.locator(".select2-results__group")
   await expect(headings).toHaveText(["Kategorier", "Projekt", "Avdelningar", "Utgivare"])
+  expect(await headings.evaluateAll(nodes => nodes.map(node => (
+    getComputedStyle(node.parentElement!).backgroundColor
+  )))).toEqual([
+    "rgba(0, 0, 0, 0)",
+    "rgba(0, 0, 0, 0)",
+    "rgba(0, 0, 0, 0)",
+    "rgba(0, 0, 0, 0)"
+  ])
 
   for (const option of [
     "Svenska Akademien",
     "Dramawebben",
     "Gunnar Ekelöf. Sent på jorden",
-    "Romaner"
+    "Romaner",
+    "Dramatik",
+    "Essäer"
   ]) {
     await categories.getByRole("option", { name: option, exact: true }).click()
   }
 
   await expect.poll(() => new URL(page.url()).searchParams.get("keywords")).toBe(
-    "texttype:roman,keyword:sentpajorden,keyword:Dramawebben,provenance.library:SA"
+    "texttype:drama;dramasamling,texttype:essä;essäsamling,texttype:roman,"
+      + "keyword:sentpajorden,keyword:Dramawebben,provenance.library:SA"
   )
   const query = new URL(page.url()).searchParams
   expect(query.getAll("utm")).toEqual(["keep", "twice"])
@@ -1160,6 +1194,8 @@ test("category multiselect exposes legacy groups and canonicalizes selections fr
   })).toBeVisible()
   await expect(categories.getByRole("button", { name: "Ta bort Dramawebben" })).toBeVisible()
   await expect(categories.getByRole("button", { name: "Ta bort Svenska Akademien" })).toBeVisible()
+  await expect(categories.getByRole("button", { name: "Ta bort Dramatik" })).toBeVisible()
+  await expect(categories.getByRole("button", { name: "Ta bort Essäer" })).toBeVisible()
 
   await page.keyboard.press("Escape")
   await expect(categories.locator(".multiselect__content-wrapper")).toBeHidden()

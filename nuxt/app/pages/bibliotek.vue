@@ -2013,7 +2013,7 @@ onUnmounted(() => {
                         @deselect-visible-source-works="deselectVisibleSourceWorks"
                     />
                     <div class="btn-group p-0 mt-4 lg:mt-6">
-                        <LibraryModeTabs :tabs="libraryModeTabs" />
+                        <LibraryModeTabs :tabs="libraryModeTabs" @navigate="loading = true" />
                     </div>
                 </LibrarySearchControls>
             </div>

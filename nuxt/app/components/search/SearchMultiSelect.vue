@@ -59,6 +59,7 @@ const emit = defineEmits<{
 
 const multiselect = ref<InstanceType<typeof VueMultiselect> | null>(null)
 const isOpen = ref(false)
+let closeOnControlClick = false
 const controlName = computed(() => props.accessibleName ?? props.placeholder)
 const flatOptions = computed(() => props.optionGroups.length > 0
   ? props.optionGroups.flatMap(group => group.options)
@@ -115,6 +116,24 @@ function toggleOptions() {
   toggleable?.toggle()
 }
 
+function isControlSurface(target: EventTarget | null): boolean {
+  return target instanceof Element
+    && (target.matches(".multiselect") || target.closest(".multiselect__tags") !== null)
+    && target.closest(".select2-selection__choice__remove") === null
+}
+
+function prepareControlClick(event: MouseEvent) {
+  closeOnControlClick = isOpen.value && isControlSurface(event.target)
+}
+
+function toggleActiveControl(event: MouseEvent) {
+  if (!closeOnControlClick) return
+  closeOnControlClick = false
+  event.preventDefault()
+  event.stopPropagation()
+  toggleOptions()
+}
+
 onMounted(() => {
   const search = multiselect.value?.$el.querySelector(
     "input.multiselect__input:not(.search-multiselect__input-row)"
@@ -133,6 +152,8 @@ onMounted(() => {
     :data-library-media="$attrs['data-library-media']"
     :data-library-narrowing="$attrs['data-library-narrowing']"
     class="filter_select select2 select2-container select2-container--default"
+    @mousedown.capture="prepareControlClick"
+    @click.capture="toggleActiveControl"
   >
     <VueMultiselect
       ref="multiselect"

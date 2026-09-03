@@ -123,6 +123,12 @@ test.describe("Nuxt whole-site staging smoke", () => {
         )
         await expect(page.locator('[data-library-mounted="true"]')).toBeVisible()
         await expect(page.locator("[data-library-filter]")).toBeVisible()
+        await expect(
+            page.locator("[data-library-chronology-range]")
+        ).toBeVisible()
+        await expect(
+            page.locator("[data-library-chronology-unavailable]")
+        ).toHaveCount(0)
         await expect(page.locator('[data-library-tab="works"]')).toHaveAttribute(
             "aria-current",
             "page"
