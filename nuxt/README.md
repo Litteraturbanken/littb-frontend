@@ -34,10 +34,10 @@ current lint baseline, and the full parity gate.
 Run the deployment only from this repository's persistent Stage checkout:
 
 ```text
-<littb>/.worktrees/stage
+<littb>
 ```
 
-Set `LB_INFRA_REPOSITORY` to the persistent `lb-infra` Stage checkout. The
+Set `LB_INFRA_REPOSITORY` to the primary `lb-infra` checkout on `master`. The
 script acquires the shared Stage job lock, and the guard then requires a clean
 local `stage` branch whose `HEAD` exactly matches freshly fetched
 `origin/stage`. It refuses feature worktrees, stale Stage sources, and any
@@ -50,7 +50,7 @@ frontend allocation to be healthy, runs the public identity-bound smoke suite,
 captures a receipt, and records the verified deployment in `lb-infra`:
 
 ```sh
-export LB_INFRA_REPOSITORY=/path/to/lb-infra/.worktrees/stage
+export LB_INFRA_REPOSITORY=/path/to/lb-infra
 export WAIT_FOR_BUILD=1
 scripts/deploy-stage.sh
 nomad job status lb-frontend-stage
