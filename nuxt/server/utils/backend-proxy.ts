@@ -11,6 +11,7 @@ import {
 } from "h3"
 
 import { correlationHeaders } from "./observability"
+import { compressApiResponse } from "./api-response-compression"
 
 type ProxyMethod = "GET" | "HEAD" | "POST"
 
@@ -87,6 +88,8 @@ export function safeBackendPath(value: string | undefined): string {
 
 function outboundHeaders(event: H3Event, method: ProxyMethod): Headers {
   const headers = new Headers(correlationHeaders(event))
+  // Fetch decodes upstream encodings. Compress once at the browser boundary.
+  headers.set("accept-encoding", "identity")
   for (const name of requestHeadersByMethod[method]) {
     const value = getHeader(event, name)
     if (value) headers.set(name, value)
@@ -133,11 +136,12 @@ async function proxyBackendTarget(
       signal: controller.signal
     })
     forwardResponseMetadata(event, response)
-    if (!response.body) {
+    const responseBody = compressApiResponse(event, response)
+    if (!responseBody) {
       event.node.res.end()
       return
     }
-    await sendStream(event, response.body)
+    await sendStream(event, responseBody)
   } catch (error) {
     if (controller.signal.aborted) return
     throw createError({

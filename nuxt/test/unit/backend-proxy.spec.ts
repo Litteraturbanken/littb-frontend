@@ -1,5 +1,6 @@
-import { createServer } from "node:http"
+import { createServer, get } from "node:http"
 import { once } from "node:events"
+import { gzipSync } from "node:zlib"
 
 import { createApp, toNodeListener } from "h3"
 import { afterEach, describe, expect, test, vi } from "vitest"
@@ -110,6 +111,145 @@ async function exerciseProxy(options: {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+})
+
+describe("public API compression", () => {
+  const json = JSON.stringify({ works: Array.from({ length: 300 }, (_, i) => ({
+    id: i, title: "Svenska sökträffar skulle kunna vara", hits: [1, 2, 3]
+  })) })
+
+  test.each(["GET", "POST"] as const)("compresses %s JSON with exact decoded parity", async method => {
+    const { request, response } = await exerciseProxy({
+      method,
+      headers: { "accept-encoding": "br, gzip" },
+      reply: { body: json, headers: {
+        "content-type": "application/json; charset=utf-8",
+        "etag": '"search-result"',
+        "vary": "Origin"
+      } }
+    })
+    expect(request.headers.get("accept-encoding")).toBe("identity")
+    expect(response.headers.get("content-encoding")).toBe("gzip")
+    expect(response.headers.get("content-length")).toBeNull()
+    expect(response.headers.get("vary")).toBe("Origin, Accept-Encoding")
+    expect(response.headers.get("etag")).toBe('W/"search-result"')
+    expect(await response.text()).toBe(json)
+  })
+
+  test.each(["", "identity", "gzip;q=0, *;q=1", "br", "gzip;q=bogus"])("respects %s negotiation", async encoding => {
+    const { response } = await exerciseProxy({
+      method: "POST", headers: { "accept-encoding": encoding },
+      reply: { body: json, headers: { "content-type": "application/json" } }
+    })
+    expect(response.headers.get("content-encoding")).toBeNull()
+    expect(response.headers.get("vary")).toBe("Accept-Encoding")
+    expect(await response.text()).toBe(json)
+  })
+
+  test.each(["GZIP;q=0.5", "*;q=0.5"])("accepts %s", async encoding => {
+    const { response } = await exerciseProxy({
+      method: "POST", headers: { "accept-encoding": encoding },
+      reply: { body: json, headers: { "content-type": "application/json", "vary": "*" } }
+    })
+    expect(response.headers.get("content-encoding")).toBe("gzip")
+    expect(response.headers.get("vary")).toBe("*")
+    expect(await response.text()).toBe(json)
+  })
+
+  test.each([
+    { status: 206, headers: { "content-type": "application/json", "content-range": "bytes 0-99/200" } },
+    { headers: { "content-type": "application/json", "cache-control": "public, no-transform" } },
+    { headers: { "content-type": "text/event-stream" } },
+    { headers: { "content-type": "image/png" } }
+  ])("preserves excluded response %j", async reply => {
+    const { response } = await exerciseProxy({
+      method: "GET", headers: { "accept-encoding": "gzip" }, reply: { ...reply, body: json }
+    })
+    expect(response.headers.get("content-encoding")).toBeNull()
+    expect(await response.text()).toBe(json)
+  })
+
+  test("keeps known small responses uncompressed", async () => {
+    const { response } = await exerciseProxy({
+      method: "GET", headers: { "accept-encoding": "gzip" },
+      reply: { body: '{"ok":true}', headers: { "content-type": "application/json", "content-length": "11" } }
+    })
+    expect(response.headers.get("content-encoding")).toBeNull()
+    expect(await response.json()).toEqual({ ok: true })
+  })
+
+  test.each([
+    { range: "bytes=0-99" },
+    { "cache-control": "max-age=0, no-transform" }
+  ])("respects request transformation restrictions %j", async headers => {
+    const { response } = await exerciseProxy({
+      method: "GET", headers: { ...headers, "accept-encoding": "gzip" },
+      reply: { body: json, headers: { "content-type": "application/json" } }
+    })
+    expect(response.headers.get("content-encoding")).toBeNull()
+    expect(await response.text()).toBe(json)
+  })
+
+  test("preserves HEAD metadata without creating a gzip body", async () => {
+    const { response } = await exerciseProxy({
+      method: "HEAD", headers: { "accept-encoding": "gzip" },
+      reply: { body: json, headers: { "content-type": "application/json", "etag": '"original"' } }
+    })
+    expect(response.headers.get("content-encoding")).toBeNull()
+    expect(response.headers.get("etag")).toBe('"original"')
+    expect(await response.text()).toBe("")
+  })
+
+  test("does not double-encode an upstream that ignores identity negotiation", async () => {
+    const { response } = await exerciseProxy({
+      method: "POST", headers: { "accept-encoding": "gzip" },
+      reply: { body: gzipSync(json), headers: {
+        "content-type": "application/json", "content-encoding": "gzip"
+      } }
+    })
+    expect(response.headers.get("content-encoding")).toBe("gzip")
+    expect(await response.text()).toBe(json)
+  })
+
+  test("streams gzip before upstream completion and cancels on disconnect", async () => {
+    let closed!: () => void
+    const upstreamClosed = new Promise<void>(resolve => { closed = resolve })
+    const upstream = createServer((_request, response) => {
+      response.writeHead(200, { "content-type": "application/json" })
+      response.write("[")
+      const timer = setInterval(() => response.write(JSON.stringify("skulle ".repeat(1000)) + ","), 5)
+      response.once("close", () => { clearInterval(timer); closed() })
+    }).listen(0, "127.0.0.1")
+    await once(upstream, "listening")
+    const address = upstream.address()
+    if (!address || typeof address === "string") throw new Error("Expected TCP server")
+    const app = createApp().use(event => proxyBackendRequest(event, `http://127.0.0.1:${address.port}`, "stream"))
+    const proxy = createServer(toNodeListener(app)).listen(0, "127.0.0.1")
+    await once(proxy, "listening")
+    const proxyAddress = proxy.address()
+    if (!proxyAddress || typeof proxyAddress === "string") throw new Error("Expected TCP server")
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const request = get(`http://127.0.0.1:${proxyAddress.port}/api/stream`, {
+          headers: { "accept-encoding": "gzip" }
+        }, response => {
+          expect(response.headers["content-encoding"]).toBe("gzip")
+          response.once("data", () => { request.destroy(); resolve() })
+        })
+        request.once("error", reject)
+      })
+      expect(await Promise.race([
+        upstreamClosed.then(() => true),
+        new Promise<boolean>(resolve => setTimeout(() => resolve(false), 1000))
+      ])).toBe(true)
+    } finally {
+      proxy.closeAllConnections()
+      upstream.closeAllConnections()
+      proxy.close()
+      upstream.close()
+      await Promise.all([once(proxy, "close"), once(upstream, "close")])
+    }
+  })
 })
 
 async function routeResponse(
