@@ -3234,9 +3234,9 @@ export interface components {
             /**
              * Title Limit
              * @default 30
-             * @enum {integer}
+             * @enum {unknown}
              */
-            title_limit: 0 | 30 | 500;
+            title_limit: 0 | 30 | 500 | "all";
             /**
              * Word Form Only
              * @default true

@@ -1,6 +1,25 @@
 import { describe, expect, test } from "vitest"
 
 describe("SearchMultiSelect grouped normalization", () => {
+  test("renders title options beyond the multiselect default limit", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, ssrContextKey }, { default: SearchMultiSelect }] = await Promise.all([
+      import("vue"), import("../../app/components/search/SearchMultiSelect.vue")
+    ])
+    const app = createApp({ setup: () => () => h(SearchMultiSelect, {
+      modelValue: [], placeholder: "Titlar",
+      options: Array.from({ length: 1501 }, (_, i) => ({ value: `lb${i}`, label: `Title ${i}` }))
+    }) })
+    app.provide(ssrContextKey, { modules: new Set<string>() })
+    app.mount(target)
+    target.querySelector<HTMLElement>(".multiselect")!.dispatchEvent(new window.Event("focus"))
+    await nextTick()
+    expect(target.querySelectorAll('[role="option"]')).toHaveLength(1501)
+    expect(target.textContent).toContain("Title 1500")
+    app.unmount()
+  })
+
   test("forwards only the reviewed class and Library marker attributes", async () => {
     const target = document.createElement("div")
     document.body.append(target)

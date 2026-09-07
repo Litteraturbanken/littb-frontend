@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue"
+import { computed, onMounted, ref, useId, watch } from "vue"
 import VueMultiselect from "vue-multiselect"
 
 defineOptions({ inheritAttrs: false })
@@ -41,6 +41,7 @@ const props = withDefaults(defineProps<{
   spaceAfterRemove?: boolean
   persistentInputRow?: boolean
   hideSelected?: boolean
+  preserveSearch?: boolean
 }>(), {
   optionGroups: () => [],
   accessibleName: undefined,
@@ -49,7 +50,8 @@ const props = withDefaults(defineProps<{
   loading: false,
   spaceAfterRemove: true,
   persistentInputRow: false,
-  hideSelected: false
+  hideSelected: false,
+  preserveSearch: false
 })
 
 const emit = defineEmits<{
@@ -59,6 +61,7 @@ const emit = defineEmits<{
 
 const multiselect = ref<InstanceType<typeof VueMultiselect> | null>(null)
 const isOpen = ref(false)
+const inputId = useId()
 let closeOnControlClick = false
 const controlName = computed(() => props.accessibleName ?? props.placeholder)
 const flatOptions = computed(() => props.optionGroups.length > 0
@@ -119,7 +122,7 @@ function toggleOptions() {
 function isControlSurface(target: EventTarget | null): boolean {
   return target instanceof Element
     && (target.matches(".multiselect") || target.closest(".multiselect__tags") !== null)
-    && target.closest(".select2-selection__choice__remove") === null
+    && target.closest(".select2-selection__choice__remove, input:not([readonly])") === null
 }
 
 function prepareControlClick(event: MouseEvent) {
@@ -151,15 +154,18 @@ onMounted(() => {
     :data-library-languages="$attrs['data-library-languages']"
     :data-library-media="$attrs['data-library-media']"
     :data-library-narrowing="$attrs['data-library-narrowing']"
+    :data-preserve-search="preserveSearch || undefined"
     class="filter_select select2 select2-container select2-container--default"
     @mousedown.capture="prepareControlClick"
     @click.capture="toggleActiveControl"
   >
     <VueMultiselect
+      :id="inputId"
       ref="multiselect"
       class="select2-selection select2-selection--multiple"
       :model-value="selectedOptions"
       :options="multiselectOptions"
+      :options-limit="flatOptions.length + optionGroups.length"
       :name="controlName"
       :aria-label="controlName"
       :group-values="optionGroups.length > 0 ? 'options' : undefined"
@@ -173,6 +179,8 @@ onMounted(() => {
       track-by="value"
       label="label"
       :close-on-select="false"
+      :preserve-search="preserveSearch"
+      :clear-on-select="!preserveSearch"
       :hide-selected="hideSelected"
       :show-labels="false"
       :allow-empty="true"
@@ -207,7 +215,7 @@ onMounted(() => {
 
       <template #selection="{ values, remove }">
         <input
-          v-if="values.length && persistentInputRow && (!searchable || !isOpen)"
+          v-if="values.length && persistentInputRow && (!searchable || (!isOpen && !preserveSearch))"
           class="multiselect__input search-multiselect__input-row"
           type="search"
           :placeholder="placeholder"
@@ -252,6 +260,12 @@ onMounted(() => {
           :aria-disabled="option.$isDisabled ? 'true' : undefined"
         >{{ option.label }}</span>
       </template>
+
+      <template #beforeList><slot name="beforeList" /></template>
+      <template #afterList><slot name="afterList" /></template>
+
+      <template #noResult>Inga matchande alternativ.</template>
+      <template #noOptions>Inga alternativ att visa.</template>
 
       <template #loading>
         <i

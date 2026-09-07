@@ -446,7 +446,7 @@ export function buildTextSearchResultsRequest(
 export type TextSearchOptionsInput = Readonly<{
   titleFilter?: string
   selectedWorkIds?: readonly string[]
-  titleLimit?: 0 | 30 | 500
+  titleLimit?: 0 | 30 | 500 | "all"
   includeStaticOptions?: boolean
 }>
 
@@ -457,8 +457,8 @@ export function buildTextSearchOptionsRequest(
   const titleFilter = (input.titleFilter ?? "").trim()
   if (titleFilter.length > 200) throw new RangeError("Title filter is too long")
   const titleLimit = input.titleLimit ?? 30
-  if (titleLimit !== 0 && titleLimit !== 30 && titleLimit !== 500) {
-    throw new RangeError("Title limit must be 0, 30, or 500")
+  if (titleLimit !== 0 && titleLimit !== 30 && titleLimit !== 500 && titleLimit !== "all") {
+    throw new RangeError("Title limit must be 0, 30, 500, or all")
   }
   const selectedWorkIds = distinctBounded(
     (input.selectedWorkIds ?? state.workIds).filter(isSafeIdentifier),
@@ -727,8 +727,8 @@ function isTextSearchOptionsResponse(value: unknown): value is TextSearchOptions
     "about_authors"
   ], [
     "year_from", "year_to"
-  ]) || !isBoundedArray(value.title_options, 550, isTitleOption) ||
-    !isSafeInteger(value.title_total) ||
+  ]) || !isSafeInteger(value.title_total) ||
+    !isBoundedArray(value.title_options, value.title_total + 50, isTitleOption) ||
     !isBoundedArray(value.title_author_facets, 10_000, isAuthorFacet) ||
     !isBoundedArray(value.authors, 10_000, isAuthorOption) ||
     !isBoundedArray(value.about_authors, 10_000, isAuthorOption) ||
@@ -752,7 +752,7 @@ export function acceptTextSearchOptionsResponse(
   const optionIds = value.title_options.map(option => option.work_id)
   const ordinaryCount = optionIds.length - selectedWorkIds.length
   if (!selectedWorkIds.every((workId, index) => optionIds[index] === workId) ||
-    ordinaryCount < 0 || ordinaryCount > request.title_limit ||
+    ordinaryCount < 0 || (request.title_limit !== "all" && ordinaryCount > request.title_limit) ||
     ordinaryCount > value.title_total ||
     value.title_author_facets.some(facet =>
       facet.count < 1 || facet.count > value.title_total)) return null

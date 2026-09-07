@@ -599,7 +599,7 @@
         display: none;
     }
 
-    .multiselect:not(.multiselect--active):has(.select2-selection__choice)
+    &:not([data-preserve-search]) .multiselect:not(.multiselect--active):has(.select2-selection__choice)
         .search-multiselect__native-search {
         display: none;
     }
@@ -787,4 +787,79 @@
         top: 0.21875px;
     }
 
+}
+
+// Keep advanced search controls and status text within their own column.
+.page-search #mainview #text-search-advanced-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em 79.78125px;
+
+    > .left, > .right {
+        margin-right: 0;
+        width: 350px;
+        max-width: 100%;
+        min-width: 0;
+        white-space: normal;
+    }
+
+    .title_limit_notice, .title_options_error, .title_select_show_all {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        padding: 6px;
+        margin: 0;
+        font: inherit;
+        line-height: inherit;
+        text-align: left;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .title_limit_notice {
+        color: #999;
+        cursor: default;
+    }
+
+    .title_select_show_all {
+        border: 0;
+        background: transparent;
+        color: inherit;
+
+        &:hover, &:focus-visible {
+            background: #eee;
+        }
+    }
+
+    .multiselect__option {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .multiselect__content {
+        min-width: 0;
+    }
+
+    .filter_select, .multiselect__tags {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .filter_select input.multiselect__input {
+        width: 100% !important;
+        min-width: 0;
+        height: 28px;
+        min-height: 28px;
+        padding: 5px 5px 5px 10px !important;
+        margin: 0;
+        transform: none;
+        color: #444;
+        -webkit-text-fill-color: #444;
+        opacity: 1;
+
+        &::placeholder {
+            color: #9e9e9e;
+            -webkit-text-fill-color: #9e9e9e;
+        }
+    }
 }

@@ -523,6 +523,9 @@ const optionsRequestOwner = createTextSearchRequestOwner()
 const optionsIdentity = computed(() => textSearchOptionsRequestIdentity(
   buildTextSearchOptionsRequest(state.value)
 ))
+const optionsFilterIdentity = computed(() => textSearchOptionsRequestIdentity(
+  buildTextSearchOptionsRequest(state.value, { selectedWorkIds: [] })
+))
 const optionsLoadState = shallowRef<OptionsLoadState>({
   identity: optionsIdentity.value,
   status: optionsCache.value[optionsIdentity.value]?.staticComplete
@@ -751,14 +754,9 @@ const titleOptionsExpanded = ref(false)
 const titleFilterText = ref("")
 let failedTitleOptionsRequest: Readonly<{
   titleFilter: string
-  titleLimit: 30 | 500
+  titleLimit: 30 | "all"
 }> | null = null
-watch(optionsIdentity, () => {
-  titleOptionsExpanded.value = false
-  titleOptionsFailed.value = false
-  failedTitleOptionsRequest = null
-})
-async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) {
+async function loadTitleOptions(titleFilter: string, titleLimit: 30 | "all" = 30) {
   const requestedState = state.value
   const identity = textSearchOptionsRequestIdentity(buildTextSearchOptionsRequest(requestedState))
   const request = titleRequestOwner.start(identity)
@@ -787,7 +785,7 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
         titles: optionsView(accepted).titles,
         titleTotal: accepted.title_total
       }
-      titleOptionsExpanded.value = titleLimit === 500
+      titleOptionsExpanded.value = titleLimit === "all"
       failedTitleOptionsRequest = null
     } else if (titleRequestOwner.isCurrent(request, optionsIdentity.value)) {
       titleOptionsFailed.value = true
@@ -824,7 +822,7 @@ function queueTitleOptions(titleFilter: string) {
 function showAllTitleOptions() {
   if (titleTimer) clearTimeout(titleTimer)
   titleTimer = null
-  void loadTitleOptions(titleFilterText.value, 500)
+  void loadTitleOptions(titleFilterText.value, "all")
 }
 
 function retryTitleOptions() {
@@ -1028,8 +1026,20 @@ function selectedMode(mode: string): boolean {
 }
 
 watch(
-  [optionsIdentity, () => state.value.advanced],
-  ([identity, advanced], [previousIdentity]) => {
+  [optionsIdentity, () => state.value.advanced, optionsFilterIdentity],
+  ([identity, advanced, filterIdentity], [previousIdentity, , previousFilterIdentity]) => {
+    if (advanced && identity !== previousIdentity && filterIdentity === previousFilterIdentity) {
+      // Selecting a title does not change the available filter choices.
+      const cached = optionsCache.value[previousIdentity]
+      if (cached) optionsCache.value[identity] = cached
+      if (titleOptionsOverride.value) {
+        titleOptionsOverride.value = { ...titleOptionsOverride.value, identity }
+      }
+      titleRequestOwner.cancel()
+      titleLoading.value = false
+      if (titleFilterText.value && !titleOptionsExpanded.value) queueTitleOptions(titleFilterText.value)
+      return
+    }
     if (identity !== previousIdentity || !advanced) cancelTitleOptions()
   },
   { flush: "sync" }
@@ -1572,35 +1582,6 @@ v-for="item in [
             />
           </div>
           <div class="title_select_container">
-            <div
-              v-if="titleFilterText
-                && titleOptionsOverride?.identity === optionsIdentity
-                && titleOptionsOverride.titleFilter === titleFilterText
-                && (options?.titleTotal ?? 0) > (options?.titles.length ?? 0)"
-              class="title_limit_notice"
-            >
-              {{ titleFilterText
-                ? `Visar de första ${options?.titles.length} matchande titlarna`
-                : `Visar de första ${options?.titles.length} titlarna` }}
-              <button
-                v-if="!titleOptionsExpanded && !titleOptionsFailed"
-                type="button"
-                @mousedown.prevent
-                @click="showAllTitleOptions"
-              >
-                {{ titleFilterText
-                  ? `Visa alla ${options?.titleTotal} matchande titlar`
-                  : `Visa alla ${options?.titleTotal} titlar` }}
-              </button>
-            </div>
-            <p v-if="titleOptionsFailed" class="title_options_error" role="alert">
-              Fler titlar kunde inte hämtas.
-              <button
-                type="button"
-                @mousedown.prevent
-                @click="retryTitleOptions"
-              >Försök igen</button>
-            </p>
             <SearchMultiSelect
               class="title_select"
               persistent-input-row
@@ -1609,10 +1590,38 @@ v-for="item in [
               placeholder="Titlar"
               searchable
               hide-selected
+              preserve-search
               :loading="titleLoading"
               @query="queueTitleOptions"
               @update:model-value="patchFilters({ workIds: $event })"
-            />
+            >
+              <template #beforeList>
+                <li
+                  v-if="!titleOptionsExpanded && (options?.titleTotal ?? 0) > 30"
+                  class="title_limit_notice select2-results__option"
+                  role="option"
+                  aria-disabled="true"
+                >{{ titleFilterText
+                  ? "Visar de första 30 matchande titlarna"
+                  : "Visar de första 30 titlarna" }}</li>
+              </template>
+              <template #afterList>
+                <li v-if="titleOptionsFailed" class="title_options_error" role="alert">
+                  Fler titlar kunde inte hämtas.
+                  <button type="button" @mousedown.prevent @click="retryTitleOptions">Försök igen</button>
+                </li>
+                <li v-else-if="!titleOptionsExpanded && (options?.titleTotal ?? 0) > 30">
+                  <button
+                    type="button"
+                    class="title_select_show_all select2-results__option"
+                    @mousedown.prevent
+                    @click="showAllTitleOptions"
+                  >{{ titleFilterText
+                    ? `Visa alla ${options?.titleTotal} matchande titlar`
+                    : `Visa alla ${options?.titleTotal} titlar` }}</button>
+                </li>
+              </template>
+            </SearchMultiSelect>
           </div>
           <div class="lang_select_container">
             <SearchMultiSelect
@@ -2037,10 +2046,6 @@ v-for="item in [
   margin-bottom: calc(2em - 34px) !important;
 }
 
-.bottom_row > .left {
-  margin-right: 79.78125px !important;
-}
-
 .littb_pager .ctrl li:not(.arrows) > button {
   display: inline !important;
   width: auto !important;
@@ -2064,10 +2069,6 @@ v-for="item in [
   .bottom_row {
     margin-top: 2em !important;
     margin-bottom: 2em !important;
-  }
-
-  .bottom_row > .left {
-    margin-right: 57px !important;
   }
 
   .bottom_row > .left > div:first-child {

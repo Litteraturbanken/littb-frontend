@@ -992,6 +992,22 @@ describe("text search route state", () => {
     expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
   })
 
+  test("accepts more than 1000 titles only when all titles were requested", () => {
+    const state = parseTextSearchRouteQuery({})
+    const response = { ...optionsResponse(), title_total: 1501,
+      title_author_facets: [],
+      title_options: Array.from({ length: 1501 }, (_, i) => ({
+        work_id: `lb${i}`, title: `Title ${i}`, author_name: "Author"
+      })) }
+    for (const titleLimit of [500, "all"] as const) {
+      const request = buildTextSearchOptionsRequest(state, { titleLimit })
+      const accepted = acceptTextSearchOptionsResponse(response, request,
+        textSearchOptionsRequestIdentity(request))
+      if (titleLimit === "all") expect(accepted?.title_options).toHaveLength(1501)
+      else expect(accepted).toBeNull()
+    }
+  })
+
   test("accepts strict options and the 50 selected plus 500 ordinary boundary", () => {
     const state = parseTextSearchRouteQuery({ fras: "frihet" })
 
