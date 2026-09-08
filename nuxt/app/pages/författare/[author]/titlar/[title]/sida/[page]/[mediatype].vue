@@ -1629,7 +1629,7 @@ function workSearchDisclosureFullPath(enabled: boolean): string {
 }
 
 async function toggleWorkSearch(): Promise<void> {
-  if (!etextReader.value) return
+  if (!reader.value?.searchable) return
   const enabled = !workSearchOpen.value
   if (!enabled) cancelPendingWorkSearchSubmission()
   workSearchMessage.value = ""
@@ -2303,11 +2303,9 @@ watch(readerRequestIdentity, () => {
         :aria-label="`${reader.title}, sida ${reader.pageName}`"
         @click="toggleFocusBar"
       >
-        <RenderableHtmlContent
+        <ReaderEtextContent
           v-if="etextReader"
-          as="div"
           :html="markedReaderHtml"
-          class="etext txt"
         />
         <ReaderFacsimileImage
           v-else-if="markedFacsimileReader && selectedFacsimileSize"
@@ -2550,7 +2548,7 @@ watch(readerRequestIdentity, () => {
                   @click.prevent="openSourceInfoFromSidebar"
                 >{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a></li>
                 <li><a :href="focusHref" @click.prevent="activateFocus">Läsfokus</a></li>
-                <li v-if="reader.searchable && etextReader">
+                <li v-if="reader.searchable">
                   <button
                     type="button"
                     class="reader-work-search-trigger reader-action-button"
@@ -2742,7 +2740,7 @@ watch(readerRequestIdentity, () => {
             <a :href="sourceInfoHref">{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a>
             <a :href="focusHref">Läsfokus</a>
             <a
-              v-if="reader.searchable && etextReader"
+              v-if="reader.searchable"
               class="reader-work-search-trigger"
               :href="workSearchDisclosureFullPath(true)"
             >Sök i verket</a>

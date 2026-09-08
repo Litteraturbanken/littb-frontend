@@ -15,6 +15,7 @@ type PendingReaderNavigation = {
 }
 
 type PendingReaderScroll = {
+  initial?: boolean
   navigationId: number
   position: { left: number; top: number }
   resolve: (position: { left: number; top: number } | false) => void
@@ -73,6 +74,14 @@ export default defineNuxtPlugin({
     let pendingNavigation: PendingReaderNavigation | null = null
     let pendingScroll: PendingReaderScroll | null = null
     const readyRoutes = new Set<string>()
+    let initialReaderPositioned = false
+    const initialPosition = () => window.innerWidth > 768
+      ? { left: 1000, top: 0 }
+      : {
+          left: 0,
+          top: (document.querySelector(".reader_main")?.getBoundingClientRect().top ?? 0)
+            + window.scrollY
+        }
 
     router.beforeEach((to, from) => {
       const readerPageNavigation = isReaderPageNavigation(to, from)
@@ -100,6 +109,23 @@ export default defineNuxtPlugin({
       navigationId += 1
       pendingScroll?.resolve(false)
       pendingScroll = null
+      const enteringReader = readerRoute(to) !== null
+        && readerRoute(to)?.identity !== readerRoute(from)?.identity
+        && !savedPosition
+      if (enteringReader) {
+        initialReaderPositioned = true
+        pendingNavigation = null
+        if (readyRoutes.delete(to.fullPath)) return initialPosition()
+        return new Promise(resolve => {
+          pendingScroll = {
+            initial: true,
+            navigationId,
+            position: { left: 0, top: 0 },
+            resolve,
+            to: to.fullPath
+          }
+        })
+      }
       if (!isReaderPageNavigation(to, from)) {
         readyRoutes.clear()
         pendingNavigation = null
@@ -141,11 +167,18 @@ export default defineNuxtPlugin({
         && current.to === fullPath
       ) {
         pendingScroll = null
-        current.resolve(successful ? current.position : { left: 0, top: 0 })
+        current.resolve(successful
+          ? current.initial ? initialPosition() : current.position
+          : { left: 0, top: 0 })
         return
       }
       if (successful && router.currentRoute.value.fullPath === fullPath) {
         readyRoutes.add(fullPath)
+        // The initial hydrated route may predate the router wrapper.
+        if (!initialReaderPositioned) {
+          initialReaderPositioned = true
+          window.scrollTo(initialPosition())
+        }
       }
     })
 

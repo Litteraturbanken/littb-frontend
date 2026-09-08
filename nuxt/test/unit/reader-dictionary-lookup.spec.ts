@@ -9,7 +9,7 @@ vi.mock("../../app/composables/useLbApiClient", () => ({
   useLbApiClient: () => ({ GET: dictionaryGet })
 }))
 
-async function mountLookup() {
+async function mountLookup(mode = "legacy", so?: string) {
   const [{ createApp, defineComponent, h, nextTick, reactive, ref, shallowRef, computed,
     onBeforeMount, onBeforeUnmount, watch }, { default: LegacyNotice }, {
     default: ReaderDictionaryLookup
@@ -22,7 +22,7 @@ async function mountLookup() {
     fullPath: "/reader",
     hash: "",
     path: "/reader",
-    query: {} as Record<string, string | null>
+    query: (so === undefined ? {} : { so }) as Record<string, string | null>
   })
   const router = {
     push: vi.fn(),
@@ -47,7 +47,7 @@ async function mountLookup() {
   vi.stubGlobal("useRoute", () => route)
   vi.stubGlobal("useRouter", () => router)
   vi.stubGlobal("useRuntimeConfig", () => ({
-    public: { readerDictionaryMode: "legacy" }
+    public: { readerDictionaryMode: mode }
   }))
   vi.stubGlobal("watch", watch)
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
@@ -98,7 +98,7 @@ async function mountLookup() {
     expect(dictionaryGet).toHaveBeenCalled()
   }
 
-  return { app, failLookup, instance, nextTick, route, target }
+  return { app, embed, router, failLookup, instance, nextTick, route, target }
 }
 
 describe("ReaderDictionaryLookup transient notice lifecycle", () => {
@@ -132,5 +132,20 @@ describe("ReaderDictionaryLookup transient notice lifecycle", () => {
 
     expect(harness.instance.$.subTree.component.setupState.message).toBe("")
     expect(vi.getTimerCount()).toBe(baselineTimers)
+  })
+})
+
+
+describe("ReaderDictionaryLookup URL lookup", () => {
+  test("starts the embed lookup from so on initial mount without changing history", async () => {
+    const { embed, router } = await mountLookup("embed", "Stilmarkörer")
+    expect(embed.start).toHaveBeenCalledExactlyOnceWith("Stilmarkörer")
+    expect(router.push).not.toHaveBeenCalled()
+    expect(router.replace).not.toHaveBeenCalled()
+  })
+
+  test.each([undefined, "", "two words"])("does not open for invalid so %s", async so => {
+    const { embed } = await mountLookup("embed", so)
+    expect(embed.start).not.toHaveBeenCalled()
   })
 })

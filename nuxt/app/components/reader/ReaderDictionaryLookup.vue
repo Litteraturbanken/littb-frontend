@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ComponentPublicInstance } from "vue"
+import { onMounted, type ComponentPublicInstance } from "vue"
 
 import type { components } from "~/lib/api/generated/lbapi"
 import type { SanitizedHtml } from "#shared/types/renderable-html"
@@ -12,7 +12,8 @@ import {
 } from "~/lib/reader-dictionary"
 import {
   buildSvenskaDictionaryUrl,
-  readerDictionaryMode
+  readerDictionaryMode,
+  readerLookupWord
 } from "~/lib/reader-dictionary-embed"
 
 type DictionaryArticle = components["schemas"]["DictionaryArticleResponse"]
@@ -230,8 +231,7 @@ async function lookup(): Promise<void> {
   articleHtml.value = emptyRenderableHtml()
   if (mode === "embed") {
     await setRouteLookupWord(selected.word)
-    embedAttemptWord.value = selected.word
-    embed.start(selected.word)
+    syncRouteLookup()
     return
   }
   closeEmbed()
@@ -296,6 +296,26 @@ function setEmbedFrame(element: Element | ComponentPublicInstance | null): void 
   embed.frame.value = element instanceof HTMLIFrameElement ? element : null
 }
 
+function syncRouteLookup(): void {
+  if (mode !== "embed") return
+  const word = readerLookupWord(route.query.so)
+  if (word === embedAttemptWord.value) return
+  cancelLookup()
+  closeLegacy()
+  clearIndicator()
+  if (!word) {
+    closeEmbed()
+    return
+  }
+  embedAttemptWord.value = word
+  embed.start(word)
+}
+
+onMounted(syncRouteLookup)
+watch(() => route.fullPath, () => {
+  if (import.meta.client) syncRouteLookup()
+}, { flush: "post" })
+
 watch(() => {
   const query = { ...route.query }
   Reflect.deleteProperty(query, "so")
@@ -308,7 +328,6 @@ watch(() => {
   clearIndicator()
   closeLegacy()
   clearMessage()
-  if (route.query.so !== undefined) void setRouteLookupWord(null, { replace: true })
 })
 
 onBeforeMount(() => {

@@ -2784,6 +2784,22 @@ test("Reader sidebar reveals one delayed text-only tooltip only for a distinct f
   expect(problems).toEqual([])
 })
 
+test("opening a reader positions the work like the legacy reader", async ({ page, isMobile }) => {
+  if (!isMobile) await page.setViewportSize({ width: 800, height: 900 })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  if (isMobile) {
+    await expect.poll(() => page.locator(".reader_main").evaluate(
+      element => Math.round(element.getBoundingClientRect().top)
+    )).toBe(0)
+  } else {
+    const target = await page.evaluate(
+      () => Math.min(1000, document.documentElement.scrollWidth - window.innerWidth)
+    )
+    expect(target).toBeGreaterThan(0)
+    await expect.poll(() => page.evaluate(() => window.scrollX)).toBe(target)
+  }
+})
+
 test("page navigation preserves each page's horizontal history position", async ({
   isMobile,
   page

@@ -167,7 +167,7 @@ onMounted(() => {
                 <template v-for="(author, index) in sourceInfo.authors" :key="author.authorId">
                   <template v-if="index > 0"><template
                     v-if="index === sourceInfo.authors.length - 1"
-                  > <em class="font-normal">&amp;</em> </template><template v-else>, </template></template><NuxtLink
+                  >{{ " " }}<em class="font-normal">&amp;</em>{{ " " }}</template><template v-else>, </template></template><NuxtLink
                     :to="canonicalNuxtHref(author.url)"
                   >{{ author.fullName }} <span
                     v-if="authorRole(author.authorType, author.role)"
