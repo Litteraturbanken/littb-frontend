@@ -122,7 +122,8 @@ function toggleOptions() {
 function isControlSurface(target: EventTarget | null): boolean {
   return target instanceof Element
     && (target.matches(".multiselect") || target.closest(".multiselect__tags") !== null)
-    && target.closest(".select2-selection__choice__remove, input:not([readonly])") === null
+    && target.closest(".select2-selection__choice__remove") === null
+    && !(props.preserveSearch && target.closest("input:not([readonly])") !== null)
 }
 
 function prepareControlClick(event: MouseEvent) {

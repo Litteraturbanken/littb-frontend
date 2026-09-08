@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, useId } from "vue"
+import type { DownloadResult } from "../../lib/library/view-model"
 import type { RouteLocationRaw } from "vue-router"
 import { libraryTooltipDirective } from "../../directives/library-tooltip"
 import { canonicalNuxtHref } from "../../lib/internal-navigation"
@@ -26,6 +27,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     selectSort: [sort: EpubSortKey]
     selectPage: [page: number]
+    downloadEpub3: [item: DownloadResult]
 }>()
 
 const vLibraryTooltip = libraryTooltipDirective
@@ -33,6 +35,11 @@ const imprintYearTargetsByYear = computed(
     () => new Map(props.imprintYearTargets.map(target => [target.year, target.to]))
 )
 const sortDirectionId = `library-download-sort-direction-${useId()}`
+function download(event: MouseEvent, item: DownloadResult): void {
+    if (!event.altKey || props.mode !== "epub") return
+    event.preventDefault()
+    emit("downloadEpub3", item)
+}
 
 function hasImprintYearTarget(year: string): boolean {
     return imprintYearTargetsByYear.value.has(year)
@@ -179,6 +186,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                             :href="item.downloadHref"
                             :download="item.downloadFilename"
                             target="_self"
+                            @click="download($event, item)"
                             >Hämta</a
                         >
                         <span

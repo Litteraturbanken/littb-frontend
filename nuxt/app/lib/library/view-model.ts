@@ -60,6 +60,7 @@ export type DownloadResult = {
   authorHref: string
   downloadHref: string
   downloadFilename: string
+  epub3Lookup?: { authorId: string, titlePath: string }
 }
 
 type BrowseAction = {
@@ -386,7 +387,10 @@ function mapDownloadItem(item: DownloadItem, mode: DownloadMode): DownloadResult
     },
     authorHref: safeLibraryAuthorHref(item.author_url) ?? "",
     downloadHref: safeLibraryDownloadHref(item.download_url, mode) ?? "",
-    downloadFilename: item.download_filename
+    downloadFilename: item.download_filename,
+    ...(mode === "epub" ? {
+      epub3Lookup: { authorId: item.route_author_id, titlePath: item.route_title_id }
+    } : {})
   }
 }
 

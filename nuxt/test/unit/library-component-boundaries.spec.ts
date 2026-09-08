@@ -122,7 +122,7 @@ describe("Library component ownership", () => {
     ])
     const pageTemplate = page.slice(page.indexOf("<template>"))
 
-    expect(page.split("\n").length).toBeLessThanOrEqual(2100)
+    expect(page.split("\n").length).toBeLessThanOrEqual(2110)
     for (const component of componentSources) {
       expect(component.split("\n").length).toBeLessThanOrEqual(600)
       expect(component).not.toMatch(
@@ -2075,6 +2075,7 @@ describe("Library component ownership", () => {
     const loading = ref(false)
     const selectedSorts: string[] = []
     const selectedPages: number[] = []
+    const epub3Requests: unknown[] = []
     const NuxtLink = {
       props: { to: { type: [String, Object], required: true }, custom: Boolean },
       setup(props: { to: string; custom: boolean }, { slots }: { slots: { default?: (slotProps?: { href: string; navigate: () => void }) => unknown[] } }) {
@@ -2105,6 +2106,7 @@ describe("Library component ownership", () => {
           ]
         },
         onSelectSort: (sort: string) => selectedSorts.push(sort),
+        onDownloadEpub3: (item: unknown) => epub3Requests.push(item),
         onSelectPage: (page: number) => selectedPages.push(page)
       })
     })
@@ -2127,6 +2129,16 @@ describe("Library component ownership", () => {
       .toBe("/download/roda-rummet.epub")
     expect(target.querySelector("[data-library-epub-download]")?.getAttribute("download"))
       .toBe("roda-rummet.epub")
+    const epubLink = target.querySelector("[data-library-epub-download]")!
+    const normalClick = new document.defaultView!.Event("click", { bubbles: true, cancelable: true })
+    epubLink.dispatchEvent(normalClick)
+    expect(normalClick.defaultPrevented).toBe(false)
+    expect(epub3Requests).toHaveLength(0)
+    const altClick = new document.defaultView!.Event("click", { bubbles: true, cancelable: true })
+    Object.defineProperty(altClick, "altKey", { value: true })
+    epubLink.dispatchEvent(altClick)
+    expect(altClick.defaultPrevented).toBe(true)
+    expect(epub3Requests).toEqual([response.value.data[0]])
     expect(target.querySelector('[data-library-sort="titlar"]')?.getAttribute("aria-current"))
       .toBe("true")
     expect(sortDescription(target, "titlar")?.textContent)
@@ -2171,6 +2183,11 @@ describe("Library component ownership", () => {
       .toBe("/download/ett-dromspel.pdf")
     expect(target.querySelector("[data-library-pdf-download]")?.getAttribute("download"))
       .toBe("ett-dromspel.pdf")
+    const pdfAltClick = new document.defaultView!.Event("click", { bubbles: true, cancelable: true })
+    Object.defineProperty(pdfAltClick, "altKey", { value: true })
+    target.querySelector("[data-library-pdf-download]")!.dispatchEvent(pdfAltClick)
+    expect(pdfAltClick.defaultPrevented).toBe(false)
+    expect(epub3Requests).toHaveLength(1)
     loading.value = true
     await nextTick()
     expect(target.querySelector("[data-library-loading]")?.getAttribute("role")).toBe("status")

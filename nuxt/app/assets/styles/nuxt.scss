@@ -500,8 +500,8 @@
     }
 }
 
-.page-library #mainview form:has([data-library-narrowing] .multiselect--active),
-.page-epub #mainview form:has([data-library-narrowing] .multiselect--active) {
+.page-library #mainview form:has([data-library-advanced-panel] .multiselect--active),
+.page-epub #mainview form:has([data-library-advanced-panel] .multiselect--active) {
     overflow: visible;
 }
 

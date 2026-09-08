@@ -2,6 +2,7 @@
 import type { LocationQuery, RouteLocationRaw } from "vue-router"
 import libraryBackground from "~/assets/img/biblioteket_bakgrund.jpg"
 import epubBackground from "~/assets/img/ljudlandskap.jpg"
+import { useEpub3Download } from "~/composables/useEpub3Download"
 import { useLbApiClient } from "~/composables/useLbApiClient"
 import { legacyPaginationItems, type LegacyPaginationItem } from "~/lib/legacy-pagination"
 import type {
@@ -278,6 +279,7 @@ function emptyPageData(mode: LibraryMode, failed = false): LibraryPageState {
 }
 
 const libraryClient = useLbApiClient()
+const { epub3Error, epub3Loading, downloadEpub3 } = useEpub3Download(libraryClient)
 
 async function fetchLibraryCount(
     mode: LibraryCountMode,
@@ -2091,7 +2093,10 @@ onUnmounted(() => {
                         :pagination="epubPagination"
                         @select-sort="selectSort"
                         @select-page="selectPage"
+                        @download-epub3="downloadEpub3"
                     />
+                    <p v-if="epub3Loading" role="status">Hämtar EPUB3 …</p>
+                    <p v-if="epub3Error" role="alert">{{ epub3Error }}</p>
                 </div>
             </div>
         </div>
