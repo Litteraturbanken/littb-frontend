@@ -964,11 +964,14 @@ const sliderDraftIndex = computed(() => {
   if (!draft || maximum === null || draft.identity !== readerRequestIdentity.value) return null
   return Math.min(maximum, Math.max(0, draft.rawIndex))
 })
-const sliderValue = computed(() => sliderDraftIndex.value ?? reader.value?.pageIndex ?? 0)
+const pageRouteDraftIndex = computed(() => reader.value?.pageMap.find(
+  page => page.page_name === pageRouteDraftName.value
+)?.page_index ?? reader.value?.pageIndex ?? 0)
+const sliderValue = computed(() => sliderDraftIndex.value ?? pageRouteDraftIndex.value)
 const sliderPercent = computed(() => {
   const maximum = sliderMaximum.value
-  if (sliderDraftIndex.value === null || maximum === null || maximum === 0) return null
-  return sliderDraftIndex.value / maximum * 100
+  if (maximum === null || maximum === 0) return null
+  return sliderValue.value / maximum * 100
 })
 function sliderPageName(rawIndex: number): string {
   return reader.value?.pageMap.find(page => page.page_index === rawIndex)?.page_name ?? String(rawIndex)
@@ -2363,7 +2366,7 @@ watch(readerRequestIdentity, () => {
               >{{ reader.title }}</a>
               <span v-if="reader.imprintYear"> ({{ reader.imprintYear }})</span>
             </div>
-            <span class="reader-page-position sr-only">{{ reader.pageName }} av {{ reader.pageCount }}</span>
+            <span class="reader-page-position sr-only">{{ pageRouteDraftName }} av {{ reader.pageCount }}</span>
 
             <hr>
 
@@ -2457,7 +2460,7 @@ watch(readerRequestIdentity, () => {
               >Gå till sista sidan</a>
               <br>
               <form class="goto" @submit.prevent="submitGoto"><button type="button" class="reader-action-button" @click="toggleGoto">Gå till sida . . .
-                <span class="pages">{{ reader.pageName }} av {{ reader.endPageName || reader.pageCount }}</span></button>
+                <span class="pages">{{ pageRouteDraftName }} av {{ reader.endPageName || reader.pageCount }}</span></button>
                 <template v-if="showGotoInput">
                   <input ref="gotoInput" v-model="gotoPage" type="text" aria-label="Gå till sida">
                   <button type="submit" class="goto-submit" aria-label="Gå"><i class="fa fa-angle-double-right" /></button>
@@ -2732,7 +2735,7 @@ watch(readerRequestIdentity, () => {
                 :href="pageHref(reader.nextPageName)"
               >Nästa sida</a>
             </nav>
-            <span class="reader-page-position">{{ reader.pageName }} av {{ reader.pageCount }}</span>
+            <span class="reader-page-position">{{ pageRouteDraftName }} av {{ reader.pageCount }}</span>
             <a
               v-if="reader.parts.length"
               :href="contentsHref"
