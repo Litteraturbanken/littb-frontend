@@ -2196,8 +2196,16 @@ describe("Library component ownership", () => {
     expect(target.querySelector("[data-library-loading] .spinner")?.getAttribute("aria-hidden"))
       .toBe("true")
     response.value = { ...response.value, data: [], hits: 0, distinctHits: 0 }
-    await nextTick()
-    expect(target.querySelector("[data-library-empty]")?.textContent?.trim()).toBe("Inga träffar.")
+    for (const downloadMode of ["epub", "pdf"] as const) {
+      mode.value = downloadMode
+      loading.value = true
+      await nextTick()
+      expect(target.querySelector("[data-library-empty]")).toBeNull()
+      expect(target.querySelector("[data-library-loading]")).not.toBeNull()
+      loading.value = false
+      await nextTick()
+      expect(target.querySelector("[data-library-empty]")?.textContent?.trim()).toBe("Inga träffar.")
+    }
     response.value = { ...response.value, failed: true }
     await nextTick()
     expect(target.querySelector("[data-library-error]")?.textContent).toBe("Ett fel uppstod.")
