@@ -56,3 +56,63 @@ test("desktop keeps the full library navigation", async ({ page }) => {
   await expect(page.getByRole("navigation", { name: "Huvudnavigation" })).toBeVisible()
   await expect(page.getByRole("button", { name: "Meny", exact: true })).toBeHidden()
 })
+
+for (const width of [320, 390, 768]) {
+  test(`standalone e-book controls and downloads fit ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 })
+    await page.goto("/epub")
+    await page.locator('[data-library-mounted="true"]').waitFor({ state: "attached" })
+    await expect(page.getByRole("heading", { name: "Hämta e-böcker" })).toBeVisible()
+
+    for (const mode of ["epub", "pdf"]) {
+      await page.locator(`[data-library-tab="${mode}"]`).click()
+      await expect(page.locator(`[data-library-tab="${mode}"]`)).toHaveAttribute("aria-current", "page")
+      await expect(page.locator("[data-library-loading]")).toHaveCount(0)
+      const rows = page.locator(`[data-library-${mode}-row]`)
+      await expect(rows.first()).toBeVisible()
+      await expectContained(page)
+      for (const row of await rows.all()) {
+        const title = row.locator(`[data-library-${mode}-title]`)
+        const download = row.locator(`a[data-library-${mode}-download]`)
+        await expect(download).toHaveAttribute("href", /\.(epub|pdf)$/)
+        await expect(download).toHaveAttribute("target", "_self")
+        await expect(download).toHaveAccessibleName(`Hämta ${await title.innerText()} som ${mode.toUpperCase()}`)
+        const geometry = await row.evaluate(element => {
+          const title = element.querySelector(".header")!
+          const author = element.children[2]!
+          const download = element.querySelector("a[download]")!
+          const box = download.getBoundingClientRect()
+          return {
+            clippedTitle: title.scrollWidth > title.clientWidth + 1,
+            clippedAuthor: author.scrollWidth > author.clientWidth + 1,
+            width: box.width,
+            height: box.height,
+            outside: box.right > element.getBoundingClientRect().right + 1
+          }
+        })
+        expect(geometry.clippedTitle).toBe(false)
+        expect(geometry.clippedAuthor).toBe(false)
+        expect(geometry.outside).toBe(false)
+        expect(geometry.width).toBeGreaterThanOrEqual(44)
+        expect(geometry.height).toBeGreaterThanOrEqual(44)
+      }
+      await page.locator('[data-library-sort="titlar"]').click()
+      await expect(page.locator('[data-library-sort="titlar"]')).toHaveAttribute("aria-current", "true")
+      await expect(page).toHaveURL(/sort=titlar/)
+      await expect(page.locator("[data-library-loading]")).toHaveCount(0)
+      await expectContained(page)
+    }
+
+    await page.locator("[data-library-filter]").fill("Selma")
+    await page.locator("[data-library-filter]").press("Enter")
+    await expect(page).toHaveURL(/filter=Selma/)
+    await page.locator("[data-library-reset]").click()
+    await expect(page.locator("[data-library-filter]")).toHaveValue("")
+    await page.locator("[data-library-advanced]").click()
+    await expect(page.locator("[data-library-advanced-panel]")).toBeVisible()
+    await expectContained(page)
+    await page.getByRole("combobox", { name: "Filtrera: Kategorier / Utgivare", exact: true }).click()
+    await expectContained(page)
+    await page.keyboard.press("Escape")
+  })
+}

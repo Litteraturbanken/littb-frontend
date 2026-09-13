@@ -1,6 +1,6 @@
 // Keep the library usable at phone and tablet widths, independent of device type.
 @media (max-width: 1023px) {
-    body.page-library {
+    body:is(.page-library, .page-epub) {
         display: block;
         width: 100%;
         min-width: 0;
@@ -8,7 +8,7 @@
         background-color: #302b24;
     }
 
-    body.page-library {
+    body:is(.page-library, .page-epub) {
         #mainview {
             display: block;
             width: 100%;
@@ -279,7 +279,7 @@
 }
 
 @media (max-width: 639px) {
-    body.page-library #mainview .result .work_link {
+    body:is(.page-library, .page-epub) #mainview .result .work_link {
         grid-template-columns: minmax(0, 1fr) auto;
         row-gap: 6px;
 
@@ -298,6 +298,82 @@
         .text-ellipsis {
             white-space: normal;
             overflow-wrap: anywhere;
+        }
+    }
+}
+
+// Downloads share their layout in Biblioteket and the standalone e-book page.
+@media (max-width: 1023px) {
+    body:is(.page-library, .page-epub) #mainview .result {
+        [data-library-epub-row],
+        [data-library-pdf-row] {
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            align-items: center;
+            gap: 8px 12px;
+
+            > td:first-child {
+                grid-column: 1 / -1;
+            }
+
+            > td:nth-child(2) {
+                grid-column: 2;
+                grid-row: 2;
+                width: auto;
+            }
+
+            > td:nth-child(3) {
+                grid-column: 1;
+                grid-row: 2;
+                width: auto;
+                min-width: 0;
+            }
+
+            > td:last-child {
+                grid-column: 3;
+                grid-row: 2;
+                width: auto;
+            }
+
+            .header,
+            .header_container,
+            .text-ellipsis {
+                white-space: normal;
+                overflow-wrap: anywhere;
+            }
+        }
+
+        a[data-library-epub-download],
+        a[data-library-pdf-download] {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 64px;
+            min-height: 44px;
+            padding: 6px 12px;
+            border: 1px solid currentColor;
+            line-height: 1;
+
+            &:hover {
+                background: rgb(140 37 9 / 8%);
+            }
+
+            &:focus-visible {
+                outline: 2px solid currentColor;
+                outline-offset: 3px;
+            }
+        }
+    }
+}
+
+@media (max-width: 639px) {
+    body:is(.page-library, .page-epub) #mainview .result {
+        [data-library-epub-row],
+        [data-library-pdf-row] {
+            grid-template-columns: minmax(0, 1fr) auto;
+
+            > td:last-child {
+                grid-column: 2;
+            }
         }
     }
 }

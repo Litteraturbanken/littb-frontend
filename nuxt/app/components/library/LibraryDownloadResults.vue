@@ -184,6 +184,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                             :data-library-pdf-download="mode === 'pdf' || undefined"
                             class="sc block"
                             :href="item.downloadHref"
+                            :aria-label="`Hämta ${item.title} som ${mode === 'epub' ? 'EPUB' : 'PDF'}`"
                             :download="item.downloadFilename"
                             target="_self"
                             @click="download($event, item)"
