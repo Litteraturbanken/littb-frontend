@@ -317,7 +317,9 @@ for (const visualCase of visualCases) {
         await expect(page.locator(corridor)).toHaveCSS("filter", "none")
       }
       if (isMobile) {
-        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeGreaterThan(390)
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+        expect(await page.locator("#mainview").evaluate(element => element.scrollWidth))
+          .toBeGreaterThan(390)
       }
     } else {
       await expect(modal).toBeVisible()

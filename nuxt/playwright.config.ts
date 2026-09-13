@@ -30,6 +30,8 @@ const mobileBehaviorSpecs = [
   /e2e\/reader-production\.behavior\.spec\.ts/,
   /e2e\/editor-reader\.mobile\.behavior\.spec\.ts/,
   /e2e\/library-advanced\.behavior\.spec\.ts/,
+  /e2e\/library-mobile-layout\.behavior\.spec\.ts/,
+  /e2e\/site-navigation\.behavior\.spec\.ts/,
   /e2e\/quick-search-developer\.behavior\.spec\.ts/
 ]
 let mobileE2eTestMatch: RegExp | RegExp[] = [visualE2eSpec, ...mobileBehaviorSpecs]
@@ -116,6 +118,11 @@ export function createPlaywrightConfig({
     },
     {
       name: "mobile-chromium",
+      // Preserve the Angular reference images while the shared mobile navigation evolves.
+      snapshotPathTemplate: resolve(
+        import.meta.dirname,
+        "test/visual/mobile-navigation/{arg}{ext}"
+      ),
       testMatch: mobileE2eTestMatch,
       testIgnore: configuredE2eLane === "behavior"
         ? [visualE2eSpec, productionLayoutShiftSpec]

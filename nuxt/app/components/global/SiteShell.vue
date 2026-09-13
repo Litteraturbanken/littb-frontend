@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Popover, PopoverButton } from "@headlessui/vue"
 import {
   isProductionShortcutGuarded,
   isPublicShellPasteGuarded,
@@ -16,7 +17,9 @@ const isStartPage = computed(() => route.path === "/")
 const quickSearchOpen = ref(false)
 const quickSearchInfoRequested = ref(false)
 const quickSearchTrigger = ref<HTMLAnchorElement | null>(null)
+const menuButton = ref<{ $el: HTMLButtonElement } | null>(null)
 const layoutFontsLoading = ref(true)
+const mounted = ref(false)
 const authorityFontStylesheetUrl = "/assets/styles/fonts/601526/FD3D54C3A22C4D32B.css"
 const layoutFontQueries = [
   ['20px "Requiem Text A"', "Litteraturbanken Svenska"],
@@ -32,6 +35,7 @@ useHead({
     {
       rel: "stylesheet",
       href: authorityFontStylesheetUrl,
+      onload: settleLayoutFonts,
       "data-authority-fonts": ""
     },
     {
@@ -82,7 +86,11 @@ function closeQuickSearch(): void {
   quickSearchOpen.value = false
   quickSearchInfoRequested.value = false
   document.body.classList.remove("modal-open")
-  void nextTick(() => quickSearchTrigger.value?.focus())
+  void nextTick(() => {
+    const trigger = quickSearchTrigger.value
+    if (trigger?.getClientRects().length) trigger.focus()
+    else menuButton.value?.$el.focus()
+  })
 }
 
 function onShellPaste(event: ClipboardEvent) {
@@ -105,6 +113,7 @@ async function settleLayoutFonts(): Promise<void> {
 }
 
 onMounted(() => {
+  mounted.value = true
   document.addEventListener("keydown", onShellKeydown)
   document.addEventListener("paste", onShellPaste)
   void settleLayoutFonts()
@@ -118,7 +127,12 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="site-shell">
-    <div id="leftCorridor">
+    <Popover
+      id="leftCorridor"
+      v-slot="{ open, close }"
+      class="site-navigation"
+      :data-site-navigation-ready="mounted || undefined"
+    >
       <NuxtLink class="logo_link_monogram block" to="/" no-prefetch aria-label="Litteraturbanken">
         <svg
           class="lb-logo inline-block"
@@ -141,7 +155,10 @@ onBeforeUnmount(() => {
           </g>
         </svg>
       </NuxtLink>
-      <nav aria-label="Huvudnavigation">
+      <PopoverButton ref="menuButton" class="site-menu-toggle">
+        {{ open ? "Stäng meny" : "Meny" }} <span aria-hidden="true">☰</span>
+      </PopoverButton>
+      <SiteNavigationPanel :open="open" :close="close">
         <ul class="mainnav">
           <li><NuxtLink :to="libraryHref" no-prefetch>Biblioteket</NuxtLink></li>
           <li>
@@ -155,12 +172,6 @@ onBeforeUnmount(() => {
               @keydown.enter.prevent="openQuickSearch()"
               @keydown.space.prevent="openQuickSearch()"
             >Snabbsökning</a>
-            <LazyQuickSearch
-              v-if="quickSearchOpen"
-              initially-open
-              :show-context-info-initially="quickSearchInfoRequested"
-              @closed="closeQuickSearch"
-            />
           </li>
           <li><NuxtLink :to="textSearchHref" no-prefetch>Sök i texterna</NuxtLink></li>
           <li><NuxtLink to="/epub?visa=epub&amp;sort=popularitet" no-prefetch>Hämta e-böcker</NuxtLink></li>
@@ -174,25 +185,31 @@ onBeforeUnmount(() => {
           <li><a href="/skolan/">Skolan</a></li>
           <li><NuxtLink to="/om/ide" no-prefetch>Om LB</NuxtLink></li>
         </ul>
-      </nav>
-      <ul class="start-only uppercase text-sm align-right antialiased mt-2 text-right mr-32 font-display">
-        <li><a href="/skolan/lararsida/">Lärare</a></li>
-        <li><a href="/bibliotekariesidor/">Bibliotekarier</a></li>
-      </ul>
-      <ul class="start-only flex space-x-2 uppercase text-sm align-right antialiased justify-end mr-32 font-display">
-        <li><NuxtLink to="/om/english.html" no-prefetch>English</NuxtLink></li>
-        <li><NuxtLink to="/om/deutsch.html" no-prefetch>Deutsch</NuxtLink></li>
-        <li><NuxtLink to="/om/francais.html" no-prefetch>Français</NuxtLink></li>
-      </ul>
-      <a
-        class="sa-logo start-only block text-right mr-32 mt-6 relative left-1"
-        href="https://www.svenskaakademien.se"
-        aria-label="Logotyp för Svenska Akademien"
-      >
-        <LazyHomeAcademyLogo v-if="isStartPage" />
-      </a>
+        <ul class="start-only uppercase text-sm align-right antialiased mt-2 text-right mr-32 font-display">
+          <li><a href="/skolan/lararsida/">Lärare</a></li>
+          <li><a href="/bibliotekariesidor/">Bibliotekarier</a></li>
+        </ul>
+        <ul class="start-only flex space-x-2 uppercase text-sm align-right antialiased justify-end mr-32 font-display">
+          <li><NuxtLink to="/om/english.html" no-prefetch>English</NuxtLink></li>
+          <li><NuxtLink to="/om/deutsch.html" no-prefetch>Deutsch</NuxtLink></li>
+          <li><NuxtLink to="/om/francais.html" no-prefetch>Français</NuxtLink></li>
+        </ul>
+        <a
+          class="sa-logo start-only block text-right mr-32 mt-6 relative left-1"
+          href="https://www.svenskaakademien.se"
+          aria-label="Logotyp för Svenska Akademien"
+        >
+          <LazyHomeAcademyLogo v-if="isStartPage" />
+        </a>
+      </SiteNavigationPanel>
       <div id="toolkit" />
-    </div>{{ " " }}
+    </Popover>{{ " " }}
+    <LazyQuickSearch
+      v-if="quickSearchOpen"
+      initially-open
+      :show-context-info-initially="quickSearchInfoRequested"
+      @closed="closeQuickSearch"
+    />
     <main id="mainview" role="main"><slot /></main>{{ " " }}
     <div id="rightCorridor" class="ml-4 sm:ml-16 relative z-50">
       <div id="toolkit-right" />

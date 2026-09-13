@@ -63,7 +63,7 @@ const visualCases = [
 test.beforeEach(async ({ request }) => resetReader(request))
 test.afterEach(async ({ request }) => resetReader(request))
 
-test("narrow reader keeps the live corridor gap between its logo and facsimile", async ({
+test("narrow reader places its shared mobile header above the facsimile", async ({
   page
 }) => {
   await page.setViewportSize({ width: 665, height: 1000 })
@@ -73,13 +73,13 @@ test("narrow reader keeps the live corridor gap between its logo and facsimile",
   const logo = leftCorridor.locator(".logo_link_monogram")
   const facsimile = page.locator(".reader_main img.faksimil")
   await expect(facsimile).toBeVisible()
-  await expect(leftCorridor).toHaveCSS("margin-right", "80px")
+  await expect(leftCorridor.locator(".site-menu-toggle")).toBeVisible()
 
   const logoBox = await logo.boundingBox()
   const facsimileBox = await facsimile.boundingBox()
   expect(logoBox).not.toBeNull()
   expect(facsimileBox).not.toBeNull()
-  expect(facsimileBox!.x - (logoBox!.x + logoBox!.width)).toBeGreaterThanOrEqual(40)
+  expect(facsimileBox!.y).toBeGreaterThanOrEqual(logoBox!.y + logoBox!.height)
 })
 
 for (const visualCase of visualCases) {
@@ -180,7 +180,9 @@ for (const visualCase of visualCases) {
     expect(imageBox?.width).toBe(visualCase.width)
     expect(imageBox?.height).toBeCloseTo(visualCase.width * 1308 / 1900, 1)
     if (testInfo.project.name === "mobile-chromium") {
-      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeGreaterThan(390)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+      expect(await page.locator("#mainview").evaluate(element => element.scrollWidth))
+        .toBeGreaterThan(390)
     }
 
     expect(scanRequests).toEqual([selectedBrowserScan, selectedBrowserScan])

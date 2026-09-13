@@ -78,7 +78,7 @@ test("advanced Library controls remain labelled and keyboard operable on mobile"
     .toBe("1901,1910")
 })
 
-test("relevance titles ellipsize without moving the year or author columns", async ({ page }) => {
+test("relevance titles wrap on mobile and preserve desktop columns", async ({ page }, testInfo) => {
   await page.goto("/bibliotek?filter=titelmetadata", { waitUntil: "networkidle" })
   await page.locator('[data-library-mounted="true"]').waitFor({ state: "attached" })
 
@@ -88,6 +88,12 @@ test("relevance titles ellipsize without moving the year or author columns", asy
   const year = row.locator("td").nth(2)
   const author = row.locator("td").nth(3)
   const shortRow = rows.nth(1)
+
+  if (testInfo.project.name === "mobile-chromium") {
+    await expect(title).toHaveCSS("white-space", "normal")
+    expect(await title.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+    return
+  }
 
   await expect(title).toHaveCSS("white-space", "nowrap")
   await expect(title).toHaveCSS("overflow", "hidden")
@@ -113,7 +119,7 @@ test("relevance titles ellipsize without moving the year or author columns", asy
   expect(controlledShortGeometry).toEqual(longGeometry)
 })
 
-test("preserves the populated legacy Library shell geometry at desktop and mobile", async ({
+test("preserves populated Library geometry at desktop and mobile", async ({
   page
 }, testInfo) => {
   const problems: string[] = []
@@ -163,7 +169,12 @@ test("preserves the populated legacy Library shell geometry at desktop and mobil
     .evaluate(element => element.getBoundingClientRect().toJSON())
   const rows = await page.locator("[data-library-result]")
     .evaluateAll(elements => elements.map(element => element.getBoundingClientRect().toJSON()))
-  expect(resultBox.width).toBeGreaterThan(mobile ? 350 : 900)
+  if (mobile) {
+    await expect(page).toHaveScreenshot("library-responsive-mobile.png", {
+      fullPage: true, animations: "disabled", caret: "hide", scale: "css"
+    })
+  }
+  expect(resultBox.width).toBeGreaterThan(mobile ? 300 : 900)
   expect(rows).toHaveLength(3)
   expect(rows.every((row, index) => row.width > 0
     && row.height > 0
@@ -327,7 +338,16 @@ for (const visualCase of [
         return { width: box.width, height: box.height }
       }))
     expect(selectBoxes).toHaveLength(6)
-    const authorityWidth = mobile ? 349 : 350
+    if (mobile) {
+      // Mobile now has its own responsive design; preserve the Angular desktop authority.
+      await expect(page).toHaveScreenshot(`${visualCase.name}-responsive-mobile.png`, {
+        fullPage: true, animations: "disabled", caret: "hide", scale: "css"
+      })
+      expect(forbidden).toEqual([])
+      expect(problems).toEqual([])
+      return
+    }
+    const authorityWidth = 350
     for (const box of selectBoxes) {
       expect(Math.abs(box.width - authorityWidth)).toBeLessThanOrEqual(1)
       expect(Math.abs(box.height - 31)).toBeLessThanOrEqual(1)
@@ -459,7 +479,14 @@ test("matches production selected Library filter placement at desktop and mobile
   const panel = page.locator("[data-library-advanced-panel]")
   const panelBox = await panel.boundingBox()
   expect(panelBox).not.toBeNull()
-  expect(panelBox!.width).toBeCloseTo(mobile ? 354 : 979, 1)
+  if (mobile) {
+    await expect(panel).toHaveScreenshot("library-selected-filters-responsive-mobile.png", {
+      animations: "disabled", caret: "hide", scale: "css"
+    })
+    expect(await panel.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+    return
+  }
+  expect(panelBox!.width).toBeCloseTo(979, 1)
   expect(panelBox!.height).toBeCloseTo(320.5625, 1)
   if (!mobile) {
     await expect(page.locator("[data-library-gender-visual]")).toHaveScreenshot(

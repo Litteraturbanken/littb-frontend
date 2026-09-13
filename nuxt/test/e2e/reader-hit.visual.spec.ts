@@ -180,7 +180,9 @@ for (const visualCase of visualCases) {
     expect(await page.locator("img").evaluateAll(images => images.every(image => image.complete))).toBe(true)
     await expect(page.locator("html")).toHaveCSS("background-image", "none")
     if (testInfo.project.name === "mobile-chromium") {
-      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeGreaterThan(390)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+      expect(await page.locator("#mainview").evaluate(element => element.scrollWidth))
+        .toBeGreaterThan(390)
     }
     const device = testInfo.project.name === "mobile-chromium" ? "mobile" : "desktop"
     await expect(page).toHaveScreenshot(`reader-hit-${visualCase.name}-${device}.png`, {

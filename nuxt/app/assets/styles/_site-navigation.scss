@@ -1,0 +1,166 @@
+.site-menu-toggle {
+    display: none;
+}
+
+@media (max-width: 1023px) {
+    body:has(.site-shell) {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        padding: 0 16px 24px;
+    }
+
+    body #leftCorridor.site-navigation {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        width: calc(100% + 32px);
+        min-width: 0;
+        margin: 0 -16px;
+        padding: 12px 16px;
+        color: white;
+        background: #302b24;
+
+        .logo_link_monogram {
+            display: block;
+            width: 56px;
+            height: 60px;
+            margin: 0;
+            left: 0;
+        }
+
+        .lb-logo {
+            --logo-l-color: white;
+            --logo-b-color: white;
+            display: block;
+            width: 56px;
+            max-width: none;
+            height: 60px;
+            margin: 0;
+            left: 0;
+        }
+
+        .site-menu-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 44px;
+            padding: 8px 14px;
+            border: 1px solid rgb(255 255 255 / 60%);
+            color: white;
+            background: rgb(0 0 0 / 15%);
+            font-size: 16px;
+        }
+
+        :is(a, button):focus-visible {
+            outline: 2px solid white;
+            outline-offset: 3px;
+        }
+
+        .site-navigation-panel {
+            display: none;
+            width: 100%;
+        }
+
+        .site-navigation-panel--open {
+            display: block;
+        }
+
+        .mainnav {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0 12px;
+            width: 100%;
+            margin: 12px 0 0;
+            padding: 0;
+            text-align: left;
+            font-size: 16px;
+
+            a {
+                display: block;
+                align-content: center;
+                min-height: 44px;
+                color: white;
+                white-space: normal;
+                overflow-wrap: anywhere;
+            }
+        }
+
+        .start-only {
+            margin: 12px 0 0;
+            text-align: left;
+            justify-content: flex-start;
+
+            a {
+                display: inline-flex;
+                align-items: center;
+                min-height: 44px;
+                color: white;
+            }
+        }
+
+        .sa-logo {
+            width: 60px;
+        }
+
+        #toolkit:empty {
+            display: none;
+        }
+
+        #toolkit:not(:empty) {
+            width: calc(100% + 32px);
+            margin: 12px -16px -12px;
+            padding: 16px;
+            color: #333;
+            background: white;
+        }
+    }
+
+    body .site-shell > #mainview {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        margin-top: 0;
+    }
+
+    // Wide scans and fixed-width etext pages scroll inside the reading area.
+    // They must not expand the viewport containing the mobile navigation.
+    body.page-reading:not(.reader-focus-mode) .site-shell > #mainview {
+        overflow-x: auto;
+    }
+
+    // The home column previously started beside the desktop sidebar.
+    body.page-start #mainview .center_col {
+        display: block;
+        max-width: 100%;
+        margin-left: 0;
+        padding-top: 24px;
+        overflow-wrap: anywhere;
+
+        h1 {
+            font-size: clamp(30px, 7.5vw, 48px);
+        }
+
+        .home-editorial,
+        .news {
+            max-width: 100%;
+        }
+    }
+
+    body.reader-focus-mode #leftCorridor.site-navigation {
+        display: none;
+    }
+}
+
+@media (max-width: 767px) {
+    body.modal-open:has(.site-shell) {
+        padding: 2%;
+        background-color: #333;
+    }
+
+    body.modal-open #leftCorridor.site-navigation,
+    body.modal-open .site-shell > #mainview {
+        display: none;
+    }
+}

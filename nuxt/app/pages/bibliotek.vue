@@ -2014,12 +2014,12 @@ onUnmounted(() => {
                         @select-visible-source-works="selectVisibleSourceWorks"
                         @deselect-visible-source-works="deselectVisibleSourceWorks"
                     />
-                    <div class="btn-group p-0 mt-4 lg:mt-6">
+                    <div class="library-mode-tabs btn-group p-0 mt-4 lg:mt-6">
                         <LibraryModeTabs :tabs="libraryModeTabs" @navigate="loading = true" />
                     </div>
                 </LibrarySearchControls>
             </div>
-            <div class="flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
+            <div class="library-results flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
                 <LibrarySourceDownloadWorkspace
                     v-if="currentMode === 'works' && downloadMode"
                     ref="sourceDownloadWorkspace"
