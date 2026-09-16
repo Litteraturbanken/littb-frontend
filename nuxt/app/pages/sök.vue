@@ -1350,12 +1350,21 @@ function setFacet(authorId: string | null) {
 }
 
 const toolkitMounted = ref(false)
+const mobileSearchLayout = ref(false)
+let searchLayoutQuery: MediaQueryList | null = null
+function updateSearchLayout() {
+  mobileSearchLayout.value = searchLayoutQuery?.matches ?? false
+}
 onMounted(() => {
   primaryClientMounted.value = true
+  searchLayoutQuery = window.matchMedia("(max-width: 1023px)")
+  updateSearchLayout()
+  searchLayoutQuery.addEventListener("change", updateSearchLayout)
   toolkitMounted.value = true
   document.addEventListener("keydown", handlePaginationKeydown)
 })
 onBeforeUnmount(() => {
+  searchLayoutQuery?.removeEventListener("change", updateSearchLayout)
   document.removeEventListener("keydown", handlePaginationKeydown)
   primaryRequestOwner.cancel()
   primaryAsyncData.clear()
@@ -1847,6 +1856,8 @@ v-for="item in [
           {{ totalPages }}.
         </div>
       </div>
+    </Teleport>
+    <Teleport to="#toolkit" :disabled="!toolkitMounted || mobileSearchLayout">
       <ul v-if="navigatorFacets.length || state.facetAuthorId" class="navigator">
         <li>
           <button
@@ -1874,6 +1885,23 @@ v-for="item in [
 </template>
 
 <style scoped>
+@media (max-width: 1023px) {
+  .navigator {
+    margin-top: 1rem;
+    padding: 0.8em;
+    border: 1px solid darkgrey;
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    font-family: "Requiem Text SC A", "Requiem Text SC B";
+    font-size: 0.8em;
+    text-transform: lowercase;
+    line-height: 1.4;
+    max-height: 53vh;
+    overflow-y: auto;
+    list-style: none;
+  }
+}
+
 .text-search-pagination {
   max-width: 100%;
   min-width: 0;
