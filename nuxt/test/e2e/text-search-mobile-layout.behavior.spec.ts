@@ -114,3 +114,16 @@ for (const width of [320, 390]) {
     }
   })
 }
+
+test("mobile search tools align with the results viewport at tablet widths", async ({ page }) => {
+  await page.setViewportSize({ width: 846, height: 1000 })
+  await page.goto("/s%C3%B6k?fras=overflow")
+  await page.locator('[data-search-mounted="true"]').waitFor()
+  const edges = await page.evaluate(() => {
+    const form = document.querySelector(".submit_form")!.getBoundingClientRect()
+    const results = document.querySelector(".table_viewport")!.getBoundingClientRect()
+    return { left: Math.abs(form.left - results.left), right: Math.abs(form.right - results.right) }
+  })
+  expect(edges.left).toBeLessThan(1)
+  expect(edges.right).toBeLessThan(1)
+})

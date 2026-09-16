@@ -1,6 +1,8 @@
 @media (max-width: 1023px) {
     body.page-search #mainview [data-search-root] {
         min-width: 0;
+        width: 100%;
+        max-width: 750px;
         h1 {
             margin: 12px 0 20px;
             font-size: clamp(30px, 7.5vw, 42px);
