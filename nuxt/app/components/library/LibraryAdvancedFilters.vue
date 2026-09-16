@@ -325,7 +325,7 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
                 aria-label="Från tryckår"
                 @input="emitChronologyDraft('from', inputValue($event))"
                 @change="emitChronologyRange('from', inputValue($event))"
-            />{{ " " }}
+            >{{ " " }}
             <span class="text-sm sc">till </span>
             <input
                 class="text-sm text-center py-1"
@@ -334,7 +334,7 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
                 aria-label="Till tryckår"
                 @input="emitChronologyDraft('to', inputValue($event))"
                 @change="emitChronologyRange('to', inputValue($event))"
-            />
+            >
         </div>
     </div>
     <div v-else data-library-chronology-unavailable class="text-sm py-1">
