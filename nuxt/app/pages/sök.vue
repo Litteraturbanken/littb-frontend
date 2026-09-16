@@ -2,6 +2,10 @@
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/vue"
 import type { LocationQueryRaw } from "vue-router"
 
+import LibraryPagination from "~/components/library/LibraryPagination.vue"
+import type { LibraryPaginationModel } from "~/lib/library/component-models"
+import { legacyPaginationItems } from "~/lib/legacy-pagination"
+
 import searchBackground from "~/assets/img/sok_bkg.jpg"
 import type {
   SearchMultiSelectOption,
@@ -1212,6 +1216,23 @@ const paginationReady = computed(() => {
     && primary.results !== null
 })
 const displayedPage = computed(() => Math.min(state.value.page, totalPages.value))
+const pagination = computed<LibraryPaginationModel>(() => {
+  const pageHref = (page: number) => ({
+    path: route.path,
+    query: textSearchPageQuery({ ...rawQuery.value, snapshot: results.value?.snapshot }, page) as LocationQueryRaw
+  })
+  return {
+    currentPage: displayedPage.value,
+    pageCount: totalPages.value,
+    previous: displayedPage.value <= 1 ? null : pageHref(displayedPage.value - 1),
+    next: displayedPage.value >= totalPages.value ? null : pageHref(displayedPage.value + 1),
+    entries: legacyPaginationItems(totalPages.value, displayedPage.value).map(item => ({
+      ...item,
+      to: pageHref(item.page),
+      ellipsis: item.label === "..."
+    }))
+  }
+})
 const visibleWorkCount = computed(() => results.value?.works.length ?? 0)
 const firstVisibleWork = computed(() => visibleWorkCount.value > 0
   ? (displayedPage.value - 1) * 30 + 1
@@ -1301,31 +1322,6 @@ function handlePaginationKeydown(event: KeyboardEvent) {
   }
 }
 
-const showGotoPageInput = ref(false)
-const gotoPageInput = ref("")
-const gotoPageElement = ref<HTMLInputElement | null>(null)
-function toggleGotoPageInput() {
-  if (totalPages.value <= 1) return
-  showGotoPageInput.value = !showGotoPageInput.value
-  if (!showGotoPageInput.value) return
-  gotoPageInput.value = String(state.value.page)
-  void nextTick(() => gotoPageElement.value?.focus())
-}
-
-function submitGotoPage() {
-  const value = gotoPageInput.value.trim()
-  if (!/^[1-9]\d*$/.test(value)) return
-  const page = Number(value)
-  if (!Number.isSafeInteger(page) || page < 1 || page > totalPages.value) return
-  showGotoPageInput.value = false
-  goToPage(page)
-}
-
-watch(routeIdentity, () => {
-  showGotoPageInput.value = false
-  gotoPageInput.value = ""
-}, { flush: "sync" })
-
 const rawGenderSelection = computed(() => {
   const rawGender = rawQuery.value["kön"]
   return typeof rawGender === "string" ? rawGender : rawGender?.[0]
@@ -1354,12 +1350,21 @@ function setFacet(authorId: string | null) {
 }
 
 const toolkitMounted = ref(false)
+const mobileSearchLayout = ref(false)
+let searchLayoutQuery: MediaQueryList | null = null
+function updateSearchLayout() {
+  mobileSearchLayout.value = searchLayoutQuery?.matches ?? false
+}
 onMounted(() => {
   primaryClientMounted.value = true
+  searchLayoutQuery = window.matchMedia("(max-width: 1023px)")
+  updateSearchLayout()
+  searchLayoutQuery.addEventListener("change", updateSearchLayout)
   toolkitMounted.value = true
   document.addEventListener("keydown", handlePaginationKeydown)
 })
 onBeforeUnmount(() => {
+  searchLayoutQuery?.removeEventListener("change", updateSearchLayout)
   document.removeEventListener("keydown", handlePaginationKeydown)
   primaryRequestOwner.cancel()
   primaryAsyncData.clear()
@@ -1715,6 +1720,14 @@ v-for="item in [
     >
       <div class="table_viewport">
         <div class="table_container">
+          <section
+            v-if="(results?.totalWorks ?? 0) > 0"
+            class="text-search-pagination"
+            :inert="!paginationReady"
+            :aria-busy="!paginationReady"
+          >
+            <LibraryPagination :model="pagination" @select-page="goToPage" />
+          </section>
           <div v-if="results?.totalWorks === 0">Din sökning gav inga träffar</div>
           <table cellspacing="0" class="results">
             <tbody>
@@ -1803,6 +1816,14 @@ v-for="item in [
               </tr>
             </tbody>
           </table>
+          <section
+            v-if="(results?.totalWorks ?? 0) > 0"
+            class="text-search-pagination"
+            :inert="!paginationReady"
+            :aria-busy="!paginationReady"
+          >
+            <LibraryPagination :model="pagination" @select-page="goToPage" />
+          </section>
         </div>
       </div>
     </div>
@@ -1833,59 +1854,10 @@ v-for="item in [
           Visar verk {{ firstVisibleWork }}-{{ lastVisibleWork }} av
           {{ results?.totalWorks ?? 0 }}, sida {{ displayedPage }} av
           {{ totalPages }}.
-
-          <ul v-if="(results?.totalWorks ?? 0) > 1" class="ctrl">
-            <li class="arrows">
-              <button
-                type="button"
-                class="submit btn navicon left"
-                aria-label="Föregående träffsida"
-                :disabled="!paginationReady || state.page <= 1"
-                @click="goToPage(state.page - 1)"
-              >
-                <i class="fa fa-angle-left" />
-              </button>{{ " " }}
-              <button
-                type="button"
-                class="submit btn navicon"
-                aria-label="Nästa träffsida"
-                :disabled="!paginationReady || state.page >= totalPages"
-                @click="goToPage(state.page + 1)"
-              >
-                <i class="fa fa-angle-right" />
-              </button>
-            </li>
-            <li>
-              <button class="link-control" type="button" :disabled="!paginationReady" @click="goToPage(1)">Gå till första träffen</button>
-            </li>
-            <li>
-              <button class="link-control" type="button" :disabled="!paginationReady" @click="goToPage(totalPages)">Gå till sista träffen</button>
-            </li>
-            <li
-              :class="{ open: showGotoPageInput }"
-              :aria-disabled="totalPages === 1"
-            >
-              <button
-                class="link-control"
-                type="button"
-                :disabled="!paginationReady || totalPages === 1"
-                @click="toggleGotoPageInput"
-              >Gå till träffsida . . .</button>
-              <form v-if="showGotoPageInput" @submit.prevent="submitGotoPage">
-                <input
-                  ref="gotoPageElement"
-                  v-model="gotoPageInput"
-                  class="input_page"
-                  type="text"
-                  inputmode="numeric"
-                  aria-label="Träffsida"
-                >
-                <i class="fa fa-angle-double-right" aria-hidden="true" />
-              </form>
-            </li>
-          </ul>
         </div>
       </div>
+    </Teleport>
+    <Teleport to="#toolkit" :disabled="!toolkitMounted || mobileSearchLayout">
       <ul v-if="navigatorFacets.length || state.facetAuthorId" class="navigator">
         <li>
           <button
@@ -1913,6 +1885,49 @@ v-for="item in [
 </template>
 
 <style scoped>
+@media (max-width: 1023px) {
+  .navigator {
+    margin-top: 1rem;
+    padding: 0.8em;
+    border: 1px solid darkgrey;
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    font-family: "Requiem Text SC A", "Requiem Text SC B";
+    font-size: 0.8em;
+    text-transform: lowercase;
+    line-height: 1.4;
+    max-height: 53vh;
+    overflow-y: auto;
+    list-style: none;
+  }
+}
+
+.text-search-pagination {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.text-search-pagination :deep(.pagination) {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 767px) {
+  .text-search-pagination :deep(.pagination) {
+    gap: 4px;
+  }
+
+  .text-search-pagination :deep(.pagination > li > a),
+  .text-search-pagination :deep(.pagination > li > span) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+    margin: 0;
+  }
+}
+
 .chronology_ranges {
   position: relative;
   flex: 1 1 400px;

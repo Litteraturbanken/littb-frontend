@@ -222,7 +222,7 @@ test("hydration replace-canonicalizes an accepted empty out-of-range result", as
   await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
   const pager = page.locator("#toolkit .littb_pager")
   await expect(pager).toContainText("Visar verk 1-2 av 2, sida 1 av 1.")
-  await expect(pager.getByRole("button", { name: "Nästa träffsida" })).toBeDisabled()
+  await expect(page.locator("[data-library-pagination-next]").first()).toHaveAttribute("aria-disabled", "true")
   await expect.poll(async () => (await requests(request, "results")).map(entry => entry.body.page))
     .toEqual([2, 1])
   await page.waitForTimeout(200)
@@ -433,7 +433,7 @@ test("Visa fler pins its accepted snapshot and route changes discard expanded hr
   })
   await expect(page.locator("#results tr.sentence .match")).toHaveCount(153)
 
-  const nextSearchPage = page.getByRole("button", { name: "Nästa träffsida" })
+  const nextSearchPage = page.locator("[data-library-pagination-next]").first()
   await expect(nextSearchPage).not.toHaveAttribute("rel")
   await nextSearchPage.click()
   await expect(page).toHaveURL(/traffsida=2/)
@@ -754,48 +754,34 @@ test("chronology text and bounded range drafts commit only valid ascending pairs
   await expect.poll(textValues).toEqual(["1900", "1910"])
 })
 
-test("pager page input opens and navigates only within inclusive bounds", async ({ page }) => {
+test("both result pagers navigate within the page bounds", async ({ page }) => {
   await page.goto("/s%C3%B6k?fras=overflow")
   await waitForHydration(page)
-  const toggle = page.getByRole("button", { name: "Gå till träffsida . . ." })
-  await toggle.click()
-  const item = toggle.locator("xpath=..")
-  const input = item.locator("input")
-  await expect(item).toHaveClass(/open/)
-  await expect(input).toBeVisible()
-
-  await input.fill("0")
-  await input.press("Enter")
-  expect(new URL(page.url()).searchParams.has("traffsida")).toBe(false)
-  await expect(item).toHaveClass(/open/)
-  await input.fill("4")
-  await input.press("Enter")
-  expect(new URL(page.url()).searchParams.has("traffsida")).toBe(false)
-
-  await input.fill("3")
-  await input.press("Enter")
-  await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("3")
-  await expect(page.locator(".littb_pager .ctrl li.open")).toHaveCount(0)
-
-  await page.getByRole("button", { name: "Gå till träffsida . . ." }).click()
-  const boundary = page.locator(".littb_pager .ctrl li.open input")
-  await boundary.fill("1")
-  await boundary.press("Enter")
+  const pagers = page.locator(".text-search-pagination")
+  await expect(pagers).toHaveCount(2)
+  for (const pager of await pagers.all()) {
+    await expect(pager.locator("[data-library-pagination-previous]")).toHaveAttribute("aria-disabled", "true")
+    await expect(pager.locator("[aria-current=page]")).toHaveText("1")
+  }
+  await pagers.last().getByRole("link", { name: "3", exact: true }).click()
+  await expect(page).toHaveURL(/traffsida=3/)
+  for (const pager of await pagers.all()) {
+    await expect(pager.locator("[data-library-pagination-next]")).toHaveAttribute("aria-disabled", "true")
+    await expect(pager.locator("[aria-current=page]")).toHaveText("3")
+  }
+  await pagers.first().getByRole("link", { name: "1", exact: true }).click()
   await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
 })
 
-test("pager and author facet actions use native button semantics", async ({ page }) => {
+test("pager links have real destinations and author facets use native buttons", async ({ page }) => {
   await page.goto("/s%C3%B6k?fras=overflow")
   await waitForHydration(page)
-
-  const actions = page.locator(
-    ".littb_pager .ctrl li:not(.arrows) > :is(a, button), .navigator li > :is(a, button)"
-  )
-  await expect(actions).toHaveCount(6)
+  await expect(page.locator(".text-search-pagination a:not([href])")).toHaveCount(0)
+  await expect(page.locator(".text-search-pagination a").first()).toHaveAttribute("href", /snapshot=gen-fixture-0001/)
+  const actions = page.locator(".navigator li > :is(a, button)")
+  await expect(actions).toHaveCount(3)
   expect(await actions.evaluateAll(elements => elements.map(element => element.localName)))
-    .toEqual(Array(6).fill("button"))
-  await expect(page.locator(".littb_pager .ctrl a:not([href]), .navigator a:not([href])"))
-    .toHaveCount(0)
+    .toEqual(Array(3).fill("button"))
 })
 
 test("raw unsafe author facets remain visible but cannot become filter actions", async ({ page }) => {
