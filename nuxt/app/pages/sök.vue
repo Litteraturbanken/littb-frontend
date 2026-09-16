@@ -1226,7 +1226,10 @@ const pagination = computed<LibraryPaginationModel>(() => {
     pageCount: totalPages.value,
     previous: displayedPage.value <= 1 ? null : pageHref(displayedPage.value - 1),
     next: displayedPage.value >= totalPages.value ? null : pageHref(displayedPage.value + 1),
-    entries: legacyPaginationItems(totalPages.value, displayedPage.value).map(item => ({
+    entries: legacyPaginationItems(totalPages.value, displayedPage.value)
+      .filter(item => !mobileSearchLayout.value
+        || (item.label !== "..." && Math.abs(item.page - displayedPage.value) <= 1))
+      .map(item => ({
       ...item,
       to: pageHref(item.page),
       ellipsis: item.label === "..."
@@ -1354,6 +1357,7 @@ let resultResizeObserver: ResizeObserver | null = null
 function centerResultKeyword() {
   const viewport = resultViewport.value
   if (!viewport || !mobileSearchLayout.value) return
+  viewport.style.setProperty("--search-viewport-width", `${viewport.clientWidth}px`)
   const match = viewport.querySelector<HTMLElement>(".match a")
     ?? viewport.querySelector<HTMLElement>(".match")
   if (!match) return

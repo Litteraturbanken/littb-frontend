@@ -105,7 +105,22 @@
 
             table.results {
                 width: max(700px, 150%);
+                overflow: visible;
+
+                td.header { padding-right: 0; }
+
+                .header_content {
+                    position: sticky;
+                    left: 0;
+                    max-width: var(--search-viewport-width);
+                    white-space: normal;
+                    overflow-wrap: anywhere;
+                }
             }
+        }
+
+        .text-search-pagination .pagination {
+            flex-wrap: nowrap;
         }
 
         .table_container > .littb_pager {
@@ -116,6 +131,19 @@
             white-space: normal;
             .hits_info > div { display: flex; align-items: baseline; gap: 4px; }
             .hits { font-size: 1.25em; }
+        }
+    }
+}
+
+@media (max-width: 359px) {
+    body.page-search #mainview [data-search-root] .text-search-pagination .pagination {
+        gap: 3px;
+
+        > li > a, > li > span {
+            min-width: 32px;
+            min-height: 32px;
+            padding: 4px 6px;
+            font-size: 11px;
         }
     }
 }
