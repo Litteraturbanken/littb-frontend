@@ -1,0 +1,111 @@
+@media (max-width: 1023px) {
+    body.page-search #mainview [data-search-root] {
+        min-width: 0;
+        h1 {
+            margin: 12px 0 20px;
+            font-size: clamp(30px, 7.5vw, 42px);
+            line-height: 1.1;
+        }
+        .submit_form {
+            margin: 0 0 16px;
+            padding: 16px;
+            color: #333;
+            background: rgb(255 253 248 / 92%);
+        }
+        .top_row {
+            position: relative;
+            display: block;
+            max-width: none;
+            margin: 0;
+            > .w-4 { position: absolute; right: 0; bottom: -24px; }
+        }
+        .search-main-controls {
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 52px;
+            gap: 10px;
+            > svg {
+                position: absolute;
+                top: 12px;
+                left: 12px;
+                margin: 0;
+                pointer-events: none;
+            }
+            > input {
+                grid-column: 1 / -1;
+                width: 100%;
+                min-width: 0;
+                margin: 0;
+                padding: 12px 44px;
+                font-size: 16px;
+            }
+            .reset {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                left: auto;
+                width: 44px;
+                height: 44px;
+                margin: 0;
+                padding: 10px;
+            }
+            [data-search-submit], [data-search-advanced] {
+                width: 100%;
+                min-height: 44px;
+                margin: 0;
+            }
+        }
+        .search_opts_widget {
+            display: grid;
+            gap: 4px;
+            width: 100%;
+            margin: 16px 0;
+            color: #333;
+            font-size: 16px;
+            li { position: relative; padding-left: 22px; white-space: normal; }
+            [role="checkbox"] { position: absolute; top: 10px; left: 0; }
+            [role="button"] { display: flex; align-items: center; min-height: 40px; }
+        }
+        .chronology { color: #333; }
+        .search-chronology-controls {
+            flex-direction: column;
+            gap: 12px;
+            padding: 0;
+            .chronology_ranges { flex: none; width: 100%; margin: 12px 0 0 !important; }
+            .chronology_inputs {
+                align-self: flex-start;
+                margin: 0;
+                input { min-height: 40px; font-size: 16px; }
+            }
+        }
+        #text-search-advanced-panel {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 12px;
+            margin: 20px 0 0;
+            > div, .select2-container, .multiselect, .multiselect__tags {
+                width: 100%; min-width: 0; max-width: 100%; margin-right: 0;
+            }
+            .multiselect__tags { height: auto; flex-wrap: wrap; }
+            .multiselect__input, .search-multiselect__input-row {
+                flex-basis: 100%; width: 100% !important;
+                min-width: 0; max-width: 100%; margin-right: 0 !important;
+            }
+            .multiselect__tags-wrap {
+                display: flex; flex: 0 0 100%; flex-wrap: wrap; min-width: 0;
+            }
+            .select2-selection__choice {
+                height: auto; max-width: 100%; white-space: normal; overflow-wrap: anywhere;
+            }
+        }
+        .table_container > .littb_pager {
+            margin-top: 16px;
+            color: #333;
+            font-size: 16px;
+            line-height: 1.4;
+            white-space: normal;
+            .hits_info > div { display: flex; align-items: baseline; gap: 4px; }
+            .hits { font-size: 1.25em; }
+        }
+    }
+}

@@ -1405,7 +1405,7 @@ useHead({
 
     <form class="submit_form" @submit.prevent="submitSearch">
       <div class="top_row -mt-2 flex max-w-xl">
-        <div class="flex w-full items-stretch">
+        <div class="search-main-controls flex w-full items-stretch">
           <svg
             class="w-6 h-6 relative left-4 self-center top-0 -mt-px"
             xmlns="http://www.w3.org/2000/svg"
@@ -1450,7 +1450,7 @@ useHead({
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
             </svg>
           </button>
-          <button class="mr-2 bg-white border border-gray-500 w-14 uppercase sc">Sök</button>
+          <button data-search-submit class="mr-2 bg-white border border-gray-500 w-14 uppercase sc">Sök</button>
           <button
             type="button"
             data-search-advanced
@@ -1536,7 +1536,7 @@ v-for="item in [
         <i class="fa fa-clock-o mr-1 ml-px" />{{ " " }}
         <span class="sc mt-8">Tidslinje: kronologisk sökning</span>
       </div>
-      <div class="flex max-w-3xl pr-2">
+      <div class="search-chronology-controls flex max-w-3xl pr-2">
         <ChronologyRangeSlider
           data-search-chronology-range
           class="mt-3 slider-large chronology_ranges"
@@ -1720,6 +1720,28 @@ v-for="item in [
     >
       <div class="table_viewport">
         <div class="table_container">
+          <Teleport to="#toolkit" :disabled="!toolkitMounted || mobileSearchLayout">
+            <div
+              v-if="displayPrimary?.status === 200"
+              class="littb_pager"
+            >
+              <div>
+                <div class="hits_info">
+                  <div>
+                    <div v-show="(results?.totalOccurrences ?? 0) > 0" class="hits">{{ results?.totalOccurrences ?? 0 }}</div>{{ " " }}
+                    <div class="hits_sub">
+                      <span v-show="(results?.totalOccurrences ?? 0) > 1">sökträffar</span>
+                      <span v-show="results?.totalOccurrences === 1">sökträff</span>
+                    </div>
+                  </div>
+                </div>
+
+                Visar verk {{ firstVisibleWork }}-{{ lastVisibleWork }} av
+                {{ results?.totalWorks ?? 0 }}, sida {{ displayedPage }} av
+                {{ totalPages }}.
+              </div>
+            </div>
+          </Teleport>
           <section
             v-if="(results?.totalWorks ?? 0) > 0"
             class="text-search-pagination"
@@ -1835,28 +1857,6 @@ v-for="item in [
       Sökresultatet kan inte visas just nu.
     </div>
 
-    <Teleport to="#toolkit" :disabled="!toolkitMounted">
-      <div
-        v-if="displayPrimary?.status === 200"
-        class="littb_pager"
-      >
-        <div>
-          <div class="hits_info">
-            <div>
-              <div v-show="(results?.totalOccurrences ?? 0) > 0" class="hits">{{ results?.totalOccurrences ?? 0 }}</div>{{ " " }}
-              <div class="hits_sub">
-                <span v-show="(results?.totalOccurrences ?? 0) > 1">sökträffar</span>
-                <span v-show="results?.totalOccurrences === 1">sökträff</span>
-              </div>
-            </div>
-          </div>
-
-          Visar verk {{ firstVisibleWork }}-{{ lastVisibleWork }} av
-          {{ results?.totalWorks ?? 0 }}, sida {{ displayedPage }} av
-          {{ totalPages }}.
-        </div>
-      </div>
-    </Teleport>
     <Teleport to="#toolkit" :disabled="!toolkitMounted || mobileSearchLayout">
       <ul v-if="navigatorFacets.length || state.facetAuthorId" class="navigator">
         <li>
