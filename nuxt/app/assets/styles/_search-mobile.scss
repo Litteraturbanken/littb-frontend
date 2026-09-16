@@ -98,6 +98,16 @@
                 height: auto; max-width: 100%; white-space: normal; overflow-wrap: anywhere;
             }
         }
+        .search-sentences-viewport {
+            width: 100%;
+            overflow-x: auto;
+            overscroll-behavior-x: contain;
+
+            table.results {
+                width: max(700px, 150%);
+            }
+        }
+
         .table_container > .littb_pager {
             margin-top: 16px;
             color: #333;

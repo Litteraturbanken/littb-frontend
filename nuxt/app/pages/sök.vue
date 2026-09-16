@@ -1349,13 +1349,45 @@ function setFacet(authorId: string | null) {
   patchFilters({ facetAuthorId: authorId })
 }
 
+const resultViewport = ref<HTMLElement | null>(null)
+let resultResizeObserver: ResizeObserver | null = null
+function centerResultKeyword() {
+  const viewport = resultViewport.value
+  if (!viewport || !mobileSearchLayout.value) return
+  const match = viewport.querySelector<HTMLElement>(".match a")
+    ?? viewport.querySelector<HTMLElement>(".match")
+  if (!match) return
+  const bounds = match.getBoundingClientRect()
+  const frame = viewport.getBoundingClientRect()
+  viewport.scrollLeft += bounds.left + bounds.width / 2 - frame.left - viewport.clientWidth / 2
+}
+watch([resultViewport, results], async () => {
+  await nextTick()
+  resultResizeObserver?.disconnect()
+  const viewport = resultViewport.value
+  if (viewport && resultResizeObserver) {
+    resultResizeObserver.observe(viewport)
+    const table = viewport.querySelector("table")
+    if (table) resultResizeObserver.observe(table)
+  }
+  centerResultKeyword()
+}, { flush: "post" })
+
 const toolkitMounted = ref(false)
 const mobileSearchLayout = ref(false)
 let searchLayoutQuery: MediaQueryList | null = null
 function updateSearchLayout() {
   mobileSearchLayout.value = searchLayoutQuery?.matches ?? false
+  void nextTick(centerResultKeyword)
 }
 onMounted(() => {
+  void document.fonts.ready.then(centerResultKeyword)
+  resultResizeObserver = new ResizeObserver(centerResultKeyword)
+  if (resultViewport.value) {
+    resultResizeObserver.observe(resultViewport.value)
+    const table = resultViewport.value.querySelector("table")
+    if (table) resultResizeObserver.observe(table)
+  }
   primaryClientMounted.value = true
   searchLayoutQuery = window.matchMedia("(max-width: 1023px)")
   updateSearchLayout()
@@ -1364,6 +1396,7 @@ onMounted(() => {
   document.addEventListener("keydown", handlePaginationKeydown)
 })
 onBeforeUnmount(() => {
+  resultResizeObserver?.disconnect()
   searchLayoutQuery?.removeEventListener("change", updateSearchLayout)
   document.removeEventListener("keydown", handlePaginationKeydown)
   primaryRequestOwner.cancel()
@@ -1751,6 +1784,13 @@ v-for="item in [
             <LibraryPagination :model="pagination" @select-page="goToPage" />
           </section>
           <div v-if="results?.totalWorks === 0">Din sökning gav inga träffar</div>
+          <div
+            ref="resultViewport"
+            class="search-sentences-viewport"
+            role="region"
+            aria-label="Sökresultat med textkontext"
+            tabindex="0"
+          >
           <table cellspacing="0" class="results">
             <tbody>
               <tr
@@ -1838,6 +1878,7 @@ v-for="item in [
               </tr>
             </tbody>
           </table>
+          </div>
           <section
             v-if="(results?.totalWorks ?? 0) > 0"
             class="text-search-pagination"
