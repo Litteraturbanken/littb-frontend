@@ -1890,7 +1890,7 @@ test("pagination keeps every page in the accepted generation and drops it for fi
   request
 }) => {
   await openSearch(page, "/s%C3%B6k?fras=overflow")
-  const next = page.getByRole("button", { name: "Nästa träffsida" })
+  const next = page.locator("[data-library-pagination-next]").first()
   await next.click()
   await expect(page).toHaveURL(/traffsida=2/)
   await expect(page).toHaveURL(/snapshot=gen-fixture-0001/)
@@ -1908,13 +1908,11 @@ test("pagination keeps every page in the accepted generation and drops it for fi
   await page.goForward()
   await expect(page).toHaveURL(/traffsida=2/)
 
-  await page.getByRole("button", { name: "Gå till sista träffen" }).click()
+  await page.locator("[data-library-page='3']").last().click()
   await expect(page).toHaveURL(/traffsida=3/)
-  await page.getByRole("button", { name: "Gå till första träffen" }).click()
+  await page.locator("[data-library-page='1']").first().click()
   await expect(page).not.toHaveURL(/traffsida=/)
-  await page.getByRole("button", { name: "Gå till träffsida . . ." }).click()
-  await page.getByRole("textbox", { name: "Träffsida" }).fill("2")
-  await page.getByRole("textbox", { name: "Träffsida" }).press("Enter")
+  await page.locator("[data-library-page='2']").last().click()
   await expect(page).toHaveURL(/traffsida=2/)
   await page.locator("h1").click()
   await page.keyboard.press("ArrowRight")
@@ -1953,8 +1951,8 @@ test("pagination cannot reuse a previous response while a new primary request is
   await requestHeld
   await expect(page.locator("#results")).toHaveClass(/searching/)
   await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)
-  const next = page.getByRole("button", { name: "Nästa träffsida" })
-  await expect(next).toBeDisabled()
+  const next = page.locator("[data-library-pagination-next]").first()
+  await expect(page.locator(".text-search-pagination").first()).toHaveAttribute("inert", "")
   const beforePagination = await requests(request, "results")
   await next.dispatchEvent("click")
   await page.locator("h1").click()
@@ -2061,7 +2059,7 @@ for (const auxiliary of ["expansion", "navigator"] as const) {
     expect(fresh).toHaveLength(1)
     expect(fresh[0]!.body).toMatchObject({ query: "overflow", author_ids: ["StrindbergA"], page: 1 })
     if (auxiliary === "navigator") expect(fresh[0]!.body.facet_author_id).toBe("StrindbergA")
-    await page.getByRole("button", { name: "Nästa träffsida" }).click()
+    await page.locator("[data-library-pagination-next]").first().click()
     await expect(page).toHaveURL(/snapshot=gen-fixture-0002/)
     await expect.poll(async () => (await requests(request, "results")).at(-1)?.body.snapshot).toBe("gen-fixture-0002")
     expect(legacyRequests).toEqual([])
@@ -2125,7 +2123,7 @@ test("an expired generation requires an explicit fresh restart", async ({ page, 
   )).length).toBe(unpinnedA.length + 1)
   expect(new URL(page.url()).searchParams.get("fras")).toBe("overflow")
   expect(new URL(page.url()).searchParams.get("forfattare")).toBe("StrindbergA")
-  await page.getByRole("button", { name: "Nästa träffsida" }).click()
+  await page.locator("[data-library-pagination-next]").first().click()
   await expect(page).toHaveURL(/snapshot=gen-fixture-0002/)
   expect((await requests(request, "results")).at(-1)?.body).toMatchObject({
     query: "overflow", author_ids: ["StrindbergA"], page: 2, snapshot: "gen-fixture-0002"
@@ -2188,7 +2186,7 @@ test("an accepted out-of-range page replace-canonicalizes without a pager or his
   await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
   const pager = page.locator("#toolkit .littb_pager")
   await expect(pager).toContainText("Visar verk 1-2 av 2, sida 1 av 1.")
-  await expect(pager.getByRole("button", { name: "Nästa träffsida" })).toBeDisabled()
+  await expect(page.locator("[data-library-pagination-next]").first()).toHaveAttribute("aria-disabled", "true")
   await expect.poll(() => page.evaluate(() => history.length)).toBe(historyLength + 1)
   await expect.poll(async () => (await requests(request, "results")).map(entry => entry.body.page))
     .toEqual([2, 1])
@@ -2378,7 +2376,7 @@ test("author facet and pager controls inherit production small-caps casing", asy
 
   const controls = [
     page.locator(".navigator").getByRole("button", { name: "Visa alla" }),
-    page.locator(".littb_pager").getByRole("button", { name: "Gå till första träffen" })
+    page.locator("[data-library-page='1']").first()
   ]
 
   for (const control of controls) {
@@ -2857,10 +2855,10 @@ test("route changes cancel every expansion without letting late owners erase a r
     )
     await expect.poll(async () => (await moreResponseGate(page)).requests).toBe(2)
 
-    await page.getByRole("button", { name: "Nästa träffsida" }).click()
+    await page.locator("[data-library-pagination-next]").first().click()
     await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
     await expect(page.locator("#toolkit .littb_pager")).toContainText("Visar verk 31-60 av 64")
-    await page.getByRole("button", { name: "Föregående träffsida" }).click()
+    await page.locator("[data-library-pagination-previous]").first().click()
     await expect(page.locator("#toolkit .littb_pager")).toContainText("Visar verk 1-30 av 64")
     await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
     const currentMore = page.locator("#results .overflow .more")
@@ -3185,7 +3183,7 @@ test("options and more cancellation clear loading and reject stale identity data
     data: { operation: "results", selector: "overflow", delay: 1200 }
   })
   await page.locator("#results .overflow .more").last().click()
-  await page.getByRole("button", { name: "Nästa träffsida" }).click()
+  await page.locator("[data-library-pagination-next]").first().click()
   await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
   await page.waitForTimeout(1300)
   await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(75)
