@@ -1549,7 +1549,7 @@ v-for="item in [
           <span class="text-sm sc">Tryckår: </span>
           <input
             type="text"
-            class="text-sm text-center py-1"
+            class="text-sm text-center py-1 px-1"
             :value="chronologyFromDraft"
             aria-label="Från år"
             @input="setChronologyDraft('from', ($event.target as HTMLInputElement).value)"

@@ -65,15 +65,19 @@ function emitLanguages(value: readonly string[]): void {
     emit("change", { field: "languages", value: value as readonly LibraryLanguage[] })
 }
 
-function draftValues(endpoint: ChronologyEndpoint, value: string): readonly [string, string] | null {
+function draftValues(
+    endpoint: ChronologyEndpoint,
+    value: string
+): readonly [string, string] | null {
     const chronology = props.model.chronology
     if (!chronology) return null
-    return endpoint === "from"
-        ? [value, chronology.to]
-        : [chronology.from, value]
+    return endpoint === "from" ? [value, chronology.to] : [chronology.from, value]
 }
 
-function rangeValues(endpoint: ChronologyEndpoint, value: string): readonly [string, string] | null {
+function rangeValues(
+    endpoint: ChronologyEndpoint,
+    value: string
+): readonly [string, string] | null {
     const chronology = props.model.chronology
     if (!chronology) return null
     const numeric = Number(value)
@@ -187,10 +191,12 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
                     class="about_select"
                     accessible-name="Om ett författarskap"
                     :model-value="model.aboutAuthorIds"
-                    :options="model.aboutAuthorOptions.map(author => ({
-                        value: author.id,
-                        label: author.label
-                    }))"
+                    :options="
+                        model.aboutAuthorOptions.map(author => ({
+                            value: author.id,
+                            label: author.label
+                        }))
+                    "
                     placeholder="Om ett författarskap"
                     searchable
                     internal-search
@@ -319,7 +325,7 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
                 aria-label="Från tryckår"
                 @input="emitChronologyDraft('from', inputValue($event))"
                 @change="emitChronologyRange('from', inputValue($event))"
-            >{{ " " }}
+            />{{ " " }}
             <span class="text-sm sc">till </span>
             <input
                 class="text-sm text-center py-1"
@@ -328,7 +334,7 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
                 aria-label="Till tryckår"
                 @input="emitChronologyDraft('to', inputValue($event))"
                 @change="emitChronologyRange('to', inputValue($event))"
-            >
+            />
         </div>
     </div>
     <div v-else data-library-chronology-unavailable class="text-sm py-1">
