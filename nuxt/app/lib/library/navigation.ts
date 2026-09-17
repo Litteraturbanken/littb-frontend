@@ -5,7 +5,7 @@ export type RelevanceSortKey = "relevans" | "forfattare" | "titlar" | "kronologi
 export type EpubSortKey = "forfattare" | "titlar" | "popularitet" | "kronologi"
 export type LatestSortKey = "nytillkommet"
 export type AuthorSortKey = "namn" | "popularitet" | "kronologi"
-export type PartSortKey = "forfattare" | "titlar"
+export type PartSortKey = "forfattare" | "titlar" | "popularitet"
 export type BrowseSortKey = EpubSortKey | AuthorSortKey | PartSortKey
 type LibrarySortKey = RelevanceSortKey | BrowseSortKey | LatestSortKey
 
@@ -29,7 +29,7 @@ const epubSorts = new Set<EpubSortKey>([
   "forfattare", "titlar", "popularitet", "kronologi"
 ])
 const authorSorts = new Set<AuthorSortKey>(["namn", "popularitet", "kronologi"])
-const partSorts = new Set<PartSortKey>(["forfattare", "titlar"])
+const partSorts = new Set<PartSortKey>(["forfattare", "titlar", "popularitet"])
 
 function queryValue(value: unknown): string {
   return typeof value === "string" ? value : ""

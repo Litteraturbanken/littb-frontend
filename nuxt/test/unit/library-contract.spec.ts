@@ -37,6 +37,11 @@ const author = {
 } satisfies LibraryAuthor
 
 describe("typed Library boundary", () => {
+  test("sends parts popularity sorting to the API", () => {
+    expect(buildLibrarySearchRequest({
+      mode: "parts", filters: filterState, sort: "popularitet", reverse: false, page: 1
+    })).toMatchObject({ mode: "parts", sort: "popularity", reverse: false })
+  })
   test.each([
     ["all", "relevans", "fallande"],
     ["all", "forfattare", "stigande"],
@@ -52,6 +57,7 @@ describe("typed Library boundary", () => {
     ["works", "kronologi", "fallande"],
     ["parts", "forfattare", "stigande"],
     ["parts", "titlar", "stigande"],
+    ["parts", "popularitet", "fallande"],
     ["epub", "forfattare", "stigande"],
     ["epub", "titlar", "stigande"],
     ["epub", "popularitet", "fallande"],

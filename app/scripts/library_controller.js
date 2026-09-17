@@ -552,6 +552,12 @@ function LibraryPageCtrl(
         ],
         parts: [
             {
+                label: "Populärt",
+                val: "popularity",
+                dir: "desc",
+                search: "popularitet"
+            },
+            {
                 label: "Författare",
                 val: "main_author.name_for_index",
                 suffix: ",sortkey|asc",

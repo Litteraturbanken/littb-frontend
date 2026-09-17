@@ -142,7 +142,8 @@ const authorSorts: Array<{ key: AuthorSortKey; label: string }> = [
 ]
 const partSorts: Array<{ key: PartSortKey; label: string }> = [
     { key: "forfattare", label: "Författare" },
-    { key: "titlar", label: "Titel" }
+    { key: "titlar", label: "Titel" },
+    { key: "popularitet", label: "Populärt" }
 ]
 
 const route = useRoute()

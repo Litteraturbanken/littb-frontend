@@ -2136,7 +2136,7 @@ export interface components {
              * @default title
              * @enum {string}
              */
-            sort: "author" | "title";
+            sort: "author" | "title" | "popularity";
         };
         /** LibraryPartsSearchResponse */
         LibraryPartsSearchResponse: {

@@ -18,6 +18,7 @@ describe("parseLibraryRouteState", () => {
     ["/bibliotek", { sida: "101" }, "all", "relevans", 1],
     ["/bibliotek", { visa: "authors", sort: "namn", sida: "7" }, "authors", "namn", 1],
     ["/bibliotek", { visa: "parts", sort: "forfattare", sida: "3" }, "parts", "forfattare", 3],
+    ["/bibliotek", { visa: "parts", sort: "popularitet", sida: "2" }, "parts", "popularitet", 2],
     ["/bibliotek", { visa: "latest", sort: "titlar", hide1800: null }, "latest", "nytillkommet", 1],
     ["/bibliotek", { visa: "pdf", sort: "kronologi", sida: "100" }, "pdf", "kronologi", 100],
     ["/epub", { visa: "works", sort: "invalid", sida: "101" }, "epub", "popularitet", 1]

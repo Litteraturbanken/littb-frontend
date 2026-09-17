@@ -91,8 +91,8 @@ export function librarySortDirection(
     let descendingByDefault = false
     if (mode === "latest") descendingByDefault = true
     else if (mode === "all") descendingByDefault = key === "relevans" || key === "kronologi"
-    else if (mode === "authors") descendingByDefault = key === "popularitet"
-    else if (mode !== "parts") {
+    else if (mode === "authors" || mode === "parts") descendingByDefault = key === "popularitet"
+    else {
         descendingByDefault = key === "popularitet" || key === "kronologi"
     }
     return descendingByDefault !== reversed ? "fallande" : "stigande"

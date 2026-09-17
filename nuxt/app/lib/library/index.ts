@@ -28,7 +28,7 @@ export type LibrarySearchState =
   | (CommonSearchState & { mode: "all", sort: "relevans" | "forfattare" | "titlar" | "kronologi", page: number })
   | (CommonSearchState & { mode: "authors", sort: "namn" | "popularitet" | "kronologi", limit: number })
   | (CommonSearchState & { mode: "works", sort: "forfattare" | "titlar" | "popularitet" | "kronologi", page: number, sourceOnly: boolean })
-  | (CommonSearchState & { mode: "parts", sort: "forfattare" | "titlar", page: number })
+  | (CommonSearchState & { mode: "parts", sort: "forfattare" | "titlar" | "popularitet", page: number })
   | (CommonSearchState & { mode: "latest", page: number, hide1800: boolean })
   | (CommonSearchState & { mode: "epub" | "pdf", sort: "forfattare" | "titlar" | "popularitet" | "kronologi", page: number })
 
