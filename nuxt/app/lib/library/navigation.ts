@@ -68,7 +68,7 @@ export function authorSortKey(value: unknown): AuthorSortKey {
 }
 
 export function partSortKey(value: unknown): PartSortKey {
-  return partSorts.has(value as PartSortKey) ? value as PartSortKey : "titlar"
+  return partSorts.has(value as PartSortKey) ? value as PartSortKey : "popularitet"
 }
 
 function librarySort(mode: LibraryMode, value: unknown): LibrarySortKey {

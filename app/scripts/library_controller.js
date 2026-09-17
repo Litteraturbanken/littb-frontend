@@ -458,7 +458,7 @@ function LibraryPageCtrl(
         epub: "popularity|desc",
         pdf: "popularity|desc",
         authors: "popularity|desc",
-        parts: "sortkey|asc",
+        parts: "popularity|desc",
         latest: "imported|desc,main_author.name_for_index|asc,sortkey|asc,sort_date_imprint.date|asc"
     }
 

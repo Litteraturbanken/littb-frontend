@@ -1649,7 +1649,7 @@ function ordinaryLibraryModeTabs(
                 "parts",
                 "Dikt, novell, etc.",
                 librarySummary.value.parts,
-                stateHref({ mode: "parts", filter: filter.value, sort: "titlar" }),
+                stateHref({ mode: "parts", filter: filter.value, sort: "popularitet" }),
                 librarySummary.value.parts === 0,
                 false,
                 separatorBefore
