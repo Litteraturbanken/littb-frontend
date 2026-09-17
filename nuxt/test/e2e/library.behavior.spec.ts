@@ -1019,7 +1019,7 @@ test("delayed Works and Dikt transitions never relabel rows owned by the other m
     .toBeVisible()
 
   await setLibraryDelay(request, "search", {
-    mode: "parts", filters: libraryFilters(), sort: "title", reverse: false, page: 1
+    mode: "parts", filters: libraryFilters(), sort: "popularity", reverse: false, page: 1
   })
   await page.locator('[data-library-tab="parts"]').click()
   await expect(page.locator("[data-library-loading] .spinner")).toBeVisible()
@@ -1973,7 +1973,7 @@ test("Library modes use only generated v2 operations", async ({ page, request })
     { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "latest", filters, reverse: false, page: 1, hide_1800: false } },
     { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "authors", filters, sort: "popularity", reverse: false, limit: 150 } },
     { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "works", filters, sort: "popularity", reverse: false, page: 1, source_only: false } },
-    { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "parts", filters, sort: "title", reverse: false, page: 1 } },
+    { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "parts", filters, sort: "popularity", reverse: false, page: 1 } },
     { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "epub", filters, sort: "popularity", reverse: false, page: 1 } },
     { method: "POST", path: "/v2/library/search", scope: "public", body: { mode: "pdf", filters, sort: "popularity", reverse: false, page: 1 } }
   ])
