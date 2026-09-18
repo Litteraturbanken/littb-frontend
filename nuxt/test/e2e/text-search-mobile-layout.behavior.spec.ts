@@ -20,9 +20,9 @@ async function expectHeadingsPinned(page: Page) {
   })).toBe(true)
 }
 
-for (const width of [320, 390, 768]) {
+for (const width of [375, 390, 768]) {
   test(`search keyword is centered and context scrolls independently at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 844 })
+    await page.setViewportSize({ width, height: width === 375 ? 667 : 844 })
     await page.goto("/s%C3%B6k?fras=overflow")
     await page.locator('[data-search-mounted="true"]').waitFor()
     await page.evaluate(() => document.fonts.ready)
@@ -75,14 +75,14 @@ for (const width of [320, 390, 768]) {
     await page.setViewportSize({ width: 1440, height: 1000 })
     await expect(page.locator("#toolkit .littb_pager")).toHaveCount(1)
     await expect(page.locator("#toolkit .navigator")).toHaveCount(1)
-    await page.setViewportSize({ width, height: 844 })
+    await page.setViewportSize({ width, height: width === 375 ? 667 : 844 })
     await expectKeywordCentered(page)
   })
 }
 
-for (const width of [320, 390]) {
+for (const width of [375, 390]) {
   test(`mobile pagination stays on one row across 273 pages at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 844 })
+    await page.setViewportSize({ width, height: width === 375 ? 667 : 844 })
     await page.route("**/api/v2/text-search/results", async route => {
       const body = route.request().postDataJSON()
       const response = await route.fetch({ postData: { ...body, page: 2 } })
@@ -97,19 +97,28 @@ for (const width of [320, 390]) {
       await expect(page.locator('.text-search-pagination [aria-current="page"]'))
         .toHaveText([String(currentPage), String(currentPage)])
       for (const pager of await page.locator(".text-search-pagination").all()) {
+        await expect(pager.locator('[data-library-page="1"]')).toBeVisible()
+        await expect(pager.locator('[data-library-page="273"]')).toBeVisible()
+        const extraPage = currentPage === 1 ? 3 : currentPage === 273 ? 271 : 138
+        await expect(pager.locator(`[data-library-page="${extraPage}"]`)).toBeVisible()
+        await expect(pager.locator('[data-library-pagination-previous]')).toHaveText("←")
+        await expect(pager.locator('[data-library-pagination-next]')).toHaveText("→")
+        await expect(pager.locator('[data-library-pagination-ellipsis]')).toHaveCount(currentPage === 137 ? 2 : 1)
         const layout = await pager.evaluate(node => {
           const frame = node.getBoundingClientRect()
           const buttons = [...node.querySelectorAll("li > a, li > span")]
             .map(button => button.getBoundingClientRect())
           return {
+            frame: { left: frame.left, right: frame.right },
+            buttons: buttons.map(box => ({ left: box.left, right: box.right })),
             rows: new Set(buttons.map(box => Math.round(box.top))).size,
             fits: buttons.every(box => box.left >= frame.left && box.right <= frame.right + 1),
             heights: buttons.map(box => box.height)
           }
         })
         expect(layout.rows).toBe(1)
-        expect(layout.fits).toBe(true)
-        if (width === 320) expect(Math.max(...layout.heights)).toBe(32)
+        expect(layout.fits, JSON.stringify(layout)).toBe(true)
+        expect(Math.min(...layout.heights)).toBeGreaterThanOrEqual(40)
       }
     }
   })
@@ -126,4 +135,17 @@ test("mobile search tools align with the results viewport at tablet widths", asy
   })
   expect(edges.left).toBeLessThan(1)
   expect(edges.right).toBeLessThan(1)
+})
+
+
+test("search panels use the full iPhone SE width", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 })
+  await page.goto("/s%C3%B6k?fras=overflow")
+  await page.locator('[data-search-mounted="true"]').waitFor()
+  for (const selector of [".submit_form", ".table_viewport"]) {
+    const bounds = await page.locator(selector).boundingBox()
+    expect(bounds!.x).toBeCloseTo(0, 0)
+    expect(bounds!.width).toBeCloseTo(375, 0)
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375)
 })

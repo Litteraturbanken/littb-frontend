@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { legacyPaginationItems } from "../../app/lib/legacy-pagination"
+import { legacyPaginationItems, mobilePaginationItems } from "../../app/lib/legacy-pagination"
 
 describe("legacyPaginationItems", () => {
   test("shows the first ten pages and a forward ellipsis on the first page", () => {
@@ -35,5 +35,26 @@ describe("legacyPaginationItems", () => {
         label: String(index + 8)
       }))
     ])
+  })
+})
+
+
+describe("mobilePaginationItems", () => {
+  test.each([
+    [1, ["1", "2", "3", "...", "273"]],
+    [3, ["1", "2", "3", "4", "...", "273"]],
+    [137, ["1", "...", "137", "138", "...", "273"]],
+    [271, ["1", "...", "271", "272", "273"]],
+    [273, ["1", "...", "271", "272", "273"]]
+  ])("keeps endpoints and the current page within six slots on page %d", (page, labels) => {
+    const items = mobilePaginationItems(273, page)
+    expect(items.map(item => item.label)).toEqual(labels)
+    expect(items.every(item => item.page >= 1 && item.page <= 273)).toBe(true)
+  })
+
+  test("shows every page for short result sets", () => {
+    expect(mobilePaginationItems(5, 3).map(item => item.label)).toEqual(["1", "2", "3", "4", "5"])
+    expect(mobilePaginationItems(1, 1).map(item => item.label)).toEqual(["1"])
+    expect(mobilePaginationItems(0, 1)).toEqual([])
   })
 })

@@ -3,6 +3,7 @@ import type { LibraryPaginationModel } from "~/lib/library/component-models"
 
 defineProps<{
     model: LibraryPaginationModel
+    compact?: boolean
 }>()
 const emit = defineEmits<{ selectPage: [page: number] }>()
 </script>
@@ -14,8 +15,9 @@ const emit = defineEmits<{ selectPage: [page: number] }>()
                 <span
                     v-if="model.previous === null"
                     data-library-pagination-previous
+                    aria-label="Föregående"
                     aria-disabled="true"
-                    >Föregående</span
+                    >{{ compact ? '←' : 'Föregående' }}</span
                 >
                 <NuxtLink
                     v-else
@@ -25,9 +27,10 @@ const emit = defineEmits<{ selectPage: [page: number] }>()
                     :to="model.previous"
                 ><a
                     data-library-pagination-previous
+                    aria-label="Föregående"
                     :href="href || ''"
                     @click.prevent="emit('selectPage', model.currentPage - 1)"
-                    >Föregående</a
+                    >{{ compact ? '←' : 'Föregående' }}</a
                 ></NuxtLink>
             </li>
             <li
@@ -53,8 +56,9 @@ const emit = defineEmits<{ selectPage: [page: number] }>()
                 <span
                     v-if="model.next === null"
                     data-library-pagination-next
+                    aria-label="Nästa"
                     aria-disabled="true"
-                    >Nästa</span
+                    >{{ compact ? '→' : 'Nästa' }}</span
                 >
                 <NuxtLink
                     v-else
@@ -64,9 +68,10 @@ const emit = defineEmits<{ selectPage: [page: number] }>()
                     :to="model.next"
                 ><a
                     data-library-pagination-next
+                    aria-label="Nästa"
                     :href="href || ''"
                     @click.prevent="emit('selectPage', model.currentPage + 1)"
-                    >Nästa</a
+                    >{{ compact ? '→' : 'Nästa' }}</a
                 ></NuxtLink>
             </li>
         </ul>

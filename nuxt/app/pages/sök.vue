@@ -4,7 +4,7 @@ import type { LocationQueryRaw } from "vue-router"
 
 import LibraryPagination from "~/components/library/LibraryPagination.vue"
 import type { LibraryPaginationModel } from "~/lib/library/component-models"
-import { legacyPaginationItems } from "~/lib/legacy-pagination"
+import { legacyPaginationItems, mobilePaginationItems } from "~/lib/legacy-pagination"
 
 import searchBackground from "~/assets/img/sok_bkg.jpg"
 import type {
@@ -1226,9 +1226,7 @@ const pagination = computed<LibraryPaginationModel>(() => {
     pageCount: totalPages.value,
     previous: displayedPage.value <= 1 ? null : pageHref(displayedPage.value - 1),
     next: displayedPage.value >= totalPages.value ? null : pageHref(displayedPage.value + 1),
-    entries: legacyPaginationItems(totalPages.value, displayedPage.value)
-      .filter(item => !mobileSearchLayout.value
-        || (item.label !== "..." && Math.abs(item.page - displayedPage.value) <= 1))
+    entries: (mobileSearchLayout.value ? mobilePaginationItems : legacyPaginationItems)(totalPages.value, displayedPage.value)
       .map(item => ({
       ...item,
       to: pageHref(item.page),
@@ -1785,7 +1783,7 @@ v-for="item in [
             :inert="!paginationReady"
             :aria-busy="!paginationReady"
           >
-            <LibraryPagination :model="pagination" @select-page="goToPage" />
+            <LibraryPagination :model="pagination" :compact="mobileSearchLayout" @select-page="goToPage" />
           </section>
           <div v-if="results?.totalWorks === 0">Din sökning gav inga träffar</div>
           <div
@@ -1889,7 +1887,7 @@ v-for="item in [
             :inert="!paginationReady"
             :aria-busy="!paginationReady"
           >
-            <LibraryPagination :model="pagination" @select-page="goToPage" />
+            <LibraryPagination :model="pagination" :compact="mobileSearchLayout" @select-page="goToPage" />
           </section>
         </div>
       </div>

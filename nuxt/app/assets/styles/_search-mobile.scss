@@ -1,10 +1,16 @@
 @media (max-width: 1023px) {
+    body.page-search .site-shell > #mainview {
+        width: calc(100% + 32px);
+        margin-right: -16px;
+        margin-left: -16px;
+    }
+
     body.page-search #mainview [data-search-root] {
         min-width: 0;
         width: 100%;
         max-width: 750px;
         h1 {
-            margin: 12px 0 20px;
+            margin: 12px 16px 20px;
             font-size: clamp(30px, 7.5vw, 42px);
             line-height: 1.1;
         }
@@ -123,6 +129,10 @@
 
         .text-search-pagination .pagination {
             flex-wrap: nowrap;
+
+            > li > a[data-library-pagination-ellipsis] {
+                min-width: 34px;
+            }
         }
 
         .table_container > .littb_pager {
@@ -133,19 +143,6 @@
             white-space: normal;
             .hits_info > div { display: flex; align-items: baseline; gap: 4px; }
             .hits { font-size: 1.25em; }
-        }
-    }
-}
-
-@media (max-width: 359px) {
-    body.page-search #mainview [data-search-root] .text-search-pagination .pagination {
-        gap: 3px;
-
-        > li > a, > li > span {
-            min-width: 32px;
-            min-height: 32px;
-            padding: 4px 6px;
-            font-size: 11px;
         }
     }
 }

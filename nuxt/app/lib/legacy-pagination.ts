@@ -44,3 +44,23 @@ export function legacyPaginationItems(
   }
   return items
 }
+
+// Keep both endpoints and the current page within six slots on narrow screens.
+export function mobilePaginationItems(totalPages: number, currentPage: number): LegacyPaginationItem[] {
+  if (totalPages <= 0) return []
+  const current = Math.max(1, Math.min(currentPage, totalPages))
+  const nearby = Math.max(2, Math.min(current, totalPages - 2))
+  const pages = totalPages <= 6
+    ? Array.from({ length: totalPages }, (_, index) => index + 1)
+    : [...new Set([1, nearby, nearby + 1, totalPages])]
+  const items: LegacyPaginationItem[] = []
+  for (const page of pages) {
+    const previous = items.at(-1)?.page ?? 0
+    if (page - previous > 1) {
+      const target = Math.floor((previous + page) / 2)
+      items.push({ key: `gap-${target}`, page: target, label: page - previous === 2 ? String(target) : "..." })
+    }
+    items.push({ key: `page-${page}`, page, label: String(page) })
+  }
+  return items
+}
