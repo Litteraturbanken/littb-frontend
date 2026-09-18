@@ -44,9 +44,11 @@ type DeveloperOutput =
   | { kind: "ftp", entries: RedFtpEntry[], status: string | null }
 
 const props = withDefaults(defineProps<{
+  inline?: boolean
   initiallyOpen?: boolean
   showContextInfoInitially?: boolean
 }>(), {
+  inline: false,
   initiallyOpen: false,
   showContextInfoInitially: false
 })
@@ -72,6 +74,7 @@ const commands: Command[] = [
   { label: "Läshistorik", url: "/historik" }
 ]
 
+const inputId = useId()
 const trigger = ref<HTMLAnchorElement | null>(null)
 const isOpen = ref(props.initiallyOpen)
 const query = ref("")
@@ -88,7 +91,7 @@ let requestController: AbortController | null = null
 let requestVersion = 0
 
 function inputElement(): HTMLInputElement | null {
-  return document.querySelector("#autocomplete")
+  return document.getElementById(props.inline ? inputId : "autocomplete") as HTMLInputElement | null
 }
 
 const matchingCommands = computed(() => {
@@ -244,6 +247,13 @@ function open() {
 }
 
 function close() {
+  if (props.inline) {
+    cancelPendingSearch()
+    query.value = ""
+    resetResults()
+    emit("closed")
+    return
+  }
   if (!isOpen.value) return
   isOpen.value = false
   cancelPendingSearch()
@@ -288,7 +298,7 @@ function onInputKeydown(event: KeyboardEvent, activeIndex: number | null) {
 }
 
 watch(rows, async values => {
-  if (!values.length || !isOpen.value) return
+  if (!values.length || (!isOpen.value && !props.inline)) return
   await nextTick()
   window.requestAnimationFrame(() => dispatchComboboxKey("Home"))
 })
@@ -380,7 +390,9 @@ async function searchDeveloperFtp(label: string): Promise<void> {
   }
 }
 
-onMounted(() => window.addEventListener("keydown", onGlobalKeydown))
+onMounted(() => {
+  if (!props.inline) window.addEventListener("keydown", onGlobalKeydown)
+})
 onMounted(() => {
   if (!isOpen.value) return
   void nextTick(() => {
@@ -391,13 +403,13 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", onGlobalKeydown)
   cancelPendingSearch()
-  document.body.classList.remove("modal-open")
+  if (!props.inline) document.body.classList.remove("modal-open")
 })
 </script>
 
 <template>
   <a
-    v-if="!initiallyOpen"
+    v-if="!initiallyOpen && !inline"
     ref="trigger"
     role="button"
     tabindex="0"
@@ -408,35 +420,35 @@ onBeforeUnmount(() => {
     @keydown.space.prevent="open"
   >Snabbsökning</a>
   <ClientOnly>
-      <Dialog
-      v-if="isOpen"
+      <component
+      :is="inline ? 'div' : Dialog"
+      v-if="isOpen || inline"
       :open="isOpen"
       as="div"
-      class="modal autocomplete fade in"
+      :class="inline ? 'menu-quick-search' : 'modal autocomplete fade in'"
       @close="close"
     >
-      <div class="modal-backdrop fade in" aria-hidden="true" @click="close" />
-      <div class="modal-dialog modal-sm">
-        <DialogPanel class="modal-content">
-          <DialogTitle class="sr-only">Snabbsökning</DialogTitle>
+      <div v-if="!inline" class="modal-backdrop fade in" aria-hidden="true" @click="close" />
+      <div :class="inline ? 'menu-search-content' : 'modal-dialog modal-sm'">
+        <component :is="inline ? 'div' : DialogPanel" :class="{ 'modal-content': !inline }">
+          <component :is="inline ? 'label' : DialogTitle" :for="inline ? inputId : undefined" :class="inline ? 'menu-search-label' : 'sr-only'">Snabbsökning</component>
           <div
-            class="modal-body"
-            :class="{ info: developerOutput?.kind === 'info' || developerOutput?.kind === 'ftp' }"
+            :class="[inline ? 'menu-search-body' : 'modal-body', { info: developerOutput?.kind === 'info' || developerOutput?.kind === 'ftp' }]"
           >
             <Combobox v-slot="{ activeIndex }" :model-value="null" nullable @update:model-value="selectRow">
               <ComboboxInput
-                id="autocomplete"
+                :id="inline ? inputId : 'autocomplete'"
                 class="text-gray-900"
                 type="text"
                 autocomplete="off"
                 autocorrect="off"
                 autocapitalize="none"
                 spellcheck="false"
-                placeholder="Gå till ett verk, en dikt, en novell eller en författare"
+                :placeholder="inline ? 'Författare, verk eller dikt' : 'Gå till ett verk, en dikt, en novell eller en författare'"
                 @change="onQueryChange"
                 @keydown.capture="onInputKeydown($event, activeIndex)"
               />
-              <ComboboxOptions v-if="rows.length" class="dropdown-menu quick-search-options">
+              <ComboboxOptions v-if="rows.length" :class="['quick-search-options', inline ? 'menu-search-options' : 'dropdown-menu']">
                 <ComboboxOption
                   v-for="row in rows"
                   v-slot="{ active: optionActive }"
@@ -460,6 +472,8 @@ onBeforeUnmount(() => {
                 </ComboboxOption>
               </ComboboxOptions>
             </Combobox>
+            <p v-if="inline && !rows.length && requestState === 'loading'" class="menu-search-status" role="status">Söker …</p>
+            <p v-if="inline && !rows.length && requestState === 'failure'" class="menu-search-status" role="status">Sökningen kunde inte hämtas. Försök igen.</p>
             <pre
               v-if="developerOutput?.kind === 'id'"
               class="quick-search-developer-id"
@@ -498,12 +512,12 @@ onBeforeUnmount(() => {
               class="quick-search-developer-status"
               role="status"
             >{{ developerOutput.status }}</p>
-            <div class="footer">
+            <div v-if="!inline" class="footer">
               <span>Gå till <NuxtLink class="sc" to="/bibliotek" no-prefetch @click="close">biblioteket</NuxtLink> om du vill utföra mer avancerade sökningar</span>
             </div>
           </div>
-        </DialogPanel>
+        </component>
       </div>
-      </Dialog>
+      </component>
   </ClientOnly>
 </template>

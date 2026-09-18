@@ -159,7 +159,8 @@ onBeforeUnmount(() => {
         {{ open ? "Stäng meny" : "Meny" }} <span aria-hidden="true">☰</span>
       </PopoverButton>
       <SiteNavigationPanel :open="open" :close="close">
-        <ul class="mainnav">
+        <MobileNavigationMenu :open="open" @navigate="close" />
+        <ul class="mainnav desktop-navigation">
           <li><NuxtLink :to="libraryHref" no-prefetch>Biblioteket</NuxtLink></li>
           <li>
             <a
@@ -185,17 +186,17 @@ onBeforeUnmount(() => {
           <li><a href="/skolan/">Skolan</a></li>
           <li><NuxtLink to="/om/ide" no-prefetch>Om LB</NuxtLink></li>
         </ul>
-        <ul class="start-only uppercase text-sm align-right antialiased mt-2 text-right mr-32 font-display">
+        <ul class="desktop-navigation start-only uppercase text-sm align-right antialiased mt-2 text-right mr-32 font-display">
           <li><a href="/skolan/lararsida/">Lärare</a></li>
           <li><a href="/bibliotekariesidor/">Bibliotekarier</a></li>
         </ul>
-        <ul class="start-only flex space-x-2 uppercase text-sm align-right antialiased justify-end mr-32 font-display">
+        <ul class="desktop-navigation start-only flex space-x-2 uppercase text-sm align-right antialiased justify-end mr-32 font-display">
           <li><NuxtLink to="/om/english.html" no-prefetch>English</NuxtLink></li>
           <li><NuxtLink to="/om/deutsch.html" no-prefetch>Deutsch</NuxtLink></li>
           <li><NuxtLink to="/om/francais.html" no-prefetch>Français</NuxtLink></li>
         </ul>
         <a
-          class="sa-logo start-only block text-right mr-32 mt-6 relative left-1"
+          class="desktop-navigation sa-logo start-only block text-right mr-32 mt-6 relative left-1"
           href="https://www.svenskaakademien.se"
           aria-label="Logotyp för Svenska Akademien"
         >

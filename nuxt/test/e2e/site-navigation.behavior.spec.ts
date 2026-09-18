@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test"
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
 const routes = ["/", "/bibliotek", "/sök", "/epub", "/presentationer", "/om/ide", "/författare/StrindbergA", readerPath]
 
-for (const width of [320, 390, 768]) {
+for (const width of [375, 390, 768]) {
   test(`shared mobile navigation fits all main page types at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
     for (const route of routes) {
@@ -24,8 +24,10 @@ for (const width of [320, 390, 768]) {
         .toBeLessThanOrEqual(1)
       await expect(button).toHaveAttribute("aria-controls", await navigation.getAttribute("id") ?? "")
       await expect(navigation.getByRole("link", { name: "Biblioteket", exact: true })).toBeVisible()
+      await expect(navigation.getByRole("button", { name: "ändra design" })).toHaveCount(0)
+      await expect(navigation.locator(".tungsten-grid")).toBeVisible()
       await page.keyboard.press("Tab")
-      await expect(navigation.getByRole("link", { name: "Biblioteket", exact: true })).toBeFocused()
+      await expect(navigation.getByRole("combobox", { name: "Snabbsökning" })).toBeFocused()
       await page.keyboard.press("Escape")
       await expect(navigation).toBeHidden()
       await expect(button).toBeFocused()
@@ -66,10 +68,11 @@ test("quick search remains accessible with the mobile menu closed", async ({ pag
   await expect(dialog).toBeHidden()
   await expect(button).toBeFocused()
   await button.click()
-  await page.getByRole("button", { name: "Snabbsökning", exact: true }).click()
-  await expect(dialog).toBeVisible()
-  await page.keyboard.press("Escape")
+  const inlineSearch = page.getByRole("combobox", { name: "Snabbsökning" })
+  await expect(inlineSearch).toBeVisible()
+  await inlineSearch.focus()
   await expect(dialog).toBeHidden()
+  await page.keyboard.press("Escape")
   await expect(page.getByRole("navigation", { name: "Huvudnavigation" })).toBeHidden()
   await expect(button).toBeFocused()
 })
