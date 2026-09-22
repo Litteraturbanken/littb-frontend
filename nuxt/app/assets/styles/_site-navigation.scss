@@ -1,31 +1,17 @@
-.site-mobile-chrome-background {
-    display: none;
-}
-
 .site-menu-toggle {
     display: none;
 }
 
 @media (max-width: 1023px) {
-    // Safari 26 extends the color of viewport-attached elements into its top UI.
-    // Keep that edge yellow without making the navigation or its open panel sticky.
-    body:not(.reader-focus-mode):not(.modal-open) .site-mobile-chrome-background {
-        display: block;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: max(1px, env(safe-area-inset-top, 0px));
-        background-color: #ffda54;
-        pointer-events: none;
-        z-index: 60;
-    }
-
+    // With viewport-fit=cover, the header paints the area behind the notch.
+    // Keep its controls and page content inside the device's safe insets.
     body:has(.site-shell) {
+        --site-inset-left: max(16px, env(safe-area-inset-left, 0px));
+        --site-inset-right: max(16px, env(safe-area-inset-right, 0px));
         display: block;
         width: 100%;
         min-width: 0;
-        padding: 0 16px 24px;
+        padding: 0 var(--site-inset-right) max(24px, env(safe-area-inset-bottom, 0px)) var(--site-inset-left);
     }
 
     body #leftCorridor.site-navigation {
@@ -33,10 +19,10 @@
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        width: calc(100% + 32px);
+        width: calc(100% + var(--site-inset-left) + var(--site-inset-right));
         min-width: 0;
-        margin: 0 -16px;
-        padding: 12px 16px;
+        margin: 0 calc(-1 * var(--site-inset-right)) 0 calc(-1 * var(--site-inset-left));
+        padding: calc(12px + env(safe-area-inset-top, 0px)) var(--site-inset-right) 12px var(--site-inset-left);
         color: white;
         background: #302b24;
 
@@ -127,8 +113,8 @@
         }
 
         #toolkit:not(:empty) {
-            width: calc(100% + 32px);
-            margin: 12px -16px -12px;
+            width: calc(100% + var(--site-inset-left) + var(--site-inset-right));
+            margin: 12px calc(-1 * var(--site-inset-right)) -12px calc(-1 * var(--site-inset-left));
             padding: 16px;
             color: #333;
             background: white;
@@ -166,6 +152,10 @@
         }
     }
 
+    body.reader-focus-mode:has(.site-shell) {
+        padding-top: env(safe-area-inset-top, 0px);
+    }
+
     body.reader-focus-mode #leftCorridor.site-navigation {
         display: none;
     }
@@ -173,7 +163,7 @@
 
 @media (max-width: 767px) {
     body.modal-open:has(.site-shell) {
-        padding: 2%;
+        padding: max(2%, env(safe-area-inset-top, 0px)) max(2%, env(safe-area-inset-right, 0px)) max(2%, env(safe-area-inset-bottom, 0px)) max(2%, env(safe-area-inset-left, 0px));
         background-color: #333;
     }
 

@@ -43,9 +43,9 @@ onMounted(() => { loadMenuFonts.value = true })
     }
     .desktop-navigation { display: none; }
     .site-navigation-panel {
-      width: calc(100% + 32px);
-      margin-right: -16px;
-      margin-left: -16px;
+      width: calc(100% + var(--site-inset-left) + var(--site-inset-right));
+      margin-right: calc(-1 * var(--site-inset-right));
+      margin-left: calc(-1 * var(--site-inset-left));
     }
     .mobile-navigation-menu {
       --menu-paper: #fff;
@@ -54,7 +54,7 @@ onMounted(() => { loadMenuFonts.value = true })
       --menu-line: #bab3a8;
       display: block;
       margin: 12px 0 -12px;
-      padding: 0 0 24px;
+      padding: 0 env(safe-area-inset-right, 0px) max(24px, env(safe-area-inset-bottom, 0px)) env(safe-area-inset-left, 0px);
       container-type: inline-size;
       color: var(--menu-ink);
       background: var(--menu-paper);

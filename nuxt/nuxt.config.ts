@@ -180,6 +180,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
       htmlAttrs: { lang: "sv" },
       link: [
         { rel: "icon", type: "image/png", sizes: "32x32", href: "/assets/img/favicons/favicon-32x32.png" },
