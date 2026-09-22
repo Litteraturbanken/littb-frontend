@@ -34,6 +34,8 @@ onMounted(() => { loadMenuFonts.value = true })
 @media (max-width: 1023px) {
   body #leftCorridor.site-navigation {
     &:has(.mobile-navigation-menu) {
+      > .logo_link_monogram { width: 84px; height: 90px; margin: 0; }
+      .lb-logo { width: 84px; height: 90px; }
       background: #ffda54;
       box-shadow: inset 0 0 26px #98662066;
       .site-menu-toggle { color: #453d1c; border-color: #867431; background: transparent; }
@@ -52,7 +54,7 @@ onMounted(() => { loadMenuFonts.value = true })
       --menu-line: #bab3a8;
       display: block;
       margin: 12px 0 -12px;
-      padding: 12px 0 24px;
+      padding: 0 0 24px;
       container-type: inline-size;
       color: var(--menu-ink);
       background: var(--menu-paper);
@@ -63,7 +65,7 @@ onMounted(() => { loadMenuFonts.value = true })
       :is(a, button, input):focus-visible { outline: 2px solid var(--menu-accent); outline-offset: 3px; }
       ul { list-style: none; padding: 0; margin: 0; }
       li { margin: 0; padding: 0; }
-      .menu-content { display: flex; flex-direction: column; gap: 2.5cqw; padding-top: 16px; }
+      .menu-content { display: flex; flex-direction: column; gap: 2.5cqw; padding-top: 2.5cqw; }
       .menu-search-label { display: block; margin: 0 0 10px; font: 11px/1.5 Arial, sans-serif; letter-spacing: .13em; text-transform: uppercase; color: var(--menu-accent); }
       .menu-utility-links { display: flex; flex-wrap: wrap; gap: 0 16px; border-top: 1px solid var(--menu-line); padding-top: 8px; font: 12px Arial, sans-serif; a { display: flex; align-items: center; min-height: 44px; } }
       .menu-search-section { position: relative; z-index: 2; }
