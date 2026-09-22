@@ -3,6 +3,21 @@
 }
 
 @media (max-width: 1023px) {
+    html:has(.site-shell) {
+        // Page routes set inline backgrounds; keep the browser canvas yellow.
+        background-color: #ffda54 !important;
+    }
+
+    body:has(.site-shell) {
+        background-color: #071e2b;
+        // Preserve the route artwork above the navy body background.
+        background-image: inherit;
+        background-position: inherit;
+        background-size: inherit;
+        background-repeat: inherit;
+        background-attachment: inherit;
+    }
+
     // With viewport-fit=cover, the header paints the area behind the notch.
     // Keep its controls and page content inside the device's safe insets.
     body:has(.site-shell) {
@@ -164,7 +179,7 @@
 @media (max-width: 767px) {
     body.modal-open:has(.site-shell) {
         padding: max(2%, env(safe-area-inset-top, 0px)) max(2%, env(safe-area-inset-right, 0px)) max(2%, env(safe-area-inset-bottom, 0px)) max(2%, env(safe-area-inset-left, 0px));
-        background-color: #333;
+        background-color: #071e2b;
     }
 
     body.modal-open #leftCorridor.site-navigation,
