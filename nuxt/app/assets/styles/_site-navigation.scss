@@ -1,8 +1,26 @@
+.site-mobile-chrome-background {
+    display: none;
+}
+
 .site-menu-toggle {
     display: none;
 }
 
 @media (max-width: 1023px) {
+    // Safari 26 extends the color of viewport-attached elements into its top UI.
+    // Keep that edge yellow without making the navigation or its open panel sticky.
+    body:not(.reader-focus-mode):not(.modal-open) .site-mobile-chrome-background {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: max(1px, env(safe-area-inset-top, 0px));
+        background-color: #ffda54;
+        pointer-events: none;
+        z-index: 60;
+    }
+
     body:has(.site-shell) {
         display: block;
         width: 100%;

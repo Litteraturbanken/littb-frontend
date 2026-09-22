@@ -127,6 +127,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="site-shell">
+    <div class="site-mobile-chrome-background" aria-hidden="true" />
     <Popover
       id="leftCorridor"
       v-slot="{ open, close }"
