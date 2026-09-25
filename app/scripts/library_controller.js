@@ -658,8 +658,11 @@ function LibraryPageCtrl(
                     ctrl.filter
                         .split(" ")
                         .map(str => {
-                            let search =
-                                item.full_name + " " + _.map(item.pseudonym, "full_name").join(" ")
+                            let search = [
+                                item.full_name,
+                                ..._.map(item.pseudonym, "full_name"),
+                                ...(item.other_name || [])
+                            ].join(" ")
 
                             return checkForName(search, str)
                         })
