@@ -880,6 +880,7 @@ test("direct source information hydrates once without a client refetch", async (
 
   expect(response?.status()).toBe(200)
   const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(page).toHaveTitle("Hjalmar Söderberg – Doktor Glas (1905). Om boken | Litteraturbanken")
   await expect(dialog).toHaveCount(1)
   await expect(dialog).toContainText("Doktor Glas. Roman")
   await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
@@ -929,6 +930,7 @@ test("direct source information remains visible and linked without JavaScript", 
   const titleHref = await title.getAttribute("href")
   const directResponse = await page.goto(`${origin}${titleHref}`, { waitUntil: "networkidle" })
   expect(directResponse?.status()).toBe(200)
+  await expect(page).toHaveTitle("Hjalmar Söderberg – Doktor Glas (1905). Om boken | Litteraturbanken")
   await expect(page).toHaveURL(`${readerPath}?om-boken`)
   const dialog = page.locator('.modal.about[role="dialog"]')
   await expect(dialog).toBeVisible()
@@ -957,6 +959,7 @@ test("source information entrances replace history and preserve raw query bytes"
   const openPath = `${readerPath}${rawQuery}&om-boken`
   const openEncodedPath = `${readerEncodedPath}${rawQuery}&om-boken`
   await page.goto(`${readerPath}${rawQuery}`, { waitUntil: "networkidle" })
+  const readingTitle = await page.title()
   await resetReader(request)
 
   const title = page.locator(".reader-context").getByRole("link", {
@@ -972,11 +975,13 @@ test("source information entrances replace history and preserve raw query bytes"
   await startHistoryMutationCounter(page)
   await title.click()
   await expect(page).toHaveURL(openPath)
+  await expect(page).toHaveTitle("Hjalmar Söderberg – Doktor Glas (1905). Om boken | Litteraturbanken")
   await expect(dialog).toHaveCount(1)
   expect(await historyMutationCounts(page)).toEqual({ pushState: 0, replaceState: 1 })
   expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
   await dialog.getByRole("button", { name: "Stäng" }).click()
   await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
+  await expect(page).toHaveTitle(readingTitle)
   await expect(title).toBeFocused()
 
   await sidebar.click()

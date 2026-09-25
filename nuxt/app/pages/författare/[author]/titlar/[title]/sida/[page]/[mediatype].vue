@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { readerDocumentTitle } from "~/lib/reader-document-title"
 import type {
   ReaderFacsimilePage,
   ReaderFacsimileSize,
@@ -1073,9 +1074,7 @@ const readerSliderStyles = computed(() => {
   }
 })
 const pageTitle = computed(
-  () => reader.value
-    ? `${reader.value.title} sida ${reader.value.pageName} ${reader.value.mediaType} | Litteraturbanken`
-    : "Litteraturbanken"
+  () => readerDocumentTitle(reader.value, sourceInfoRequested.value)
 )
 const currentPart = computed(() => {
   const currentReader = reader.value
