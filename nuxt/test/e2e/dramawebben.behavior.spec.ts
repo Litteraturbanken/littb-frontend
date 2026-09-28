@@ -1553,12 +1553,12 @@ test("drama range capture loss prevents a later stale pointer commit", async ({ 
   expect(new URL(page.url()).searchParams.get("keep")).toBe("capture")
 })
 
-test("catalog selected values and author placeholder meet normal-text contrast", async ({
+test("catalog keeps selected values dark and matches production placeholders", async ({
   page
 }) => {
   await page.goto(
     "/dramawebben/pjäser?author=StrindbergA&gender=female&mediatype=pdf",
-    { waitUntil: "networkidle" }
+    { waitUntil: "domcontentloaded" }
   )
 
   const authorInput = page.getByRole("combobox", { name: "Visa författare", exact: true })
@@ -1577,23 +1577,26 @@ test("catalog selected values and author placeholder meet normal-text contrast",
     expect(contrast.ratio).toBeGreaterThanOrEqual(4.5)
   }
 
-  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+  await page.goto("/dramawebben/pjäser", { waitUntil: "domcontentloaded" })
   const defaultAuthorInput = page.getByRole("combobox", {
     name: "Visa författare",
     exact: true
   })
-  await expect(defaultAuthorInput).toHaveValue("Välj författare")
-  const defaultValueContrast = await resolvedTextContrast(defaultAuthorInput)
-  expect(defaultValueContrast.foregroundCss).toBe("rgb(85, 85, 85)")
-  expect(defaultValueContrast.background).toEqual([255, 255, 255])
-  expect(defaultValueContrast.ratio).toBeGreaterThanOrEqual(4.5)
-  await defaultAuthorInput.fill("")
   await expect(defaultAuthorInput).toHaveValue("")
+  await expect(defaultAuthorInput).toHaveAttribute("placeholder", "Välj författare")
   const placeholderContrast = await resolvedTextContrast(defaultAuthorInput, "::placeholder")
-  expect(placeholderContrast.foregroundCss).toBe("rgb(118, 118, 118)")
-  expect(placeholderContrast.background).toEqual([255, 255, 255])
-  expect(placeholderContrast.ratio).toBeGreaterThanOrEqual(4.5)
+  expect(placeholderContrast.foregroundCss).toBe("rgb(153, 153, 153)")
+  expect(await defaultAuthorInput.evaluate(element =>
+    getComputedStyle(element, "::placeholder").fontFamily
+  )).toContain("Requiem Text SC")
+  for (const label of ["Kön", "Utgivningsformat"]) {
+    await expect(page.getByRole("button", { name: label, exact: true })
+      .locator(".select2-selection__rendered")).toHaveCSS("color", "rgb(153, 153, 153)")
+  }
+  const searchPlaceholder = await resolvedTextContrast(page.getByRole("textbox", { name: "Sök", exact: true }), "::placeholder")
+  expect(searchPlaceholder.foregroundCss).toBe("rgb(153, 153, 153)")
 })
+
 
 test("range filter button shows its narrow focus indicator only for keyboard use", async ({
   page

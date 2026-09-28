@@ -244,7 +244,7 @@ function authorName(author: CatalogAuthor) {
 }
 
 function selectedAuthorLabel(value: unknown): string {
-  return isCatalogAuthor(value) ? value.surname || value.full_name : "Välj författare"
+  return isCatalogAuthor(value) ? value.surname || value.full_name : ""
 }
 
 function mediaHref(media: CatalogMedia): string {
@@ -832,7 +832,7 @@ useHead(() => ({
               class="select2-selection select2-selection--single"
               :aria-label="gender === 'all' ? 'Kön' : `Kön: ${genderLabel}`"
             >
-              <span class="select2-selection__rendered">{{ genderLabel }}</span>
+              <span class="select2-selection__rendered" :class="{ catalog_placeholder: gender === 'all' }">{{ genderLabel }}</span>
               <span class="select2-selection__arrow"><b /></span>
             </ListboxButton>
             <ListboxOptions class="catalog_options select2-results__options">
@@ -849,7 +849,7 @@ useHead(() => ({
               class="select2-selection select2-selection--single"
               :aria-label="mediaType === 'all' ? 'Utgivningsformat' : `Utgivningsformat: ${mediaLabel}`"
             >
-              <span class="select2-selection__rendered">{{ mediaLabel }}</span>
+              <span class="select2-selection__rendered" :class="{ catalog_placeholder: mediaType === 'all' }">{{ mediaLabel }}</span>
               <span class="select2-selection__arrow"><b /></span>
             </ListboxButton>
             <ListboxOptions class="catalog_options select2-results__options">
@@ -1115,9 +1115,15 @@ useHead(() => ({
   font-variant: normal;
   text-transform: lowercase !important;
 }
-.catalog_select input.select2-selection__rendered::placeholder {
-  color: #767676;
+.catalog_select .select2-selection__rendered.catalog_placeholder,
+.catalog_select input.select2-selection__rendered::placeholder,
+.controls input.filter::placeholder {
+  color: #999;
   opacity: 1;
+}
+.catalog_select input.select2-selection__rendered::placeholder {
+  font-family: "Requiem Text SC A", "Requiem Text SC B";
+  text-transform: lowercase;
 }
 .controls .dropdown-menu > li:not(:last-child) { min-height: 54px; }
 .controls .dropdown-menu > li:last-child { min-height: 18px; }
