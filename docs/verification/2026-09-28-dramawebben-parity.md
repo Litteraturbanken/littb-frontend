@@ -34,3 +34,11 @@ The regression traverses landing → catalogue → Mer läsning → catalogue. T
 ## Validation boundary
 
 The targeted fixture navigation regression passed. Lint and diff checks passed. Its first two attempts timed out waiting for `networkidle` in the existing warmup; the warmup now waits for DOM content and the expected visible catalogue rows instead. Live deployment verification is reported separately with the deployment receipt.
+
+## Stage deployment verification
+
+- Public frontend: `a924f131b3a1fbfc2a5e4c49152852a3e79f970a`.
+- Image: `sha256:17af18ea66e588377605587386ee338e68e069ffe4b921fd79f440cf2f1f9dfa`.
+- Guarded deployment completed; all 19 live smoke checks passed, including the new landing → catalogue assertion.
+- Infrastructure manifest receipt: `265294e6e621251d9420727e49a15ac10d50b421`; only the frontend component changed.
+- Post-deployment browser: clicking Pjäser opened the catalogue with 462 data rows.
