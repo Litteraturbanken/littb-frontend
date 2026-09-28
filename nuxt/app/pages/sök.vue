@@ -1383,6 +1383,8 @@ function updateSearchLayout() {
   void nextTick(centerResultKeyword)
 }
 onMounted(() => {
+  // Native autofocus does not run reliably after client-side navigation.
+  void nextTick(() => searchInputElement.value?.focus({ preventScroll: true }))
   void document.fonts.ready.then(centerResultKeyword)
   resultResizeObserver = new ResizeObserver(centerResultKeyword)
   if (resultViewport.value) {
