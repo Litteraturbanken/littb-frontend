@@ -1045,11 +1045,24 @@ test("the list toggle pushes query-owned history and Back/Forward restores each 
   request
 }) => {
   const problems = collectProblems(page)
-  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+  await page.goto("/dramawebben/pjäser", { waitUntil: "domcontentloaded" })
   await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+  await expect(page.getByRole("combobox", { name: "Visa författare", exact: true })).toBeVisible()
   await expect(page.getByRole("button", { name: "Pjäser", exact: true })).toHaveClass(/\bactive\b/u)
   await expect(page.getByRole("button", { name: "Författare", exact: true }))
     .not.toHaveClass(/\bactive\b/u)
+
+  await expect(page.getByRole("button", { name: "Pjäser", exact: true }))
+    .toHaveCSS("background-color", "rgb(85, 85, 85)")
+  const controlBoxes = await page.locator(
+    ".catalog_select .select2-selection--single, .filter_btn, input.filter"
+  ).evaluateAll(elements => elements.map(element => {
+    const box = element.getBoundingClientRect()
+    return { height: box.height, top: box.top }
+  }))
+  expect(controlBoxes).toHaveLength(5)
+  expect(new Set(controlBoxes.map(box => box.height))).toEqual(new Set([34]))
+  expect(new Set(controlBoxes.map(box => box.top)).size).toBe(1)
 
   await page.getByRole("button", { name: "Författare", exact: true }).click()
   await expectQuery(page, "visa", "författare")
@@ -1060,6 +1073,11 @@ test("the list toggle pushes query-owned history and Back/Forward restores each 
     .not.toHaveClass(/\bactive\b/u)
   await expect(page.getByRole("button", { name: "Författare", exact: true }))
     .toHaveClass(/\bactive\b/u)
+
+  await expect(page.getByRole("button", { name: "Författare", exact: true }))
+    .toHaveCSS("background-color", "rgb(85, 85, 85)")
+  await expect(page.getByRole("button", { name: "Pjäser", exact: true }))
+    .toHaveCSS("background-color", "rgb(255, 255, 255)")
 
   await page.goBack()
   await expectQuery(page, "visa", null)

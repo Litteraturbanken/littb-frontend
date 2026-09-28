@@ -769,7 +769,7 @@ useHead(() => ({
       </p>
 
       <div class="controls">
-        <div class="btn-group">
+        <div class="btn-group" role="group" aria-label="Visa pjäser eller författare">
           <button
             type="button"
             class="sc btn btn-primary"
@@ -860,8 +860,8 @@ useHead(() => ({
           </div>
         </Listbox>
 
-        <div class="auth_select_container">
-          <Popover v-if="listType === 'pjäser'" v-slot="{ open: isOpen }">
+        <div v-if="listType === 'pjäser'" class="auth_select_container">
+          <Popover v-slot="{ open: isOpen }">
             <div class="btn-group" :class="{ open: isOpen }">
               <PopoverButton
                 type="button"
@@ -1027,7 +1027,8 @@ useHead(() => ({
   display: block;
   box-sizing: border-box;
   width: 100%;
-  height: 28px;
+  height: 34px;
+  min-height: 34px;
   padding: 1px 20px 0 8px;
   border: 1px solid #999 !important;
   background: white !important;
@@ -1037,7 +1038,7 @@ useHead(() => ({
   display: block !important;
   max-width: none !important;
   width: 100%;
-  height: 24px;
+  height: 30px;
   padding: 0;
   border: 0 !important;
   background: transparent;
@@ -1055,7 +1056,7 @@ useHead(() => ({
   top: 0;
   right: 1px;
   width: 20px;
-  height: 26px;
+  height: 32px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -1085,25 +1086,47 @@ useHead(() => ({
   list-style: none;
 }
 .catalog_options .select2-results__option { padding: 6px; }
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px;
+}
 .controls > .btn-group:first-child {
-  display: block;
+  display: flex;
+  flex: 0 0 100%;
   margin-bottom: 0;
 }
-.controls > .btn-group:first-child .btn { height: 34.421875px; }
-.controls > .btn-group:first-child .btn.active {
-  color: black;
-  background-color: #fff;
-  background-image: linear-gradient(to top, #eee 0%, #fff 50%);
+.controls > .btn-group:first-child .btn {
+  height: 34px;
+  min-height: 34px;
+  border: 1px solid #999;
+  background: #fff;
+  color: #333;
   box-shadow: none;
+}
+.controls > .btn-group:first-child .btn.active {
+  color: #fff !important;
+  background: #555 !important;
+  border-color: #555 !important;
 }
 .controls > .btn-group:first-child .btn:first-child { width: 75px; }
 .controls > .btn-group:first-child .btn:last-child {
   width: 115px;
-  margin-left: 6px;
+  margin-left: -1px;
 }
 .controls > .auth_select_container,
-.controls > .catalog_select { margin-right: 4.53125px; }
-.controls > input.filter { margin-right: 4.53125px; }
+.controls > .catalog_select,
+.controls > input.filter { margin: 0; }
+.controls :deep(.filter_btn),
+.controls > input.filter,
+.controls > .clear_filter {
+  box-sizing: border-box;
+  height: 34px;
+  min-height: 34px;
+  margin: 0;
+}
+.catalog_select .select2-selection__rendered { line-height: 30px; }
 .controls .auth_select_container .btn-group {
   position: relative;
   display: inline-block;
