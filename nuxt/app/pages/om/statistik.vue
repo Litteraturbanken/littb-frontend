@@ -3,6 +3,7 @@ import AboutPageShell from "../../components/about/AboutPageShell.vue"
 import { useLbApiClient } from "../../composables/useLbApiClient"
 import type { components } from "../../lib/api/generated/lbapi"
 import { authorProfilePath, encodeRfc3986Segment } from "../../lib/author-profile"
+import { buildLibraryCountRequest } from "../../lib/library"
 import { isSafePopularEpub, isSafePopularWork } from "../../lib/statistics-items"
 
 type PopularWork = components["schemas"]["PopularWork"]
@@ -33,6 +34,23 @@ async function requestStats() {
     return data ?? null
   } catch (error) {
     reportFailure("summary", error)
+    return null
+  }
+}
+
+async function requestEpubCount() {
+  try {
+    // Match /epub: count downloadable works across all catalogue formats.
+    const { data, error } = await client.POST("/library/counts", {
+      body: buildLibraryCountRequest("epub", {
+        query: "", gender: null, categories: [], narrowingCategories: [],
+        aboutAuthorIds: [], media: [], languages: [], yearRange: null
+      })
+    })
+    if (error) reportFailure("EPUB count", error)
+    return data?.mode === "epub" ? data.total : null
+  } catch (error) {
+    reportFailure("EPUB count", error)
     return null
   }
 }
@@ -68,6 +86,11 @@ const statsAsync = useAsyncData(
   async () => ({ value: await requestStats() }),
   { lazy: true }
 )
+const epubCountAsync = useAsyncData(
+  "statistics-epub-count",
+  async () => ({ value: await requestEpubCount() }),
+  { lazy: true }
+)
 const worksAsync = useAsyncData(
   "statistics-popular-works",
   async () => ({
@@ -83,8 +106,9 @@ const epubsAsync = useAsyncData(
   { lazy: true }
 )
 
-if (import.meta.server) await Promise.all([statsAsync, worksAsync, epubsAsync])
+if (import.meta.server) await Promise.all([statsAsync, epubCountAsync, worksAsync, epubsAsync])
 
+const epubCount = computed(() => epubCountAsync.data.value?.value ?? null)
 const statsData = computed(() => statsAsync.data.value?.value ?? null)
 const popularWorks = computed(() => (
   worksAsync.data.value?.value?.items ?? []
@@ -92,7 +116,7 @@ const popularWorks = computed(() => (
 const popularEpubs = computed(() => (
   epubsAsync.data.value?.value?.items ?? []
 ).filter(isSafePopularEpub))
-const statisticsPending = computed(() => [statsAsync, worksAsync, epubsAsync]
+const statisticsPending = computed(() => [statsAsync, epubCountAsync, worksAsync, epubsAsync]
   .some(resource => resource.status.value === "idle" || resource.status.value === "pending"))
 const statisticsReady = computed(() => !statisticsPending.value)
 
@@ -148,7 +172,7 @@ function epubHref(item: PopularEpub): string {
       <li>{{ numberFmt(statsData.pages.etext) }} sidor etext</li>
       <li>{{ numberFmt(statsData.pages.faksimil) }} sidor faksimil</li>
       <li>{{ numberFmt(statsData.words.etext + statsData.words.faksimil) }} ord</li>
-      <li>{{ numberFmt(statsData.epubs) }} epubfiler</li>
+      <li v-if="epubCount !== null">{{ numberFmt(epubCount) }} epubfiler</li>
     </ul>
 
     <h3>De mest lästa verken</h3>

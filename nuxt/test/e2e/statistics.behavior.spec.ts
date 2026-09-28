@@ -55,7 +55,13 @@ async function beginRouterPush(page: Page, path: string) {
   }, path)
 }
 
-test.beforeEach(async ({ request }) => resetFixture(request))
+test.beforeEach(async ({ page, request }) => {
+  await resetFixture(request)
+  // External font authorization is independent of statistics behavior.
+  await page.route("https://cloud.typography.com/**", route => route.fulfill({
+    contentType: "text/css", body: ""
+  }))
+})
 
 test("mounts Statistics before all resources settle", async ({ page }) => {
   await page.goto("/bibliotek", { waitUntil: "networkidle" })
@@ -63,6 +69,7 @@ test("mounts Statistics before all resources settle", async ({ page }) => {
 
   const expectedResources = new Set([
     "/api/v2/stats",
+    "/api/v2/library/counts",
     "/api/v2/works/popular",
     "/api/v2/epubs/popular"
   ])
@@ -87,6 +94,7 @@ test("mounts Statistics before all resources settle", async ({ page }) => {
   }
 
   await page.route("**/api/v2/stats", gateResponse)
+  await page.route("**/api/v2/library/counts", gateResponse)
   await page.route("**/api/v2/works/popular**", gateResponse)
   await page.route("**/api/v2/epubs/popular**", gateResponse)
   try {
@@ -109,6 +117,7 @@ test("mounts Statistics before all resources settle", async ({ page }) => {
     await page.unroute("**/api/v2/epubs/popular**", gateResponse)
     await page.unroute("**/api/v2/works/popular**", gateResponse)
     await page.unroute("**/api/v2/stats", gateResponse)
+    await page.unroute("**/api/v2/library/counts", gateResponse)
   }
 })
 
@@ -131,7 +140,7 @@ test("renders exact copy, order, URLs, metadata, and no hydration errors", async
     "342 753 sidor etext",
     "2 737 882 sidor faksimil",
     "741 208 730 ord",
-    "1513 epubfiler"
+    "201 epubfiler"
   ])
 
   const works = lists.nth(1).locator("li")
@@ -369,3 +378,25 @@ test("client navigation omits unsafe download identities", async ({ page, reques
     )
   await expect(page.getByText(/Unsafe download identity/u)).toHaveCount(0)
 })
+
+for (const scenario of [
+  { name: "zero", status: 200, body: { mode: "epub", total: 0 } },
+  { name: "unavailable", status: 200, body: { mode: "epub", total: null } },
+  { name: "failed", status: 503, body: {} }
+]) {
+  test(`client navigation handles ${scenario.name} EPUB count`, async ({ page }) => {
+    await page.goto("/om/ide", { waitUntil: "networkidle" })
+    await page.route("**/api/v2/library/counts", route => route.fulfill({
+      status: scenario.status,
+      contentType: "application/json",
+      body: JSON.stringify(scenario.body)
+    }))
+    await beginRouterPush(page, "/om/statistik")
+    await expect(page.locator(".content.stats")).toBeVisible()
+    const summary = page.locator(".content.stats > ul").first()
+    await expect(summary).toContainText("16 237 verk")
+    if (scenario.name === "zero") await expect(summary).toContainText("0 epubfiler")
+    else await expect(summary).not.toContainText("epubfiler")
+    await expect(page.locator(".content.stats > ul").nth(2).locator("li")).toHaveCount(30)
+  })
+}

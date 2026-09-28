@@ -35,7 +35,7 @@ test("direct HTML contains metadata, data, and rankings before hydration", async
     "342 753 sidor etext",
     "2 737 882 sidor faksimil",
     "741 208 730 ord",
-    "1513 epubfiler",
+    "201 epubfiler",
     "Doktor Glas",
     "Popular Work 30",
     "EPUB Work 30"
@@ -194,4 +194,35 @@ test("malformed download identities produce no unsafe hrefs before hydration", a
   )
   expect(document.querySelector(".content.stats")?.textContent)
     .not.toContain("Unsafe download identity")
+})
+
+test("EPUB statistics match the unfiltered download catalogue", async ({ request }) => {
+  await resetFixture(request)
+  const statistics = await (await request.get("/om/statistik")).text()
+  const catalogue = await (await request.get("/epub")).text()
+  const { document: statsDocument } = parseHTML(statistics)
+  const { document: catalogueDocument } = parseHTML(catalogue)
+  const count = statsDocument.querySelector(".content.stats > ul")?.textContent
+    ?.match(/(\d+) epubfiler/)?.[1]
+  expect(count).toBe("201")
+  expect(catalogueDocument.querySelector('a[href="/epub?sort=popularitet"]')?.textContent)
+    .toContain(count!)
+  expect(statistics).not.toContain("1513 epubfiler")
+})
+
+test("unavailable catalogue count hides only the EPUB total", async ({ request }) => {
+  await resetFixture(request)
+  await request.put(`${fixture}/_library_v2/failures`, {
+    data: { operation: "counts", mode: "epub" }
+  })
+  try {
+    const html = await (await request.get("/om/statistik")).text()
+    const { document } = parseHTML(html)
+    const summary = document.querySelector(".content.stats > ul")?.textContent
+    expect(summary).toContain("16 237 verk")
+    expect(summary).not.toContain("epubfiler")
+    expect(document.querySelectorAll(".content.stats > ul:nth-of-type(3) > li")).toHaveLength(30)
+  } finally {
+    await request.delete(`${fixture}/_library_v2/failures`)
+  }
 })
