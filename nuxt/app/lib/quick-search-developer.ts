@@ -167,7 +167,7 @@ function contextualCommands(context: QuickSearchContext | null): QuickSearchDeve
   return output
 }
 
-export function quickSearchInfoEnabled(hostname: string, development: boolean): boolean {
+export function quickSearchContextCommandsEnabled(hostname: string, development: boolean): boolean {
   return development || hostname === "stage.litteraturbanken.se" || hostname === "red.litteraturbanken.se"
 }
 
@@ -175,12 +175,11 @@ export function developerQuickSearchCommands(
   query: string,
   context: QuickSearchContext | null,
   enabled: boolean,
-  infoEnabled = enabled
+  contextCommandsEnabled = enabled
 ): QuickSearchDeveloperCommand[] {
-  if (!enabled && !infoEnabled) return []
+  if (!enabled && !contextCommandsEnabled) return []
   const normalized = query.trim().toLocaleLowerCase("sv-SE")
   const output = contextualCommands(context).filter(command =>
-    (enabled || (infoEnabled && command.action === "info")) &&
     command.label.toLocaleLowerCase("sv-SE").startsWith(normalized)
   )
   if (enabled && safeWorkId.test(query.trim())) {
