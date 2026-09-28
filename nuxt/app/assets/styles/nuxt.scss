@@ -115,6 +115,14 @@
     cursor: pointer;
 }
 
+// Match the production quick-search selection, including the inline menu.
+.quick-search-options [role="option"].active > a,
+.quick-search-options [role="option"].active > a:hover,
+.quick-search-options [role="option"].active > a:focus {
+    color: #fff;
+    background: #979797 linear-gradient(#a9a9a9, #979797);
+}
+
 .quick-search-options [role="option"][aria-disabled="true"] > a {
     cursor: default;
 }

@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest"
 
 import {
   developerQuickSearchCommands,
+  quickSearchInfoEnabled,
   editorDestination,
   parseRedFtpResponse,
   publishQuickSearchContext,
@@ -236,5 +237,25 @@ describe("Red FTP response parsing", () => {
       return ""
     })).resolves.toBeNull()
     expect(called).toBe(false)
+  })
+})
+
+describe("deployed Quick Search info", () => {
+  test.each([
+    ["stage.litteraturbanken.se", true],
+    ["red.litteraturbanken.se", true],
+    ["litteraturbanken.se", false],
+    ["www.litteraturbanken.se", false],
+    ["stage.litteraturbanken.se.example.com", false]
+  ])("limits /info on %s to the intended hosts", (hostname, expected) => {
+    const enabled = quickSearchInfoEnabled(hostname, false)
+    expect(enabled).toBe(expected)
+    expect(developerQuickSearchCommands("/", readerContext("reader"), false, enabled)
+      .map(row => row.label)).toEqual(expected ? ["/info"] : [])
+    expect(developerQuickSearchCommands("lb123", null, false, enabled)).toEqual([])
+  })
+
+  test("preserves local development commands", () => {
+    expect(quickSearchInfoEnabled("localhost", true)).toBe(true)
   })
 })

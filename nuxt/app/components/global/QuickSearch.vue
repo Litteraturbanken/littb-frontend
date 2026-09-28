@@ -13,6 +13,7 @@ import { useLbApiClient } from "../../composables/useLbApiClient"
 import type { components } from "../../lib/api/generated/lbapi"
 import {
   developerQuickSearchCommands,
+  quickSearchInfoEnabled,
   stableDeveloperJson,
   type QuickSearchContext,
   type QuickSearchDeveloperAction,
@@ -83,6 +84,7 @@ const correction = ref<string | null>(null)
 const requestState = ref<"idle" | "loading" | "success" | "failure">("idle")
 const developerOutput = ref<DeveloperOutput | null>(null)
 const developerContext = useQuickSearchContext()
+const infoEnabled = quickSearchInfoEnabled(useRequestURL().hostname, import.meta.dev)
 
 const client = useLbApiClient()
 
@@ -120,7 +122,8 @@ function remoteRow(item: QuickSearchItem, index: number): SearchRow {
 const developerRows = computed<SearchRow[]>(() => developerQuickSearchCommands(
   query.value,
   developerContext.value,
-  import.meta.dev
+  import.meta.dev,
+  infoEnabled
 ).map(command => ({
   id: command.id,
   label: command.label,
@@ -343,21 +346,21 @@ async function runDeveloperAction(
   action: QuickSearchDeveloperAction,
   label: string
 ): Promise<void> {
+  if (action === "info") {
+    showContextInfo()
+    return
+  }
   if (!import.meta.dev) return
   const context = developerContext.value
   if (action === "id") {
     await copyDeveloperWorkId(context)
     return
   }
-  if (action === "info") {
-    showContextInfo()
-    return
-  }
-
   await searchDeveloperFtp(label)
 }
 
 function showContextInfo(): void {
+  if (!infoEnabled) return
   const context = developerContext.value
   if (!context) return
   developerOutput.value = { kind: "info", value: stableDeveloperJson(context.info) }
