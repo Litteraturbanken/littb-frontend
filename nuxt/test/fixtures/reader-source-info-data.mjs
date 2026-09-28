@@ -294,7 +294,7 @@ export const cendrillonInfopostSourceInfo = {
       { key: "other_roles", value: "1" }
     ],
     roles: [],
-    history_html: null
+    history_html: '<p>Teaterkritik.</p><p class="author"><em>Ulrika Lindgren</em></p>'
   }
 }
 

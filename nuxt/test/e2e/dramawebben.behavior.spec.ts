@@ -881,10 +881,12 @@ test("Cendrillon infopost renders its linked provenance, attribution, and live f
 }) => {
   await page.goto(
     "/dramawebben/pjäser?om-boken&authorid=WahlenbergA&titlepath=Cendrillon#dw",
-    { waitUntil: "networkidle" }
+    { waitUntil: "domcontentloaded" }
   )
 
   const dialog = page.getByRole("dialog", { name: "Om boken", exact: true })
+  await expect(dialog.locator(".history p").filter({ hasText: "Ulrika Lindgren" }))
+    .toHaveCSS("text-align", "right")
   const provenance = dialog.locator(".provenance")
   await expect(provenance.getByRole("link")).toHaveAttribute(
     "href",
@@ -1727,6 +1729,23 @@ test("author combobox shows its narrow focus indicator only for keyboard use", a
   })
   expect(await authorInput.boundingBox()).toEqual(initialInputBox)
   expect(await authorSelection.boundingBox()).toEqual(initialSelectionBox)
+})
+
+test("clicking the author input opens and reopens the options", async ({ page }) => {
+  await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "domcontentloaded" })
+  const input = page.getByRole("combobox", { name: "Visa författare", exact: true })
+  const option = page.getByRole("option", { name: "Alla författare", exact: true })
+  await input.click()
+  await expect(option).toBeVisible()
+  await input.click()
+  await expect(option).toBeVisible()
+  await input.press("Escape")
+  await expect(option).toHaveCount(0)
+  await input.click()
+  await expect(option).toBeVisible()
+  await input.fill("Strindberg")
+  await page.getByRole("option", { name: "Strindberg, August 1849-1912" }).click()
+  await expectQuery(page, "author", "StrindbergA")
 })
 
 test("Headless UI catalog controls support keyboard, Escape, outside close, and focus return", async ({

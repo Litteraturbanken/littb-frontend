@@ -540,6 +540,18 @@ describe("Reader source-information sanitizer", () => {
     )
   })
 
+  test("preserves editorial byline alignment without retaining unrelated classes", () => {
+    expect(sanitizeReaderSourceInfoHtml(
+      '<p class="author hidden fixed"><em>Ulrika Lindgren</em></p>', "editorial"
+    )).toBe('<p class="text-right"><em>Ulrika Lindgren</em></p>')
+    expect(sanitizeReaderSourceInfoHtml(
+      '<p class="text-right">Byline</p>', "editorial"
+    )).toBe('<p class="text-right">Byline</p>')
+    expect(sanitizeReaderSourceInfoHtml(
+      '<span class="author hidden">Name</span>', "editorial"
+    )).toBe('<span>Name</span>')
+  })
+
   test("preserves editorial structure while stripping active and unknown markup", () => {
     const source = [
       '<p class="workintro modal-backdrop modal fixed hidden in" onclick="bad()">Text <em>kursiv</em> <strong>fet</strong>.</p>',

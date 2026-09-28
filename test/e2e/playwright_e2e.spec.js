@@ -479,6 +479,13 @@ test.describe("Nuxt whole-site staging smoke", () => {
             .toBeVisible()
         await expect(page.getByRole("link", { name: "Abu Casems tofflor [1908]", exact: true }))
             .toBeVisible()
+        const sharedWork = page.getByRole("row").filter({ hasText: "Den ena för den andra" })
+        await expect(sharedWork.locator("td.author a")).toHaveText([
+            "Gustav III, kung av Sverige", "Oxenstierna, Johan Gabriel"
+        ])
+        await page.getByPlaceholder("Välj författare", { exact: true }).click()
+        await expect(page.getByRole("option", { name: "Alla författare", exact: true }))
+            .toBeVisible()
     })
 
     test("retains About content during client-side tab navigation", async ({ page }) => {

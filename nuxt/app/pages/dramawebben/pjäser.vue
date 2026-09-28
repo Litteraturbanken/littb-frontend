@@ -535,6 +535,7 @@ const catalogFiltersActive = computed(() => (
 ))
 const authorSearch = ref("")
 const authorPointerFocused = ref(false)
+const authorToggle = ref<{ $el: HTMLButtonElement } | null>(null)
 const filterPointerFocused = ref(false)
 
 const mediaAuthorIds = computed<ReadonlySet<string>>(() => {
@@ -786,7 +787,7 @@ useHead(() => ({
         </div>
 
         <div v-show="listType === 'pjäser'" class="auth_select_container">
-          <Combobox :model-value="selectedAuthor" nullable @update:model-value="chooseAuthor">
+          <Combobox v-slot="{ open: authorOptionsOpen }" :model-value="selectedAuthor" nullable @update:model-value="chooseAuthor">
             <div
               class="catalog_select select2 select2-container select2-container--default"
               @keydown.capture="authorPointerFocused = false"
@@ -800,9 +801,10 @@ useHead(() => ({
                   placeholder="Välj författare"
                   :display-value="selectedAuthorLabel"
                   @blur="authorPointerFocused = false"
+                  @click="!authorOptionsOpen && authorToggle?.$el.click()"
                   @change="authorSearch = ($event.target as HTMLInputElement).value"
                 />
-                <ComboboxButton class="select2-selection__arrow" aria-label="Visa författare"><b /></ComboboxButton>
+                <ComboboxButton ref="authorToggle" class="select2-selection__arrow" aria-label="Visa författare"><b /></ComboboxButton>
               </div>
               <ComboboxOptions class="catalog_options select2-results__options">
                 <ComboboxOption v-slot="{ active }" :value="null" as="template">

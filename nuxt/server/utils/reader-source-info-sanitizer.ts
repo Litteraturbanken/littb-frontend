@@ -37,7 +37,7 @@ interface ParsedDocument {
 }
 
 const allowedClassesByContext = {
-  editorial: new Set(["role", "sc"]),
+  editorial: new Set(["role", "sc", "text-right"]),
   inline: new Set(["role", "sc"]),
   license: new Set<string>()
 } as const
@@ -91,7 +91,14 @@ function sanitizeClassAttribute(
   context: "editorial" | "inline" | "license"
 ): void {
   if (!element.hasAttribute("class")) return
-  const value = sanitizeClasses(element.getAttribute("class") ?? "", context)
+  // Legacy editorial bylines use p.author; preserve their alignment without
+  // exposing the generic author class to unrelated modal styles.
+  const classes = (element.getAttribute("class") ?? "").split(/\s+/u).map(className => (
+    context === "editorial" && element.localName === "p" && className === "author"
+      ? "text-right"
+      : className
+  ))
+  const value = sanitizeClasses(classes.join(" "), context)
   if (value === null) element.removeAttribute("class")
   else element.setAttribute("class", value)
 }
