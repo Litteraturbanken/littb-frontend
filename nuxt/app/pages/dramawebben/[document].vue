@@ -142,7 +142,17 @@ useHead({
 
 <template>
   <DramawebbenShell :page="kind">
-    <RenderableHtmlContent v-if="page" as="div" :html="page.bodyHtml" />
+    <RenderableHtmlContent v-if="page" as="div" class="dramawebben-document" :html="page.bodyHtml" />
     <p v-else-if="accepted" class="error">Innehållet kan inte visas just nu.</p>
   </DramawebbenShell>
 </template>
+
+<style scoped>
+.dramawebben-document :deep(.content) {
+  height: auto;
+  overflow: visible;
+  padding: 0;
+  border: none;
+  background: none;
+}
+</style>
