@@ -474,6 +474,11 @@ test.describe("Nuxt whole-site staging smoke", () => {
         )
         await expect(page.getByRole("link", { name: "Pjäser", exact: true }))
             .toBeVisible()
+        await page.getByRole("link", { name: "Pjäser", exact: true }).click()
+        await expect(page.getByRole("table", { name: "Pjäser", exact: true }))
+            .toBeVisible()
+        await expect(page.getByRole("link", { name: "Abu Casems tofflor [1908]", exact: true }))
+            .toBeVisible()
     })
 
     test("retains About content during client-side tab navigation", async ({ page }) => {

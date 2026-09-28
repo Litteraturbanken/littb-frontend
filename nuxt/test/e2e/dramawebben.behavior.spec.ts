@@ -199,7 +199,7 @@ async function expectExactLinks(page: Page, kind: "pjäser" | "om" | "kringtexte
     href: link.getAttribute("href"),
     text: link.textContent?.replace(/\s+/gu, " ").trim()
   })))).toEqual([
-    { href: "/dramawebben/pjäser", text: "Pjäser" },
+    { href: "/dramawebben/pj%C3%A4ser", text: "Pjäser" },
     { href: "/dramawebben/kringtexter", text: "Mer läsning" },
     { href: "/s%C3%B6k?avancerad&keywords=keyword:Dramawebben", text: "Sök" },
     { href: "/dramawebben/om", text: "Om" },
@@ -210,16 +210,28 @@ async function expectExactLinks(page: Page, kind: "pjäser" | "om" | "kringtexte
   )
   if (kind !== "om") {
     await expect(page.locator(".subpage ul.links li.active a"))
-      .toHaveAttribute("href", `/dramawebben/${kind}`)
+      .toHaveAttribute("href", encodeURI(`/dramawebben/${kind}`))
   }
 }
+
+test("landing and document navigation open the play catalogue without reloading", async ({ page }) => {
+  await page.goto("/dramawebben", { waitUntil: "domcontentloaded" })
+  await page.getByRole("link", { name: "Pjäser", exact: true }).click()
+  await expect(page.getByRole("table", { name: "Pjäser", exact: true })).toBeVisible()
+  await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+  await page.getByRole("link", { name: "Mer läsning", exact: true }).click()
+  await expect(page).toHaveURL(/\/dramawebben\/kringtexter$/u)
+  await page.getByRole("link", { name: "Pjäser", exact: true }).click()
+  await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+})
 
 test.beforeEach(async ({ request }) => reset(request))
 test.afterEach(async ({ request }) => reset(request))
 test.beforeAll(async ({ baseURL, browser, request }) => {
   const warmupPage = await browser.newPage({ baseURL })
-  const response = await warmupPage.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+  const response = await warmupPage.goto("/dramawebben/pjäser", { waitUntil: "domcontentloaded" })
   expect(response?.status()).toBe(200)
+  await expectPlayRows(warmupPage, dramawebbenCatalogExpected.plays)
   await warmupPage.close()
   await reset(request)
 })

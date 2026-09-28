@@ -22,7 +22,7 @@ const isStartPage = computed(() => props.page === "start")
     <div>
       <ul class="links">
         <li :class="{ active: page === 'pjäser' }">
-          <NuxtLink to="/dramawebben/pjäser">Pjäser</NuxtLink>
+          <NuxtLink to="/dramawebben/pj%C3%A4ser">Pjäser</NuxtLink>
         </li>{{ " " }}
         <li :class="{ active: page === 'kringtexter' }">
           {{ " " }}<NuxtLink to="/dramawebben/kringtexter">Mer läsning</NuxtLink>
