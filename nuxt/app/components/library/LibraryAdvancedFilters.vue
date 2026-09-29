@@ -227,7 +227,7 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
                 />
             </label>
         </div>
-        <div class="title_select_container">
+        <div v-if="!model.standalone" class="title_select_container">
             <label>
                 <span class="sr-only">Utgivningsformat</span>
                 <SearchMultiSelect
