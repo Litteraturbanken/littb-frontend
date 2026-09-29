@@ -1835,7 +1835,7 @@ v-for="item in [
                       :key="wordIndex"
                       class="word"
                       :class="{ punct: word.punct }"
-                    >{{ word.text }}</span>
+                    >{{ `${word.text} ` }}</span>
                   </NuxtLink>
                   <template v-else>
                     <span
@@ -1843,7 +1843,7 @@ v-for="item in [
                       :key="`match-${wordIndex}`"
                     class="word"
                       :class="{ punct: word.punct }"
-                    >{{ word.text }}</span>
+                    >{{ `${word.text} ` }}</span>
                     <span class="sr-only">{{ readerTargetUnavailableMessage }}</span>
                   </template>
                 </td>
