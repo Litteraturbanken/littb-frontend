@@ -555,6 +555,8 @@ const advancedControls = computed<LibraryAdvancedControlsModel>(() => ({
             to: chronologyToDraft.value
         }
         : null,
+    chronologyUnavailable: !chronologyBounds.value
+        && ["success", "error"].includes(optionsAsyncData.status.value),
     standalone: standalone.value,
     downloadMode: downloadMode.value,
     allVisibleSourceWorksSelected: allVisibleSourceWorksSelected.value

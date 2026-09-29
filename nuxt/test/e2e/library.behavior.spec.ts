@@ -2737,6 +2737,43 @@ test("SPA navigation between Library and its EPUB route updates the complete she
   expect(publicOnlyEpubRequests(await epubRequests(request))).toHaveLength(1)
 })
 
+for (const path of ["/bibliotek", "/epub?visa=epub&sort=popularitet"]) {
+  for (const failed of [false, true]) {
+    test(`timeline waits for options before showing ${failed ? "failure" : "the range"} on ${path}`, async ({
+      page,
+      request
+    }) => {
+      await page.route("**/*typography.com/**", route => route.fulfill({ body: "" }))
+      await page.goto("/om/ide", { waitUntil: "domcontentloaded" })
+      await waitForHydration(page)
+      if (failed) {
+        await request.put(`${fixture}/_library_v2/failures`, {
+          data: { operation: "options", section: "chronology" }
+        })
+      }
+      const optionsGate = createRequestGate()
+      await page.route("**/v2/library/options", route => optionsGate.handle(route))
+      try {
+        await pushRoute(page, path)
+        await expect.poll(() => optionsGate.count()).toBe(1)
+        await expect(page.locator("[data-library-loading]")).toHaveCount(1)
+        await expect(page.locator("[data-library-chronology-unavailable]")).toHaveCount(0)
+        await expect(page.locator("[data-library-chronology-range]")).toHaveCount(0)
+
+        optionsGate.releaseNext()
+        await expect(page.locator("[data-library-loading]")).toHaveCount(0)
+        await expect(page.locator("[data-library-chronology-unavailable]"))
+          .toHaveCount(failed ? 1 : 0)
+        await expect(page.locator("[data-library-chronology-range]"))
+          .toHaveCount(failed ? 0 : 1)
+      } finally {
+        optionsGate.releaseAll()
+        await page.unroute("**/v2/library/options")
+      }
+    })
+  }
+}
+
 test("fresh SPA Library entry mounts its empty loading shell before options and results settle", async ({
   page,
   request

@@ -265,6 +265,7 @@ describe("Library component ownership", () => {
       mediaSelectOptions: [{ value: "mediatype:etext", label: "Etext" }],
       languageSelectOptions: [{ value: "language:swe", label: "Svenska" }],
       chronology: null as null | { min: number, max: number, from: string, to: string },
+      chronologyUnavailable: false,
       standalone: false,
       downloadMode: false,
       allVisibleSourceWorksSelected: false
@@ -285,7 +286,12 @@ describe("Library component ownership", () => {
 
     expect(advancedTarget.querySelector("[data-library-advanced-panel]")).not.toBeNull()
     expect(advancedTarget.querySelector("[data-library-about-authors]")).toBeNull()
-    expect(advancedTarget.querySelector("[data-library-chronology-unavailable]")).not.toBeNull()
+    expect(advancedTarget.querySelector("[data-library-chronology-unavailable]")).toBeNull()
+    expect(advancedTarget.querySelector("[data-library-chronology-range]")).toBeNull()
+    model.value.chronologyUnavailable = true
+    await nextTick()
+    expect(advancedTarget.querySelector("[data-library-chronology-unavailable]")?.textContent)
+      .toContain("Tidslinjen kunde inte hämtas.")
     const gender = advancedTarget.querySelector<HTMLSelectElement>("[data-library-gender]")!
     gender.value = "female"
     gender.dispatchEvent(new window.Event("change"))
@@ -295,6 +301,7 @@ describe("Library component ownership", () => {
       ...model.value,
       aboutAuthorOptions: [{ id: "lagerlof", label: "Selma Lagerlöf" }],
       chronology: { min: 1800, max: 2020, from: "not-a-year", to: "2001" },
+      chronologyUnavailable: false,
       downloadMode: true
     }
     await nextTick()

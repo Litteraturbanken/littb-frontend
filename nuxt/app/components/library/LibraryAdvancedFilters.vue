@@ -337,7 +337,11 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
             >
         </div>
     </div>
-    <div v-else data-library-chronology-unavailable class="text-sm py-1">
+    <div
+        v-else-if="model.chronologyUnavailable"
+        data-library-chronology-unavailable
+        class="text-sm py-1"
+    >
         Tidslinjen kunde inte hämtas.
     </div>
 </template>

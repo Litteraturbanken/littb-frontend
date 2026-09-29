@@ -40,6 +40,7 @@ export type LibraryAdvancedControlsModel = Readonly<{
     mediaSelectOptions: readonly LibraryAdvancedControlOption<LibraryMedia>[]
     languageSelectOptions: readonly LibraryAdvancedControlOption<LibraryLanguage>[]
     chronology: LibraryChronologyControlsModel | null
+    chronologyUnavailable: boolean
     standalone: boolean
     downloadMode: boolean
     allVisibleSourceWorksSelected: boolean
