@@ -1,0 +1,116 @@
+{
+  "results": [
+    {
+      "label": "direct search: one pageview and one separate search event",
+      "events": [
+        {
+          "url": "https://litteraturbanken.se/sök",
+          "search": null,
+          "category": null,
+          "count": null,
+          "eventCategory": null,
+          "event": null,
+          "name": null,
+          "value": null,
+          "pageview": "Sök: \"frihet\" | Litteraturbanken"
+        },
+        {
+          "url": "https://litteraturbanken.se/sök",
+          "search": null,
+          "category": null,
+          "count": null,
+          "eventCategory": "Text search",
+          "event": "search",
+          "name": "frihet",
+          "value": "3",
+          "pageview": null
+        }
+      ]
+    },
+    {
+      "label": "typing does not track",
+      "events": []
+    },
+    {
+      "label": "advanced disclosure does not duplicate search",
+      "events": []
+    },
+    {
+      "label": "result click",
+      "events": [
+        {
+          "url": "https://litteraturbanken.se/sök",
+          "search": null,
+          "category": null,
+          "count": null,
+          "eventCategory": "Text search",
+          "event": "result_open:hit",
+          "name": "lb238704",
+          "value": null,
+          "pageview": null
+        }
+      ]
+    },
+    {
+      "label": "submitted zero-result search",
+      "events": [
+        {
+          "url": "https://litteraturbanken.se/sök",
+          "search": null,
+          "category": null,
+          "count": null,
+          "eventCategory": "Text search",
+          "event": "search",
+          "name": "inga",
+          "value": "0",
+          "pageview": null
+        }
+      ]
+    },
+    {
+      "label": "new paginated search",
+      "events": [
+        {
+          "url": "https://litteraturbanken.se/sök",
+          "search": null,
+          "category": null,
+          "count": null,
+          "eventCategory": "Text search",
+          "event": "search",
+          "name": "overflow",
+          "value": "512",
+          "pageview": null
+        }
+      ]
+    },
+    {
+      "label": "next result page does not count as a new search",
+      "events": []
+    },
+    {
+      "label": "same route again",
+      "events": []
+    },
+    {
+      "label": "back to a different search",
+      "events": [
+        {
+          "url": "https://litteraturbanken.se/sök",
+          "search": null,
+          "category": null,
+          "count": null,
+          "eventCategory": "Text search",
+          "event": "search",
+          "name": "frihet",
+          "value": "3",
+          "pageview": null
+        }
+      ]
+    },
+    {
+      "label": "failure is not a zero-result search",
+      "events": []
+    }
+  ],
+  "googleRequests": 0
+}

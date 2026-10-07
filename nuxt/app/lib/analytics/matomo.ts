@@ -1,4 +1,4 @@
-/** Legacy Matomo contract. GA-only events deliberately do not belong here. */
+/** Legacy page-view contract plus the shared, production-only Matomo queue. */
 export type MatomoCommand = [string, ...unknown[]]
 export interface MatomoQueue { push: (command: MatomoCommand) => unknown }
 export interface MatomoRoute { fullPath: string; path: string; hash: string }
@@ -95,4 +95,10 @@ export function installMatomo(browser: MatomoWindow, document: Document): Matomo
   script.src = `${MATOMO_BASE}matomo.js`
   document.head.appendChild(script)
   return views
+}
+
+/** Events share the installed queue and never initialize a second tracker. */
+export function pushMatomo(browser: MatomoWindow, command: MatomoCommand): void {
+  if (!matomoEnabled(browser.location.hostname, browser.navigator.userAgent)) return
+  browser._paq?.push(command)
 }

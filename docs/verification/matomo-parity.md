@@ -14,7 +14,7 @@ The Angular frontend has exactly four active Matomo call sites:
 | `app/scripts/app.js:788–797` | Route success sets decoded pathname, route title and one page view, except `#external`. | `MatomoPageViews.visit` |
 | `app/scripts/components/reader/reading_controller.js:992–1025` | Reused public reader updates set pathname and `author – title s. page`, then emit a page view. Query/hash updates enter this same handler. Editor index updates return before tracking; work/media changes reload. | The same coordinator, including reused-component navigation. No second reader tracker. |
 
-The source was searched for `matomo`, `piwik`, `_paq`, and tracking methods; there are no legacy Matomo custom events or explicit `trackSiteSearch` calls to port. Search, QR, media/download interaction, and source-material `gtag` calls in `services/backend.js`, `services.js`, `library_controller.js`, and the route/reader handlers are GA-only. None are added to Nuxt. The old Angular files remain intact.
+This section describes the original page-view port; the text-search extension below deliberately adds custom events. The source was searched for `matomo`, `piwik`, `_paq`, and tracking methods; there are no legacy Matomo custom events or explicit `trackSiteSearch` calls to port. Search, QR, media/download interaction, and source-material `gtag` calls in `services/backend.js`, `services.js`, `library_controller.js`, and the route/reader handlers are GA-only. None are added to Nuxt. The old Angular files remain intact.
 
 Reference: [Matomo SPA tracking documentation](https://developer.matomo.org/guides/spa-tracking), corroborated against the installed tracker script.
 
@@ -81,3 +81,20 @@ playwright-cli --session matomo-parity run-code "$(cat docs/verification/matomo-
 ```
 
 The harness proxies only the test browser's production/Stage requests to localhost. It serves the tracker from the local file and intercepts all collector requests before navigation. It installs the snapshot user agent at the end; use a fresh session when repeating it. Matomo delays queued transport briefly, so the delayed-load assertion allows two seconds for both requests to arrive.
+
+## Text-search events: separate from library Site Search
+
+The editor-facing distinction is intentional: `/bibliotek` uses Matomo Site Search, while `/sök` (the canonical destination of `/sok`) sends **custom events**, never `trackSiteSearch`. Editors can inspect the `Text search` category under Matomo's Events report without combining library and full-text searches.
+
+| Category | Action | Event name | Event value |
+| --- | --- | --- | --- |
+| `Text search` | `search` | Submitted, normalized search phrase | Accepted total occurrence count, including zero |
+| `Text search` | `result_open:title` | Work ID | Unset |
+| `Text search` | `result_open:hit` | Work ID | Unset |
+| `Text search` | `result_open:continuation` | Work ID | Unset |
+
+A search event represents an accepted result for a new phrase/filter combination, including a direct link or a return to another search. It is not a raw submit-button or keystroke counter. Only the primary accepted result is observed. Failed, stale, aborted or invalid responses do not become zero-result events. A repeated result, result-page navigation, snapshot change, options fetch, result expansion, or advanced-panel disclosure does not add a search. An actual change of search filters does. Identity is built from the existing request contract with pagination and snapshot excluded.
+
+Result-link handlers cover ordinary/keyboard activation and middle-click, with right-click excluded. These events use the existing installed Matomo queue and production/snapshot gates. They do not initialize another tracker. URLs remain `/sök` without query parameters; phrases occur in the intentional event-name field. No native Site Search action is sent, and no additional page view is emitted when a search completes. The initial page visit still gets its single existing page view.
+
+Final validation: 162 analytics/search/request-owner unit tests, typecheck, zero-warning focused lint, architecture policy, and production build passed. `matomo-search-browser-check.js` is a Playwright CLI callback using the same isolated fixture and intercepted collector setup described above. Ten browser cases verified a direct search (one page view and one custom search event), typing, advanced disclosure, a result click, submitted zero results, a new paginated search, pagination, identical navigation, return to a different query, and a failed request. The saved sanitized `matomo-search-browser-results.json` contains the emitted payload fields; all native `search` parameters are absent, and Google requests are zero. Nothing has been deployed.

@@ -13,6 +13,8 @@ import type {
 } from "~/components/search/SearchMultiSelect.vue"
 import SearchMultiSelect from "~/components/search/SearchMultiSelect.vue"
 import { useLbApiClient } from "~/composables/useLbApiClient"
+import { MatomoTextSearch } from "~/lib/analytics/text-search"
+import { pushMatomo } from "~/lib/analytics/matomo"
 import { isSnapshotUnavailable } from "~/lib/api/snapshot"
 import {
   createTextSearchRequestOwner,
@@ -349,6 +351,23 @@ watch([primaryData, primaryIdentity], ([candidate, identity]) => {
   if (candidate.status === 200) displayPrimary.value = candidate
   else displayPrimary.value = null
 }, { immediate: true, flush: "sync" })
+
+const searchAnalytics = new MatomoTextSearch(command => {
+  if (import.meta.client && window.location.hash !== "#external") pushMatomo(window, command)
+})
+const analyticsIdentity = computed(() => state.value.phrase
+  ? textSearchResultsRequestIdentity(buildTextSearchResultsRequest({
+      ...state.value, page: 1, snapshot: null
+    }))
+  : null)
+watch([analyticsIdentity, acceptedPrimary], ([identity, candidate]) => {
+  if (!import.meta.client) return
+  const current = candidate?.identity === primaryIdentity.value ? candidate : null
+  searchAnalytics.observe(identity, state.value.phrase, current && {
+    status: current.status,
+    count: current.results?.totalOccurrences ?? null
+  })
+}, { immediate: true, flush: "post" })
 
 const results = computed(() => displayPrimary.value?.status === 200
   ? displayPrimary.value.results
@@ -1813,7 +1832,12 @@ v-for="item in [
                   <div class="header_content" :title="row.work.title">
                     <span v-if="row.work.authorName" class="author">{{ row.work.authorName }}</span>{{ " " }}
                     <span class="title">
-                      <NuxtLink v-if="row.titleHref" :to="readerHrefWithReturn(row.titleHref)">{{ row.work.title }}</NuxtLink>
+                      <NuxtLink
+                        v-if="row.titleHref"
+                        :to="readerHrefWithReturn(row.titleHref)"
+                        @click="searchAnalytics.openResult($event, row.work.workId, 'title')"
+                        @auxclick="searchAnalytics.openResult($event, row.work.workId, 'title')"
+                      >{{ row.work.title }}</NuxtLink>
                       <template v-else>{{ row.work.title }}</template>
                     </span>
                   </div>
@@ -1829,7 +1853,12 @@ v-for="item in [
                   >{{ `${word.text} ` }}</span>
                 </td>
                 <td class="match w-px whitespace-nowrap">
-                  <NuxtLink v-if="row.hit.href" :to="readerHrefWithReturn(row.hit.href)">
+                  <NuxtLink
+                    v-if="row.hit.href"
+                    :to="readerHrefWithReturn(row.hit.href)"
+                    @click="searchAnalytics.openResult($event, row.work.workId, 'hit')"
+                    @auxclick="searchAnalytics.openResult($event, row.work.workId, 'hit')"
+                  >
                     <span
                       v-for="(word, wordIndex) in row.hit.match"
                       :key="wordIndex"
@@ -1873,6 +1902,8 @@ v-for="item in [
                       <NuxtLink
                         v-if="row.continuationHref"
                         :to="readerHrefWithReturn(row.continuationHref)"
+                        @click="searchAnalytics.openResult($event, row.work.workId, 'continuation')"
+                        @auxclick="searchAnalytics.openResult($event, row.work.workId, 'continuation')"
                       >Fortsätt i läsaren</NuxtLink>
                     </template>{{ " " }}
                     <hr>
