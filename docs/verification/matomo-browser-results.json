@@ -1,0 +1,293 @@
+{
+  "flows": {
+    "results": [
+      {
+        "label": "home to library by real link",
+        "events": [
+          {
+            "title": "Biblioteket – Titlar och författare",
+            "url": "https://litteraturbanken.se/bibliotek",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Biblioteket – Titlar och författare | Litteraturbanken"
+      },
+      {
+        "label": "library filter",
+        "events": [],
+        "title": "Biblioteket – Titlar och författare | Litteraturbanken"
+      },
+      {
+        "label": "author",
+        "events": [
+          {
+            "title": "Författarprofil | Litteraturbanken",
+            "url": "https://litteraturbanken.se/författare/SöderbergH",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Hjalmar Söderberg, Introduktion | Litteraturbanken"
+      },
+      {
+        "label": "author subsection",
+        "events": [
+          {
+            "title": "Författarverk | Litteraturbanken",
+            "url": "https://litteraturbanken.se/författare/SöderbergH/titlar",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Författarverk | Litteraturbanken"
+      },
+      {
+        "label": "reader initial",
+        "events": [
+          {
+            "title": "SöderbergH – DoktorGlas s. -2",
+            "url": "https://litteraturbanken.se/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Doktor Glas sida -2 etext | Litteraturbanken"
+      },
+      {
+        "label": "reader next reused component",
+        "events": [
+          {
+            "title": "SöderbergH – DoktorGlas s. -1",
+            "url": "https://litteraturbanken.se/författare/SöderbergH/titlar/DoktorGlas/sida/-1/etext",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Doktor Glas sida -1 etext | Litteraturbanken"
+      },
+      {
+        "label": "reader query",
+        "events": [
+          {
+            "title": "SöderbergH – DoktorGlas s. -1",
+            "url": "https://litteraturbanken.se/författare/SöderbergH/titlar/DoktorGlas/sida/-1/etext",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Hjalmar Söderberg – Doktor Glas (1905). Om boken | Litteraturbanken"
+      },
+      {
+        "label": "reader duplicate navigation",
+        "events": [],
+        "title": "Hjalmar Söderberg – Doktor Glas (1905). Om boken | Litteraturbanken"
+      },
+      {
+        "label": "back",
+        "events": [
+          {
+            "title": "SöderbergH – DoktorGlas s. -1",
+            "url": "https://litteraturbanken.se/författare/SöderbergH/titlar/DoktorGlas/sida/-1/etext",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Doktor Glas sida -1 etext | Litteraturbanken"
+      },
+      {
+        "label": "forward",
+        "events": [
+          {
+            "title": "SöderbergH – DoktorGlas s. -1",
+            "url": "https://litteraturbanken.se/författare/SöderbergH/titlar/DoktorGlas/sida/-1/etext",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Hjalmar Söderberg – Doktor Glas (1905). Om boken | Litteraturbanken"
+      },
+      {
+        "label": "external marker",
+        "events": [],
+        "title": "Biblioteket – Titlar och författare | Litteraturbanken"
+      },
+      {
+        "label": "search",
+        "events": [
+          {
+            "title": "Sök | Litteraturbanken",
+            "url": "https://litteraturbanken.se/sök",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Sök | Litteraturbanken"
+      },
+      {
+        "label": "search query",
+        "events": [],
+        "title": "Sök | Litteraturbanken"
+      },
+      {
+        "label": "direct reader document",
+        "events": [
+          {
+            "title": "SöderbergH – DoktorGlas s. -2",
+            "url": "https://litteraturbanken.se/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Doktor Glas sida -2 etext | Litteraturbanken"
+      },
+      {
+        "label": "reader media switch",
+        "events": [
+          {
+            "title": "SöderbergH – DoktorGlas s. -2",
+            "url": "https://litteraturbanken.se/författare/SöderbergH/titlar/DoktorGlas/sida/-2/faksimil",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Doktor Glas sida -2 faksimil | Litteraturbanken"
+      },
+      {
+        "label": "redirect destination /sök",
+        "events": [
+          {
+            "title": "Sök | Litteraturbanken",
+            "url": "https://litteraturbanken.se/sök",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Sök | Litteraturbanken"
+      },
+      {
+        "label": "EPUB catalogue",
+        "events": [
+          {
+            "title": "E-böcker för nedladdning",
+            "url": "https://litteraturbanken.se/epub",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "E-böcker för nedladdning | Litteraturbanken"
+      },
+      {
+        "label": "real EPUB download link",
+        "events": [
+          {
+            "title": null,
+            "url": "https://litteraturbanken.se/epub",
+            "download": "https://litteraturbanken.se/txt/epub/SöderbergH_DoktorGlas.epub",
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "E-böcker för nedladdning | Litteraturbanken"
+      },
+      {
+        "label": "home again",
+        "events": [
+          {
+            "title": "Svenska klassiker som e-bok och epub",
+            "url": "https://litteraturbanken.se/",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Litteraturbanken | Svenska klassiker som e-bok och epub"
+      },
+      {
+        "label": "dynamic download",
+        "events": [
+          {
+            "title": null,
+            "url": "https://litteraturbanken.se/",
+            "download": "https://litteraturbanken.se/test.pdf",
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Litteraturbanken | Svenska klassiker som e-bok och epub"
+      },
+      {
+        "label": "dynamic outbound",
+        "events": [
+          {
+            "title": null,
+            "url": "https://litteraturbanken.se/",
+            "download": null,
+            "link": "https://example.org/matomo-test",
+            "site": "1"
+          }
+        ],
+        "title": "Litteraturbanken | Svenska klassiker som e-bok och epub"
+      },
+      {
+        "label": "reload",
+        "events": [
+          {
+            "title": "Svenska klassiker som e-bok och epub",
+            "url": "https://litteraturbanken.se/",
+            "download": null,
+            "link": null,
+            "site": "1"
+          }
+        ],
+        "title": "Litteraturbanken | Svenska klassiker som e-bok och epub"
+      }
+    ],
+    "googleRequests": 0,
+    "scripts": 1
+  },
+  "edges": {
+    "results": [
+      {
+        "case": "delayed tracker: home then library",
+        "requests": 2
+      },
+      {
+        "case": "https://stage.litteraturbanken.se",
+        "scripts": 0,
+        "queue": false,
+        "requests": 0
+      },
+      {
+        "case": "http://127.0.0.1:3090",
+        "scripts": 0,
+        "queue": false,
+        "requests": 0
+      },
+      {
+        "case": "littb-snapshot",
+        "scripts": 0,
+        "queue": false,
+        "requests": 0
+      },
+      {
+        "case": "SSR HTML",
+        "trackerMarkup": false
+      }
+    ],
+    "googleRequests": 0
+  }
+}
