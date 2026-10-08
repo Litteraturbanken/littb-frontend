@@ -68,7 +68,10 @@ async function fetchDocument(path: string, signal: AbortSignal): Promise<Present
       (input, init) => fetch(input, { ...init, signal })
     )
     if (signal.aborted) throw signal.reason
-    return parsePresentationDocument(source)
+    const displaySource = path === "/red/presentationer/presentationerForfattare.html"
+      ? source.replace(/(<h1\b[^>]*>\s*)Presentationer och introduktioner/i, "$1Presentationer &amp; introduktioner")
+      : source
+    return parsePresentationDocument(displaySource)
   } catch (error) {
     if (signal.aborted) throw error
     return emptyPresentationDocument()

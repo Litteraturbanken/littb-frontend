@@ -530,7 +530,7 @@ test("direct Presentation ankare scrolls after hydration with one index request 
   expect(response?.status()).toBe(200)
 
   await expect(page.locator("body")).toHaveClass("focus page-presentation ready")
-  await expect(page.getByRole("heading", { name: "Presentationer och introduktioner" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Presentationer & introduktioner" })).toBeVisible()
   await expectAnchorAtViewportTop(page, "kulturarvet")
 
   const requests = await presentationRequests(request)
@@ -674,7 +674,7 @@ test("Presentation route transitions replace all document head and body state be
   await expect(page.locator("body")).not.toHaveClass(/\bpresentation-style-rostratt\b/)
 
   await navigateClient(page, "/presentationer")
-  await expect(page.getByRole("heading", { name: "Presentationer och introduktioner" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Presentationer & introduktioner" })).toBeVisible()
   await expect(page).toHaveTitle("Presentationer | Litteraturbanken")
   await expect(descriptionMeta(page)).toHaveAttribute(
     "content",
@@ -730,7 +730,7 @@ test("managed Presentation links use Nuxt navigation and preserve Back history",
 
   await page.goBack()
   await expect(page).toHaveURL("/presentationer")
-  await expect(page.getByRole("heading", { name: "Presentationer och introduktioner" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Presentationer & introduktioner" })).toBeVisible()
   expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
     .toBe("presentation-spa")
 })

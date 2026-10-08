@@ -28,7 +28,7 @@ const cases: VisualCase[] = [
     name: "index",
     route: "/presentationer",
     contentPath: "/red/presentationer/presentationerForfattare.html",
-    heading: "Presentationer och introduktioner",
+    heading: "Presentationer & introduktioner",
     stylesheets: [],
     images: [],
     backgroundPath: null,
