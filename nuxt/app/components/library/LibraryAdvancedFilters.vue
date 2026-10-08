@@ -319,7 +319,7 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
         <div class="whitespace-nowrap self-center chronology_inputs">
             <span class="text-sm sc">Tryckår: </span>
             <input
-                class="text-sm text-center py-1"
+                class="text-sm text-center py-1 px-1"
                 type="text"
                 :value="model.chronology.from"
                 aria-label="Från tryckår"
@@ -328,7 +328,7 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
             >{{ " " }}
             <span class="text-sm sc">till </span>
             <input
-                class="text-sm text-center py-1"
+                class="text-sm text-center py-1 px-1"
                 type="text"
                 :value="model.chronology.to"
                 aria-label="Till tryckår"
