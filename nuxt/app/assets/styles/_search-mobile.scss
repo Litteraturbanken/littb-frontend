@@ -1,4 +1,14 @@
 @media (max-width: 1023px) {
+    html:has(body.page-search .site-shell) {
+        background-color: white !important;
+        // Keep yellow behind the iPhone header, with white at the page bottom.
+        background-image: linear-gradient(#ffda54 120px, white 120px) !important;
+    }
+
+    body.page-search:has(.site-shell) {
+        background: white !important;
+    }
+
     body.page-search .site-shell > #mainview {
         width: calc(100% + 32px);
         margin-right: -16px;
@@ -13,6 +23,7 @@
             margin: 12px 16px 20px;
             font-size: clamp(30px, 7.5vw, 42px);
             line-height: 1.1;
+            color: black;
         }
         .submit_form {
             margin: 0 0 16px;
