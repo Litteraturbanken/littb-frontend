@@ -227,3 +227,11 @@
 body.page-presentation #mainview h1 em {
     font-style: italic !important;
 }
+
+@media (max-width: 1023px) {
+    body.page-presentation #mainview .doc.main .content li {
+        margin-bottom: 12px;
+
+        a { text-decoration: none; }
+    }
+}
