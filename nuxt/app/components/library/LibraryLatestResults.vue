@@ -45,8 +45,8 @@ function imprintYearTo(year: string): RouteLocationRaw {
 
 <template>
     <div class="result title pl-0 flex-column min-h-500">
-        <div class="flex items-baseline">
-            <div class="text-base">
+        <div class="latest-controls flex items-baseline">
+            <div class="latest-sort text-base">
                 <div class="inline-block sc mr-2">Sortera:</div>
                 {{ " " }}
                 <ul class="part_header top_header mb-4 inline-block">
@@ -79,7 +79,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                     </li>
                 </ul>
             </div>
-            <span class="sc ml-4">
+            <span class="latest-hide-works sc ml-4">
                 <span>{{ hide1800 ? "Visa även från:" : "Dölj verk:" }}</span
                 >{{ " " }}
                 <button

@@ -365,3 +365,28 @@
 
     }
 }
+
+@media (max-width: 1023px) {
+    body.page-library #mainview .result .latest-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 12px;
+
+        .latest-sort {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+
+            > div { margin-right: 0; }
+            .top_header { margin-bottom: 0; }
+        }
+
+        .latest-hide-works {
+            margin-left: 0;
+            font-size: 14px;
+
+            button { text-align: left; }
+        }
+    }
+}
