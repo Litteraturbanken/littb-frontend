@@ -3,15 +3,22 @@
 }
 
 @media (max-width: 1023px) {
-    html:has(body.page-about .site-shell) {
+    html:has(body:is(.page-about, .page-presentation) .site-shell) {
         background-color: white !important;
         background-image: linear-gradient(#ffda54 120px, white 120px) !important;
     }
 
-    body.page-about:has(.site-shell) {
+    body:is(.page-about, .page-presentation):has(.site-shell) {
         background: white !important;
 
         #mainview h1 { color: black; }
+        #mainview .intro { color: #333; }
+    }
+
+    body.page-presentation #mainview .content {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
     }
 
     html:has(.site-shell) {
@@ -211,7 +218,7 @@
 }
 
 @media (max-width: 639px) {
-    body.page-about #mainview .content {
+    body:is(.page-about, .page-presentation) #mainview .content {
         padding-left: 12px;
         padding-right: 12px;
     }
