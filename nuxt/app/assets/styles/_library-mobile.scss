@@ -367,6 +367,11 @@
 
 @media (max-width: 639px) {
     body:is(.page-library, .page-epub) #mainview .result {
+        a[data-library-epub-download],
+        a[data-library-pdf-download] {
+            font-size: 14px;
+        }
+
         [data-library-epub-row],
         [data-library-pdf-row] {
             grid-template-columns: minmax(0, 1fr) auto;

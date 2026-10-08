@@ -153,7 +153,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                     </td>
                     <td class="block w-44 text-left">
                         <div class="text-ellipsis whitespace-nowrap overflow-hidden">
-                            <span class="author uppercase text-sm">
+                            <span class="author text-base">
                                 <NuxtLink
                                     v-if="item.authorHref"
                                     v-library-tooltip="item.authorTooltip"
