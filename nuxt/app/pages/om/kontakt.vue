@@ -222,3 +222,53 @@ async function subscribe() {
     </div>
   </AboutPageShell>
 </template>
+
+<style scoped>
+.page-contactForm input,
+.page-contactForm textarea {
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border: 1px solid darkgrey;
+  vertical-align: middle;
+}
+
+.page-contactForm .form_head > div {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.page-contactForm .contactform .form_head input {
+  width: 100%;
+  min-width: 0;
+}
+
+.page-contactForm .form_head .error_msg {
+  grid-column: 2;
+}
+
+.page-contactForm .subscribeform {
+  align-items: center;
+}
+
+.page-contactForm .subscribeform label {
+  padding-top: 0;
+}
+
+@media (max-width: 639px) {
+  .page-contactForm {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .page-contactForm .contactform .msg_box textarea,
+  .page-contactForm .contactform .msg_box .submit_container {
+    width: 100%;
+  }
+
+  .page-contactForm .subscribeform input {
+    min-width: 0;
+  }
+}
+</style>
