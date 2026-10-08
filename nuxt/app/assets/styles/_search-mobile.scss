@@ -103,6 +103,7 @@
             > div, .select2-container, .multiselect, .multiselect__tags {
                 width: 100%; min-width: 0; max-width: 100%; margin-right: 0;
             }
+            > .left > div { margin-bottom: 0; }
             .multiselect__tags { height: auto; flex-wrap: wrap; }
             .multiselect__input, .search-multiselect__input-row {
                 flex-basis: 100%; width: 100% !important;
