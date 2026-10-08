@@ -10,12 +10,12 @@
     }
 
     html:has(.site-shell) {
-        background-color: #071e2b;
+        background-color: white;
     }
 
     body:has(.site-shell) {
-        background-color: #071e2b;
-        // Preserve the route artwork above the navy body background.
+        background-color: white;
+        // Preserve the route artwork above the white body background.
         background-image: inherit;
         background-position: inherit;
         background-size: inherit;
@@ -117,7 +117,7 @@
 @media (max-width: 767px) {
     body.modal-open:has(.site-shell) {
         padding: max(2%, env(safe-area-inset-top, 0px)) max(2%, env(safe-area-inset-right, 0px)) max(2%, env(safe-area-inset-bottom, 0px)) max(2%, env(safe-area-inset-left, 0px));
-        background-color: #071e2b;
+        background-color: white;
     }
 
     body.modal-open #leftCorridor.site-navigation,

@@ -187,7 +187,7 @@ export default defineNuxtConfig({
         { rel: "icon", type: "image/png", sizes: "16x16", href: "/assets/img/favicons/favicon-16x16.png" }
       ],
       meta: [
-        { key: "theme-color-mobile", name: "theme-color", content: "#071e2b", media: "(max-width: 1023px)" },
+        { key: "theme-color-mobile", name: "theme-color", content: "#ffffff", media: "(max-width: 1023px)" },
         { key: "theme-color-desktop", name: "theme-color", content: "#ffffff", media: "(min-width: 1024px)" }
       ]
     }
