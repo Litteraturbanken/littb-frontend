@@ -1516,7 +1516,7 @@ useHead({
             aria-controls="text-search-advanced-panel"
             @click="toggleAdvanced"
           >
-            <span class="lg:hidden">{{ state.advanced ? 'Visa enkel sökning' : 'Visa utökad sökning' }}</span>
+            <span class="lg:hidden sc">{{ state.advanced ? 'Visa enkel sökning' : 'Visa utökad sökning' }}</span>
             <svg
               v-if="!state.advanced"
               class="filter w-6 h-6 relative top-0 inline-block text-gray-700"
