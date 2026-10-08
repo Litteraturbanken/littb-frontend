@@ -639,7 +639,15 @@ async function expectBoyeContributors(container: Locator) {
   ])).toEqual(['"("', '")"'])
 }
 
-test.beforeEach(async ({ request }) => resetReader(request))
+test.beforeEach(async ({ page, request }) => {
+  // External font availability is covered by typography tests, not reader behavior.
+  await page.route("https://cloud.typography.com/**", route => route.fulfill({
+    status: 200,
+    contentType: "text/css",
+    body: ""
+  }))
+  await resetReader(request)
+})
 test.afterEach(async ({ request }) => {
   expect(await readerMetadataRequests(request)).toEqual([])
   expect(await editorManifestRequests(request)).toEqual([])
@@ -858,6 +866,19 @@ for (const closeMethod of ["Escape", "backdrop", "Stäng"] as const) {
   })
 }
 
+test("reader prefetches source information and opens it without another request", async ({ page, request }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(dialog).toHaveCount(0)
+  await resetReader(request)
+  await page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Mer om boken" }).click()
+  await expect(dialog).toContainText("Doktor Glas. Roman")
+  await expect(dialog.locator(".preloader")).toHaveCount(0)
+  expect(await sourceInfoRequests(request)).toEqual([])
+})
+
 test("direct source information hydrates once without a client refetch", async ({
   page,
   request
@@ -1001,7 +1022,7 @@ test("source information entrances replace history and preserve raw query bytes"
   await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
   await expect(dialog).toHaveCount(0)
 
-  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(await sourceInfoRequests(request)).toHaveLength(0)
   expect(problems).toEqual([])
 })
 
@@ -1129,6 +1150,10 @@ test("a failed source-information request is modal-local and retries on reopen",
       method: "GET",
       status: 502,
       url: failedSourceInfoUrl
+    }, {
+      method: "GET",
+      status: 502,
+      url: failedSourceInfoUrl
     }]
   })
   await request.put(`${fixture}/_source_info_failure`)
@@ -1150,7 +1175,7 @@ test("a failed source-information request is modal-local and retries on reopen",
 
   await expect(dialog).toContainText("Doktor Glas. Roman")
   await expect(dialog.getByRole("alert")).toHaveCount(0)
-  expect(await sourceInfoRequests(request)).toHaveLength(2)
+  expect(await sourceInfoRequests(request)).toHaveLength(3)
   expect(problems).toEqual([])
 })
 
@@ -1211,9 +1236,9 @@ test("source-information shortcuts yield to guarded keyboard events", async ({ p
 test("source information shows only its own loading state", async ({ page, request }) => {
   const problems = captureBrowserProblems(page)
   await request.put(`${fixture}/_source_info_delays`, {
-    data: { "SöderbergH|DoktorGlas": 400 }
+    data: { "SöderbergH|DoktorGlas": 2_000 }
   })
-  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.goto(readerPath, { waitUntil: "domcontentloaded" })
   await page.locator(".reader-context .subnav")
     .getByRole("link", { name: "Mer om boken" }).click()
 
@@ -1224,28 +1249,31 @@ test("source information shows only its own loading state", async ({ page, reque
   expect(problems).toEqual([])
 })
 
-test("closing source information aborts its obsolete client request", async ({ page, request }) => {
+test("closing source information keeps the prefetch for reopening", async ({ page, request }) => {
   const problems = captureBrowserProblems(page)
   await request.put(`${fixture}/_source_info_delays`, {
     data: { "SöderbergH|DoktorGlas": 2_000 }
   })
-  await page.goto(readerPath, { waitUntil: "networkidle" })
-
   const sourceInfoPath = "/nuxt-api/reader/source-info/S%C3%B6derbergH/DoktorGlas"
   const sourceInfoStarted = page.waitForRequest(browserRequest =>
     new URL(browserRequest.url()).pathname === sourceInfoPath
   )
-  const sourceInfoAborted = page.waitForEvent("requestfailed", browserRequest =>
-    new URL(browserRequest.url()).pathname === sourceInfoPath
+  const sourceInfoFinished = page.waitForResponse(response =>
+    new URL(response.url()).pathname === sourceInfoPath
   )
-  await page.locator(".reader-context .subnav")
-    .getByRole("link", { name: "Mer om boken" }).click()
+  await page.goto(readerPath, { waitUntil: "domcontentloaded" })
   await sourceInfoStarted
-
-  await navigateClient(page, readerEncodedPath)
-
-  await expect(page.getByRole("dialog", { name: "Om boken" })).toHaveCount(0)
-  expect((await sourceInfoAborted).failure()?.errorText).toMatch(/abort/iu)
+  const trigger = page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Mer om boken" })
+  await trigger.click()
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(dialog).toHaveCount(1)
+  await dialog.getByRole("button", { name: "Stäng" }).click()
+  await expect(dialog).toHaveCount(0)
+  expect((await sourceInfoFinished).status()).toBe(200)
+  await trigger.click()
+  await expect(dialog).toContainText("Doktor Glas. Roman")
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
   expect(problems).toEqual([])
 })
 
@@ -1270,7 +1298,7 @@ test("external query removal closes source information without refetching Reader
   expect(await readerManifestRequests(request)).toEqual([])
   expect(await readerHitRequests(request)).toEqual([])
   expect(await rawStoredPageViews(page)).toBe(historyBefore)
-  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(await sourceInfoRequests(request)).toHaveLength(0)
   expect(problems).toEqual([])
 })
 

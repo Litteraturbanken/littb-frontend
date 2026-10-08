@@ -449,6 +449,15 @@ export const oversizedSourceInfo = {
 }
 
 export const sourceInfoByIdentity = new Map([
+  ["SöderbergH|DoktorGlasParts", {
+    ...doktorGlasSourceInfo,
+    title_path: "DoktorGlasParts",
+    read_actions: doktorGlasSourceInfo.read_actions.map(action => ({
+      ...action,
+      url: action.url.replace("/DoktorGlas/", "/DoktorGlasParts/")
+    })),
+    download_actions: []
+  }],
   ["SöderbergH|DoktorGlas", doktorGlasSourceInfo],
   ["AlmlöfN|Affarer", dramaSourceInfo],
   ["Anonym|BarnensTeater", catalogInfopostSourceInfo],

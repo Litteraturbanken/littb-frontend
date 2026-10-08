@@ -584,11 +584,13 @@ const sourceInfoLoading = computed(
       || sourceInfoFetch.status.value === "pending")
 )
 
+// Warm the modal after mounting so metadata never blocks the reading page.
+// Keep an in-flight request when the modal closes; it is still useful on reopen.
+onMounted(() => {
+  if (!initialSourceInfoRequested) void sourceInfoFetch.execute({ dedupe: "defer" })
+})
 watch(sourceInfoRequested, open => {
-  if (!open) {
-    sourceInfoController?.abort()
-    return
-  }
+  if (!open) return
   if (import.meta.client && nuxtApp.isHydrating) return
   const current = sourceInfoFetch.data.value
   if (
@@ -596,7 +598,7 @@ watch(sourceInfoRequested, open => {
     || current.identity !== sourceInfoRequestIdentity.value
     || current.status === "error"
   ) {
-    void sourceInfoFetch.execute()
+    void sourceInfoFetch.execute({ dedupe: "defer" })
   }
 })
 onBeforeUnmount(() => sourceInfoController?.abort())
