@@ -30,7 +30,7 @@
         .search-main-controls {
             position: relative;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+            grid-template-columns: minmax(0, 1fr) auto;
             gap: 10px;
             > svg {
                 position: absolute;
