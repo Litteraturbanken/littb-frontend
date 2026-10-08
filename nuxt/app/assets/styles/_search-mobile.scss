@@ -46,13 +46,16 @@
             gap: 10px;
             > svg {
                 position: absolute;
-                top: 12px;
+                grid-row: 1 / 2;
+                top: 0;
+                bottom: 0;
                 left: 12px;
-                margin: 0;
+                margin: auto 0;
                 pointer-events: none;
             }
             > input {
                 grid-column: 1 / -1;
+                grid-row: 1 / 2;
                 width: 100%;
                 min-width: 0;
                 margin: 0;
@@ -61,12 +64,14 @@
             }
             .reset {
                 position: absolute;
-                top: 2px;
+                grid-row: 1 / 2;
+                top: 0;
+                bottom: 0;
                 right: 2px;
                 left: auto;
                 width: 44px;
                 height: 44px;
-                margin: 0;
+                margin: auto 0;
                 padding: 10px;
             }
             [data-search-submit], [data-search-advanced] {
