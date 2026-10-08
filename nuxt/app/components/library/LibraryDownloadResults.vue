@@ -137,8 +137,32 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                 </div>
                             </div>
                         </div>
+                        <div class="download-book-author lg:hidden">
+                            <span class="author text-base">
+                                <NuxtLink
+                                    v-if="item.authorHref"
+                                    v-library-tooltip="item.authorTooltip"
+                                    :data-library-epub-author="mode === 'epub' || undefined"
+                                    :data-library-pdf-author="mode === 'pdf' || undefined"
+                                    data-library-tooltip-kind="author"
+                                    :to="canonicalNuxtHref(item.authorHref)"
+                                    >{{ item.fullAuthorName || item.surname }}</NuxtLink
+                                ><span
+                                    v-else
+                                    v-library-tooltip="item.authorTooltip"
+                                    :tabindex="item.authorTooltip ? 0 : undefined"
+                                    :data-library-epub-author="mode === 'epub' || undefined"
+                                    :data-library-pdf-author="mode === 'pdf' || undefined"
+                                    data-library-tooltip-kind="author"
+                                    >{{ item.fullAuthorName || item.surname }}</span
+                                ><template v-if="item.roleSuffix"
+                                    >{{ " "
+                                    }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template
+                                >
+                            </span>
+                        </div>
                     </td>
-                    <td class="text-left hidden sm:block w-28 text-base">
+                    <td class="text-left hidden lg:block w-28 text-base">
                         <span
                             :data-library-epub-year="mode === 'epub' || undefined"
                             :data-library-pdf-year="mode === 'pdf' || undefined"
@@ -151,7 +175,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                             ><template v-else>{{ item.year }}</template></span
                         >
                     </td>
-                    <td class="block w-44 text-left">
+                    <td class="hidden lg:block w-44 text-left">
                         <div class="text-ellipsis whitespace-nowrap overflow-hidden">
                             <span class="author text-base">
                                 <NuxtLink
