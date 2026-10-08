@@ -3,6 +3,17 @@
 }
 
 @media (max-width: 1023px) {
+    html:has(body.page-about .site-shell) {
+        background-color: white !important;
+        background-image: linear-gradient(#ffda54 120px, white 120px) !important;
+    }
+
+    body.page-about:has(.site-shell) {
+        background: white !important;
+
+        #mainview h1 { color: black; }
+    }
+
     html:has(.site-shell) {
         // Page routes set inline backgrounds; keep the browser canvas yellow.
         background-color: #ffda54 !important;
@@ -196,5 +207,12 @@
     body.modal-open #leftCorridor.site-navigation,
     body.modal-open .site-shell > #mainview {
         display: none;
+    }
+}
+
+@media (max-width: 639px) {
+    body.page-about #mainview .content {
+        padding-left: 12px;
+        padding-right: 12px;
     }
 }
