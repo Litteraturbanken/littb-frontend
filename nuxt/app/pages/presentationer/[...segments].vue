@@ -69,7 +69,7 @@ async function fetchDocument(path: string, signal: AbortSignal): Promise<Present
     )
     if (signal.aborted) throw signal.reason
     const displaySource = path === "/red/presentationer/presentationerForfattare.html"
-      ? source.replace(/(<h1\b[^>]*>\s*)Presentationer och introduktioner/i, "$1Presentationer &amp; introduktioner")
+      ? source.replace(/(<h1\b[^>]*>\s*)Presentationer och introduktioner/i, "$1Presentationer <em class='italic'>&amp;</em> introduktioner")
       : source
     return parsePresentationDocument(displaySource)
   } catch (error) {

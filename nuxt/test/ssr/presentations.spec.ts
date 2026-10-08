@@ -64,7 +64,7 @@ test("Presentation index renders its exact SSR shell without background XML", as
   expect(html).toMatch(/<body[^>]*class="focus page-presentation ready"/)
   expect(html).toMatch(/<html[^>]*style="[^"]*background:[^"]*presentations[^"]*\.jpg/)
   expect(html).toContain('<div class="doc main">')
-  expect(html).toContain("Presentationer &amp; introduktioner")
+  expect(html).toContain("Presentationer <em class=\"italic\">&amp;</em> introduktioner")
   expect(html).not.toContain("PRESENTATIONER</title>")
   expect(await presentationRequests(request)).toEqual([
     "/red/presentationer/presentationerForfattare.html"
