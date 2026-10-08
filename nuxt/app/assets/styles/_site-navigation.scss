@@ -147,10 +147,17 @@
         margin-top: 0;
     }
 
+    // The reading area owns horizontal scrolling on narrow screens.
+    // Do not let fractional layout widths create a second viewport scrollbar.
+    html:has(body.page-reading:not(.reader-focus-mode)) {
+        overflow-x: clip;
+    }
+
     // Wide scans and fixed-width etext pages scroll inside the reading area.
     // They must not expand the viewport containing the mobile navigation.
     body.page-reading:not(.reader-focus-mode) .site-shell > #mainview {
         overflow-x: auto;
+        overflow-y: hidden;
     }
 
     // The home column previously started beside the desktop sidebar.
