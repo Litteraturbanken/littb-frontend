@@ -457,7 +457,7 @@ test.describe("Nuxt whole-site staging smoke", () => {
         await openNuxtRoute(page, "/presentationer")
 
         await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-            "Presentationer och introduktioner"
+            "Presentationer & introduktioner"
         )
         await expect(page.locator(".doc.main")).toContainText(
             "Litteraturbankens digitala utställningar"
