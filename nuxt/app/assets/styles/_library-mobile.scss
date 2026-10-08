@@ -9,6 +9,11 @@
         background: white !important;
 
         #mainview h1 { color: black; }
+
+        #mainview form,
+        #mainview .library-results > div {
+            border: 1px solid darkgrey;
+        }
     }
 
     body:is(.page-library, .page-epub) {
