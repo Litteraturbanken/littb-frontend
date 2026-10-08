@@ -161,7 +161,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                     :data-library-pdf-author="mode === 'pdf' || undefined"
                                     data-library-tooltip-kind="author"
                                     :to="canonicalNuxtHref(item.authorHref)"
-                                    >{{ item.surname }}</NuxtLink
+                                    >{{ item.fullAuthorName || item.surname }}</NuxtLink
                                 ><span
                                     v-else
                                     v-library-tooltip="item.authorTooltip"
@@ -169,7 +169,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                     :data-library-epub-author="mode === 'epub' || undefined"
                                     :data-library-pdf-author="mode === 'pdf' || undefined"
                                     data-library-tooltip-kind="author"
-                                    >{{ item.surname }}</span
+                                    >{{ item.fullAuthorName || item.surname }}</span
                                 ><template v-if="item.roleSuffix"
                                     >{{ " "
                                     }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template

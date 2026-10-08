@@ -49,6 +49,7 @@ export type LibraryResult = {
 }
 
 export type DownloadResult = {
+  fullAuthorName?: string
   title: string
   titleTooltip: string
   year: string
@@ -373,6 +374,7 @@ function mapDownloadItem(item: DownloadItem, mode: DownloadMode): DownloadResult
     titleTooltip: usefulLibraryTooltipText(item.full_title, item.title),
     year: item.year ?? "",
     surname,
+    fullAuthorName: item.author.full_name || surname,
     authorTooltip: libraryAuthorTooltipText(item.author, surname),
     roleSuffix: roleSuffix(item.author.role),
     titleHref: safeLibraryTitleHref(item.title_url) ?? "",
