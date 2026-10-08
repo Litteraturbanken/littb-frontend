@@ -1619,7 +1619,7 @@ v-for="item in [
           <span class="text-sm sc">till </span>
           <input
             type="text"
-            class="text-sm text-center py-1"
+            class="text-sm text-center py-1 px-1"
             :value="chronologyToDraft"
             aria-label="Till år"
             @input="setChronologyDraft('to', ($event.target as HTMLInputElement).value)"
