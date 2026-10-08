@@ -2817,28 +2817,31 @@ test("Reader sidebar reveals one delayed text-only tooltip only for a distinct f
   expect(problems).toEqual([])
 })
 
-test("opening a reader positions the work like the legacy reader", async ({ page, isMobile }) => {
-  if (!isMobile) await page.setViewportSize({ width: 800, height: 900 })
-  await page.goto(readerPath, { waitUntil: "networkidle" })
-  if (isMobile) {
-    await expect.poll(() => page.locator(".reader_main").evaluate(
-      element => Math.round(element.getBoundingClientRect().top)
-    )).toBe(0)
-  } else {
-    const target = await page.evaluate(
-      () => Math.min(1000, document.documentElement.scrollWidth - window.innerWidth)
-    )
-    expect(target).toBeGreaterThan(0)
-    await expect.poll(() => page.evaluate(() => window.scrollX)).toBe(target)
-  }
-})
+for (const width of [390, 818, 1023, 1024, 1280]) {
+  test(`reader initial autoscroll follows the desktop breakpoint at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 670 })
+    await page.goto(readerPath, { waitUntil: "networkidle" })
+    if (width < 1024) {
+      expect(await page.evaluate(() => [window.scrollX, window.scrollY])).toEqual([0, 0])
+      await page.evaluate(() => window.scrollTo(0, 200))
+      await page.waitForTimeout(300)
+      expect(await page.evaluate(() => window.scrollY)).toBe(200)
+    } else {
+      const target = await page.evaluate(
+        () => Math.min(1000, document.documentElement.scrollWidth - window.innerWidth)
+      )
+      if (width === 1024) expect(target).toBeGreaterThan(0)
+      await expect.poll(() => page.evaluate(() => window.scrollX)).toBe(target)
+    }
+  })
+}
 
 test("page navigation preserves each page's horizontal history position", async ({
   isMobile,
   page
 }) => {
   test.skip(isMobile, "the responsive reader has no horizontal page overflow")
-  await page.setViewportSize({ width: 800, height: 900 })
+  await page.setViewportSize({ width: 1024, height: 900 })
   await page.route("**/nuxt-api/reader/**/-1/etext", async route => {
     await new Promise(resolve => setTimeout(resolve, 800))
     const response = await route.fetch()
@@ -2850,7 +2853,7 @@ test("page navigation preserves each page's horizontal history position", async 
   await page.evaluate(() => {
     const spacer = document.createElement("div")
     spacer.id = "history-vertical-spacer"
-    spacer.style.cssText = "position:absolute;left:0;top:0;width:1px;height:1400px"
+    spacer.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:1400px"
     document.body.append(spacer)
   })
 

@@ -75,13 +75,10 @@ export default defineNuxtPlugin({
     let pendingScroll: PendingReaderScroll | null = null
     const readyRoutes = new Set<string>()
     let initialReaderPositioned = false
-    const initialPosition = () => window.innerWidth > 768
+    // Match the side-by-side reader layout; narrow screens keep user scroll control.
+    const initialPosition = () => window.innerWidth >= 1024
       ? { left: 1000, top: 0 }
-      : {
-          left: 0,
-          top: (document.querySelector(".reader_main")?.getBoundingClientRect().top ?? 0)
-            + window.scrollY
-        }
+      : false as const
 
     router.beforeEach((to, from) => {
       const readerPageNavigation = isReaderPageNavigation(to, from)
@@ -177,7 +174,8 @@ export default defineNuxtPlugin({
         // The initial hydrated route may predate the router wrapper.
         if (!initialReaderPositioned) {
           initialReaderPositioned = true
-          window.scrollTo(initialPosition())
+          const position = initialPosition()
+          if (position) window.scrollTo(position)
         }
       }
     })

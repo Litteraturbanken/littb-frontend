@@ -1516,6 +1516,7 @@ useHead({
             aria-controls="text-search-advanced-panel"
             @click="toggleAdvanced"
           >
+            <span class="lg:hidden sc">{{ state.advanced ? 'Visa enkel sökning' : 'Visa utökad sökning' }}</span>
             <svg
               v-if="!state.advanced"
               class="filter w-6 h-6 relative top-0 inline-block text-gray-700"
@@ -1934,38 +1935,52 @@ v-for="item in [
     </div>
 
     <Teleport to="#toolkit" :disabled="!toolkitMounted || mobileSearchLayout">
-      <ul v-if="navigatorFacets.length || state.facetAuthorId" class="navigator">
-        <li>
-          <button
-            class="link-control"
-            type="button"
-            :class="{ selected: !state.facetAuthorId }"
-            :aria-pressed="!state.facetAuthorId"
-            @click="setFacet(null)"
-          >Visa alla</button>
-        </li>
-        <li v-for="facet in navigatorFacets" :key="facet.key">
-          <button
-            v-if="isSafeTextSearchIdentifier(facet.key)"
-            class="link-control"
-            type="button"
-            :class="{ selected: state.facetAuthorId === facet.key }"
-            :aria-pressed="state.facetAuthorId === facet.key"
-            @click="setFacet(facet.key)"
-          >{{ facet.name }}</button>
-          <span v-else class="link-control" aria-disabled="true">{{ facet.name }}</span>
-        </li>
-      </ul>
+      <div v-if="navigatorFacets.length || state.facetAuthorId" class="search-author-navigator">
+        <ul class="navigator">
+          <li>
+            <button
+              class="link-control"
+              type="button"
+              :class="{ selected: !state.facetAuthorId }"
+              :aria-pressed="!state.facetAuthorId"
+              @click="setFacet(null)"
+            >Visa alla</button>
+          </li>
+          <li v-for="facet in navigatorFacets" :key="facet.key">
+            <button
+              v-if="isSafeTextSearchIdentifier(facet.key)"
+              class="link-control"
+              type="button"
+              :class="{ selected: state.facetAuthorId === facet.key }"
+              :aria-pressed="state.facetAuthorId === facet.key"
+              @click="setFacet(facet.key)"
+            >{{ facet.name }}</button>
+            <span v-else class="link-control" aria-disabled="true">{{ facet.name }}</span>
+          </li>
+        </ul>
+      </div>
     </Teleport>
   </div>
 </template>
 
 <style scoped>
+.search-author-navigator {
+  display: contents;
+}
+
 @media (max-width: 1023px) {
-  .navigator {
+  .search-author-navigator {
+    display: block;
     margin-top: 1rem;
-    padding: 0.8em;
+    padding: 0.64em;
     border: 1px solid darkgrey;
+    background: white;
+  }
+
+  .navigator {
+    margin: 0;
+    padding: 0;
+    border: 0;
     background: rgba(255, 255, 255, 0.95);
     color: #333;
     font-family: "Requiem Text SC A", "Requiem Text SC B";

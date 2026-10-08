@@ -1,4 +1,14 @@
 @media (max-width: 1023px) {
+    html:has(body.page-search .site-shell) {
+        background-color: white !important;
+        // Keep yellow behind the iPhone header, with white at the page bottom.
+        background-image: linear-gradient(#ffda54 120px, white 120px) !important;
+    }
+
+    body.page-search:has(.site-shell) {
+        background: white !important;
+    }
+
     body.page-search .site-shell > #mainview {
         width: calc(100% + 32px);
         margin-right: -16px;
@@ -13,12 +23,14 @@
             margin: 12px 16px 20px;
             font-size: clamp(30px, 7.5vw, 42px);
             line-height: 1.1;
+            color: black;
         }
         .submit_form {
             margin: 0 0 16px;
             padding: 16px;
             color: #333;
-            background: rgb(255 253 248 / 92%);
+            background: white;
+            border: 1px solid darkgrey;
         }
         .top_row {
             position: relative;
@@ -30,17 +42,20 @@
         .search-main-controls {
             position: relative;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 52px;
+            grid-template-columns: minmax(0, 1fr) auto;
             gap: 10px;
             > svg {
                 position: absolute;
-                top: 12px;
+                grid-row: 1 / 2;
+                top: 0;
+                bottom: 0;
                 left: 12px;
-                margin: 0;
+                margin: auto 0;
                 pointer-events: none;
             }
             > input {
                 grid-column: 1 / -1;
+                grid-row: 1 / 2;
                 width: 100%;
                 min-width: 0;
                 margin: 0;
@@ -49,12 +64,14 @@
             }
             .reset {
                 position: absolute;
-                top: 2px;
+                grid-row: 1 / 2;
+                top: 0;
+                bottom: 0;
                 right: 2px;
                 left: auto;
                 width: 44px;
                 height: 44px;
-                margin: 0;
+                margin: auto 0;
                 padding: 10px;
             }
             [data-search-submit], [data-search-advanced] {
@@ -62,6 +79,15 @@
                 min-height: 44px;
                 margin: 0;
             }
+        }
+        [data-search-advanced] {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            text-transform: uppercase;
+            svg { flex-shrink: 0; }
         }
         .search_opts_widget {
             display: grid;
@@ -71,8 +97,8 @@
             color: #333;
             font-size: 16px;
             li { position: relative; padding-left: 22px; white-space: normal; }
-            [role="checkbox"] { position: absolute; top: 5px; left: 0; }
-            [role="button"] { display: flex; align-items: center; min-height: 30px; padding: 4px 0; }
+            [role="checkbox"] { position: absolute; top: 2px; left: 0; }
+            [role="button"] { display: flex; align-items: center; min-height: 24px; padding: 2px 0; }
         }
         .chronology { color: #333; }
         .search-chronology-controls {
@@ -94,6 +120,7 @@
             > div, .select2-container, .multiselect, .multiselect__tags {
                 width: 100%; min-width: 0; max-width: 100%; margin-right: 0;
             }
+            > .left > div { margin-bottom: 0; }
             .multiselect__tags { height: auto; flex-wrap: wrap; }
             .multiselect__input, .search-multiselect__input-row {
                 flex-basis: 100%; width: 100% !important;
