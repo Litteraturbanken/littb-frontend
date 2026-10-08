@@ -1,5 +1,16 @@
 // Keep the library usable at phone and tablet widths, independent of device type.
 @media (max-width: 1023px) {
+    html:has(body.page-epub .site-shell) {
+        background-color: white !important;
+        background-image: linear-gradient(#ffda54 120px, white 120px) !important;
+    }
+
+    body.page-epub:has(.site-shell) {
+        background: white !important;
+
+        #mainview h1 { color: black; }
+    }
+
     body:is(.page-library, .page-epub) {
         display: block;
         width: 100%;
