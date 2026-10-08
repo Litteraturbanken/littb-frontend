@@ -131,25 +131,7 @@
                 }
             }
 
-            [data-library-chronology-range] {
-                flex-direction: column;
-                gap: 8px;
 
-                .rzslider {
-                    flex: none;
-                    margin: 8px 0 3px !important;
-                }
-
-                .chronology_inputs {
-                    align-self: flex-start;
-                    margin: 0;
-
-                    input {
-                        min-height: 40px;
-                        font-size: 16px;
-                    }
-                }
-            }
 
             .library-mode-tabs {
                 display: flex;

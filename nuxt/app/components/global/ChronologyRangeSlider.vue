@@ -1,14 +1,21 @@
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false })
+
 type ChronologyEndpoint = "from" | "to"
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   min: number
   max: number
   from: number | string
   to: number | string
   fromLabel: string
   toLabel: string
-}>()
+  fromInputLabel?: string
+  toInputLabel?: string
+}>(), {
+  fromInputLabel: "Från tryckår",
+  toInputLabel: "Till tryckår"
+})
 
 const emit = defineEmits<{
   cancel: []
@@ -107,41 +114,116 @@ function inputValue(event: Event): string {
 </script>
 
 <template>
-  <div
-    class="rzslider"
-    :style="rangeStyle"
-    @pointerdown="beginPointer"
-    @pointermove="movePointer"
-    @pointerup="finishPointer"
-    @pointercancel="cancelPointer"
-    @lostpointercapture="cancelPointer"
-  >
-    <input
-      type="range"
-      data-range-endpoint="from"
-      :min="min"
-      :max="max"
-      step="1"
-      :value="from"
-      :aria-label="fromLabel"
-      @input="emit('draft', 'from', inputValue($event))"
-      @change="emit('commit', 'from', inputValue($event))"
+  <div class="chronology-controls">
+    <div
+      :class="$attrs.class"
+      :data-search-chronology-range="$attrs['data-search-chronology-range']"
+      class="rzslider"
+      :style="rangeStyle"
+      @pointerdown="beginPointer"
+      @pointermove="movePointer"
+      @pointerup="finishPointer"
+      @pointercancel="cancelPointer"
+      @lostpointercapture="cancelPointer"
     >
-    <input
-      type="range"
-      data-range-endpoint="to"
-      :min="min"
-      :max="max"
-      step="1"
-      :value="to"
-      :aria-label="toLabel"
-      @input="emit('draft', 'to', inputValue($event))"
-      @change="emit('commit', 'to', inputValue($event))"
-    >
+      <input
+        type="range"
+        data-range-endpoint="from"
+        :min="min"
+        :max="max"
+        step="1"
+        :value="from"
+        :aria-label="fromLabel"
+        @input="emit('draft', 'from', inputValue($event))"
+        @change="emit('commit', 'from', inputValue($event))"
+      >
+      <input
+        type="range"
+        data-range-endpoint="to"
+        :min="min"
+        :max="max"
+        step="1"
+        :value="to"
+        :aria-label="toLabel"
+        @input="emit('draft', 'to', inputValue($event))"
+        @change="emit('commit', 'to', inputValue($event))"
+      >
+    </div>
+    <div class="whitespace-nowrap self-center chronology_inputs">
+      <span class="text-sm sc">Tryckår: </span>
+      <input
+        class="text-sm text-center py-1 px-1"
+        type="text"
+        :value="from"
+        :aria-label="fromInputLabel"
+        @input="emit('draft', 'from', inputValue($event))"
+        @change="emit('commit', 'from', inputValue($event))"
+      >{{ " " }}
+      <span class="text-sm sc">till </span>
+      <input
+        class="text-sm text-center py-1 px-1"
+        type="text"
+        :value="to"
+        :aria-label="toInputLabel"
+        @input="emit('draft', 'to', inputValue($event))"
+        @change="emit('commit', 'to', inputValue($event))"
+      >
+    </div>
   </div>
 </template>
 
 <style scoped>
+.chronology-controls {
+  display: flex;
+  width: 100%;
+}
+
+.chronology_inputs input {
+  width: 3rem;
+  border: 1px solid #999;
+}
+
+.rzslider {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 20px;
+  margin: 8px 1.85rem 3px 0 !important;
+  background: linear-gradient(
+    to right,
+    rgba(122, 20, 0, 0.15) 0 var(--chronology-from),
+    #7a1400 var(--chronology-from) var(--chronology-to),
+    rgba(122, 20, 0, 0.15) var(--chronology-to) 100%
+  );
+  background-position: 10px calc(50% - 2px);
+  background-size: calc(100% - 20px) 8px;
+  background-repeat: no-repeat;
+}
+
+@media (max-width: 1023px) {
+  .chronology-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .rzslider {
+    flex: none;
+    width: 100%;
+    margin: 12px 0 0 !important;
+  }
+
+  .chronology_inputs {
+    align-self: flex-start;
+    margin: 0;
+  }
+
+  .chronology_inputs input {
+    min-height: 40px;
+    font-size: 16px;
+  }
+}
+
 input[type="range"] {
   appearance: none;
   position: absolute;

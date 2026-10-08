@@ -1601,32 +1601,15 @@ v-for="item in [
           :max="chronologyCeiling"
           :from="chronologyFromDraft"
           :to="chronologyToDraft"
+          from-input-label="Från år"
+          to-input-label="Till år"
           from-label="Från år reglage"
           to-label="Till år reglage"
           @draft="setChronologyDraft"
           @commit="commitChronologyDraft"
           @cancel="cancelChronologyDraft"
         />
-        <div class="whitespace-nowrap self-center chronology_inputs">
-          <span class="text-sm sc">Tryckår: </span>
-          <input
-            type="text"
-            class="text-sm text-center py-1 px-1"
-            :value="chronologyFromDraft"
-            aria-label="Från år"
-            @input="setChronologyDraft('from', ($event.target as HTMLInputElement).value)"
-            @change="commitChronologyDraft('from', ($event.target as HTMLInputElement).value)"
-          >{{ " " }}
-          <span class="text-sm sc">till </span>
-          <input
-            type="text"
-            class="text-sm text-center py-1 px-1"
-            :value="chronologyToDraft"
-            aria-label="Till år"
-            @input="setChronologyDraft('to', ($event.target as HTMLInputElement).value)"
-            @change="commitChronologyDraft('to', ($event.target as HTMLInputElement).value)"
-          >
-        </div>
+
       </div>
 
       <div v-if="state.advanced" id="text-search-advanced-panel" class="bottom_row">
@@ -2019,25 +2002,7 @@ v-for="item in [
   }
 }
 
-.chronology_ranges {
-  position: relative;
-  flex: 1 1 400px;
-  width: 400px;
-  min-width: 0;
-  height: 20px;
-  margin-top: 8px !important;
-  margin-right: 1.85rem;
-  margin-bottom: 3px;
-  background: linear-gradient(
-    to right,
-    rgba(122, 20, 0, 0.15) 0 var(--chronology-from),
-    #7a1400 var(--chronology-from) var(--chronology-to),
-    rgba(122, 20, 0, 0.15) var(--chronology-to) 100%
-  );
-  background-position: 10px calc(50% - 2px);
-  background-size: calc(100% - 20px) 8px;
-  background-repeat: no-repeat;
-}
+
 
 .reset {
   color: #616161;
@@ -2166,11 +2131,7 @@ v-for="item in [
 }
 
 @media (max-width: 767px) {
-  .chronology_ranges {
-    width: 396px;
-    max-width: 396px;
-    flex-basis: 396px;
-  }
+
 
   .bottom_row {
     margin-top: 2em !important;

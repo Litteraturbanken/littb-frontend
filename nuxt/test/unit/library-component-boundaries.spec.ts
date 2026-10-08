@@ -40,7 +40,14 @@ vi.mock("../../app/components/global/ChronologyRangeSlider.vue", async () => {
             value: props.to,
             onInput: (event: Event) => emit("draft", "to", value(event)),
             onChange: (event: Event) => emit("commit", "to", value(event))
-          })
+          }),
+          ...(["from", "to"] as const).map(endpoint => h("input", {
+            type: "text",
+            "aria-label": endpoint === "from" ? "Från tryckår" : "Till tryckår",
+            value: props[endpoint],
+            onInput: (event: Event) => emit("draft", endpoint, value(event)),
+            onChange: (event: Event) => emit("commit", endpoint, value(event))
+          }))
         ])
       }
     })

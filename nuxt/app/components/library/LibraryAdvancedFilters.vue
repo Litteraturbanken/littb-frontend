@@ -316,26 +316,7 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
             @commit="emitChronologyRange"
             @cancel="emit('reset-chronology')"
         />
-        <div class="whitespace-nowrap self-center chronology_inputs">
-            <span class="text-sm sc">Tryckår: </span>
-            <input
-                class="text-sm text-center py-1 px-1"
-                type="text"
-                :value="model.chronology.from"
-                aria-label="Från tryckår"
-                @input="emitChronologyDraft('from', inputValue($event))"
-                @change="emitChronologyRange('from', inputValue($event))"
-            >{{ " " }}
-            <span class="text-sm sc">till </span>
-            <input
-                class="text-sm text-center py-1 px-1"
-                type="text"
-                :value="model.chronology.to"
-                aria-label="Till tryckår"
-                @input="emitChronologyDraft('to', inputValue($event))"
-                @change="emitChronologyRange('to', inputValue($event))"
-            >
-        </div>
+
     </div>
     <div
         v-else-if="model.chronologyUnavailable"
@@ -467,21 +448,5 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
     display: none;
 }
 
-[data-library-chronology-range] .rzslider {
-    position: relative;
-    flex: 1 1 auto;
-    width: 100%;
-    min-width: 0;
-    height: 20px;
-    margin: 8px 1.85rem 3px 0 !important;
-    background: linear-gradient(
-        to right,
-        rgba(122, 20, 0, 0.15) 0 var(--chronology-from),
-        #7a1400 var(--chronology-from) var(--chronology-to),
-        rgba(122, 20, 0, 0.15) var(--chronology-to) 100%
-    );
-    background-position: 10px calc(50% - 2px);
-    background-size: calc(100% - 20px) 8px;
-    background-repeat: no-repeat;
-}
+
 </style>

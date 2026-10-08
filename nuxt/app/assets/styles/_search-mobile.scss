@@ -105,12 +105,7 @@
             flex-direction: column;
             gap: 12px;
             padding: 0;
-            .chronology_ranges { flex: none; width: 100%; margin: 12px 0 0 !important; }
-            .chronology_inputs {
-                align-self: flex-start;
-                margin: 0;
-                input { min-height: 40px; font-size: 16px; }
-            }
+
         }
         #text-search-advanced-panel {
             display: grid;
