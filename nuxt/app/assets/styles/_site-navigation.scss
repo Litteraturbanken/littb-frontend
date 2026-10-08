@@ -3,18 +3,6 @@
 }
 
 @media (max-width: 1023px) {
-    html:has(body:is(.page-about, .page-presentation) .site-shell) {
-        background-color: white !important;
-        background-image: linear-gradient(#ffda54 120px, white 120px) !important;
-    }
-
-    body:is(.page-about, .page-presentation):has(.site-shell) {
-        background: white !important;
-
-        #mainview h1 { color: black; }
-        #mainview .intro { color: #333; }
-    }
-
     body.page-presentation #mainview .content {
         box-sizing: border-box;
         width: 100%;
@@ -22,8 +10,7 @@
     }
 
     html:has(.site-shell) {
-        // Page routes set inline backgrounds; keep the browser canvas yellow.
-        background-color: #ffda54 !important;
+        background-color: #071e2b;
     }
 
     body:has(.site-shell) {
@@ -34,6 +21,11 @@
         background-size: inherit;
         background-repeat: inherit;
         background-attachment: inherit;
+    }
+
+    // The legacy device stylesheet suppresses these route backgrounds.
+    body:is(.page-search, .page-authorInfo):has(.site-shell) {
+        background-image: inherit !important;
     }
 
     body.page-reading:has(.site-shell) {
@@ -52,110 +44,27 @@
     }
 
     body #leftCorridor.site-navigation {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        width: calc(100% + var(--site-inset-left) + var(--site-inset-right));
+        display: block;
+        width: 100%;
         min-width: 0;
-        margin: 0 calc(-1 * var(--site-inset-right)) 0 calc(-1 * var(--site-inset-left));
-        padding: calc(12px + env(safe-area-inset-top, 0px)) var(--site-inset-right) 12px var(--site-inset-left);
-        color: white;
-        background: #302b24;
+        margin: 1em 0 3em;
+        padding: 0;
+        background: transparent;
 
-        .logo_link_monogram {
-            display: block;
-            width: 56px;
-            height: 60px;
-            margin: 0;
-            left: 0;
-        }
-
+        .logo_link_monogram,
         .lb-logo {
-            --logo-l-color: white;
-            --logo-b-color: white;
-            display: block;
-            width: 56px;
-            max-width: none;
-            height: 60px;
-            margin: 0;
+            max-width: 100%;
             left: 0;
         }
 
-        .site-menu-toggle {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            min-height: 44px;
-            padding: 8px 14px;
-            border: 1px solid rgb(255 255 255 / 60%);
+        .mainnav a {
             color: white;
-            background: rgb(0 0 0 / 15%);
-            font-size: 16px;
         }
+    }
 
-        :is(a, button):focus-visible {
-            outline: 2px solid white;
-            outline-offset: 3px;
-        }
-
-        .site-navigation-panel {
-            display: none;
-            width: 100%;
-        }
-
-        .site-navigation-panel--open {
-            display: block;
-        }
-
-        .mainnav {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0 12px;
-            width: 100%;
-            margin: 12px 0 0;
-            padding: 0;
-            text-align: left;
-            font-size: 16px;
-
-            a {
-                display: block;
-                align-content: center;
-                min-height: 44px;
-                color: white;
-                white-space: normal;
-                overflow-wrap: anywhere;
-            }
-        }
-
-        .start-only {
-            margin: 12px 0 0;
-            text-align: left;
-            justify-content: flex-start;
-
-            a {
-                display: inline-flex;
-                align-items: center;
-                min-height: 44px;
-                color: white;
-            }
-        }
-
-        .sa-logo {
-            width: 60px;
-        }
-
-        #toolkit:empty {
-            display: none;
-        }
-
-        #toolkit:not(:empty) {
-            width: calc(100% + var(--site-inset-left) + var(--site-inset-right));
-            margin: 12px calc(-1 * var(--site-inset-right)) -12px calc(-1 * var(--site-inset-left));
-            padding: 16px;
-            color: #333;
-            background: white;
-        }
+    // Override the legacy phone stylesheet's black library navigation links.
+    body:is(.page-library, .page-epub) #leftCorridor.site-navigation .mainnav a {
+        color: white;
     }
 
     body .site-shell > #mainview {

@@ -4,92 +4,62 @@ const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
 const routes = ["/", "/bibliotek", "/sök", "/epub", "/presentationer", "/om/ide", "/författare/StrindbergA", readerPath]
 
 for (const width of [375, 390, 768]) {
-  test(`shared mobile navigation fits all main page types at ${width}px`, async ({ page }) => {
+  test(`original mobile navigation stays visible across page types at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
     for (const route of routes) {
       await page.goto(route)
       await page.locator("[data-site-navigation-ready=true]").waitFor()
-      const button = page.locator(".site-menu-toggle")
       const navigation = page.getByRole("navigation", { name: "Huvudnavigation" })
-      await expect(button, route).toBeVisible()
-      await expect(button).toHaveAttribute("aria-expanded", "false")
-      await expect(navigation).toBeHidden()
-      const header = page.locator("#leftCorridor")
-      const box = await header.boundingBox()
-      expect(box!.x, route).toBeGreaterThanOrEqual(-1)
-      expect(box!.x + box!.width, route).toBeLessThanOrEqual(width + 1)
-      await button.press("Enter")
-      await expect(navigation).toBeVisible()
-      expect(await navigation.evaluate(element => element.scrollWidth - element.clientWidth), route)
-        .toBeLessThanOrEqual(1)
-      await expect(button).toHaveAttribute("aria-controls", await navigation.getAttribute("id") ?? "")
+      await expect(navigation, route).toBeVisible()
       await expect(navigation.getByRole("link", { name: "Biblioteket", exact: true })).toBeVisible()
-      await expect(navigation.getByRole("button", { name: "ändra design" })).toHaveCount(0)
-      await expect(navigation.locator(".tungsten-grid")).toBeVisible()
-      await page.keyboard.press("Tab")
-      await expect(navigation.getByRole("combobox", { name: "Snabbsökning" })).toBeFocused()
-      await page.keyboard.press("Escape")
-      await expect(navigation).toBeHidden()
-      await expect(button).toBeFocused()
+      await expect(page.locator(".site-menu-toggle, .mobile-navigation-menu")).toHaveCount(0)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), route)
+        .toBeLessThanOrEqual(1)
+      if (["/bibliotek", "/sök", "/epub", "/presentationer", "/om/ide"].includes(route)) {
+        await expect(page.locator("html"), route).not.toHaveCSS("background-image", "none")
+        await expect(page.locator("body"), route).not.toHaveCSS("background-image", "none")
+      }
+      if (route === "/bibliotek") {
+        for (const link of await navigation.locator(".mainnav a").all()) {
+          await expect(link).toHaveCSS("color", "rgb(255, 255, 255)")
+        }
+      }
     }
   })
 }
 
-test("mobile navigation closes on outside click and route navigation", async ({ page, isMobile }) => {
+test("original navigation links work and quick search returns focus to its trigger", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/bibliotek")
   await page.locator("[data-site-navigation-ready=true]").waitFor()
-  const button = page.locator(".site-menu-toggle")
   const navigation = page.getByRole("navigation", { name: "Huvudnavigation" })
-  await button.click()
-  if (isMobile) await page.locator("h1").tap()
-  else await page.locator("h1").click()
-  await expect(navigation).toBeHidden()
-  await button.press("Space")
   await navigation.getByRole("link", { name: "Presentationer", exact: true }).click()
   await expect(page).toHaveURL(/\/presentationer$/)
-  await expect(navigation).toBeHidden()
-  await button.click()
+  await expect(navigation).toBeVisible()
   await navigation.getByRole("link", { name: "Biblioteket", exact: true }).click()
   await expect(page).toHaveURL(/\/bibliotek$/)
-  await expect(navigation).toBeHidden()
-})
-
-test("quick search remains accessible with the mobile menu closed", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto("/bibliotek")
   await page.locator("[data-site-navigation-ready=true]").waitFor()
-  const button = page.locator(".site-menu-toggle")
-  await button.focus()
-  await page.keyboard.press("s")
+  const trigger = navigation.getByRole("button", { name: "Snabbsökning" })
+  await trigger.press("Enter")
   const dialog = page.getByRole("dialog", { name: "Snabbsökning", exact: true })
   await expect(dialog).toBeVisible()
   await page.keyboard.press("Escape")
   await expect(dialog).toBeHidden()
-  await expect(button).toBeFocused()
-  await button.click()
-  const inlineSearch = page.getByRole("combobox", { name: "Snabbsökning" })
-  await expect(inlineSearch).toBeVisible()
-  await inlineSearch.focus()
-  await expect(dialog).toBeHidden()
-  await page.keyboard.press("Escape")
-  await expect(page.getByRole("navigation", { name: "Huvudnavigation" })).toBeHidden()
-  await expect(button).toBeFocused()
+  await expect(trigger).toBeFocused()
 })
 
-test("desktop navigation remains visible after resizing and reader focus hides the header", async ({ page }) => {
+test("navigation remains visible after resizing and reader focus hides it", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/bibliotek")
   await page.locator("[data-site-navigation-ready=true]").waitFor()
+  const navigation = page.getByRole("navigation", { name: "Huvudnavigation" })
   await page.setViewportSize({ width: 1440, height: 1000 })
-  await expect(page.getByRole("navigation", { name: "Huvudnavigation" })).toBeVisible()
-  await expect(page.locator(".site-menu-toggle")).toBeHidden()
+  await expect(navigation).toBeVisible()
   await page.setViewportSize({ width: 390, height: 844 })
-  await expect(page.getByRole("navigation", { name: "Huvudnavigation" })).toBeHidden()
+  await expect(navigation).toBeVisible()
   await page.goto(`${readerPath}?fokus`)
-  await page.locator("[data-site-navigation-ready=true]").waitFor({ state: "attached" })
   await expect(page.locator("body")).toHaveClass(/reader-focus-mode/)
   await expect(page.locator("#leftCorridor")).toBeHidden()
   await page.keyboard.press("Escape")
-  await expect(page.locator(".site-menu-toggle")).toBeVisible()
+  await expect(navigation).toBeVisible()
 })

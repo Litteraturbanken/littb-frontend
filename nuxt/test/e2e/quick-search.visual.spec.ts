@@ -81,9 +81,6 @@ for (const state of ["empty", "populated"] as const) {
     const response = await page.goto("/om/ide", { waitUntil: "networkidle" })
     expect(response?.status()).toBe(200)
     await expect(page.locator("body")).toHaveClass(/\bready\b/)
-    if (testInfo.project.name === "mobile-chromium") {
-      await page.locator(".site-menu-toggle").click()
-    }
     await page.getByRole("button", { name: "Snabbsökning", exact: true }).click()
 
     const dialog = page.getByRole("dialog", { name: "Snabbsökning", exact: true })

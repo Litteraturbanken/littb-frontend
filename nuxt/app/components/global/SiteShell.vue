@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Popover, PopoverButton } from "@headlessui/vue"
 import {
   isProductionShortcutGuarded,
   isPublicShellPasteGuarded,
@@ -17,7 +16,6 @@ const isStartPage = computed(() => route.path === "/")
 const quickSearchOpen = ref(false)
 const quickSearchInfoRequested = ref(false)
 const quickSearchTrigger = ref<HTMLAnchorElement | null>(null)
-const menuButton = ref<{ $el: HTMLButtonElement } | null>(null)
 const layoutFontsLoading = ref(true)
 const mounted = ref(false)
 const authorityFontStylesheetUrl = "/assets/styles/fonts/601526/FD3D54C3A22C4D32B.css"
@@ -89,7 +87,6 @@ function closeQuickSearch(): void {
   void nextTick(() => {
     const trigger = quickSearchTrigger.value
     if (trigger?.getClientRects().length) trigger.focus()
-    else menuButton.value?.$el.focus()
   })
 }
 
@@ -127,12 +124,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="site-shell">
-    <Popover
-      id="leftCorridor"
-      v-slot="{ open, close }"
-      class="site-navigation"
-      :data-site-navigation-ready="mounted || undefined"
-    >
+    <div id="leftCorridor" class="site-navigation" :data-site-navigation-ready="mounted || undefined">
       <NuxtLink class="logo_link_monogram block" to="/" no-prefetch aria-label="Litteraturbanken">
         <svg
           class="lb-logo inline-block"
@@ -155,12 +147,8 @@ onBeforeUnmount(() => {
           </g>
         </svg>
       </NuxtLink>
-      <PopoverButton ref="menuButton" class="site-menu-toggle">
-        {{ open ? "Stäng meny" : "Meny" }} <span aria-hidden="true">☰</span>
-      </PopoverButton>
-      <SiteNavigationPanel :open="open" :close="close">
-        <MobileNavigationMenu :open="open" @navigate="close" />
-        <ul class="mainnav desktop-navigation">
+      <nav aria-label="Huvudnavigation" class="site-navigation-panel">
+        <ul class="mainnav">
           <li><NuxtLink :to="libraryHref" no-prefetch>Biblioteket</NuxtLink></li>
           <li>
             <a
@@ -186,25 +174,25 @@ onBeforeUnmount(() => {
           <li><a href="/skolan/">Skolan</a></li>
           <li><NuxtLink to="/om/ide" no-prefetch>Om LB</NuxtLink></li>
         </ul>
-        <ul class="desktop-navigation start-only uppercase text-sm align-right antialiased mt-2 text-right mr-32 font-display">
+        <ul class="start-only uppercase text-sm align-right antialiased mt-2 text-right mr-32 font-display">
           <li><a href="/skolan/lararsida/">Lärare</a></li>
           <li><a href="/bibliotekariesidor/">Bibliotekarier</a></li>
         </ul>
-        <ul class="desktop-navigation start-only flex space-x-2 uppercase text-sm align-right antialiased justify-end mr-32 font-display">
+        <ul class="start-only flex space-x-2 uppercase text-sm align-right antialiased justify-end mr-32 font-display">
           <li><NuxtLink to="/om/english.html" no-prefetch>English</NuxtLink></li>
           <li><NuxtLink to="/om/deutsch.html" no-prefetch>Deutsch</NuxtLink></li>
           <li><NuxtLink to="/om/francais.html" no-prefetch>Français</NuxtLink></li>
         </ul>
         <a
-          class="desktop-navigation sa-logo start-only block text-right mr-32 mt-6 relative left-1"
+          class="sa-logo start-only block text-right mr-32 mt-6 relative left-1"
           href="https://www.svenskaakademien.se"
           aria-label="Logotyp för Svenska Akademien"
         >
           <LazyHomeAcademyLogo v-if="isStartPage" />
         </a>
-      </SiteNavigationPanel>
+      </nav>
       <div id="toolkit" />
-    </Popover>{{ " " }}
+    </div>{{ " " }}
     <LazyQuickSearch
       v-if="quickSearchOpen"
       initially-open

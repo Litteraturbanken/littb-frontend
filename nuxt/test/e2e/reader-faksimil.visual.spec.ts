@@ -73,7 +73,7 @@ test("narrow reader places its shared mobile header above the facsimile", async 
   const logo = leftCorridor.locator(".logo_link_monogram")
   const facsimile = page.locator(".reader_main img.faksimil")
   await expect(facsimile).toBeVisible()
-  await expect(leftCorridor.locator(".site-menu-toggle")).toBeVisible()
+  await expect(leftCorridor.getByRole("navigation", { name: "Huvudnavigation" })).toBeVisible()
 
   const logoBox = await logo.boundingBox()
   const facsimileBox = await facsimile.boundingBox()
