@@ -451,6 +451,13 @@ import json
 import sys
 
 allocs = json.load(sys.stdin)
+# Nomad retains failed attempts after rescheduling. Only retire an attempt
+# when its actual replacement is present in the same task group.
+by_id = {alloc.get("ID"): alloc for alloc in allocs if alloc.get("ID")}
+allocs = [alloc for alloc in allocs if not (
+    alloc.get("NextAllocation") in by_id
+    and by_id[alloc["NextAllocation"]].get("TaskGroup") == alloc.get("TaskGroup")
+)]
 if not allocs:
     print("pending")
 elif any(alloc.get("ClientStatus") == "failed" for alloc in allocs):

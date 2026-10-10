@@ -331,7 +331,7 @@ elif [ "\${1##*/}" = "stage.py" ]; then
       if [ "\${CHANGE_LEASE_AT:-0}" = "$count" ]; then
         lease_hash="${"d".repeat(64)}"
       fi
-      printf '%s\\n' "{\\\"candidate_sha\\\":\\\"${gitSha}\\\",\\\"component\\\":\\\"frontend\\\",\\\"live_identity_sha256\\\":\\\"$lease_hash\\\",\\\"live_job_modify_index\\\":41,\\\"manifest_component_sha256\\\":\\\"${"e".repeat(64)}\\\",\\\"origin_stage_sha\\\":\\\"${gitSha}\\\"}"
+      printf '%s\\n' "{\\"candidate_sha\\":\\"${gitSha}\\",\\"component\\":\\"frontend\\",\\"live_identity_sha256\\":\\"$lease_hash\\",\\"live_job_modify_index\\":41,\\"manifest_component_sha256\\":\\"${"e".repeat(64)}\\",\\"origin_stage_sha\\":\\"${gitSha}\\"}"
       ;;
     capture)
       receipt=""
@@ -773,7 +773,7 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
     "https://stage.svenska.se"
   )
   expect(environment.NUXT_OBSERVABILITY_ALLOWED_ORIGINS)
-    .toBe("https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se")
+    .toBe("https://stage.litteraturbanken.se,https://lb-frontend.pub.lb.se,https://red.litteraturbanken.se")
   expect(environment).not.toHaveProperty(
     "NUXT_OBSERVABILITY_TRUSTED_PROXY_CIDRS"
   )
@@ -1255,3 +1255,34 @@ test.each(Object.entries(invalidImageDigests))(
     expect(trace).toEqual([])
   }
 )
+
+test.each([
+  ["complete", "complete"],
+  ["running", "running"],
+  ["failed", "failed"]
+])("build status follows a %s replacement instead of its failed predecessor", (replacementStatus, expected) => {
+  const script = readRepositoryFile("scripts/deploy-stage.sh")
+  const program = script.match(/(allocs = json.load\(sys.stdin\)[\s\S]*?)\n'\n/)![1]
+  const result = spawnSync("python3", ["-c", `import json, sys\n${program}`], {
+    input: JSON.stringify([
+      { ID: "old", TaskGroup: "arm64", ClientStatus: "failed", NextAllocation: "retry" },
+      { ID: "retry", TaskGroup: "arm64", ClientStatus: replacementStatus },
+      { ID: "other", TaskGroup: "amd64", ClientStatus: "complete" }
+    ]), encoding: "utf8"
+  })
+  expect(result.status).toBe(0)
+  expect(result.stdout.trim()).toBe(expected)
+})
+
+test.each(["missing", "other"])("build status does not hide a failure with an invalid %s replacement", replacement => {
+  const script = readRepositoryFile("scripts/deploy-stage.sh")
+  const program = script.match(/(allocs = json.load\(sys.stdin\)[\s\S]*?)\n'\n/)![1]
+  const result = spawnSync("python3", ["-c", `import json, sys\n${program}`], {
+    input: JSON.stringify([
+      { ID: "old", TaskGroup: "arm64", ClientStatus: "failed", NextAllocation: replacement },
+      { ID: "other", TaskGroup: "amd64", ClientStatus: "complete" }
+    ]), encoding: "utf8"
+  })
+  expect(result.status).toBe(0)
+  expect(result.stdout.trim()).toBe("failed")
+})
