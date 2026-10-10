@@ -78,6 +78,9 @@ function isDownloadTitle(work: AuthorWork): boolean {
     <div class="page_content">
       <div :class="variant === 'titlar' ? 'flex' : undefined">
         <div class="unbox">
+          <p v-if="variant === 'titlar' && !sections.some(section => section.items.length)">
+            Författaren har inga verk publicerade hos Litteraturbanken.
+          </p>
           <template v-for="section in sections" :key="section.kind">
             <div v-if="section.items.length">
               <h2>{{ section.label }}</h2>
