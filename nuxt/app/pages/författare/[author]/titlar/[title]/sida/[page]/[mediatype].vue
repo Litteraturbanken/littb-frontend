@@ -49,6 +49,7 @@ import {
   workSearchWordPosition,
   type WorkSearchOption
 } from "~/lib/reader/work-search"
+import { recoverWorkSearchHit } from "~/lib/reader/recover-search"
 import { isExactWorkSearchHit, readerTargetUnavailableMessage } from "~/lib/reader-target"
 import {
   copyProductionValue,
@@ -1106,6 +1107,42 @@ onBeforeUnmount(() => {
   cancelPendingHitNavigation()
 })
 
+async function recoverSavedSearch(
+  currentReader: ReaderPage, state: CanonicalSearchState, signal: AbortSignal,
+  savedHit?: WorkSearchHit | null
+) {
+  const fromWordId = savedHit?.start_word_id ?? route.query.traff
+  const toWordId = savedHit?.end_word_id ?? route.query.traffslut
+  return recoverWorkSearchHit({
+    workId: currentReader.workId, pageIndex: currentReader.pageIndex,
+    pageName: currentReader.pageName, hitIndex: state.hit,
+    ...(typeof fromWordId === "string" && typeof toWordId === "string"
+      ? { fromWordId, toWordId } : {})
+  }, async (offset, limit, snapshot) => {
+    const result = await runtimeClient.GET("/works/{work_id}/search-hits", {
+      signal, params: { path: { work_id: currentReader.workId }, query: {
+        media_type: currentReader.mediaType, query: state.query, offset, limit,
+        word_forms: state.wordForms, include_older_spellings: state.includeOlderSpellings,
+        prefix: state.prefix, suffix: state.suffix, snapshot: snapshot ?? undefined
+      } }
+    })
+    if (result.error || !isExpectedHitResponse(result.data, { ...state, snapshot },
+      offset, currentReader.workId, currentReader.mediaType, currentReader.pageMap, offset, limit)) {
+      throw new Error("Cannot recover saved search")
+    }
+    return result.data
+  })
+}
+
+function recoveredSearchPath(snapshot: string, hit: WorkSearchHit | null): string {
+  let path = readerFullPathWithQueryValue(rawFullPath.value, "snapshot", snapshot)
+  if (hit) {
+    path = readerFullPathWithQueryValue(path, "hit", String(hit.index))
+    if (route.query.hit_index !== undefined) path = readerFullPathWithQueryValue(path, "hit_index", String(hit.index))
+  }
+  return path
+}
+
 const hitFetch = await useAsyncData(
   computed(() => [
         "reader-hit",
@@ -1148,8 +1185,12 @@ const hitFetch = await useAsyncData(
               }
             }
           })
+          if (requestSignal.aborted || identity !== dialogNeutralIdentity.value) {
+            return { status: "inactive" as const, identity }
+          }
           if (isSnapshotUnavailable(result)) {
-            return { status: "expired" as const, identity }
+            const recovered = await recoverSavedSearch(currentReader, state, requestSignal)
+            return { status: "recovered" as const, identity, ...recovered }
           }
           if (result.error || !isExpectedHitResponse(
             result.data,
@@ -1175,6 +1216,15 @@ const hitFetch = await useAsyncData(
       { watch: [dialogNeutralIdentity, () => reader.value?.pageName] }
     )
 
+// A saved URL can outlive an index generation. Replace only its search cursor;
+// keep the book, page, options, return link and browser history entry intact.
+onMounted(() => {
+  watch(hitFetch.data, value => {
+    if (value?.status !== "recovered" || value.identity !== dialogNeutralIdentity.value || !value.hit) return
+    void navigateRawFullPath(recoveredSearchPath(value.snapshot, value.hit), true, rawFullPath.value)
+  }, { immediate: true })
+})
+
 const hitResponse = computed(() => {
   const value = hitFetch.data.value
   return value?.status === "success" &&
@@ -1198,10 +1248,10 @@ const hitRequestFailed = computed(
 )
 const hitContinuationFailure = shallowRef<{ identity: string, status: "error" | "expired" } | null>(null)
 const hitExpired = computed(() => (
-  (hitFetch.data.value?.status === "expired" && hitFetch.data.value.identity === dialogNeutralIdentity.value)
+  (hitFetch.data.value?.status === "recovered" && !hitFetch.data.value.hit && hitFetch.data.value.identity === dialogNeutralIdentity.value)
   || (hitContinuationFailure.value?.identity === dialogNeutralIdentity.value && hitContinuationFailure.value.status === "expired")
 ))
-const expiredSnapshotMessage = "Sökresultatet har gått ut. Starta om sökningen för att använda den aktuella textsamlingen."
+const expiredSnapshotMessage = "Den tidigare sökträffen finns inte längre i den aktuella texten. Du är kvar på den länkade sidan."
 const activeHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
   return workSearchHitAt(hitResponse.value.items, searchState.value.hit)
@@ -1259,6 +1309,7 @@ const nextHit = computed(() => {
   return index <= maximumNavigableHit ? workSearchHitAt(hitResponse.value.items, index) : null
 })
 const highlightHit = computed(() => {
+  if (hitExpired.value) return null
   if (selectedSearchHit.value) return selectedSearchHit.value
   return activeHit.value && isExactWorkSearchHit(activeHit.value)
     ? {
@@ -1309,7 +1360,7 @@ const markedFacsimileReader = computed(() => {
   }
 })
 const hitPosition = computed(() => {
-  if (!searchState.value || !activeHit.value || !hitResponse.value) return null
+  if (hitExpired.value || !searchState.value || !activeHit.value || !hitResponse.value) return null
   return `Sökträff ${searchState.value.hit + 1} av ${hitResponse.value.total_hits}`
 })
 const hitNavigationFailed = ref(false)
@@ -1425,7 +1476,14 @@ async function fetchHitAtIndex(
   })
   if (signal.aborted || !hitLookupIsCurrent(context)) return null
   if (isSnapshotUnavailable(result)) {
-    hitContinuationFailure.value = { identity: context.sourceIdentity, status: "expired" }
+    const recovered = await recoverSavedSearch(currentReader, state, signal,
+      workSearchHitAt(response.items, state.hit))
+    if (signal.aborted || !hitLookupIsCurrent(context)) return null
+    if (recovered.hit) {
+      await navigateRawFullPath(recoveredSearchPath(recovered.snapshot, recovered.hit), true, rawFullPath.value)
+    } else {
+      hitContinuationFailure.value = { identity: context.sourceIdentity, status: "expired" }
+    }
     return null
   }
   if (result.error || !isExpectedHitResponse(

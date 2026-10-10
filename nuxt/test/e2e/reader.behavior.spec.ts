@@ -268,7 +268,7 @@ test("snapshot comes from the accepted unpinned corpus page one Reader link", as
   await expect.poll(() => page.evaluate(() => location.pathname + location.search)).toBe(origin)
 })
 
-test("snapshot public restart bypasses an accepted unpinned cache and stale continuation 409", async ({ page, request }) => {
+test("snapshot recovery bypasses an accepted unpinned cache and stale continuation 409", async ({ page }) => {
   const cacheRoute = `${storedReaderPath.replace("/sida/-2/", "/sida/-3/")}?q=doktor+glas&hit=0`
   await page.goto(cacheRoute, { waitUntil: "networkidle" })
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -3")
@@ -298,12 +298,8 @@ test("snapshot public restart bypasses an accepted unpinned cache and stale cont
   await page.waitForFunction(() => (window as unknown as { snapshotGate: { started: boolean } }).snapshotGate.started)
   // Move to an explicitly expired initial state while the older continuation is held.
   await navigateClient(page, `${cacheRoute}&snapshot=gen-expired`)
-  await expect(page.locator("#search_nav")).toContainText(expiredSnapshotMessage)
-  await request.delete(`${fixture}/_reader_hit_requests`)
-  await page.locator("#search_nav").getByRole("button", { name: "Starta om sökningen", exact: true }).click()
+  await expect(page).toHaveURL(/snapshot=gen-fixture-0001/)
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -3")
-  const queries = (await readerHitRequests(request)).map(item => new URLSearchParams(item.query))
-  expect(queries.filter(item => !item.has("snapshot") && item.get("limit") === "1")).toHaveLength(1)
   await page.evaluate(async () => {
     (window as unknown as { snapshotGate: { release: () => void } }).snapshotGate.release()
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
@@ -314,14 +310,9 @@ test("snapshot public restart bypasses an accepted unpinned cache and stale cont
 })
 
 for (const continuation of [false, true]) {
-  test(`snapshot expiry ${continuation ? "continuation" : "initial"} requires explicit public restart`, async ({ page, request }) => {
-    const legacyRequests: string[] = []
-    page.on("request", request => {
-      if (["fetch", "xhr"].includes(request.resourceType())
-        && /\/(?:search|search_count|page_search)\//u.test(new URL(request.url()).pathname)) legacyRequests.push(request.url())
-    })
+  test(`snapshot expiry ${continuation ? "continuation" : "initial"} automatically recovers the saved passage`, async ({ page, request }) => {
     const snapshot = continuation ? "gen-expired-continuation" : "gen-expired"
-    await page.goto(`${readerPath}?q=doktor%20glas&hit=1&snapshot=${snapshot}&lemma=1&ej_modern=1&prefix=1&suffix=1`, {
+    await page.goto(`${readerPath}?q=doktor%20glas&hit=1&snapshot=${snapshot}&lemma=1&ej_modern=1&prefix=1&suffix=1&traff=w2_1&traffslut=w2_2&s_return=%2Fs%25C3%25B6k%3Ffras%3Ddoktor`, {
       waitUntil: "networkidle"
     })
     const navigation = page.locator("#search_nav")
@@ -329,21 +320,20 @@ for (const continuation of [false, true]) {
       await expect(navigation).toContainText("Träff 2, sida -2")
       await navigation.getByRole("button", { name: "Gå till sista träffen" }).click()
     }
-    await expect(navigation).toContainText(expiredSnapshotMessage)
-    await expect(navigation.getByRole("link", { name: "Nästa sökträff" })).toHaveCount(0)
-    expect(new URL(page.url()).searchParams.get("hit")).toBe("1")
-    expect(new URL(page.url()).searchParams.get("snapshot")).toBe(snapshot)
-    expect((await readerHitRequests(request)).every(item => new URLSearchParams(item.query).get("snapshot") === snapshot)).toBe(true)
-    await navigation.getByRole("button", { name: "Starta om sökningen", exact: true }).click()
-    await expect(navigation).toContainText("Träff 1, sida -3")
-    expect(new URL(page.url()).searchParams.get("snapshot")).toBe("gen-fixture-0001")
+    await expect(page).toHaveURL(/snapshot=gen-fixture-0001/)
+    await expect(navigation).toContainText("Träff 2, sida -2")
+    await expect(navigation).not.toContainText(expiredSnapshotMessage)
+    await expect(page.locator("#w2_1.markee")).toHaveCount(1)
+    const url = new URL(page.url())
+    expect(url.pathname).toContain("/sida/-2/etext")
+    expect(url.searchParams.get("hit")).toBe("1")
+    expect(url.searchParams.get("s_return")).toBe("/s%C3%B6k?fras=doktor")
     const queries = (await readerHitRequests(request)).map(item => new URLSearchParams(item.query))
     const fresh = queries.find(item => !item.has("snapshot"))!
-    expect(Object.fromEntries(fresh)).toMatchObject({ query: "doktor glas", limit: "1", offset: "0", word_forms: "true", include_older_spellings: "false", prefix: "true", suffix: "true" })
+    expect(Object.fromEntries(fresh)).toMatchObject({ query: "doktor glas", word_forms: "true", include_older_spellings: "false", prefix: "true", suffix: "true" })
     await navigation.getByRole("link", { name: "Nästa sökträff" }).click()
-    await expect(navigation).toContainText("Träff 2, sida -2")
+    await expect(navigation).toContainText("Träff 3, sida -2")
     expect(new URLSearchParams((await readerHitRequests(request)).at(-1)!.query).get("snapshot")).toBe("gen-fixture-0001")
-    expect(legacyRequests).toEqual([])
   })
 }
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
