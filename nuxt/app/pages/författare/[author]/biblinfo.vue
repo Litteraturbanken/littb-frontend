@@ -165,7 +165,6 @@ const hitText = computed(() => entries.value.length
   ? `${entries.value.length} träffar`
   : "Inga träffar")
 const rootHref = computed(() => authorProfilePath(authorId.value))
-const titlesHref = computed(() => authorProfilePath(authorId.value, "titlar"))
 const dramawebbenHref = computed(() => authorProfilePath(authorId.value, "dramawebben"))
 
 function internalSearchHref(value: string): string {
@@ -298,7 +297,7 @@ useHead({
           <li v-if="profile.hasOrdinaryIntroduction">
             <NuxtLink :to="rootHref">Introduktion</NuxtLink>
           </li>{{ " " }}
-          <li><NuxtLink :to="titlesHref">Verk</NuxtLink></li>{{ " " }}
+          <AuthorWorksNavItem :author-id="authorId" />{{ " " }}
           <li v-if="profile.audioUrl">
             <a :href="profile.audioUrl" target="_blank" rel="noopener noreferrer">Ljud</a>
           </li>{{ " " }}

@@ -98,12 +98,14 @@ if (import.meta.server && response.value?.status !== 200) {
   setResponseStatus(response.value?.status === 404 ? 404 : 503)
 }
 
+const hasWorks = await useAuthorWorksAvailability(authorId)
 const redirectedIdentity = shallowRef("")
 async function redirectToCanonical(candidate: ProfileResponse | null, identity: string) {
   if (!candidate || candidate.identity !== identity || !candidate.canonicalPath) return
   const requestedAuthor = identity.slice("ordinary:".length)
   const rootPath = authorProfilePath(requestedAuthor)
   const canonicalPath = candidate.canonicalPath
+  if (canonicalPath === authorProfilePath(requestedAuthor, "titlar") && hasWorks.value === false) return
   if (canonicalPath !== rootPath) {
     const redirectIdentity = `${identity}:${canonicalPath}:${route.fullPath}`
     if (redirectedIdentity.value === redirectIdentity) return
@@ -127,7 +129,7 @@ if (import.meta.server) {
   await redirectToCanonical(response.value, currentIdentity.value)
 } else {
   watch(
-    [response, currentIdentity, () => route.fullPath],
+    [response, currentIdentity, () => route.fullPath, hasWorks],
     ([candidate, identity]) => {
       void redirectToCanonical(candidate, identity)
     },

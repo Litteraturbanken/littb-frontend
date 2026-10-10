@@ -169,7 +169,6 @@ const labels: Record<AuthorDocumentKind, string> = {
 }
 const pageLabel = computed(() => labels[documentKind.value])
 const rootHref = computed(() => `/f%C3%B6rfattare/${encodeRfc3986Segment(authorId.value)}`)
-const titlesHref = computed(() => `${rootHref.value}/titlar`)
 const dramawebbenHref = computed(() => `${rootHref.value}/dramawebben`)
 
 useSeoMeta({
@@ -225,9 +224,7 @@ useHead(() => ({
             <li v-if="page.author.hasIntroduction">
               <NuxtLink :to="canonicalNuxtHref(rootHref)">Introduktion</NuxtLink>
             </li>{{ " " }}
-            <li>
-              <NuxtLink :to="canonicalNuxtHref(titlesHref)">Verk</NuxtLink>
-            </li>{{ " " }}
+            <AuthorWorksNavItem :author-id="authorId" />{{ " " }}
             <li v-if="page.author.audioUrl">
               <a
                 :href="page.author.audioUrl"

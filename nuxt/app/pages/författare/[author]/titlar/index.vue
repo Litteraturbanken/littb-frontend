@@ -6,7 +6,7 @@ import {
   isAuthorWorksResponse,
   type AuthorWorksResponse
 } from "~/lib/author-works"
-import { validateAuthorRouteParam } from "~/lib/author-profile"
+import { authorProfilePath, validateAuthorRouteParam } from "~/lib/author-profile"
 
 type WorksPageResponse = {
   identity: string
@@ -81,6 +81,18 @@ if (import.meta.server && accepted.value?.status !== 200) {
 const works = computed(() => accepted.value?.status === 200
   ? accepted.value.works
   : null)
+async function redirectEmptyWorks() {
+  if (works.value && !works.value.authored_sections.some(section => section.items.length)) {
+    await navigateTo({ path: authorProfilePath(authorId.value), query: route.query }, {
+      redirectCode: 307, replace: true
+    })
+  }
+}
+if (import.meta.server) {
+  await redirectEmptyWorks()
+} else {
+  watch(works, () => { void redirectEmptyWorks() }, { immediate: true })
+}
 useAuthorQuickSearchContextPublisher(computed(() => works.value?.author ?? null))
 const description = computed(() => works.value
   ? `${works.value.author.full_name}, Tillgängliga verk`

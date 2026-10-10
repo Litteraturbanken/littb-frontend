@@ -1,28 +1,29 @@
-# Explain empty author works pages
+# Hide empty author works pages
 
 Slack: https://litteraturbanken.slack.com/lists/T18B5J892/F0ACH3G9HBM?record_id=Rec0BQKBMKWF7
 
-Read all six discussion comments in the Slack desktop app. Authors represented
-in Ljud & Bild still need their author pages even when they have no published
-works. The report explicitly proposes either removing the Verk link or showing
-an explanatory message; this fix takes the latter option.
+Read all six discussion comments through the Slack desktop app. Authors
+represented in Ljud & Bild need their author pages even without published works.
+The user chose hiding the Verk tab and redirecting direct visits to Introduktion.
+This supersedes the earlier explanatory empty-state message.
 
-## Reproduction and change
+## Behavior
 
-Stage's `/författare/EggehornY/titlar` displayed the author navigation and
-encyclopedia links but no works and no explanation. When every authored section
-is empty, the Nuxt works page now displays:
-
-> Författaren har inga verk publicerade hos Litteraturbanken.
-
-Introduction and Ljud links remain available. Nonempty sections and the separate
-Texter om page retain their existing behavior.
+- Hide Verk when all authored sections are empty, including introduction,
+  Dramawebben, Texter om, and document navigation.
+- Direct /författare/{author}/titlar visits redirect to the author root with 307;
+  client navigation replaces the current history entry. Preserve query parameters.
+- Do not redirect on API errors or unavailable data.
+- Prevent the API's default /titlar canonical path for authors without intro text
+  from redirecting an empty author back to the works page.
+- Keep Introduktion active at the root and retain Ljud access for audio authors.
 
 ## Verification
 
-Playwright against an isolated local Nuxt server using read-only Stage APIs:
-- EggehornY: message visible, introduction and audio links retained.
-- SnoilskyC: normal populated works list, no empty-state message.
-- ESLint on the changed component passed.
+Isolated local Nuxt frontend using read-only Stage APIs:
+- EggehornY/titlar returns HTTP 307 to EggehornY.
+- Browser reaches the introduction, shows Introduktion and Ljud, and omits Verk.
+- SnoilskyC introduction retains Verk; clicking it opens the populated works list.
+- ESLint on all changed components/composable/pages and Nuxt typecheck passed.
 
-Prepared in a feature worktree; not merged or deployed. No data rebuild needed.
+Committed in a feature worktree; not merged or deployed. No data rebuild needed.

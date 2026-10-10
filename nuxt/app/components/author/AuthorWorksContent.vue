@@ -60,7 +60,7 @@ function isDownloadTitle(work: AuthorWork): boolean {
         <li v-if="author.has_introduction">
           <NuxtLink :to="rootHref">Introduktion</NuxtLink>
         </li>{{ " " }}
-        <li :class="{ active: variant === 'titlar' }">
+        <li v-if="response.authored_sections.some(section => section.items.length)" :class="{ active: variant === 'titlar' }">
           <NuxtLink :to="titlesHref" :aria-current="variant === 'titlar' ? 'page' : undefined">Verk</NuxtLink>
         </li>{{ " " }}
         <li v-if="author.audio_url">
@@ -78,9 +78,6 @@ function isDownloadTitle(work: AuthorWork): boolean {
     <div class="page_content">
       <div :class="variant === 'titlar' ? 'flex' : undefined">
         <div class="unbox">
-          <p v-if="variant === 'titlar' && !sections.some(section => section.items.length)">
-            Författaren har inga verk publicerade hos Litteraturbanken.
-          </p>
           <template v-for="section in sections" :key="section.kind">
             <div v-if="section.items.length">
               <h2>{{ section.label }}</h2>

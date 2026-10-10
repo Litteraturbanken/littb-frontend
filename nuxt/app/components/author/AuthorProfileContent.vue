@@ -12,7 +12,6 @@ const props = defineProps<{
 }>()
 
 const rootHref = computed(() => authorProfilePath(props.profile.authorId))
-const titlesHref = computed(() => authorProfilePath(props.profile.authorId, "titlar"))
 const moreHref = computed(() => authorProfilePath(props.profile.authorId, "mer"))
 const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId, "dramawebben"))
 const shortcutMessage = ref("")
@@ -53,14 +52,15 @@ onBeforeUnmount(() => {
 
     <nav aria-label="Författarsidor">
       <ul class="links">
-        <li v-if="profile.hasOrdinaryIntroduction" :class="{ active: variant === 'ordinary' }">
+        <li v-if="profile.hasOrdinaryIntroduction || variant === 'ordinary'" :class="{ active: variant === 'ordinary' }">
           <NuxtLink
             :to="rootHref"
             :aria-current="variant === 'ordinary' ? 'page' : undefined"
           >Introduktion</NuxtLink>
         </li>{{ " " }}
-        <li>
-          <NuxtLink :to="titlesHref">Verk</NuxtLink>
+        <AuthorWorksNavItem :author-id="profile.authorId" />{{ " " }}
+        <li v-if="profile.audioUrl">
+          <a :href="profile.audioUrl" target="_blank" rel="noopener noreferrer">Ljud</a>
         </li>{{ " " }}
         <li v-if="profile.hasDramawebben" :class="{ active: variant === 'dramawebben' }">
           <NuxtLink
