@@ -216,6 +216,13 @@
     }
 }
 
+// Keep prose quotations readable while preserving explicit poetry line breaks.
+.page-authorInfo .introtext blockquote {
+    max-width: 400px;
+    line-height: 1.4;
+    font-size: 0.85em;
+}
+
 .page-authorInfo .drama-source {
     position: relative;
 
