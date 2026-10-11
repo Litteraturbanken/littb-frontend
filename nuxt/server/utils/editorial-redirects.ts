@@ -65,31 +65,3 @@ export function resolveEditorialPath(pathname: string, table: RedirectTable): st
   if (target === original && raw[1] !== "forfattare") return null
   return target.split("/").map(encodeURIComponent).join("/") + (trailingSlash ? "/" : "")
 }
-
-// One table per backend URL, never shared across Stage/production environments.
-// Refresh single-flight; requests keep using the last fully validated table.
-export function createRedirectCache(load: () => Promise<unknown>, now = Date.now) {
-  let table: RedirectTable | null = null
-  let expires = 0
-  let pending: Promise<RedirectTable> | null = null
-  function refresh(): Promise<RedirectTable> {
-    if (pending) return pending
-    pending = load().then(value => {
-      const candidate = parseRedirectTable(value)
-      table = candidate
-      expires = now() + 30_000
-      return candidate
-    }).catch((error: unknown) => {
-      expires = now() + 5_000
-      throw error
-    }).finally(() => { pending = null })
-    return pending
-  }
-  return async (): Promise<RedirectTable> => {
-    if (!table) return refresh()
-    if (now() >= expires) void refresh().catch(error => {
-      console.error("Editorial redirect refresh failed; retaining previous table", error)
-    })
-    return table
-  }
-}

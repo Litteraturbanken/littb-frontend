@@ -30,6 +30,15 @@ describe("editorial redirect HTTP responses", () => {
     expect(response.headers.get("cache-control")).toBe("no-store")
     expect(response.headers.get("x-lb-redirect")).toBe("editorial")
   })
+  test("looks up every request and observes updates and removals immediately", async () => {
+    const fetcher = vi.mocked($fetch)
+    fetcher.mockResolvedValueOnce({ rules: [{ source: "/författare/A/titlar/Old", target: "/författare/A/titlar/New", media: [] }] })
+    const url = `${origin}/f%C3%B6rfattare/A/titlar/Old`
+    expect((await fetch(url, { redirect: "manual" })).headers.get("location")).toContain("/New")
+    fetcher.mockResolvedValueOnce({ rules: [] })
+    expect((await fetch(url, { redirect: "manual" })).status).toBe(200)
+    expect(fetcher).toHaveBeenLastCalledWith("http://backend.test/v2/editorial-redirects", expect.objectContaining({ query: { path: "/f%C3%B6rfattare/A/titlar/Old" } }))
+  })
   test("HEAD redirects too, while canonical paths and POST fall through", async () => {
     const alias = `${origin}/f%C3%B6rfattare/%C3%96stergrenCL/titlar/Dikter`
     expect((await fetch(alias, { method: "HEAD", redirect: "manual" })).status).toBe(307)
