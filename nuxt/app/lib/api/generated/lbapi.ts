@@ -1557,11 +1557,6 @@ export interface components {
             /** Trace Id */
             trace_id: string | null;
         };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
         /**
          * HydrationErrorAttributes
          * @description Identify hydration without retaining component or diagnostic content.
@@ -3592,15 +3587,6 @@ export interface components {
             /** Trace Id */
             trace_id: string | null;
         };
-        /** ValidationError */
-        ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-        };
         /**
          * VerificationAttributes
          * @description Carry a synthetic sentinel used for end-to-end pipeline verification.
@@ -4565,13 +4551,22 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description Invalid request */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
