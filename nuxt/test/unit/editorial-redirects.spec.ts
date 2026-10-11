@@ -14,6 +14,10 @@ describe("editorial redirects", () => {
     expect(resolveEditorialPath(`/${prefix}/KrusenstjernaA/titlar/TonyVaxerUpp/sida/3/etext`, table))
       .toBe("/f%C3%B6rfattare/KrusenstjernaA/titlar/TonyV%C3%A4xerUpp/sida/3/etext")
   })
+  test("preserves a trailing slash on historical title routes", () => {
+    expect(resolveEditorialPath("/författare/ÖstergrenCL/titlar/Dikter/", table))
+      .toBe("/f%C3%B6rfattare/%C3%96stergrenCL/titlar/Dikter1879/")
+  })
   test("handles already-accented titles under the ASCII route", () => {
     expect(resolveEditorialPath("/forfattare/KrusenstjernaA/titlar/TonyV%C3%A4xerUpp/sida/3/etext", table))
       .toBe("/f%C3%B6rfattare/KrusenstjernaA/titlar/TonyV%C3%A4xerUpp/sida/3/etext")

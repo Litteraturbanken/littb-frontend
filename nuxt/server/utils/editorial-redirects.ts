@@ -38,7 +38,9 @@ export function parseRedirectTable(value: unknown): RedirectTable {
 }
 
 export function resolveEditorialPath(pathname: string, table: RedirectTable): string | null {
+  const trailingSlash = pathname.endsWith("/")
   const raw = pathname.split("/")
+  if (trailingSlash) raw.pop()
   let parts: string[]
   try {
     parts = raw.slice(1).map(part => decodeURIComponent(part))
@@ -61,7 +63,7 @@ export function resolveEditorialPath(pathname: string, table: RedirectTable): st
   }
   const target = rule ? `${rule.target}${suffix.length ? `/${suffix.join("/")}` : ""}` : original
   if (target === original && raw[1] !== "forfattare") return null
-  return target.split("/").map(encodeURIComponent).join("/")
+  return target.split("/").map(encodeURIComponent).join("/") + (trailingSlash ? "/" : "")
 }
 
 // One table per backend URL, never shared across Stage/production environments.
