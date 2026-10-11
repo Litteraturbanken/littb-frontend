@@ -174,6 +174,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/editorial-redirects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Editorial Redirects */
+        get: operations["v2_get_editorial_redirects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/epubs/popular": {
         parameters: {
             query?: never;
@@ -1272,6 +1289,27 @@ export interface components {
             title_path: string;
             /** Work Id */
             work_id: string;
+        };
+        /** EditorialMediaRedirect */
+        EditorialMediaRedirect: {
+            /** Source */
+            source: string;
+            /** Target */
+            target: string;
+        };
+        /** EditorialRedirect */
+        EditorialRedirect: {
+            /** Media */
+            media?: components["schemas"]["EditorialMediaRedirect"][];
+            /** Source */
+            source: string;
+            /** Target */
+            target: string;
+        };
+        /** EditorialRedirectSnapshot */
+        EditorialRedirectSnapshot: {
+            /** Rules */
+            rules: components["schemas"]["EditorialRedirect"][];
         };
         /** EditorPageBoundsOnlyManifest */
         EditorPageBoundsOnlyManifest: {
@@ -4475,6 +4513,35 @@ export interface operations {
             };
             /** @description Search backend unavailable */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_editorial_redirects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EditorialRedirectSnapshot"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
