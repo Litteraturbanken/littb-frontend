@@ -179,8 +179,8 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
     'data-reader-title-tooltip-content="Doktor Glas. Roman"'
   )
   expect(html).toContain(`href="${sourceHref}">Mer om boken</a>`)
-  expect(html).toContain('class="reader-context-ssr"')
-  expect(html).not.toContain('class="reader-context-ssr sr-only"')
+  expect(parseHTML(html).document.querySelector(".reader-context-ssr")).not.toBeNull()
+  expect(parseHTML(html).document.querySelector(".reader-context-ssr.sr-only")).toBeNull()
   expect(html).toContain("Sök i verket")
   expect(html).toContain(
     'class="reader-work-search-trigger" href="/f%C3%B6rfattare/' +
@@ -245,9 +245,8 @@ test("legacy main-author contribution is present in the Reader SSR fallback", as
   expect(response.status()).toBe(200)
   const html = await response.text()
 
-  expect(html).toContain(
-    'class="reader-context-ssr" aria-label="Läsinformation och sidnavigering"'
-  )
+  expect(parseHTML(html).document.querySelector(".reader-context-ssr")
+    ?.getAttribute("aria-label")).toBe("Läsinformation och sidnavigering")
   const { document } = parseHTML(html)
   const link = document.querySelector(".reader-context-ssr .author a")
   expect(link?.getAttribute("href")).toBe("/f%C3%B6rfattare/LongErrataA")

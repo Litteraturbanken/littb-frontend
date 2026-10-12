@@ -1453,16 +1453,16 @@ useHead(() => ({
         </div>
       </Teleport>
       <Teleport to="#toolkit-right">
-        <aside v-if="page" class="reader-context editor-reader-context" :class="{ 'has-search-hit': searchState }" aria-label="Läsinformation och sidnavigering">
+        <aside v-if="page" class="reader-context editor-reader-context my-[1em]" :class="{ 'has-search-hit': searchState }" aria-label="Läsinformation och sidnavigering">
           <template v-if="page.metadataAvailable">
-            <div class="editor-metadata-controls"><div class="author"><ReaderContributors :contributors="page.contributors" /></div><span class="title">{{ page.title }}{{ " " }}</span><span
+            <div class="editor-metadata-controls mb-5 block"><div class="author min-h-[1em] mb-[0.3em] text-[1em] sc [&_a]:text-primary"><ReaderContributors :contributors="page.contributors" /></div><span class="title min-h-[1em]">{{ page.title }}{{ " " }}</span><span
               v-if="page.imprintYear"
               class="editor-imprint-year"
             >({{ page.imprintYear }})</span></div>
-            <hr class="editor-metadata-controls">
-            <div class="current_part editor-metadata-controls">
+            <hr class="editor-metadata-controls mb-5 block mx-0 mt-0 w-[67%] border-[#d3d3d3] text-left">
+            <div class="current_part editor-metadata-controls mb-[3em] block h-[60px] text-[0.9em]">
               <template v-if="page.currentPart">
-                <div class="header">
+                <div class="header mb-[0.2em] sc [&_a]:text-primary">
                   <template
                     v-for="(partAuthor, partAuthorIndex) in page.currentPart.authors"
                     :key="`${partAuthor.author_id}:${partAuthorIndex}`"
@@ -1472,35 +1472,35 @@ useHead(() => ({
                     >, </span>
                   </template>
                 </div>
-                <div><p class="navtitle line-clamp-4">{{ partLabel() }}</p></div>
+                <div><p class="navtitle line-clamp-4 max-h-[5.2em] max-w-[85%] overflow-hidden leading-[1.3]">{{ partLabel() }}</p></div>
               </template>
             </div>
-            <hr class="lower editor-metadata-controls">
+            <hr class="lower editor-metadata-controls mb-5 block mx-0 mt-0 w-[67%] border-[#d3d3d3] text-left">
           </template>
-          <nav class="pager_ctrls" aria-label="Sidnavigering">
-            <NuxtLink v-if="page.previousPartIndex !== null" custom :to="href(page.previousPartIndex)"><a class="prev_part sc" :href="href(page.previousPartIndex)" @click="navigateLink($event, href(page.previousPartIndex))">Gå bakåt en del</a></NuxtLink>
-            <span v-else class="prev_part disabled sc" aria-disabled="true">Gå bakåt en del</span>
+          <nav class="pager_ctrls mb-[0.8em] mt-[1.3em] block text-[0.9em] leading-none" aria-label="Sidnavigering">
+            <NuxtLink v-if="page.previousPartIndex !== null" custom :to="href(page.previousPartIndex)"><a class="prev_part sc mr-[2px] -my-[3px] inline-block py-[3px]" :href="href(page.previousPartIndex)" @click="navigateLink($event, href(page.previousPartIndex))">Gå bakåt en del</a></NuxtLink>
+            <span v-else class="prev_part disabled sc [&_i]:cursor-default [&_i]:opacity-70 [&_i::before]:text-[#808080]" aria-disabled="true">Gå bakåt en del</span>
             <br>
-            <NuxtLink v-if="page.nextPartIndex !== null" custom :to="href(page.nextPartIndex)"><a class="next_part sc" :href="href(page.nextPartIndex)" @click="navigateLink($event, href(page.nextPartIndex))">Gå till nästa del</a></NuxtLink>
-            <span v-else class="next_part disabled sc" aria-disabled="true">Gå till nästa del</span>
+            <NuxtLink v-if="page.nextPartIndex !== null" custom :to="href(page.nextPartIndex)"><a class="next_part sc mr-[2px] -my-[3px] inline-block py-[3px]" :href="href(page.nextPartIndex)" @click="navigateLink($event, href(page.nextPartIndex))">Gå till nästa del</a></NuxtLink>
+            <span v-else class="next_part disabled sc [&_i]:cursor-default [&_i]:opacity-70 [&_i::before]:text-[#808080]" aria-disabled="true">Gå till nästa del</span>
             <br>
-            <NuxtLink v-if="page.pageIndex !== page.firstReadableIndex" custom :to="href(page.firstReadableIndex)"><a :href="href(page.firstReadableIndex)" @click="navigateLink($event, href(page.firstReadableIndex))">Gå till första sidan</a></NuxtLink>
-            <span v-else class="disabled sc" aria-disabled="true">Gå till första sidan</span>
+            <NuxtLink v-if="page.pageIndex !== page.firstReadableIndex" custom :to="href(page.firstReadableIndex)"><a class="mr-[2px] sc -my-[3px] inline-block py-[3px]" :href="href(page.firstReadableIndex)" @click="navigateLink($event, href(page.firstReadableIndex))">Gå till första sidan</a></NuxtLink>
+            <span v-else class="disabled sc [&_i]:cursor-default [&_i]:opacity-70 [&_i::before]:text-[#808080]" aria-disabled="true">Gå till första sidan</span>
             <br>
-            <NuxtLink v-if="page.pageIndex !== page.lastReadableIndex" custom :to="href(page.lastReadableIndex)"><a :href="href(page.lastReadableIndex)" @click="navigateLink($event, href(page.lastReadableIndex))">Gå till sista sidan</a></NuxtLink>
-            <span v-else class="disabled sc" aria-disabled="true">Gå till sista sidan</span>
+            <NuxtLink v-if="page.pageIndex !== page.lastReadableIndex" custom :to="href(page.lastReadableIndex)"><a class="mr-[2px] sc -my-[3px] inline-block py-[3px]" :href="href(page.lastReadableIndex)" @click="navigateLink($event, href(page.lastReadableIndex))">Gå till sista sidan</a></NuxtLink>
+            <span v-else class="disabled sc [&_i]:cursor-default [&_i]:opacity-70 [&_i::before]:text-[#808080]" aria-disabled="true">Gå till sista sidan</span>
             <br>
-            <span class="goto"><span class="sc">Gå till sida . . .{{ " " }}<span
+            <span class="goto mb-[0.4em] block whitespace-nowrap"><span class="sc">Gå till sida . . .{{ " " }}<span
               v-if="page.pageName || page.endPageName"
-              class="pages"
+              class="pages mr-[3px] text-[0.8em]"
             ><template v-if="page.pageName">{{ page.pageName }}{{ " " }}</template><template
               v-if="page.endPageName"
             >av {{ page.endPageName }}</template></span></span></span>
-            <NuxtLink v-if="page.previousIndex !== null" custom :to="href(page.previousIndex)"><a rel="prev" :href="href(page.previousIndex)" aria-label="Föregående sida" @click="navigateLink($event, href(page.previousIndex))"><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span></a></NuxtLink>{{ " " }}
-            <NuxtLink v-if="page.nextIndex !== null" custom :to="href(page.nextIndex)"><a rel="next" :href="href(page.nextIndex)" aria-label="Nästa sida" @click="navigateLink($event, href(page.nextIndex))"><span class="submit btn navicon navicon-visual right" aria-hidden="true"><i class="fa fa-angle-right right" /></span></a></NuxtLink>
-            <span class="expl small" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
+            <NuxtLink v-if="page.previousIndex !== null" custom :to="href(page.previousIndex)"><a class="mr-[2px] sc -my-[3px] inline-block py-[3px]" rel="prev" :href="href(page.previousIndex)" aria-label="Föregående sida" @click="navigateLink($event, href(page.previousIndex))"><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span></a></NuxtLink>{{ " " }}
+            <NuxtLink v-if="page.nextIndex !== null" custom :to="href(page.nextIndex)"><a class="mr-[2px] sc -my-[3px] inline-block py-[3px]" rel="next" :href="href(page.nextIndex)" aria-label="Nästa sida" @click="navigateLink($event, href(page.nextIndex))"><span class="submit btn navicon navicon-visual right ml-[2px]" aria-hidden="true"><i class="fa fa-angle-right right ml-[2px]" /></span></a></NuxtLink>
+            <span class="expl small ml-1 mt-[14px] inline-block w-[170px] text-[0.7em]" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
           </nav>
-          <div v-if="page.pageCount !== null && page.pageIndexes === null" class="w-11/12">
+          <div v-if="page.pageCount !== null && page.pageIndexes === null" class="w-11/12 mb-5 block">
             <span class="rzslider mt-3 slider-large" :class="{ active: sliderDraft !== null }">
               <span class="rz-base" aria-hidden="true">
                 <span class="rz-bar-wrapper"><span class="rz-bar" /></span>
@@ -1524,11 +1524,11 @@ useHead(() => ({
               >
             </span>
           </div>
-          <div v-if="page.metadataAvailable" class="subnav mt-10 editor-metadata-controls">
+          <div v-if="page.metadataAvailable" class="subnav mt-10 editor-metadata-controls mb-5 block whitespace-nowrap text-[0.9em] leading-none sc">
             <ul>
-              <li v-if="page.parts.length"><a ref="contentsTrigger" :href="contentsHref" @click.prevent="openContents">Innehållsförteckning</a></li>
-              <li v-if="sourceInfoAvailable"><a ref="sourceInfoTrigger" :href="sourceInfoHref" @click.prevent="openSourceInfo">Mer om boken</a></li>
-              <li><a :href="focusHref" @click.prevent="activateFocus">Läsfokus</a></li>
+              <li v-if="page.parts.length"><a ref="contentsTrigger" class="-my-[3px] inline-block py-[3px]" :href="contentsHref" @click.prevent="openContents">Innehållsförteckning</a></li>
+              <li v-if="sourceInfoAvailable"><a ref="sourceInfoTrigger" class="-my-[3px] inline-block py-[3px]" :href="sourceInfoHref" @click.prevent="openSourceInfo">Mer om boken</a></li>
+              <li><a class="-my-[3px] inline-block py-[3px]" :href="focusHref" @click.prevent="activateFocus">Läsfokus</a></li>
               <li v-if="page.searchable">
                 <button
                   type="button"
@@ -1539,8 +1539,8 @@ useHead(() => ({
                 <div v-show="workSearchOpen" class="searchbox">
                   <div class="collapse-content">
                     <div class="header">
-                      <div class="auth">Sök i <span class="author"><ReaderContributors :contributors="page.contributors" /></span></div>
-                      <div class="title">{{ page.title }}</div>
+                      <div class="auth">Sök i <span class="author min-h-[1em] mb-[0.3em] text-[1em] sc [&_a]:text-primary"><ReaderContributors :contributors="page.contributors" /></span></div>
+                      <div class="title min-h-[1em]">{{ page.title }}</div>
                     </div>
                     <div class="ctrls">
                       <form @submit.prevent="submitWorkSearch">
@@ -1562,15 +1562,15 @@ useHead(() => ({
                   </div>
                 </div>
               </li>
-              <li v-else aria-disabled="true"><a class="disabled" aria-disabled="true" tabindex="-1">Sök i verket</a></li>
-              <li><NuxtLink v-if="authorSearchHref" :to="authorSearchHref">Sök i författarens texter</NuxtLink><span v-else>Sök i författarens texter</span></li>
+              <li v-else aria-disabled="true"><a class="disabled -my-[3px] inline-block py-[3px]" aria-disabled="true" tabindex="-1">Sök i verket</a></li>
+              <li><NuxtLink v-if="authorSearchHref" class="-my-[3px] inline-block py-[3px]" :to="authorSearchHref">Sök i författarens texter</NuxtLink><span v-else>Sök i författarens texter</span></li>
             </ul>
             <NuxtLink v-if="page.closeHref" class="submit btn mt-4 text-xs" :to="page.closeHref">Stäng editor</NuxtLink>
           </div>
         </aside>
       </Teleport>
       <template #fallback>
-        <aside v-if="page" class="reader-context-ssr" aria-label="Läsinformation och sidnavigering">
+        <aside v-if="page" class="reader-context-ssr absolute left-full top-[1em] z-50 my-[1em] ml-4 w-[250px] text-[20px] leading-[1.2] md:ml-16 [.reader-focus-mode_&]:hidden [&>*]:mb-5 [&>*]:block [&>.author]:mb-[0.3em] [&>.author]:min-h-[1em] [&>.author]:sc [&>.author_a]:text-primary [&>a]:text-[0.9em] [&>a]:sc [&>nav]:text-[0.9em] [&>nav]:sc [&>nav>a]:mb-1 [&>nav>a]:block" aria-label="Läsinformation och sidnavigering">
           <div v-if="page.metadataAvailable" class="editor-metadata-controls"><span class="author"><ReaderContributors :contributors="page.contributors" /></span><span>{{ page.title }}<span
               v-if="page.imprintYear"
               class="editor-imprint-year"

@@ -2412,29 +2412,29 @@ watch(readerRequestIdentity, () => {
       <ClientOnly>
         <Teleport to="#toolkit-right">
           <aside
-            class="reader-context"
+            class="reader-context my-[1em]"
             :class="{ 'has-search-hit': searchState }"
             aria-label="Läsinformation och sidnavigering"
           >
-            <div>
-              <div class="author"><ReaderContributors :contributors="reader.contributors" /></div>
+            <div class="mb-5 block">
+              <div class="author min-h-[1em] mb-[0.3em] text-[1em] sc [&_a]:text-primary"><ReaderContributors :contributors="reader.contributors" /></div>
               <a
                 ref="titleSourceInfoTrigger"
                 v-reader-title-tooltip="readerTitleTooltip"
-                class="title"
+                class="title min-h-[1em]"
                 :data-reader-title-tooltip-content="readerTitleTooltip || undefined"
                 :href="sourceInfoHref"
                 @click.prevent="openSourceInfoFromTitle"
               >{{ reader.title }}</a>
               <span v-if="reader.imprintYear"> ({{ reader.imprintYear }})</span>
             </div>
-            <span class="reader-page-position sr-only">{{ pageRouteDraftName }} av {{ reader.pageCount }}</span>
+            <span class="reader-page-position sr-only mb-5 block">{{ pageRouteDraftName }} av {{ reader.pageCount }}</span>
 
-            <hr>
+            <hr class="mb-5 block mx-0 mt-0 w-[67%] border-[#d3d3d3] text-left">
 
-            <div class="current_part">
+            <div class="current_part mb-[3em] block h-[60px] text-[0.9em]">
               <template v-if="currentPart">
-                <div class="header">
+                <div class="header mb-[0.2em] sc [&_a]:text-primary">
                   <template
                     v-for="(partAuthor, index) in currentPart.authors"
                     :key="readerPartAuthorKey(partAuthor.author_id, index)"
@@ -2449,26 +2449,26 @@ watch(readerRequestIdentity, () => {
                 <div
                   v-reader-title-tooltip.left="currentPart.title"
                   tabindex="0"
-                ><p class="navtitle line-clamp-4">{{ currentPartLabel }}</p></div>
+                ><p class="navtitle line-clamp-4 max-h-[5.2em] max-w-[85%] overflow-hidden leading-[1.3]">{{ currentPartLabel }}</p></div>
               </template>
             </div>
 
-            <hr class="lower">
+            <hr class="lower mb-5 block mx-0 mt-0 w-[67%] border-[#d3d3d3] text-left">
 
-            <nav class="pager_ctrls reader-navigation" aria-label="Sidnavigering">
+            <nav class="pager_ctrls reader-navigation mb-[0.8em] mt-[1.3em] block text-[0.9em] leading-none" aria-label="Sidnavigering">
               <NuxtLink
                 v-if="reader.previousPartPageName"
                 v-slot="{ navigate }"
                 custom
                 :to="pageHref(reader.previousPartPageName)"
               ><a
-                class="prev_part"
+                class="prev_part mr-[2px] sc -my-[3px] inline-block py-[3px]"
                 :href="pageHref(reader.previousPartPageName)"
                 @click="navigate"
               >Gå bakåt en del</a></NuxtLink>
               <a
                 v-else
-                class="prev_part disabled"
+                class="prev_part disabled mr-[2px] sc -my-[3px] inline-block py-[3px] [&_i]:cursor-default [&_i]:opacity-70 [&_i::before]:text-[#808080]"
                 aria-disabled="true"
                 tabindex="-1"
               >Gå bakåt en del</a>
@@ -2479,13 +2479,13 @@ watch(readerRequestIdentity, () => {
                 custom
                 :to="pageHref(reader.nextPartPageName)"
               ><a
-                class="next_part"
+                class="next_part mr-[2px] sc -my-[3px] inline-block py-[3px]"
                 :href="pageHref(reader.nextPartPageName)"
                 @click="navigate"
               >Gå till nästa del</a></NuxtLink>
               <a
                 v-else
-                class="next_part disabled"
+                class="next_part disabled mr-[2px] sc -my-[3px] inline-block py-[3px] [&_i]:cursor-default [&_i]:opacity-70 [&_i::before]:text-[#808080]"
                 aria-disabled="true"
                 tabindex="-1"
               >Gå till nästa del</a>
@@ -2496,12 +2496,13 @@ watch(readerRequestIdentity, () => {
                 custom
                 :to="pageHref(reader.startPageName)"
               ><a
+                class="mr-[2px] sc -my-[3px] inline-block py-[3px]"
                 :href="pageHref(reader.startPageName)"
                 @click="navigate"
               >Gå till första sidan</a></NuxtLink>
               <a
                 v-else
-                class="disabled"
+                class="disabled mr-[2px] sc -my-[3px] inline-block py-[3px] [&_i]:cursor-default [&_i]:opacity-70 [&_i::before]:text-[#808080]"
                 aria-disabled="true"
                 tabindex="-1"
               >Gå till första sidan</a>
@@ -2512,18 +2513,19 @@ watch(readerRequestIdentity, () => {
                 custom
                 :to="pageHref(reader.endPageName)"
               ><a
+                class="mr-[2px] sc -my-[3px] inline-block py-[3px]"
                 :href="pageHref(reader.endPageName)"
                 @click="navigate"
               >Gå till sista sidan</a></NuxtLink>
               <a
                 v-else
-                class="disabled"
+                class="disabled mr-[2px] sc -my-[3px] inline-block py-[3px] [&_i]:cursor-default [&_i]:opacity-70 [&_i::before]:text-[#808080]"
                 aria-disabled="true"
                 tabindex="-1"
               >Gå till sista sidan</a>
               <br>
-              <form class="goto" @submit.prevent="submitGoto"><button type="button" class="reader-action-button" @click="toggleGoto">Gå till sida . . .
-                <span class="pages">{{ pageRouteDraftName }} av {{ reader.endPageName || reader.pageCount }}</span></button>
+              <form class="goto mb-[0.4em] block whitespace-nowrap mr-[2px] sc" @submit.prevent="submitGoto"><button type="button" class="reader-action-button" @click="toggleGoto">Gå till sida . . .
+                <span class="pages mr-[3px] text-[0.8em]">{{ pageRouteDraftName }} av {{ reader.endPageName || reader.pageCount }}</span></button>
                 <template v-if="showGotoInput">
                   <input ref="gotoInput" v-model="gotoPage" type="text" aria-label="Gå till sida">
                   <button type="submit" class="goto-submit" aria-label="Gå"><i class="fa fa-angle-double-right" /></button>
@@ -2533,6 +2535,7 @@ watch(readerRequestIdentity, () => {
 
               <a
                 v-if="draftPreviousPageName"
+                class="mr-[2px] sc -my-[3px] inline-block py-[3px]"
                 rel="prev"
                 :href="pageHref(draftPreviousPageName)"
                 aria-label="Föregående sida"
@@ -2540,23 +2543,24 @@ watch(readerRequestIdentity, () => {
               ><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span>{{ " " }}</a>
               <a
                 v-else
-                class="disabled"
+                class="disabled mr-[2px] sc -my-[3px] inline-block py-[3px] [&_i]:cursor-default [&_i]:opacity-70 [&_i::before]:text-[#808080]"
                 aria-disabled="true"
                 aria-label="Föregående sida"
                 tabindex="-1"
               ><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span>{{ " " }}</a>
               <a
                 v-if="draftNextPageName"
+                class="mr-[2px] sc -my-[3px] inline-block py-[3px]"
                 rel="next"
                 :href="pageHref(draftNextPageName)"
                 aria-label="Nästa sida"
                 @click="queueReaderLink($event, draftNextPageName)"
-              ><span class="submit btn navicon navicon-visual right" aria-hidden="true"><i class="fa fa-angle-right right" /></span>{{ " " }}</a>
+              ><span class="submit btn navicon navicon-visual right ml-[2px]" aria-hidden="true"><i class="fa fa-angle-right right ml-[2px]" /></span>{{ " " }}</a>
 
-              <span class="expl small" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
+              <span class="expl small ml-1 mt-[14px] inline-block w-[170px] text-[0.7em]" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
             </nav>
 
-            <div class="w-11/12">
+            <div class="w-11/12 mb-5 block">
               <span
                 class="rzslider mt-3 slider-large"
                 :class="{ active: sliderDraftIndex !== null }"
@@ -2599,21 +2603,23 @@ watch(readerRequestIdentity, () => {
               </span>
             </div>
 
-            <div class="subnav mt-10">
+            <div class="subnav mt-10 mb-5 block whitespace-nowrap text-[0.9em] leading-none sc">
               <ul>
                 <li v-if="reader.parts.length">
                   <a
-                    ref="contentsTrigger"
+ref="contentsTrigger"
+                    class="-my-[3px] inline-block py-[3px]"
                     :href="contentsHref"
                     @click.prevent="openContents"
                   >Innehållsförteckning</a>
                 </li>
                 <li><a
-                  ref="sidebarSourceInfoTrigger"
+ref="sidebarSourceInfoTrigger"
+                  class="-my-[3px] inline-block py-[3px]"
                   :href="sourceInfoHref"
                   @click.prevent="openSourceInfoFromSidebar"
                 >{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a></li>
-                <li><a :href="focusHref" @click.prevent="activateFocus">Läsfokus</a></li>
+                <li><a class="-my-[3px] inline-block py-[3px]" :href="focusHref" @click.prevent="activateFocus">Läsfokus</a></li>
                 <li v-if="reader.searchable">
                   <button
                     type="button"
@@ -2625,11 +2631,11 @@ watch(readerRequestIdentity, () => {
                     <div class="collapse-content">
                       <div class="header">
                         <div class="auth">
-                          Sök i <span class="author"><ReaderContributors
+                          Sök i <span class="author min-h-[1em] mb-[0.3em] text-[1em] sc [&_a]:text-primary"><ReaderContributors
                             :contributors="reader.contributors"
                           /></span>
                         </div>
-                        <div class="title">{{ reader.title }}</div>
+                        <div class="title min-h-[1em]">{{ reader.title }}</div>
                       </div>
                       <div
                         class="ctrls"
@@ -2668,10 +2674,11 @@ watch(readerRequestIdentity, () => {
                   </div>
                 </li>
                 <li v-else aria-disabled="true">
-                  <a class="disabled" aria-disabled="true" tabindex="-1">Sök i verket</a>
+                  <a class="disabled -my-[3px] inline-block py-[3px]" aria-disabled="true" tabindex="-1">Sök i verket</a>
                 </li>
                 <li>
                   <NuxtLink
+                    class="-my-[3px] inline-block py-[3px]"
                     :to="{ path: '/s%C3%B6k', query: { avancerad: null, forfattare: reader.author.author_id } }"
                     no-prefetch
                   >
@@ -2679,11 +2686,11 @@ watch(readerRequestIdentity, () => {
                   </NuxtLink>
                 </li>
                 <li v-if="reader.hasDramawebben">
-                  <LazyReaderDramawebbenLink />
+                  <LazyReaderDramawebbenLink class="-my-[3px] inline-block py-[3px]" />
                 </li>
                 <li v-if="reader.hasNyaVagar" class="-ml-px">
                   <a
-                    class="block w-3/6 -ml-3 reader-nya-vagar"
+                    class="w-3/6 -ml-3 reader-nya-vagar -my-[3px] inline-block py-[3px]"
                     href="https://litteraturbanken.se/diktensmuseum/nya-vagar-inledning/"
                   ><img
                     class="object-contain"
@@ -2778,7 +2785,8 @@ watch(readerRequestIdentity, () => {
         </nav>
         </Teleport>
         <template #fallback>
-          <aside class="reader-context-ssr" aria-label="Läsinformation och sidnavigering">
+          <!-- The SSR fallback stays beside the book before the client Teleport mounts. -->
+          <aside class="reader-context-ssr absolute left-full top-[1em] z-50 my-[1em] ml-4 w-[250px] text-[20px] leading-[1.2] md:ml-16 [.reader-focus-mode_&]:hidden [&>*]:mb-5 [&>*]:block [&>.author]:mb-[0.3em] [&>.author]:min-h-[1em] [&>.author]:sc [&>.author_a]:text-primary [&>a]:text-[0.9em] [&>a]:sc [&>nav]:text-[0.9em] [&>nav]:sc [&>nav>a]:mb-1 [&>nav>a]:block" aria-label="Läsinformation och sidnavigering">
             <span class="author"><ReaderContributors
               :contributors="reader.contributors"
             /></span>
