@@ -45,16 +45,27 @@
 
     body #leftCorridor.site-navigation {
         display: block;
-        width: 100%;
+        width: 225px;
+        max-width: 100%;
         min-width: 0;
         margin: 1em 0 3em;
         padding: 0;
         background: transparent;
 
-        .logo_link_monogram,
-        .lb-logo {
+        .logo_link_monogram {
+            width: 225px;
             max-width: 100%;
-            left: 0;
+            left: 40px;
+        }
+
+        .lb-logo {
+            width: 260px;
+            max-width: none;
+            left: 8px;
+        }
+
+        .mainnav {
+            margin-right: 0;
         }
 
         .mainnav a {
