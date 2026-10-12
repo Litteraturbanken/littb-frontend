@@ -175,6 +175,8 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
                     :options="model.collectionSelectOptions"
                     :option-groups="model.collectionSelectGroups"
                     :space-after-remove="false"
+                    searchable
+                    internal-search
                     placeholder="Filtrera: Kategorier / Utgivare"
                     @update:model-value="emitKeywords"
                 />
@@ -222,6 +224,8 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
                     :options="model.collectionSelectOptions"
                     :option-groups="narrowingSelectGroups"
                     :space-after-remove="false"
+                    searchable
+                    internal-search
                     placeholder="Avgränsa sökningen"
                     @update:model-value="emitNarrowingKeywords"
                 />
@@ -238,6 +242,8 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
                     :model-value="model.media"
                     :options="model.mediaSelectOptions"
                     :space-after-remove="false"
+                    searchable
+                    internal-search
                     placeholder="Utgivningsformat"
                     @update:model-value="emitMedia"
                 />
@@ -254,6 +260,8 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
                     :model-value="model.languages"
                     :options="model.languageSelectOptions"
                     :space-after-remove="false"
+                    searchable
+                    internal-search
                     placeholder="Språk …"
                     @update:model-value="emitLanguages"
                 />

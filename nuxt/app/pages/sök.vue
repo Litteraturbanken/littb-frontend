@@ -1623,6 +1623,7 @@ v-for="item in [
               placeholder="Författarskap"
               searchable
               internal-search
+              hide-selected
               @update:model-value="patchFilters({ authorIds: $event })"
             />
           </div>
@@ -1674,6 +1675,8 @@ v-for="item in [
               persistent-input-row
               :model-value="state.languages"
               :options="languageChoices"
+              searchable
+              internal-search
               placeholder="Språk …"
               :space-after-remove="false"
               @update:model-value="patchFilters({ languages: $event as TextSearchRouteState['languages'] })"
@@ -1691,6 +1694,7 @@ v-for="item in [
               placeholder="Om ett författarskap"
               searchable
               internal-search
+              hide-selected
               @update:model-value="patchFilters({ aboutAuthorIds: $event })"
             />
           </div>
@@ -1701,6 +1705,8 @@ v-for="item in [
               :model-value="state.categories"
               :options="categoryChoices"
               :option-groups="categoryChoiceGroups"
+              searchable
+              internal-search
               placeholder="Filtrera: Kategorier / Utgivare"
               :space-after-remove="false"
               @update:model-value="patchFilters({ categories: $event as TextSearchRouteState['categories'] })"
@@ -1714,7 +1720,10 @@ v-for="item in [
               >
                 <ListboxButton class="select2-selection select2-selection--single">
                   <span class="select2-selection__rendered">
-                    <span class="gender_selection_label">{{ genderLabel }}</span>
+                    <span
+                      class="gender_selection_label"
+                      :class="{ gender_placeholder: genderSelection === 'all' && rawGenderSelection !== 'all' }"
+                    >{{ genderLabel }}</span>
                   </span>
                   <span class="select2-selection__arrow" aria-hidden="true"><b /></span>
                 </ListboxButton>
@@ -2064,6 +2073,10 @@ v-for="item in [
   line-height: 28px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.gender_select .gender_placeholder {
+  color: #9e9e9e;
 }
 
 .gender_select .select2-selection__arrow {

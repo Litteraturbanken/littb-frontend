@@ -103,6 +103,24 @@ test("inert Library tooltip hosts join keyboard order and reveal their full text
   await expect(author).not.toHaveAttribute("aria-describedby", /library-tooltip-/)
 })
 
+test("Library advanced menus filter typed input", async ({ page }) => {
+  await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  for (const marker of ["keywords", "narrowing", "media", "languages"]) {
+    const root = page.locator(`[data-library-${marker}]`)
+    await root.getByRole("button").first().click()
+    const options = root.getByRole("option")
+    const label = (await options.filter({ hasNot: page.locator(".select2-results__group") })
+      .first().textContent())!.trim()
+    const input = root.locator("input.select2-search__field")
+    await input.fill("no-such-option-xyz")
+    await expect(options).toHaveCount(0)
+    await input.fill(label)
+    await expect(root.getByRole("option", { name: label, exact: true })).toBeVisible()
+    await input.press("Escape")
+  }
+})
+
 test("advanced Library controls retain the production baseline at each breakpoint", async ({
   page
 }) => {
