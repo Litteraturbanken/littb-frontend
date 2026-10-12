@@ -115,7 +115,18 @@
                 display: flex; flex: 0 0 100%; flex-wrap: wrap; min-width: 0;
             }
             .select2-selection__choice {
-                height: auto; max-width: 100%; white-space: normal; overflow-wrap: anywhere;
+                display: inline-flex;
+                align-items: baseline;
+                height: auto;
+                max-width: 100%;
+                white-space: nowrap;
+                overflow-wrap: normal;
+                .select2-selection__choice__remove { flex-shrink: 0; }
+                .select2-selection__choice-label {
+                    min-width: 0;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
             }
         }
         .search-sentences-viewport {

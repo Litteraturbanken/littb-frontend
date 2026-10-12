@@ -1,0 +1,36 @@
+import { expect, test } from "@playwright/test"
+
+for (const width of [375, 640, 731, 768, 1023, 1024]) {
+  test(`search chips and logo navigation remain aligned at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto("/s%C3%B6k?avancerad=1&keywords=texttype:brev;brevsamling")
+    await page.locator('[data-search-mounted="true"]').waitFor()
+    const measure = () => page.locator("#leftCorridor").evaluate(root => {
+      const logo = root.querySelector(".lb-logo")!.getBoundingClientRect()
+      const menu = root.querySelector(".mainnav")!.getBoundingClientRect()
+      return { gap: menu.right - logo.right, width: menu.width }
+    })
+    const desktop = await measure()
+    await page.setViewportSize({ width, height: 711 })
+    const current = await measure()
+    expect(current.gap).toBeCloseTo(desktop.gap, 0)
+    expect(current.width).toBeCloseTo(desktop.width, 0)
+    const chip = page.locator(".keyword_select .select2-selection__choice")
+    await expect(chip).toContainText("Brev")
+    const geometry = await chip.evaluate(node => {
+      const remove = node.querySelector("button")!.getBoundingClientRect()
+      const label = node.querySelector(".select2-selection__choice-label")!.getBoundingClientRect()
+      const frame = node.getBoundingClientRect()
+      return { removeTop: remove.top, labelTop: label.top, height: frame.height,
+        labelRight: label.right, chipRight: frame.right }
+    })
+    expect(Math.abs(geometry.removeTop - geometry.labelTop)).toBeLessThan(4)
+    expect(geometry.height).toBeLessThan(25)
+    expect(geometry.labelRight).toBeLessThanOrEqual(geometry.chipRight + 1)
+    if (width < 1024) {
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1)
+    }
+    await chip.getByRole("button", { name: "Ta bort Brev" }).click()
+    await expect(chip).toHaveCount(0)
+  })
+}
