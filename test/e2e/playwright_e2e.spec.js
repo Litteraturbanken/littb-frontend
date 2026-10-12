@@ -395,7 +395,10 @@ test.describe("Nuxt whole-site staging smoke", () => {
         })
         const frame = dialog.locator('iframe[title="Slå upp damm i SO och SAOB"]')
         await expect(frame).toBeVisible()
-        await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin")
+        await expect(frame).toHaveAttribute(
+            "sandbox",
+            "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        )
         await expect(frame).toHaveAttribute("referrerpolicy", "origin")
         const dictionary = frame.contentFrame()
         await expect(dictionary.getByRole("heading", { level: 1 })).toHaveCount(0)
