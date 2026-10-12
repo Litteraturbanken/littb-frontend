@@ -34,3 +34,20 @@ for (const width of [375, 640, 731, 768, 1023, 1024]) {
     await expect(chip).toHaveCount(0)
   })
 }
+
+for (const width of [375, 731, 768, 1440]) {
+  test(`Library filter placeholders share left padding at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 711 })
+    await page.goto("/bibliotek?avancerat=1")
+    await page.locator("[data-library-advanced-panel]").waitFor()
+    for (const name of ["Filtrera: Kategorier / Utgivare", "Om ett författarskap",
+      "Avgränsa sökningen", "Utgivningsformat", "Språk …"]) {
+      const input = page.getByRole("textbox", { name, exact: true })
+      await expect(input).toHaveCSS("padding-left", "10px")
+      await input.fill("test")
+      await expect(input).toHaveCSS("padding-left", "10px")
+      await input.press("Escape")
+      await expect(input).toHaveCSS("padding-left", "10px")
+    }
+  })
+}
