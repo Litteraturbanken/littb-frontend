@@ -251,6 +251,44 @@ test("a selected title keeps its title while refreshed options are pending", asy
   }
 })
 
+for (const control of [
+  { selector: ".author_select", name: "Författarskap", label: "Lagerlöf, Selma", id: "LagerlöfS" },
+  { selector: ".about_select", name: "Om ett författarskap", label: "Strindberg, August", id: "StrindbergA" }
+]) {
+  test(`${control.name} hides selected authors while options refresh`, async ({ page }) => {
+    await openSearch(page, "/s%C3%B6k?avancerad=1")
+    const root = page.locator(control.selector)
+    await root.getByRole("button", { name: `Visa alternativ för ${control.name}` }).click()
+    const option = root.getByRole("option", { name: new RegExp(control.label) })
+    await expect(option).toBeVisible()
+    let release = () => {}
+    const gate = new Promise<void>(resolve => { release = resolve })
+    let held = false
+    const hold = async (route: Route) => {
+      held = true
+      await gate
+      await route.continue()
+    }
+    await page.route("**/api/v2/text-search/options", hold)
+    try {
+      await option.click()
+      await expect.poll(() => held).toBe(true)
+      await expect(root.locator(".select2-selection__choice")).toContainText(control.label)
+      await expect(root).not.toContainText(control.id)
+      await expect(option).toHaveCount(0)
+      const refreshed = page.waitForResponse("**/api/v2/text-search/options")
+      release()
+      await refreshed
+      await expect(option).toHaveCount(0)
+      await root.getByRole("button", { name: new RegExp(`Ta bort ${control.label}`) }).click()
+      await expect(option).toBeVisible()
+    } finally {
+      release()
+      await page.unroute("**/api/v2/text-search/options", hold)
+    }
+  })
+}
+
 test("long selected title labels stay on one ellipsized line", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?avancerad=1&titlar=lb238704")
   const title = page.locator(".title_select")
@@ -498,9 +536,9 @@ test("vue-multiselect names each real keyboard control without a searchbox suffi
   for (const control of [
     page.getByRole("textbox", { name: "Författarskap", exact: true }),
     page.getByRole("textbox", { name: "Titlar", exact: true }),
-    page.getByRole("combobox", { name: "Språk …", exact: true }),
+    page.getByRole("textbox", { name: "Språk …", exact: true }),
     page.getByRole("textbox", { name: "Om ett författarskap", exact: true }),
-    page.getByRole("combobox", {
+    page.getByRole("textbox", {
       name: "Filtrera: Kategorier / Utgivare", exact: true
     })
   ]) {
@@ -537,7 +575,7 @@ test("vue-multiselect preserves declared option order, unknown selections, and l
   await expect(authors.getByRole("button", { name: "Ta bort missing" })).toBeVisible()
 })
 
-test("every advanced multiselect closes when its control surface is clicked again", async ({
+test("advanced multiselect controls toggle while the persistent title input stays open", async ({
   page
 }) => {
   await openSearch(page, "/s%C3%B6k?avancerad=1")
@@ -556,6 +594,10 @@ test("every advanced multiselect closes when its control surface is clicked agai
     await control.click({ position: point })
     await expect(control).toHaveClass(/multiselect--active/)
     await control.click({ position: point })
+    if (selector === ".title_select") {
+      await expect(control).toHaveClass(/multiselect--active/)
+      await root.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
+    }
     await expect(control).not.toHaveClass(/multiselect--active/)
   }
 })
@@ -565,15 +607,16 @@ test("vue-multiselect accepts Enter selection and keeps legacy dropdown geometry
   const authors = page.locator(".author_select")
   const control = authors.getByRole("combobox")
   await control.focus()
-  await control.press("Enter")
-  await expect.poll(() => new URL(page.url()).searchParams.get("forfattare")).toBe("LagerlöfS")
-
-  await authors.getByRole("button", { name: "Visa alternativ för Författarskap" }).click()
   const option = authors.getByRole("option", { name: "Lagerlöf, Selma (1858-1940)" })
     .locator(".multiselect__option")
   await expect(option).toHaveCSS("padding-top", "6px")
   await expect(option).toHaveCSS("min-height", "0px")
   await expect(option).toHaveCSS("line-height", "normal")
+
+  await control.press("Enter")
+  await expect.poll(() => new URL(page.url()).searchParams.get("forfattare")).toBe("LagerlöfS")
+  await expect(authors.locator(".select2-selection__choice")).toContainText("Lagerlöf, Selma")
+  await expect(option).toHaveCount(0)
 })
 
 test("advanced multiselects reserve small caps for their filter inputs", async ({ page }) => {
@@ -627,10 +670,31 @@ test("both author multiselects filter their existing options locally", async ({ 
   }
 })
 
+test("language and category menus filter typed input", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+  for (const control of [
+    { selector: ".lang_select", query: "svenska", label: "Svenska", excluded: "Danska" },
+    { selector: ".keyword_select", query: "brev", label: "Brev", excluded: "Romaner" }
+  ]) {
+    const root = page.locator(control.selector)
+    await root.getByRole("button").first().click()
+    const input = root.locator("input.select2-search__field")
+    await input.fill(control.query)
+    await expect(root.getByRole("option", { name: control.label, exact: true })).toBeVisible()
+    await expect(root.getByRole("option", { name: control.excluded, exact: true })).toHaveCount(0)
+    await root.getByRole("option", { name: control.label, exact: true }).click()
+    await expect(root.locator(".select2-selection__choice")).toContainText(control.label)
+    await input.press("Escape")
+  }
+})
+
 test("gender dropdown matches the production trigger and open menu", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?avancerad=1")
   const gender = page.locator(".gender_select")
   const trigger = gender.getByRole("button")
+  const placeholderColor = await page.locator(".author_select input.select2-search__field")
+    .evaluate(input => getComputedStyle(input, "::placeholder").color)
+  await expect(gender.locator(".gender_selection_label")).toHaveCSS("color", placeholderColor)
 
   await expect(trigger).toHaveCSS(
     "font-family",
