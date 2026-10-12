@@ -12,7 +12,7 @@ const behaviorProjects = [
   "webkit-authors"
 ]
 
-const visualProjects = ["desktop-chromium", "mobile-chromium"]
+const visualProjects = ["desktop-chromium", "mobile-chromium", "mobile-home-chromium"]
 
 function splitProjectSelections(arguments_) {
   const projects = []

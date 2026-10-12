@@ -101,7 +101,9 @@ test("matches the approved Angular Home page", async ({ page, request }, testInf
   expect(forbiddenProductionRequests).toEqual([])
   expect(unexpectedContentRequests).toEqual([])
 
-  const device = testInfo.project.name === "mobile-chromium" ? "mobile" : "desktop"
+  const device = testInfo.project.name.startsWith("mobile-") ? "mobile" : "desktop"
+  // Home follows the original production layout, including on narrow screens.
+  // Other mobile routes retain the separate mobile-navigation baselines.
   await expect(page).toHaveScreenshot(`home-${device}.png`, {
     fullPage: true,
     animations: "disabled",
