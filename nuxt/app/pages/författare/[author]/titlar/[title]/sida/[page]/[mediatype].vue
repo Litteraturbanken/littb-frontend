@@ -2447,7 +2447,7 @@ watch(readerRequestIdentity, () => {
                   </template>
                 </div>
                 <div
-                  v-reader-title-tooltip.left="currentPart.title"
+                  v-reader-title-tooltip.left.conditional="currentPart.title"
                   tabindex="0"
                 ><p class="navtitle line-clamp-4 max-h-[5.2em] max-w-[85%] overflow-hidden leading-[1.3]">{{ currentPartLabel }}</p></div>
               </template>

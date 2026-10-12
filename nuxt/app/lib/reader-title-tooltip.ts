@@ -6,6 +6,8 @@ let readerTitleTooltipSequence = 0
 type ReaderTitleTooltipState = {
   content: string
   left: boolean
+  immediate: boolean
+  conditional: boolean
   hovered: boolean
   focused: boolean
   timer: ReturnType<typeof setTimeout> | null
@@ -25,11 +27,20 @@ function hideReaderTitleTooltip(element: HTMLElement, state: ReaderTitleTooltipS
   else element.setAttribute("aria-describedby", state.previousDescribedBy)
 }
 
+function needsReaderTitleTooltip(element: HTMLElement, state: ReaderTitleTooltipState): boolean {
+  if (!state.conditional) return true
+  const label = element.querySelector<HTMLElement>(".navtitle") || element
+  return label.textContent?.trim() !== state.content.trim()
+    || label.scrollHeight > label.clientHeight
+    || label.scrollWidth > label.clientWidth
+}
+
 function showReaderTitleTooltip(element: HTMLElement, state: ReaderTitleTooltipState): void {
   if (!state.content || state.popup || state.timer || (!state.hovered && !state.focused)) return
   state.timer = setTimeout(() => {
     state.timer = null
     if (!element.isConnected || !state.content || (!state.hovered && !state.focused)) return
+    if (!needsReaderTitleTooltip(element, state)) return
     const popup = document.createElement("div")
     const inner = document.createElement("div")
     const arrow = document.createElement("div")
@@ -43,14 +54,16 @@ function showReaderTitleTooltip(element: HTMLElement, state: ReaderTitleTooltipS
     inner.textContent = state.content
     arrow.className = "tooltip-arrow"
     popup.append(inner, arrow)
-    document.body.append(popup)
+    // Keep modal tooltips inside the dialog accessibility boundary.
+    const container = element.closest("[role=dialog]") || document.body
+    container.append(popup)
     const rect = element.getBoundingClientRect()
     popup.style.left = `${state.left ? rect.left : rect.left + rect.width / 2}px`
     popup.style.top = `${state.left ? rect.top + rect.height / 2 : rect.top}px`
     popup.style.transform = state.left ? "translate(-100%, -50%)" : "translate(-50%, -100%)"
     state.popup = popup
     element.setAttribute("aria-describedby", id)
-  }, state.left ? 0 : readerTitleTooltipDelay)
+  }, state.immediate ? 0 : readerTitleTooltipDelay)
 }
 
 function updateReaderTitleTooltipVisibility(
@@ -84,6 +97,8 @@ function mountReaderTitleTooltip(
   const state: ReaderTitleTooltipState = {
     content: binding.value || "",
     left: Boolean(binding.modifiers.left),
+    immediate: Boolean(binding.modifiers.left || binding.modifiers.immediate),
+    conditional: Boolean(binding.modifiers.conditional),
     hovered: false,
     focused: false,
     timer: null,

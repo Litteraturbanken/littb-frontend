@@ -8,6 +8,7 @@ import type {
 } from "#shared/types/work-manifest"
 import { readerManifestPartAuthorLabel } from "#shared/utils/reader-author"
 import { readerAuthorHref, readerPartAuthorKey } from "~/lib/reader-routes"
+import { readerTitleTooltipDirective as vReaderTitleTooltip } from "~/lib/reader-title-tooltip"
 
 defineProps<{
   open: boolean
@@ -95,7 +96,6 @@ onMounted(() => {
             <li
               v-for="(part, partIndex) in parts"
               :key="part.source_index"
-              :title="part.title"
             >
               <span>
                 <span
@@ -111,6 +111,7 @@ onMounted(() => {
                   custom
                   :to="partHrefs[partIndex]"
                 ><a
+                  v-reader-title-tooltip.immediate="part.title"
                   :href="href || partHrefs[partIndex] || ''"
                   @click="selectPart($event, part.start_page_name)"
                 >{{ partLabel(part) }}</a></NuxtLink>
