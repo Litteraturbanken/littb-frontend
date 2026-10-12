@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AuthorProfileContent from "~/components/author/AuthorProfileContent.vue"
-import { useLbApiClient } from "~/composables/useLbApiClient"
+import { useAuthorProfileRequest } from "~/composables/useAuthorProfileRequest"
 import {
   authorProfilePath,
   createAuthorProfileView,
@@ -19,6 +19,8 @@ type ProfileResponse = {
 }
 
 definePageMeta({
+  middleware: "author-profile",
+  key: route => route.path,
   validate: route => {
     const author = Array.isArray(route.params.author)
       ? route.params.author[0]
@@ -34,16 +36,8 @@ const authorId = computed(() => {
 })
 const asyncKey = computed(() => `author-profile:ordinary:${authorId.value}`)
 const currentIdentity = computed(() => `ordinary:${authorId.value}`)
-const pendingIdentity = shallowRef<string | null>(null)
-onBeforeRouteUpdate(to => {
-  const value = Array.isArray(to.params.author) ? to.params.author[0] : to.params.author
-  pendingIdentity.value = `ordinary:${typeof value === "string" ? value : ""}`
-})
-watch(currentIdentity, identity => {
-  if (pendingIdentity.value === identity) pendingIdentity.value = null
-}, { flush: "sync" })
-const acceptedIdentity = computed(() => pendingIdentity.value ?? currentIdentity.value)
-const client = useLbApiClient()
+const acceptedIdentity = currentIdentity
+const profileRequest = useAuthorProfileRequest()
 const profileHandoffs = useState<Partial<Record<string, ProfileResponse>>>(
   "author-profile-handoffs",
   () => ({})
@@ -62,9 +56,7 @@ const { data } = await useAsyncData<ProfileResponse>(
     }
     if (handoff) profileHandoffs.value[handoffKey] = undefined
     try {
-      const { data: profile, response } = await client.GET("/authors/{author_id}", {
-        params: { path: { author_id: requestedAuthor } }
-      })
+      const { data: profile, response } = await profileRequest.load(requestedAuthor)
       const hasDramawebben = Boolean(profile?.dramawebben)
       const canonicalPath = profile
         ? safeAuthorCanonicalPath(profile.canonical_path, requestedAuthor, hasDramawebben)
@@ -86,8 +78,7 @@ const { data } = await useAsyncData<ProfileResponse>(
     } catch {
       return { identity, view: null, status: 503, canonicalPath: "", hasDramawebben: false }
     }
-  },
-  { lazy: true }
+  }
 )
 
 const response = computed(() => (

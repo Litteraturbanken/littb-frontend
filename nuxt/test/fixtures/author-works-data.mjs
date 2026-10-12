@@ -621,6 +621,16 @@ export const authorWorksById = new Map(
       ...emptyAuthorWorks,
       author: { ...emptyAuthorWorks.author, author_id: "SöderbergH", full_name: "Hjalmar Söderberg" }
     }],
+    ["DramaOnly", {
+      ...emptyAuthorWorks,
+      author: {
+        ...emptyAuthorWorks.author,
+        author_id: "DramaOnly",
+        full_name: "Dramatikern",
+        has_introduction: false,
+        has_dramawebben: true
+      }
+    }],
     [rfc3986AuthorWorks.author.author_id, rfc3986AuthorWorks]
   ])
 )

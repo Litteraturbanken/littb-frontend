@@ -82,7 +82,7 @@ function collectProblems(page: Page): string[] {
   const problems: string[] = []
   page.on("pageerror", error => problems.push(error.message))
   page.on("console", message => {
-    if (["error", "warning"].includes(message.type())) problems.push(message.text())
+    if (["error", "warning"].includes(message.type())) problems.push(`${message.text()} (${message.location().url})`)
   })
   return problems
 }
@@ -96,7 +96,7 @@ test.beforeEach(async ({ page, request }) => {
   }))
 })
 
-test("mounts the author shell before profile data settles", async ({ page }) => {
+test("keeps the current history entry until the destination author is available", async ({ page }) => {
   await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
 
   for (const path of [
@@ -129,13 +129,14 @@ test("mounts the author shell before profile data settles", async ({ page }) => 
       await beginRouterPush(page, path)
       await requestStarted
 
-      await expect(page).toHaveURL(path)
-      await expect(page.locator("body")).toHaveClass(/page-authorInfo/u)
-      await expect(page.getByRole("status", { name: "Laddar författarsidan" })).toHaveCount(1)
-      await expect(page.locator(".introtext")).toHaveCount(0)
+      await expect(page).not.toHaveURL(path)
+      await expect(page).toHaveTitle(/August Strindberg/u)
+      await expect(page.locator("h1")).toContainText("August Strindberg")
 
       releaseResponse()
       await responseDelivered
+      await expect(page).toHaveURL(path)
+      await expect(page).toHaveTitle(/August Strindberg/u)
       await expect(page.locator("h1")).toContainText("August Strindberg")
     } finally {
       releaseResponse()
@@ -305,45 +306,61 @@ test("client author navigation uses one public request and replaces every profil
   expect(problems).toEqual([])
 })
 
-test("a delayed Strindberg-to-Lagerlöf navigation never renders August at the new URL", async ({
-  page,
-  request
-}) => {
-  const problems = collectProblems(page)
-  await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
-  await reset(request)
+for (const delayedResource of ["profile", "works"]) {
+  test(`a delayed ${delayedResource} keeps author titles in the correct history entries`, async ({
+    page,
+    request
+  }) => {
+    const problems = collectProblems(page)
+    await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
+    await reset(request)
 
-  let releaseResponse = () => {}
-  const responseGate = new Promise<void>(resolve => {
-    releaseResponse = resolve
-  })
-  let markRequestStarted = () => {}
-  const requestStarted = new Promise<void>(resolve => {
-    markRequestStarted = resolve
-  })
-  let markResponseDelivered = () => {}
-  const responseDelivered = new Promise<void>(resolve => {
-    markResponseDelivered = resolve
-  })
-  await page.route("**/v2/authors/Lagerl%C3%B6fS", async route => {
-    const response = await route.fetch()
-    markRequestStarted()
-    await responseGate
-    await route.fulfill({ response })
-    markResponseDelivered()
+    let releaseResponse = () => {}
+    const responseGate = new Promise<void>(resolve => {
+      releaseResponse = resolve
+    })
+    let markRequestStarted = () => {}
+    const requestStarted = new Promise<void>(resolve => {
+      markRequestStarted = resolve
+    })
+    let markResponseDelivered = () => {}
+    const responseDelivered = new Promise<void>(resolve => {
+      markResponseDelivered = resolve
+    })
+    await page.route(`**/v2/authors/Lagerl%C3%B6fS${delayedResource === "works" ? "/works" : ""}`, async route => {
+      const response = await route.fetch()
+      markRequestStarted()
+      await responseGate
+      await route.fulfill({ response })
+      markResponseDelivered()
+    })
+
+    await beginRouterPush(page, "/f%C3%B6rfattare/Lagerl%C3%B6fS")
+    await requestStarted
+    await expect(page).toHaveURL(/\/f%C3%B6rfattare\/StrindbergA$/u)
+    await expect(page).toHaveTitle("August Strindberg, Introduktion | Litteraturbanken")
+
+    releaseResponse()
+    await responseDelivered
+    await expect(page.locator("h1")).toContainText("Selma Lagerlöf")
+    await expect(page).toHaveTitle("Selma Lagerlöf, Introduktion | Litteraturbanken")
+    await expect(page.locator("body")).not.toContainText("August Strindberg")
+    expect(await profileRequests(request)).toEqual(["/v2/authors/Lagerl%C3%B6fS"])
+    const session = await page.context().newCDPSession(page)
+    const history = await session.send("Page.getNavigationHistory")
+    expect(history.entries.filter(entry => entry.url.includes("/f%C3%B6rfattare/"))
+      .map(entry => entry.title)).toEqual([
+        "August Strindberg, Introduktion | Litteraturbanken",
+        "Selma Lagerlöf, Introduktion | Litteraturbanken"
+      ])
+    await page.goBack()
+    await expect(page).toHaveTitle("August Strindberg, Introduktion | Litteraturbanken")
+    await page.goForward()
+    await expect(page).toHaveTitle("Selma Lagerlöf, Introduktion | Litteraturbanken")
+    expect(problems).toEqual([])
   })
 
-  await beginRouterPush(page, "/f%C3%B6rfattare/Lagerl%C3%B6fS")
-  await requestStarted
-  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/Lagerl%C3%B6fS$/u)
-  await expect(page.locator("body")).not.toContainText("August Strindberg")
-
-  releaseResponse()
-  await responseDelivered
-  await expect(page.locator("h1")).toContainText("Selma Lagerlöf")
-  await expect(page.locator("body")).not.toContainText("August Strindberg")
-  expect(problems).toEqual([])
-})
+}
 
 test("a late obsolete canonical response cannot redirect or hand off over the current author", async ({
   page,
