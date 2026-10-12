@@ -100,9 +100,15 @@ export async function loadReaderSourceInfo(
   titlePath: string,
   mediaType: ReaderMediaQuery | null
 ): Promise<ReaderSourceInfo> {
+  const source = await fetchWorkSourceInfo(createServerLbApiClient(event), authorId, titlePath, mediaType)
+  return projectReaderSourceInfo(event, source)
+}
+
+export async function projectReaderSourceInfo(
+  event: H3Event, source: WorkSourceInfoResponse
+): Promise<ReaderSourceInfo> {
   const config = useRuntimeConfig(event)
   const client = createServerLbApiClient(event)
-  const source = await fetchWorkSourceInfo(client, authorId, titlePath, mediaType)
   let definitions: ReaderSourceInfoStaticDefinitions
   try {
     definitions = await loadCachedReaderSourceInfoStaticDefinitions(config.contentBase)

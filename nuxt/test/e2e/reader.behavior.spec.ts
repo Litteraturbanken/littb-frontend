@@ -856,9 +856,12 @@ for (const closeMethod of ["Escape", "backdrop", "Stäng"] as const) {
   })
 }
 
-test("reader prefetches source information and opens it without another request", async ({ page, request }) => {
+test("reader receives source information with its initial data and opens it without another request", async ({ page, request }) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
-  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(await sourceInfoRequests(request)).toHaveLength(0)
+  expect(await readerManifestRequests(request)).toEqual([
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/reader-data?media_type=etext"
+  ])
   const dialog = page.getByRole("dialog", { name: "Om boken" })
   await expect(dialog).toHaveCount(0)
   await resetReader(request)
@@ -867,6 +870,8 @@ test("reader prefetches source information and opens it without another request"
   await expect(dialog).toContainText("Doktor Glas. Roman")
   await expect(dialog.locator(".preloader")).toHaveCount(0)
   expect(await sourceInfoRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([])
+  expect(await similarWorkRequests(request)).toEqual([])
 })
 
 test("direct source information hydrates once without a client refetch", async ({
@@ -897,14 +902,10 @@ test("direct source information hydrates once without a client refetch", async (
   await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
   expect(clientSourceInfoRequests).toEqual([])
   expect(clientSimilarWorkRequests).toEqual([])
-  expect(await sourceInfoRequests(request)).toEqual([{
-    scope: "private",
-    path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
-    query: "?media_type=etext"
-  }])
+  expect(await sourceInfoRequests(request)).toEqual([])
   expect(await similarWorkRequests(request)).toEqual([{
     scope: "private",
-    path: "/private-v2/works/lb1728740/similar",
+    path: "/private-v2/works/lb-reader-doktor-glas/similar",
     query: "?media_type=etext"
   }])
   expect(problems).toEqual([])
@@ -1125,47 +1126,26 @@ test("source information wins over contents and closing it reveals contents", as
   await expect(page).toHaveURL(`${readerPartsPath}?bare&innehall`)
   await expect(sourceDialog).toHaveCount(0)
   await expect(contentsDialog).toHaveCount(1)
-  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(await sourceInfoRequests(request)).toHaveLength(0)
   expect(problems).toEqual([])
 })
 
-test("a failed source-information request is modal-local and retries on reopen", async ({
-  page,
-  request
-}) => {
-  const failedSourceInfoUrl =
-    "/nuxt-api/reader/source-info/S%C3%B6derbergH/DoktorGlas?media_type=etext"
-  const problems = captureBrowserProblems(page, {
-    httpErrors: [{
-      method: "GET",
-      status: 502,
-      url: failedSourceInfoUrl
-    }, {
-      method: "GET",
-      status: 502,
-      url: failedSourceInfoUrl
-    }]
-  })
+test("failed bundled source information stays modal-local and retries the combined request on reopen", async ({ page, request }) => {
+  const problems = captureBrowserProblems(page)
   await request.put(`${fixture}/_source_info_failure`)
   await page.goto(readerPath, { waitUntil: "networkidle" })
-  const trigger = page.locator(".reader-context .subnav")
-    .getByRole("link", { name: "Mer om boken" })
+  await expect(page.locator(".reader_main")).toContainText("DOKTOR")
+  const trigger = page.locator(".reader-context .subnav").getByRole("link", { name: "Mer om boken" })
   const dialog = page.getByRole("dialog", { name: "Om boken" })
-
-  const failedResponse = page.waitForResponse(response => {
-    const url = new URL(response.url())
-    return `${url.pathname}${url.search}` === failedSourceInfoUrl
-  })
   await trigger.click()
-  expect((await failedResponse).status()).toBe(502)
   await expect(dialog.getByRole("alert")).toHaveText("Ett fel har uppstått.")
   await dialog.getByRole("button", { name: "Stäng" }).click()
   await request.delete(`${fixture}/_source_info_failure`)
   await trigger.click()
-
   await expect(dialog).toContainText("Doktor Glas. Roman")
   await expect(dialog.getByRole("alert")).toHaveCount(0)
-  expect(await sourceInfoRequests(request)).toHaveLength(3)
+  expect(await sourceInfoRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toHaveLength(3)
   expect(problems).toEqual([])
 })
 
@@ -1223,47 +1203,40 @@ test("source-information shortcuts yield to guarded keyboard events", async ({ p
   expect(await sourceInfoRequests(request)).toEqual([])
 })
 
-test("source information shows only its own loading state", async ({ page, request }) => {
+test("direct source information waits for the bundled metadata", async ({ page, request }) => {
   const problems = captureBrowserProblems(page)
   await request.put(`${fixture}/_source_info_delays`, {
     data: { "SöderbergH|DoktorGlas": 2_000 }
   })
-  await page.goto(readerPath, { waitUntil: "domcontentloaded" })
-  await page.locator(".reader-context .subnav")
-    .getByRole("link", { name: "Mer om boken" }).click()
+  await page.goto(`${readerPath}?om-boken`, { waitUntil: "networkidle" })
 
   const dialog = page.getByRole("dialog", { name: "Om boken" })
-  await expect(dialog.locator(".preloader")).toContainText("Hämtar")
+  await expect(dialog.locator(".preloader")).toHaveCount(0)
   await expect(page.locator(".reader-primary-loading")).toHaveCount(0)
   await expect(dialog).toContainText("Doktor Glas. Roman")
   expect(problems).toEqual([])
 })
 
-test("closing source information keeps the prefetch for reopening", async ({ page, request }) => {
+test("slow initial metadata is complete when the reader appears and reused on reopen", async ({ page, request }) => {
   const problems = captureBrowserProblems(page)
-  await request.put(`${fixture}/_source_info_delays`, {
-    data: { "SöderbergH|DoktorGlas": 2_000 }
+  const browserMetadataRequests: string[] = []
+  page.on("request", event => {
+    if (event.url().includes("/nuxt-api/reader/source-info/")) browserMetadataRequests.push(event.url())
   })
-  const sourceInfoPath = "/nuxt-api/reader/source-info/S%C3%B6derbergH/DoktorGlas"
-  const sourceInfoStarted = page.waitForRequest(browserRequest =>
-    new URL(browserRequest.url()).pathname === sourceInfoPath
-  )
-  const sourceInfoFinished = page.waitForResponse(response =>
-    new URL(response.url()).pathname === sourceInfoPath
-  )
-  await page.goto(readerPath, { waitUntil: "domcontentloaded" })
-  await sourceInfoStarted
-  const trigger = page.locator(".reader-context .subnav")
-    .getByRole("link", { name: "Mer om boken" })
-  await trigger.click()
+  await request.put(`${fixture}/_source_info_delays`, { data: { "SöderbergH|DoktorGlas": 500 } })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  const trigger = page.locator(".reader-context .subnav").getByRole("link", { name: "Mer om boken" })
   const dialog = page.getByRole("dialog", { name: "Om boken" })
-  await expect(dialog).toHaveCount(1)
-  await dialog.getByRole("button", { name: "Stäng" }).click()
-  await expect(dialog).toHaveCount(0)
-  expect((await sourceInfoFinished).status()).toBe(200)
-  await trigger.click()
-  await expect(dialog).toContainText("Doktor Glas. Roman")
-  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  await resetReader(request)
+  for (let index = 0; index < 2; index++) {
+    await trigger.click()
+    await expect(dialog).toContainText("Doktor Glas. Roman")
+    await expect(dialog.locator(".preloader")).toHaveCount(0)
+    await dialog.getByRole("button", { name: "Stäng" }).click()
+  }
+  expect(browserMetadataRequests).toEqual([])
+  expect(await sourceInfoRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toEqual([])
   expect(problems).toEqual([])
 })
 
@@ -1342,11 +1315,11 @@ test("normal source information renders exact actions and source metadata", asyn
   )
   await dialog.getByText("Hänvisa till detta verk", { exact: true }).click()
   await expect(dialog.locator("code")).toHaveText(
-    "https://urn.kb.se/resolve?urn=urn:nbn:se:lb-lb1728740-etext"
+    "https://urn.kb.se/resolve?urn=urn:nbn:se:lb-lb-reader-doktor-glas-etext"
   )
   await expect(dialog.locator(".col_right img")).toHaveAttribute(
     "srcset",
-    "/txt/lb1728740/lb1728740_small.jpeg 1x, /txt/lb1728740/lb1728740_large.jpeg 2x"
+    "/txt/lb-reader-doktor-glas/lb-reader-doktor-glas_small.jpeg 1x, /txt/lb-reader-doktor-glas/lb-reader-doktor-glas_large.jpeg 2x"
   )
   const provenance = dialog.locator(".provenance")
   await expect(provenance.getByRole("link")).toHaveAttribute("href", "http://www.ub.gu.se/")
@@ -1419,7 +1392,7 @@ test("empty and failed recommendations stay absent without failing source inform
   await expect(normalDialog.locator(".reader-similar-works")).toHaveCount(0)
   expect(await similarWorkRequests(request)).toEqual([{
     scope: "private",
-    path: "/private-v2/works/lb1728740/similar",
+    path: "/private-v2/works/lb-reader-doktor-glas/similar",
     query: "?media_type=etext"
   }])
   await request.delete(`${fixture}/_similar_work_failure`)
@@ -2091,42 +2064,23 @@ test("source-info alias mounts before resolution", async ({ page }) => {
   }
 })
 
-test("Reader shell mounts before source information", async ({ page }) => {
-  let releaseSourceInfo = () => {}
-  const sourceInfoGate = new Promise<void>(resolve => { releaseSourceInfo = resolve })
-  let markSourceInfoStarted = () => {}
-  const sourceInfoStarted = new Promise<void>(resolve => { markSourceInfoStarted = resolve })
-  const sourceInfoRoute = async (route: import("@playwright/test").Route) => {
-    const response = await route.fetch()
-    markSourceInfoStarted()
-    await sourceInfoGate
-    try {
-      await route.fulfill({ response })
-    } catch (error) {
-      if (!String(error).includes("Route is already handled")) throw error
-    }
-  }
-
-  await page.route("**/nuxt-api/reader/source-info/**", sourceInfoRoute)
-  try {
-    await page.goto("/bibliotek", { waitUntil: "networkidle" })
-    await expect(page.getByRole("heading", { name: "Botanisera i biblioteket" })).toBeVisible()
-
-    void navigateClient(page, `${readerEncodedPath}?om-boken`)
-    await sourceInfoStarted
-
-    await expect(page).toHaveURL(`${readerPath}?om-boken`)
-    await expect(page.locator(".reader-page")).toBeAttached()
-    const dialog = page.getByRole("dialog", { name: "Om boken" })
-    await expect(dialog.locator(".maincontent.searching .preloader")).toContainText("Hämtar")
-    await expect(page.getByRole("heading", { name: "Botanisera i biblioteket" })).toHaveCount(0)
-
-    releaseSourceInfo()
-    await expect(dialog).toContainText("Doktor Glas. Roman")
-  } finally {
-    releaseSourceInfo()
-    await page.unroute("**/nuxt-api/reader/source-info/**", sourceInfoRoute)
-  }
+test("client navigation receives reader and source information together", async ({ page, request }) => {
+  const problems = captureBrowserProblems(page)
+  const metadataRequests: string[] = []
+  page.on("request", event => {
+    if (event.url().includes("/nuxt-api/reader/source-info/")) metadataRequests.push(event.url())
+  })
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  await resetReader(request)
+  await navigateClient(page, `${readerEncodedPath}?om-boken`)
+  await expect(page.locator(".reader-page")).toBeAttached()
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(dialog).toContainText("Doktor Glas. Roman")
+  await expect(dialog.locator(".preloader")).toHaveCount(0)
+  expect(metadataRequests).toEqual([])
+  expect(await sourceInfoRequests(request)).toEqual([])
+  expect(await readerManifestRequests(request)).toHaveLength(1)
+  expect(problems).toEqual([])
 })
 
 test("late alias resolution cannot redirect the route that replaced it", async ({ page }) => {
@@ -2462,7 +2416,7 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
     "/txt/lb-reader-doktor-glas/res_00002.html?"
   ))
   expect(await readerManifestRequests(request)).toEqual([
-    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/reader-data?media_type=etext"
   ])
   expect(pages).toEqual([
     "/txt/lb-reader-doktor-glas/res_00002.html?username=app"

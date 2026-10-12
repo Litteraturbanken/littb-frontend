@@ -113,6 +113,10 @@ function expectedManifestRequest(
   return `/v2/works/${authorId}/${titlePath}/manifest?media_type=${mediaType}`
 }
 
+function expectedReaderDataRequest(titlePath: string) {
+  return expectedManifestRequest(titlePath).replace("/manifest?", "/reader-data?")
+}
+
 test.beforeEach(async ({ request }) => resetReader(request))
 test.afterEach(async ({ request }) => {
   expect(await fixtureRequests(request, "_reader_metadata_requests")).toEqual([])
@@ -250,7 +254,7 @@ test("canonical Reader rejects a wrong returned author", async ({ request }) => 
   )
   expect(response.status()).toBe(404)
   expect(await readerManifestRequests(request)).toEqual([
-    expectedManifestRequest("WrongAuthorReader")
+    expectedReaderDataRequest("WrongAuthorReader")
   ])
   expect((await readerRequests(request)).some(path => path.includes("/res_"))).toBe(false)
 })
@@ -262,7 +266,7 @@ test("canonical Reader accepts a valid page without start metadata", async ({ re
   expect(response.status()).toBe(200)
   expect(await response.text()).toContain("DOKTOR")
   expect(await readerManifestRequests(request)).toEqual([
-    expectedManifestRequest("MissingStartReader")
+    expectedReaderDataRequest("MissingStartReader")
   ])
 })
 
@@ -272,7 +276,7 @@ test("canonical Reader rejects present malformed start metadata", async ({ reque
   )
   expect(response.status()).toBe(502)
   expect(await readerManifestRequests(request)).toEqual([
-    expectedManifestRequest("MalformedStartReader")
+    expectedReaderDataRequest("MalformedStartReader")
   ])
   expect((await readerRequests(request)).some(path => path.includes("/res_"))).toBe(false)
 })
@@ -460,14 +464,14 @@ test("a bare-title alias and canonical Reader independently load source informat
   )
   // The 307 resolver and its canonical destination are separate stateless HTTP
   // requests; the destination owns the dialog payload it renders.
-  expect(await sourceInfoRequests(request)).toHaveLength(2)
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
   expect(await readerRequests(request)).toEqual([
     "/txt/lb-reader-doktor-glas/res_00002.html?username=app",
     "/red/css/etext.css",
     "/txt/css/lb-reader-doktor-glas-etext.css"
   ])
   expect(await readerManifestRequests(request)).toEqual([
-    expectedManifestRequest("DoktorGlas")
+    expectedReaderDataRequest("DoktorGlas")
   ])
 })
 

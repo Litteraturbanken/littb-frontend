@@ -281,6 +281,12 @@ export async function loadReaderMetadata(
 ): Promise<ReaderWorkMetadata> {
   if (!isReaderMediaType(mediaType)) readerPageNotFound()
   const manifest = await fetchReaderManifest(event, authorId, titlePath, mediaType)
+  return readerMetadataFromManifest(event, manifest)
+}
+
+export function readerMetadataFromManifest(
+  event: H3Event, manifest: ReaderManifestResponse
+): ReaderWorkMetadata {
   const base = useRuntimeConfig(event).contentBase.replace(/\/$/u, "")
   if (manifest.media_type === "faksimil") {
     return readerFacsimileMetadata(manifest, base)
