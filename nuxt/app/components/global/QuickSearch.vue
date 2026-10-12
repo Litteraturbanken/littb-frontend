@@ -312,8 +312,6 @@ watch(rows, async values => {
   window.requestAnimationFrame(() => dispatchComboboxKey("Home"))
 })
 
-const authorTitleNames = useAuthorTitleNames()
-
 async function selectRow(row: SearchRow | null) {
   if (!row || row.disabled) return
   if (row.correction) {
@@ -332,10 +330,6 @@ async function selectRow(row: SearchRow | null) {
     return
   }
   if (!row.url) return
-  if (row.typeLabel === "Författare") {
-    const [surname, ...givenNames] = row.label.replace(/\s*\([^()]*\)$/, "").split(",")
-    authorTitleNames.rememberPath(row.url, [...givenNames, surname].map(value => value?.trim()).filter(Boolean).join(" "))
-  }
   close()
   await navigateTo(row.url)
 }

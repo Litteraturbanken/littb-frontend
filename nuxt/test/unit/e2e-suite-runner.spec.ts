@@ -15,7 +15,6 @@ describe("E2E suite lanes", () => {
           "--project=chromium-typography",
           "--project=firefox-typography",
           "--project=webkit-typography",
-          "--project=webkit-authors",
           "--reporter=line"
         ],
         env: {

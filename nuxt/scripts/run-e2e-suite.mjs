@@ -8,8 +8,7 @@ const behaviorProjects = [
   "mobile-chromium",
   "chromium-typography",
   "firefox-typography",
-  "webkit-typography",
-  "webkit-authors"
+  "webkit-typography"
 ]
 
 const visualProjects = ["desktop-chromium", "mobile-chromium"]

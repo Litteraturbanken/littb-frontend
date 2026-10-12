@@ -19,6 +19,7 @@ type ProfileResponse = {
 }
 
 definePageMeta({
+  middleware: "author-profile",
   key: route => route.path,
   validate: route => {
     const author = Array.isArray(route.params.author)
@@ -37,7 +38,6 @@ const asyncKey = computed(() => `author-profile:dramawebben:${authorId.value}`)
 const currentIdentity = computed(() => `dramawebben:${authorId.value}`)
 const acceptedIdentity = currentIdentity
 const profileRequest = useAuthorProfileRequest()
-const titleNames = useAuthorTitleNames()
 const profileHandoffs = useState<Partial<Record<string, ProfileResponse>>>(
   "author-profile-handoffs",
   () => ({})
@@ -76,8 +76,7 @@ const { data } = await useAsyncData<ProfileResponse>(
     } catch {
       return { identity, view: null, status: 503, canonicalPath: "", hasDramawebben: false }
     }
-  },
-  { lazy: true }
+  }
 )
 
 const response = computed(() => (
@@ -125,18 +124,14 @@ if (import.meta.server) {
 }
 
 const view = computed(() => response.value?.view ?? null)
-watch(view, value => {
-  if (value) titleNames.remember(authorId.value, value.fullName)
-}, { immediate: true })
-const titleName = computed(() => view.value?.fullName || titleNames.names.value[authorId.value])
 useAuthorQuickSearchContextPublisher(view)
 const description = computed(() => view.value
   ? `${view.value.fullName}, Introduktion av Dramawebben`
   : "Författarprofil")
 
 useSeoMeta({
-  title: () => titleName.value
-    ? `${titleName.value}, Introduktion av Dramawebben | Litteraturbanken`
+  title: () => view.value
+    ? `${view.value.fullName}, Introduktion av Dramawebben | Litteraturbanken`
     : "Författarprofil | Litteraturbanken",
   description
 })
@@ -150,13 +145,15 @@ useHead({
   <div>
     <div
       v-if="!response"
-      class="flex items-center justify-center gap-3 py-12"
+      class="searching"
       role="status"
       aria-live="polite"
       aria-label="Laddar författarsidan"
     >
-      <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
-      <span>Laddar författarsidan</span>
+      <div class="preloader">
+        <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
+        <span class="sr-only">Laddar författarsidan</span>
+      </div>
     </div>
     <div v-else-if="response.status === 404" class="error">
       Ett fel har inträffat: författarid <code>{{ authorId }}</code> kan inte hittas. Kontrollera adressen.

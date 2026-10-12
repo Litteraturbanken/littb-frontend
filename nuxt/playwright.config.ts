@@ -146,11 +146,6 @@ export function createPlaywrightConfig({
       }
     },
     {
-      name: "webkit-authors",
-      testMatch: /e2e\/author-profiles\.behavior\.spec\.ts/,
-      use: { ...devices["Desktop Safari"] }
-    },
-    {
       name: "webkit-typography",
       testMatch: /e2e\/requiem-kerning\.behavior\.spec\.ts/,
       use: {

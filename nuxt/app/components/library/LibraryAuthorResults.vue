@@ -8,7 +8,7 @@ import {
 import type { AuthorSortKey } from "~/lib/library/navigation"
 import type { AuthorBrowseResponse } from "~/lib/library/page-results"
 
-const props = defineProps<{
+defineProps<{
     response: AuthorBrowseResponse
     sortOptions: readonly LibraryNativeSortOption<AuthorSortKey>[]
     sortReversed: boolean
@@ -20,12 +20,6 @@ const emit = defineEmits<{
     selectSort: [sort: AuthorSortKey]
     showAll: []
 }>()
-const titleNames = useAuthorTitleNames()
-watch(() => props.response.data, items => {
-    for (const item of items) {
-        titleNames.remember(item.authorId, [item.authorGivenNames, item.authorSurname].filter(Boolean).join(" "))
-    }
-}, { immediate: true })
 const sortDirectionId = `library-author-sort-direction-${useId()}`
 
 function formattedCount(value: number): string {
