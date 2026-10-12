@@ -209,7 +209,7 @@ onBeforeUnmount(() => {
       <div
         v-if="authorNavigationPending"
         data-author-navigation-loading
-        class="flex items-center justify-center gap-3 py-12"
+        class="flex items-center justify-center gap-3 rounded bg-white px-6 py-12 text-gray-900"
         role="status"
         aria-label="Laddar författarsidan"
       >
