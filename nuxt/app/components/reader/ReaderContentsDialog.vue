@@ -111,7 +111,7 @@ onMounted(() => {
                   custom
                   :to="partHrefs[partIndex]"
                 ><a
-                  v-reader-title-tooltip.immediate="part.title"
+                  v-reader-title-tooltip.immediate="part.title !== partLabel(part) ? part.title : ''"
                   :href="href || partHrefs[partIndex] || ''"
                   @click="selectPart($event, part.start_page_name)"
                 >{{ partLabel(part) }}</a></NuxtLink>
