@@ -280,6 +280,12 @@ function onQueryChange(event: Event) {
   query.value = (event.target as HTMLInputElement).value
 }
 
+function onInputBlur(event: FocusEvent) {
+  // Window/tab switches have no next focus target. Headless UI otherwise
+  // closes the options and resets this navigation combobox's null selection.
+  if (event.relatedTarget === null) event.stopImmediatePropagation()
+}
+
 function dispatchComboboxKey(key: "Home" | "End") {
   inputElement()?.dispatchEvent(new KeyboardEvent("keydown", {
     key,
@@ -448,6 +454,7 @@ onBeforeUnmount(() => {
                 spellcheck="false"
                 :placeholder="inline ? 'Författare, verk eller dikt' : 'Gå till ett verk, en dikt, en novell eller en författare'"
                 @change="onQueryChange"
+                @blur.capture="onInputBlur"
                 @keydown.capture="onInputKeydown($event, activeIndex)"
               />
               <ComboboxOptions v-if="rows.length" :class="['quick-search-options', inline ? 'menu-search-options' : 'dropdown-menu']">
