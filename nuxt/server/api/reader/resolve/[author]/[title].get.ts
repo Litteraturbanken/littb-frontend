@@ -1,4 +1,4 @@
-import type { ReaderRouteResolution } from "#shared/types/reader"
+import type { SourceInfoRouteResolution } from "#shared/types/reader"
 
 import { fetchWorkSourceInfo } from "../../../../utils/reader-source-info"
 import { parseReaderSourceInfoRequest } from "../../../../utils/reader-source-info-validation"
@@ -25,6 +25,17 @@ export default defineEventHandler(async event => {
     request.titlePath,
     request.mediaType
   )
+  if (source.media_type === "infopost") {
+    return {
+      authorId: source.author_id,
+      titlePath: source.title_path,
+      mediaType: "infopost",
+      startPageName: null,
+      canonicalPath: "/dramawebben/pj%C3%A4ser?om-boken"
+        + `&authorid=${encodeRfc3986Segment(source.author_id)}`
+        + `&titlepath=${encodeRfc3986Segment(source.title_path)}#dw`
+    } satisfies SourceInfoRouteResolution
+  }
   if (
     (source.media_type !== "etext" && source.media_type !== "faksimil")
     || source.start_page === null
@@ -48,5 +59,5 @@ export default defineEventHandler(async event => {
     mediaType: source.media_type,
     startPageName: source.start_page,
     titlePath: source.title_path
-  } satisfies ReaderRouteResolution
+  } satisfies SourceInfoRouteResolution
 })

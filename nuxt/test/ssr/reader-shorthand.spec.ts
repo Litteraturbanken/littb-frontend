@@ -425,6 +425,10 @@ for (const [alias, destination] of [
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?om-boken"
   ],
   [
+    "/författare/SparseA/titlar/SparseTitle/info",
+    "/dramawebben/pj%C3%A4ser?om-boken&authorid=SparseA&titlepath=SparseTitle#dw"
+  ],
+  [
     "/författare/AlmlöfN/titlar/Affarer/info/faksimil",
     "/f%C3%B6rfattare/Alml%C3%B6fN/titlar/Affarer/sida/-2/faksimil?om-boken"
   ]
@@ -518,7 +522,6 @@ for (const [alias, expectedStatus] of [
   ["/författare/ValidationA/titlar/ValidationTitle", 502],
   ["/författare/ServerErrorA/titlar/ServerErrorTitle/info", 502],
   ["/författare/MalformedA/titlar/MalformedTitle/info", 502],
-  ["/författare/SparseA/titlar/SparseTitle/info", 404],
   ["/författare/SöderbergH/titlar/DoktorGlas/info/pdf", 404]
 ] as const) {
   test(`${alias} maps resolver failures to ${expectedStatus}`, async ({ request }) => {
@@ -575,4 +578,51 @@ test("client media source-information aliases resolve the latest same-record med
   // cannot regain control; exact compiler request multiplicity is not observable in production.
   expect(requests.filter(({ query }: { query: string }) => query === "?media_type=faksimil").length)
     .toBeGreaterThanOrEqual(1)
+})
+
+
+test("infopost source-information resolver uses Dramawebben without a reader page", async ({
+  request
+}) => {
+  const response = await request.get("/nuxt-api/reader/resolve/WahlenbergA/Cendrillon")
+  expect(response.status()).toBe(200)
+  expect(await response.json()).toEqual({
+    authorId: "WahlenbergA",
+    titlePath: "Cendrillon",
+    mediaType: "infopost",
+    startPageName: null,
+    canonicalPath: "/dramawebben/pj%C3%A4ser?om-boken"
+      + "&authorid=WahlenbergA&titlepath=Cendrillon#dw"
+  })
+  expect(await readerManifestRequests(request)).toEqual([])
+  expect(await readerRequests(request)).toEqual([])
+})
+
+for (const suffix of ["", "/info"]) {
+  test(`infopost ${suffix || "bare title"} redirects to its Dramawebben information`, async ({
+    request
+  }) => {
+    const response = await request.get(
+      `/författare/WahlenbergA/titlar/Cendrillon${suffix}?incoming=discard`,
+      { maxRedirects: 0 }
+    )
+    expect(response.status()).toBe(307)
+    expect(response.headers().location).toBe(
+      "/dramawebben/pj%C3%A4ser?om-boken&authorid=WahlenbergA&titlepath=Cendrillon#dw"
+    )
+    expect(await readerManifestRequests(request)).toEqual([])
+    expect(await readerRequests(request)).toEqual([])
+  })
+}
+
+test("client navigation to an infopost info alias opens its Dramawebben dialog", async ({
+  page
+}) => {
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  await navigateClient(page, "/f%C3%B6rfattare/WahlenbergA/titlar/Cendrillon/info")
+  await expect(page).toHaveURL(
+    /\/dramawebben\/pj%C3%A4ser\?om-boken&authorid=WahlenbergA&titlepath=Cendrillon#dw$/u
+  )
+  await expect(page.getByRole("dialog")).toBeVisible()
+  await expect(page.getByRole("dialog")).toContainText("Cendrillon")
 })

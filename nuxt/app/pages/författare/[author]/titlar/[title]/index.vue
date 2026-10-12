@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ReaderMediaType, ReaderRouteResolution } from "#shared/types/reader"
+import type { ReaderMediaType, SourceInfoRouteResolution } from "#shared/types/reader"
 import { encodeRfc3986Segment, validRouteSegment } from "~/lib/internal-navigation"
 
 const props = defineProps<{ mediaType?: ReaderMediaType }>()
@@ -40,10 +40,19 @@ function isRecord(value: unknown): value is UnknownRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value)
 }
 
-function isExpectedResolution(value: unknown): value is ReaderRouteResolution {
+function isExpectedResolution(value: unknown): value is SourceInfoRouteResolution {
   if (!isRecord(value)) return false
   const mediaType = value.mediaType
   const startPageName = value.startPageName
+  if (mediaType === "infopost") {
+    if (typeof value.authorId !== "string"
+      || !validRouteSegment(value.authorId, 100)
+      || value.titlePath !== requestedTitle
+      || startPageName !== null) return false
+    return value.canonicalPath === "/dramawebben/pj%C3%A4ser?om-boken"
+      + `&authorid=${encodeRfc3986Segment(value.authorId)}`
+      + `&titlepath=${encodeRfc3986Segment(requestedTitle)}#dw`
+  }
   if (
     (mediaType !== "etext" && mediaType !== "faksimil")
     || typeof value.authorId !== "string"
@@ -83,7 +92,7 @@ onBeforeUnmount(() => {
 })
 
 async function resolveReaderSourceInfoAlias(): Promise<void> {
-  let resolution: ReaderRouteResolution
+  let resolution: SourceInfoRouteResolution
   try {
     const result = await requestFetch<unknown>(resolverPath, {
       retry: 0,
@@ -105,7 +114,10 @@ async function resolveReaderSourceInfoAlias(): Promise<void> {
     })
   }
   if (!isCurrentIdentity()) return
-  await nuxtApp.runWithContext(() => navigateTo(`${resolution.canonicalPath}?om-boken`, {
+  const destination = resolution.mediaType === "infopost"
+    ? resolution.canonicalPath
+    : `${resolution.canonicalPath}?om-boken`
+  await nuxtApp.runWithContext(() => navigateTo(destination, {
     redirectCode: 307,
     replace: true
   }))

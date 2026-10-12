@@ -94,3 +94,11 @@ export interface ReaderRouteResolution {
   startPageName: string
   titlePath: string
 }
+
+export type SourceInfoRouteResolution = ReaderRouteResolution | {
+  authorId: string
+  canonicalPath: string
+  mediaType: "infopost"
+  startPageName: null
+  titlePath: string
+}
