@@ -5,6 +5,7 @@ let readerTitleTooltipSequence = 0
 
 type ReaderTitleTooltipState = {
   content: string
+  left: boolean
   hovered: boolean
   focused: boolean
   timer: ReturnType<typeof setTimeout> | null
@@ -34,7 +35,7 @@ function showReaderTitleTooltip(element: HTMLElement, state: ReaderTitleTooltipS
     const arrow = document.createElement("div")
     const id = `reader-title-tooltip-${++readerTitleTooltipSequence}`
     popup.id = id
-    popup.className = "tooltip top in reader-title-tooltip"
+    popup.className = `tooltip ${state.left ? "left" : "top"} in reader-title-tooltip`
     popup.role = "tooltip"
     popup.style.position = "fixed"
     popup.style.pointerEvents = "none"
@@ -44,12 +45,12 @@ function showReaderTitleTooltip(element: HTMLElement, state: ReaderTitleTooltipS
     popup.append(inner, arrow)
     document.body.append(popup)
     const rect = element.getBoundingClientRect()
-    popup.style.left = `${rect.left + rect.width / 2}px`
-    popup.style.top = `${rect.top}px`
-    popup.style.transform = "translate(-50%, -100%)"
+    popup.style.left = `${state.left ? rect.left : rect.left + rect.width / 2}px`
+    popup.style.top = `${state.left ? rect.top + rect.height / 2 : rect.top}px`
+    popup.style.transform = state.left ? "translate(-100%, -50%)" : "translate(-50%, -100%)"
     state.popup = popup
     element.setAttribute("aria-describedby", id)
-  }, readerTitleTooltipDelay)
+  }, state.left ? 0 : readerTitleTooltipDelay)
 }
 
 function updateReaderTitleTooltipVisibility(
@@ -82,6 +83,7 @@ function mountReaderTitleTooltip(
   }
   const state: ReaderTitleTooltipState = {
     content: binding.value || "",
+    left: Boolean(binding.modifiers.left),
     hovered: false,
     focused: false,
     timer: null,
