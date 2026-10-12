@@ -19,7 +19,10 @@ const quickSearchInfoRequested = ref(false)
 const quickSearchTrigger = ref<HTMLAnchorElement | null>(null)
 const layoutFontsLoading = ref(true)
 const mounted = ref(false)
-const authorityFontStylesheetUrl = "/assets/styles/fonts/601526/FD3D54C3A22C4D32B.css"
+// Match the legacy homepage font metrics; other routes retain their existing bundle.
+const authorityFontStylesheetUrl = computed(() => isStartPage.value
+  ? "/assets/styles/fonts/601526/32FBEBA806C948833.css"
+  : "/assets/styles/fonts/601526/FD3D54C3A22C4D32B.css")
 const layoutFontQueries = [
   ['20px "Requiem Text A"', "Litteraturbanken Svenska"],
   ['20px "Requiem Display A"', "Litteraturbanken Svenska"],
