@@ -44,7 +44,7 @@ describe("reader dictionary", () => {
   it("renders the authenticated embed session with accessible fallback states", () => {
     expect(dialogSource).toContain('mode: "legacy"')
     expect(dialogSource).toContain('mode: "embed"')
-    expect(dialogSource).toContain('sandbox="allow-scripts allow-same-origin"')
+    expect(dialogSource).toContain('sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"')
     expect(dialogSource).toContain('referrerpolicy="origin"')
     expect(dialogSource).toContain("Slå upp ${props.word} i SO och SAOB")
     expect(dialogSource).toContain('role="status"')

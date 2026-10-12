@@ -100,7 +100,7 @@ const frameTitle = computed(() =>
                         class="reader-dictionary-embed__frame"
                         :src="props.session.src"
                         :title="frameTitle"
-                        sandbox="allow-scripts allow-same-origin"
+                        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
                         referrerpolicy="origin"
                         @load="props.handleFrameLoad"
                     />
