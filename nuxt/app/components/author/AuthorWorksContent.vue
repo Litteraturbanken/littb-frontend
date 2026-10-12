@@ -104,10 +104,7 @@ function isDownloadTitle(work: AuthorWork): boolean {
                       </span>
                     </td>
                     <td v-if="section.show_author">
-                      <NuxtLink
-                        v-if="work.display_author && !(section.kind === 'editor' && work.display_author.author_id === author.author_id)"
-                        :to="canonicalNuxtHref(work.display_author.url)"
-                      >
+                      <NuxtLink v-if="work.display_author" :to="canonicalNuxtHref(work.display_author.url)">
                         {{ work.display_author.name_for_index }}
                       </NuxtLink>
                     </td>
