@@ -151,7 +151,7 @@ for (const routeCase of affectedRoutes) {
 test("Home reserves Requiem metrics while the authority font stylesheet is unavailable", async ({
   page
 }) => {
-  await page.route("**/assets/styles/fonts/601526/FD3D54C3A22C4D32B.css", route => route.abort())
+  await page.route("**/assets/styles/fonts/601526/32FBEBA806C948833.css", route => route.abort())
 
   const response = await page.goto("/", { waitUntil: "domcontentloaded" })
   expect(response?.ok()).toBe(true)

@@ -2,6 +2,7 @@
     display: none;
 }
 
+// The homepage retains the production layout at every viewport width.
 @media (max-width: 1023px) {
     body.page-presentation #mainview .content {
         box-sizing: border-box;
@@ -9,11 +10,11 @@
         max-width: 100%;
     }
 
-    html:has(.site-shell) {
+    html:has(body:not(.page-start) .site-shell) {
         background-color: white;
     }
 
-    body:has(.site-shell) {
+    body:not(.page-start):has(.site-shell) {
         background-color: white;
         // Preserve the route artwork above the white body background.
         background-image: inherit;
@@ -34,7 +35,7 @@
 
     // With viewport-fit=cover, the header paints the area behind the notch.
     // Keep its controls and page content inside the device's safe insets.
-    body:has(.site-shell) {
+    body:not(.page-start):has(.site-shell) {
         --site-inset-left: max(16px, env(safe-area-inset-left, 0px));
         --site-inset-right: max(16px, env(safe-area-inset-right, 0px));
         display: block;
@@ -43,7 +44,7 @@
         padding: 0 var(--site-inset-right) max(24px, env(safe-area-inset-bottom, 0px)) var(--site-inset-left);
     }
 
-    body #leftCorridor.site-navigation {
+    body:not(.page-start) #leftCorridor.site-navigation {
         display: block;
         width: 225px;
         max-width: 100%;
@@ -78,7 +79,7 @@
         color: white;
     }
 
-    body .site-shell > #mainview {
+    body:not(.page-start) .site-shell > #mainview {
         display: block;
         width: 100%;
         min-width: 0;
@@ -96,24 +97,6 @@
     body.page-reading:not(.reader-focus-mode) .site-shell > #mainview {
         overflow-x: auto;
         overflow-y: hidden;
-    }
-
-    // The home column previously started beside the desktop sidebar.
-    body.page-start #mainview .center_col {
-        display: block;
-        max-width: 100%;
-        margin-left: 0;
-        padding-top: 24px;
-        overflow-wrap: anywhere;
-
-        h1 {
-            font-size: clamp(30px, 7.5vw, 48px);
-        }
-
-        .home-editorial,
-        .news {
-            max-width: 100%;
-        }
     }
 
     body.reader-focus-mode:has(.site-shell) {

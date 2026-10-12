@@ -27,6 +27,7 @@ describe("E2E suite lanes", () => {
         args: [
           "--project=desktop-chromium",
           "--project=mobile-chromium",
+          "--project=mobile-home-chromium",
           "--reporter=line"
         ],
         env: {

@@ -126,7 +126,14 @@ export function createPlaywrightConfig({
       testMatch: mobileE2eTestMatch,
       testIgnore: configuredE2eLane === "behavior"
         ? [visualE2eSpec, productionLayoutShiftSpec]
-        : [productionLayoutShiftSpec],
+        : [productionLayoutShiftSpec, /e2e\/home-page\.visual\.spec\.ts/],
+      use: { ...devices["iPhone 13"], browserName: "chromium" }
+    },
+    // Home must match the original production reference at mobile sizes too.
+    {
+      name: "mobile-home-chromium",
+      testMatch: /e2e\/home-page\.visual\.spec\.ts/,
+      testIgnore: configuredE2eLane === "behavior" ? [visualE2eSpec] : [],
       use: { ...devices["iPhone 13"], browserName: "chromium" }
     },
     {
