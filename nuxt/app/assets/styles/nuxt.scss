@@ -191,6 +191,11 @@
         gap: 1em;
         padding: 0 0 0.75em;
 
+        &::before,
+        &::after {
+            display: none;
+        }
+
         h4 {
             margin: 0;
             font-size: 28px;
