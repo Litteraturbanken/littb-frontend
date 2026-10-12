@@ -16,6 +16,7 @@ export async function useAuthorWorksAvailability(authorId: Ref<string>) {
     } catch { /* An unavailable API must not be treated as an empty list. */ }
     return { identity, hasWorks: null }
   }, {
+    lazy: true,
     getCachedData: (cacheKey, nuxtApp) => nuxtApp.payload.data[cacheKey]
   })
   return computed(() => data.value?.identity === authorId.value ? data.value.hasWorks : null)
