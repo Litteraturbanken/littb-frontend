@@ -184,10 +184,40 @@
         border: 0;
     }
 
-    .reader-dictionary-embed__status,
+    .reader-dictionary-embed .modal-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1em;
+        padding: 0 0 0.75em;
+
+        h4 {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        .btn {
+            flex: 0 0 auto;
+            float: none;
+            margin: 0;
+        }
+    }
+
+    .reader-dictionary-embed__status {
+        flex: 1 1 auto;
+        margin: 0;
+        padding: 1em 0;
+        font-size: 20px;
+        line-height: 1.4;
+    }
+
     .reader-dictionary-embed__fallback {
         flex: 0 0 auto;
-        margin: 0 0 0.75em;
+        margin: 0;
+        padding-top: 1em;
+        font-size: 18px;
+        line-height: 1.4;
     }
 }
 
