@@ -1999,9 +1999,12 @@ useHead(() => ({
   bodyAttrs: {
     class: readerBodyClass()
   },
-  meta: currentPart.value?.title_id
-    ? [{ name: "part", content: currentPart.value.title_id }]
-    : [],
+  meta: [
+    ...(reader.value ? [{ name: "lbworkid", content: reader.value.workId }] : []),
+    ...(currentPart.value?.title_id
+      ? [{ name: "part", content: currentPart.value.title_id }]
+      : [])
+  ],
   link: readerHeadLinks(reader.value),
   style: readerHeadStyles(reader.value)
 }))
