@@ -74,7 +74,7 @@ async function openEmbed(page: Page, word: string) {
   await expect(indicator).toBeVisible()
   await indicator.click({ force: true })
   const frame = page.locator(`iframe[title="Slå upp ${word} i SO och SAOB"]`)
-  await expect(frame).toBeVisible()
+  await expect(frame).toBeAttached()
   return frame
 }
 
@@ -479,7 +479,8 @@ test("a newer dictionary lookup replaces the active session before its late resu
     )) ?? false
   ), firstRequestId)).toBe(true)
   await expect(page.getByRole("status")).toHaveText("Laddar ordboken…")
-  await second.contentFrame().getByRole("button", { name: "Skicka svar" }).click()
+  await second.contentFrame().getByRole("button", { name: "Skicka svar", includeHidden: true })
+    .evaluate((button: HTMLButtonElement) => button.click())
 
   await expect(second.contentFrame().getByRole("tabpanel"))
     .toContainText("SAOB-artikel för GLAS")
@@ -533,7 +534,8 @@ test("a trusted sibling frame cannot answer for the current dictionary frame", a
   ), requestId)).toBe(true)
 
   await expect(page.getByRole("status")).toHaveText("Laddar ordboken…")
-  await currentFrame.contentFrame().getByRole("button", { name: "Skicka svar" }).click()
+  await currentFrame.contentFrame().getByRole("button", { name: "Skicka svar", includeHidden: true })
+    .evaluate((button: HTMLButtonElement) => button.click())
   await expect(page.getByRole("status")).toHaveCount(0)
 })
 
@@ -575,7 +577,7 @@ for (const [name, scenario, message] of [
   [
     "empty",
     { autoPost: true, event: "empty", longContent: false, word: "DOKTOR" },
-    "Hittade inget uppslag"
+    "Ingen artikel hittades för DOKTOR."
   ],
   [
     "child error",
@@ -583,7 +585,7 @@ for (const [name, scenario, message] of [
     "Ordboken kunde inte laddas"
   ]
 ] as const) {
-  test(`${name} keeps the child state visible and offers the full dictionary`, async ({
+  test(`${name} shows one parent message and one footer link`, async ({
     page,
     request
   }) => {
@@ -593,10 +595,10 @@ for (const [name, scenario, message] of [
     const frame = await openEmbed(page, "DOKTOR")
 
     await expect(page.getByRole("status")).toHaveText(message)
-    await expect(frame).toBeVisible()
-    await expect(frame.contentFrame().getByRole("tabpanel")).toHaveText(message)
+    await expect(frame).toBeHidden()
+    await expect(page.getByRole("dialog").getByRole("link")).toHaveCount(1)
     await expect(page.getByRole("link", {
-      name: "Öppna uppslaget på Svenska Akademiens ordbokssida"
+      name: "Visa på svenska.se"
     })).toHaveAttribute(
       "href",
       `${svenskaEmbedOrigin}/?q=DOKTOR&activeTab=alla&exactMatch=true`
@@ -620,7 +622,7 @@ test("a silent child reaches timeout through the Reader clock", async ({ page, r
   await page.clock.fastForward(8_001)
 
   await expect(page.getByRole("status")).toHaveText("Ordboken kunde inte laddas")
-  await expect(frame).toBeVisible()
+  await expect(frame).toBeHidden()
   expect(await fixtureRequests(request, "_dictionary_requests")).toEqual([])
 })
 
@@ -640,7 +642,8 @@ test("the current frame cannot finish an active lookup with a stale request id",
   await page.goto(readerPath, { waitUntil: "networkidle" })
   const frame = await openEmbed(page, "DOKTOR")
 
-  await frame.contentFrame().getByRole("button", { name: "Skicka svar" }).click()
+  await frame.contentFrame().getByRole("button", { name: "Skicka svar", includeHidden: true })
+    .evaluate((button: HTMLButtonElement) => button.click())
   await expect(page.getByRole("status")).toHaveText("Laddar ordboken…")
   await frame.contentFrame().locator("body").evaluate(() => {
     const requestId = new URL(window.location.href).searchParams.get("requestId")!
@@ -692,7 +695,8 @@ test("a forged message from the parent origin cannot finish the lookup", async (
   }), requestId)
 
   await expect(page.getByRole("status")).toHaveText("Laddar ordboken…")
-  await frame.contentFrame().getByRole("button", { name: "Skicka svar" }).click()
+  await frame.contentFrame().getByRole("button", { name: "Skicka svar", includeHidden: true })
+    .evaluate((button: HTMLButtonElement) => button.click())
   await expect(page.getByRole("status")).toHaveCount(0)
   expect(await fixtureRequests(request, "_dictionary_requests")).toEqual([])
 })

@@ -48,7 +48,7 @@ describe("reader dictionary", () => {
     expect(dialogSource).toContain('referrerpolicy="origin"')
     expect(dialogSource).toContain("Slå upp ${props.word} i SO och SAOB")
     expect(dialogSource).toContain('role="status"')
-    expect(dialogSource).toContain("Hittade inget uppslag")
+    expect(dialogSource).toContain("Ingen artikel hittades för {{ props.word }}.")
     expect(dialogSource).toContain("Ordboken kunde inte laddas")
     expect(dialogSource).toContain(":href=\"props.fullSiteUrl\"")
     expect(dialogSource).toContain(':initial-focus="closeButton"')

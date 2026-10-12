@@ -84,7 +84,7 @@ const frameTitle = computed(() =>
                         class="reader-dictionary-embed__status"
                         role="status"
                     >
-                        Hittade inget uppslag
+                        Ingen artikel hittades för {{ props.word }}.
                     </p>
                     <p
                         v-else-if="props.status === 'error' || props.status === 'timeout'"
@@ -95,6 +95,7 @@ const frameTitle = computed(() =>
                     </p>
                     <iframe
                         v-if="props.session"
+                        v-show="props.status === 'result'"
                         :ref="props.frameRef"
                         class="reader-dictionary-embed__frame"
                         :src="props.session.src"
@@ -111,7 +112,7 @@ const frameTitle = computed(() =>
                         class="reader-dictionary-embed__fallback"
                     >
                         <a :href="props.fullSiteUrl"
-                            >Öppna uppslaget på Svenska Akademiens ordbokssida</a
+                            >Visa på svenska.se</a
                         >
                     </p>
                 </div>
