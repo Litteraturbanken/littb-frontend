@@ -10,6 +10,7 @@ import {
 
 const { textSearchHref } = useTextSearchNavigation()
 const { libraryHref } = useLibraryNavigation()
+const authorNavigationPending = useState<string | null>("author-navigation-pending", () => null)
 const router = useRouter()
 const route = useRoute()
 const isStartPage = computed(() => route.path === "/")
@@ -199,8 +200,25 @@ onBeforeUnmount(() => {
       :show-context-info-initially="quickSearchInfoRequested"
       @closed="closeQuickSearch"
     />
-    <main id="mainview" role="main"><slot /></main>{{ " " }}
-    <div id="rightCorridor" class="ml-4 sm:ml-16 relative z-50">
+    <main
+      id="mainview"
+      role="main"
+      :data-author-navigation-pending="authorNavigationPending ? '' : undefined"
+      :aria-busy="authorNavigationPending ? true : undefined"
+    >
+      <div
+        v-if="authorNavigationPending"
+        data-author-navigation-loading
+        class="flex items-center justify-center gap-3 py-12"
+        role="status"
+        aria-label="Laddar författarsidan"
+      >
+        <i class="fa fa-spinner fa-pulse" aria-hidden="true" />
+        <span>Laddar författarsidan</span>
+      </div>
+      <slot />
+    </main>{{ " " }}
+    <div v-show="!authorNavigationPending" id="rightCorridor" class="ml-4 sm:ml-16 relative z-50">
       <div id="toolkit-right" data-reader-sidebar-target />
     </div>
     <div id="bkgimg" />
@@ -208,6 +226,11 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* Keep NuxtPage mounted so its suspense and head lifecycle can finish normally. */
+#mainview[data-author-navigation-pending] > :deep(:not([data-author-navigation-loading])) {
+  display: none !important;
+}
+
 .l-fill { fill: var(--logo-l-color, white); }
 .b-fill { fill: var(--logo-b-color, white); }
 </style>

@@ -6,6 +6,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const value = to.params.author
   const authorId = Array.isArray(value) ? value[0] : value
   if (!authorId || !validateAuthorRouteParam(authorId)) return
+  // Give immediate feedback while the guard keeps the history entry pending.
+  const pending = useState<string | null>("author-navigation-pending", () => null)
+  pending.value = to.fullPath
   const variant = to.path.endsWith("/dramawebben") ? "dramawebben" : "ordinary"
   const identity = `${variant}:${authorId}`
   // A canonical ordinary-to-Dramawebben redirect already carries its profile.

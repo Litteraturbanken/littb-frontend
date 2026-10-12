@@ -96,7 +96,7 @@ test.beforeEach(async ({ page, request }) => {
   }))
 })
 
-test("keeps the current history entry until the destination author is available", async ({ page }) => {
+test("shows immediate loading feedback while the destination history entry is pending", async ({ page }) => {
   await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
 
   for (const path of [
@@ -131,7 +131,8 @@ test("keeps the current history entry until the destination author is available"
 
       await expect(page).not.toHaveURL(path)
       await expect(page).toHaveTitle(/August Strindberg/u)
-      await expect(page.locator("h1")).toContainText("August Strindberg")
+      await expect(page.locator("[data-author-navigation-loading]")).toBeVisible()
+      await expect(page.locator("h1")).not.toBeVisible()
 
       releaseResponse()
       await responseDelivered
@@ -144,6 +145,27 @@ test("keeps the current history entry until the destination author is available"
       await page.unroute("**/api/v2/authors/**", profileRoute)
     }
   }
+})
+
+test("returning to the current route dismisses a pending author loading view", async ({ page }) => {
+  await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
+  let release = () => {}
+  const gate = new Promise<void>(resolve => { release = resolve })
+  await page.route("**/v2/authors/Lagerl%C3%B6fS", async route => {
+    await gate
+    await route.continue()
+  })
+  try {
+    await beginRouterPush(page, "/f%C3%B6rfattare/Lagerl%C3%B6fS")
+    await expect(page.locator("[data-author-navigation-loading]")).toBeVisible()
+    await beginRouterPush(page, "/f%C3%B6rfattare/StrindbergA")
+    await expect(page.locator("[data-author-navigation-loading]")).toHaveCount(0)
+    await expect(page.locator("h1")).toContainText("August Strindberg")
+    release()
+    await page.waitForLoadState("networkidle")
+    await expect(page).toHaveURL(/\/f%C3%B6rfattare\/StrindbergA$/u)
+    await expect(page).toHaveTitle("August Strindberg, Introduktion | Litteraturbanken")
+  } finally { release() }
 })
 
 test("hydrates the rich profile without warnings or duplicate browser requests", async ({
@@ -309,7 +331,8 @@ test("client author navigation uses one public request and replaces every profil
 for (const delayedResource of ["profile", "works"]) {
   test(`a delayed ${delayedResource} keeps author titles in the correct history entries`, async ({
     page,
-    request
+    request,
+    browserName
   }) => {
     const problems = collectProblems(page)
     await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
@@ -340,19 +363,25 @@ for (const delayedResource of ["profile", "works"]) {
     await expect(page).toHaveURL(/\/f%C3%B6rfattare\/StrindbergA$/u)
     await expect(page).toHaveTitle("August Strindberg, Introduktion | Litteraturbanken")
 
+    await expect(page.locator("[data-author-navigation-loading]")).toBeVisible()
+    await expect(page.locator("h1")).not.toBeVisible()
     releaseResponse()
     await responseDelivered
+    await expect(page.locator("[data-author-navigation-loading]")).toHaveCount(0)
     await expect(page.locator("h1")).toContainText("Selma Lagerlöf")
     await expect(page).toHaveTitle("Selma Lagerlöf, Introduktion | Litteraturbanken")
     await expect(page.locator("body")).not.toContainText("August Strindberg")
     expect(await profileRequests(request)).toEqual(["/v2/authors/Lagerl%C3%B6fS"])
-    const session = await page.context().newCDPSession(page)
-    const history = await session.send("Page.getNavigationHistory")
-    expect(history.entries.filter(entry => entry.url.includes("/f%C3%B6rfattare/"))
-      .map(entry => entry.title)).toEqual([
-        "August Strindberg, Introduktion | Litteraturbanken",
-        "Selma Lagerlöf, Introduktion | Litteraturbanken"
-      ])
+    if (browserName === "chromium") {
+      const session = await page.context().newCDPSession(page)
+      const history = await session.send("Page.getNavigationHistory")
+      expect(history.entries.filter(entry => entry.url.includes("/f%C3%B6rfattare/"))
+        .map(entry => entry.title)).toEqual([
+          "August Strindberg, Introduktion | Litteraturbanken",
+          "Selma Lagerlöf, Introduktion | Litteraturbanken"
+        ])
+      await session.detach()
+    }
     await page.goBack()
     await expect(page).toHaveTitle("August Strindberg, Introduktion | Litteraturbanken")
     await page.goForward()
