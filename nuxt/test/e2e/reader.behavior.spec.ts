@@ -2799,9 +2799,9 @@ test("Reader sidebar reveals one delayed text-only tooltip only for a distinct f
   await expect(page.getByRole("tooltip")).toHaveCount(0)
 
   await page.goto(boyeFacsimilePath, { waitUntil: "networkidle" })
-  await expect(page.locator(".reader-context .title"))
+  await expect(page.locator(".reader-context a.title"))
     .not.toHaveAttribute("data-reader-title-tooltip-content")
-  await page.locator(".reader-context .title").dispatchEvent("mouseenter")
+  await page.locator(".reader-context a.title").dispatchEvent("mouseenter")
   await page.waitForTimeout(550)
   await expect(page.getByRole("tooltip")).toHaveCount(0)
   expect(problems).toEqual([])

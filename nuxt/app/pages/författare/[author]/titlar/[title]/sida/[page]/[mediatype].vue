@@ -2444,7 +2444,8 @@ watch(readerRequestIdentity, () => {
                   </template>
                 </div>
                 <div
-                  :title="currentPart.title !== currentPartLabel ? currentPart.title : undefined"
+                  v-reader-title-tooltip.left="currentPart.title"
+                  tabindex="0"
                 ><p class="navtitle line-clamp-4">{{ currentPartLabel }}</p></div>
               </template>
             </div>
