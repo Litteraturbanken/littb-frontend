@@ -27,7 +27,7 @@ function expectedReaderManifest(
   mediaType: "etext" | "faksimil" = "etext"
 ): string {
   return `/v2/works/${encodeURIComponent(authorId)}/${encodeURIComponent(titlePath)}`
-    + `/manifest?media_type=${mediaType}`
+    + `/reader-data?media_type=${mediaType}`
 }
 
 async function resetReader(request: APIRequestContext) {
@@ -136,8 +136,8 @@ test.afterEach(async ({ request }) => {
 })
 
 for (const [partition, path] of [
-  ["path", "/v2/works/%20/DoktorGlas/manifest?media_type=etext"],
-  ["query", "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=pdf"]
+  ["path", "/v2/works/%20/DoktorGlas/reader-data?media_type=etext"],
+  ["query", "/v2/works/S%C3%B6derbergH/DoktorGlas/reader-data?media_type=pdf"]
 ] as const) {
   test(`the Reader fixture ledgers one invalid ${partition} request before its 422 response`, async ({
     request
@@ -200,7 +200,7 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
 
   const recorded = await readerRequests(request)
   expect(await readerManifestRequests(request)).toEqual([
-    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/reader-data?media_type=etext"
   ])
   expect(await authorResolveRequests(request)).toEqual([])
   expect(recorded.some(path => (
@@ -216,7 +216,7 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   ])
   expect(await readerHitRequests(request)).toEqual([])
   expect(await sourceInfoRequests(request)).toEqual([])
-  expect(await sourceInfoStaticRequests(request)).toEqual([])
+  expectSourceInfoStaticCacheLedger(await sourceInfoStaticRequests(request))
 })
 
 test("canonical Reader API projects exact work searchability", async ({ request }) => {
@@ -422,14 +422,10 @@ test("direct bare source-information SSR renders the Reader and complete modal o
   expect(html).not.toContain("content_vector")
   expect(html).not.toContain("Ett fel har uppstått.")
   expect(html).toMatch(/<body[^>]*class="focus page-reading ready modal-open"/u)
-  expect(await sourceInfoRequests(request)).toEqual([{
-    scope: "private",
-    path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
-    query: "?media_type=etext"
-  }])
+  expect(await sourceInfoRequests(request)).toEqual([])
   expect(await similarWorkRequests(request)).toEqual([{
     scope: "private",
-    path: "/private-v2/works/lb1728740/similar",
+    path: "/private-v2/works/lb-reader-doktor-glas/similar",
     query: "?media_type=etext"
   }])
   expectSourceInfoStaticCacheLedger(await sourceInfoStaticRequests(request))
@@ -460,7 +456,7 @@ test("exact empty source-information assignment remains closed and makes no requ
   expect(html).not.toContain('class="modal about fade in"')
   expect(html).not.toContain("Ett fel har uppstått.")
   expect(await sourceInfoRequests(request)).toEqual([])
-  expect(await sourceInfoStaticRequests(request)).toEqual([])
+  expectSourceInfoStaticCacheLedger(await sourceInfoStaticRequests(request))
   expect(await readerManifestRequests(request)).toEqual([
     expectedReaderManifest("SöderbergH", "DoktorGlas")
   ])
@@ -476,7 +472,7 @@ test("source-information failure stays modal-local on a successful Reader SSR", 
   expect(html).toContain("DOKTOR")
   expect(html).toContain('class="modal about fade in"')
   expect(html).toContain("Ett fel har uppstått.")
-  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(await sourceInfoRequests(request)).toHaveLength(0)
   expect(await readerManifestRequests(request)).toEqual([
     expectedReaderManifest("SöderbergH", "DoktorGlas")
   ])
@@ -507,7 +503,7 @@ test("source information has presentation priority when both dialog keys are dir
   const html = await response.text()
   expect(html).toContain('class="modal about fade in"')
   expect(html).not.toContain('class="modal chapters fade in"')
-  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(await sourceInfoRequests(request)).toHaveLength(0)
   expect(await readerManifestRequests(request)).toEqual([
     expectedReaderManifest("SöderbergH", "DoktorGlas")
   ])
@@ -550,7 +546,7 @@ test("drama Reader projects closed copy and complete source-information facts", 
     "BR",
     "SPAN"
   ])
-  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(await sourceInfoRequests(request)).toHaveLength(0)
   expect(await readerManifestRequests(request)).toEqual(Array(2).fill(
     expectedReaderManifest("AlmlöfN", "Affarer", "faksimil")
   ))
@@ -660,6 +656,8 @@ test("canonical API returns the exact searchable faksimil arm with selectable OC
   )
   expect(response.status()).toBe(200)
   expect(await response.json()).toEqual({
+    sourceInfo: null,
+    similarWorks: [],
     alternateMedia: null,
     alternateMediaPageMap: null,
     author: {
@@ -767,7 +765,7 @@ test("canonical API returns the exact searchable faksimil arm with selectable OC
     jpeg: []
   })
   expect(await readerManifestRequests(request)).toEqual([
-    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/reader-data?media_type=faksimil"
   ])
   expect(await readerHitRequests(request)).toEqual([])
   expect(await authorResolveRequests(request)).toEqual([])
@@ -804,7 +802,7 @@ test("Rallarliv keeps its canonical hit marquee and assets on one v2 manifest", 
   expect(html).toContain("traff=w99_20&amp;traffslut=w99_21")
   expect(html).toContain("hit_index=1")
   expect(await readerManifestRequests(request)).toEqual([
-    "/v2/works/AarnsethF/Rallarliv/manifest?media_type=faksimil"
+    "/v2/works/AarnsethF/Rallarliv/reader-data?media_type=faksimil"
   ])
   expect(await separateReaderRequests(request)).toEqual({
     metadata: [],
@@ -881,7 +879,7 @@ test("canonical API projects source-ordered generated Reader navigation without 
   ])
   expect(await authorResolveRequests(request)).toEqual([])
   expect(await readerManifestRequests(request)).toEqual([
-    "/v2/works/S%C3%B6derbergH/DoktorGlasParts/manifest?media_type=etext"
+    "/v2/works/S%C3%B6derbergH/DoktorGlasParts/reader-data?media_type=etext"
   ])
   expect(await separateReaderRequests(request)).toEqual({
     metadata: [],
@@ -1137,7 +1135,7 @@ test("canonical faksimil selects the requested alternate representation", async 
     jpeg: []
   })
   expect(await readerManifestRequests(request)).toEqual([
-    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=faksimil"
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/reader-data?media_type=faksimil"
   ])
 })
 
@@ -1160,7 +1158,7 @@ test("canonical missing faksimil page fails before asset IO", async ({ request }
   const recorded = await separateReaderRequests(request)
   expect(recorded.metadata).toEqual([])
   expect(await readerManifestRequests(request)).toEqual([
-    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/reader-data?media_type=faksimil"
   ])
   expect({ html: recorded.html, ocr: recorded.ocr, jpeg: recorded.jpeg }).toEqual({
     html: [], ocr: [], jpeg: []
@@ -1180,7 +1178,7 @@ for (const titlePath of [
     const recorded = await separateReaderRequests(request)
     expect(recorded.metadata).toEqual([])
     expect(await readerManifestRequests(request)).toEqual([
-      `/v2/works/Lagerl%C3%B6fS/${titlePath}/manifest?media_type=faksimil`
+      `/v2/works/Lagerl%C3%B6fS/${titlePath}/reader-data?media_type=faksimil`
     ])
     expect({ html: recorded.html, ocr: recorded.ocr, jpeg: recorded.jpeg }).toEqual({
       html: [], ocr: [], jpeg: []
@@ -1563,7 +1561,7 @@ test("an unknown e-text page is a work-specific real 404", async ({ request }) =
   const recorded = await readerRequests(request)
   expect(recorded.filter(path => path.includes("/res_"))).toHaveLength(0)
   expect(await readerManifestRequests(request)).toEqual([
-    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/reader-data?media_type=etext"
   ])
 })
 

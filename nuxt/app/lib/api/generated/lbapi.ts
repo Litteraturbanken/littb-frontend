@@ -401,6 +401,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/works/{author_id}/{title_path}/reader-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Reader Data */
+        get: operations["v2_get_reader_data"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/works/{author_id}/{title_path}/source-info": {
         parameters: {
             query?: never;
@@ -2585,6 +2602,12 @@ export interface components {
             correction: string | null;
             /** Items */
             items: components["schemas"]["QuickSearchItem"][];
+        };
+        /** ReaderDataResponse */
+        ReaderDataResponse: {
+            /** Manifest */
+            manifest: components["schemas"]["ReaderEtextManifest"] | components["schemas"]["ReaderFacsimileManifest"];
+            source_info: components["schemas"]["WorkSourceInfoResponse"] | null;
         };
         /** ReaderEtextManifest */
         ReaderEtextManifest: {
@@ -5263,6 +5286,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReaderEtextManifest"] | components["schemas"]["ReaderFacsimileManifest"];
+                };
+            };
+            /** @description Work manifest not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_reader_data: {
+        parameters: {
+            query: {
+                media_type: "etext" | "faksimil";
+            };
+            header?: never;
+            path: {
+                author_id: string;
+                title_path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderDataResponse"];
                 };
             };
             /** @description Work manifest not found */

@@ -7,6 +7,7 @@ import type {
 } from "#shared/types/reader"
 import type { ManagedAssetHtml, ManagedStyleText } from "#shared/types/renderable-html"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
+import type { ReaderPageData } from "#shared/types/reader-data"
 import { adjacentFacsimileSize } from "#shared/utils/facsimile-source"
 import {
   emptyRenderableHtml
@@ -226,7 +227,6 @@ const sourceInfoNeutralFullPath = computed(
 type WorkSearchHit = components["schemas"]["WorkSearchHit"]
 type WorkSearchHitsResponse = components["schemas"]["WorkSearchHitsResponse"]
 type SimilarWork = components["schemas"]["SimilarWork"]
-type SimilarWorksResponse = components["schemas"]["SimilarWorksResponse"]
 
 type CanonicalSearchState = Readonly<{
   query: string
@@ -329,54 +329,6 @@ function isSafeInteger(value: unknown, minimum = 0): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= minimum
 }
 
-function exactObjectKeys(value: Record<string, unknown>, expected: readonly string[]): boolean {
-  const keys = Object.keys(value)
-  return keys.length === expected.length && expected.every(key => keys.includes(key))
-}
-
-function isReaderSegment(value: unknown): value is string {
-  return typeof value === "string"
-    && value.length >= 1
-    && value.length <= 200
-    && value.trim() === value
-    && value !== "."
-    && value !== ".."
-    && !/[\\/%\p{Cc}\p{Cs}]/u.test(value)
-}
-
-function isReaderLabel(value: unknown): value is string {
-  return typeof value === "string"
-    && value.length >= 1
-    && value.length <= 20_000
-    && value.trim() === value
-    && !/[\p{Cc}\p{Cs}]/u.test(value)
-}
-
-function isSimilarWork(value: unknown): value is SimilarWork {
-  if (!isRecord(value) || !exactObjectKeys(value, [
-    "author_id",
-    "author_surname",
-    "title_id",
-    "start_page",
-    "media_type",
-    "label"
-  ])) return false
-  return isReaderSegment(value.author_id)
-    && isReaderLabel(value.author_surname)
-    && isReaderSegment(value.title_id)
-    && isReaderSegment(value.start_page)
-    && (value.media_type === "etext" || value.media_type === "faksimil")
-    && isReaderLabel(value.label)
-}
-
-function isSimilarWorksResponse(value: unknown): value is SimilarWorksResponse {
-  return isRecord(value)
-    && exactObjectKeys(value, ["items"])
-    && Array.isArray(value.items)
-    && value.items.length <= 5
-    && value.items.every(isSimilarWork)
-}
-
 function isExpectedHitItem(
   item: unknown,
   position: number,
@@ -458,17 +410,17 @@ let readerFetchDebounce: ReturnType<typeof setTimeout> | null = null
 const requestFetch = useRequestFetch()
 
 type CurrentReaderPage =
-  | { status: "success", identity: string, reader: ReaderPage }
+  | { status: "success", identity: string, reader: ReaderPageData }
   | { status: "error", identity: string }
 
-const { data, error } = await useAsyncData<CurrentReaderPage>(
+const { data, error, refresh: refreshReader, status: readerFetchStatus } = await useAsyncData<CurrentReaderPage>(
   computed(() => `reader:${readerFetchIdentity.value}`),
   async () => {
     const identity = readerFetchIdentity.value
     const requestParts = JSON.parse(identity) as [string, string, string, string]
     const readerApiUrl = requestParts.map(encodeURIComponent).join("/")
     try {
-      const currentReader = await requestFetch<ReaderPage>(`/nuxt-api/reader/${readerApiUrl}`, {
+      const currentReader = await requestFetch<ReaderPageData>(`/nuxt-api/reader/${readerApiUrl}`, {
         retry: 0
       })
       return { status: "success" as const, identity, reader: currentReader }
@@ -501,108 +453,34 @@ const sourceInfoRequestIdentity = computed(() => JSON.stringify([
   titleParam.value,
   mediaTypeParam.value
 ]))
-const initialSourceInfoRequested = sourceInfoRequested.value
-type CurrentReaderSourceInfo =
-  | {
-    status: "success"
-    identity: string
-    sourceInfo: ReaderSourceInfo
-    similarWorks: SimilarWork[]
+// The initial reader response owns all work metadata. Opening the modal never
+// starts a second work lookup, and page changes retain metadata for this work.
+const sourceInfoState = shallowRef<{
+  identity: string
+  sourceInfo: ReaderSourceInfo | null
+  similarWorks: SimilarWork[]
+} | null>(null)
+watch(data, current => {
+  if (current?.status !== "success") return
+  const [author, title, , media] = JSON.parse(current.identity) as string[]
+  sourceInfoState.value = {
+    identity: JSON.stringify([author, title, media]),
+    sourceInfo: current.reader.sourceInfo,
+    similarWorks: current.reader.similarWorks
   }
-  | { status: "error", identity: string }
-
-let sourceInfoController: AbortController | null = null
-const sourceInfoFetch = await useAsyncData<CurrentReaderSourceInfo>(
-  computed(() => `reader-source-info:${sourceInfoRequestIdentity.value}`),
-  async (_nuxtApp, { signal }) => {
-    sourceInfoController?.abort()
-    const identity = sourceInfoRequestIdentity.value
-    const controller = new AbortController()
-    sourceInfoController = controller
-    const requestSignal = AbortSignal.any([signal, controller.signal])
-    const sourceInfoApiUrl = [
-      "/nuxt-api/reader/source-info",
-      encodeURIComponent(authorParam.value),
-      encodeURIComponent(titleParam.value)
-    ].join("/")
-    try {
-      const sourceInfo = await requestFetch<ReaderSourceInfo>(sourceInfoApiUrl, {
-        query: { media_type: mediaTypeParam.value },
-        retry: 0,
-        signal: requestSignal
-      })
-      let similarWorks: SimilarWork[] = []
-      if (sourceInfo.mediaType === "etext" || sourceInfo.mediaType === "faksimil") {
-        try {
-          const result = await runtimeClient.GET("/works/{work_id}/similar", {
-            params: {
-              path: { work_id: sourceInfo.workId },
-              query: { media_type: sourceInfo.mediaType }
-            },
-            redirect: "manual",
-            signal: requestSignal
-          })
-          if (!result.error && isSimilarWorksResponse(result.data)) {
-            similarWorks = result.data.items
-          }
-        } catch {
-          // Recommendations are optional and must never replace valid source information.
-        }
-      }
-      return { status: "success" as const, identity, sourceInfo, similarWorks }
-    } catch {
-      return { status: "error" as const, identity }
-    } finally {
-      if (sourceInfoController === controller) sourceInfoController = null
-    }
-  },
-  { immediate: initialSourceInfoRequested, lazy: true }
-)
-
-const sourceInfo = computed(() => {
-  const current = sourceInfoFetch.data.value
-  return current?.status === "success"
-    && current.identity === sourceInfoRequestIdentity.value
-    ? current.sourceInfo
-    : null
-})
-const similarWorks = computed(() => {
-  const current = sourceInfoFetch.data.value
-  return current?.status === "success"
-    && current.identity === sourceInfoRequestIdentity.value
-    ? current.similarWorks
-    : []
-})
-const sourceInfoFailed = computed(
-  () => sourceInfoFetch.data.value?.status === "error"
-    && sourceInfoFetch.data.value.identity === sourceInfoRequestIdentity.value
-)
-const sourceInfoLoading = computed(
-  () => sourceInfoRequested.value
-    && !sourceInfo.value
-    && !sourceInfoFailed.value
-    && (sourceInfoFetch.status.value === "idle"
-      || sourceInfoFetch.status.value === "pending")
-)
-
-// Warm the modal after mounting so metadata never blocks the reading page.
-// Keep an in-flight request when the modal closes; it is still useful on reopen.
-onMounted(() => {
-  if (!initialSourceInfoRequested) void sourceInfoFetch.execute({ dedupe: "defer" })
-})
+}, { immediate: true })
+const sourceInfo = computed(() => sourceInfoState.value?.identity === sourceInfoRequestIdentity.value
+  ? sourceInfoState.value.sourceInfo : null)
+const similarWorks = computed(() => sourceInfoState.value?.identity === sourceInfoRequestIdentity.value
+  ? sourceInfoState.value.similarWorks : [])
+const sourceInfoFailed = computed(() => sourceInfoState.value?.identity === sourceInfoRequestIdentity.value
+  && sourceInfoState.value.sourceInfo === null && readerFetchStatus.value !== "pending")
+const sourceInfoLoading = computed(() => sourceInfoRequested.value && !sourceInfo.value && !sourceInfoFailed.value)
 watch(sourceInfoRequested, open => {
-  if (!open) return
-  if (import.meta.client && nuxtApp.isHydrating) return
-  const current = sourceInfoFetch.data.value
-  if (
-    !current
-    || current.identity !== sourceInfoRequestIdentity.value
-    || current.status === "error"
-  ) {
-    void sourceInfoFetch.execute({ dedupe: "defer" })
+  if (open && import.meta.client && !nuxtApp.isHydrating && sourceInfoFailed.value) {
+    void refreshReader()
   }
 })
-onBeforeUnmount(() => sourceInfoController?.abort())
 
 const currentReader = computed(() => {
   const current = data.value

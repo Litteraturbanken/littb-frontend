@@ -47,7 +47,7 @@ function encodeRfc3986Segment(value: string): string {
   )
 }
 
-const manifestPathSerializer: PathSerializer = (pathname, pathParams) => (
+export const manifestPathSerializer: PathSerializer = (pathname, pathParams) => (
   pathname.replace(/\{([^{}]+)\}/gu, (_placeholder, name: string) => {
     const value = pathParams[name]
     if (typeof value !== "string") throw new TypeError("Invalid work manifest identity")

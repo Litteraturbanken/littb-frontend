@@ -115,6 +115,8 @@ const homeContent = new Map([
 
 const readerFacsimileJpeg = readFileSync(readerFacsimileJpegFile)
 const sourceInfoCoverIds = [
+  "lb-reader-doktor-glas",
+  "lb-reader-doktor-glas-parts",
   "lb1728740",
   "lb31230",
   "lbSparse1",
@@ -1207,6 +1209,7 @@ function readerMetadataResponse(titlePath) {
       return {
         hits: 1,
         data: [readerRepresentation(titlePath, {
+          lbworkid: "lbSparse1",
           authors: [{
             authorid: "SparseA",
             full_name: "Sparsamt Författarnamn",
@@ -1222,6 +1225,7 @@ function readerMetadataResponse(titlePath) {
       return {
         hits: 1,
         data: [readerRepresentation(titlePath, {
+          lbworkid: "lbLongErrata1",
           authors: [{
             authorid: "LongErrataA",
             full_name: "Rita Redaktör",
@@ -1236,6 +1240,7 @@ function readerMetadataResponse(titlePath) {
       return {
         hits: 1,
         data: [readerRepresentation(titlePath, {
+          lbworkid: "lbHugeErrata1",
           authors: [{
             authorid: "HugeErrataA",
             full_name: "Hugo Granskare",
@@ -1250,6 +1255,7 @@ function readerMetadataResponse(titlePath) {
       return {
         hits: 1,
         data: [readerRepresentation(titlePath, {
+          lbworkid: "lbEmptyErrata1",
           authors: [{
             authorid: "EmptyErrataA",
             full_name: "Erik Exempel",
@@ -3726,7 +3732,7 @@ const handleFixtureRequest = async (request, response) => {
   }
 
   const readerManifestMatch = request.method === "GET"
-    ? /^\/v2\/works\/([^/]+)\/([^/]+)\/manifest$/.exec(apiPathname)
+    ? /^\/v2\/works\/([^/]+)\/([^/]+)\/(manifest|reader-data)$/.exec(apiPathname)
     : null
   const editorManifestMatch = request.method === "GET"
     ? /^\/v2\/works\/([^/]+)\/editor-manifest$/.exec(apiPathname)
@@ -3790,6 +3796,15 @@ const handleFixtureRequest = async (request, response) => {
               details: null
             }
           })
+        }
+        if (readerManifestMatch[3] === "reader-data") {
+          await waitForSourceInfoDelay(authorId, titlePath)
+          const item = authorId === "SparseA" && titlePath === "SparseTitle"
+            ? navigableSparseSourceInfo : sourceInfoByIdentity.get(`${authorId}|${titlePath}`)
+          const sourceInfo = !sourceInfoFailure && item
+            ? { ...JSON.parse(JSON.stringify(item).replaceAll(item.work_id, manifest.work_id)), media_type: mediaType }
+            : null
+          return sendJson(response, 200, { manifest, source_info: sourceInfo })
         }
         return sendJson(response, 200, manifest)
       } catch {
@@ -4746,7 +4761,7 @@ const handleFixtureRequest = async (request, response) => {
   }
 
   const readerPageMatch = request.method === "GET"
-    ? /^\/txt\/lb-reader-doktor-glas\/res_0000([123])\.html$/.exec(url.pathname)
+    ? /^\/txt\/(?:lb-reader-doktor-glas|lbSparse1|lbLongErrata1|lbHugeErrata1|lbEmptyErrata1)\/res_0000([123])\.html$/.exec(url.pathname)
     : null
   if (readerPageMatch) {
     const recordedRequest = `${url.pathname}${url.search}`
@@ -5067,6 +5082,7 @@ const handleFixtureRequest = async (request, response) => {
   if (
     ["GET", "HEAD"].includes(request.method) &&
     (
+      /\/txt\/css\/lb(?:Sparse1|LongErrata1|HugeErrata1|EmptyErrata1)-etext\.css$/.test(url.pathname) ||
       url.pathname === "/txt/css/lb-reader-doktor-glas-etext.css" ||
       url.pathname === "/txt/css/lb-reader-doktor-glas-parts-etext.css" ||
       url.pathname === "/txt/css/lb-reader-boye-jordiskt-etext.css" ||
@@ -5798,7 +5814,7 @@ const handleFixtureRequest = async (request, response) => {
     return sendJson(
       response,
       200,
-      similarWorkIdentity.workId === "lb1728740"
+      ["lb1728740", "lb-reader-doktor-glas"].includes(similarWorkIdentity.workId)
         ? doktorGlasSimilarWorks
         : { items: [] }
     )

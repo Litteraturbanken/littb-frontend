@@ -173,14 +173,18 @@ const readerPageHandler = defineEventHandler(async event => {
   const titlePath = requiredParam(event, "title")
   const pageName = requiredParam(event, "page")
   const mediaType = requiredParam(event, "mediatype")
-  const metadata = await loadReaderMetadata(event, author, titlePath, mediaType)
+  const { manifest, sourceInfo } = await loadReaderData(event, author, titlePath, mediaType)
+  const metadata = readerMetadataFromManifest(event, manifest)
   const currentPosition = readerPagePosition(metadata, pageName)
   const currentPage = metadata.pages[currentPosition]!
   const commonPage = commonReaderPage(metadata, currentPage, currentPosition, pageName)
-  if (metadata.mediaType === "faksimil") {
-    return facsimileReaderPage(event, metadata, currentPosition, commonPage)
-  }
-  return etextReaderPage(event, metadata, currentPosition, commonPage)
+  const [page, similarWorks] = await Promise.all([
+    metadata.mediaType === "faksimil"
+      ? facsimileReaderPage(event, metadata, currentPosition, commonPage)
+      : etextReaderPage(event, metadata, currentPosition, commonPage),
+    sourceInfo ? loadReaderSimilarWorks(event, metadata.workId, metadata.mediaType) : Promise.resolve([])
+  ])
+  return { ...page, sourceInfo, similarWorks }
 })
 
 export default readerPageHandler

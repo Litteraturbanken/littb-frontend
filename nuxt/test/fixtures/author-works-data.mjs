@@ -617,6 +617,10 @@ export const authorWorksById = new Map(
     [richAuthorWorks.author.author_id, richAuthorWorks],
     [sparseAuthorWorks.author.author_id, sparseAuthorWorks],
     [emptyAuthorWorks.author.author_id, emptyAuthorWorks],
+    ["SöderbergH", {
+      ...emptyAuthorWorks,
+      author: { ...emptyAuthorWorks.author, author_id: "SöderbergH", full_name: "Hjalmar Söderberg" }
+    }],
     [rfc3986AuthorWorks.author.author_id, rfc3986AuthorWorks]
   ])
 )

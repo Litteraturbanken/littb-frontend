@@ -52,7 +52,7 @@ test("canonical faksimil OCR API returns one sanitized optional overlay", async 
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"
   ])
   expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
-    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/reader-data?media_type=faksimil"
   ])
 })
 
@@ -71,7 +71,7 @@ test("searchable facsimile API always returns OCR while non-searchable facsimile
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"
   ])
   expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
-    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/reader-data?media_type=faksimil"
   ])
 
   await resetReader(request)
@@ -82,7 +82,7 @@ test("searchable facsimile API always returns OCR while non-searchable facsimile
   expect(await inert.json()).toMatchObject({ searchable: false, ocrOverlay: null })
   expect(await ocrRequests(request)).toEqual([])
   expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
-    "/v2/works/Lagerl%C3%B6fS/UnsearchableFacsimileReader/manifest?media_type=faksimil"
+    "/v2/works/Lagerl%C3%B6fS/UnsearchableFacsimileReader/reader-data?media_type=faksimil"
   ])
 })
 
@@ -100,7 +100,7 @@ test("direct public OCR mode is server rendered without sacrificing the scan", a
     "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"
   ])
   expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
-    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/manifest?media_type=faksimil"
+    "/v2/works/Lagerl%C3%B6fS/GostaBerlingsSaga/reader-data?media_type=faksimil"
   ])
 })
 
@@ -112,7 +112,7 @@ test("direct Läsfokus mode is represented truthfully in SSR markup", async ({ r
   expect(html).toMatch(/class="reader_main[^"]*\bfocus\b/u)
   expect(html).toContain("Läsfokus")
   expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
-    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/reader-data?media_type=etext"
   ])
 })
 
@@ -126,7 +126,7 @@ test("eligible Reader SSR exposes the exact Nya vägar authority link", async ({
   )
   expect(html).toContain('alt="Logotyp för Nya vägar"')
   expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
-    "/v2/works/S%C3%B6derbergH/NyaVagarReader/manifest?media_type=etext"
+    "/v2/works/S%C3%B6derbergH/NyaVagarReader/reader-data?media_type=etext"
   ])
 })
 
@@ -138,6 +138,6 @@ test("ordinary Reader SSR has no empty Nya vägar handoff", async ({ request }) 
   expect(html).not.toContain("nya-vagar-inledning")
   expect(html).not.toContain("Logotyp för Nya vägar")
   expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
-    "/v2/works/S%C3%B6derbergH/DoktorGlas/manifest?media_type=etext"
+    "/v2/works/S%C3%B6derbergH/DoktorGlas/reader-data?media_type=etext"
   ])
 })
