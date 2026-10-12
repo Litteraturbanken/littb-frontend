@@ -123,7 +123,10 @@ function isControlSurface(target: EventTarget | null): boolean {
   return target instanceof Element
     && (target.matches(".multiselect") || target.closest(".multiselect__tags") !== null)
     && target.closest(".select2-selection__choice__remove") === null
-    && !(props.preserveSearch && target.closest("input:not([readonly])") !== null)
+    && !(props.preserveSearch
+      && target instanceof HTMLInputElement
+      && !target.readOnly
+      && target.value.length > 0)
 }
 
 function prepareControlClick(event: MouseEvent) {

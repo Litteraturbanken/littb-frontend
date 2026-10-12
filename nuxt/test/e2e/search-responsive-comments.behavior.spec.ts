@@ -51,3 +51,25 @@ for (const width of [375, 731, 768, 1440]) {
     }
   })
 }
+
+for (const width of [731, 1440]) {
+  test(`empty title search toggles on repeated clicks at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 711 })
+    await page.goto("/s%C3%B6k?avancerad=1&keywords=texttype:brev;brevsamling&infix=1&ej_modern=1")
+    await page.locator('[data-search-mounted="true"]').waitFor()
+    const control = page.getByRole("combobox", { name: "Titlar", exact: true })
+    const input = control.getByRole("textbox", { name: "Titlar", exact: true })
+    await input.click()
+    await expect(control).toHaveAttribute("aria-expanded", "true")
+    await input.click()
+    await expect(control).toHaveAttribute("aria-expanded", "false")
+    await input.click()
+    await expect(control).toHaveAttribute("aria-expanded", "true")
+    await input.fill("brev")
+    await input.click()
+    await expect(control).toHaveAttribute("aria-expanded", "true")
+    await expect(input).toHaveValue("brev")
+    await input.press("Escape")
+    await expect(control).toHaveAttribute("aria-expanded", "false")
+  })
+}
