@@ -94,6 +94,9 @@ definePageMeta({
   }
 })
 
+const sidebarMounted = ref(false)
+onMounted(() => { sidebarMounted.value = true })
+
 const route = useRoute()
 const router = useRouter()
 const vReaderTitleTooltip = readerTitleTooltipDirective
@@ -2287,11 +2290,10 @@ watch(readerRequestIdentity, () => {
         <p v-if="hitMessage" class="reader-search-message">{{ hitMessage }}</p>
       </div>
 
-      <ClientOnly>
-        <Teleport to="#toolkit-right">
+      <Teleport to="#toolkit-right">
           <aside
             class="reader-context my-[1em]"
-            :class="{ 'has-search-hit': searchState }"
+            :class="{ 'has-search-hit': searchState, 'reader-context-ssr': !sidebarMounted }"
             aria-label="Läsinformation och sidnavigering"
           >
             <div class="mb-5 block">
@@ -2499,12 +2501,14 @@ ref="sidebarSourceInfoTrigger"
                 >{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a></li>
                 <li><a class="-my-[3px] inline-block py-[3px]" :href="focusHref" @click.prevent="activateFocus">Läsfokus</a></li>
                 <li v-if="reader.searchable">
-                  <button
-                    type="button"
+                  <component
+                    :is="sidebarMounted ? 'button' : 'a'"
+                    :type="sidebarMounted ? 'button' : undefined"
                     class="reader-work-search-trigger reader-action-button"
+                    :href="sidebarMounted ? undefined : workSearchDisclosureFullPath(!workSearchOpen)"
                     :aria-expanded="workSearchOpen"
-                    @click="toggleWorkSearch"
-                  >Sök i verket</button>
+                    @click.prevent="toggleWorkSearch"
+                  >Sök i verket</component>
                   <div v-show="workSearchOpen" class="searchbox">
                     <div class="collapse-content">
                       <div class="header">
@@ -2578,8 +2582,29 @@ ref="sidebarSourceInfoTrigger"
                 </li>
               </ul>
             </div>
+            <nav
+              v-if="!sidebarMounted && (searchState || hasActiveSearchOrigin)"
+              class="reader-hit-navigation"
+              aria-label="Sökträffsnavigering"
+            >
+              <p v-if="hitExpired">{{ expiredSnapshotMessage }}</p>
+              <button v-if="hitExpired" type="button" disabled>Starta om sökningen</button>
+              <a
+                v-if="previousHit"
+                rel="prev"
+                :href="hitHref(previousHit)"
+              >Föregående sökträff</a>
+              <a
+                v-if="nextHit"
+                rel="next"
+                :href="hitHref(nextHit)"
+              >Nästa sökträff</a>
+              <a :href="closeWorkSearchHref">Stäng träffvisningen</a>
+              <a v-if="searchReturnHref" :href="searchReturnHref">Tillbaka till sökningen</a>
+            </nav>
           </aside>
-        </Teleport>
+      </Teleport>
+      <ClientOnly>
         <Teleport v-if="searchState || hasActiveSearchOrigin" to="#toolkit">
         <i
           v-if="searchState"
@@ -2662,76 +2687,6 @@ ref="sidebarSourceInfoTrigger"
           </ul>
         </nav>
         </Teleport>
-        <template #fallback>
-          <!-- The SSR fallback stays beside the book before the client Teleport mounts. -->
-          <aside class="reader-context-ssr absolute left-full top-[1em] z-50 my-[1em] ml-4 w-[250px] text-[20px] leading-[1.2] md:ml-16 [.reader-focus-mode_&]:hidden [&>*]:mb-5 [&>*]:block [&>.author]:mb-[0.3em] [&>.author]:min-h-[1em] [&>.author]:sc [&>.author_a]:text-primary [&>a]:text-[0.9em] [&>a]:sc [&>nav]:text-[0.9em] [&>nav]:sc [&>nav>a]:mb-1 [&>nav>a]:block" aria-label="Läsinformation och sidnavigering">
-            <span class="author"><ReaderContributors
-              :contributors="reader.contributors"
-            /></span>
-            <span><a
-              :data-reader-title-tooltip-content="readerTitleTooltip || undefined"
-              :href="sourceInfoHref"
-            >{{ reader.title }}</a><template
-              v-if="reader.imprintYear"
-            > ({{ reader.imprintYear }})</template></span>
-            <nav aria-label="Sidnavigering">
-              <a
-                v-if="reader.previousPageName"
-                :href="pageHref(reader.previousPageName)"
-              >Föregående sida</a>
-              <a
-                v-if="reader.nextPageName"
-                :href="pageHref(reader.nextPageName)"
-              >Nästa sida</a>
-            </nav>
-            <span class="reader-page-position">{{ pageRouteDraftName }} av {{ reader.pageCount }}</span>
-            <a
-              v-if="reader.parts.length"
-              :href="contentsHref"
-            >Innehållsförteckning</a>
-            <a :href="sourceInfoHref">{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a>
-            <a :href="focusHref">Läsfokus</a>
-            <a
-              v-if="reader.searchable"
-              class="reader-work-search-trigger"
-              :href="workSearchDisclosureFullPath(true)"
-            >Sök i verket</a>
-            <span
-              v-else
-              class="reader-work-search-trigger disabled"
-            >Sök i verket</span>
-            <!-- Progressive-enhancement fallback: native before hydration. -->
-            <LazyReaderDramawebbenLink
-              v-if="reader.hasDramawebben"
-              :client-navigation="false"
-            />
-            <a
-              v-if="reader.hasNyaVagar"
-              class="reader-nya-vagar"
-              href="https://litteraturbanken.se/diktensmuseum/nya-vagar-inledning/"
-            ><img :src="nyaVagarLogo" alt="Logotyp för Nya vägar"></a>
-            <nav
-              v-if="searchState || hasActiveSearchOrigin"
-              class="reader-hit-navigation"
-              aria-label="Sökträffsnavigering"
-            >
-              <p v-if="hitExpired">{{ expiredSnapshotMessage }}</p>
-              <button v-if="hitExpired" type="button" disabled>Starta om sökningen</button>
-              <a
-                v-if="previousHit"
-                rel="prev"
-                :href="hitHref(previousHit)"
-              >Föregående sökträff</a>
-              <a
-                v-if="nextHit"
-                rel="next"
-                :href="hitHref(nextHit)"
-              >Nästa sökträff</a>
-              <a :href="closeWorkSearchHref">Stäng träffvisningen</a>
-              <a v-if="searchReturnHref" :href="searchReturnHref">Tillbaka till sökningen</a>
-            </nav>
-          </aside>
-        </template>
       </ClientOnly>
       <ReaderContentsDialog
         :open="contentsOpen"

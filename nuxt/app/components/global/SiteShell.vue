@@ -201,7 +201,7 @@ onBeforeUnmount(() => {
     />
     <main id="mainview" role="main"><slot /></main>{{ " " }}
     <div id="rightCorridor" class="ml-4 sm:ml-16 relative z-50">
-      <div id="toolkit-right" />
+      <div id="toolkit-right" data-reader-sidebar-target />
     </div>
     <div id="bkgimg" />
   </div>

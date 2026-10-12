@@ -934,7 +934,7 @@ test("direct source information remains visible and linked without JavaScript", 
   const fallback = page.locator(".reader-context-ssr")
   await expect(fallback).toBeAttached()
   const expectedHref = `${readerEncodedPath}?om-boken`
-  const title = fallback.locator("a").filter({ hasText: "Doktor Glas" })
+  const title = fallback.locator(":scope > div:first-child > a.title")
   const sidebar = fallback.locator("a").filter({ hasText: "Mer om boken" })
   await expect(title).toHaveAttribute("href", expectedHref)
   await expect(sidebar).toHaveAttribute("href", expectedHref)

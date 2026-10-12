@@ -182,10 +182,11 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   expect(parseHTML(html).document.querySelector(".reader-context-ssr")).not.toBeNull()
   expect(parseHTML(html).document.querySelector(".reader-context-ssr.sr-only")).toBeNull()
   expect(html).toContain("Sök i verket")
-  expect(html).toContain(
-    'class="reader-work-search-trigger" href="/f%C3%B6rfattare/' +
-    'S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?show_search_work"'
-  )
+  expect(parseHTML(html).document.querySelector(".reader-work-search-trigger")?.getAttribute("href"))
+    .toBe("/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?show_search_work")
+  const initialPager = parseHTML(html).document.querySelector('.reader-context-ssr [aria-label="Föregående sida"]')
+  expect(initialPager?.querySelector(".fa-angle-left")).not.toBeNull()
+  expect(initialPager?.textContent?.trim()).toBe("")
 
   const { document } = parseHTML(html)
   const notices = [...document.querySelectorAll(
@@ -304,7 +305,7 @@ test("Boye Reader API and SSR retain ordered work contributors", async ({ reques
   expect(response.status()).toBe(200)
   const { document } = parseHTML(await response.text())
   const context = document.querySelector(".reader-context-ssr")
-  const links = [...context?.querySelectorAll(".author a") ?? []]
+  const links = [...context?.querySelectorAll(":scope > div:first-child .author a") ?? []]
   expect(links.map(link => [link.textContent?.trim(), link.getAttribute("href")])).toEqual([
     ["Karin Boye", "/f%C3%B6rfattare/BoyeK"],
     ["Paulina Helgeson red.", "/f%C3%B6rfattare/HelgesonP"]
@@ -348,7 +349,7 @@ test("Reader keeps contributor order while selecting the declared primary author
   )
   expect(response.status()).toBe(200)
   const { document } = parseHTML(await response.text())
-  const links = [...document.querySelectorAll(".reader-context-ssr .author a")]
+  const links = [...document.querySelectorAll(".reader-context-ssr > div:first-child .author a")]
   expect(links.map(link => link.textContent?.trim())).toEqual([
     "Erika Editor red.",
     "Pia Primary"
