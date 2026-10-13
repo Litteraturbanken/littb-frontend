@@ -2605,7 +2605,7 @@ ref="sidebarSourceInfoTrigger"
           </aside>
       </Teleport>
       <ClientOnly>
-        <Teleport v-if="searchState || hasActiveSearchOrigin" to="#toolkit">
+        <Teleport v-if="searchState || hasActiveSearchOrigin" to="#reader-hit-toolkit">
         <i
           v-if="searchState"
           class="spinner_search fa fa-spinner fa-pulse"

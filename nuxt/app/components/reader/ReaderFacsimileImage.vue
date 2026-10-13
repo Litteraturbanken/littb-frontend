@@ -118,7 +118,7 @@ watch(selectedSourceIdentity, () => {
   </div>
 
   <ClientOnly>
-    <Teleport to="#toolkit">
+    <Teleport to="#reader-facsimile-toolkit">
       <div class="reader-facsimile-controls">
         <div class="reader-facsimile-size-controls">
           <h2>Ändra storlek</h2>

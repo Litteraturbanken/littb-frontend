@@ -195,7 +195,10 @@ onBeforeUnmount(() => {
           <LazyHomeAcademyLogo v-if="isStartPage" />
         </a>
       </nav>
-      <div id="toolkit" />
+      <div id="toolkit">
+        <div id="reader-hit-toolkit" />
+        <div id="reader-facsimile-toolkit" />
+      </div>
     </div>{{ " " }}
     <LazyQuickSearch
       v-if="quickSearchOpen"
