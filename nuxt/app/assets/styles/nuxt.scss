@@ -890,6 +890,12 @@
         overflow-wrap: anywhere;
     }
 
+    .multiselect__option,
+    .multiselect__option--selected.multiselect__option--highlight {
+        font-weight: 400;
+        color: inherit;
+    }
+
     .multiselect__content {
         min-width: 0;
     }
