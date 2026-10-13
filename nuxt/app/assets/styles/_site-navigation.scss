@@ -69,13 +69,13 @@
             margin-right: 0;
         }
 
-        .mainnav a {
+        .mainnav a:not(:hover, :active) {
             color: white;
         }
     }
 
     // Override the legacy phone stylesheet's black library navigation links.
-    body:is(.page-library, .page-epub) #leftCorridor.site-navigation .mainnav a {
+    body:is(.page-library, .page-epub) #leftCorridor.site-navigation .mainnav a:not(:hover, :active) {
         color: white;
     }
 
@@ -139,6 +139,12 @@ body.page-presentation #mainview h1 em {
     }
 }
 
-body.page-reading #leftCorridor.site-navigation .mainnav a {
+body.page-reading #leftCorridor.site-navigation .mainnav a:not(:hover, :active) {
     color: black;
+}
+
+// Homepage content styles can load before the shared navigation bundle.
+body.page-start #leftCorridor.site-navigation .mainnav a:hover {
+    color: white;
+    opacity: 0.5;
 }
