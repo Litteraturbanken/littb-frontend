@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, useId, watch } from "vue"
+import { computed, nextTick, onMounted, ref, useId, watch } from "vue"
 import VueMultiselect from "vue-multiselect"
 
 defineOptions({ inheritAttrs: false })
@@ -27,6 +27,9 @@ type VueMultiselectOptionGroup = Readonly<{
 
 type ToggleableMultiselect = Readonly<{
   toggle: () => void
+  pointerForward: () => void
+  pointerBackward: () => void
+  $refs: { list?: HTMLElement }
 }>
 
 const props = withDefaults(defineProps<{
@@ -119,6 +122,30 @@ function toggleOptions() {
   toggleable?.toggle()
 }
 
+async function navigateOptions(event: KeyboardEvent) {
+  if (!isOpen.value || !["ArrowDown", "ArrowUp"].includes(event.key)) return
+  const control = multiselect.value as unknown as ToggleableMultiselect | null
+  const list = control?.$refs.list
+  if (!control || !list) return
+  event.preventDefault()
+  event.stopPropagation()
+  const scrollTop = list.scrollTop
+  if (event.key === "ArrowDown") control.pointerForward()
+  else control.pointerBackward()
+  // The library assumes 40px rows; our wrapped titles and group labels vary in height.
+  // Keep its pointer navigation, but scroll using the actual rendered option bounds.
+  list.scrollTop = scrollTop
+  await nextTick()
+  const option = list.querySelector(".multiselect__option--highlight")
+  if (!option) return
+  const viewportTop = list.getBoundingClientRect().top + list.clientTop
+  const bounds = option.getBoundingClientRect()
+  if (bounds.top < viewportTop) list.scrollTop += bounds.top - viewportTop
+  else if (bounds.bottom > viewportTop + list.clientHeight) {
+    list.scrollTop += bounds.bottom - viewportTop - list.clientHeight
+  }
+}
+
 function isControlSurface(target: EventTarget | null): boolean {
   return target instanceof Element
     && (target.matches(".multiselect") || target.closest(".multiselect__tags") !== null)
@@ -162,6 +189,7 @@ onMounted(() => {
     class="filter_select select2 select2-container select2-container--default"
     @mousedown.capture="prepareControlClick"
     @click.capture="toggleActiveControl"
+    @keydown.capture="navigateOptions"
   >
     <VueMultiselect
       :id="inputId"

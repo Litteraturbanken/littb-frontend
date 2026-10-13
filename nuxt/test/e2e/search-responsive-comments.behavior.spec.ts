@@ -73,3 +73,39 @@ for (const width of [731, 1440]) {
     await expect(control).toHaveAttribute("aria-expanded", "false")
   })
 }
+
+for (const width of [375, 731, 1440]) {
+  test(`dropdown highlights fill their rows and keyboard navigation stays visible at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/s%C3%B6k?avancerad=1')
+    await page.locator('[data-search-mounted="true"]').waitFor()
+    for (const name of ['Filtrera: Kategorier / Utgivare', 'Titlar', 'Författarskap']) {
+      const control = page.getByRole('combobox', { name, exact: true })
+      const input = control.getByRole('textbox', { name, exact: true })
+      await input.click()
+      await page.mouse.move(0, 0)
+      const measure = () => control.evaluate(root => {
+        const list = root.querySelector<HTMLElement>('.multiselect__content-wrapper')!
+        const active = root.querySelector<HTMLElement>('.multiselect__option--highlight')!
+        const frame = list.getBoundingClientRect()
+        const row = active.getBoundingClientRect()
+        return { top: row.top - frame.top - list.clientTop,
+          bottom: row.bottom - frame.top - list.clientTop,
+          height: list.clientHeight, scroll: list.scrollTop,
+          rightGap: frame.left + list.clientLeft + list.clientWidth - row.right }
+      })
+      for (const key of [...Array<string>(22).fill('ArrowDown'), ...Array<string>(22).fill('ArrowUp')]) {
+        const before = await measure()
+        await input.press(key)
+        const after = await measure()
+        expect(after.top).toBeGreaterThanOrEqual(-1)
+        expect(after.bottom).toBeLessThanOrEqual(after.height + 1)
+        expect(Math.abs(after.rightGap)).toBeLessThanOrEqual(1)
+        if (Math.abs(after.scroll - before.scroll) > 1) {
+          expect(Math.min(Math.abs(after.top), Math.abs(after.bottom - after.height))).toBeLessThanOrEqual(1)
+        }
+      }
+      await input.press('Escape')
+    }
+  })
+}
