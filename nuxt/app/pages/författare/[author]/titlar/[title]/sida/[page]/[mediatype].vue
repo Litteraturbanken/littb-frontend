@@ -1020,6 +1020,8 @@ function recoveredSearchPath(snapshot: string, hit: WorkSearchHit | null): strin
   if (hit) {
     path = readerFullPathWithQueryValue(path, "hit", String(hit.index))
     if (route.query.hit_index !== undefined) path = readerFullPathWithQueryValue(path, "hit_index", String(hit.index))
+    if (route.query.traff !== undefined) path = readerFullPathWithQueryValue(path, "traff", hit.start_word_id)
+    if (route.query.traffslut !== undefined) path = readerFullPathWithQueryValue(path, "traffslut", hit.end_word_id)
   }
   return path
 }
@@ -1101,7 +1103,7 @@ const hitFetch = await useAsyncData(
 // keep the book, page, options, return link and browser history entry intact.
 onMounted(() => {
   watch(hitFetch.data, value => {
-    if (value?.status !== "recovered" || value.identity !== dialogNeutralIdentity.value || !value.hit) return
+    if (value?.status !== "recovered" || value.identity !== dialogNeutralIdentity.value) return
     void navigateRawFullPath(recoveredSearchPath(value.snapshot, value.hit), true, rawFullPath.value)
   }, { immediate: true })
 })
@@ -1127,12 +1129,7 @@ const hitRequestFailed = computed(
     hitFetch.data.value.identity === dialogNeutralIdentity.value)
     || (hitContinuationFailure.value?.identity === dialogNeutralIdentity.value && hitContinuationFailure.value.status === "error")
 )
-const hitContinuationFailure = shallowRef<{ identity: string, status: "error" | "expired" } | null>(null)
-const hitExpired = computed(() => (
-  (hitFetch.data.value?.status === "recovered" && !hitFetch.data.value.hit && hitFetch.data.value.identity === dialogNeutralIdentity.value)
-  || (hitContinuationFailure.value?.identity === dialogNeutralIdentity.value && hitContinuationFailure.value.status === "expired")
-))
-const expiredSnapshotMessage = "Den tidigare sökträffen finns inte längre i den aktuella texten. Du är kvar på den länkade sidan."
+const hitContinuationFailure = shallowRef<{ identity: string, status: "error" } | null>(null)
 const activeHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
   return workSearchHitAt(hitResponse.value.items, searchState.value.hit)
@@ -1190,7 +1187,6 @@ const nextHit = computed(() => {
   return index <= maximumNavigableHit ? workSearchHitAt(hitResponse.value.items, index) : null
 })
 const highlightHit = computed(() => {
-  if (hitExpired.value) return null
   if (selectedSearchHit.value) return selectedSearchHit.value
   return activeHit.value && isExactWorkSearchHit(activeHit.value)
     ? {
@@ -1241,16 +1237,16 @@ const markedFacsimileReader = computed(() => {
   }
 })
 const hitPosition = computed(() => {
-  if (hitExpired.value || !searchState.value || !activeHit.value || !hitResponse.value) return null
+  if (!searchState.value || !activeHit.value || !hitResponse.value) return null
   return `Sökträff ${searchState.value.hit + 1} av ${hitResponse.value.total_hits}`
 })
 const hitNavigationFailed = ref(false)
 const hitMessage = computed(() => {
   if (!searchState.value) return null
-  if (hitExpired.value) return expiredSnapshotMessage
   if (hitRequestFailed.value || hitNavigationFailed.value) {
     return "Sökträffen kunde inte hämtas."
   }
+  if (hitResponse.value?.total_hits === 0) return "Inga träffar."
   if (hitResponse.value && !activeHit.value) return "Ingen sådan sökträff."
   if (activeHit.value && !isExactWorkSearchHit(activeHit.value)) return readerTargetUnavailableMessage
   return null
@@ -1360,11 +1356,7 @@ async function fetchHitAtIndex(
     const recovered = await recoverSavedSearch(currentReader, state, signal,
       workSearchHitAt(response.items, state.hit))
     if (signal.aborted || !hitLookupIsCurrent(context)) return null
-    if (recovered.hit) {
-      await navigateRawFullPath(recoveredSearchPath(recovered.snapshot, recovered.hit), true, rawFullPath.value)
-    } else {
-      hitContinuationFailure.value = { identity: context.sourceIdentity, status: "expired" }
-    }
+    await navigateRawFullPath(recoveredSearchPath(recovered.snapshot, recovered.hit), true, rawFullPath.value)
     return null
   }
   if (result.error || !isExpectedHitResponse(
@@ -1426,7 +1418,6 @@ function rawHitFullPath(hit: WorkSearchHit, sourceFullPath = rawFullPath.value):
 }
 
 async function navigateToHit(index: number): Promise<void> {
-  if (hitExpired.value) return
   cancelPendingHitNavigation()
   const generation = hitNavigationGeneration
   if (searchState.value?.hit === index) {
@@ -1706,11 +1697,6 @@ async function submitWorkSearch(): Promise<void> {
     suffix: workSearchSuffix.value
   })
   await runWorkSearch(state)
-}
-
-async function restartWorkSearch(): Promise<void> {
-  const state = searchState.value
-  if (state) await runWorkSearch({ ...state, hit: 0, snapshot: null })
 }
 
 async function runWorkSearch(state: CanonicalSearchState): Promise<void> {
@@ -2587,8 +2573,6 @@ ref="sidebarSourceInfoTrigger"
               class="reader-hit-navigation"
               aria-label="Sökträffsnavigering"
             >
-              <p v-if="hitExpired">{{ expiredSnapshotMessage }}</p>
-              <button v-if="hitExpired" type="button" disabled>Starta om sökningen</button>
               <a
                 v-if="previousHit"
                 rel="prev"
@@ -2627,8 +2611,7 @@ ref="sidebarSourceInfoTrigger"
           </div>
           <p v-if="searchState && hitMessage" class="text">{{ hitMessage }}</p>
           <ul class="ctrls">
-            <li v-if="hitExpired"><button type="button" class="reader-action-button" @click="restartWorkSearch">Starta om sökningen</button></li>
-            <template v-if="searchState && hitResponse && !hitExpired">
+            <template v-if="searchState && hitResponse">
             <li class="arrows">
               <NuxtLink
                 v-if="previousHit"

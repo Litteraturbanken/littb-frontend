@@ -33,13 +33,32 @@ test("finds the same word when hundreds of preceding hits change its ordinal", a
   expect(api.calls.slice(1).every(call => call.snapshot === "gen-current")).toBe(true)
 })
 
-test("does not substitute a different passage when the saved word disappeared", async () => {
+test("keeps search navigation available when the saved word disappeared", async () => {
   const api = fixture([hit(0, 146), hit(1, 148)])
-  expect((await recoverWorkSearchHit(target, api.request)).hit).toBeNull()
+  expect((await recoverWorkSearchHit(target, api.request)).hit).toEqual(hit(0, 146))
 })
 
 test("old links without word anchors stay on their saved page", async () => {
   const items = [hit(0, 147), hit(1, 156)]
   const api = fixture(items)
   expect((await recoverWorkSearchHit({ workId: "book", pageIndex: 74, pageName: "75", hitIndex: 1 }, api.request)).hit).toEqual(items[1])
+})
+
+
+test("recovers the saved hit after the reader has paged away from it", async () => {
+  const api = fixture([hit(0, 147), hit(1, 156)])
+  const moved = { ...target, pageIndex: 193, pageName: "194", hitIndex: 1,
+    fromWordId: "w74_156", toWordId: "w74_156" }
+  expect((await recoverWorkSearchHit(moved, api.request)).hit).toEqual(hit(1, 156))
+  expect(api.calls).toEqual([{ offset: 0, snapshot: null }])
+})
+
+test("adopts the current generation even when the repeated search is empty", async () => {
+  const api = fixture([])
+  expect(await recoverWorkSearchHit(target, api.request)).toEqual({ hit: null, snapshot: "gen-current" })
+})
+
+test("clamps an obsolete ordinal to the last remaining hit", async () => {
+  const api = fixture([hit(0, 146), hit(1, 148)])
+  expect((await recoverWorkSearchHit({ ...target, hitIndex: 20 }, api.request)).hit).toEqual(hit(1, 148))
 })

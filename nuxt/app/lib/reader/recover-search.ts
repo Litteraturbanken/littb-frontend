@@ -13,12 +13,12 @@ export type SavedSearchTarget = Readonly<{
 }>
 
 function matches(hit: Hit, target: SavedSearchTarget): boolean {
-  return hit.page_index === target.pageIndex && hit.page_name === target.pageName
-    && (!target.fromWordId || (hit.start_word_id === target.fromWordId
-      && hit.end_word_id === target.toWordId))
+  return target.fromWordId
+    ? hit.start_word_id === target.fromWordId && hit.end_word_id === target.toWordId
+    : hit.page_index === target.pageIndex && hit.page_name === target.pageName
 }
 
-/** Re-find the passage, never assume that an old ordinal still means the same hit. */
+/** Rerun the URL search, preferring its old passage before falling back to its ordinal. */
 export async function recoverWorkSearchHit(
   target: SavedSearchTarget,
   request: (offset: number, limit: number, snapshot: string | null) => Promise<Response>
@@ -31,6 +31,7 @@ export async function recoverWorkSearchHit(
   // Work hits are in reading order. Locate the saved page/word without loading
   // every occurrence in a large book. Every probe uses the newly adopted snapshot.
   const position = target.fromWordId ? workSearchWordPosition(target.fromWordId, target.workId) : null
+  const targetPageIndex = position?.pageIndex ?? target.pageIndex
   let lower = 0
   let upper = Math.min(initial.total_hits, 1_000_001)
   while (lower < upper) {
@@ -41,11 +42,17 @@ export async function recoverWorkSearchHit(
     if (!hit) throw new Error("Missing search probe")
     if (matches(hit, target)) return { hit, snapshot: initial.snapshot }
     const hitPosition = workSearchWordPosition(hit.start_word_id, target.workId)
-    const before = hit.page_index < target.pageIndex || (hit.page_index === target.pageIndex
-      && position && hitPosition && hitPosition.scope === position.scope
-      && hitPosition.ordinal < position.ordinal)
+    const before = position && hitPosition && hitPosition.scope === position.scope
+      ? hitPosition.ordinal < position.ordinal
+      : hit.page_index < targetPageIndex
     if (before) lower = offset + 1
     else upper = offset
   }
-  return { hit: null, snapshot: initial.snapshot }
+  // A changed passage must not disable an otherwise reproducible search.
+  if (initial.total_hits === 0) return { hit: null, snapshot: initial.snapshot }
+  const index = Math.min(target.hitIndex, initial.total_hits - 1)
+  const fallback = initial.items.find(hit => hit.index === index)
+    ?? (await request(index, 1, initial.snapshot)).items[0]
+  if (!fallback) throw new Error("Missing search hit")
+  return { hit: fallback, snapshot: initial.snapshot }
 }
