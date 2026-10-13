@@ -13,7 +13,7 @@ const { libraryHref } = useLibraryNavigation()
 const authorNavigationPending = useState<string | null>("author-navigation-pending", () => null)
 const router = useRouter()
 const route = useRoute()
-const isStartPage = computed(() => route.path === "/")
+const isStartPage = computed(() => !authorNavigationPending.value && route.path === "/")
 const quickSearchOpen = ref(false)
 const quickSearchInfoRequested = ref(false)
 const quickSearchTrigger = ref<HTMLAnchorElement | null>(null)
@@ -209,16 +209,7 @@ onBeforeUnmount(() => {
       :data-author-navigation-pending="authorNavigationPending ? '' : undefined"
       :aria-busy="authorNavigationPending ? true : undefined"
     >
-      <div
-        v-if="authorNavigationPending"
-        data-author-navigation-loading
-        class="flex items-center justify-center gap-3 rounded bg-white px-6 py-12 text-gray-900"
-        role="status"
-        aria-label="Laddar författarsidan"
-      >
-        <i class="fa fa-spinner fa-pulse" aria-hidden="true" />
-        <span>Laddar författarsidan</span>
-      </div>
+      <AuthorNavigationLoading v-if="authorNavigationPending" :destination="authorNavigationPending" />
       <slot />
     </main>{{ " " }}
     <div v-show="!authorNavigationPending" id="rightCorridor" class="ml-4 sm:ml-16 relative z-50">

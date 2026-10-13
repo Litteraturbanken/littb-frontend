@@ -133,6 +133,11 @@ test("shows immediate loading feedback while the destination history entry is pe
       await expect(page).toHaveTitle(/August Strindberg/u)
       await expect(page.locator("[data-author-navigation-loading]")).toBeVisible()
       await expect(page.locator("h1")).not.toBeVisible()
+      await expect(page.locator("body")).toHaveClass(/\bpage-authorInfo\b/u)
+      await expect(page.locator("body")).not.toHaveClass(/\bpage-library\b/u)
+      await expect(page.locator("html")).toHaveCSS("background-image",
+        path.endsWith("/dramawebben") ? /dramawebben_fade_more/u : /forf2_bkg/u)
+      await expect(page.locator("[data-author-navigation-loading]")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
 
       releaseResponse()
       await responseDelivered
@@ -165,6 +170,37 @@ test("returning to the current route dismisses a pending author loading view", a
     await page.waitForLoadState("networkidle")
     await expect(page).toHaveURL(/\/f%C3%B6rfattare\/StrindbergA$/u)
     await expect(page).toHaveTitle("August Strindberg, Introduktion | Litteraturbanken")
+  } finally { release() }
+})
+
+test("library navigation shows the author shell and restores the library on cancellation", async ({ page }) => {
+  await page.goto("/bibliotek?visa=authors", { waitUntil: "networkidle" })
+  const sourceUrl = page.url()
+  const sourceTitle = await page.title()
+  const sourceClasses = await page.locator("body").evaluate(element => [...element.classList].sort())
+  const sourceBackground = await page.locator("html").evaluate(element => getComputedStyle(element).backgroundImage)
+  let release = () => {}
+  const gate = new Promise<void>(resolve => { release = resolve })
+  await page.route("**/v2/authors/StrindbergA", async route => {
+    await gate
+    await route.continue()
+  })
+  try {
+    await beginRouterPush(page, "/f%C3%B6rfattare/StrindbergA")
+    await expect(page.locator("[data-author-navigation-loading] .fa-spinner")).toBeVisible()
+    await expect(page.locator("body")).toHaveClass(/\bpage-authorInfo\b/u)
+    await expect(page.locator("body")).not.toHaveClass(/\bpage-library\b/u)
+    await expect(page.locator("html")).toHaveCSS("background-image", /forf2_bkg/u)
+    await expect(page).toHaveURL(sourceUrl)
+    await expect(page).toHaveTitle(sourceTitle)
+    await beginRouterPush(page, new URL(sourceUrl).pathname + new URL(sourceUrl).search)
+    await expect(page.locator("[data-author-navigation-loading]")).toHaveCount(0)
+    await expect.poll(() => page.locator("body").evaluate(element => [...element.classList].sort())).toEqual(sourceClasses)
+    await expect(page.locator("html")).toHaveCSS("background-image", sourceBackground)
+    release()
+    await page.waitForLoadState("networkidle")
+    await expect(page).toHaveURL(sourceUrl)
+    await expect(page).toHaveTitle(sourceTitle)
   } finally { release() }
 })
 
