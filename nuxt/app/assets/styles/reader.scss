@@ -154,6 +154,10 @@
     #leftCorridor {
         #toolkit {
             position: relative;
+
+            &:has(.reader-facsimile-controls) #search_nav {
+                margin-bottom: 3em;
+            }
         }
 
         .spinner_search {
