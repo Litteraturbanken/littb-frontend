@@ -1,3 +1,4 @@
+import { formatAuthorYears } from "../author-profile"
 import type { RouteLocationRaw } from "vue-router"
 
 import {
@@ -189,7 +190,7 @@ function mapAuthorItem(item: Extract<AllItem, { kind: "author" }>): LibraryResul
   const [surname = "", ...givenNames] = item.name_for_index.split(",")
   const birth = knownYear(item.birth_year)
   const death = knownYear(item.death_year)
-  const years = birth && !death ? `f.${birth}` : birth || death ? `${birth}–${death}` : ""
+  const years = formatAuthorYears(birth, death)
   return {
     ...baseResult("author", item.highlights),
     sourceLabel: "Författare",
