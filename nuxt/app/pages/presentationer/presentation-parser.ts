@@ -364,7 +364,7 @@ function firstHeadingMetadata(body: ParsedElement): Pick<PresentationDocument, "
   }
 }
 
-function inertPresentationBody(body: ParsedElement): void {
+function inertPresentationBody(body: ParsedElement, redirects: Record<string, string>): void {
   Array.from(body.querySelectorAll("*")).forEach(element => {
     if (blockedPresentationBodyElements.has(element.localName.toLowerCase())) element.remove()
   })
@@ -385,7 +385,11 @@ function inertPresentationBody(body: ParsedElement): void {
       else {
         const canonical = canonicalNuxtHref(normalized)
         const pathname = canonical.split(/[?#]/u)[0] ?? ""
-        element.setAttribute("href", isNuxtInternalHref(pathname) ? canonical : normalized)
+        const replacement = Object.hasOwn(redirects, pathname) ? redirects[pathname] : undefined
+        const target = replacement && isNuxtInternalHref(replacement)
+          ? `${replacement}${canonical.slice(pathname.length)}`
+          : canonical
+        element.setAttribute("href", isNuxtInternalHref(pathname) ? target : normalized)
       }
     }
     if (!element.hasAttribute("src")) return
@@ -397,7 +401,18 @@ function inertPresentationBody(body: ParsedElement): void {
   })
 }
 
-export function parsePresentationDocument(source: string): PresentationDocument {
+export function presentationAuthorLinkPaths(source: string): string[] {
+  const document = new DOMParser().parseFromString(source, "text/html") as unknown as ParsedDocument
+  const paths = Array.from(document.querySelectorAll("a[href]")).flatMap(anchor => {
+    const href = normalizedUrl(anchor.getAttribute("href") ?? "")
+    if (href === null) return []
+    const path = canonicalNuxtHref(href).split(/[?#]/u)[0] ?? ""
+    return path.startsWith("/f%C3%B6rfattare/") && isNuxtInternalHref(path) ? [path] : []
+  })
+  return [...new Set(paths)]
+}
+
+export function parsePresentationDocument(source: string, redirects: Record<string, string> = {}): PresentationDocument {
   if (!source.trim()) return emptyPresentationDocument()
 
   try {
@@ -406,7 +421,7 @@ export function parsePresentationDocument(source: string): PresentationDocument 
     if (!body) return emptyPresentationDocument()
 
     Array.from(document.querySelectorAll("script")).forEach(script => script.remove())
-    inertPresentationBody(body)
+    inertPresentationBody(body, redirects)
 
     const head = document.querySelector("head")
     const styleNodes: PresentationStyleNode[] = head
