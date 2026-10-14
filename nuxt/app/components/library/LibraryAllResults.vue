@@ -209,7 +209,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                 v-if="item.authorContribution"
                                 data-library-author-contribution
                                 class="text-gray-600 text-xs"
-                                >{{ item.authorContribution }}</span
+                                >&nbsp;{{ item.authorContribution }}</span
                             >
                         </td>
                     </tr>

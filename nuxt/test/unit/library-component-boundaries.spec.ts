@@ -853,7 +853,7 @@ describe("Library component ownership", () => {
     expect(target.querySelector("[data-library-imprint-year]")?.getAttribute("href"))
       .toBe("/bibliotek?intervall=1888%2C1888")
     expect(target.querySelector("[data-library-author-contribution]")?.textContent)
-      .toBe("(red.)")
+      .toBe("\u00a0(red.)")
 
     target.querySelector<HTMLAnchorElement>('[data-library-sort="titlar"]')?.click()
     await nextTick()
