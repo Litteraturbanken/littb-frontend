@@ -385,15 +385,15 @@ test.describe("Nuxt whole-site staging smoke", () => {
             word.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }))
         })
         const lookup = page.getByRole("button", {
-            name: "Slå upp damm i SO och SAOB"
+            name: "Slå upp damm i Svensk ordbok"
         })
         await expect(lookup).toBeVisible()
         await lookup.click()
 
         const dialog = page.getByRole("dialog", {
-            name: "Svenska Akademiens ordbok"
+            name: "Svensk ordbok utgiven av Svenska Akademien"
         })
-        const frame = dialog.locator('iframe[title="Slå upp damm i SO och SAOB"]')
+        const frame = dialog.locator('iframe[title="Slå upp damm i Svensk ordbok"]')
         await expect(frame).toBeVisible()
         await expect(frame).toHaveAttribute(
             "sandbox",
