@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatAuthorYears } from "#shared/utils/author-years"
 import {
   Combobox,
   ComboboxButton,
@@ -225,17 +226,8 @@ function normalizedTokens(value: string): string[] {
   return value.toLocaleLowerCase("sv-SE").split(/\s+/u).filter(Boolean)
 }
 
-function visibleYear(value: string | null): string | null {
-  return value && value !== "0000" ? value : null
-}
-
 function authorYear(author: CatalogAuthor): string {
-  const birth = visibleYear(author.birth_year)
-  const death = visibleYear(author.death_year)
-  if (birth && death) return `${birth}-${death}`
-  if (birth) return `f. ${birth}`
-  if (death) return `d. ${death}`
-  return ""
+  return formatAuthorYears(author.birth_year, author.death_year)
 }
 
 function authorName(author: CatalogAuthor) {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatAuthorYears } from "#shared/utils/author-years"
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/vue"
 import type { LocationQueryRaw } from "vue-router"
 
@@ -504,10 +505,8 @@ const primaryLoading = computed(() => Boolean(state.value.phrase)
   && (primaryPending.value || acceptedPrimary.value === null))
 
 function authorLabel(author: TextSearchOptionsResponse["authors"][number]): string {
-  const years = author.birth_year || author.death_year
-    ? ` (${author.birth_year ?? ""}-${author.death_year ?? ""})`
-    : ""
-  return `${author.name_for_index}${years}`
+  const years = formatAuthorYears(author.birth_year, author.death_year)
+  return `${author.name_for_index}${years ? ` (${years})` : ""}`
 }
 
 function optionsView(

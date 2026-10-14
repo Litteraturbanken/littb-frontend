@@ -1,4 +1,4 @@
-import { formatAuthorYears } from "../author-profile"
+import { formatAuthorYears } from "#shared/utils/author-years"
 import type { RouteLocationRaw } from "vue-router"
 
 import {
