@@ -70,10 +70,10 @@ async function selectReaderWord(page: Page, word: string) {
 
 async function openEmbed(page: Page, word: string) {
   await selectReaderWord(page, word)
-  const indicator = page.getByRole("button", { name: `Slå upp ${word} i SO och SAOB` })
+  const indicator = page.getByRole("button", { name: `Slå upp ${word} i Svensk ordbok` })
   await expect(indicator).toBeVisible()
   await indicator.click({ force: true })
-  const frame = page.locator(`iframe[title="Slå upp ${word} i SO och SAOB"]`)
+  const frame = page.locator(`iframe[title="Slå upp ${word} i Svensk ordbok"]`)
   await expect(frame).toBeAttached()
   return frame
 }
@@ -168,12 +168,12 @@ test("one selected Reader word accepts the result from the current cross-origin 
   const word = page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first()
   await word.dblclick()
 
-  const indicator = page.getByRole("button", { name: "Slå upp DOKTOR i SO och SAOB" })
+  const indicator = page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" })
   await expect(indicator).toBeVisible()
   await indicator.click()
 
   const dialog = page.getByRole("dialog")
-  const frame = dialog.locator('iframe[title="Slå upp DOKTOR i SO och SAOB"]')
+  const frame = dialog.locator('iframe[title="Slå upp DOKTOR i Svensk ordbok"]')
   await expect(frame).toBeVisible()
   await expect.poll(() => new URL(page.url()).searchParams.get("so"))
     .toBe("DOKTOR")
@@ -310,7 +310,7 @@ test("a collapsed OCR double-click recovers the nested Reader word without a sta
   await page.clock.install()
   await page.locator(".reader_main #reported-nested-ocr-word").dblclick()
 
-  const indicator = page.getByRole("button", { name: "Slå upp verkligt i SO och SAOB" })
+  const indicator = page.getByRole("button", { name: "Slå upp verkligt i Svensk ordbok" })
   await expect(indicator).toBeVisible()
   await page.clock.fastForward(650)
   await expect(indicator).toBeVisible()
@@ -333,7 +333,7 @@ test("manual one-word selection retains delayed mouseup inspection", async ({
     word.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }))
   })
 
-  await expect(page.getByRole("button", { name: "Slå upp DOKTOR i SO och SAOB" }))
+  await expect(page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" }))
     .toBeVisible()
   expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
     readerManifest
@@ -358,12 +358,12 @@ test("a keyboard-created Reader selection exposes the dictionary action", async 
     }))
   })
 
-  const indicator = page.getByRole("button", { name: "Slå upp DOKTOR i SO och SAOB" })
+  const indicator = page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" })
   await expect(indicator).toBeVisible()
   await indicator.focus()
   await expect(indicator).toBeFocused()
   await page.keyboard.press("Enter")
-  await expect(page.locator('iframe[title="Slå upp DOKTOR i SO och SAOB"]'))
+  await expect(page.locator('iframe[title="Slå upp DOKTOR i Svensk ordbok"]'))
     .toBeVisible()
   expect(await fixtureRequests(request, "_dictionary_requests")).toEqual([])
   expect(await fixtureRequests(request, "_reader_manifest_requests")).toEqual([
@@ -409,6 +409,8 @@ test("an SO-only result renders no undeclared SAOB tab", async ({ page, request 
   await page.goto(readerPath, { waitUntil: "networkidle" })
   const frame = await openEmbed(page, "DOKTOR")
 
+  await expect(page.getByRole("heading", { name: "Svensk ordbok utgiven av Svenska Akademien" })).toBeVisible()
+  expect(new URL((await frame.getAttribute("src"))!).searchParams.get("dictionary")).toBe("so")
   await expect(frame.contentFrame().getByRole("tab", { name: "SO" }))
     .toHaveAttribute("aria-selected", "true")
   await expect(frame.contentFrame().getByRole("tab", { name: "SAOB" })).toHaveCount(0)
@@ -458,12 +460,12 @@ test("a newer dictionary lookup replaces the active session before its late resu
   })
 
   await selectReaderWord(page, "GLAS")
-  const nextIndicator = page.getByRole("button", { name: "Slå upp GLAS i SO och SAOB" })
+  const nextIndicator = page.getByRole("button", { name: "Slå upp GLAS i Svensk ordbok" })
   await expect(nextIndicator).toBeVisible()
   // Headless UI makes the Reader background inert while the modal is open. Invoke the
   // rendered indicator in-page to exercise the component's real replacement path.
   await nextIndicator.evaluate((button: HTMLButtonElement) => button.click())
-  const second = page.locator('iframe[title="Slå upp GLAS i SO och SAOB"]')
+  const second = page.locator('iframe[title="Slå upp GLAS i Svensk ordbok"]')
 
   await expect.poll(() => page.evaluate((requestId) => (
     (window as typeof window & {
@@ -557,7 +559,7 @@ test("route changes invalidate a pending dictionary lookup", async ({ page, requ
   await expect(page).toHaveURL(`${readerPath}?om-boken`)
 
   await expect(page.locator(".reader-dictionary-modal")).toHaveCount(0)
-  await expect(page.locator('iframe[title="Slå upp DOKTOR i SO och SAOB"]')).toHaveCount(0)
+  await expect(page.locator('iframe[title="Slå upp DOKTOR i Svensk ordbok"]')).toHaveCount(0)
   await expect(page.locator(".modal.about")).toBeVisible()
   await expect(page.getByRole("dialog")).toContainText("Om boken")
   await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
@@ -724,7 +726,7 @@ test("double-clicking Reader whitespace clears stale selection and its pending i
   await page.goto(readerPath, { waitUntil: "networkidle" })
   await page.clock.install()
   await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().dblclick()
-  const indicator = page.getByRole("button", { name: "Slå upp DOKTOR i SO och SAOB" })
+  const indicator = page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" })
   await expect(indicator).toBeVisible()
 
   await page.locator(".reader_main").dblclick({ position: { x: 5, y: 5 } })

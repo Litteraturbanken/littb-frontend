@@ -2996,7 +2996,7 @@ const handleFixtureRequest = async (request, response) => {
     const word = wordValues.length === 1 ? wordValues[0] : null
     const requestId = requestIdValues.length === 1 ? requestIdValues[0] : null
     if (
-      url.searchParams.size !== 2
+      (url.searchParams.size !== 2 && !(url.searchParams.size === 3 && url.searchParams.get("dictionary") === "so"))
       || typeof word !== "string"
       || word.length < 1
       || word.length > 100

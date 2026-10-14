@@ -222,9 +222,9 @@ test("the production artifact opens the cross-origin Reader dictionary embed", a
   const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
   await page.goto(readerPath, { waitUntil: "networkidle" })
   await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().dblclick()
-  await page.getByRole("button", { name: "Slå upp DOKTOR i SO och SAOB" }).click()
+  await page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" }).click()
 
-  const frame = page.locator('iframe[title="Slå upp DOKTOR i SO och SAOB"]')
+  const frame = page.locator('iframe[title="Slå upp DOKTOR i Svensk ordbok"]')
   await expect(frame.contentFrame().getByRole("tabpanel"))
     .toContainText("SO-artikel för DOKTOR")
   expect(await (await request.get(`${fixtureOrigin}/_dictionary_requests`)).json())

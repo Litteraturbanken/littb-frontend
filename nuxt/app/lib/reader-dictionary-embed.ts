@@ -86,6 +86,7 @@ export function buildReaderDictionaryEmbedUrl(options: {
   const url = new URL("/embed/reader", origin)
   url.searchParams.set("word", word)
   url.searchParams.set("requestId", options.requestId)
+  url.searchParams.set("dictionary", "so")
   return url.toString()
 }
 
@@ -100,7 +101,7 @@ export function buildSvenskaDictionaryUrl(
 
   const url = new URL("/", origin)
   url.searchParams.set("q", word)
-  url.searchParams.set("activeTab", "alla")
+  url.searchParams.set("activeTab", "so")
   url.searchParams.set("exactMatch", "true")
   return url.toString()
 }
