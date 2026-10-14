@@ -1238,7 +1238,7 @@ const displayedPage = computed(() => Math.min(state.value.page, totalPages.value
 const pagination = computed<LibraryPaginationModel>(() => {
   const pageHref = (page: number) => ({
     path: route.path,
-    query: textSearchPageQuery({ ...rawQuery.value, snapshot: results.value?.snapshot }, page) as LocationQueryRaw
+    query: textSearchPageQuery(rawQuery.value, page) as LocationQueryRaw
   })
   return {
     currentPage: displayedPage.value,
@@ -1265,7 +1265,7 @@ function pageQuery(page: number) {
   const primary = acceptedPrimary.value
   if (primary?.identity !== primaryIdentity.value || primary.status !== 200
     || !primary.results) return null
-  return textSearchPageQuery({ ...rawQuery.value, snapshot: primary.results.snapshot }, page)
+  return textSearchPageQuery(rawQuery.value, page)
 }
 
 function replacePage(page: number) {
