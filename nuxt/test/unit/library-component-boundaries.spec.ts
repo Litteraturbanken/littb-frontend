@@ -861,7 +861,7 @@ describe("Library component ownership", () => {
 
     loading.value = true
     await nextTick()
-    expect(target.querySelector("[data-library-result]")).toBeNull()
+    expect(target.querySelector("[data-library-result]")).not.toBeNull()
     expect(target.querySelector("[data-library-loading]")?.getAttribute("role")).toBe("status")
     expect(target.querySelector("[data-library-loading] .sr-only")?.textContent)
       .toBe("Laddar resultat")
@@ -1554,9 +1554,9 @@ describe("Library component ownership", () => {
       .toBe("Laddar resultat")
     expect(target.querySelector("[data-library-loading] .spinner")?.getAttribute("aria-hidden"))
       .toBe("true")
-    expect(target.querySelector("[data-library-work-row]")).toBeNull()
-    expect(target.querySelector("[data-library-work-actions]")).toBeNull()
-    expect(target.querySelector("[data-library-page]")).toBeNull()
+    expect(target.querySelector("[data-library-work-row]")).not.toBeNull()
+    expect(target.querySelector("[data-library-work-actions]")).not.toBeNull()
+    expect(target.querySelector("[data-library-page]")).not.toBeNull()
     expect(target.querySelector('[data-library-sort="titlar"]')).not.toBeNull()
     app.unmount()
     target.remove()

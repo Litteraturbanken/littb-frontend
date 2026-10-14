@@ -84,7 +84,7 @@ function workActionsId(key: string): string {
             <span class="sr-only">Laddar resultat</span>
             <i aria-hidden="true" class="spinner fa fa-spinner fa-pulse" />
         </div>
-        <template v-else>
+        <template v-if="!loading || response.data.length">
             <div v-if="response.failed" data-library-error role="alert">Ett fel uppstod.</div>
             <div v-else-if="!response.data.length" data-library-empty class="pb-4">
                 Inga träffar.
