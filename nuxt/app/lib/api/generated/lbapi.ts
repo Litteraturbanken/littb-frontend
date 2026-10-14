@@ -21,6 +21,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/authors/{author_id}/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Author Audio
+         * @description Resolve the optional WordPress link independently of the author profile.
+         */
+        get: operations["v2_get_author_audio"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/authors/{author_id}/documents/{document_kind}": {
         parameters: {
             query?: never;
@@ -64,6 +84,26 @@ export interface paths {
         };
         /** Get Author Works */
         get: operations["v2_get_author_works"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/authors/{author_id}/works-availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Author Works Availability
+         * @description Return the navigation flag without building the works page.
+         */
+        get: operations["v2_get_author_works_availability"];
         put?: never;
         post?: never;
         delete?: never;
@@ -549,6 +589,11 @@ export interface components {
             /** Request Id */
             request_id?: string | null;
         };
+        /** AuthorAudioLink */
+        AuthorAudioLink: {
+            /** Audio Url */
+            audio_url: string | null;
+        };
         /** AuthorContainingWork */
         AuthorContainingWork: {
             author: components["schemas"]["AuthorWorksPerson"];
@@ -703,6 +748,13 @@ export interface components {
             media_type: "etext" | "faksimil" | "infopost";
             /** Url */
             url: string;
+        };
+        /** AuthorWorksAvailability */
+        AuthorWorksAvailability: {
+            /** Author Id */
+            author_id: string;
+            /** Has Works */
+            has_works: boolean;
         };
         /** AuthorWorkSection */
         AuthorWorkSection: {
@@ -3980,6 +4032,73 @@ export interface operations {
             };
         };
     };
+    v2_get_author_audio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                author_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorAudioLink"];
+                };
+            };
+            /** @description Author not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     v2_get_author_document: {
         parameters: {
             query?: never;
@@ -4143,6 +4262,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_author_works_availability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                author_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorWorksAvailability"];
                 };
             };
             /** @description Search snapshot unavailable */

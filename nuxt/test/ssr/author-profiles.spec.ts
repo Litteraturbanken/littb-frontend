@@ -333,7 +333,7 @@ test("SSR renders a sparse Dramawebben-only profile without ordinary content", a
   expect(document.title).toBe("Dramatikern, Introduktion av Dramawebben | Litteraturbanken")
   expect(document.querySelector("h1")?.textContent?.trim()).toBe("Dramatikern")
   expect([...document.querySelectorAll("ul.links a")].map(node => node.textContent?.trim()))
-    .toEqual(["Verk", "Dramawebben"])
+    .toEqual(["Dramawebben"])
   expect(document.querySelector(".introtext")?.textContent).toContain(
     "Den här introduktionen finns bara på Dramawebben."
   )

@@ -59,9 +59,7 @@ onBeforeUnmount(() => {
           >Introduktion</NuxtLink>
         </li>{{ " " }}
         <AuthorWorksNavItem :author-id="profile.authorId" />{{ " " }}
-        <li v-if="profile.audioUrl">
-          <a :href="profile.audioUrl" target="_blank" rel="noopener noreferrer">Ljud</a>
-        </li>{{ " " }}
+        <AuthorAudioNavItem :author-id="profile.authorId" :initial-url="profile.audioUrl" />{{ " " }}
         <li v-if="profile.hasDramawebben" :class="{ active: variant === 'dramawebben' }">
           <NuxtLink
             :to="dramawebbenHref"

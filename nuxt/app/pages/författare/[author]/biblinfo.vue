@@ -298,9 +298,7 @@ useHead({
             <NuxtLink :to="rootHref">Introduktion</NuxtLink>
           </li>{{ " " }}
           <AuthorWorksNavItem :author-id="authorId" />{{ " " }}
-          <li v-if="profile.audioUrl">
-            <a :href="profile.audioUrl" target="_blank" rel="noopener noreferrer">Ljud</a>
-          </li>{{ " " }}
+          <AuthorAudioNavItem :author-id="profile.authorId" :initial-url="profile.audioUrl" />{{ " " }}
           <li v-if="profile.hasDramawebben">
             <NuxtLink :to="dramawebbenHref">Dramawebben</NuxtLink>
           </li>{{ " " }}

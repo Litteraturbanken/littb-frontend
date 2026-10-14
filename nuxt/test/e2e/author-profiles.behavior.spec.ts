@@ -96,6 +96,39 @@ test.beforeEach(async ({ page, request }) => {
   }))
 })
 
+test("internal author links do not request editorial redirects", async ({ page }) => {
+  const lookups: string[] = []
+  page.on("request", request => {
+    if (request.url().includes("/nuxt-api/editorial-redirect")) lookups.push(request.url())
+  })
+  await page.goto("/bibliotek?visa=authors", { waitUntil: "networkidle" })
+  await routerPush(page, "/f%C3%B6rfattare/StrindbergA")
+  await expect(page.locator("h1")).toContainText("August Strindberg")
+  expect(lookups).toEqual([])
+})
+
+test("a slow audio lookup does not delay the author title or download full works", async ({ page }) => {
+  const works: string[] = []
+  page.on("request", request => {
+    if (/\/authors\/[^/]+\/works$/u.test(request.url())) works.push(request.url())
+  })
+  let release = () => {}
+  const gate = new Promise<void>(resolve => { release = resolve })
+  await page.route("**/authors/StrindbergA/audio", async route => {
+    await gate
+    await route.fulfill({ json: { audio_url: "https://litteraturbanken.se/ljudochbild/författare/strindberga" } })
+  })
+  try {
+    await page.goto("/bibliotek?visa=authors", { waitUntil: "networkidle" })
+    await routerPush(page, "/f%C3%B6rfattare/StrindbergA")
+    await expect(page.locator("h1")).toContainText("August Strindberg")
+    await expect(page).toHaveTitle("August Strindberg, Introduktion | Litteraturbanken")
+    expect(works).toEqual([])
+    release()
+    await expect(page.getByRole("link", { name: "Ljud", exact: true })).toHaveAttribute("href", /strindberga$/u)
+  } finally { release() }
+})
+
 test("shows immediate loading feedback while the destination history entry is pending", async ({ page }) => {
   await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
 
@@ -386,7 +419,7 @@ for (const delayedResource of ["profile", "works"]) {
     const responseDelivered = new Promise<void>(resolve => {
       markResponseDelivered = resolve
     })
-    await page.route(`**/v2/authors/Lagerl%C3%B6fS${delayedResource === "works" ? "/works" : ""}`, async route => {
+    await page.route(`**/v2/authors/Lagerl%C3%B6fS${delayedResource === "works" ? "/works-availability" : ""}`, async route => {
       const response = await route.fetch()
       markRequestStarted()
       await responseGate

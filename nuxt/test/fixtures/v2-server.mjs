@@ -6218,6 +6218,22 @@ const handleFixtureRequest = async (request, response) => {
     ))
   }
 
+  const authorAuxiliary = /^\/v2\/authors\/([^/]+)\/(audio|works-availability)$/.exec(apiPathname)
+  if (request.method === "GET" && authorAuxiliary) {
+    const identity = decodeURIComponent(authorAuxiliary[1])
+    if (authorAuxiliary[2] === "audio") {
+      return sendJson(response, 200, { audio_url: authorProfiles.get(identity)?.audio_url ?? null })
+    }
+    await waitForAuthorWorksDelay(identity)
+    if (authorWorksFailures.has(identity)) return sendJson(response, 503, { error: "unavailable" })
+    const works = authorWorksById.get(identity)
+    if (!works) return sendJson(response, 404, { error: "not found" })
+    return sendJson(response, 200, {
+      author_id: identity,
+      has_works: works ? works.authored_sections.some(section => section.items.length > 0) : false
+    })
+  }
+
   const authorWorksAuthorId = request.method === "GET"
     ? decodedAuthorWorksAuthorId(rawApiPathname)
     : null
