@@ -1919,6 +1919,12 @@ test("word modes and allowlisted legacy filters preserve exact URL and request o
     include_modernized: false,
     legacy_filters: [{ field: "source", value: "sol" }]
   })
+  await page.getByRole("button", { name: "SÖK EFTER DEL AV ORD", exact: true }).click()
+  await expect.poll(() => new URL(page.url()).searchParams.get("infix")).toBe("1")
+  const infixQuery = new URL(page.url()).searchParams
+  expect(infixQuery.get("prefix")).toBe("1")
+  expect(infixQuery.get("suffix")).toBe("1")
+  expect(infixQuery.has("snapshot")).toBe(false)
 })
 
 test("Back and Forward atomically restore route-owned controls and results", async ({ page }) => {
@@ -1949,7 +1955,7 @@ test("left and right keyboard pagination updates the canonical page and restores
   await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
 })
 
-test("pagination keeps every page in the accepted generation and drops it for filters", async ({
+test("pagination uses legacy URLs through reload, history, keyboard and filters", async ({
   page,
   request
 }) => {
@@ -1957,15 +1963,15 @@ test("pagination keeps every page in the accepted generation and drops it for fi
   const next = page.locator("[data-library-pagination-next]").first()
   await next.click()
   await expect(page).toHaveURL(/traffsida=2/)
-  await expect(page).toHaveURL(/snapshot=gen-fixture-0001/)
+  await expect(page).not.toHaveURL(/snapshot=/)
   expect((await requests(request, "results")).at(-1)?.body).toMatchObject({
-    page: 2, snapshot: "gen-fixture-0001"
+    page: 2
   })
 
   await page.reload()
   await expect(page.locator("#results tr.sentence .match")).toHaveCount(150)
   expect((await requests(request, "results")).at(-1)?.body).toMatchObject({
-    page: 2, snapshot: "gen-fixture-0001"
+    page: 2
   })
   await page.goBack()
   await expect(page).not.toHaveURL(/traffsida=2/)
@@ -1981,7 +1987,7 @@ test("pagination keeps every page in the accepted generation and drops it for fi
   await page.locator("h1").click()
   await page.keyboard.press("ArrowRight")
   await expect(page).toHaveURL(/traffsida=3/)
-  await expect(page).toHaveURL(/snapshot=gen-fixture-0001/)
+  await expect(page).not.toHaveURL(/snapshot=/)
 
   await page.locator(".navigator").getByRole("button", { name: "Strindberg, August" }).click()
   await expect(page).not.toHaveURL(/snapshot=/)
@@ -2116,7 +2122,7 @@ for (const auxiliary of ["expansion", "navigator"] as const) {
     expect(await requests(request, "results")).toHaveLength(beforeRestart.length)
     await page.getByRole("button", { name: "Starta om sökningen" }).click()
     await expect(page.getByRole("alert")).toHaveCount(0)
-    await expect(page.locator("#results .match a").first()).toHaveAttribute("href", /snapshot=gen-fixture-0002/)
+    await expect(page.locator("#results .match a").first()).toHaveAttribute("href", /traff=/)
     expect(await page.evaluate(() => location.pathname + location.search)).toBe(origin)
     const fresh = (await requests(request, "results")).slice(beforeRestart.length)
       .filter(entry => !Object.hasOwn(entry.body, "snapshot"))
@@ -2124,8 +2130,9 @@ for (const auxiliary of ["expansion", "navigator"] as const) {
     expect(fresh[0]!.body).toMatchObject({ query: "overflow", author_ids: ["StrindbergA"], page: 1 })
     if (auxiliary === "navigator") expect(fresh[0]!.body.facet_author_id).toBe("StrindbergA")
     await page.locator("[data-library-pagination-next]").first().click()
-    await expect(page).toHaveURL(/snapshot=gen-fixture-0002/)
-    await expect.poll(async () => (await requests(request, "results")).at(-1)?.body.snapshot).toBe("gen-fixture-0002")
+    await expect(page).not.toHaveURL(/snapshot=/)
+    await expect.poll(async () => (await requests(request, "results")).at(-1)?.body.page).toBe(2)
+    expect((await requests(request, "results")).at(-1)?.body).not.toHaveProperty("snapshot")
     expect(legacyRequests).toEqual([])
   })
 }
@@ -2188,9 +2195,10 @@ test("an expired generation requires an explicit fresh restart", async ({ page, 
   expect(new URL(page.url()).searchParams.get("fras")).toBe("overflow")
   expect(new URL(page.url()).searchParams.get("forfattare")).toBe("StrindbergA")
   await page.locator("[data-library-pagination-next]").first().click()
-  await expect(page).toHaveURL(/snapshot=gen-fixture-0002/)
-  expect((await requests(request, "results")).at(-1)?.body).toMatchObject({
-    query: "overflow", author_ids: ["StrindbergA"], page: 2, snapshot: "gen-fixture-0002"
+  await expect(page).not.toHaveURL(/snapshot=/)
+  await expect(page).toHaveURL(/traffsida=2/)
+  await expect.poll(async () => (await requests(request, "results")).at(-1)?.body).toMatchObject({
+    query: "overflow", author_ids: ["StrindbergA"], page: 2
   })
 })
 
@@ -2802,7 +2810,7 @@ test("Visa fler discloses remaining occurrences at 500 and continues from the la
   const href = new URL((await continuation.getAttribute("href"))!, "http://litteraturbanken.test")
   expect(href.pathname).toContain("/sida/50/faksimil")
   expect(href.searchParams.get("traff")).toBe("w21_4992")
-  expect(href.searchParams.get("snapshot")).toBe("gen-fixture-0001")
+  expect(href.searchParams.has("snapshot")).toBe(false)
   expect(href.searchParams.get("s_return")).toBe(origin)
   expect(href.searchParams.get("s_prefix")).toBe("true")
   await expect(page.locator("tr:not(.is_faksimil).sentence .match")).toHaveCount(5)
@@ -3373,7 +3381,7 @@ test("SSR hydration is single-fetch and Reader hit destination is navigable", as
   const reader = new URL(href!, "http://litteraturbanken.test")
   expect(reader.pathname).toBe("/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/1/etext")
   expect(reader.searchParams.get("hit")).toBe("0")
-  expect(reader.searchParams.get("snapshot")).toBe("gen-fixture-0001")
+  expect(reader.searchParams.has("snapshot")).toBe(false)
   expect(reader.searchParams.get("hit_index")).toBe("0")
   expect(reader.searchParams.get("q")).toBe("frihet")
   const response = await page.goto(href!, { waitUntil: "domcontentloaded" })
@@ -3439,7 +3447,7 @@ test("renders a phrase hit as one accessible Reader link", async ({ page }) => {
 
   const match = page.locator("#results tr.sentence .match").first()
   await expect(match.locator("a")).toHaveCount(1)
-  await expect(match.locator("a")).toHaveText("frihetnu")
+  await expect(match.locator("a")).toHaveText("frihet nu")
   await expect(match.locator("a .word")).toHaveCount(2)
 })
 
@@ -3460,7 +3468,7 @@ test("Search result return restores the exact origin and Reader hit", async ({ p
 
   await page.goBack({ waitUntil: "networkidle" })
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida 1")
-  await expect(page).toHaveURL(/q=frihet&hit=0&snapshot=gen-fixture-0001&traff=w1_11/)
+  await expect(page).toHaveURL(/q=frihet&hit=0&traff=w1_11/)
   await page.reload({ waitUntil: "networkidle" })
   await expect(page.locator("#search_nav").getByRole("link", {
     name: "Tillbaka till sökningen"
