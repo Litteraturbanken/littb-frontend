@@ -16,6 +16,19 @@ function encodeLayers(value: string, layers: number) {
 }
 
 describe("Presentation XHTML parser", () => {
+  test("canonicalizes author links before rendering for Nuxt and native navigation", async () => {
+    const source = await readFile(new URL("presentationerForfattare.html", fixtureRoot), "utf8")
+    const parsed = parsePresentationDocument(source)
+    expect(parsed.bodyHtml).toContain('href="/f%C3%B6rfattare/FrostensonK/presentation"')
+    expect(parsed.bodyHtml).not.toContain('href="/forfattare/')
+    const links = parsePresentationDocument(`<html><body>
+      <a href="/forfattare/FrostensonK/presentation?x=a%2Bb#text">Author</a>
+      <a href="https://example.org/forfattare/FrostensonK/presentation">External</a>
+    </body></html>`).bodyHtml
+    expect(links).toContain('href="/f%C3%B6rfattare/FrostensonK/presentation?x=a%2Bb#text"')
+    expect(links).toContain('href="https://example.org/forfattare/FrostensonK/presentation"')
+  })
+
   test("extracts the active body and head assets without executable wrappers", () => {
     const source = `<!doctype html>
       <html><head>
@@ -81,7 +94,7 @@ describe("Presentation XHTML parser", () => {
 
     expect(parsed.bodyHtml).toContain('id="relative" href="/red/presentationer/file.pdf" download')
     for (const value of [
-      "/författare/Test",
+      "/f%C3%B6rfattare/Test",
       "#del",
       "mailto:test@example.test",
       "tel:+461234",
@@ -128,7 +141,7 @@ describe("Presentation XHTML parser", () => {
     expect(parsed.bodyHtml).toContain('id="legacy-background">')
     expect(parsed.bodyHtml).toContain('id="inline-style">Text</p>')
     expect(parsed.bodyHtml).toContain('id="other-url-attributes">Fler attribut</p>')
-    expect(parsed.bodyHtml).toContain('id="ping-link" href="/författare/Test">Länk</a>')
+    expect(parsed.bodyHtml).toContain('id="ping-link" href="/f%C3%B6rfattare/Test">Länk</a>')
     expect(parsed.bodyHtml).not.toMatch(/(?:srcset|background=|style=|action=|poster=|xlink:href|ping=|attributionsrc|evil\.test)/iu)
   })
 

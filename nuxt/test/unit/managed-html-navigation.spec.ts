@@ -26,6 +26,7 @@ function target(
 describe("managed HTML navigation", () => {
   test.each([
     ["/presentationer?ankare=kulturarvet", "/presentationer?ankare=kulturarvet"],
+    ["/f%C3%B6rfattare/FrostensonK/presentation", "/f%C3%B6rfattare/FrostensonK/presentation"],
     [
       "/författare/Lagerl%C3%B6fS?om-boken",
       "/f%C3%B6rfattare/Lagerl%C3%B6fS?om-boken"

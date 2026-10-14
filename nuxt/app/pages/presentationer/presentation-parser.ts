@@ -11,6 +11,7 @@ import {
 } from "#shared/utils/renderable-html"
 import { hasC0OrC1Control, hasLoneSurrogate, removeC0AndSpace } from "#shared/utils/text-safety"
 import { SaxesParser, type SaxesTagNS } from "saxes"
+import { canonicalNuxtHref, isNuxtInternalHref } from "../../lib/internal-navigation"
 
 export { validatePresentationSegments } from "../../lib/presentation-routes"
 
@@ -381,7 +382,11 @@ function inertPresentationBody(body: ParsedElement): void {
     if (element.hasAttribute("href")) {
       const normalized = normalizedUrl(element.getAttribute("href") ?? "")
       if (normalized === null) element.removeAttribute("href")
-      else element.setAttribute("href", normalized)
+      else {
+        const canonical = canonicalNuxtHref(normalized)
+        const pathname = canonical.split(/[?#]/u)[0] ?? ""
+        element.setAttribute("href", isNuxtInternalHref(pathname) ? canonical : normalized)
+      }
     }
     if (!element.hasAttribute("src")) return
     const normalized = element.localName.toLowerCase() === "img"
