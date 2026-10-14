@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { displayedSummary } from "~/lib/library/displayed-summary"
 import type { LocationQuery, RouteLocationRaw } from "vue-router"
 import libraryBackground from "~/assets/img/biblioteket_bakgrund.jpg"
 import epubBackground from "~/assets/img/ljudlandskap.jpg"
@@ -653,6 +654,7 @@ function initialLibrarySummaryValue(): LibrarySummary {
 }
 
 const librarySummary = ref<LibrarySummary>(initialLibrarySummaryValue())
+const displayedLibrarySummary = computed<LibrarySummary>(previous => displayedSummary(librarySummary.value, previous))
 const browseResults = computed(() =>
     currentMode.value === "parts" ? partResults.value : workResults.value
 )
@@ -1628,16 +1630,16 @@ function ordinaryLibraryModeTabs(
         libraryModeTab(
             "authors",
             "Författare",
-            librarySummary.value.authors,
+            displayedLibrarySummary.value.authors,
             stateHref({ mode: "authors", filter: filter.value, sort: "popularitet" }),
-            downloadMode.value || librarySummary.value.authors === 0,
+            downloadMode.value || displayedLibrarySummary.value.authors === 0,
             downloadMode.value,
             separatorBefore
         ),
         libraryModeTab(
             "works",
             "Verk",
-            librarySummary.value.works,
+            displayedLibrarySummary.value.works,
             ordinaryWorksTabHref(),
             false,
             false,
@@ -1650,9 +1652,9 @@ function ordinaryLibraryModeTabs(
             libraryModeTab(
                 "parts",
                 "Dikt, novell, etc.",
-                librarySummary.value.parts,
+                displayedLibrarySummary.value.parts,
                 stateHref({ mode: "parts", filter: filter.value, sort: "popularitet" }),
-                librarySummary.value.parts === 0,
+                displayedLibrarySummary.value.parts === 0,
                 false,
                 separatorBefore
             ),
@@ -1839,10 +1841,10 @@ const downloadDistinctHits = computed(() =>
     currentMode.value === "pdf" ? pdfResults.value.distinctHits : epubResults.value.distinctHits
 )
 const epubTabCount = computed(() =>
-    standalone.value ? downloadCounts.value.epub : librarySummary.value.epub
+    standalone.value ? downloadCounts.value.epub : displayedLibrarySummary.value.epub
 )
 const pdfTabCount = computed(() =>
-    standalone.value ? downloadCounts.value.pdf : librarySummary.value.pdf
+    standalone.value ? downloadCounts.value.pdf : displayedLibrarySummary.value.pdf
 )
 
 function currentResultHitCount(): number {

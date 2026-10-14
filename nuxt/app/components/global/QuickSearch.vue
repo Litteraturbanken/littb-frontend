@@ -138,11 +138,11 @@ const developerRows = computed<SearchRow[]>(() => developerQuickSearchCommands(
 const rows = computed<SearchRow[]>(() => {
   if (!query.value) return []
   if (query.value.startsWith("/")) return developerRows.value
-  if (requestState.value === "idle" || requestState.value === "loading") {
+  if (requestState.value === "idle") {
     return developerRows.value
   }
 
-  const output = requestState.value === "success"
+  const output = requestState.value === "success" || requestState.value === "loading"
     ? remoteItems.value.map(remoteRow)
     : []
 
@@ -230,10 +230,13 @@ async function runSearch(value: string, version: number) {
 
 watch(query, value => {
   cancelPendingSearch()
-  resetResults()
   developerOutput.value = null
   const trimmed = value.trim()
-  if (!trimmed || trimmed.startsWith("/")) return
+  if (!trimmed || trimmed.startsWith("/")) {
+    resetResults()
+    return
+  }
+  requestState.value = "loading"
 
   const version = requestVersion
   debounceTimer = setTimeout(() => {
