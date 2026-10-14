@@ -15,7 +15,7 @@ const { data } = useLazyAsyncData(
       return { identity, url: safeHttpUrl(audio?.audio_url) }
     } catch { return { identity, url: "" } }
   },
-  { server: false }
+  { server: false, getCachedData: (key, nuxtApp) => nuxtApp.payload.data[key] }
 )
 const url = computed(() => props.initialUrl
   || (data.value?.identity === props.authorId ? data.value.url : ""))

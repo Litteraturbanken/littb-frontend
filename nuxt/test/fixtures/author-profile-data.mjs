@@ -354,8 +354,21 @@ export const unsafePortraitAuthorProfile = {
   }
 }
 
+/** @satisfies {AuthorProfile} */
+export const noWorksAuthorProfile = {
+  ...lagerlofAuthorProfile,
+  author_id: "NoWorks",
+  full_name: "Författare utan tillgängliga verk",
+  surname: null,
+  birth_year: null,
+  death_year: null,
+  canonical_path: "/författare/NoWorks",
+  introduction_html: null
+}
+
 /** @type {ReadonlyMap<string, AuthorProfile>} */
 export const authorProfiles = new Map([
+  [noWorksAuthorProfile.author_id, noWorksAuthorProfile],
   [strindbergAuthorProfile.author_id, strindbergAuthorProfile],
   [soderbergAuthorProfile.author_id, soderbergAuthorProfile],
   [lagerlofAuthorProfile.author_id, lagerlofAuthorProfile],

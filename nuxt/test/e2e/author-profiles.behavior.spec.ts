@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page, type Route } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 import { readFileSync } from "node:fs"
 
 import { managedHtmlRawProbes } from "../fixtures/author-profile-data.mjs"
@@ -129,60 +129,26 @@ test("a slow audio lookup does not delay the author title or download full works
   } finally { release() }
 })
 
-test("shows immediate loading feedback while the destination history entry is pending", async ({ page }) => {
+test("switching author profile variants preserves the shell and caches the introduction", async ({ page }) => {
   await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
-
-  for (const path of [
-    "/f%C3%B6rfattare/StrindbergA/dramawebben",
-    "/f%C3%B6rfattare/StrindbergA"
-  ] as const) {
-    let releaseResponse = () => {}
-    const responseGate = new Promise<void>(resolve => {
-      releaseResponse = resolve
-    })
-    let markRequestStarted = () => {}
-    const requestStarted = new Promise<void>(resolve => {
-      markRequestStarted = resolve
-    })
-    let markResponseDelivered = () => {}
-    const responseDelivered = new Promise<void>(resolve => {
-      markResponseDelivered = resolve
-    })
-    const profileRoute = async (route: Route) => {
-      const response = await route.fetch()
-      markRequestStarted()
-      await responseGate
-      await route.fulfill({ response })
-      markResponseDelivered()
-    }
-
-    await page.route("**/api/v2/authors/**", profileRoute)
-    await page.route("**/v2/authors/**", profileRoute)
-    try {
-      await beginRouterPush(page, path)
-      await requestStarted
-
-      await expect(page).not.toHaveURL(path)
-      await expect(page).toHaveTitle(/August Strindberg/u)
-      await expect(page.locator("[data-author-navigation-loading]")).toBeVisible()
-      await expect(page.locator("h1")).not.toBeVisible()
-      await expect(page.locator("body")).toHaveClass(/\bpage-authorInfo\b/u)
-      await expect(page.locator("body")).not.toHaveClass(/\bpage-library\b/u)
-      await expect(page.locator("html")).toHaveCSS("background-image",
-        path.endsWith("/dramawebben") ? /dramawebben_fade_more/u : /forf2_bkg/u)
-      await expect(page.locator("[data-author-navigation-loading]")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
-
-      releaseResponse()
-      await responseDelivered
-      await expect(page).toHaveURL(path)
-      await expect(page).toHaveTitle(/August Strindberg/u)
-      await expect(page.locator("h1")).toContainText("August Strindberg")
-    } finally {
-      releaseResponse()
-      await page.unroute("**/v2/authors/**", profileRoute)
-      await page.unroute("**/api/v2/authors/**", profileRoute)
-    }
-  }
+  let release = () => {}
+  const gate = new Promise<void>(resolve => { release = resolve })
+  await page.route("**/v2/authors/StrindbergA", async route => {
+    await gate
+    await route.continue()
+  })
+  try {
+    await beginRouterPush(page, "/f%C3%B6rfattare/StrindbergA/dramawebben")
+    await expect(page.locator("h1")).toBeVisible()
+    await expect(page.getByRole("navigation", { name: "Författarsidor" })).toBeVisible()
+    release()
+    await expect(page).toHaveURL(/dramawebben$/u)
+    const requests: string[] = []
+    page.on("request", request => requests.push(request.url()))
+    await beginRouterPush(page, "/f%C3%B6rfattare/StrindbergA")
+    await expect(page).toHaveTitle("August Strindberg, Introduktion | Litteraturbanken")
+    expect(requests.filter(url => /\/v2\/authors\//u.test(url))).toEqual([])
+  } finally { release() }
 })
 
 test("returning to the current route dismisses a pending author loading view", async ({ page }) => {

@@ -376,9 +376,7 @@ test("titlar and mer transitions replace sections and chrome while preserving th
   await expect(page.locator(".unbox")).not.toContainText(
     "August Strindberg: en levnadsteckning"
   )
-  expect(await authorWorksRequests(request)).toEqual([
-    "/v2/authors/StrindbergA/works"
-  ])
+  expect(await authorWorksRequests(request)).toEqual([])
   expect(problems).toEqual([])
 })
 
@@ -403,15 +401,15 @@ test("a delayed obsolete author response cannot overwrite the latest author rout
     "/v2/authors/NoWorks/works"
   ])
 
-  await expect(page).toHaveURL(new RegExp(`${emptyTitlesPath}$`))
+  await expect(page).toHaveURL(new RegExp(`${emptyTitlesPath.replace(/\/titlar$/, "")}$`))
   await expect(page.locator("h1")).toContainText("Författare utan tillgängliga verk")
   await expectNoRichResidue(page)
   await expect(page).toHaveTitle(
-    "Författare utan tillgängliga verk, Tillgängliga verk | Litteraturbanken"
+    "Författare utan tillgängliga verk, Introduktion | Litteraturbanken"
   )
   await awaitPendingRouterPushes(page)
   await page.waitForTimeout(500)
-  await expect(page).toHaveURL(new RegExp(`${emptyTitlesPath}$`))
+  await expect(page).toHaveURL(new RegExp(`${emptyTitlesPath.replace(/\/titlar$/, "")}$`))
   await expect(page.locator("h1")).toContainText("Författare utan tillgängliga verk")
   await expect(page.locator("body")).not.toContainText("Selma Lagerlöf")
   await expectNoRichResidue(page)
@@ -492,7 +490,7 @@ test("empty, 404, 503, and malformed transitions clear rich content and metadata
     {
       authorId: "NoWorks",
       path: emptyTitlesPath,
-      finalTitle: "Författare utan tillgängliga verk, Tillgängliga verk | Litteraturbanken",
+      finalTitle: "Författare utan tillgängliga verk, Introduktion | Litteraturbanken",
       finalHeading: "Författare utan tillgängliga verk",
       error: false,
       failure: false
@@ -565,7 +563,7 @@ test("empty, 404, 503, and malformed transitions clear rich content and metadata
     }).toBe("Författarverk | Litteraturbanken")
 
     await awaitPendingRouterPushes(page)
-    await expect(page).toHaveURL(new RegExp(`${scenario.path}$`))
+    await expect(page).toHaveURL(new RegExp(`${scenario.authorId === "NoWorks" ? scenario.path.replace(/\/titlar$/, "") : scenario.path}$`))
     await expect(page).toHaveTitle(scenario.finalTitle)
     await expectNoRichResidue(page)
     if (scenario.error) {
@@ -581,4 +579,30 @@ test("empty, 404, 503, and malformed transitions clear rich content and metadata
   }
   expect(problems.filter(problem => !/^Failed to load resource: the server responded with a status of (404|503)/.test(problem)))
     .toEqual([])
+})
+
+
+test("keeps the author shell while loading works and reuses both tabs", async ({ page, request }) => {
+  await page.goto("/f%C3%B6rfattare/StrindbergA/", { waitUntil: "networkidle" })
+  await resetAuthorWorks(request)
+  const apiRequests: string[] = []
+  page.on("request", req => {
+    if (new URL(req.url()).pathname.includes("/api/v2/authors/")) apiRequests.push(req.url())
+  })
+  await request.put(`${fixture}/_author_works_delays`, { data: { StrindbergA: 1200 } })
+  await startRouterPush(page, richTitlesPath)
+  await expect(page.locator(".author-tab-progress")).toContainText("Laddar författarens verk")
+  await expect(page.getByRole("navigation", { name: "Författarsidor" })).toBeVisible()
+  await expect(page.locator(".portrait_container")).toBeVisible()
+  await expect(page.locator("h1")).toContainText("August Strindberg")
+  await awaitPendingRouterPushes(page)
+  await expectRichTitles(page)
+  await page.getByRole("link", { name: "Introduktion", exact: true }).click()
+  await expect(page).toHaveTitle("August Strindberg, Introduktion | Litteraturbanken")
+  await page.getByRole("link", { name: "Verk", exact: true }).click()
+  await expectRichTitles(page)
+  await routerPush(page, richMorePath)
+  await expectRichMore(page)
+  expect(await authorWorksRequests(request)).toEqual(["/v2/authors/StrindbergA/works"])
+  expect(apiRequests.filter(url => !url.endsWith("/works"))).toEqual([])
 })

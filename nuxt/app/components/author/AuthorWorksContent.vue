@@ -63,9 +63,7 @@ function isDownloadTitle(work: AuthorWork): boolean {
         <li v-if="response.authored_sections.some(section => section.items.length)" :class="{ active: variant === 'titlar' }">
           <NuxtLink :to="titlesHref" :aria-current="variant === 'titlar' ? 'page' : undefined">Verk</NuxtLink>
         </li>{{ " " }}
-        <li v-if="author.audio_url">
-          <a :href="author.audio_url" target="_blank" rel="noopener noreferrer">Ljud</a>
-        </li>{{ " " }}
+        <AuthorAudioNavItem :author-id="author.author_id" :initial-url="author.audio_url ?? undefined" />{{ " " }}
         <li v-if="author.has_dramawebben">
           <NuxtLink :to="dramawebbenHref">Dramawebben</NuxtLink>
         </li>{{ " " }}

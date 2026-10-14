@@ -43,6 +43,7 @@ const profileHandoffs = useState<Partial<Record<string, ProfileResponse>>>(
   () => ({})
 )
 
+const profileCache = useState<Record<string, ProfileResponse>>("author-profile-pages", () => ({}))
 const { data } = await useAsyncData<ProfileResponse>(
   asyncKey,
   async () => {
@@ -75,6 +76,13 @@ const { data } = await useAsyncData<ProfileResponse>(
       }
     } catch {
       return { identity, view: null, status: 503, canonicalPath: "", hasDramawebben: false }
+    }
+  },
+  {
+    getCachedData: key => profileCache.value[key],
+    transform: result => {
+      if (result.status === 200 && result.view) profileCache.value[`author-profile:${result.identity}`] = result
+      return result
     }
   }
 )

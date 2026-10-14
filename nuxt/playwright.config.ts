@@ -154,7 +154,7 @@ export function createPlaywrightConfig({
     },
     {
       name: "webkit-authors",
-      testMatch: /e2e\/author-profiles\.behavior\.spec\.ts/,
+      testMatch: /e2e\/author-(profiles|works)\.behavior\.spec\.ts/,
       use: { ...devices["Desktop Safari"] }
     },
     {
