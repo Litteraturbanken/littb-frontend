@@ -49,6 +49,7 @@ try {
         "false"
     ])
     run(process.execPath, [join(outDir, "test/unit/query.spec.js")])
+    run(process.execPath, ["test/unit/search-filter-roundtrip.spec.mjs", join(outDir, "app/scripts/query.js")])
 } catch (error) {
     if (error instanceof CommandFailure) {
         process.exitCode = error.status

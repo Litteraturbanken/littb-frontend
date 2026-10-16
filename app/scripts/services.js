@@ -453,7 +453,7 @@ littb.factory("SearchData", function (backend, $q, $http, $location) {
                 // TODO text_attrs are not more
                 const val = this.currentParams[key]
                 if (key === "text_filter" && !_.isEmpty(val)) {
-                    merged[`s_${key}`] = JSON.stringify(val)
+                    merged[`s_${key}`] = typeof val === "string" ? val : JSON.stringify(val)
                 } else {
                     merged[`s_${key}`] = val
                 }
@@ -461,7 +461,9 @@ littb.factory("SearchData", function (backend, $q, $http, $location) {
 
             merged["s_lbworkid"] = metadata.lbworkid
             merged.hit_index = index
-            merged = _(merged).toPairs().invokeMap("join", "=").join("&")
+            merged = Object.entries(merged)
+                .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+                .join("&")
 
             const author = metadata.authors[0].authorid
             const titleid = metadata.titleid
