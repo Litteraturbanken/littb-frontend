@@ -142,3 +142,18 @@ assert.deepStrictEqual(groupedKeywordPayload.textFilter, {
 assert.deepStrictEqual(groupedKeywordPayload.keywordAux, [])
 
 console.log("extended query utilities tests: ok")
+
+assertQuery(
+    "Academy keyword includes provenance and nested author",
+    { keywords: ["provenance.library:SA"] },
+    "(provenance.library:SA OR authors>(authorid:SvenskaAkademien))"
+)
+assertQuery(
+    "Academy keyword keeps other selections and AND filters",
+    { gender: "female", keywords: ["provenance.library:SA", "keyword:Humor"] },
+    "(gender:female OR authors>(gender:female)) AND (provenance.library:SA OR keyword:Humor OR authors>(authorid:SvenskaAkademien))"
+)
+assert.deepStrictEqual(buildSearchFilterPayload({ keywords: ["provenance.library:SA"] }), {
+    textFilter: { "provenance.library": ["SA"] },
+    keywordAux: []
+})

@@ -170,6 +170,10 @@ const keywordsClause = (values?: string[]): string | undefined => {
     const clauses = Object.entries(filterMap)
         .map(([key, value]) => (value ? buildFieldClause(key, value) : undefined))
         .filter((clause): clause is string => Boolean(clause))
+    // Keep the existing dropdown/URL value while including Academy-authored works.
+    if (filterMap["provenance.library"]?.includes("SA")) {
+        clauses.push("authors>(authorid:SvenskaAkademien)")
+    }
     return groupOr(clauses)
 }
 
