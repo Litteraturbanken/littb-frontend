@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import {
     buildFilterQuery,
+    compileSearchTextFilter,
     buildSearchFilterPayload,
     composeQuery,
     fromFilters
@@ -157,3 +158,20 @@ assert.deepStrictEqual(buildSearchFilterPayload({ keywords: ["provenance.library
     textFilter: { "provenance.library": ["SA"] },
     keywordAux: []
 })
+
+assert.strictEqual(
+    compileSearchTextFilter({"provenance.library": ["SA"]}),
+    "(provenance.library:SA OR authors>(authorid:SvenskaAkademien))"
+)
+assert.strictEqual(
+    compileSearchTextFilter({"provenance.library": ["SA", "SVS"], "authors>authorid": ["Other"], "keyword": ["Humor"], "sort_date_imprint.date:range": "1800,1900"}),
+    "(provenance.library:(SA OR SVS) OR authors>(authorid:SvenskaAkademien)) AND (authors>authorid:Other) AND (keyword:Humor) AND (sort_date_imprint.date:[1800 TO 1900])"
+)
+const legacyTextFilter = {"provenance.library": ["SVS"], keyword: ["Humor"]}
+assert.strictEqual(compileSearchTextFilter(legacyTextFilter), legacyTextFilter)
+assert.strictEqual(compileSearchTextFilter("authors>(authorid:SvenskaAkademien)"), "authors>(authorid:SvenskaAkademien)")
+
+assert.strictEqual(
+    compileSearchTextFilter(JSON.stringify({"provenance.library": ["SA"]})),
+    "(provenance.library:SA OR authors>(authorid:SvenskaAkademien))"
+)

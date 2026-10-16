@@ -1,6 +1,7 @@
 const angular = window.angular
 const _ = window._
 const c = window.console
+import { compileSearchTextFilter } from "./query.ts"
 import { createBackendService } from "./services/backend"
 
 const littb = angular.module("littbApp")
@@ -174,6 +175,9 @@ littb.factory("SearchData", function (backend, $q, $http, $location) {
         submit(query, params) {
             query = query.toLowerCase()
             delete params.query
+            if (params.text_filter) {
+                params.text_filter = compileSearchTextFilter(params.text_filter)
+            }
             $http({
                 url: `${STRIX_URL}/search_count/${query}`,
                 params: _.omit(params, "number_of_fragments", "from", "to", "sort_field"),

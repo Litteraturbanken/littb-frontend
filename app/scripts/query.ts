@@ -483,3 +483,32 @@ export function fromFilters(filters: FilterObj = {}): string {
     if (filtered.length === 1) return filtered[0]
     return filtered.map(wrapForAnd).join(" AND ")
 }
+
+// Only the Academy selection needs NEST; retain the legacy JSON wire format otherwise.
+export const compileSearchTextFilter = (
+    filters: Record<string, unknown> | string
+): Record<string, unknown> | string => {
+    if (typeof filters === "string") {
+        // Reader search links carry the legacy mapping as serialized JSON.
+        try {
+            const decoded = JSON.parse(filters)
+            if (decoded && typeof decoded === "object" && !Array.isArray(decoded)) {
+                return compileSearchTextFilter(decoded)
+            }
+        } catch {
+            // Already a NEST expression.
+        }
+        return filters
+    }
+    const libraries = toArray(filters["provenance.library"])
+    if (!libraries.includes("SA")) return filters
+    const remaining = { ...filters }
+    delete remaining["provenance.library"]
+    const academy = groupOr([
+        buildFieldClause("provenance.library", libraries.map(String)),
+        "authors>(authorid:SvenskaAkademien)"
+    ])
+    return [academy, ...buildFilterClauses(remaining)].filter(Boolean).map(clause =>
+        wrapForAnd(clause as string)
+    ).join(" AND ")
+}
