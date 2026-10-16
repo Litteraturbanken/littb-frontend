@@ -396,10 +396,10 @@ const chronologyBounds = computed<ImprintBounds | null>(() => {
 const aboutAuthorOptionsAvailable = computed(
     () => Array.isArray(libraryOptionsData.value?.about_authors)
 )
+// The API orders these by name_for_index; labels contain display names.
 const aboutAuthorOptions = computed<LibraryAboutAuthorOption[]>(() =>
     (libraryOptionsData.value?.about_authors ?? [])
         .map(author => ({ id: author.author_id, label: author.label }))
-        .sort((left, right) => left.label.localeCompare(right.label, "sv"))
 )
 const aboutAuthorIdSet = computed<ReadonlySet<string>>(
     () => new Set(aboutAuthorOptions.value.map(option => option.id))

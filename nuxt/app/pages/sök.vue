@@ -523,11 +523,13 @@ function optionsView(
       label: authorLabel(author),
       selectionLabel: authorLabel(author)
     })),
-    aboutAuthors: response.about_authors.map(author => ({
-      value: author.author_id,
-      label: authorLabel(author),
-      selectionLabel: authorLabel(author)
-    })),
+    aboutAuthors: [...response.about_authors]
+      .sort((left, right) => left.name_for_index.localeCompare(right.name_for_index, "sv"))
+      .map(author => ({
+        value: author.author_id,
+        label: authorLabel(author),
+        selectionLabel: authorLabel(author)
+      })),
     titleTotal: response.title_total,
     yearFrom: response.year_from ?? null,
     yearTo: response.year_to ?? null,
