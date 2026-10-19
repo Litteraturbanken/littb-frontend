@@ -170,9 +170,9 @@ const keywordsClause = (values?: string[]): string | undefined => {
     const clauses = Object.entries(filterMap)
         .map(([key, value]) => (value ? buildFieldClause(key, value) : undefined))
         .filter((clause): clause is string => Boolean(clause))
-    // Keep the existing dropdown/URL value while including Academy-authored works.
+    // Include parts whose containing work is authored or edited by the Academy.
     if (filterMap["provenance.library"]?.includes("SA")) {
-        clauses.push("authors>(authorid:SvenskaAkademien)")
+        clauses.push("authors>(authorid:SvenskaAkademien)", "work_authors>(authorid:SvenskaAkademien)")
     }
     return groupOr(clauses)
 }
@@ -506,7 +506,8 @@ export const compileSearchTextFilter = (
     delete remaining["provenance.library"]
     const academy = groupOr([
         buildFieldClause("provenance.library", libraries.map(String)),
-        "authors>(authorid:SvenskaAkademien)"
+        "authors>(authorid:SvenskaAkademien)",
+        "work_authors>(authorid:SvenskaAkademien)"
     ])
     return [academy, ...buildFilterClauses(remaining)].filter(Boolean).map(clause =>
         wrapForAnd(clause as string)

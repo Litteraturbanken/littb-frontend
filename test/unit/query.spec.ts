@@ -147,12 +147,12 @@ console.log("extended query utilities tests: ok")
 assertQuery(
     "Academy keyword includes provenance and nested author",
     { keywords: ["provenance.library:SA"] },
-    "(provenance.library:SA OR authors>(authorid:SvenskaAkademien))"
+    "(provenance.library:SA OR authors>(authorid:SvenskaAkademien) OR work_authors>(authorid:SvenskaAkademien))"
 )
 assertQuery(
     "Academy keyword keeps other selections and AND filters",
     { gender: "female", keywords: ["provenance.library:SA", "keyword:Humor"] },
-    "(gender:female OR authors>(gender:female)) AND (provenance.library:SA OR keyword:Humor OR authors>(authorid:SvenskaAkademien))"
+    "(gender:female OR authors>(gender:female)) AND (provenance.library:SA OR keyword:Humor OR authors>(authorid:SvenskaAkademien) OR work_authors>(authorid:SvenskaAkademien))"
 )
 assert.deepStrictEqual(buildSearchFilterPayload({ keywords: ["provenance.library:SA"] }), {
     textFilter: { "provenance.library": ["SA"] },
@@ -161,11 +161,11 @@ assert.deepStrictEqual(buildSearchFilterPayload({ keywords: ["provenance.library
 
 assert.strictEqual(
     compileSearchTextFilter({"provenance.library": ["SA"]}),
-    "(provenance.library:SA OR authors>(authorid:SvenskaAkademien))"
+    "(provenance.library:SA OR authors>(authorid:SvenskaAkademien) OR work_authors>(authorid:SvenskaAkademien))"
 )
 assert.strictEqual(
     compileSearchTextFilter({"provenance.library": ["SA", "SVS"], "authors>authorid": ["Other"], "keyword": ["Humor"], "sort_date_imprint.date:range": "1800,1900"}),
-    "(provenance.library:(SA OR SVS) OR authors>(authorid:SvenskaAkademien)) AND (authors>authorid:Other) AND (keyword:Humor) AND (sort_date_imprint.date:[1800 TO 1900])"
+    "(provenance.library:(SA OR SVS) OR authors>(authorid:SvenskaAkademien) OR work_authors>(authorid:SvenskaAkademien)) AND (authors>authorid:Other) AND (keyword:Humor) AND (sort_date_imprint.date:[1800 TO 1900])"
 )
 const legacyTextFilter = {"provenance.library": ["SVS"], keyword: ["Humor"]}
 assert.strictEqual(compileSearchTextFilter(legacyTextFilter), legacyTextFilter)
@@ -173,5 +173,15 @@ assert.strictEqual(compileSearchTextFilter("authors>(authorid:SvenskaAkademien)"
 
 assert.strictEqual(
     compileSearchTextFilter(JSON.stringify({"provenance.library": ["SA"]})),
-    "(provenance.library:SA OR authors>(authorid:SvenskaAkademien))"
+    "(provenance.library:SA OR authors>(authorid:SvenskaAkademien) OR work_authors>(authorid:SvenskaAkademien))"
+)
+
+// Parts have their own authors; the Academy editor is stored in work_authors.
+assert.strictEqual(
+    composeQuery({
+        filterQuery: buildFilterQuery({ keywords: ["provenance.library:SA"] }),
+        keywordAux: ["texttype:diktsamling;dikt"]
+    }),
+    "(texttype:(diktsamling OR dikt)) AND (provenance.library:SA OR authors>(authorid:SvenskaAkademien) OR work_authors>(authorid:SvenskaAkademien))",
+    "Poetry stays ANDed with all Academy membership alternatives"
 )
