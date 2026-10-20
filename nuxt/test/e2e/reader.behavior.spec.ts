@@ -336,6 +336,18 @@ for (const continuation of [false, true]) {
     expect(new URLSearchParams((await readerHitRequests(request)).at(-1)!.query).get("snapshot")).toBe("gen-fixture-0001")
   })
 }
+test("snapshot recovery preserves a reading page different from the selected hit", async ({ page, request }) => {
+  const path = readerPath.replace("/sida/-2/", "/sida/-1/")
+  await page.goto(`${path}?q=doktor%20glas&hit=1&snapshot=gen-expired&lemma=1&ej_modern=1&prefix=1&suffix=1&traff=w2_1&traffslut=w2_2`, { waitUntil: "networkidle" })
+  await expect(page).toHaveURL(/snapshot=gen-fixture-0001/)
+  expect(new URL(page.url()).pathname).toContain("/sida/-1/etext")
+  await expect(page.locator("#search_nav")).not.toContainText("Den tidigare sökträffen")
+  await expect(page.locator('#search_nav a[rel="next"]')).toBeVisible()
+  const queries = (await readerHitRequests(request)).map(item => new URLSearchParams(item.query))
+  expect(Object.fromEntries(queries.find(item => !item.has("snapshot"))!)).toMatchObject({
+    query: "doktor glas", word_forms: "true", include_older_spellings: "false", prefix: "true", suffix: "true"
+  })
+})
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
 const readerPartsPath = "/författare/SöderbergH/titlar/DoktorGlasParts/sida/-1/etext"
 const workScopedReaderPath = "/författare/SöderbergH/titlar/WorkScopedIdsReader/sida/-2/etext"
