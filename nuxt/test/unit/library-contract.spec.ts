@@ -204,7 +204,15 @@ describe("typed Library boundary", () => {
     expect(view.response.data[0].primaryHref).toBe(expectedHref)
   })
 
-  test("defensively hides zero author lifespan sentinels", () => {
+  test.each([
+    [1946, null, "f. 1946"],
+    [1946, 0, "f. 1946"],
+    [null, 1946, "d. 1946"],
+    [0, 1946, "d. 1946"],
+    [1858, 1940, "1858-1940"],
+    [null, null, ""],
+    [0, 0, ""]
+  ])("matches legacy authorYear for %s / %s", (birth, death, years) => {
     const response = {
       mode: "all",
       total_hits: 1,
@@ -213,8 +221,8 @@ describe("typed Library boundary", () => {
         author_id: "UnknownA",
         name_for_index: "Okänd",
         popularity: 0,
-        birth_year: 0,
-        death_year: 0,
+        birth_year: birth,
+        death_year: death,
         highlights: []
       }]
     } satisfies LibrarySearchResponse
@@ -222,9 +230,9 @@ describe("typed Library boundary", () => {
     const view = toLibrarySearchView(response)
     if (view.mode !== "all") throw new Error("expected all view")
     expect(view.response.data[0]).toMatchObject({
-      yearLabel: "",
-      mobileYearLabel: "",
-      authorBirth: 0
+      yearLabel: years,
+      mobileYearLabel: years ? `(${years})` : "",
+      authorBirth: birth ?? 0
     })
   })
 

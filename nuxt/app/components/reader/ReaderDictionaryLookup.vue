@@ -356,9 +356,7 @@ onBeforeUnmount(() => {
       class="search_dict"
       type="button"
       :style="{ left: `${indicator.left}px`, top: `${indicator.top}px` }"
-      :aria-label="mode === 'embed'
-        ? `Slå upp ${indicator.word} i SO och SAOB`
-        : `Slå upp ${indicator.word} i Svensk ordbok`"
+      :aria-label="`Slå upp ${indicator.word} i Svensk ordbok`"
       @mousedown.prevent
       @click.stop="lookup"
     >

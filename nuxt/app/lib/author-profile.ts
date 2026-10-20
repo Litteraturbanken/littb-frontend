@@ -1,3 +1,4 @@
+import { formatAuthorYears } from "#shared/utils/author-years"
 import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 import { rawUrlParts } from "#shared/utils/url-safety"
 import type { SanitizedHtml } from "#shared/types/renderable-html"
@@ -157,17 +158,7 @@ export function validateAuthorRouteParam(value: unknown): boolean {
     && value !== ".."
 }
 
-export function formatAuthorYears(
-  birthYear: string | null | undefined,
-  deathYear: string | null | undefined
-): string {
-  const birth = birthYear && birthYear !== "0000" ? birthYear : ""
-  const death = deathYear && deathYear !== "0000" ? deathYear : ""
-  if (birth && death) return `${birth}-${death}`
-  if (birth) return `f. ${birth}`
-  if (death) return `d. ${death}`
-  return ""
-}
+export { formatAuthorYears } from "#shared/utils/author-years"
 
 function hasTraversal(path: string): boolean {
   return path.split("/").some(segment => segment === "." || segment === "..")

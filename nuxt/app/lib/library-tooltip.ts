@@ -1,3 +1,4 @@
+import { formatAuthorYears } from "#shared/utils/author-years"
 import { hasC0OrC1Control, hasLoneSurrogate } from "#shared/utils/text-safety"
 
 type UnknownRecord = Record<string, unknown>
@@ -51,9 +52,6 @@ export function libraryAuthorTooltipText(
   }
   const birth = validYear("birth_year", "birth")
   const death = validYear("death_year", "death")
-  let lifespan = ""
-  if (birth && death) lifespan = `${birth}-${death}`
-  else if (birth) lifespan = `f. ${birth}`
-  else if (death) lifespan = `d. ${death}`
+  const lifespan = formatAuthorYears(birth, death)
   return usefulLibraryTooltipText(`${fullName}${lifespan ? ` (${lifespan})` : ""}`, displayText)
 }

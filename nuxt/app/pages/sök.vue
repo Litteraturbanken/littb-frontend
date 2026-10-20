@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatAuthorYears } from "#shared/utils/author-years"
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/vue"
 import type { LocationQueryRaw } from "vue-router"
 
@@ -504,10 +505,8 @@ const primaryLoading = computed(() => Boolean(state.value.phrase)
   && (primaryPending.value || acceptedPrimary.value === null))
 
 function authorLabel(author: TextSearchOptionsResponse["authors"][number]): string {
-  const years = author.birth_year || author.death_year
-    ? ` (${author.birth_year ?? ""}-${author.death_year ?? ""})`
-    : ""
-  return `${author.name_for_index}${years}`
+  const years = formatAuthorYears(author.birth_year, author.death_year)
+  return `${author.name_for_index}${years ? ` (${years})` : ""}`
 }
 
 function optionsView(
@@ -524,11 +523,13 @@ function optionsView(
       label: authorLabel(author),
       selectionLabel: authorLabel(author)
     })),
-    aboutAuthors: response.about_authors.map(author => ({
-      value: author.author_id,
-      label: authorLabel(author),
-      selectionLabel: authorLabel(author)
-    })),
+    aboutAuthors: [...response.about_authors]
+      .sort((left, right) => left.name_for_index.localeCompare(right.name_for_index, "sv"))
+      .map(author => ({
+        value: author.author_id,
+        label: authorLabel(author),
+        selectionLabel: authorLabel(author)
+      })),
     titleTotal: response.title_total,
     yearFrom: response.year_from ?? null,
     yearTo: response.year_to ?? null,
@@ -1238,7 +1239,7 @@ const displayedPage = computed(() => Math.min(state.value.page, totalPages.value
 const pagination = computed<LibraryPaginationModel>(() => {
   const pageHref = (page: number) => ({
     path: route.path,
-    query: textSearchPageQuery({ ...rawQuery.value, snapshot: results.value?.snapshot }, page) as LocationQueryRaw
+    query: textSearchPageQuery(rawQuery.value, page) as LocationQueryRaw
   })
   return {
     currentPage: displayedPage.value,
@@ -1265,7 +1266,7 @@ function pageQuery(page: number) {
   const primary = acceptedPrimary.value
   if (primary?.identity !== primaryIdentity.value || primary.status !== 200
     || !primary.results) return null
-  return textSearchPageQuery({ ...rawQuery.value, snapshot: primary.results.snapshot }, page)
+  return textSearchPageQuery(rawQuery.value, page)
 }
 
 function replacePage(page: number) {

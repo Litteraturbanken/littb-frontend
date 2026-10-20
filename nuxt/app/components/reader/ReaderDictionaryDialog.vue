@@ -27,7 +27,7 @@ const props = defineProps<LegacyDialogProps | EmbedDialogProps>()
 const emit = defineEmits<{ close: [] }>()
 const closeButton = ref<HTMLButtonElement | null>(null)
 const frameTitle = computed(() =>
-    props.mode === "embed" ? `Slå upp ${props.word} i SO och SAOB` : ""
+    props.mode === "embed" ? `Slå upp ${props.word} i Svensk ordbok` : ""
 )
 </script>
 
@@ -46,7 +46,7 @@ const frameTitle = computed(() =>
                 <div v-if="props.mode === 'legacy'" class="so_modal">
                     <div class="modal-header">
                         <DialogTitle as="h4"
-                            >Svensk ordbok utgiven av <br>Svenska Akademien (2009)</DialogTitle
+                            >Svensk ordbok utgiven av <br>Svenska Akademien</DialogTitle
                         >
                         <button
                             ref="closeButton"
@@ -62,7 +62,7 @@ const frameTitle = computed(() =>
                 </div>
                 <div v-else class="reader-dictionary-embed">
                     <div class="modal-header">
-                        <DialogTitle as="h4">Svenska Akademiens ordbok</DialogTitle>
+                        <DialogTitle as="h4">Svensk ordbok utgiven av <br>Svenska Akademien</DialogTitle>
                         <button
                             ref="closeButton"
                             class="btn pull-right"

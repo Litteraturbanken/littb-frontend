@@ -10,6 +10,7 @@ import {
 
 const { textSearchHref } = useTextSearchNavigation()
 const { libraryHref } = useLibraryNavigation()
+const authorTabPending = useState<string | null>("author-tab-pending", () => null)
 const authorNavigationPending = useState<string | null>("author-navigation-pending", () => null)
 const router = useRouter()
 const route = useRoute()
@@ -210,9 +211,13 @@ onBeforeUnmount(() => {
       id="mainview"
       role="main"
       :data-author-navigation-pending="authorNavigationPending ? '' : undefined"
-      :aria-busy="authorNavigationPending ? true : undefined"
+      :aria-busy="authorNavigationPending || authorTabPending ? true : undefined"
     >
       <AuthorNavigationLoading v-if="authorNavigationPending" :destination="authorNavigationPending" />
+      <div v-if="authorTabPending" role="status" class="author-tab-progress">
+        <i class="fa fa-spinner fa-pulse" aria-hidden="true" />
+        <span class="sr-only">Laddar författarens verk</span>
+      </div>
       <slot />
     </main>{{ " " }}
     <div v-show="!authorNavigationPending" id="rightCorridor" class="ml-4 sm:ml-16 relative z-50">
@@ -230,4 +235,6 @@ onBeforeUnmount(() => {
 
 .l-fill { fill: var(--logo-l-color, white); }
 .b-fill { fill: var(--logo-b-color, white); }
+
+.author-tab-progress { position: fixed; top: 1rem; right: 1rem; z-index: 100; font-size: 1.5rem; }
 </style>

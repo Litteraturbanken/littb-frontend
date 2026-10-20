@@ -137,13 +137,14 @@ describe("text search filter option contracts", () => {
 })
 
 describe("text search route state", () => {
-  test("parses, forwards, retains, and clears a safe generation snapshot", () => {
+  test("accepts previously shared generation pins without emitting them in search links", () => {
     const raw = { fras: "hus", traffsida: "2", snapshot: "gen-0123456789abcdef" }
     const state = parseTextSearchRouteQuery(raw)
 
     expect(state.snapshot).toBe("gen-0123456789abcdef")
     expect(buildTextSearchResultsRequest(state).snapshot).toBe("gen-0123456789abcdef")
-    expect(textSearchPageQuery(raw, 3).snapshot).toBe("gen-0123456789abcdef")
+    expect(textSearchPageQuery(raw, 3)).not.toHaveProperty("snapshot")
+    expect(serializeTextSearchRouteState(state, raw)).not.toHaveProperty("snapshot")
     expect(textSearchSubmitQuery(raw, "hem")).not.toHaveProperty("snapshot")
     expect(textSearchFilterQuery(raw, { prefix: true })).not.toHaveProperty("snapshot")
   })
@@ -262,7 +263,7 @@ describe("text search route state", () => {
     })
     const infix = parseTextSearchRouteQuery({ infix: "yes", prefix: "false", suffix: "0" })
     expect(infix).toMatchObject({ prefix: true, suffix: true, infix: true })
-    expect(serializeTextSearchRouteState(infix)).toEqual({ infix: "1" })
+    expect(serializeTextSearchRouteState(infix)).toEqual({ infix: "1", prefix: "1", suffix: "1" })
     expect(parseTextSearchRouteQuery({ prefix: "false", suffix: "0", infix: "false" }))
       .toMatchObject({ prefix: false, suffix: false, infix: false })
   })
@@ -341,6 +342,32 @@ describe("text search route state", () => {
     expect(state.categories).toEqual(categories)
   })
 
+  test("round-trips the legacy search parameter vocabulary without translation", () => {
+    // SearchPageCtrl.setupHashComplex and searchOptions in the Angular site.
+    const legacy = {
+      fras: "frihet & rätt", traffsida: "2", avancerad: "1",
+      forfattare: "StrindbergA,LagerlöfS", titlar: "lb238704,lb278171",
+      kön: "female", languages: "language:swe,translation:true",
+      keywords: "texttype:roman,keyword:Rösträtt", authorkeyword: "AuthorB",
+      intervall: "1850,1950", sok_filter: "StrindbergA",
+      prefix: "1", suffix: "1", infix: "1", lemma: "1", ej_modern: "1",
+      fuzzy: "1", keyword: "source:sol", sok_om: "true"
+    }
+    const state = parseTextSearchRouteQuery(legacy)
+    expect(serializeTextSearchRouteState(state, legacy)).toEqual(legacy)
+    expect(textSearchPageQuery(legacy, 3)).toEqual({ ...legacy, traffsida: "3" })
+    expect(buildTextSearchResultsRequest(state)).toMatchObject({
+      query: "frihet & rätt", page: 2, author_ids: ["StrindbergA", "LagerlöfS"],
+      work_ids: ["lb238704", "lb278171"], gender: "female",
+      languages: ["language:swe", "translation:true"],
+      categories: ["texttype:roman", "keyword:Rösträtt"], about_author_ids: ["AuthorB"],
+      year_from: 1850, year_to: 1950, facet_author_id: "StrindbergA",
+      prefix: true, suffix: true, word_form_only: false, include_modernized: false,
+      legacy_filters: [{ field: "source", value: "sol" }]
+    })
+    expect(buildTextSearchResultsRequest(state)).not.toHaveProperty("snapshot")
+  })
+
   test("serializes canonical values and preserves unknown raw entries exactly", () => {
     const raw = {
       unknown: ["one", null, "two"] as const,
@@ -355,6 +382,8 @@ describe("text search route state", () => {
       kön: "female",
       intervall: "1850,1950",
       infix: "1",
+      prefix: "1",
+      suffix: "1",
       lemma: "1",
       ej_modern: "1",
       keyword: "source:sol"
@@ -369,6 +398,8 @@ describe("text search route state", () => {
       kön: "female",
       intervall: "1850,1950",
       infix: "1",
+      prefix: "1",
+      suffix: "1",
       lemma: "1",
       ej_modern: "1",
       keyword: "source:sol"
@@ -441,6 +472,8 @@ describe("text search route state", () => {
       intervall: "1850,1950",
       sok_filter: "AuthorC",
       infix: "1",
+      prefix: "1",
+      suffix: "1",
       lemma: "1",
       ej_modern: "1",
       fuzzy: "1",
@@ -1356,6 +1389,8 @@ describe("text search route state", () => {
       intervall: "1850,1950",
       sok_filter: "AuthorC",
       infix: "1",
+      prefix: "1",
+      suffix: "1",
       lemma: "1",
       ej_modern: "1",
       fuzzy: "1",
@@ -1383,7 +1418,7 @@ describe("text search route state", () => {
       "/f%C3%B6rfattare/Author%21A/titlar/title%2A%28one%29/sida/page%21%20one/etext"
     )
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      q: "frihet & rätt", hit: "0", snapshot: "gen-0123456789abcdef", lemma: "1", ej_modern: "1",
+      q: "frihet & rätt", hit: "0", lemma: "1", ej_modern: "1",
       prefix: "1", suffix: "1", traff: "w12_4", traffslut: "w12_5",
       s_query: "frihet & rätt", s_lbworkid: "lb!1", s_mediatype: "etext",
       s_word_form_only: "false", s_include_modernized: "false", hit_index: "0",

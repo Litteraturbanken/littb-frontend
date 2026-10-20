@@ -1,3 +1,4 @@
+import { formatAuthorYears as formatYears } from "#shared/utils/author-years"
 import { createError, type H3Event } from "h3"
 import { parseHTML } from "linkedom"
 
@@ -489,14 +490,7 @@ export function isExactSlaHtmlResponse(response: Response): boolean {
     .test(contentType)
 }
 
-export function formatYears(birth: string | null, death: string | null): string {
-  const left = birth && birth !== "0000" ? birth : ""
-  const right = death && death !== "0000" ? death : ""
-  if (left && right) return `${left}-${right}`
-  if (left) return `f. ${left}`
-  if (right) return `d. ${right}`
-  return ""
-}
+export { formatAuthorYears as formatYears } from "#shared/utils/author-years"
 
 function authorSupplementalPage(
   descriptor: AuthorDocumentDescriptor,

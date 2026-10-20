@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import AuthorWorksContent from "~/components/author/AuthorWorksContent.vue"
 import ordinaryBackground from "~/assets/img/forf2_bkg.jpg"
-import { useLbApiClient } from "~/composables/useLbApiClient"
-import {
-  isAuthorWorksResponse,
-  type AuthorWorksResponse
+import type {
+  AuthorWorksResponse
 } from "~/lib/author-works"
 import { validateAuthorRouteParam } from "~/lib/author-profile"
 
@@ -15,6 +13,7 @@ type WorksPageResponse = {
 }
 
 definePageMeta({
+  middleware: ["author-works"],
   validate: route => {
     const author = Array.isArray(route.params.author)
       ? route.params.author[0]
@@ -30,38 +29,20 @@ const authorId = computed(() => {
 })
 const currentIdentity = computed(() => `mer:${authorId.value}`)
 const asyncKey = computed(() => `author-works:${currentIdentity.value}`)
-const client = useLbApiClient()
+const worksRequest = useAuthorWorksRequest()
 
 const { data } = await useAsyncData<WorksPageResponse>(
   asyncKey,
   async () => {
     const requestedAuthorId = authorId.value
     const identity = `mer:${requestedAuthorId}`
-    try {
-      const { data: body, response } = await client.GET("/authors/{author_id}/works", {
-        params: { path: { author_id: requestedAuthorId } }
-      })
-      if (
-        response.status === 200
-        && isAuthorWorksResponse(body)
-        && body.author.author_id === requestedAuthorId
-      ) {
-        return { identity, status: 200, works: body }
-      }
-      return {
-        identity,
-        status: response.status === 404 ? 404 : 503,
-        works: null
-      }
-    } catch {
-      return { identity, status: 503, works: null }
-    }
+    return { identity, ...await worksRequest.load(requestedAuthorId) }
   },
   {
     lazy: true,
     getCachedData: (key, nuxtApp) => {
       const cached = nuxtApp.payload.data[key] as WorksPageResponse | undefined
-      return cached?.identity === currentIdentity.value ? cached : undefined
+      return cached?.identity === currentIdentity.value && cached.status === 200 ? cached : undefined
     }
   }
 )

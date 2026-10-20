@@ -257,9 +257,9 @@ test("SSR omits sparse and empty sections without inventing author content", asy
       .toBeNull()
     expect(emptyDocument.querySelector(".portrait_container img, .ext_links"), variant).toBeNull()
     expect(emptyDocument.querySelector(".portrait_container") !== null, variant)
-      .toBe(variant === "titlar")
+      .toBe(false)
     expect(emptyDocument.title).toBe(
-      `Författare utan tillgängliga verk, ${variant === "titlar" ? "Tillgängliga verk" : "Mer"} | Litteraturbanken`
+      `Författare utan tillgängliga verk, ${variant === "titlar" ? "Introduktion" : "Mer"} | Litteraturbanken`
     )
     await expectOnlyWorksRequest(request, "/private-v2/authors/NoWorks/works")
   }

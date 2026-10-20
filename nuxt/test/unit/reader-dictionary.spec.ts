@@ -26,15 +26,14 @@ describe("reader dictionary", () => {
   it("selects the validated embed path without removing the legacy lookup path", () => {
     expect(lookupSource).toContain("readerDictionaryMode")
     expect(lookupSource).toContain('if (mode === "embed")')
-    expect(lookupSource).toContain("embed.start(selected.word)")
+    expect(lookupSource).toContain("embed.start(word)")
     expect(lookupSource).toContain("lookupLegacy(selected.word)")
-    expect(lookupSource).toContain("Slå upp ${indicator.word} i SO och SAOB")
     expect(lookupSource).toContain("Slå upp ${indicator.word} i Svensk ordbok")
   })
 
   it("keeps a failed embed attempt reachable without trusting its rejected origin", () => {
     expect(lookupSource).toContain("const embedAttemptWord = ref<string | null>(null)")
-    expect(lookupSource).toContain("embedAttemptWord.value = selected.word")
+    expect(lookupSource).toContain("embedAttemptWord.value = word")
     expect(lookupSource).toContain('const safeSvenskaOrigin = "https://svenska.se"')
     expect(lookupSource).toContain("buildSvenskaDictionaryUrl(safeSvenskaOrigin, word)")
     expect(dialogSource).toContain("session: EmbedSession | null")
@@ -46,7 +45,7 @@ describe("reader dictionary", () => {
     expect(dialogSource).toContain('mode: "embed"')
     expect(dialogSource).toContain('sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"')
     expect(dialogSource).toContain('referrerpolicy="origin"')
-    expect(dialogSource).toContain("Slå upp ${props.word} i SO och SAOB")
+    expect(dialogSource).toContain("Slå upp ${props.word} i Svensk ordbok")
     expect(dialogSource).toContain('role="status"')
     expect(dialogSource).toContain("Ingen artikel hittades för {{ props.word }}.")
     expect(dialogSource).toContain("Ordboken kunde inte laddas")

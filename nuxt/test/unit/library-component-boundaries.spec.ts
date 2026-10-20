@@ -853,7 +853,7 @@ describe("Library component ownership", () => {
     expect(target.querySelector("[data-library-imprint-year]")?.getAttribute("href"))
       .toBe("/bibliotek?intervall=1888%2C1888")
     expect(target.querySelector("[data-library-author-contribution]")?.textContent)
-      .toBe("(red.)")
+      .toBe("\u00a0(red.)")
 
     target.querySelector<HTMLAnchorElement>('[data-library-sort="titlar"]')?.click()
     await nextTick()
@@ -861,7 +861,7 @@ describe("Library component ownership", () => {
 
     loading.value = true
     await nextTick()
-    expect(target.querySelector("[data-library-result]")).toBeNull()
+    expect(target.querySelector("[data-library-result]")).not.toBeNull()
     expect(target.querySelector("[data-library-loading]")?.getAttribute("role")).toBe("status")
     expect(target.querySelector("[data-library-loading] .sr-only")?.textContent)
       .toBe("Laddar resultat")
@@ -1554,9 +1554,9 @@ describe("Library component ownership", () => {
       .toBe("Laddar resultat")
     expect(target.querySelector("[data-library-loading] .spinner")?.getAttribute("aria-hidden"))
       .toBe("true")
-    expect(target.querySelector("[data-library-work-row]")).toBeNull()
-    expect(target.querySelector("[data-library-work-actions]")).toBeNull()
-    expect(target.querySelector("[data-library-page]")).toBeNull()
+    expect(target.querySelector("[data-library-work-row]")).not.toBeNull()
+    expect(target.querySelector("[data-library-work-actions]")).not.toBeNull()
+    expect(target.querySelector("[data-library-page]")).not.toBeNull()
     expect(target.querySelector('[data-library-sort="titlar"]')).not.toBeNull()
     app.unmount()
     target.remove()

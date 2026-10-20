@@ -82,7 +82,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
             <span class="sr-only">Laddar resultat</span>
             <i aria-hidden="true" class="spinner fa fa-spinner fa-pulse" />
         </div>
-        <div v-else>
+        <div v-if="!loading || response.data.length">
             <div v-if="response.failed" data-library-error role="alert">Ett fel uppstod.</div>
             <div v-else-if="!response.data.length" data-library-empty class="pb-4">
                 Inga träffar.
@@ -209,7 +209,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                 v-if="item.authorContribution"
                                 data-library-author-contribution
                                 class="text-gray-600 text-xs"
-                                >{{ item.authorContribution }}</span
+                                >&nbsp;{{ item.authorContribution }}</span
                             >
                         </td>
                     </tr>

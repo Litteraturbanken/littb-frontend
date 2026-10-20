@@ -56,7 +56,7 @@ describe("Reader dictionary embed configuration", () => {
       requestId,
       word: "förgås"
     })).toBe(
-      `https://svenska.se/embed/reader?word=f%C3%B6rg%C3%A5s&requestId=${requestId}`
+      `https://svenska.se/embed/reader?word=f%C3%B6rg%C3%A5s&requestId=${requestId}&dictionary=so`
     )
   })
 
@@ -70,7 +70,7 @@ describe("Reader dictionary embed configuration", () => {
       requestId,
       word
     })).toBe(
-      `https://svenska.se/embed/reader?word=${encodedWord}&requestId=${requestId}`
+      `https://svenska.se/embed/reader?word=${encodedWord}&requestId=${requestId}&dictionary=so`
     )
   })
 
@@ -98,7 +98,7 @@ describe("Reader dictionary embed configuration", () => {
 
   test("builds the fixed full-site dictionary fallback URL", () => {
     expect(buildSvenskaDictionaryUrl("https://svenska.se", "förgås"))
-      .toBe("https://svenska.se/?q=f%C3%B6rg%C3%A5s&activeTab=alla&exactMatch=true")
+      .toBe("https://svenska.se/?q=f%C3%B6rg%C3%A5s&activeTab=so&exactMatch=true")
   })
 })
 

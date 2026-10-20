@@ -11,6 +11,7 @@ import {
   emptyPresentationDocument,
   parseBackgroundRules,
   parsePresentationDocument,
+  presentationAuthorLinkPaths,
   selectBackgroundRule,
   validatePresentationSegments,
   type BackgroundRule,
@@ -35,6 +36,7 @@ definePageMeta({
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const requestFetch = useRequestFetch()
 const segments = computed(() =>
   Array.isArray(route.params.segments)
     ? route.params.segments.map(String)
@@ -71,7 +73,16 @@ async function fetchDocument(path: string, signal: AbortSignal): Promise<Present
     const displaySource = path === "/red/presentationer/presentationerForfattare.html"
       ? source.replace(/(<h1\b[^>]*>\s*)Presentationer och introduktioner/i, "$1Presentationer <em class='italic'>&amp;</em> introduktioner")
       : source
-    return parsePresentationDocument(displaySource)
+    const paths = presentationAuthorLinkPaths(displaySource)
+    const redirects = paths.length
+      ? await requestFetch<Record<string, string>>("/nuxt-api/editorial-redirects", {
+          method: "POST", body: { paths }, signal, retry: 0
+        }).catch(error => {
+          if (signal.aborted) throw error
+          return {}
+        })
+      : {}
+    return parsePresentationDocument(displaySource, redirects)
   } catch (error) {
     if (signal.aborted) throw error
     return emptyPresentationDocument()

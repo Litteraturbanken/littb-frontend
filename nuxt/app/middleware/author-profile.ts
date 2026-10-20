@@ -8,9 +8,11 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   if (!authorId || !validateAuthorRouteParam(authorId)) return
   // Give immediate feedback while the guard keeps the history entry pending.
   const pending = useState<string | null>("author-navigation-pending", () => null)
-  pending.value = to.fullPath
+  if (from.params.author !== authorId) pending.value = to.fullPath
   const variant = to.path.endsWith("/dramawebben") ? "dramawebben" : "ordinary"
   const identity = `${variant}:${authorId}`
+  const cache = useState<Record<string, unknown>>("author-profile-pages", () => ({}))
+  if (cache.value[`author-profile:${identity}`]) return
   // A canonical ordinary-to-Dramawebben redirect already carries its profile.
   const handoffs = useState<Record<string, { identity: string } | undefined>>(
     "author-profile-handoffs", () => ({})

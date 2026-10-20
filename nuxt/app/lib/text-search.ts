@@ -308,10 +308,9 @@ function serializeTextSearchMatching(
   set: SetSerializedValue
 ): void {
   if (state.infix) set("infix", "1")
-  else {
-    if (state.prefix) set("prefix", "1")
-    if (state.suffix) set("suffix", "1")
-  }
+  // The legacy search reads prefix/suffix, even when the menu selects infix.
+  if (state.prefix || state.infix) set("prefix", "1")
+  if (state.suffix || state.infix) set("suffix", "1")
   if (!state.wordFormOnly) set("lemma", "1")
   if (!state.includeModernized) set("ej_modern", "1")
   if (state.fuzzy) set("fuzzy", "1")
@@ -331,7 +330,6 @@ export function serializeTextSearchRouteState(
     if (value !== null) serialized[key] = value
   }
   set("fras", state.phrase)
-  set("snapshot", state.snapshot)
   if (state.page !== 1) set("traffsida", String(state.page))
   if (state.advanced) set("avancerad", "1")
   serializeTextSearchSelections(state, set)
@@ -379,6 +377,8 @@ export function textSearchPageQuery(
   page: number
 ): Record<string, string | readonly string[] | null | undefined> {
   const next = { ...raw }
+  // Generation pins belong to API requests, not shareable pagination URLs.
+  delete next.snapshot
   if (Number.isSafeInteger(page) && page >= 2 && page <= 10_000) {
     next.traffsida = String(page)
   } else {
@@ -837,7 +837,6 @@ function appendCanonicalReaderSearch(
 ): void {
   appendSearchParam(params, "q", state.phrase)
   appendSearchParam(params, "hit", hitIndex)
-  appendSearchParam(params, "snapshot", state.snapshot)
   if (!state.wordFormOnly) appendSearchParam(params, "lemma", 1)
   if (!state.includeModernized) appendSearchParam(params, "ej_modern", 1)
   if (state.prefix) appendSearchParam(params, "prefix", 1)

@@ -2996,7 +2996,7 @@ const handleFixtureRequest = async (request, response) => {
     const word = wordValues.length === 1 ? wordValues[0] : null
     const requestId = requestIdValues.length === 1 ? requestIdValues[0] : null
     if (
-      url.searchParams.size !== 2
+      (url.searchParams.size !== 2 && !(url.searchParams.size === 3 && url.searchParams.get("dictionary") === "so"))
       || typeof word !== "string"
       || word.length < 1
       || word.length > 100
@@ -6216,6 +6216,22 @@ const handleFixtureRequest = async (request, response) => {
       query.mediaType,
       { ...query, snapshot: query.snapshot ?? textSearchActiveGeneration }
     ))
+  }
+
+  const authorAuxiliary = /^\/v2\/authors\/([^/]+)\/(audio|works-availability)$/.exec(apiPathname)
+  if (request.method === "GET" && authorAuxiliary) {
+    const identity = decodeURIComponent(authorAuxiliary[1])
+    if (authorAuxiliary[2] === "audio") {
+      return sendJson(response, 200, { audio_url: authorProfiles.get(identity)?.audio_url ?? null })
+    }
+    await waitForAuthorWorksDelay(identity)
+    if (authorWorksFailures.has(identity)) return sendJson(response, 503, { error: "unavailable" })
+    const works = authorWorksById.get(identity)
+    if (!works) return sendJson(response, 404, { error: "not found" })
+    return sendJson(response, 200, {
+      author_id: identity,
+      has_works: works ? works.authored_sections.some(section => section.items.length > 0) : false
+    })
   }
 
   const authorWorksAuthorId = request.method === "GET"
