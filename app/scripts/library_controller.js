@@ -44,6 +44,7 @@ littb.component("keywordSelect", {
         <option value="texttype:diktsamling;dikt">Poesi</option>
         <option value="texttype:roman">Romaner</option>
         <option value="texttype:sakprosa;kringtexter;avhandling;referensverk">Sakprosa</option>
+        <option value="texttype:tal">Tal</option>
         
         <option value='keyword:Barnlitteratur'>Barn- och ungdomslitteratur</option>
         <option value='keyword:Biografika|texttype:brev;brevsamling'>Biografisk litteratur</option>
