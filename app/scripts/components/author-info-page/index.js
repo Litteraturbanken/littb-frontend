@@ -333,18 +333,6 @@ class AuthorInfoPageCtrl {
                         data: null,
                         def: this.backend.getPartsInOthersWorks(s.author, "main_author.name_for_index|desc", true),
                         showAuthor(work) { return work["authors"] || work["work_authors"] }
-                    },
-                    {
-                        label: "Som utgivare",
-                        data: null,
-                        def: this.backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "editor", true),
-                        showAuthor(work) { return work["authors"] }
-                    },
-                    {
-                        label: "Som översättare",
-                        data: null,
-                        def: this.backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "translator", true),
-                        showAuthor(work) { return work["authors"] }
                     }
                 ]
 
