@@ -1350,6 +1350,19 @@ const rawGenderSelection = computed(() => {
 const genderSelection = computed(() => (
   rawGenderSelection.value === "all" ? "all" : (state.value.gender ?? "all")
 ))
+function leaveGenderMenu(event: KeyboardEvent) {
+  if (event.key !== "Tab" || !(event.target instanceof Element)
+    || !event.target.closest('[role="listbox"]')) return
+  const container = event.currentTarget as HTMLElement
+  const button = container.querySelector<HTMLButtonElement>('button[aria-haspopup="listbox"]')
+  if (!button) return
+  // Headless UI 1.x prevents Tab in ListboxOptions. Close via its button,
+  // then let the browser continue from that button in either direction.
+  event.stopPropagation()
+  button.click()
+  button.focus({ preventScroll: true })
+}
+
 const genderChoices = [
   { value: "all", label: "Alla författare" },
   { value: "female", label: "Kvinnliga författare" },
@@ -1718,6 +1731,7 @@ v-for="item in [
               <div
                 class="gender_select select2 select2-container select2-container--default"
                 :data-gender-value="genderSelection"
+                @keydown.capture="leaveGenderMenu"
               >
                 <ListboxButton class="select2-selection select2-selection--single">
                   <span class="select2-selection__rendered">

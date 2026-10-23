@@ -18,6 +18,7 @@ describe("SearchMultiSelect grouped normalization", () => {
     app.provide(ssrContextKey, { modules: new Set<string>() })
     app.mount(target)
     const root = target.querySelector<HTMLElement>(".multiselect")!
+    expect(root.querySelector(".multiselect__select")?.getAttribute("tabindex")).toBe("-1")
     const press = async (key: string) => {
       const event = new window.Event("keydown", { bubbles: true, cancelable: true })
       Object.defineProperty(event, "key", { value: key })

@@ -68,6 +68,7 @@ const multiselect = ref<InstanceType<typeof VueMultiselect> | null>(null)
 const isOpen = ref(false)
 const inputId = useId()
 let closeOnControlClick = false
+let restoringFocus = false
 const controlName = computed(() => props.accessibleName ?? props.placeholder)
 const flatOptions = computed(() => props.optionGroups.length > 0
   ? props.optionGroups.flatMap(group => group.options)
@@ -119,9 +120,43 @@ function update(value: readonly VueMultiselectOption[] | null) {
   emit("update:modelValue", [...known, ...unknown])
 }
 
-function toggleOptions() {
+async function toggleOptions() {
+  const wasOpen = isOpen.value
   const toggleable = multiselect.value as unknown as ToggleableMultiselect | null
   toggleable?.toggle()
+  if (!wasOpen) return
+  await nextTick()
+  const root = multiselect.value?.$el as HTMLElement | undefined
+  const target = props.searchable
+    ? root?.querySelector<HTMLInputElement>("input.multiselect__input:not(.search-multiselect__input-row)")
+    : root
+  // Closing blurs the library control. Restore focus without reopening on focus.
+  restoringFocus = true
+  try {
+    const visibleTarget = target?.getClientRects().length ? target : root
+    visibleTarget?.focus({ preventScroll: true })
+  } finally {
+    restoringFocus = false
+  }
+}
+
+function retainClosedFocus(event: FocusEvent) {
+  if (restoringFocus) event.stopPropagation()
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  const closesMenu = isOpen.value && event.key === "Escape"
+  const opensMenu = !isOpen.value
+    && event.target instanceof Element
+    && event.target.matches(".multiselect, input.multiselect__input:not(.search-multiselect__input-row)")
+    && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key)
+  if (closesMenu || opensMenu) {
+    event.preventDefault()
+    event.stopPropagation()
+    void toggleOptions()
+  } else {
+    void navigateOptions(event)
+  }
 }
 
 function navigatePage(control: ToggleableMultiselect, list: HTMLElement, direction: number) {
@@ -208,7 +243,8 @@ onMounted(() => {
     class="filter_select select2 select2-container select2-container--default"
     @mousedown.capture="prepareControlClick"
     @click.capture="toggleActiveControl"
-    @keydown.capture="navigateOptions"
+    @keydown.capture="handleKeydown"
+    @focus.capture="retainClosedFocus"
   >
     <VueMultiselect
       :id="inputId"
@@ -241,7 +277,7 @@ onMounted(() => {
       @open="isOpen = true"
       @close="isOpen = false"
     >
-      <template #caret="{ toggle }">
+      <template #caret>
         <input
           v-if="selectedOptions.length === 0 && !searchable"
           class="multiselect__input search-multiselect__input-row search-multiselect__main-trigger"
@@ -251,14 +287,15 @@ onMounted(() => {
           aria-hidden="true"
           tabindex="-1"
           @mousedown.prevent.stop
-          @click.prevent.stop="toggle"
+          @click.prevent.stop="toggleOptions"
         >
         <button
           type="button"
           class="select2-selection__arrow multiselect__select"
+          tabindex="-1"
           :aria-label="`Visa alternativ för ${placeholder}`"
           @mousedown.prevent.stop
-          @click.prevent.stop="toggle"
+          @click.prevent.stop="toggleOptions"
         >
           <b aria-hidden="true" />
         </button>
@@ -330,3 +367,11 @@ onMounted(() => {
 </template>
 
 <style src="vue-multiselect/dist/vue-multiselect.css"></style>
+
+<style scoped>
+.multiselect:focus-visible,
+.multiselect:has(input.multiselect__input:focus-visible) {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+</style>
