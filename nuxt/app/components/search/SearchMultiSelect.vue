@@ -27,6 +27,8 @@ type VueMultiselectOptionGroup = Readonly<{
 
 type ToggleableMultiselect = Readonly<{
   toggle: () => void
+  pointer: number
+  pointerSet: (index: number) => void
   pointerForward: () => void
   pointerBackward: () => void
   $refs: { list?: HTMLElement }
@@ -122,15 +124,32 @@ function toggleOptions() {
   toggleable?.toggle()
 }
 
+function navigatePage(control: ToggleableMultiselect, list: HTMLElement, direction: number) {
+  const rows = [...list.querySelectorAll<HTMLElement>(".multiselect__element")]
+  const current = rows[control.pointer]
+  if (!current) return
+  const origin = current.getBoundingClientRect().top
+  let target = control.pointer
+  for (let index = target + direction; index >= 0 && index < rows.length; index += direction) {
+    const row = rows[index]!
+    if (row.getAttribute("role") !== "option") continue
+    target = index
+    if (Math.abs(row.getBoundingClientRect().top - origin) >= list.clientHeight) break
+  }
+  control.pointerSet(target)
+}
+
 async function navigateOptions(event: KeyboardEvent) {
-  if (!isOpen.value || !["ArrowDown", "ArrowUp"].includes(event.key)) return
+  if (!isOpen.value || !["ArrowDown", "ArrowUp", "PageDown", "PageUp"].includes(event.key)) return
   const control = multiselect.value as unknown as ToggleableMultiselect | null
   const list = control?.$refs.list
   if (!control || !list) return
   event.preventDefault()
   event.stopPropagation()
   const scrollTop = list.scrollTop
-  if (event.key === "ArrowDown") control.pointerForward()
+  if (event.key === "PageDown" || event.key === "PageUp") {
+    navigatePage(control, list, event.key === "PageDown" ? 1 : -1)
+  } else if (event.key === "ArrowDown") control.pointerForward()
   else control.pointerBackward()
   // The library assumes 40px rows; our wrapped titles and group labels vary in height.
   // Keep its pointer navigation, but scroll using the actual rendered option bounds.

@@ -1,6 +1,72 @@
 import { describe, expect, test } from "vitest"
 
 describe("SearchMultiSelect grouped normalization", () => {
+  test.each([false, true])("pages through grouped options (searchable=%s)", async (searchable) => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, ssrContextKey }, { default: SearchMultiSelect }] = await Promise.all([
+      import("vue"), import("../../app/components/search/SearchMultiSelect.vue")
+    ])
+    const updates: string[][] = []
+    const app = createApp({ setup: () => () => h(SearchMultiSelect, {
+      modelValue: [], options: [], searchable, placeholder: "Titles",
+      optionGroups: [{ label: "Group", options: Array.from({ length: 12 }, (_, i) => ({
+        value: String(i), label: `Title ${i}`, disabled: i === 4
+      })) }],
+      "onUpdate:modelValue": (value: string[]) => updates.push(value)
+    }) })
+    app.provide(ssrContextKey, { modules: new Set<string>() })
+    app.mount(target)
+    const root = target.querySelector<HTMLElement>(".multiselect")!
+    const press = async (key: string) => {
+      const event = new window.Event("keydown", { bubbles: true, cancelable: true })
+      Object.defineProperty(event, "key", { value: key })
+      const input = target.querySelector<HTMLInputElement>("input.multiselect__input")
+      const control = searchable ? input! : root
+      control.dispatchEvent(event)
+      await nextTick()
+      return event
+    }
+    try {
+      expect((await press("PageDown")).defaultPrevented).toBe(false)
+      root.dispatchEvent(new window.Event("focus"))
+      await nextTick()
+      const list = target.querySelector<HTMLElement>(".multiselect__content-wrapper")!
+      list.scrollTop = 0
+      Object.defineProperties(list, { clientHeight: { value: 100 }, clientTop: { value: 0 } })
+      const rect = (top: number, height: number) => ({ top, bottom: top + height, height }) as DOMRect
+      list.getBoundingClientRect = () => rect(0, 100)
+      let top = 0
+      for (const [index, row] of [...list.querySelectorAll<HTMLElement>(".multiselect__element")].entries()) {
+        const height = index === 3 ? 60 : 20
+        const rowTop = top
+        row.getBoundingClientRect = () => rect(rowTop - list.scrollTop, height)
+        row.querySelector<HTMLElement>(".multiselect__option")!.getBoundingClientRect = row.getBoundingClientRect
+        top += height
+      }
+      const highlighted = () => list.querySelector<HTMLElement>(".multiselect__option--highlight")!
+      expect(highlighted().textContent).toBe("Title 0")
+      expect((await press("PageDown")).defaultPrevented).toBe(true)
+      expect(highlighted().textContent).toBe("Title 3")
+      expect(highlighted().getBoundingClientRect().bottom).toBeLessThanOrEqual(100)
+      await press("PageDown")
+      expect(highlighted().textContent).toBe("Title 8")
+      await press("PageUp")
+      expect(highlighted().textContent).toBe("Title 3")
+      await press("PageUp")
+      await press("PageUp")
+      expect(highlighted().textContent).toBe("Title 0")
+      for (let i = 0; i < 5; i++) await press("PageDown")
+      expect(highlighted().textContent).toBe("Title 11")
+      expect(updates).toEqual([])
+      await press("Enter")
+      expect(updates).toEqual([["11"]])
+    } finally {
+      app.unmount()
+      target.remove()
+    }
+  })
+
   test("renders title options beyond the multiselect default limit", async () => {
     const target = document.createElement("div")
     document.body.append(target)
