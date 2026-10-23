@@ -120,6 +120,14 @@ function update(value: readonly VueMultiselectOption[] | null) {
   emit("update:modelValue", [...known, ...unknown])
 }
 
+function setOpen(open: boolean) {
+  isOpen.value = open
+  // The closing transition leaves slotted buttons rendered briefly. Exclude
+  // them from Tab navigation immediately, before the list becomes hidden.
+  const control = multiselect.value as unknown as ToggleableMultiselect | null
+  control?.$refs.list?.toggleAttribute("inert", !open)
+}
+
 async function toggleOptions() {
   const wasOpen = isOpen.value
   const toggleable = multiselect.value as unknown as ToggleableMultiselect | null
@@ -145,6 +153,12 @@ function retainClosedFocus(event: FocusEvent) {
 }
 
 function handleKeydown(event: KeyboardEvent) {
+  if (event.key === "Tab") {
+    // Tab leaves the combobox; skip popup actions before native blur closes it.
+    const control = multiselect.value as unknown as ToggleableMultiselect | null
+    control?.$refs.list?.setAttribute("inert", "")
+    return
+  }
   const closesMenu = isOpen.value && event.key === "Escape"
   const opensMenu = !isOpen.value
     && event.target instanceof Element
@@ -223,6 +237,7 @@ function toggleActiveControl(event: MouseEvent) {
 }
 
 onMounted(() => {
+  setOpen(isOpen.value)
   const search = multiselect.value?.$el.querySelector(
     "input.multiselect__input:not(.search-multiselect__input-row)"
   )
@@ -274,8 +289,8 @@ onMounted(() => {
       @update:model-value="update"
       @select="rememberOption"
       @search-change="emit('query', $event)"
-      @open="isOpen = true"
-      @close="isOpen = false"
+      @open="setOpen(true)"
+      @close="setOpen(false)"
     >
       <template #caret>
         <input
