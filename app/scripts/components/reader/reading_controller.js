@@ -247,10 +247,10 @@ export default [
                         } else if (event.shiftKey) {
                             ctrl.nextPage()
                         } else {
-                            if (
-                                $rootElement.prop("scrollWidth") - $window.scrollX ===
-                                $window.innerWidth
-                            ) {
+                            // clientWidth excludes the vertical scrollbar; scrollX can
+                            // be fractional at browser zoom levels.
+                            const viewport = document.documentElement
+                            if (viewport.scrollWidth - $window.scrollX <= viewport.clientWidth + 1) {
                                 ctrl.nextPage()
                             }
                         }
