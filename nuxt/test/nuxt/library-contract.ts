@@ -47,11 +47,13 @@ type ExpectedSearchResponse =
   | components["schemas"]["LibraryEpubSearchResponse"]
   | components["schemas"]["LibraryPdfSearchResponse"]
 type ExpectedCountRequest =
+  | components["schemas"]["LibraryAuthorsCountRequest"]
   | components["schemas"]["LibraryEpubCountRequest"]
   | components["schemas"]["LibraryPdfCountRequest"]
   | components["schemas"]["LibraryWorksCountRequest"]
   | components["schemas"]["LibraryPartsCountRequest"]
 type ExpectedCountResponse =
+  | components["schemas"]["LibraryAuthorsCountResponse"]
   | components["schemas"]["LibraryDownloadCountResponse"]
   | components["schemas"]["LibraryBrowseCountResponse"]
 
@@ -60,7 +62,7 @@ type _SearchResponseUnionExact = Expect<Equal<SearchResponse, ExpectedSearchResp
 type _CountRequestUnionExact = Expect<Equal<CountRequest, ExpectedCountRequest>>
 type _CountResponseUnionExact = Expect<Equal<CountResponse, ExpectedCountResponse>>
 type SearchMode = "all" | "authors" | "works" | "parts" | "latest" | "epub" | "pdf"
-type CountMode = "epub" | "pdf" | "works" | "parts"
+type CountMode = "authors" | "epub" | "pdf" | "works" | "parts"
 type _SearchRequestModesExact = Expect<Equal<SearchRequest["mode"], SearchMode>>
 type _SearchResponseModesExact = Expect<Equal<SearchResponse["mode"], SearchMode>>
 type _CountRequestModesExact = Expect<Equal<CountRequest["mode"], CountMode>>

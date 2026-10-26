@@ -1548,7 +1548,7 @@ function validLibrarySearchBody(body) {
 function validLibraryCountBody(body) {
   return body !== null && typeof body === "object" && !Array.isArray(body)
     && hasExactFields(body, ["mode", "filters"])
-    && ["epub", "pdf", "works", "parts"].includes(body.mode)
+    && ["authors", "epub", "pdf", "works", "parts"].includes(body.mode)
     && validLibraryFilters(body.filters)
 }
 
@@ -2108,6 +2108,7 @@ function librarySearchResponse(body) {
 
 function libraryCountResponse(mode, filters) {
   const query = filters.query.toLowerCase()
+  if (mode === "authors") return { mode, total: libraryAuthorsResponse(filters.query, 150).total_authors }
   const empty = query === "inga"
   if (mode === "works") {
     return {
@@ -3102,7 +3103,7 @@ const handleFixtureRequest = async (request, response) => {
         libraryV2Failures.search.add(body.mode)
       } else if (body.operation === "counts") {
         if (!hasExactFields(body, ["operation", "mode"])
-          || !["epub", "pdf", "works", "parts"].includes(body.mode)) return validationError(response)
+          || !["authors", "epub", "pdf", "works", "parts"].includes(body.mode)) return validationError(response)
         libraryV2Failures.counts.add(body.mode)
       } else return validationError(response)
       return sendJson(response, 200, serialized())

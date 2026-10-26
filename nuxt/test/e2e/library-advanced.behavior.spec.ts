@@ -1266,3 +1266,46 @@ test("vue-multiselect Library facets keep groups, disabled narrowing choices, an
   await expect.poll(() => new URL(page.url()).searchParams.has("keywords")).toBe(false)
   await expect(keywords.locator(".select2-selection__choice")).toHaveCount(0)
 })
+
+for (const query of ["", "Selma"]) {
+  test(`author badge preserves combined advanced filters with query '${query}'`, async ({ page, request }) => {
+    const selected = libraryFilters({
+      query,
+      categories: ["texttype:roman", "provenance.library:SA"],
+      narrowing_categories: ["texttype:brev;brevsamling", "keyword:Humor"],
+      about_author_ids: ["LagerlofS"],
+      media: ["mediatype:etext", "has_epub:true"],
+      languages: ["language:swe", "proofread:false"],
+      year_from: 1850, year_to: 1950
+    })
+    const params = new URLSearchParams({
+      avancerat: "1", filter: query,
+      keywords: selected.categories!.join(","),
+      keywords_aux: selected.narrowing_categories!.join(","),
+      about_authors: "LagerlofS", mediatypes: selected.media!.join(","),
+      languages: selected.languages!.join(","), intervall: "1850,1950"
+    })
+    const ledger = async () => (await request.get(`${fixture}/_library_v2/requests`)).json()
+    const authorCounts = async () => (await ledger()).counts.filter(
+      (entry: { body: { mode: string } }) => entry.body.mode === "authors"
+    )
+    await page.goto(`/bibliotek?${params}`, { waitUntil: "networkidle" })
+    expect((await authorCounts()).map((entry: { body: { filters: LibraryFilters } }) => entry.body.filters)).toEqual([selected])
+    expect((await ledger()).search.filter((entry: { body: { mode: string } }) => entry.body.mode === "authors")).toHaveLength(0)
+
+    await page.locator("[data-library-gender]").selectOption("female")
+    await expect.poll(async () => (await authorCounts()).at(-1)?.body.filters)
+      .toEqual({ ...selected, gender: "female" })
+    await page.goBack()
+    await expect.poll(async () => (await authorCounts()).at(-1)?.body.filters).toEqual(selected)
+    await page.reload({ waitUntil: "networkidle" })
+    expect((await authorCounts()).at(-1)?.body.filters).toEqual(selected)
+    await expect(page.locator('[data-library-tab="authors"]')).toContainText(query ? ": 1" : ": 156")
+
+    await page.locator('[data-library-tab="authors"]').click()
+    await expect.poll(async () => (await ledger()).search.filter(
+      (entry: { body: { mode: string } }) => entry.body.mode === "authors"
+    ).at(-1)?.body.filters).toEqual(selected)
+    await expect(page.locator('[data-library-tab="authors"]')).toContainText(query ? ": 1" : ": 156")
+  })
+}

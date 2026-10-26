@@ -1837,6 +1837,25 @@ export interface components {
             /** Surname */
             surname: string | null;
         };
+        /** LibraryAuthorsCountRequest */
+        LibraryAuthorsCountRequest: {
+            filters: components["schemas"]["LibraryFilters"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "authors";
+        };
+        /** LibraryAuthorsCountResponse */
+        LibraryAuthorsCountResponse: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "authors";
+            /** Total */
+            total: number | null;
+        };
         /** LibraryAuthorsSearchRequest */
         LibraryAuthorsSearchRequest: {
             filters: components["schemas"]["LibraryFilters"];
@@ -4994,7 +5013,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LibraryEpubCountRequest"] | components["schemas"]["LibraryPdfCountRequest"] | components["schemas"]["LibraryWorksCountRequest"] | components["schemas"]["LibraryPartsCountRequest"];
+                "application/json": components["schemas"]["LibraryAuthorsCountRequest"] | components["schemas"]["LibraryEpubCountRequest"] | components["schemas"]["LibraryPdfCountRequest"] | components["schemas"]["LibraryWorksCountRequest"] | components["schemas"]["LibraryPartsCountRequest"];
             };
         };
         responses: {
@@ -5004,7 +5023,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LibraryDownloadCountResponse"] | components["schemas"]["LibraryBrowseCountResponse"];
+                    "application/json": components["schemas"]["LibraryAuthorsCountResponse"] | components["schemas"]["LibraryDownloadCountResponse"] | components["schemas"]["LibraryBrowseCountResponse"];
                 };
             };
             /** @description Search snapshot unavailable */
