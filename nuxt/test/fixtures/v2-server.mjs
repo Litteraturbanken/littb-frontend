@@ -2225,7 +2225,7 @@ function validTextSearchBody(operation, body) {
   if (operation === "options") {
     return typeof body.include_static_options === "boolean"
       && validBoundedString(body.title_filter, 200, true)
-      && [0, 30, 500].includes(body.title_limit)
+      && [0, 30, 500, "all"].includes(body.title_limit)
       && (!Object.hasOwn(body, "selected_work_ids")
         || validStringArray(body.selected_work_ids, 50))
   }
@@ -2824,7 +2824,7 @@ function selectedTextSearchTitleOptions(body, options) {
 function textSearchOptionsResponse(body) {
   const titleFilter = body.title_filter.toLocaleLowerCase("sv")
   if (titleFilter === "doktor") {
-    const visibleCount = body.title_limit === 500 ? 41 : Math.min(body.title_limit, 30)
+    const visibleCount = (body.title_limit === 500 || body.title_limit === "all") ? 41 : Math.min(body.title_limit, 30)
     return {
       authors: [],
       about_authors: [],
@@ -2843,7 +2843,7 @@ function textSearchOptionsResponse(body) {
     }
   }
   if (titleFilter === "overflow" || (body.query === "overflow" && !titleFilter)) {
-    const visibleCount = Math.min(body.title_limit, 731)
+    const visibleCount = body.title_limit === "all" ? 731 : Math.min(body.title_limit, 731)
     return {
       authors: [],
       about_authors: [],
@@ -2880,7 +2880,7 @@ function textSearchOptionsResponse(body) {
     }
   }
 
-  const visible = body.title_limit === 0 ? [] : matching.slice(0, body.title_limit)
+  const visible = body.title_limit === 0 ? [] : body.title_limit === "all" ? matching : matching.slice(0, body.title_limit)
   const authors = body.include_static_options && !routeHasNoOptions
     ? [{
         author_id: "LagerlöfS",

@@ -169,7 +169,7 @@ async function selectMulti(page: Page, placeholder: string, option: string | Reg
   await page.keyboard.press("Escape")
 }
 
-test("vue-multiselect title search selects and removes a route-owned title", async ({
+test("Headless UI multiselect title search selects and removes a route-owned title", async ({
   page,
   request
 }) => {
@@ -528,17 +528,17 @@ test("an overlong title filter clears loading and reports a recoverable error", 
   expect(problems).toEqual([])
 })
 
-test("vue-multiselect names each real keyboard control without a searchbox suffix", async ({
+test("Headless UI multiselect names each real keyboard control without a searchbox suffix", async ({
   page
 }) => {
   await openSearch(page, "/s%C3%B6k?avancerad=1")
 
   for (const control of [
-    page.getByRole("textbox", { name: "Författarskap", exact: true }),
-    page.getByRole("textbox", { name: "Titlar", exact: true }),
-    page.getByRole("textbox", { name: "Språk …", exact: true }),
-    page.getByRole("textbox", { name: "Om ett författarskap", exact: true }),
-    page.getByRole("textbox", {
+    page.getByRole("combobox", { name: "Författarskap", exact: true }),
+    page.getByRole("combobox", { name: "Titlar", exact: true }),
+    page.getByRole("combobox", { name: "Språk …", exact: true }),
+    page.getByRole("combobox", { name: "Om ett författarskap", exact: true }),
+    page.getByRole("combobox", {
       name: "Filtrera: Kategorier / Utgivare", exact: true
     })
   ]) {
@@ -549,7 +549,7 @@ test("vue-multiselect names each real keyboard control without a searchbox suffi
   await expect(page.getByLabel(/-searchbox$/)).toHaveCount(0)
 })
 
-test("vue-multiselect preserves declared option order, unknown selections, and labels", async ({
+test("Headless UI multiselect preserves declared option order, unknown selections, and labels", async ({
   page
 }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1&forfattare=missing,StrindbergA")
@@ -575,38 +575,29 @@ test("vue-multiselect preserves declared option order, unknown selections, and l
   await expect(authors.getByRole("button", { name: "Ta bort missing" })).toBeVisible()
 })
 
-test("advanced multiselect controls toggle while the persistent title input stays open", async ({
-  page
-}) => {
+test("advanced multiselect controls repeatedly toggle and preserve an editable title query", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?avancerad=1")
-
-  for (const selector of [
-    ".author_select",
-    ".title_select",
-    ".lang_select",
-    ".about_select",
-    ".keyword_select"
-  ]) {
-    const root = page.locator(selector)
-    const control = root.locator(".multiselect")
-    const point = { x: 100, y: 14 }
-
-    await control.click({ position: point })
-    await expect(control).toHaveClass(/multiselect--active/)
-    await control.click({ position: point })
-    if (selector === ".title_select") {
-      await expect(control).toHaveClass(/multiselect--active/)
-      await root.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
+  for (const selector of [".author_select", ".title_select", ".lang_select", ".about_select", ".keyword_select"]) {
+    const control = page.locator(selector).getByRole("combobox")
+    for (const expanded of ["true", "false", "true", "false", "true", "false"]) {
+      await control.click({ position: { x: 100, y: 14 } })
+      await expect(control).toHaveAttribute("aria-expanded", expanded)
     }
-    await expect(control).not.toHaveClass(/multiselect--active/)
   }
+  const title = page.locator(".title_select").getByRole("combobox")
+  await title.fill("Röda")
+  await title.click()
+  await expect(title).toHaveAttribute("aria-expanded", "true")
+  await expect(title).toHaveValue("Röda")
+  await title.press("Escape")
+  await expect(title).toHaveValue("Röda")
 })
 
-test("vue-multiselect accepts Enter selection and keeps legacy dropdown geometry", async ({ page }) => {
+test("Headless UI multiselect accepts Enter selection and keeps legacy dropdown geometry", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?avancerad=1")
   const authors = page.locator(".author_select")
   const control = authors.getByRole("combobox")
-  await control.focus()
+  await control.press("ArrowDown")
   const option = authors.getByRole("option", { name: "Lagerlöf, Selma (1858-1940)" })
     .locator(".multiselect__option")
   await expect(option).toHaveCSS("padding-top", "6px")
@@ -725,7 +716,7 @@ test("gender dropdown matches the production trigger and open menu", async ({ pa
   await expect(menu).toBeHidden()
 })
 
-test("advanced vue-multiselect SSR hydration renders without browser warnings", async ({ page }) => {
+test("advanced Headless UI multiselect SSR hydration renders without browser warnings", async ({ page }) => {
   const problems = browserProblems(page)
   await openSearch(page, "/s%C3%B6k?avancerad=1&forfattare=StrindbergA")
   await expect(page.locator(".author_select .multiselect")).toBeVisible()
@@ -2377,12 +2368,12 @@ test("keyboard pagination keeps noninteractive and negative-tabindex backgrounds
   }
 })
 
-test("vue-multiselect filters traverse by keyboard and remove accessibly", async ({ page, request }) => {
+test("Headless UI multiselect filters traverse by keyboard and remove accessibly", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
   await request.delete(`${fixture}/_text_search/requests/results`)
 
   const authorControl = page.locator(".author_select").getByRole("combobox")
-  await authorControl.focus()
+  await authorControl.press("ArrowDown")
   const strindberg = page.getByRole("option", { name: /Strindberg, August/ })
   await expect(strindberg).toBeVisible()
   await authorControl.press("ArrowDown")
@@ -3028,7 +3019,7 @@ test("filtered title disclosure loads the expanded set and retries a local failu
   await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
     .toMatchObject({
       title_filter: "doktor",
-      title_limit: 500,
+      title_limit: "all",
       include_static_options: false
     })
   const failure = page.getByRole("alert")
@@ -3037,7 +3028,6 @@ test("filtered title disclosure loads the expanded set and retries a local failu
   await request.delete(`${fixture}/_text_search/failures/options`)
   await failure.getByRole("button", { name: "Försök igen" }).click()
   await expect.poll(async () => (await requests(request, "options")).length).toBe(3)
-  await page.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
   await expect(page.getByRole("option", { name: "Doktortitel 41" })).toBeVisible()
 })
 
@@ -3051,10 +3041,8 @@ test("filtered title disclosure stops after every distinct option is loaded", as
   })
   await expect(showAll).toBeVisible()
   await showAll.click()
-  await expect(page.getByText("Visar de första 41 matchande titlarna", { exact: true }))
-    .toBeVisible()
+  await expect(page.locator(".title_select [role=option]")).toHaveCount(41)
   await expect(showAll).toHaveCount(0)
-  await page.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
   await expect(page.getByRole("option", { name: "Doktortitel 41" })).toBeVisible()
 })
 
@@ -3104,7 +3092,7 @@ test("changing the title filter immediately invalidates a delayed expansion", as
 
   await showAll.click()
   await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
-    .toMatchObject({ title_filter: "overflow", title_limit: 500 })
+    .toMatchObject({ title_filter: "overflow", title_limit: "all" })
   await expect(page.locator(".title_select .spinner")).toBeVisible()
 
   await input.fill("doktor")

@@ -42,7 +42,7 @@ for (const width of [375, 731, 768, 1440]) {
     await page.locator("[data-library-advanced-panel]").waitFor()
     for (const name of ["Filtrera: Kategorier / Utgivare", "Om ett författarskap",
       "Avgränsa sökningen", "Utgivningsformat", "Språk …"]) {
-      const input = page.getByRole("textbox", { name, exact: true })
+      const input = page.getByRole("combobox", { name, exact: true })
       await expect(input).toHaveCSS("padding-left", "10px")
       await input.fill("test")
       await expect(input).toHaveCSS("padding-left", "10px")
@@ -58,7 +58,7 @@ for (const width of [731, 1440]) {
     await page.goto("/s%C3%B6k?avancerad=1&keywords=texttype:brev;brevsamling&infix=1&ej_modern=1")
     await page.locator('[data-search-mounted="true"]').waitFor()
     const control = page.getByRole("combobox", { name: "Titlar", exact: true })
-    const input = control.getByRole("textbox", { name: "Titlar", exact: true })
+    const input = control
     await input.click()
     await expect(control).toHaveAttribute("aria-expanded", "true")
     await input.click()
@@ -81,10 +81,12 @@ for (const width of [375, 731, 1440]) {
     await page.locator('[data-search-mounted="true"]').waitFor()
     for (const name of ['Filtrera: Kategorier / Utgivare', 'Titlar', 'Författarskap']) {
       const control = page.getByRole('combobox', { name, exact: true })
-      const input = control.getByRole('textbox', { name, exact: true })
+      const input = control
       await input.click()
       await page.mouse.move(0, 0)
-      const measure = () => control.evaluate(root => {
+      await input.press("ArrowDown")
+      await expect(page.locator(".multiselect__option--highlight")).toHaveCount(1)
+      const measure = () => control.locator('..').locator('..').evaluate(root => {
         const list = root.querySelector<HTMLElement>('.multiselect__content-wrapper')!
         const active = root.querySelector<HTMLElement>('.multiselect__option--highlight')!
         const frame = list.getBoundingClientRect()
@@ -94,9 +96,10 @@ for (const width of [375, 731, 1440]) {
           height: list.clientHeight, scroll: list.scrollTop,
           rightGap: frame.left + list.clientLeft + list.clientWidth - row.right }
       })
-      for (const key of [...Array<string>(22).fill('ArrowDown'), ...Array<string>(22).fill('ArrowUp')]) {
+      for (const key of [...Array<string>(22).fill('ArrowDown'), ...Array<string>(22).fill('ArrowUp'), ...Array<string>(5).fill('PageDown'), ...Array<string>(5).fill('PageUp')]) {
         const before = await measure()
         await input.press(key)
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)))
         const after = await measure()
         expect(after.top).toBeGreaterThanOrEqual(-1)
         expect(after.bottom).toBeLessThanOrEqual(after.height + 1)

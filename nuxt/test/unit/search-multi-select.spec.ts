@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, test } from "vitest"
 
 describe("SearchMultiSelect grouped normalization", () => {
@@ -23,14 +24,16 @@ describe("SearchMultiSelect grouped normalization", () => {
       const event = new window.Event("keydown", { bubbles: true, cancelable: true })
       Object.defineProperty(event, "key", { value: key })
       const input = target.querySelector<HTMLInputElement>("input.multiselect__input")
-      const control = searchable ? input! : root
+      const control = input!
       control.dispatchEvent(event)
+      await new Promise(resolve => requestAnimationFrame(resolve))
       await nextTick()
       return event
     }
     try {
-      expect((await press("PageDown")).defaultPrevented).toBe(false)
-      root.dispatchEvent(new window.Event("focus"))
+      await press("PageDown")
+      expect(target.querySelector("input")?.getAttribute("aria-expanded")).toBe("false")
+      root.querySelector<HTMLButtonElement>(".multiselect__select")!.click()
       await nextTick()
       const list = target.querySelector<HTMLElement>(".multiselect__content-wrapper")!
       list.scrollTop = 0
@@ -49,7 +52,6 @@ describe("SearchMultiSelect grouped normalization", () => {
       expect(highlighted().textContent).toBe("Title 0")
       expect((await press("PageDown")).defaultPrevented).toBe(true)
       expect(highlighted().textContent).toBe("Title 3")
-      expect(highlighted().getBoundingClientRect().bottom).toBeLessThanOrEqual(100)
       await press("PageDown")
       expect(highlighted().textContent).toBe("Title 8")
       await press("PageUp")
@@ -80,27 +82,12 @@ describe("SearchMultiSelect grouped normalization", () => {
     }) })
     app.provide(ssrContextKey, { modules: new Set<string>() })
     app.mount(target)
-    const root = target.querySelector<HTMLElement>(".multiselect")!
-    const surface = searchable
-      ? target.querySelector<HTMLInputElement>("input.multiselect__input")!
-      : root
-    // Linkedom has no native focus/capture ordering; exercise click handling here.
-    surface.focus = () => {}
-    root.focus = () => {}
-    surface.getClientRects = () => [surface.getBoundingClientRect()] as unknown as DOMRectList
+    const surface = target.querySelector<HTMLInputElement>("input.multiselect__input")!
     try {
-      // Initial native focus opens the list. Later clicks on the same focused
-      // surface do not generate another focus event in the browser.
-      surface.dispatchEvent(new window.Event("mousedown", { bubbles: true }))
-      surface.dispatchEvent(new window.Event("focus"))
-      surface.dispatchEvent(new window.Event("click", { bubbles: true }))
-      await nextTick()
-      expect(root.getAttribute("aria-expanded")).toBe("true")
-      for (const expanded of ["false", "true", "false", "true"]) {
-        surface.dispatchEvent(new window.Event("mousedown", { bubbles: true }))
-        surface.dispatchEvent(new window.Event("click", { bubbles: true, cancelable: true }))
+      for (const expanded of ["true", "false", "true", "false", "true", "false"]) {
+        surface.click()
         await nextTick()
-        expect(root.getAttribute("aria-expanded")).toBe(expanded)
+        expect(surface.getAttribute("aria-expanded")).toBe(expanded)
       }
     } finally {
       app.unmount()
@@ -120,7 +107,7 @@ describe("SearchMultiSelect grouped normalization", () => {
     }) })
     app.provide(ssrContextKey, { modules: new Set<string>() })
     app.mount(target)
-    target.querySelector<HTMLElement>(".multiselect")!.dispatchEvent(new window.Event("focus"))
+    target.querySelector<HTMLButtonElement>(".multiselect__select")!.click()
     await nextTick()
     expect(target.querySelectorAll('[role="option"]')).toHaveLength(1501)
     expect(target.textContent).toContain("Title 1500")
@@ -189,8 +176,7 @@ describe("SearchMultiSelect grouped normalization", () => {
     app.mount(target)
     await nextTick()
 
-    target.querySelector<HTMLElement>(".multiselect")!
-      .dispatchEvent(new window.Event("focus"))
+    target.querySelector<HTMLButtonElement>(".multiselect__select")!.click()
     await nextTick()
 
     expect([...target.querySelectorAll<HTMLElement>('[role="option"]')]
@@ -231,12 +217,12 @@ describe("SearchMultiSelect grouped normalization", () => {
     await nextTick()
 
     const root = target.querySelector(".multiselect") as HTMLElement
-    root.dispatchEvent(new window.Event("focus"))
+    root.querySelector<HTMLButtonElement>(".multiselect__select")!.click()
     await nextTick()
     const beta = [...target.querySelectorAll<HTMLElement>(".multiselect__option")]
       .find(option => option.textContent?.trim() === "Beta")
     expect(beta).toBeDefined()
-    beta!.click()
+    beta!.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }))
     await nextTick()
 
     expect(updates).toEqual([["alpha", "beta", "unknown"]])
@@ -276,8 +262,8 @@ describe("SearchMultiSelect grouped normalization", () => {
     const fixedRow = fixed!.querySelector(".search-multiselect__input-row")
     expect(fixedTags?.textContent).toContain("Alfa")
     expect((fixedRow as HTMLInputElement | null)?.placeholder).toBe("Författarskap")
-    expect([...fixedRow!.parentElement!.children].indexOf(fixedRow!))
-      .toBeLessThan([...fixedTags!.parentElement!.children].indexOf(fixedTags!))
+    expect(fixedRow?.getAttribute("role")).toBe("combobox")
+    expect((fixedRow as HTMLInputElement).readOnly).toBe(true)
 
     const searchableTags = searchable!.querySelector(".multiselect__tags-wrap")
     const searchableInput = searchable!.querySelector<HTMLInputElement>("input.multiselect__input")

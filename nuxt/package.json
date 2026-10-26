@@ -47,7 +47,6 @@
     "openapi-fetch": "0.17.0",
     "saxes": "6.0.0",
     "vue": "3.5.39",
-    "vue-multiselect": "3.5.0",
     "vue-router": "5.2.0"
   },
   "devDependencies": {
@@ -65,6 +64,7 @@
     "eslint": "10.8.0",
     "eslint-plugin-sonarjs": "4.2.0",
     "eslint-plugin-tailwindcss": "3.18.3",
+    "happy-dom": "21.0.4",
     "knip": "6.32.0",
     "lighthouse": "13.4.1",
     "openapi-typescript": "7.13.0",

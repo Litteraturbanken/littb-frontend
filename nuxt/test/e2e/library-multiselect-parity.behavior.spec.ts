@@ -10,7 +10,7 @@ async function choose(page: Page, control: Locator, labels: readonly string[]) {
   await page.keyboard.press("Escape")
 }
 
-test("Library vue-multiselect facets preserve groups, history, reload state, and disabled narrowing", async ({
+test("Library Headless UI multiselect facets preserve groups, history, reload state, and disabled narrowing", async ({
   page
 }) => {
   const consoleErrors: string[] = []
@@ -34,7 +34,7 @@ test("Library vue-multiselect facets preserve groups, history, reload state, and
     page.getByRole("combobox", {
       name: "Filtrera: Kategorier / Utgivare", exact: true
     }),
-    page.getByRole("textbox", { name: "Om ett författarskap", exact: true }),
+    page.getByRole("combobox", { name: "Om ett författarskap", exact: true }),
     page.getByRole("combobox", { name: "Avgränsa sökningen", exact: true }),
     page.getByRole("combobox", { name: "Utgivningsformat", exact: true }),
     page.getByRole("combobox", { name: "Språk …", exact: true })
@@ -48,7 +48,7 @@ test("Library vue-multiselect facets preserve groups, history, reload state, and
   await keywords.click()
   await expect(keywords).toContainText("Kategorier")
   await expect(keywords).toContainText("Utgivare")
-  await keywords.getByText("Romaner", { exact: true }).press("Enter")
+  await keywords.getByRole("combobox").press("Enter")
   await expect.poll(() => new URL(page.url()).searchParams.get("keywords"))
     .toBe("texttype:brev;brevsamling")
   await page.keyboard.press("Escape")
@@ -85,8 +85,8 @@ test("Library multiselect main area opens without a close-reopen flicker", async
   await waitForHydration(page)
 
   const keywords = page.locator("[data-library-keywords]")
-  const control = keywords.locator(".multiselect")
-  const closedMainArea = keywords.locator(".search-multiselect__main-trigger")
+  const control = keywords.getByRole("combobox")
+  const closedMainArea = keywords.locator("input.multiselect__input")
 
   await control.evaluate(element => {
     element.setAttribute("data-expanded-transitions", "")
@@ -112,7 +112,7 @@ test("Library searchable author multiselect closes when its active area is click
 
   const root = page.locator("[data-library-about-authors]")
   const control = root.locator(".multiselect")
-  const activeArea = root.getByRole("textbox", {
+  const activeArea = root.getByRole("combobox", {
     name: "Om ett författarskap",
     exact: true
   })
@@ -133,8 +133,8 @@ test("Library multiselect selected main area toggles the dropdown closed", async
   await waitForHydration(page)
 
   const keywords = page.locator("[data-library-keywords]")
-  const control = keywords.locator(".multiselect")
-  const mainArea = keywords.locator(".search-multiselect__input-row")
+  const control = keywords.getByRole("combobox")
+  const mainArea = keywords.getByRole("combobox")
 
   await mainArea.click()
   await expect(control).toHaveAttribute("aria-expanded", "true")
@@ -144,7 +144,7 @@ test("Library multiselect selected main area toggles the dropdown closed", async
 })
 
 test("Library searchable author facet keeps its input left of visible chips and filters locally", async ({
-  page
+  page, browserName
 }) => {
   await page.goto(
     "/bibliotek?avancerat=1&about_authors=LagerlofS",
@@ -153,7 +153,7 @@ test("Library searchable author facet keeps its input left of visible chips and 
   await waitForHydration(page)
 
   const about = page.locator("[data-library-about-authors]")
-  const control = about.locator(".multiselect")
+  const control = about.getByRole("combobox")
   const closedInput = about.locator(".search-multiselect__input-row")
   const chips = about.locator(".select2-selection__choice")
 
@@ -169,7 +169,9 @@ test("Library searchable author facet keeps its input left of visible chips and 
   expect(firstClosedChipBox).not.toBeNull()
   await expect(closedInput).toHaveCSS("position", "static")
   expect(closedInputBox!.width).toBeCloseTo(350, 1)
-  expect(firstClosedChipBox!.width).toBeCloseTo(149.65625, 0)
+  // Baselines measured against the original component in each engine.
+  const chipWidth = { chromium: 149.65625, webkit: 150.8125, firefox: 150.166687 }[browserName]
+  expect(firstClosedChipBox!.width).toBeCloseTo(chipWidth, 0)
   expect(firstClosedChipBox!.x - (closedInputBox!.x + closedInputBox!.width))
     .toBeCloseTo(8, 1)
 
@@ -263,7 +265,8 @@ test("Library multiselect matches the production selected-row geometry", async (
     expect(secondChipBox).not.toBeNull()
     expect(rootBox!.height).toBeCloseTo(34.1875, 1)
     expect(inputBox!.x).toBeCloseTo(rootBox!.x, 1)
-    expect(inputBox!.y - rootBox!.y).toBeCloseTo(1.5, 1)
+    // Measure the visible input, which previously overlaid a second row.
+    expect(inputBox!.y - rootBox!.y).toBeCloseTo(0, 1)
     expect(inputBox!.width).toBeCloseTo(350, 1)
     expect(inputBox!.height).toBeCloseTo(31.1875, 1)
     expect(firstChipBox!.x - (inputBox!.x + inputBox!.width)).toBeCloseTo(8, 1)
@@ -343,4 +346,25 @@ test("Library multiselect matches the production open-dropdown geometry", async 
   await expect(selected).toHaveCSS("background-color", "rgb(221, 221, 221)")
   await expect(selected).toHaveCSS("color", "rgb(51, 51, 51)")
   await expect(selected).toHaveCSS("font-weight", "400")
+})
+
+
+test("Headless UI multiselect chips toggle predictably and Tab leaves without selecting", async ({ page }) => {
+  await page.goto("/bibliotek?avancerat=1&about_authors=LagerlofS", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  const root = page.locator("[data-library-about-authors]")
+  const input = root.getByRole("combobox")
+  const label = root.locator(".select2-selection__choice-label")
+  for (const expanded of ["true", "false", "true", "false"]) {
+    await label.click()
+    await expect(input).toHaveAttribute("aria-expanded", expanded)
+  }
+  await input.click()
+  await input.press("ArrowDown")
+  await input.press("Tab")
+  await expect(input).toHaveAttribute("aria-expanded", "false")
+  await expect(input).not.toBeFocused()
+  expect(new URL(page.url()).searchParams.get("about_authors")).toBe("LagerlofS")
+  await root.getByRole("button", { name: "Ta bort Selma Lagerlöf" }).click()
+  await expect(root.locator(".select2-selection__choice")).toHaveCount(0)
 })

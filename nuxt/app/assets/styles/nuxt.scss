@@ -273,7 +273,7 @@
     }
 }
 
-// Vue-Multiselect retains the Select2-era geometry and hooks used by the Search filters.
+// Shared Headless UI multiselects retain the Select2-era geometry and styling hooks.
 .filter_select {
     box-sizing: border-box;
     display: inline-block;
@@ -921,5 +921,42 @@
             color: #9e9e9e;
             -webkit-text-fill-color: #9e9e9e;
         }
+    }
+}
+
+// Keep the legacy closed Library row before its chips, using the real input.
+[data-library-advanced-panel] .multiselect__tags > input.search-multiselect__input-row {
+    order: -1;
+}
+
+.page-search .filter_select .multiselect__select {
+    &::before, b { display: none; }
+}
+
+@media (min-width: 768px) {
+    [data-library-advanced-panel] .filter_select:not([data-library-about-authors])
+        .multiselect:not(.multiselect--active) input.search-multiselect__input-row {
+        top: -1.5px;
+        z-index: 1;
+    }
+
+    [data-library-advanced-panel] .filter_select:not([data-library-about-authors])
+        .multiselect:not(.multiselect--active):has(input.search-multiselect__input-row)::after {
+        z-index: 2;
+    }
+
+    // Retain the original lower frame without a second interactive input.
+    [data-library-advanced-panel] .filter_select:not([data-library-about-authors])
+        .multiselect:not(.multiselect--active):has(input.search-multiselect__input-row)
+        .multiselect__tags::before {
+        content: "";
+        position: absolute;
+        top: 1.5px;
+        left: 0;
+        width: 350px;
+        height: 31.1875px;
+        border: 1px solid #999;
+        background: white;
+        pointer-events: none;
     }
 }

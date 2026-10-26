@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, useId, watch } from "vue"
-import VueMultiselect from "vue-multiselect"
+import { computed, nextTick, ref, useId, watch } from "vue"
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxLabel, ComboboxOption, ComboboxOptions } from "@headlessui/vue"
 
 defineOptions({ inheritAttrs: false })
 
@@ -14,24 +14,6 @@ export type SearchMultiSelectOption = Readonly<{
 export type SearchMultiSelectOptionGroup = Readonly<{
   label: string
   options: readonly SearchMultiSelectOption[]
-}>
-
-type VueMultiselectOption = SearchMultiSelectOption & Readonly<{
-  $isDisabled?: boolean
-}>
-
-type VueMultiselectOptionGroup = Readonly<{
-  label: string
-  options: readonly VueMultiselectOption[]
-}>
-
-type ToggleableMultiselect = Readonly<{
-  toggle: () => void
-  pointer: number
-  pointerSet: (index: number) => void
-  pointerForward: () => void
-  pointerBackward: () => void
-  $refs: { list?: HTMLElement }
 }>
 
 const props = withDefaults(defineProps<{
@@ -64,188 +46,116 @@ const emit = defineEmits<{
   query: [value: string]
 }>()
 
-const multiselect = ref<InstanceType<typeof VueMultiselect> | null>(null)
-const isOpen = ref(false)
+
+const root = ref<HTMLElement | null>(null)
+const trigger = ref<InstanceType<typeof ComboboxButton> | null>(null)
 const inputId = useId()
-let closeOnControlClick = false
-let restoringFocus = false
+const chipClickWasOpen = ref(false)
+const query = ref("")
+const above = ref(false)
+const maxHeight = ref(300)
 const controlName = computed(() => props.accessibleName ?? props.placeholder)
-const flatOptions = computed(() => props.optionGroups.length > 0
-  ? props.optionGroups.flatMap(group => group.options)
-  : props.options)
+const flatOptions = computed(() => props.optionGroups.length
+  ? props.optionGroups.flatMap(group => group.options) : props.options)
 const knownOptions = new Map<string, SearchMultiSelectOption>()
-watch(flatOptions, (options) => {
-  for (const option of options) {
-    rememberOption(option)
-  }
-}, { immediate: true })
-const multiselectOptions = computed<VueMultiselectOption[] | VueMultiselectOptionGroup[]>(() => {
-  const mapOption = (option: SearchMultiSelectOption): VueMultiselectOption => ({
-    ...option,
-    $isDisabled: option.disabled === true
-  })
-  return props.optionGroups.length > 0
-    ? props.optionGroups.map(group => ({ label: group.label, options: group.options.map(mapOption) }))
-    : props.options.map(mapOption)
-})
-const selectedOptions = computed<VueMultiselectOption[]>(() => props.modelValue.map((value) => {
+function rememberOption(option: SearchMultiSelectOption) {
+  const remembered = knownOptions.get(option.value)
+  if (option.label !== option.value || !remembered) knownOptions.set(option.value, option)
+}
+watch(flatOptions, options => options.forEach(rememberOption), { immediate: true })
+const selectedOptions = computed(() => props.modelValue.map(value => {
   const current = flatOptions.value.find(option => option.value === value)
   const remembered = knownOptions.get(value)
   if (current?.label === value && remembered && remembered.label !== value) return remembered
   return current ?? remembered ?? { value, label: value }
 }))
-
-function selectedLabel(option: SearchMultiSelectOption): string {
+const groups = computed(() => {
+  const search = props.internalSearch ? query.value.trim().toLowerCase() : ""
+  const source = props.optionGroups.length ? props.optionGroups : [{ label: "", options: props.options }]
+  return source.map(group => {
+    let options = group.options.filter(option => (
+      (!props.hideSelected || !props.modelValue.includes(option.value))
+      && (!search || option.label.toLowerCase().includes(search))
+    ))
+    if (search) options = options.toSorted((a, b) => a.label.length - b.label.length)
+    return { label: group.label, options }
+  }).filter(group => group.options.length)
+})
+function selectedLabel(option: SearchMultiSelectOption) {
   return option.selectionLabel ?? option.label
 }
-
-function rememberOption(option: SearchMultiSelectOption) {
-  const remembered = knownOptions.get(option.value)
-  if (option.label !== option.value || !remembered) {
-    knownOptions.set(option.value, option)
-  }
-}
-
-function update(value: readonly VueMultiselectOption[] | null) {
-  for (const option of value ?? []) {
-    knownOptions.set(option.value, option)
-  }
-  const selected = new Set((value ?? []).map(option => option.value))
-  const known = flatOptions.value
-    .filter(option => selected.has(option.value))
-    .map(option => option.value)
-  const unknown = props.modelValue.filter(value => (
-    selected.has(value) && !flatOptions.value.some(option => option.value === value)
-  ))
+function update(values: SearchMultiSelectOption[]) {
+  values.forEach(rememberOption)
+  const selected = new Set(values.map(option => option.value))
+  const known = flatOptions.value.filter(option => selected.has(option.value)).map(option => option.value)
+  const unknown = props.modelValue.filter(value => selected.has(value)
+    && !flatOptions.value.some(option => option.value === value))
   emit("update:modelValue", [...known, ...unknown])
+  clearQuery()
 }
-
-function setOpen(open: boolean) {
-  isOpen.value = open
-  // The closing transition leaves slotted buttons rendered briefly. Exclude
-  // them from Tab navigation immediately, before the list becomes hidden.
-  const control = multiselect.value as unknown as ToggleableMultiselect | null
-  control?.$refs.list?.toggleAttribute("inert", !open)
+function remove(option: SearchMultiSelectOption) {
+  update(selectedOptions.value.filter(value => value.value !== option.value))
 }
-
-async function toggleOptions() {
-  const wasOpen = isOpen.value
-  const toggleable = multiselect.value as unknown as ToggleableMultiselect | null
-  toggleable?.toggle()
-  if (!wasOpen) return
-  await nextTick()
-  const root = multiselect.value?.$el as HTMLElement | undefined
-  const target = props.searchable
-    ? root?.querySelector<HTMLInputElement>("input.multiselect__input:not(.search-multiselect__input-row)")
-    : root
-  // Closing blurs the library control. Restore focus without reopening on focus.
-  restoringFocus = true
-  try {
-    const visibleTarget = target?.getClientRects().length ? target : root
-    visibleTarget?.focus({ preventScroll: true })
-  } finally {
-    restoringFocus = false
-  }
+function changeQuery(event: Event) {
+  query.value = (event.target as HTMLInputElement).value
+  emit("query", query.value)
 }
-
-function retainClosedFocus(event: FocusEvent) {
-  if (restoringFocus) event.stopPropagation()
+function clearQuery() {
+  if (props.preserveSearch || !query.value) return
+  query.value = ""
+  emit("query", "")
 }
-
-function handleKeydown(event: KeyboardEvent) {
+function positionOptions() {
+  const bounds = root.value?.getBoundingClientRect()
+  if (!bounds) return
+  const below = window.innerHeight - bounds.bottom
+  above.value = !(below > 300 || below > bounds.top)
+  maxHeight.value = Math.max(0, Math.min((above.value ? bounds.top : below) - 40, 300))
+}
+function toggle() {
+  // Use the public Headless UI button, leaving the open state and focus to it.
+  const button = trigger.value?.$el as HTMLButtonElement | undefined
+  button?.click()
+}
+function clickInput(open: boolean) {
+  if (!open || !(props.preserveSearch && query.value)) toggle()
+}
+function blurInput(event: FocusEvent) {
+  if (!(event.relatedTarget instanceof Node) || !root.value?.contains(event.relatedTarget)) clearQuery()
+}
+async function keydown(event: KeyboardEvent, open: boolean) {
+  if (event.isComposing) return
+  if (event.key === "Escape") clearQuery()
   if (event.key === "Tab") {
-    // Tab leaves the combobox; skip popup actions before native blur closes it.
-    const control = multiselect.value as unknown as ToggleableMultiselect | null
-    control?.$refs.list?.setAttribute("inert", "")
-    return
+    // Popup footer actions must not steal the combobox's next Tab stop.
+    root.value?.querySelector(".multiselect__content-wrapper")?.setAttribute("inert", "")
+    clearQuery()
   }
-  const closesMenu = isOpen.value && event.key === "Escape"
-  const opensMenu = !isOpen.value
-    && event.target instanceof Element
-    && event.target.matches(".multiselect, input.multiselect__input:not(.search-multiselect__input-row)")
-    && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key)
-  if (closesMenu || opensMenu) {
-    event.preventDefault()
-    event.stopPropagation()
-    void toggleOptions()
-  } else {
-    void navigateOptions(event)
+  if (!(event.target instanceof HTMLInputElement)) return
+  if (event.key === "Backspace" && !query.value && selectedOptions.value.length) {
+    remove(selectedOptions.value.at(-1)!)
   }
-}
-
-function navigatePage(control: ToggleableMultiselect, list: HTMLElement, direction: number) {
-  const rows = [...list.querySelectorAll<HTMLElement>(".multiselect__element")]
-  const current = rows[control.pointer]
-  if (!current) return
-  const origin = current.getBoundingClientRect().top
-  let target = control.pointer
-  for (let index = target + direction; index >= 0 && index < rows.length; index += direction) {
-    const row = rows[index]!
-    if (row.getAttribute("role") !== "option") continue
-    target = index
-    if (Math.abs(row.getBoundingClientRect().top - origin) >= list.clientHeight) break
-  }
-  control.pointerSet(target)
-}
-
-async function navigateOptions(event: KeyboardEvent) {
-  if (!isOpen.value || !["ArrowDown", "ArrowUp", "PageDown", "PageUp"].includes(event.key)) return
-  const control = multiselect.value as unknown as ToggleableMultiselect | null
-  const list = control?.$refs.list
-  if (!control || !list) return
+  if (!open || !["PageDown", "PageUp"].includes(event.key)) return
   event.preventDefault()
   event.stopPropagation()
-  const scrollTop = list.scrollTop
-  if (event.key === "PageDown" || event.key === "PageUp") {
-    navigatePage(control, list, event.key === "PageDown" ? 1 : -1)
-  } else if (event.key === "ArrowDown") control.pointerForward()
-  else control.pointerBackward()
-  // The library assumes 40px rows; our wrapped titles and group labels vary in height.
-  // Keep its pointer navigation, but scroll using the actual rendered option bounds.
-  list.scrollTop = scrollTop
+  const input = event.target as HTMLInputElement
+  const list = root.value?.querySelector<HTMLElement>(".multiselect__content-wrapper")
+  const options = [...(list?.querySelectorAll<HTMLElement>('[role="option"]:not([aria-disabled="true"])') ?? [])]
+  const current = options.findIndex(option => option.id === input.getAttribute("aria-activedescendant"))
+  if (!list || current < 0) return
+  const direction = event.key === "PageDown" ? 1 : -1
+  const origin = options[current]!.getBoundingClientRect().top
+  let target = current
+  for (let i = current + direction; i >= 0 && i < options.length; i += direction) {
+    target = i
+    if (Math.abs(options[i]!.getBoundingClientRect().top - origin) >= list.clientHeight) break
+  }
+  // Headless UI activates a focused option. Restore the input immediately so
+  // typing and aria-activedescendant continue to use the combobox focus model.
+  options[target]!.focus({ preventScroll: true })
+  input.focus({ preventScroll: true })
   await nextTick()
-  const option = list.querySelector(".multiselect__option--highlight")
-  if (!option) return
-  const viewportTop = list.getBoundingClientRect().top + list.clientTop
-  const bounds = option.getBoundingClientRect()
-  if (bounds.top < viewportTop) list.scrollTop += bounds.top - viewportTop
-  else if (bounds.bottom > viewportTop + list.clientHeight) {
-    list.scrollTop += bounds.bottom - viewportTop - list.clientHeight
-  }
 }
-
-function isControlSurface(target: EventTarget | null): boolean {
-  return target instanceof Element
-    && (target.matches(".multiselect") || target.closest(".multiselect__tags") !== null)
-    && target.closest(".select2-selection__choice__remove") === null
-    && !(props.preserveSearch
-      && target instanceof HTMLInputElement
-      && !target.readOnly
-      && target.value.length > 0)
-}
-
-function prepareControlClick(event: MouseEvent) {
-  closeOnControlClick = isOpen.value && isControlSurface(event.target)
-}
-
-function toggleControlSurface(event: MouseEvent) {
-  // A closed control can still have focus after we restore it on close.
-  // Reopen on click when native focus/mousedown handlers have not opened it.
-  if (!closeOnControlClick && (isOpen.value || !isControlSurface(event.target))) return
-  closeOnControlClick = false
-  event.preventDefault()
-  event.stopPropagation()
-  toggleOptions()
-}
-
-onMounted(() => {
-  setOpen(isOpen.value)
-  const search = multiselect.value?.$el.querySelector(
-    "input.multiselect__input:not(.search-multiselect__input-row)"
-  )
-  search?.classList.add("select2-search__field", "search-multiselect__native-search")
-  search?.setAttribute("aria-label", controlName.value)
-})
 </script>
 
 <template>
@@ -258,137 +168,95 @@ onMounted(() => {
     :data-library-narrowing="$attrs['data-library-narrowing']"
     :data-preserve-search="preserveSearch || undefined"
     class="filter_select select2 select2-container select2-container--default"
-    @mousedown.capture="prepareControlClick"
-    @click.capture="toggleControlSurface"
-    @keydown.capture="handleKeydown"
-    @focus.capture="retainClosedFocus"
   >
-    <VueMultiselect
-      :id="inputId"
-      ref="multiselect"
-      class="select2-selection select2-selection--multiple"
-      :model-value="selectedOptions"
-      :options="multiselectOptions"
-      :options-limit="flatOptions.length + optionGroups.length"
-      :name="controlName"
-      :aria-label="controlName"
-      :group-values="optionGroups.length > 0 ? 'options' : undefined"
-      :group-label="optionGroups.length > 0 ? 'label' : undefined"
-      :group-select="false"
-      :placeholder="placeholder"
-      :searchable="searchable"
-      :internal-search="internalSearch"
-      :loading="loading"
-      :multiple="true"
-      track-by="value"
-      label="label"
-      :close-on-select="false"
-      :preserve-search="preserveSearch"
-      :clear-on-select="!preserveSearch"
-      :hide-selected="hideSelected"
-      :show-labels="false"
-      :allow-empty="true"
-      @update:model-value="update"
-      @select="rememberOption"
-      @search-change="emit('query', $event)"
-      @open="setOpen(true)"
-      @close="setOpen(false)"
-    >
-      <template #caret>
-        <input
-          v-if="selectedOptions.length === 0 && !searchable"
-          class="multiselect__input search-multiselect__input-row search-multiselect__main-trigger"
-          type="search"
-          :placeholder="placeholder"
-          readonly
-          aria-hidden="true"
-          tabindex="-1"
-          @mousedown.prevent.stop
-          @click.prevent.stop="toggleOptions"
-        >
-        <button
-          type="button"
+    <Combobox v-slot="{ open }" :model-value="selectedOptions" by="value" multiple @update:model-value="update">
+      <ComboboxLabel class="sr-only">{{ controlName }}</ComboboxLabel>
+      <div
+        ref="root"
+        class="multiselect select2-selection select2-selection--multiple"
+        :class="{ 'multiselect--active': open, 'multiselect--above': above }"
+        @mousedown="positionOptions"
+        @focusin="positionOptions"
+        @keydown.capture="keydown($event, open)"
+      >
+        <ComboboxButton
+          ref="trigger"
           class="select2-selection__arrow multiselect__select"
-          tabindex="-1"
           :aria-label="`Visa alternativ för ${placeholder}`"
-          @mousedown.prevent.stop
-          @click.prevent.stop="toggleOptions"
-        >
-          <b aria-hidden="true" />
-        </button>
-      </template>
-
-      <template #selection="{ values, remove }">
-        <input
-          v-if="values.length && persistentInputRow && (!searchable || (!isOpen && !preserveSearch))"
-          class="multiselect__input search-multiselect__input-row"
-          type="search"
-          :placeholder="placeholder"
-          readonly
-          tabindex="-1"
-          aria-hidden="true"
-          @mousedown.prevent.stop
-          @click.prevent.stop="toggleOptions"
-        >
-        <div
-          v-if="values.length"
-          class="multiselect__tags-wrap"
-          @mousedown.prevent.stop
-          @click.prevent.stop="toggleOptions"
-        >
-          <span
-            v-for="option in values"
-            :key="option.value"
-            class="select2-selection__choice"
-            :title="option.label"
-          >
-            <button
-              type="button"
-              class="select2-selection__choice__remove"
-              :aria-label="`Ta bort ${selectedLabel(option)}`"
-              @mousedown.prevent.stop
-              @click.prevent.stop="remove(option)"
-            >{{ "×" }}</button>
-            <span class="select2-selection__choice-label">{{ spaceAfterRemove ? " " : "" }}{{ selectedLabel(option) }}</span>
-          </span>
+          @click="open && clearQuery()"
+        ><b aria-hidden="true" /></ComboboxButton>
+        <div class="multiselect__tags">
+          <div v-if="selectedOptions.length" class="multiselect__tags-wrap" @pointerdown="chipClickWasOpen = open" @mousedown.prevent @click.prevent.stop="!chipClickWasOpen && toggle()">
+            <span v-for="option in selectedOptions" :key="option.value" class="select2-selection__choice" :title="option.label">
+              <button
+                type="button"
+                class="select2-selection__choice__remove"
+                :aria-label="`Ta bort ${selectedLabel(option)}`"
+                @click.stop="remove(option)"
+              >{{ "×" }}</button>
+              <span class="select2-selection__choice-label">{{ spaceAfterRemove ? " " : "" }}{{ selectedLabel(option) }}</span>
+            </span>
+          </div>
+          <Transition name="multiselect__loading">
+            <i v-if="loading" class="spinner fa fa-spinner fa-pulse" aria-label="Laddar alternativ" />
+          </Transition>
+          <ComboboxInput
+            :id="inputId"
+            class="multiselect__input select2-search__field"
+            :class="selectedOptions.length && persistentInputRow && !open && !preserveSearch
+              ? 'search-multiselect__input-row' : 'search-multiselect__native-search'"
+            :style="open || selectedOptions.length ? { width: '100%' } : { width: '0', position: 'absolute', padding: '0' }"
+            :display-value="() => query"
+            :placeholder="placeholder"
+            :aria-label="controlName"
+            :readonly="!searchable"
+            autocomplete="off"
+            :spellcheck="false"
+            @change="changeQuery"
+            @click="clickInput(open)"
+            @blur="blurInput"
+          />
+          <span v-if="!open && !selectedOptions.length" class="multiselect__placeholder" aria-hidden="true" @click="toggle">{{ placeholder }}</span>
         </div>
-      </template>
-
-      <template #option="{ option }">
-        <span
-          v-if="option.$isLabel"
-          class="select2-results__group"
-        >{{ option.$groupLabel }}</span>
-        <span
-          v-else
-          class="select2-results__option"
-          :aria-disabled="option.$isDisabled ? 'true' : undefined"
-        >{{ option.label }}</span>
-      </template>
-
-      <template #beforeList><slot name="beforeList" /></template>
-      <template #afterList><slot name="afterList" /></template>
-
-      <template #noResult>Inga matchande alternativ.</template>
-      <template #noOptions>Inga alternativ att visa.</template>
-
-      <template #loading>
-        <i
-          v-if="loading"
-          class="spinner fa fa-spinner fa-pulse"
-          aria-label="Laddar alternativ"
-        />
-      </template>
-    </VueMultiselect>
+        <ComboboxOptions
+          as="div"
+          :unmount="false"
+          class="multiselect__content-wrapper"
+          :style="{ maxHeight: `${maxHeight}px` }"
+          :inert="!open || undefined"
+        >
+          <ul class="multiselect__content" style="display: inline-block" role="presentation">
+            <slot name="beforeList" />
+            <template v-for="(group, index) in groups" :key="index">
+              <li v-if="group.label" class="multiselect__element" role="presentation">
+                <span class="multiselect__option multiselect__option--group multiselect__option--disabled"><span class="select2-results__group">{{ group.label }}</span></span>
+              </li>
+              <ComboboxOption v-for="(option, optionIndex) in group.options" :key="option.value" v-slot="{ active, selected }" :value="option" :order="index * flatOptions.length + optionIndex" :disabled="option.disabled" class="multiselect__element">
+                <span
+class="multiselect__option" :class="{
+                  'multiselect__option--highlight': active,
+                  'multiselect__option--selected': selected,
+                  'multiselect__option--disabled': option.disabled
+                }"><span class="select2-results__option" :aria-disabled="option.disabled || undefined">{{ option.label }}</span></span>
+              </ComboboxOption>
+            </template>
+            <li v-if="!groups.length" role="presentation"><span class="multiselect__option">{{ query ? 'Inga matchande alternativ.' : 'Inga alternativ att visa.' }}</span></li>
+            <slot name="afterList" />
+          </ul>
+        </ComboboxOptions>
+      </div>
+    </Combobox>
   </span>
 </template>
 
-<style src="vue-multiselect/dist/vue-multiselect.css"></style>
-
+<style src="~/assets/styles/search-multi-select.css"></style>
 <style scoped>
-.multiselect:focus-visible,
 .multiselect:has(input.multiselect__input:focus-visible) {
   outline: 2px solid currentColor;
   outline-offset: 2px;
+}
+/* The visible row is now the actual accessible combobox input. */
+input.search-multiselect__input-row {
+  pointer-events: auto;
 }
 </style>
