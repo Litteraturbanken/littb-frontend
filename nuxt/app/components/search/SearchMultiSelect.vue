@@ -228,8 +228,10 @@ function prepareControlClick(event: MouseEvent) {
   closeOnControlClick = isOpen.value && isControlSurface(event.target)
 }
 
-function toggleActiveControl(event: MouseEvent) {
-  if (!closeOnControlClick) return
+function toggleControlSurface(event: MouseEvent) {
+  // A closed control can still have focus after we restore it on close.
+  // Reopen on click when native focus/mousedown handlers have not opened it.
+  if (!closeOnControlClick && (isOpen.value || !isControlSurface(event.target))) return
   closeOnControlClick = false
   event.preventDefault()
   event.stopPropagation()
@@ -257,7 +259,7 @@ onMounted(() => {
     :data-preserve-search="preserveSearch || undefined"
     class="filter_select select2 select2-container select2-container--default"
     @mousedown.capture="prepareControlClick"
-    @click.capture="toggleActiveControl"
+    @click.capture="toggleControlSurface"
     @keydown.capture="handleKeydown"
     @focus.capture="retainClosedFocus"
   >

@@ -68,6 +68,46 @@ describe("SearchMultiSelect grouped normalization", () => {
     }
   })
 
+  test.each([false, true])("reopens a closed focused control on repeated clicks (searchable=%s)", async (searchable) => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, nextTick, ssrContextKey }, { default: SearchMultiSelect }] = await Promise.all([
+      import("vue"), import("../../app/components/search/SearchMultiSelect.vue")
+    ])
+    const app = createApp({ setup: () => () => h(SearchMultiSelect, {
+      modelValue: [], options: [{ value: "one", label: "One" }],
+      searchable, placeholder: "Options"
+    }) })
+    app.provide(ssrContextKey, { modules: new Set<string>() })
+    app.mount(target)
+    const root = target.querySelector<HTMLElement>(".multiselect")!
+    const surface = searchable
+      ? target.querySelector<HTMLInputElement>("input.multiselect__input")!
+      : root
+    // Linkedom has no native focus/capture ordering; exercise click handling here.
+    surface.focus = () => {}
+    root.focus = () => {}
+    surface.getClientRects = () => [surface.getBoundingClientRect()] as unknown as DOMRectList
+    try {
+      // Initial native focus opens the list. Later clicks on the same focused
+      // surface do not generate another focus event in the browser.
+      surface.dispatchEvent(new window.Event("mousedown", { bubbles: true }))
+      surface.dispatchEvent(new window.Event("focus"))
+      surface.dispatchEvent(new window.Event("click", { bubbles: true }))
+      await nextTick()
+      expect(root.getAttribute("aria-expanded")).toBe("true")
+      for (const expanded of ["false", "true", "false", "true"]) {
+        surface.dispatchEvent(new window.Event("mousedown", { bubbles: true }))
+        surface.dispatchEvent(new window.Event("click", { bubbles: true, cancelable: true }))
+        await nextTick()
+        expect(root.getAttribute("aria-expanded")).toBe(expanded)
+      }
+    } finally {
+      app.unmount()
+      target.remove()
+    }
+  })
+
   test("renders title options beyond the multiselect default limit", async () => {
     const target = document.createElement("div")
     document.body.append(target)
