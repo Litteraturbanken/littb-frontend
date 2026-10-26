@@ -134,6 +134,7 @@ export function buildLibraryCountRequest(
 ): LibraryCountRequest {
   const filters = buildLibraryFilters(filterState)
   switch (mode) {
+    case "authors": return { mode, filters }
     case "epub": return { mode, filters }
     case "pdf": return { mode, filters }
     case "works": return { mode, filters }

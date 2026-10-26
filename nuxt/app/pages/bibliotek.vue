@@ -340,23 +340,9 @@ async function fetchLibrarySummary(
     publish: (summary: LibrarySummary) => void,
     known: LibrarySummary
 ): Promise<void> {
-    const authorState: LibraryPrimaryState = {
-        mode: "authors",
-        filter: filterValue,
-        sort: "popularitet",
-        page: 1,
-        hide1800: false,
-        downloadMode: false,
-        advancedFilters: advanced
-    }
     const partial = () => emptyLibrarySummary(filterValue, advanced)
     await Promise.allSettled([
-        known.authors !== null ? Promise.resolve() : fetchLibraryPageData(authorState, signal).then(authors => {
-            if (authors.mode === "authors" && !authors.response.failed) {
-                publish({ ...partial(), authors: authors.response.hits })
-            }
-        }),
-        ...(["works", "parts", "epub", "pdf"] as const).filter(mode => known[mode] === null).map(mode =>
+        ...(["authors", "works", "parts", "epub", "pdf"] as const).filter(mode => known[mode] === null).map(mode =>
             fetchLibraryCount(mode, filterValue, advanced, signal).then(count => {
                 if (count?.mode === mode) publish({ ...partial(), [mode]: count.total })
             })
