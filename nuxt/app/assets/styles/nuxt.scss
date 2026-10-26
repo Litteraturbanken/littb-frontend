@@ -924,8 +924,8 @@
     }
 }
 
-// Keep the legacy closed Library row before its chips, using the real input.
-[data-library-advanced-panel] .multiselect__tags > input.search-multiselect__input-row {
+// Keep the Library input before its chips in every open and closed state.
+[data-library-advanced-panel] .multiselect__tags > input.multiselect__input {
     order: -1;
 }
 

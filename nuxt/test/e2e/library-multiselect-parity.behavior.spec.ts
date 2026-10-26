@@ -368,3 +368,26 @@ test("Headless UI multiselect chips toggle predictably and Tab leaves without se
   await root.getByRole("button", { name: "Ta bort Selma Lagerlöf" }).click()
   await expect(root.locator(".select2-selection__choice")).toHaveCount(0)
 })
+
+
+test("Library chips stay to the right of their input through repeated toggles", async ({ page }) => {
+  await page.goto(
+    "/bibliotek?avancerat=1&keywords=texttype:brev;brevsamling,texttype:ess%C3%A4;ess%C3%A4samling,texttype:roman"
+      + "&about_authors=LagerlofS&mediatypes=mediatype:etext&languages=language:swe",
+    { waitUntil: "networkidle" }
+  )
+  await waitForHydration(page)
+  for (const selector of ["[data-library-keywords]", "[data-library-about-authors]", "[data-library-media]", "[data-library-languages]"]) {
+    const root = page.locator(selector)
+    const input = root.getByRole("combobox")
+    for (let toggle = 0; toggle < 6; toggle++) {
+      const inputBox = await input.boundingBox()
+      const chipsBox = await root.locator(".multiselect__tags-wrap").boundingBox()
+      expect(inputBox).not.toBeNull()
+      expect(chipsBox).not.toBeNull()
+      expect(chipsBox!.x).toBeGreaterThanOrEqual(inputBox!.x + inputBox!.width)
+      await input.click()
+      await expect(input).toHaveAttribute("aria-expanded", toggle % 2 === 0 ? "true" : "false")
+    }
+  }
+})
