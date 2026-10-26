@@ -98,7 +98,6 @@ type LibrarySummary = {
 
 type LibraryInitialData = {
     page: LibraryPageState
-    summary: LibrarySummary | null
 }
 
 function emptyLibraryResponse(failed = false): LibraryResponse {
@@ -337,8 +336,9 @@ function emptyLibrarySummary(
 async function fetchLibrarySummary(
     filterValue: string,
     advanced: LibraryAdvancedFilters,
-    signal?: AbortSignal
-): Promise<LibrarySummary> {
+    signal: AbortSignal,
+    publish: (summary: LibrarySummary) => void
+): Promise<void> {
     const authorState: LibraryPrimaryState = {
         mode: "authors",
         filter: filterValue,
@@ -348,22 +348,19 @@ async function fetchLibrarySummary(
         downloadMode: false,
         advancedFilters: advanced
     }
-    const [authors, works, parts, epub, pdf] = await Promise.all([
-        fetchLibraryPageData(authorState, signal).catch(() => null),
-        fetchLibraryCount("works", filterValue, advanced, signal).catch(() => null),
-        fetchLibraryCount("parts", filterValue, advanced, signal).catch(() => null),
-        fetchLibraryCount("epub", filterValue, advanced, signal).catch(() => null),
-        fetchLibraryCount("pdf", filterValue, advanced, signal).catch(() => null)
+    const partial = () => emptyLibrarySummary(filterValue, advanced)
+    await Promise.allSettled([
+        fetchLibraryPageData(authorState, signal).then(authors => {
+            if (authors.mode === "authors" && !authors.response.failed) {
+                publish({ ...partial(), authors: authors.response.hits })
+            }
+        }),
+        ...(["works", "parts", "epub", "pdf"] as const).map(mode =>
+            fetchLibraryCount(mode, filterValue, advanced, signal).then(count => {
+                if (count?.mode === mode) publish({ ...partial(), [mode]: count.total })
+            })
+        )
     ])
-    return {
-        identity: librarySummaryIdentity(filterValue, advanced),
-        authors:
-            authors?.mode === "authors" && !authors.response.failed ? authors.response.hits : null,
-        works: works?.mode === "works" ? works.total : null,
-        parts: parts?.mode === "parts" ? parts.total : null,
-        epub: epub?.mode === "epub" ? epub.total : null,
-        pdf: pdf?.mode === "pdf" ? pdf.total : null
-    }
 }
 
 async function fetchLibraryOptions(signal?: AbortSignal): Promise<LibraryOptionsResponse> {
@@ -424,17 +421,12 @@ const initialEpubSort =
         : "popularitet"
 const initialBrowseSort = browseSortForState(initialState)
 async function fetchInitialData(signal?: AbortSignal): Promise<LibraryInitialData> {
-    const pagePromise = fetchLibraryPageData(initialState, signal)
-    const summaryPromise =
-        initialState.standalone || initialState.downloadMode
-            ? Promise.resolve(null)
-            : fetchLibrarySummary(initialState.filter, initialState.advancedFilters, signal)
-    const [page, summary] = await Promise.all([pagePromise, summaryPromise])
-    return { page, summary }
+    // Only primary results gate SSR. Hydration starts the independent tab counts.
+    return { page: await fetchLibraryPageData(initialState, signal) }
 }
 
 function emptyInitialData(): LibraryInitialData {
-    return { page: emptyPageData(initialState.mode), summary: null }
+    return { page: emptyPageData(initialState.mode) }
 }
 
 const initialAsyncData = useAsyncData<LibraryInitialData>(
@@ -625,9 +617,7 @@ const pageResultHandlers = {
 } satisfies LibraryPageResultHandlers
 
 function initialLibrarySummaryValue(): LibrarySummary {
-    const summary =
-        initialData.value?.summary ??
-        emptyLibrarySummary(initialFilter, initialState.advancedFilters)
+    const summary = emptyLibrarySummary(initialFilter, initialState.advancedFilters)
     if (initialState.standalone || initialState.downloadMode || initialPageData.response.failed) {
         return summary
     }
@@ -924,13 +914,12 @@ async function refreshLibrarySummary(
     summaryController?.abort()
     const activeController = new AbortController()
     summaryController = activeController
-    const summary = await fetchLibrarySummary(filterValue, advanced, activeController.signal).catch(
-        () => null
-    )
-    const ownsController = summaryController === activeController
-    if (ownsController) summaryController = null
-    if (!canCommitLibrarySummary(summary, identity, version, activeController, ownsController)) return
-    librarySummary.value = mergedLibrarySummary(summary, identity, filterValue, advanced)
+    await fetchLibrarySummary(filterValue, advanced, activeController.signal, summary => {
+        const ownsController = summaryController === activeController
+        if (!canCommitLibrarySummary(summary, identity, version, activeController, ownsController)) return
+        librarySummary.value = mergedLibrarySummary(summary, identity, filterValue, advanced)
+    })
+    if (summaryController === activeController) summaryController = null
 }
 
 function clearLibraryQuery(query: LocationQuery): void {

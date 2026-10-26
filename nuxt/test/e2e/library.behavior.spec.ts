@@ -1186,29 +1186,54 @@ test("ordinary tab totals use one author search and four counts without replacin
   expect((await libraryV2Requests(request)).counts).toEqual([
     {
       method: "POST",
-      path: "/private-v2/library/counts",
-      scope: "private",
+      path: "/v2/library/counts",
+      scope: "public",
       body: { mode: "works", filters: libraryFilters() }
     },
     {
       method: "POST",
-      path: "/private-v2/library/counts",
-      scope: "private",
+      path: "/v2/library/counts",
+      scope: "public",
       body: { mode: "parts", filters: libraryFilters() }
     },
     {
       method: "POST",
-      path: "/private-v2/library/counts",
-      scope: "private",
+      path: "/v2/library/counts",
+      scope: "public",
       body: { mode: "epub", filters: libraryFilters() }
     },
     {
       method: "POST",
-      path: "/private-v2/library/counts",
-      scope: "private",
+      path: "/v2/library/counts",
+      scope: "public",
       body: { mode: "pdf", filters: libraryFilters() }
     }
   ])
+})
+
+test("initial rows and fast tab counts render while a slow count is pending", async ({ page }) => {
+  let releasePdf!: () => void
+  const pdfGate = new Promise<void>(resolve => { releasePdf = resolve })
+  let pdfStarted = false
+  await page.route("**/api/v2/library/counts", async route => {
+    if (route.request().postDataJSON().mode === "pdf") {
+      pdfStarted = true
+      await pdfGate
+    }
+    await route.continue()
+  })
+  try {
+    await page.goto("/bibliotek?filter=strindberg", { waitUntil: "domcontentloaded" })
+    await expect(page.locator("[data-library-result]").first()).toBeVisible()
+    await expect.poll(() => pdfStarted).toBe(true)
+    await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 7")
+    await expect(page.locator('[data-library-tab="works"]')).toContainText(": 465")
+    await expect(page.locator('[data-library-tab="epub"]')).toContainText(": 136")
+    await expect(page.locator('[data-library-tab="pdf"]')).not.toContainText(":")
+  } finally {
+    releasePdf()
+  }
+  await expect(page.locator('[data-library-tab="pdf"]')).toContainText(": 265")
 })
 
 test("delayed ordinary summaries never gate active rows", async ({
