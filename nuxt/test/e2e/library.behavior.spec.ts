@@ -1172,7 +1172,7 @@ test("a Selma filter invalidates a delayed Strindberg summary", async ({
   await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 1")
 })
 
-test("ordinary tab totals use one author search and four counts without replacing active rows", async ({
+test("ordinary tab totals use one author search and only missing counts without replacing active rows", async ({
   page,
   request
 }) => {
@@ -1184,12 +1184,6 @@ test("ordinary tab totals use one author search and four counts without replacin
   await expect(page.locator('[data-library-tab="parts"]')).toContainText(": 201")
 
   expect((await libraryV2Requests(request)).counts).toEqual([
-    {
-      method: "POST",
-      path: "/v2/library/counts",
-      scope: "public",
-      body: { mode: "works", filters: libraryFilters() }
-    },
     {
       method: "POST",
       path: "/v2/library/counts",
@@ -3271,3 +3265,17 @@ test("PDF empty and failed states stay generic without hydration or console erro
   }])
   expect(pageErrors).toEqual([])
 })
+
+for (const mode of ["authors", "works", "parts", "epub", "pdf"] as const) {
+  test(`hydrated ${mode} skips counts already supplied by primary results`, async ({ page, request }) => {
+    await page.goto(`/bibliotek?visa=${mode}&filter=Selma&sort=${mode === "parts" ? "titlar" : "popularitet"}`, { waitUntil: "networkidle" })
+    const ledger = await libraryV2Requests(request)
+    const known: string[] = mode === "authors" ? ["works", "parts"] : [mode]
+    expect(ledger.counts.map(entry => entry.body.mode).sort()).toEqual(
+      ["works", "parts", "epub", "pdf"].filter(value => !known.includes(value)).sort()
+    )
+    if (mode === "authors") {
+      expect(ledger.search.filter(entry => entry.body.mode === "authors")).toHaveLength(1)
+    }
+  })
+}

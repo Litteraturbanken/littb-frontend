@@ -337,7 +337,8 @@ async function fetchLibrarySummary(
     filterValue: string,
     advanced: LibraryAdvancedFilters,
     signal: AbortSignal,
-    publish: (summary: LibrarySummary) => void
+    publish: (summary: LibrarySummary) => void,
+    known: LibrarySummary
 ): Promise<void> {
     const authorState: LibraryPrimaryState = {
         mode: "authors",
@@ -350,12 +351,12 @@ async function fetchLibrarySummary(
     }
     const partial = () => emptyLibrarySummary(filterValue, advanced)
     await Promise.allSettled([
-        fetchLibraryPageData(authorState, signal).then(authors => {
+        known.authors !== null ? Promise.resolve() : fetchLibraryPageData(authorState, signal).then(authors => {
             if (authors.mode === "authors" && !authors.response.failed) {
                 publish({ ...partial(), authors: authors.response.hits })
             }
         }),
-        ...(["works", "parts", "epub", "pdf"] as const).map(mode =>
+        ...(["works", "parts", "epub", "pdf"] as const).filter(mode => known[mode] === null).map(mode =>
             fetchLibraryCount(mode, filterValue, advanced, signal).then(count => {
                 if (count?.mode === mode) publish({ ...partial(), [mode]: count.total })
             })
@@ -918,7 +919,7 @@ async function refreshLibrarySummary(
         const ownsController = summaryController === activeController
         if (!canCommitLibrarySummary(summary, identity, version, activeController, ownsController)) return
         librarySummary.value = mergedLibrarySummary(summary, identity, filterValue, advanced)
-    })
+    }, librarySummary.value)
     if (summaryController === activeController) summaryController = null
 }
 
