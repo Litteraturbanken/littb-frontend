@@ -332,70 +332,7 @@ export const richAuthorWorks = {
         }
       ]
     },
-    {
-      kind: "about_editor",
-      label: "Som utgivare",
-      show_author: true,
-      items: [
-        {
-          work_id: "lb-about-editor-1",
-          title_id: "BrevTillStrindberg",
-          title_path: "BrevTillStrindberg",
-          title: "Brev till August Strindberg",
-          short_title: "Brev till Strindberg",
-          title_tooltip: "Brev till August Strindberg",
-          title_url: "/författare/MeijerB/titlar/BrevTillStrindberg/sida/1/faksimil?om-boken",
-          imprint_year: "1952",
-          display_author: {
-            author_id: "MeijerB",
-            name_for_index: "Meijer, Bernhard (utgivare)",
-            surname: "Meijer",
-            url: "/författare/MeijerB"
-          },
-          containing_work: null,
-          actions: [
-            {
-              kind: "read",
-              media_type: "faksimil",
-              url: "/författare/MeijerB/titlar/BrevTillStrindberg/sida/1/faksimil",
-              download_filename: null
-            }
-          ]
-        }
-      ]
-    },
-    {
-      kind: "about_translator",
-      label: "Som översättare",
-      show_author: true,
-      items: [
-        {
-          work_id: "lb-about-translator-1",
-          title_id: "StrindbergInEnglish",
-          title_path: "StrindbergInEnglish",
-          title: "Strindberg in English",
-          short_title: "Strindberg in English",
-          title_tooltip: null,
-          title_url: "/txt/lb-about-translator-1/lb-about-translator-1.pdf",
-          imprint_year: "1962",
-          display_author: {
-            author_id: "JohnsonW",
-            name_for_index: "Johnson, Walter (översättare)",
-            surname: "Johnson",
-            url: "/författare/JohnsonW"
-          },
-          containing_work: null,
-          actions: [
-            {
-              kind: "download",
-              media_type: "pdf",
-              url: "/txt/lb-about-translator-1/lb-about-translator-1.pdf",
-              download_filename: "JohnsonW_StrindbergInEnglish.pdf"
-            }
-          ]
-        }
-      ]
-    }
+
   ]
 }
 
@@ -471,8 +408,6 @@ export const sparseAuthorWorks = {
       show_author: true,
       items: []
     },
-    { kind: "about_editor", label: "Som utgivare", show_author: true, items: [] },
-    { kind: "about_translator", label: "Som översättare", show_author: true, items: [] }
   ]
 }
 
@@ -518,8 +453,6 @@ export const emptyAuthorWorks = {
       show_author: true,
       items: []
     },
-    { kind: "about_editor", label: "Som utgivare", show_author: true, items: [] },
-    { kind: "about_translator", label: "Som översättare", show_author: true, items: [] }
   ]
 }
 
@@ -586,8 +519,6 @@ export const rfc3986AuthorWorks = {
       show_author: true,
       items: []
     },
-    { kind: "about_editor", label: "Som utgivare", show_author: true, items: [] },
-    { kind: "about_translator", label: "Som översättare", show_author: true, items: [] }
   ]
 }
 
@@ -619,10 +550,12 @@ export const authorWorksById = new Map(
     [emptyAuthorWorks.author.author_id, emptyAuthorWorks],
     ["SöderbergH", {
       ...emptyAuthorWorks,
+      about_sections: emptyAuthorWorks.about_sections.map((section, index) => ({ ...section, label: index === 0 ? "Verk om Hjalmar Söderberg" : "Kortare texter om Hjalmar Söderberg" })),
       author: { ...emptyAuthorWorks.author, author_id: "SöderbergH", full_name: "Hjalmar Söderberg" }
     }],
     ["DramaOnly", {
       ...emptyAuthorWorks,
+      about_sections: emptyAuthorWorks.about_sections.map((section, index) => ({ ...section, label: index === 0 ? "Verk om Dramatikern" : "Kortare texter om Dramatikern" })),
       author: {
         ...emptyAuthorWorks.author,
         author_id: "DramaOnly",

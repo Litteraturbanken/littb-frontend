@@ -95,7 +95,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
                         data-library-result
                         class="lg:table-row flex flex-col justify-between pb-2 lg:pb-0 -ml-2 hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
                     >
-                        <td class="lg:text-right lg:table-cell w-44">
+                        <td class="lg:text-right lg:table-cell lg:w-px">
                             <span class="sc primarycolor whitespace-nowrap text-base">{{
                                 item.sourceLabel
                             }}</span>

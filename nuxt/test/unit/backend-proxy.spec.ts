@@ -829,3 +829,16 @@ describe("proxy correlation", () => {
     }
   })
 })
+
+test.each(["GET", "HEAD"] as const)("preserves EPUB download size for OPDS %s", async method => {
+  const { response } = await exerciseProxy({
+    method,
+    path: "opds/download/lb1.epub",
+    reply: { body: "epub", headers: {
+      "content-type": "application/epub+zip", "content-length": "4"
+    } }
+  })
+  expect(response.headers.get("content-length")).toBe("4")
+  expect(response.headers.get("content-encoding")).toBeNull()
+  expect(await response.text()).toBe(method === "HEAD" ? "" : "epub")
+})

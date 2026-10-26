@@ -24,3 +24,9 @@ describe("Library filter option ownership", () => {
     expect(second.languageValues).toContain("language:swe")
   })
 })
+
+it("offers Tal directly after Sakprosa", () => {
+  const options = createLibraryFilterOptions().collectionSelectGroups.flatMap(group => group.options)
+  const index = options.findIndex(option => option.label === "Sakprosa")
+  expect(options[index + 1]).toEqual({ value: "texttype:tal", label: "Tal" })
+})

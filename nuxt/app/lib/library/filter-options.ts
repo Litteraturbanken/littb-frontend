@@ -15,6 +15,7 @@ const collectionOptionGroups = [
       ["texttype:diktsamling;dikt", "Poesi"],
       ["texttype:roman", "Romaner"],
       ["texttype:sakprosa;kringtexter;avhandling;referensverk", "Sakprosa"],
+      ["texttype:tal", "Tal"],
       ["keyword:Barnlitteratur", "Barn- och ungdomslitteratur"],
       ["keyword:Biografika|texttype:brev;brevsamling", "Biografisk litteratur"],
       ["keyword:Finlandssvenskt", "Finlandssvensk litteratur"],

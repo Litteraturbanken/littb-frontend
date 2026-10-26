@@ -2024,7 +2024,7 @@ function readerAtScrollEdge(direction: KeyboardNavigationDirection): boolean {
   return horizontalScrollEdge(direction, {
     contentWidth: document.documentElement.scrollWidth,
     scrollLeft: window.scrollX,
-    viewportWidth: window.innerWidth
+    viewportWidth: document.documentElement.clientWidth
   })
 }
 

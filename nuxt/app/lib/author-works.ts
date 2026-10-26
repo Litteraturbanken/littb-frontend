@@ -32,9 +32,7 @@ const authoredSections = [
 ] as const
 const aboutSections = [
   { kind: "about", label: (name: string) => `Verk om ${name}` },
-  { kind: "about_part", label: (name: string) => `Kortare texter om ${name}` },
-  { kind: "about_editor", label: () => "Som utgivare" },
-  { kind: "about_translator", label: () => "Som översättare" }
+  { kind: "about_part", label: (name: string) => `Kortare texter om ${name}` }
 ] as const
 
 function isRecord(value: unknown): value is Record<string, unknown> {

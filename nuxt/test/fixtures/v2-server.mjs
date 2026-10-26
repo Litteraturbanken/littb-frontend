@@ -1444,6 +1444,7 @@ const textSearchCategories = new Set([
   "texttype:essä;essäsamling", "texttype:novellsamling;novell",
   "texttype:diktsamling;dikt", "texttype:roman",
   "texttype:sakprosa;kringtexter;avhandling;referensverk",
+  "texttype:tal",
   "keyword:Barnlitteratur", "keyword:Biografika|texttype:brev;brevsamling",
   "keyword:Finlandssvenskt", "keyword:Flickböcker", "texttype:herdaminne",
   "keyword:Humor", "texttype:kistebrev", "texttype:kringtext",
@@ -1494,8 +1495,8 @@ function validLibraryFilters(filters) {
   if (typeof filters.query !== "string" || [...filters.query].length > 500
     || /[\p{Cc}\p{Cs}]/u.test(filters.query)) return false
   if (filters.gender !== null && filters.gender !== "female" && filters.gender !== "male") return false
-  if (!validDistinctStringArray(filters.categories, 38, textSearchCategories)
-    || !validDistinctStringArray(filters.narrowing_categories, 38, textSearchCategories)
+  if (!validDistinctStringArray(filters.categories, 39, textSearchCategories)
+    || !validDistinctStringArray(filters.narrowing_categories, 39, textSearchCategories)
     || !validLibraryIdentifierArray(filters.about_author_ids)
     || !validDistinctStringArray(filters.media, 4, libraryMedia)
     || !validDistinctStringArray(filters.languages, 13, textSearchLanguages)) return false
@@ -2156,7 +2157,7 @@ function validTextSearchCommon(body) {
   }
   if (
     Object.hasOwn(body, "categories")
-    && !validStringArray(body.categories, 38, textSearchCategories)
+    && !validStringArray(body.categories, 39, textSearchCategories)
   ) return false
   if (
     Object.hasOwn(body, "languages")

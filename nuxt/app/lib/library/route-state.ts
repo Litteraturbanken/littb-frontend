@@ -42,7 +42,7 @@ type LibraryRouteAuthority = {
   languageValues: ReadonlySet<LibraryLanguage>
 }
 
-const maximumLibraryCategories = 38
+const maximumLibraryCategories = 39
 const maximumLibraryAboutAuthors = 50
 const maximumLibraryMedia = 4
 const maximumLibraryLanguages = 13

@@ -2612,6 +2612,16 @@ body > .header {
         }
         
         
+        .result.relevance table {
+            @media (min-width: $screen-lg) {
+                table-layout: auto;
+                td:nth-child(2) {
+                    width: 50%;
+                    max-width: 0;
+                }
+            }
+        }
+
         .result {
             tr.ng-enter,
             tr.ng-leave,

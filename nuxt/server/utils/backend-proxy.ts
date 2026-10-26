@@ -99,6 +99,15 @@ function outboundHeaders(event: H3Event, method: ProxyMethod): Headers {
 
 function forwardResponseMetadata(event: H3Event, response: Response): void {
   setResponseStatus(event, response.status, response.statusText)
+  // OPDS clients need the EPUB size, including on HEAD/range responses.
+  // Only preserve it for unencoded EPUBs whose bytes pass through unchanged.
+  const mediaType = response.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase()
+  const length = response.headers.get("content-length")
+  if (mediaType === "application/epub+zip" && !response.headers.has("content-encoding")
+    && length !== null && /^\d+$/.test(length)) {
+    setResponseHeader(event, "content-length", Number(length))
+  }
+
   for (const name of responseHeaders) {
     const value = response.headers.get(name)
     if (value !== null) setResponseHeader(event, name, value)
