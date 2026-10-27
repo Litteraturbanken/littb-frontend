@@ -52,6 +52,21 @@ const root = ref<HTMLElement | null>(null)
 const trigger = ref<InstanceType<typeof ComboboxButton> | null>(null)
 const inputId = useId()
 const chipClickWasOpen = ref(false)
+let optionPointerDown = false
+function rememberOptionPointer(event: PointerEvent) {
+  optionPointerDown = event.target instanceof Element
+    && Boolean(event.target.closest('[role="option"]'))
+}
+function finishOptionPointer(event: MouseEvent) {
+  if (!optionPointerDown) return
+  optionPointerDown = false
+  // Selecting on mousedown can move the mobile input under the pointer before
+  // click. Do not let that click toggle the input or activate its outer label.
+  event.preventDefault()
+  if (event.target instanceof Element && !event.target.closest('[role="option"]')) {
+    event.stopPropagation()
+  }
+}
 const query = ref("")
 const above = ref(false)
 const maxHeight = ref(300)
@@ -183,6 +198,8 @@ async function keydown(event: KeyboardEvent, open: boolean) {
         ref="root"
         class="multiselect select2-selection select2-selection--multiple"
         :class="{ 'multiselect--active': open, 'multiselect--above': above }"
+        @pointerdown.capture="rememberOptionPointer"
+        @click.capture="finishOptionPointer"
         @mousedown="positionOptions"
         @focusin="positionOptions"
         @keydown.capture="keydown($event, open)"

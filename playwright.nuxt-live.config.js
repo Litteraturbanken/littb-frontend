@@ -33,6 +33,11 @@ module.exports = defineConfig({
         {
             name: "nuxt-live-chromium",
             use: { ...devices["Desktop Chrome"] }
+        },
+        {
+            name: "nuxt-live-mobile-multiselect",
+            testMatch: "multiselect-live.spec.js",
+            use: { browserName: "chromium", viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }
         }
     ]
 })
