@@ -31,7 +31,8 @@ validate_positive_integer() {
 
 validate_positive_integer BUILD_TIMEOUT_SECONDS 1800
 validate_positive_integer STAGE_HEALTH_TIMEOUT_SECONDS 600
-validate_positive_integer STAGE_HEALTH_POLL_SECONDS 10
+validate_positive_integer STAGE_HEALTH_POLL_SECONDS 2
+validate_positive_integer BUILD_POLL_SECONDS 2
 
 : "${LB_INFRA_REPOSITORY:?set to the persistent lb-infra stage checkout}"
 
@@ -153,9 +154,10 @@ lease_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-lease.XXXXXX")"
 recheck_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-recheck.XXXXXX")"
 deployment_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-deployment.XXXXXX")"
 jobspec_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-jobspec.XXXXXX")"
+builder_jobspec_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-builder.XXXXXX")"
 stage_job_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-job.XXXXXX")"
 stage_allocations_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-allocations.XXXXXX")"
-trap 'rm -f "$lease_file" "$recheck_file" "$deployment_file" "$jobspec_file" "$stage_job_file" "$stage_allocations_file"' EXIT
+trap 'rm -f "$lease_file" "$recheck_file" "$deployment_file" "$jobspec_file" "$stage_job_file" "$stage_allocations_file" "$builder_jobspec_file"' EXIT
 
 stage_cli=(python3 "$LB_INFRA_REPOSITORY/scripts/stage.py")
 "${stage_cli[@]}" preflight frontend --source-repository "$repo_root" >"$lease_file"
@@ -185,7 +187,7 @@ recheck_lease() {
 wait_for_healthy_stage_allocations() {
   local timeout_seconds poll_seconds deadline allocation_state
   timeout_seconds="${STAGE_HEALTH_TIMEOUT_SECONDS:-600}"
-  poll_seconds="${STAGE_HEALTH_POLL_SECONDS:-10}"
+  poll_seconds="${STAGE_HEALTH_POLL_SECONDS:-2}"
   deadline=$((SECONDS + timeout_seconds))
 
   while [ "$SECONDS" -lt "$deadline" ]; do
@@ -254,7 +256,7 @@ PY
 git_url="${GIT_URL:-https://github.com/Litteraturbanken/littb-frontend.git}"
 registry_host="${REGISTRY_HOST:-registry.service.consul:5000}"
 image_name="${IMAGE_NAME:-lb-frontend}"
-builder_job="${BUILDER_JOB:-docker-builder-multiarch}"
+builder_job="${BUILDER_JOB:-lb-frontend-stage-builder}"
 image_ref="${registry_host}/${image_name}:${git_sha}"
 
 resolve_registry_digest() {
@@ -383,6 +385,21 @@ except Exception:
 PY
 }
 
+# Register only the dedicated Stage builder from the guarded source commit.
+# Other releases continue using the shared multi-architecture builder.
+if [ "$builder_job" = "lb-frontend-stage-builder" ]; then
+  git show "$git_sha:jobs/lb-frontend-stage-builder.nomad" >"$builder_jobspec_file"
+  nomad job validate "$builder_jobspec_file"
+  builder_plan_status=0
+  nomad job plan -no-color "$builder_jobspec_file" || builder_plan_status=$?
+  if [ "$builder_plan_status" -ne 0 ] && [ "$builder_plan_status" -ne 2 ]; then
+    exit "$builder_plan_status"
+  fi
+  nomad job run -detach "$builder_jobspec_file"
+fi
+
+build_started=$SECONDS
+echo "Stage build started (builder=$builder_job)"
 dispatch_output="$(
   DISPATCH_BUILDER_JOB="$builder_job" \
   DISPATCH_GIT_URL="$git_url" \
@@ -479,7 +496,7 @@ else:
       exit 1
       ;;
     *)
-      sleep 10
+      sleep "$BUILD_POLL_SECONDS"
       ;;
   esac
 done
@@ -490,6 +507,8 @@ if [ "$alloc_state" != "complete" ]; then
   exit 1
 fi
 
+echo "Stage image build completed in $((SECONDS - build_started))s"
+rollout_started=$SECONDS
 image_digest="$(resolve_registry_digest "$image_ref")"
 immutable_image_ref="${registry_host}/${image_name}@${image_digest}"
 nomad_identity_vars=(
@@ -551,6 +570,7 @@ recheck_lease "before Nomad registration"
 nomad run -check-index "$plan_modify_index" -detach "${nomad_identity_vars[@]}" "$jobspec_file"
 
 wait_for_healthy_stage_allocations
+echo "Stage rollout ready in $((SECONDS - rollout_started))s"
 read -r stage_job_version stage_job_modify_index <<EOF
 $(python3 -c 'import json,sys; job=json.load(open(sys.argv[1])); print(job["Version"], job["JobModifyIndex"])' "$stage_job_file")
 EOF
@@ -577,6 +597,7 @@ verification:
   identity_endpoint: https://stage.litteraturbanken.se/_deployment
 EOF
 
+verification_started=$SECONDS
 (
   cd "$repo_root"
   LITTB_EXPECTED_GIT_SHA="$git_sha" \
@@ -584,6 +605,8 @@ EOF
   LITTB_NUXT_LIVE_ORIGIN=https://stage.litteraturbanken.se \
     yarn test:e2e:nuxt-live
 )
+
+echo "Stage browser verification completed in $((SECONDS - verification_started))s"
 
 receipt_file="$repo_root/.stage-receipts/frontend-$git_sha.json"
 "${stage_cli[@]}" capture frontend \
@@ -607,3 +630,5 @@ echo "Image: $immutable_image_ref"
 echo "Receipt: $receipt_file"
 echo "Manifest commit: $record_output"
 echo "Route: https://stage.litteraturbanken.se/"
+
+echo "Stage deployment completed in ${SECONDS}s"

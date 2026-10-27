@@ -54,17 +54,18 @@ job "lb-frontend-stage" {
   }
 
   group "frontend" {
-    count          = 2
+    count          = 1
     shutdown_delay = "15s"
 
     constraint {
-      distinct_hosts = true
+      attribute = "${attr.cpu.arch}"
+      value     = "amd64"
     }
 
     update {
       max_parallel      = 1
       health_check      = "checks"
-      min_healthy_time  = "30s"
+      min_healthy_time  = "10s"
       healthy_deadline  = "5m"
       progress_deadline = "10m"
       auto_revert       = true
@@ -108,7 +109,7 @@ job "lb-frontend-stage" {
         type     = "http"
         path     = "/_deployment"
         method   = "GET"
-        interval = "10s"
+        interval = "5s"
         timeout  = "3s"
       }
 
