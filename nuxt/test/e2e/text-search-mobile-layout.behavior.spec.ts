@@ -75,6 +75,9 @@ for (const width of [375, 390, 768]) {
     await page.setViewportSize({ width: 1440, height: 1000 })
     await expect(page.locator("#toolkit .littb_pager")).toHaveCount(1)
     await expect(page.locator("#toolkit .navigator")).toHaveCount(1)
+    const infoBox = await page.locator("#toolkit .littb_pager").boundingBox()
+    const authorsBox = await page.locator("#toolkit .navigator").boundingBox()
+    expect(infoBox!.y + infoBox!.height).toBeLessThanOrEqual(authorsBox!.y)
     await page.setViewportSize({ width, height: width === 375 ? 667 : 844 })
     await expectKeywordCentered(page)
   })
@@ -148,4 +151,25 @@ test("search panels use the full iPhone SE width", async ({ page }) => {
     expect(bounds!.width).toBeCloseTo(375, 0)
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375)
+})
+
+
+test("desktop search pager stays above authors after asynchronous search and facet changes", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/s%C3%B6k")
+  await page.locator('[data-search-mounted="true"]').waitFor()
+  await page.getByLabel("Sökfras").fill("overflow")
+  await page.getByLabel("Sökfras").press("Enter")
+  const pager = page.locator("#toolkit .littb_pager")
+  const authors = page.locator("#toolkit .navigator")
+  await expect(pager).toBeVisible()
+  await expect(authors).toBeVisible()
+  for (const select of [false, true]) {
+    if (select) await authors.getByRole("button", { name: "Strindberg, August" }).click()
+    await expect.poll(async () => {
+      const p = await pager.boundingBox()
+      const a = await authors.boundingBox()
+      return p !== null && a !== null && p.y + p.height <= a.y
+    }).toBe(true)
+  }
 })

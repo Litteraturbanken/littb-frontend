@@ -90,3 +90,35 @@ describe("Reader search return navigation", () => {
     })).toBeNull()
   })
 })
+
+
+describe("production bookmark return navigation", () => {
+  test("restores filters, pagination, and match settings without an s_return URL", () => {
+    const href = parseTextSearchReturnHref({
+      s_query: "kyrka", s_lbworkid: "lb3203777", hit_index: "0", s_from: "60", s_to: "89",
+      s_work_ids: "lb3203777,lb1", s_authors: "AuthorC", s_prefix: "true", s_suffix: "true",
+      s_include_modernized: "false", s_fuzzy: "true",
+      s_keyword_aux: 'RAW:(keyword:"language-source" OR keyword:"translated" OR authors>type:translator),RAW:-language:swe',
+      s_text_filter: JSON.stringify({
+        "authors>authorid": ["AuthorA", "AuthorB"], "authorkeyword>authorid": ["AuthorD"],
+        "main_author.gender": "female", "sort_date_imprint.date:range": "1248,2026",
+        language: ["fin"], texttype: ["roman"], source: "sol", _exists: ["language"]
+      })
+    })
+    expect(Object.fromEntries(new URL(href!, "https://example.test").searchParams)).toEqual({
+      fras: "kyrka", traffsida: "3", titlar: "lb3203777,lb1", sok_filter: "AuthorC",
+      lemma: "1", ej_modern: "1", prefix: "1", suffix: "1", fuzzy: "1",
+      languages: "translation:true,foreign:true", forfattare: "AuthorA,AuthorB",
+      authorkeyword: "AuthorD", kön: "female", intervall: "1248,2026",
+      keyword: "language:fin,source:sol,texttype:roman"
+    })
+  })
+
+  test("keeps explicit return validation authoritative and handles malformed legacy filters", () => {
+    const bookmark = { s_query: "kyrka", s_lbworkid: "lb3203777", hit_index: "0", s_word_form_only: "true" }
+    expect(parseTextSearchReturnHref({ ...bookmark, s_return: "//example.test" })).toBeNull()
+    expect(parseTextSearchReturnHref({ ...bookmark, s_text_filter: "[object Object]" }))
+      .toBe("/s%C3%B6k?fras=kyrka")
+    expect(parseTextSearchReturnHref({ ...bookmark, s_query: ["one", "two"] })).toBeNull()
+  })
+})

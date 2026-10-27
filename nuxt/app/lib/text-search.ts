@@ -332,7 +332,7 @@ export function serializeTextSearchRouteState(
   }
   set("fras", state.phrase)
   if (state.page !== 1) set("traffsida", String(state.page))
-  if (state.advanced) set("avancerad", "1")
+  if (state.advanced) serialized.avancerad = null
   serializeTextSearchSelections(state, set)
   serializeTextSearchMatching(state, set)
   return serialized
@@ -831,17 +831,16 @@ function textSearchReaderPath(work: TextSearchWork, highlight: TextSearchHighlig
   ].map(rfc3986Segment).join("/")
 }
 
-function appendCanonicalReaderSearch(
-  params: URLSearchParams,
-  state: TextSearchRouteState,
-  hitIndex: number
-): void {
-  appendSearchParam(params, "q", state.phrase)
-  appendSearchParam(params, "hit", hitIndex)
-  if (!state.wordFormOnly) appendSearchParam(params, "lemma", 1)
-  if (!state.includeModernized) appendSearchParam(params, "ej_modern", 1)
-  if (state.prefix) appendSearchParam(params, "prefix", 1)
-  if (state.suffix) appendSearchParam(params, "suffix", 1)
+function legacyFilterMap(values: readonly string[]): Record<string, string[]> {
+  const filters: Record<string, string[]> = {}
+  for (const value of values) for (const expression of value.split("|")) {
+    const colon = expression.indexOf(":")
+    if (colon < 0) continue
+    const key = expression.slice(0, colon).trim()
+    const items = expression.slice(colon + 1).split(";").map(item => item.trim()).filter(Boolean)
+    if (key && items.length) filters[key] = [...(filters[key] ?? []), ...items]
+  }
+  return filters
 }
 
 function appendLegacyReaderSearch(
@@ -851,35 +850,44 @@ function appendLegacyReaderSearch(
   hitIndex: number
 ): void {
   appendSearchParam(params, "s_query", state.phrase)
-  appendSearchParam(params, "s_lbworkid", work.lbworkid)
-  appendSearchParam(params, "s_mediatype", work.mediatype)
-  appendSearchParam(params, "s_word_form_only", state.wordFormOnly)
-  appendSearchParam(params, "s_include_modernized", state.includeModernized)
-  appendSearchParam(params, "hit_index", hitIndex)
   appendSearchParam(params, "s_from", (state.page - 1) * 30)
   appendSearchParam(params, "s_to", state.page * 30 - 1)
   if (state.prefix) appendSearchParam(params, "s_prefix", true)
   if (state.suffix) appendSearchParam(params, "s_suffix", true)
-  appendSearchParam(params, "s_page", state.page)
-  appendSearchParam(params, "s_page_size", 30)
-  appendSearchParam(params, "s_author_ids", state.authorIds.join(","))
-  appendSearchParam(params, "s_about_author_ids", state.aboutAuthorIds.join(","))
+  const filters: Record<string, string | string[]> = {}
+  if (state.gender) filters["main_author.gender"] = state.gender
+  if (state.yearRange) filters["sort_date_imprint.date:range"] = state.yearRange.join(",")
+  const languages = legacyFilterMap(state.languages)
+  const auxiliary: string[] = []
+  const translation = '(keyword:"language-source" OR keyword:"translated" OR authors>type:translator)'
+  if (languages.translation?.includes("true")) auxiliary.push(`RAW:${translation}`)
+  if (languages.original?.includes("true")) auxiliary.push(`RAW:NOT ${translation}`)
+  if (languages.foreign?.includes("true")) {
+    auxiliary.push("RAW:-language:swe")
+    filters._exists = ["language"]
+  }
+  delete languages.translation
+  delete languages.original
+  delete languages.foreign
+  Object.assign(filters, languages, legacyFilterMap(state.categories))
+  if (state.aboutAuthorIds.length) filters["authorkeyword>authorid"] = [...state.aboutAuthorIds]
+  if (state.authorIds.length) filters["authors>authorid"] = [...state.authorIds]
+  for (const filter of state.legacyFilters) {
+    const existing = filters[filter.field]
+    filters[filter.field] = existing === undefined ? filter.value
+      : [...new Set([...(Array.isArray(existing) ? existing : [existing]), filter.value])]
+  }
+  // Production carries the filtering contract as JSON, not separate s_* lists.
+  if (Object.keys(filters).length) appendSearchParam(params, "s_text_filter", JSON.stringify(filters))
+  if (auxiliary.length) appendSearchParam(params, "s_keyword_aux", auxiliary.join(","))
   appendSearchParam(params, "s_work_ids", state.workIds.join(","))
-  appendSearchParam(params, "s_gender", state.gender)
-  if (state.yearRange) {
-    appendSearchParam(params, "s_year_from", state.yearRange[0])
-    appendSearchParam(params, "s_year_to", state.yearRange[1])
-  }
-  appendSearchParam(params, "s_languages", state.languages.join(","))
-  appendSearchParam(params, "s_categories", state.categories.join(","))
-  if (state.legacyFilters.length) {
-    appendSearchParam(
-      params,
-      "s_legacy_filters",
-      JSON.stringify(state.legacyFilters.map(filter => ({ ...filter })))
-    )
-  }
-  appendSearchParam(params, "s_facet_author_id", state.facetAuthorId)
+  if (state.wordFormOnly) appendSearchParam(params, "s_word_form_only", true)
+  if (state.fuzzy) appendSearchParam(params, "s_fuzzy", true)
+  if (!state.includeModernized) appendSearchParam(params, "s_include_modernized", false)
+  appendSearchParam(params, "s_sort_field", "main_author.name_for_index.lowercase")
+  appendSearchParam(params, "s_authors", state.facetAuthorId)
+  appendSearchParam(params, "s_lbworkid", work.lbworkid)
+  appendSearchParam(params, "hit_index", hitIndex)
 }
 
 export function buildTextSearchReaderHref(
@@ -900,7 +908,6 @@ export function buildTextSearchReaderHref(
   const path = textSearchReaderPath(work, highlight)
   if (path === null) return null
   const params = new URLSearchParams()
-  appendCanonicalReaderSearch(params, state, hitIndex)
   appendSearchParam(params, "traff", firstMatch.word_id)
   appendSearchParam(params, "traffslut", lastMatch.word_id)
   appendLegacyReaderSearch(params, work, state, hitIndex)

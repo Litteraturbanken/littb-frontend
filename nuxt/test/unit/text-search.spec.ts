@@ -354,7 +354,7 @@ describe("text search route state", () => {
       fuzzy: "1", keyword: "source:sol", sok_om: "true"
     }
     const state = parseTextSearchRouteQuery(legacy)
-    expect(serializeTextSearchRouteState(state, legacy)).toEqual(legacy)
+    expect(serializeTextSearchRouteState(state, legacy)).toEqual({ ...legacy, avancerad: null })
     expect(textSearchPageQuery(legacy, 3)).toEqual({ ...legacy, traffsida: "3" })
     expect(buildTextSearchResultsRequest(state)).toMatchObject({
       query: "frihet & rätt", page: 2, author_ids: ["StrindbergA", "LagerlöfS"],
@@ -394,7 +394,7 @@ describe("text search route state", () => {
       empty: null,
       fras: "frihet",
       traffsida: "2",
-      avancerad: "1",
+      avancerad: null,
       kön: "female",
       intervall: "1850,1950",
       infix: "1",
@@ -1375,7 +1375,7 @@ describe("text search route state", () => {
     expect(["…", "-", "..", "word"].some(isTextSearchPunctuation)).toBe(false)
   })
 
-  test("builds an RFC3986 Reader link with canonical and safe legacy state", () => {
+  test("builds an RFC3986 Reader link with the production search contract", () => {
     const state = parseTextSearchRouteQuery({
       fras: "frihet & rätt",
       snapshot: "gen-0123456789abcdef",
@@ -1418,25 +1418,22 @@ describe("text search route state", () => {
       "/f%C3%B6rfattare/Author%21A/titlar/title%2A%28one%29/sida/page%21%20one/etext"
     )
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      q: "frihet & rätt", hit: "0", lemma: "1", ej_modern: "1",
-      prefix: "1", suffix: "1", traff: "w12_4", traffslut: "w12_5",
-      s_query: "frihet & rätt", s_lbworkid: "lb!1", s_mediatype: "etext",
-      s_word_form_only: "false", s_include_modernized: "false", hit_index: "0",
-      s_from: "30", s_to: "59", s_prefix: "true", s_suffix: "true",
-      s_page: "2", s_page_size: "30", s_author_ids: "AuthorA",
-      s_about_author_ids: "AuthorB", s_work_ids: "lb1", s_gender: "female",
-      s_year_from: "1850", s_year_to: "1950", s_languages: "language:swe",
-      s_categories: "texttype:roman",
-      s_legacy_filters: JSON.stringify([
-        { field: "source", value: "sol" },
-        { field: "keyword", value: "Drama:webben" }
-      ]),
-      s_facet_author_id: "AuthorC"
+      traff: "w12_4", traffslut: "w12_5",
+      s_query: "frihet & rätt", s_from: "30", s_to: "59",
+      s_prefix: "true", s_suffix: "true",
+      s_text_filter: JSON.stringify({
+        "main_author.gender": "female", "sort_date_imprint.date:range": "1850,1950",
+        language: ["swe"], texttype: ["roman"],
+        "authorkeyword>authorid": ["AuthorB"], "authors>authorid": ["AuthorA"],
+        source: "sol", keyword: "Drama:webben"
+      }),
+      s_work_ids: "lb1", s_fuzzy: "true", s_include_modernized: "false",
+      s_sort_field: "main_author.name_for_index.lowercase", s_authors: "AuthorC",
+      s_lbworkid: "lb!1", hit_index: "0"
     })
     expect(href).not.toContain("unknown")
-    expect(href).not.toContain("fuzzy")
-    expect(href).not.toContain("text_filter")
-    expect(href).not.toContain("sort")
+    expect(url.searchParams.has("q")).toBe(false)
+    expect(url.searchParams.has("hit")).toBe(false)
   })
 
   test("preserves work-scoped word IDs in Reader hit parameters", () => {
@@ -1488,9 +1485,8 @@ describe("text search route state", () => {
       "https://example.test"
     )
     expect(first.pathname.endsWith("/12/faksimil")).toBe(true)
-    expect(first.searchParams.get("hit")).toBe("0")
-    expect(first.searchParams.get("s_mediatype")).toBe("faksimil")
-    expect(last.searchParams.get("hit")).toBe("1000001")
+    expect(first.searchParams.get("hit_index")).toBe("0")
+    expect(first.searchParams.has("s_mediatype")).toBe(false)
     expect(last.searchParams.get("hit_index")).toBe("1000001")
 
     for (const hit of [-1, 1.5, 1_000_002]) {
@@ -1546,4 +1542,26 @@ describe("text search route state", () => {
     }
     expect(buildTextSearchReaderHref(work, highlight, 0, state)).toBeNull()
   })
+})
+
+
+test("Reader bookmark round trip retains every value in multi-valued filters", () => {
+  const state = parseTextSearchRouteQuery({
+    fras: "kyrka", keywords: "texttype:roman,texttype:brev;brevsamling",
+    keyword: "source:sol,source:skolan", languages: "language:swe,language:eng"
+  })
+  const work = {
+    lbworkid: "lb1", author_id: "AuthorA", author_name: "Author A", title: "Work",
+    title_id: "work", mediatype: "etext" as const, has_more_highlights: false, highlights: []
+  }
+  const hit = {
+    reader_target_status: "exact" as const, left_context: [], right_context: [],
+    match: [{ word: "kyrka", page_name: "12", word_id: "w12_4" }]
+  }
+  const bookmark = new URL(buildTextSearchReaderHref(work, hit, 0, state)!, "https://example.test")
+  const returnHref = parseTextSearchReturnHref(Object.fromEntries(bookmark.searchParams))!
+  const restored = parseTextSearchRouteQuery(Object.fromEntries(new URL(returnHref, "https://example.test").searchParams))
+  const secondBookmark = new URL(buildTextSearchReaderHref(work, hit, 0, restored)!, "https://example.test")
+  expect(JSON.parse(secondBookmark.searchParams.get("s_text_filter")!))
+    .toEqual(JSON.parse(bookmark.searchParams.get("s_text_filter")!))
 })

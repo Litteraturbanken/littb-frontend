@@ -290,8 +290,14 @@ function canonicalHitIndex(value: string): number | null {
 function parseCanonicalSearchState(): CanonicalSearchState | null {
   if (!canonicalQueryValuesAreScalar() || !canonicalSearchFlagsAreValid()) return null
 
-  const rawQuery = route.query.q
-  const rawHit = route.query.hit
+  const legacy = route.query.q === undefined && route.query.hit === undefined
+  if (legacy && (!reader.value || !selectedHitRouteMatchesReader(reader.value))) return null
+  const rawQuery = legacy ? route.query.s_query : route.query.q
+  const rawHit = legacy ? route.query.hit_index : route.query.hit
+  if (legacy && ["s_word_form_only", "s_include_modernized", "s_prefix", "s_suffix"].some(key => {
+    const value = route.query[key]
+    return value !== undefined && value !== "true" && value !== "false"
+  })) return null
   if (typeof rawQuery !== "string" || typeof rawHit !== "string") return null
 
   const query = rawQuery
@@ -305,10 +311,10 @@ function parseCanonicalSearchState(): CanonicalSearchState | null {
     query,
     hit,
     snapshot,
-    wordForms: route.query.lemma === "1",
-    includeOlderSpellings: route.query.ej_modern !== "1",
-    prefix: route.query.prefix === "1",
-    suffix: route.query.suffix === "1"
+    wordForms: legacy ? route.query.s_word_form_only !== "true" : route.query.lemma === "1",
+    includeOlderSpellings: legacy ? route.query.s_include_modernized !== "false" : route.query.ej_modern !== "1",
+    prefix: legacy ? route.query.s_prefix === "true" : route.query.prefix === "1",
+    suffix: legacy ? route.query.s_suffix === "true" : route.query.suffix === "1"
   })
 }
 
@@ -704,14 +710,14 @@ const searchState = computed(() => {
   return snapshot ? { ...state, snapshot } : state
 })
 const searchReturnHref = computed(() => parseTextSearchReturnHref(
-  rawTextSearchReturnQuery(rawFullPath.value)
+  { ...route.query, ...rawTextSearchReturnQuery(rawFullPath.value) }
 ))
 const hasActiveSearchOrigin = computed(() => searchReturnHref.value !== null &&
   typeof route.query.q === "string" && typeof route.query.hit === "string"
 )
 const pageQuery = computed(() => {
   const query = preservedQuery()
-  if (searchState.value) {
+  if (searchState.value && route.query.q !== undefined) {
     query.q = searchState.value.query
     query.hit = String(searchState.value.hit)
     if (hitResponse.value) query.snapshot = hitResponse.value.snapshot
@@ -720,7 +726,7 @@ const pageQuery = computed(() => {
 })
 const searchNavigationFullPath = computed(() => {
   const snapshot = hitResponse.value?.snapshot ?? searchState.value?.snapshot
-  return snapshot && route.query.snapshot === undefined
+  return route.query.q !== undefined && snapshot && route.query.snapshot === undefined
     ? readerFullPathWithQueryValue(rawFullPath.value, "snapshot", snapshot)
     : rawFullPath.value
 })
@@ -947,9 +953,6 @@ function handleSliderKeyup(event: KeyboardEvent): void {
   commitSliderDraft()
 }
 const readerSliderStyles = computed(() => {
-  // Search-hit mode owns the legacy slider through `.has-search-hit`; avoid
-  // inline page-position styles overriding that established visual state.
-  if (searchState.value) return { pointer: undefined, selection: undefined }
   const geometry = readerSliderGeometryStyles(
     sliderPercent.value ?? reader.value?.sliderPercent ?? 0
   )
@@ -1399,11 +1402,13 @@ function rawHitFullPath(hit: WorkSearchHit, sourceFullPath = rawFullPath.value):
   const fragment = fragmentIndex < 0 ? "" : pagePath.slice(fragmentIndex)
   const beforeHash = fragmentIndex < 0 ? pagePath : pagePath.slice(0, fragmentIndex)
   const queryIndex = beforeHash.indexOf("?")
-  const replacements = new Map<string, string>([["hit", String(hit.index)]])
-  if (sourceFullPath === rawFullPath.value && hitResponse.value) {
+  const sourceQuery = new URLSearchParams(queryIndex < 0 ? "" : beforeHash.slice(queryIndex + 1))
+  const legacy = !sourceQuery.has("q") && sourceQuery.has("s_query")
+  const replacements = new Map<string, string>([[legacy ? "hit_index" : "hit", String(hit.index)]])
+  if (!legacy && sourceFullPath === rawFullPath.value && hitResponse.value) {
     replacements.set("snapshot", hitResponse.value.snapshot)
   }
-  if (facsimileReader.value && isExactWorkSearchHit(hit)) {
+  if ((legacy || facsimileReader.value) && isExactWorkSearchHit(hit)) {
     replacements.set("traff", hit.highlight.from_word_id)
     replacements.set("traffslut", hit.highlight.to_word_id)
     replacements.set("hit_index", String(hit.index))

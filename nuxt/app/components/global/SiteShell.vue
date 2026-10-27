@@ -197,6 +197,8 @@ onBeforeUnmount(() => {
         </a>
       </nav>
       <div id="toolkit">
+        <div id="search-pager-toolkit" class="contents" />
+        <div id="search-author-toolkit" class="contents" />
         <div id="reader-hit-toolkit" />
         <div id="reader-facsimile-toolkit" />
       </div>

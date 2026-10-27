@@ -1270,7 +1270,7 @@ async function pushAdvancedQuery(key: AdvancedQueryKey, value: string) {
 async function toggleAdvanced() {
     const query: LocationQuery = { ...route.query }
     if (advancedOpen.value) delete query.avancerat
-    else query.avancerat = "1"
+    else query.avancerat = null
     await router.push({ path: route.path, query })
 }
 

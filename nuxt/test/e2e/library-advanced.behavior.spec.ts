@@ -158,7 +158,7 @@ test("advanced disclosure and controls use push history and restore from the URL
   await expect(advanced).toBeEnabled()
   await expect(advanced).toHaveAttribute("aria-expanded", "false")
   await advanced.click()
-  await expect.poll(() => new URL(page.url()).searchParams.get("avancerat")).toBe("1")
+  await expect.poll(() => new URL(page.url()).searchParams.get("avancerat")).toBe("")
   await expect(advanced).toHaveAttribute("aria-expanded", "true")
   await expect(page.locator("[data-library-advanced-panel]")).toBeVisible()
   expect(await relevanceQueries(request)).toEqual([])

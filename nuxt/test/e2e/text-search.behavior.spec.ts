@@ -1269,7 +1269,7 @@ test("submit and advanced toggle preserve unrelated query while reset clears eve
   await expect.poll(() => new URL(page.url()).searchParams.toString()).toBe("utm=keep&fras=frihet")
 
   await page.locator("[data-search-advanced]").click()
-  await expect.poll(() => new URL(page.url()).searchParams.get("avancerad")).toBe("1")
+  await expect.poll(() => new URL(page.url()).searchParams.get("avancerad")).toBe("")
   expect(new URL(page.url()).searchParams.get("utm")).toBe("keep")
   await expect(page.locator("[data-search-advanced]")).toHaveAttribute("type", "button")
 
@@ -1606,7 +1606,7 @@ test("every advanced filter family serializes exactly and reaches the semantic r
   expect(Object.fromEntries(query)).toEqual({
     utm: "keep",
     fras: "frihet",
-    avancerad: "1",
+    avancerad: "",
     forfattare: "LagerlöfS",
     titlar: "lb238704",
     "kön": "female",
@@ -2807,7 +2807,7 @@ test("Visa fler discloses remaining occurrences at 500 and continues from the la
   expect(href.pathname).toContain("/sida/50/faksimil")
   expect(href.searchParams.get("traff")).toBe("w21_4992")
   expect(href.searchParams.has("snapshot")).toBe(false)
-  expect(href.searchParams.get("s_return")).toBe(origin)
+  expect(href.searchParams.has("s_return")).toBe(false)
   expect(href.searchParams.get("s_prefix")).toBe("true")
   await expect(page.locator("tr:not(.is_faksimil).sentence .match")).toHaveCount(5)
   const ledger = await requests(request, "results")
@@ -3058,9 +3058,9 @@ test("closing advanced search clears the transient title filter notice", async (
     .toBeVisible()
 
   await page.locator("[data-search-advanced]").click()
-  await expect(page).not.toHaveURL(/avancerad=1/u)
+  await expect(page).not.toHaveURL(/avancerad(?:&|$)/u)
   await page.locator("[data-search-advanced]").click()
-  await expect(page).toHaveURL(/avancerad=1/u)
+  await expect(page).toHaveURL(/avancerad(?:&|$)/u)
 
   await expect(page.getByText(/matchande titlarna/u)).toHaveCount(0)
   await page.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
@@ -3373,10 +3373,10 @@ test("SSR hydration is single-fetch and Reader hit destination is navigable", as
   const href = await hit.getAttribute("href")
   const reader = new URL(href!, "http://litteraturbanken.test")
   expect(reader.pathname).toBe("/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/1/etext")
-  expect(reader.searchParams.get("hit")).toBe("0")
+  expect(reader.searchParams.get("hit_index")).toBe("0")
   expect(reader.searchParams.has("snapshot")).toBe(false)
   expect(reader.searchParams.get("hit_index")).toBe("0")
-  expect(reader.searchParams.get("q")).toBe("frihet")
+  expect(reader.searchParams.get("s_query")).toBe("frihet")
   const response = await page.goto(href!, { waitUntil: "domcontentloaded" })
   expect(response?.status()).toBe(200)
   await expect(page.locator("body")).toHaveClass(/page-reading/)
@@ -3403,8 +3403,8 @@ test("empty-highlight work titles stay plain while normal titles keep their firs
   )
   expect(reader.pathname)
     .toBe("/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/3/faksimil")
-  expect(reader.searchParams.get("hit")).toBe("0")
-  expect(reader.searchParams.get("s_return")).toBe("/s%C3%B6k?fras=empty-highlights")
+  expect(reader.searchParams.get("hit_index")).toBe("0")
+  expect(reader.searchParams.has("s_return")).toBe(false)
 
   await page.locator("#results .overflow .more").last().click()
   await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
@@ -3444,8 +3444,9 @@ test("renders a phrase hit as one accessible Reader link", async ({ page }) => {
   await expect(match.locator("a .word")).toHaveCount(2)
 })
 
-test("Search result return restores the exact origin and Reader hit", async ({ page }) => {
+test("Search result return restores search filters and Reader hit without duplicate URL state", async ({ page }) => {
   const origin = "/s%C3%B6k?fras=frihet&traffsida=1&avancerad=1&forfattare=StrindbergA&utm=a+b&repeat=%2f&repeat=%2F"
+  const restored = "/s%C3%B6k?fras=frihet&forfattare=StrindbergA"
   await openSearch(page, origin)
   const readerHref = await page.locator("#results .match a").first().getAttribute("href")
   expect(readerHref).not.toBeNull()
@@ -3454,18 +3455,18 @@ test("Search result return restores the exact origin and Reader hit", async ({ p
   const back = page.locator("#search_nav").getByRole("link", {
     name: "Tillbaka till sökningen"
   })
-  await expect(back).toHaveAttribute("href", origin)
+  await expect(back).toHaveAttribute("href", restored)
   await back.click()
-  await expect(page).toHaveURL(origin)
+  await expect(page).toHaveURL(restored)
   await expect(page.locator("#results .match a").first()).toBeVisible()
 
   await page.goBack({ waitUntil: "networkidle" })
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida 1")
-  await expect(page).toHaveURL(/q=frihet&hit=0&traff=w1_11/)
+  await expect(page).toHaveURL(/traff=w1_11.*s_query=frihet/)
   await page.reload({ waitUntil: "networkidle" })
   await expect(page.locator("#search_nav").getByRole("link", {
     name: "Tillbaka till sökningen"
-  })).toHaveAttribute("href", origin)
+  })).toHaveAttribute("href", restored)
 })
 
 test("a remounted Search result links back to its new SPA query", async ({ page }) => {
@@ -3475,8 +3476,8 @@ test("a remounted Search result links back to its new SPA query", async ({ page 
 
   const readerHref = await page.locator("#results .match a").first().getAttribute("href")
   expect(readerHref).not.toBeNull()
-  expect(new URL(readerHref!, "http://litteraturbanken.test").searchParams.get("s_return"))
-    .toBe("/s%C3%B6k?fras=overflow")
+  expect(new URL(readerHref!, "http://litteraturbanken.test").searchParams.get("s_query"))
+    .toBe("overflow")
 })
 
 test("completed searches hide the top-row activity indicator", async ({ page }) => {

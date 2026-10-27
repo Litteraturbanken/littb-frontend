@@ -25,7 +25,6 @@ import {
 import {
   acceptTextSearchOptionsResponse,
   acceptTextSearchResultsResponse,
-  attachTextSearchReturnHref,
   buildTextSearchOptionsRequest,
   buildTextSearchReaderHref,
   buildTextSearchResultsRequest,
@@ -125,14 +124,6 @@ const searchOriginFullPath = ref(import.meta.client && !nuxtApp.isHydrating
   : initialSearchFullPath.value)
 const { rememberTextSearchHref } = useTextSearchNavigation()
 rememberTextSearchHref(searchOriginFullPath.value)
-
-function currentSearchFullPath(): string {
-  return searchOriginFullPath.value
-}
-
-function readerHrefWithReturn(href: string): string {
-  return attachTextSearchReturnHref(href, currentSearchFullPath())
-}
 
 watch(() => route.fullPath, () => {
   if (import.meta.client) {
@@ -1795,7 +1786,7 @@ v-for="item in [
     >
       <div class="table_viewport">
         <div class="table_container">
-          <Teleport to="#toolkit" :disabled="!toolkitMounted || mobileSearchLayout">
+          <Teleport to="#search-pager-toolkit" :disabled="!toolkitMounted || mobileSearchLayout">
             <div
               v-if="displayPrimary?.status === 200"
               class="littb_pager"
@@ -1853,7 +1844,7 @@ v-for="item in [
                     <span class="title">
                       <NuxtLink
                         v-if="row.titleHref"
-                        :to="readerHrefWithReturn(row.titleHref)"
+                        :to="row.titleHref"
                         @click="searchAnalytics.openResult($event, row.work.workId, 'title')"
                         @auxclick="searchAnalytics.openResult($event, row.work.workId, 'title')"
                       >{{ row.work.title }}</NuxtLink>
@@ -1874,7 +1865,7 @@ v-for="item in [
                 <td class="match w-px whitespace-nowrap">
                   <NuxtLink
                     v-if="row.hit.href"
-                    :to="readerHrefWithReturn(row.hit.href)"
+                    :to="row.hit.href"
                     @click="searchAnalytics.openResult($event, row.work.workId, 'hit')"
                     @auxclick="searchAnalytics.openResult($event, row.work.workId, 'hit')"
                   >
@@ -1920,7 +1911,7 @@ v-for="item in [
                       <span>Visar {{ row.shownHits }} av {{ row.work.occurrenceCount }} träffar i verket.</span>{{ " " }}
                       <NuxtLink
                         v-if="row.continuationHref"
-                        :to="readerHrefWithReturn(row.continuationHref)"
+                        :to="row.continuationHref"
                         @click="searchAnalytics.openResult($event, row.work.workId, 'continuation')"
                         @auxclick="searchAnalytics.openResult($event, row.work.workId, 'continuation')"
                       >Fortsätt i läsaren</NuxtLink>
@@ -1952,7 +1943,7 @@ v-for="item in [
       Sökresultatet kan inte visas just nu.
     </div>
 
-    <Teleport to="#toolkit" :disabled="!toolkitMounted || mobileSearchLayout">
+    <Teleport to="#search-author-toolkit" :disabled="!toolkitMounted || mobileSearchLayout">
       <div v-if="navigatorFacets.length || state.facetAuthorId" class="search-author-navigator">
         <ul class="navigator">
           <li>

@@ -3441,7 +3441,7 @@ test("a selected faksimil search row marks its word in the OCR overlay", async (
   await expect(page.locator(".reader_main .overlay #w3_147.markee")).toHaveCount(1)
   await expect(page.locator(".reader_main img.faksimil")).toBeVisible()
   await expect(page.locator(".reader_main")).not.toHaveClass(/\bocr\b/u)
-  expect(await readerHitRequests(request)).toEqual([])
+  expect((await readerHitRequests(request)).length).toBeGreaterThan(0)
   expect(problems).toEqual([])
 })
 
@@ -5535,6 +5535,14 @@ test("page-position slider keeps search-hit state and has explicit-count edge be
   })
   const hitSlider = page.getByRole("slider", { name: "Gå till sida" })
   await expect(hitSlider).toHaveValue("2")
+  const positionError = await page.locator(".reader-context .rzslider").evaluate(element => {
+    const input = element.querySelector<HTMLInputElement>("input[type=range]")!
+    const pointer = element.querySelector(".rz-pointer")!.getBoundingClientRect()
+    const track = input.getBoundingClientRect()
+    const expected = track.left + 10 + (track.width - 20) * Number(input.value) / Number(input.max)
+    return Math.abs(pointer.left + pointer.width / 2 - expected)
+  })
+  expect(positionError).toBeLessThan(1)
   await hitSlider.focus()
   await page.keyboard.down("End")
   await page.keyboard.up("End")
@@ -5628,4 +5636,29 @@ test("page-position slider clears committed drafts across A-B-A and aligns the h
   ])
   expect(hitBubbleBox).not.toBeNull()
   expect(hitBubbleBox!.x + hitBubbleBox!.width / 2).toBeCloseTo(hitPointerCenter, 0)
+})
+
+
+test("production kyrka bookmark keeps highlighting and hit navigation without duplicate parameters", async ({ page }) => {
+  const path = "/författare/AarnsethF/titlar/Rallarliv/sida/58/faksimil"
+  const query = "?traff=w58_123&traffslut=w58_123&s_query=kyrka&s_from=0&s_to=29" +
+    "&s_text_filter=%7B%22sort_date_imprint.date:range%22:%221248,2026%22%7D" +
+    "&s_word_form_only=true&s_sort_field=main_author.name_for_index.lowercase&s_lbworkid=lb3203777&hit_index=0"
+  await page.goto(path + query, { waitUntil: "networkidle" })
+  const nav = page.locator("#search_nav")
+  await expect(nav).toContainText("Träff 1, sida 58")
+  await expect(page.locator(".reader_main .overlay #w58_123.markee")).toHaveCount(2)
+  await nav.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(nav).toContainText("Träff 2")
+  expect(new URL(page.url()).searchParams.get("hit_index")).toBe("1")
+  expect(new URL(page.url()).searchParams.has("q")).toBe(false)
+  expect(new URL(page.url()).searchParams.has("hit")).toBe(false)
+  await page.reload({ waitUntil: "networkidle" })
+  await expect(nav).toContainText("Träff 2")
+  await nav.getByRole("link", { name: "Föregående sökträff" }).click()
+  await expect(page.locator(".reader_main .overlay #w58_123.markee")).toHaveCount(2)
+  await expect(nav.getByRole("link", { name: "Tillbaka till sökningen" }))
+    .toHaveAttribute("href", "/s%C3%B6k?fras=kyrka&intervall=1248%2C2026")
+  await nav.getByRole("button", { name: "Stäng träffvisningen" }).click()
+  expect(new URL(page.url()).search).toBe("")
 })
