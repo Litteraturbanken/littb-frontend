@@ -182,6 +182,25 @@ export function decodedWorkSearchQueryKey(segment: string): string | null {
   }
 }
 
+const readerSearchQueryKeys = new Set([
+  "q", "hit", "snapshot", "lemma", "ej_modern", "prefix", "suffix",
+  "traff", "traffslut", "hit_index", "show_search_work"
+])
+
+/** Remove search context, retaining unrelated raw query segments and fragments. */
+export function readerSearchNeutralFullPath(fullPath: string): string {
+  const fragmentIndex = fullPath.indexOf("#")
+  const fragment = fragmentIndex < 0 ? "" : fullPath.slice(fragmentIndex)
+  const beforeFragment = fragmentIndex < 0 ? fullPath : fullPath.slice(0, fragmentIndex)
+  const queryIndex = beforeFragment.indexOf("?")
+  if (queryIndex < 0) return fullPath
+  const retained = beforeFragment.slice(queryIndex + 1).split("&").filter(segment => {
+    const key = decodedWorkSearchQueryKey(segment)
+    return key === null || (!readerSearchQueryKeys.has(key) && !key.startsWith("s_"))
+  })
+  return `${beforeFragment.slice(0, queryIndex)}${retained.length ? `?${retained.join("&")}` : ""}${fragment}`
+}
+
 export function replaceWorkSearchQuerySegments(
   segments: readonly string[],
   keysToRemove: ReadonlySet<string>,

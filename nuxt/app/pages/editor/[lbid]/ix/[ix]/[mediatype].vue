@@ -23,6 +23,7 @@ import {
   rawTextSearchReturnQuery
 } from "~/lib/text-search-navigation"
 import {
+  readerSearchNeutralFullPath,
   nextWorkSearchOptions,
   rememberWorkSearchSnapshot,
   restoredWorkSearchSnapshot,
@@ -963,18 +964,7 @@ const editorSearchKeys = new Set([
 ])
 
 function searchNeutralHref(fullPath: string): string {
-  const fragmentIndex = fullPath.indexOf("#")
-  const fragment = fragmentIndex < 0 ? "" : fullPath.slice(fragmentIndex)
-  const beforeHash = fragmentIndex < 0 ? fullPath : fullPath.slice(0, fragmentIndex)
-  const queryIndex = beforeHash.indexOf("?")
-  if (queryIndex < 0) return fullPath
-  const path = beforeHash.slice(0, queryIndex)
-  const retained = replaceWorkSearchQuerySegments(
-    beforeHash.slice(queryIndex + 1).split("&"),
-    editorSearchKeys,
-    new Map()
-  )
-  return `${path}${retained.length ? `?${retained.join("&")}` : ""}${fragment}`
+  return readerSearchNeutralFullPath(fullPath)
 }
 
 function workSearchHitHref(hit: WorkSearchHit, submission: WorkSearchSubmission): string {

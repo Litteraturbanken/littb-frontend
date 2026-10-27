@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
 import {
+  readerSearchNeutralFullPath,
   decodedWorkSearchQueryKey,
   nextWorkSearchOptions,
   rememberWorkSearchSnapshot,
@@ -150,4 +151,17 @@ describe("reader and editor work-search options", () => {
     }, "lb1", "faksimil")).toBe(true)
   })
 
+})
+
+describe("closing reader search context", () => {
+  test("removes every search parameter from a text-search result URL", () => {
+    const path = "/författare/AmeenG/titlar/Kappsäcken4/sida/70/faksimil"
+    const query = "q=slatt&hit=0&traff=w69_198&traffslut=w69_198&s_query=slatt&s_lbworkid=lb485510&s_mediatype=faksimil&s_word_form_only=true&s_include_modernized=true&hit_index=0&s_from=0&s_to=29&s_page=1&s_page_size=30&s_return=%2Fs%25C3%25B6k%3Ffras%3Dslatt"
+    expect(readerSearchNeutralFullPath(`${path}?${query}`)).toBe(path)
+  })
+  test("preserves unrelated raw values, duplicates and fragment", () => {
+    expect(readerSearchNeutralFullPath("/reader?bare&q=glas&s%5Freturn=x&repeat=a%20b&repeat=a+b&lemma=1&s_future=1#page"))
+      .toBe("/reader?bare&repeat=a%20b&repeat=a+b#page")
+    expect(readerSearchNeutralFullPath("/reader#page")).toBe("/reader#page")
+  })
 })

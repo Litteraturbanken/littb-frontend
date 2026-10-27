@@ -3951,7 +3951,7 @@ test("canonical hit data overrides matching legacy state with forged word ids", 
   await expect(page.locator(".reader_main .markee")).toHaveCount(2)
 })
 
-test("closing mixed search state removes legacy markers but preserves its return owner", async ({
+test("closing mixed search state removes all search context and preserves unrelated query values", async ({
   page
 }) => {
   const origin = "/s%C3%B6k?fras=doktor"
@@ -3965,7 +3965,8 @@ test("closing mixed search state removes legacy markers but preserves its return
     "s_include_modernized=true",
     "s_prefix=true",
     "s_suffix=true",
-    "hit_index=1"
+    "hit_index=1", "s_from=0", "s_to=29", "s_page=1", "s_page_size=30",
+    "s_author_ids=Author", "s_categories=brev", "s_snapshot=old"
   ].join("&")
   await page.goto(
     `${readerPath}?bare&q=doktor%20glas&hit=1&${legacyMarker}`
@@ -3983,7 +3984,7 @@ test("closing mixed search state removes legacy markers but preserves its return
     bare: location.search.includes("?bare&") || location.search.endsWith("?bare"),
     keys: [...new URLSearchParams(location.search).keys()],
     searchReturn: new URLSearchParams(location.search).get("s_return")
-  }))).toEqual({ bare: true, keys: ["bare", "s_return"], searchReturn: origin })
+  }))).toEqual({ bare: true, keys: ["bare"], searchReturn: null })
 })
 
 test("projects Angular work-search options onto canonical generated hit flags", async ({
@@ -5166,7 +5167,7 @@ test("return link on faksimil preserves its origin while loading faksimil hits",
       hit: url.searchParams.get("hit"),
       searchReturn: url.searchParams.get("s_return")
     }
-  }).toEqual({ q: null, hit: null, searchReturn: origin })
+  }).toEqual({ q: null, hit: null, searchReturn: null })
   const hitRequests = await readerHitRequests(request)
   expect(hitRequests).toEqual([{
     path: "/private-v2/works/lb-reader-gosta-berlings-saga/search-hits",

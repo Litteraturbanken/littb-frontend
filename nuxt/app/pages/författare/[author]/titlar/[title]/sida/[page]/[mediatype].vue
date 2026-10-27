@@ -39,6 +39,7 @@ import {
 } from "~/lib/reader-keyboard-navigation"
 import { readerTitleTooltipDirective } from "~/lib/reader-title-tooltip"
 import {
+  readerSearchNeutralFullPath,
   nextWorkSearchOptions,
   rememberWorkSearchSnapshot,
   restoredWorkSearchSnapshot,
@@ -1609,6 +1610,7 @@ function appendWorkSearchQuery(segments: string[], state: CanonicalSearchState):
 }
 
 function workSearchFullPath(state: CanonicalSearchState | null): string {
+  if (state === null) return readerSearchNeutralFullPath(rawFullPath.value)
   const fragmentIndex = rawFullPath.value.indexOf("#")
   const fragment = fragmentIndex < 0 ? "" : rawFullPath.value.slice(fragmentIndex)
   const beforeFragment = fragmentIndex < 0
