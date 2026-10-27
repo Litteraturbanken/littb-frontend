@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, useId, watch } from "vue"
+import { computed, ref, useId, watch } from "vue"
 import SearchVirtualOptions from "./SearchVirtualOptions.vue"
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxLabel, ComboboxOption, ComboboxOptions } from "@headlessui/vue"
 
@@ -52,21 +52,6 @@ const root = ref<HTMLElement | null>(null)
 const trigger = ref<InstanceType<typeof ComboboxButton> | null>(null)
 const inputId = useId()
 const chipClickWasOpen = ref(false)
-let optionPointerDown = false
-function rememberOptionPointer(event: PointerEvent) {
-  optionPointerDown = event.target instanceof Element
-    && Boolean(event.target.closest('[role="option"]'))
-}
-function finishOptionPointer(event: MouseEvent) {
-  if (!optionPointerDown) return
-  optionPointerDown = false
-  // Selecting on mousedown can move the mobile input under the pointer before
-  // click. Do not let that click toggle the input.
-  event.preventDefault()
-  if (event.target instanceof Element && !event.target.closest('[role="option"]')) {
-    event.stopPropagation()
-  }
-}
 const query = ref("")
 const above = ref(false)
 const maxHeight = ref(300)
@@ -141,14 +126,11 @@ function clickInput(open: boolean) {
 function blurInput(event: FocusEvent) {
   if (!(event.relatedTarget instanceof Node) || !root.value?.contains(event.relatedTarget)) clearQuery()
 }
-async function keydown(event: KeyboardEvent, open: boolean) {
+// Headless UI owns dismissal, selection, and ordinary keyboard navigation.
+// Extend only chip deletion and the legacy page-sized/virtual-boundary movement.
+function keydown(event: KeyboardEvent, open: boolean) {
   if (event.isComposing) return
-  if (event.key === "Escape") clearQuery()
-  if (event.key === "Tab") {
-    // Popup footer actions must not steal the combobox's next Tab stop.
-    root.value?.querySelector(".multiselect__content-wrapper")?.setAttribute("inert", "")
-    clearQuery()
-  }
+  if (["Escape", "Tab"].includes(event.key)) clearQuery()
   if (!(event.target instanceof HTMLInputElement)) return
   if (event.key === "Backspace" && !query.value && selectedOptions.value.length) {
     remove(selectedOptions.value.at(-1)!)
@@ -156,7 +138,7 @@ async function keydown(event: KeyboardEvent, open: boolean) {
   if (open && virtualList.value && ["Home", "End"].includes(event.key)) {
     event.preventDefault()
     event.stopPropagation()
-    await virtualList.value.focusBoundary(event.key === "End")
+    void virtualList.value.focusBoundary(event.key === "End")
     return
   }
   if (!open || !["PageDown", "PageUp"].includes(event.key)) return
@@ -177,7 +159,6 @@ async function keydown(event: KeyboardEvent, open: boolean) {
   // Use Headless UI's option activation handler without moving DOM focus
   // away from the combobox input (including in Firefox).
   options[target]!.dispatchEvent(new FocusEvent("focus"))
-  await nextTick()
 }
 </script>
 
@@ -198,8 +179,6 @@ async function keydown(event: KeyboardEvent, open: boolean) {
         ref="root"
         class="multiselect select2-selection select2-selection--multiple"
         :class="{ 'multiselect--active': open, 'multiselect--above': above }"
-        @pointerdown.capture="rememberOptionPointer"
-        @click.capture="finishOptionPointer"
         @mousedown="positionOptions"
         @focusin="positionOptions"
         @keydown.capture="keydown($event, open)"

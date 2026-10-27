@@ -139,6 +139,8 @@ for (const { route, selector, name } of cases) {
         await input.press('ArrowDown')
         await input.press('Tab')
         await expect(input).not.toBeFocused()
+        await expect(input).toHaveAttribute('aria-expanded', 'false')
+        await expect.poll(() => menu.evaluate(el => el.contains(document.activeElement))).toBe(false)
         await expect(chips).toHaveCount(3)
         await chips.nth(1).getByRole('button').click()
         await expect(chips).toHaveCount(2)

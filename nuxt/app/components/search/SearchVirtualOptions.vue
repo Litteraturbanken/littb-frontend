@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// Headless UI Vue 1.7.23 declares a virtual prop but hardcodes its internal
+// virtual context to null. Keep this adapter until native support is enabled.
 import { computed, nextTick, ref } from "vue"
 import { ComboboxOption } from "@headlessui/vue"
 import { defaultRangeExtractor, useVirtualizer } from "@tanstack/vue-virtual"
