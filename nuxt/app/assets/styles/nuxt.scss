@@ -964,3 +964,38 @@
         pointer-events: none;
     }
 }
+
+// Preserve the desktop input/chip row while bounding long selections to the
+// available panel width. The fixed input must not push chips off-screen.
+@media (min-width: 768px) {
+    [data-library-advanced-panel] {
+        container-type: inline-size;
+    }
+
+    [data-library-advanced-panel] .filter_select {
+        .multiselect:has(.select2-selection__choice),
+        .multiselect:has(.select2-selection__choice) .multiselect__tags {
+            height: auto;
+        }
+
+        .multiselect:not(.multiselect--active):has(input.search-multiselect__input-row)::after {
+            top: 17.09375px;
+        }
+
+        .multiselect__input {
+            align-self: flex-start;
+            margin-top: 1.5px !important;
+        }
+
+        .multiselect__tags-wrap {
+            max-width: max(200px, calc(100cqw - 358px));
+            flex-wrap: wrap;
+        }
+
+        .select2-selection__choice {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+}

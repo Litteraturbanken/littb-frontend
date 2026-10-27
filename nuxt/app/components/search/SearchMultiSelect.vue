@@ -226,6 +226,7 @@ async function keydown(event: KeyboardEvent, open: boolean) {
           />
           <span v-if="!open && !selectedOptions.length" class="multiselect__placeholder" aria-hidden="true" @click="toggle">{{ placeholder }}</span>
         </div>
+        <!-- Prevent enclosing Library labels from clicking the input a second time. -->
         <ComboboxOptions
           as="div"
           :unmount="false"
@@ -233,6 +234,7 @@ async function keydown(event: KeyboardEvent, open: boolean) {
           class="multiselect__content-wrapper"
           :style="{ maxHeight: `${maxHeight}px` }"
           :inert="!open || undefined"
+          @click.prevent
         >
           <SearchVirtualOptions
             v-if="windowedOptions && open"

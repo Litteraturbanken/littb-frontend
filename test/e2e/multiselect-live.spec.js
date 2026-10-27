@@ -30,6 +30,7 @@ for (const { route, selector, name } of cases) {
         await expect(options.first()).toBeVisible()
         await options.first().click()
         await expect(chips).toHaveCount(1)
+        await expect(input).toHaveAttribute('aria-expanded', 'true')
         await input.press('Escape')
         await expect(input).toHaveAttribute('aria-expanded', 'false')
         await input.click()

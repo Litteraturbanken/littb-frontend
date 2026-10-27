@@ -11,6 +11,10 @@ module.exports = {
             use: { browserName, viewport: { width: 1440, height: 1000 } }
         })),
         {
+            name: 'chromium-compact-desktop',
+            use: { browserName: 'chromium', viewport: { width: 1280, height: 900 } }
+        },
+        {
             name: 'chromium-mobile',
             use: { browserName: 'chromium', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }
         }
