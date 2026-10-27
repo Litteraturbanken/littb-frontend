@@ -196,6 +196,31 @@ test.describe("Nuxt whole-site staging smoke", () => {
         await expect(page.locator("#results td.match").first()).toContainText(/kyrka/i)
     })
 
+    test("empty advanced search opens and filters the full live author catalogue", async ({ page }) => {
+        await openNuxtRoute(page, "/sök?avancerad=1")
+        const authors = page.locator(".author_select")
+        const input = authors.getByRole("combobox")
+        for (const selector of [".author_select", ".title_select", ".lang_select", ".about_select", ".keyword_select"]) {
+            const control = page.locator(selector).getByRole("combobox")
+            for (const expanded of ["true", "false", "true", "false"]) {
+                await control.click()
+                await expect(control).toHaveAttribute("aria-expanded", expanded)
+            }
+        }
+        await input.click()
+        await expect(authors.getByRole("option").first()).toBeVisible()
+        expect(await authors.getByRole("option").count()).toBeLessThan(100)
+        await input.fill("Lagerlöf")
+        const selma = authors.getByRole("option", { name: /Lagerlöf, Selma/ })
+        await expect(selma).toBeVisible()
+        await selma.click()
+        await expect(authors.locator(".select2-selection__choice")).toContainText("Lagerlöf")
+        await input.press("Escape")
+        await expect(input).toHaveAttribute("aria-expanded", "false")
+        await input.click()
+        await expect(input).toHaveAttribute("aria-expanded", "true")
+    })
+
     test("hydrates advanced text search with its route query", async ({ page }) => {
         const searchResponse = waitForSameOriginPost(
             page,

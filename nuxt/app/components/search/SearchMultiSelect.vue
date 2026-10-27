@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useId, watch } from "vue"
+import SearchVirtualOptions from "./SearchVirtualOptions.vue"
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxLabel, ComboboxOption, ComboboxOptions } from "@headlessui/vue"
 
 defineOptions({ inheritAttrs: false })
@@ -81,6 +82,8 @@ const groups = computed(() => {
     return { label: group.label, options }
   }).filter(group => group.options.length)
 })
+const windowedOptions = computed(() => props.internalSearch && !props.optionGroups.length && props.options.length > 500)
+const virtualList = ref<InstanceType<typeof SearchVirtualOptions> | null>(null)
 function selectedLabel(option: SearchMultiSelectOption) {
   return option.selectionLabel ?? option.label
 }
@@ -135,6 +138,12 @@ async function keydown(event: KeyboardEvent, open: boolean) {
   if (event.key === "Backspace" && !query.value && selectedOptions.value.length) {
     remove(selectedOptions.value.at(-1)!)
   }
+  if (open && virtualList.value && ["Home", "End"].includes(event.key)) {
+    event.preventDefault()
+    event.stopPropagation()
+    await virtualList.value.focusBoundary(event.key === "End")
+    return
+  }
   if (!open || !["PageDown", "PageUp"].includes(event.key)) return
   event.preventDefault()
   event.stopPropagation()
@@ -150,10 +159,9 @@ async function keydown(event: KeyboardEvent, open: boolean) {
     target = i
     if (Math.abs(options[i]!.getBoundingClientRect().top - origin) >= list.clientHeight) break
   }
-  // Headless UI activates a focused option. Restore the input immediately so
-  // typing and aria-activedescendant continue to use the combobox focus model.
-  options[target]!.focus({ preventScroll: true })
-  input.focus({ preventScroll: true })
+  // Use Headless UI's option activation handler without moving DOM focus
+  // away from the combobox input (including in Firefox).
+  options[target]!.dispatchEvent(new FocusEvent("focus"))
   await nextTick()
 }
 </script>
@@ -169,7 +177,7 @@ async function keydown(event: KeyboardEvent, open: boolean) {
     :data-preserve-search="preserveSearch || undefined"
     class="filter_select select2 select2-container select2-container--default"
   >
-    <Combobox v-slot="{ open }" :model-value="selectedOptions" by="value" multiple @update:model-value="update">
+    <Combobox v-slot="{ open, activeOption }" :model-value="selectedOptions" by="value" multiple @update:model-value="update">
       <ComboboxLabel class="sr-only">{{ controlName }}</ComboboxLabel>
       <div
         ref="root"
@@ -221,11 +229,18 @@ async function keydown(event: KeyboardEvent, open: boolean) {
         <ComboboxOptions
           as="div"
           :unmount="false"
+          :hold="windowedOptions"
           class="multiselect__content-wrapper"
           :style="{ maxHeight: `${maxHeight}px` }"
           :inert="!open || undefined"
         >
-          <ul class="multiselect__content" style="display: inline-block" role="presentation">
+          <SearchVirtualOptions
+            v-if="windowedOptions && open"
+            ref="virtualList"
+            :options="groups[0]?.options ?? []"
+            :active-option="activeOption"
+          />
+          <ul v-else-if="!windowedOptions" class="multiselect__content" style="display: inline-block" role="presentation">
             <slot name="beforeList" />
             <template v-for="(group, index) in groups" :key="index">
               <li v-if="group.label" class="multiselect__element" role="presentation">

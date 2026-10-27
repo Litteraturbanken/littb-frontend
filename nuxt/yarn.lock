@@ -2362,7 +2362,7 @@
   resolved "https://registry.yarnpkg.com/@tanstack/virtual-core/-/virtual-core-3.17.4.tgz#26d1307f6e544e8428e2c022616cdabda59ef77e"
   integrity sha512-nGm5KteqxasUdThLc2izl6dHUqLv0LQj7Nuyo5gYalTPf/U8a9ermvsl7reT+6ioBW1l8WfpP/mcU338nLXpqw==
 
-"@tanstack/vue-virtual@^3.0.0-beta.60":
+"@tanstack/vue-virtual@3.13.32", "@tanstack/vue-virtual@^3.0.0-beta.60":
   version "3.13.32"
   resolved "https://registry.yarnpkg.com/@tanstack/vue-virtual/-/vue-virtual-3.13.32.tgz#30ab5a6997dc004d27740f0907ad6100a6bd857e"
   integrity sha512-E8OCutx7QnwZdvpJijz0Q2PHsYDWBWjnGr3TvgWiqxTU35jB1kVhtkd93scRV7tTFuId2tg3x2iFiw+IE4evjQ==
@@ -8161,7 +8161,6 @@ vue-eslint-parser@^10.4.1:
     espree "^10.3.0 || ^11.0.0"
     esquery "^1.6.0"
     semver "^7.6.3"
-
 
 vue-router@5.2.0, vue-router@^5.1.0:
   version "5.2.0"

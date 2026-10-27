@@ -2890,6 +2890,14 @@ function textSearchOptionsResponse(body) {
         death_year: "1940"
       }]
     : []
+  if (body.query === "large-author-catalogue" && authors.length) {
+    authors.push(...Array.from({ length: 6500 }, (_, index) => ({
+      author_id: `LargeAuthor${index}`,
+      name_for_index: `Large author ${String(index).padStart(4, "0")}`,
+      birth_year: "1900",
+      death_year: "1980"
+    })))
+  }
   const aboutAuthors = body.include_static_options && !routeHasNoOptions
     ? [{
         author_id: "StrindbergA",
