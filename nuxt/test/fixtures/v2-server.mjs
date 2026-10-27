@@ -2904,7 +2904,7 @@ function textSearchOptionsResponse(body) {
         name_for_index: "Strindberg, August",
         birth_year: "1849",
         death_year: "1912"
-      }, ...(body.about_author_ids?.includes("LagerlöfS")
+      }, ...((body.about_author_ids?.includes("LagerlöfS") || body.query === "large-author-catalogue")
         ? [{
             author_id: "LagerlöfS",
             name_for_index: "Lagerlöf, Selma",

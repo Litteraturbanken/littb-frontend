@@ -867,9 +867,20 @@ function cancelTitleOptions() {
   failedTitleOptionsRequest = null
 }
 
+// These catalogues are global, not constrained by the current filters. Keep
+// them mounted while a new filter request refreshes titles and chronology;
+// removing them here would discard the combobox's keyboard focus.
+const staticAuthorOptions = shallowRef<Pick<OptionsView, "authors" | "aboutAuthors">>({
+  authors: [],
+  aboutAuthors: []
+})
+watch(options, value => {
+  if (value?.staticComplete) staticAuthorOptions.value = value
+}, { immediate: true, flush: "sync" })
+
 const authorChoices = computed<SearchMultiSelectOption[]>(() => {
   const choices = new Map<string, SearchMultiSelectOption>()
-  for (const choice of options.value?.authors ?? []) {
+  for (const choice of staticAuthorOptions.value.authors) {
     choices.set(choice.value, choice)
   }
   for (const facet of currentPrimaryFacets.value) {
@@ -888,7 +899,7 @@ const authorChoices = computed<SearchMultiSelectOption[]>(() => {
 })
 const aboutAuthorChoices = computed<SearchMultiSelectOption[]>(() => {
   const choices = new Map<string, SearchMultiSelectOption>()
-  for (const choice of options.value?.aboutAuthors ?? []) choices.set(choice.value, choice)
+  for (const choice of staticAuthorOptions.value.aboutAuthors) choices.set(choice.value, choice)
   for (const value of state.value.aboutAuthorIds) {
     if (choices.has(value)) continue
     const facet = results.value?.facets.find(candidate => candidate.key === value)

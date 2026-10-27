@@ -14,7 +14,7 @@ if (Boolean(expectedGitSha) !== Boolean(expectedImageDigest)) {
 
 module.exports = defineConfig({
     testDir: "./test/e2e",
-    testMatch: "playwright_e2e.spec.js",
+    testMatch: ["playwright_e2e.spec.js", "multiselect-live.spec.js"],
     fullyParallel: true,
     workers: Math.min(4, availableParallelism()),
     forbidOnly: !!process.env.CI,

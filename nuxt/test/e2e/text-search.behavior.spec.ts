@@ -281,6 +281,11 @@ for (const control of [
       await refreshed
       await expect(option).toHaveCount(0)
       await root.getByRole("button", { name: new RegExp(`Ta bort ${control.label}`) }).click()
+      // Chip buttons are outside the popup; removing closes it. The removed
+      // author must be available again when the user reopens the input.
+      const input = root.getByRole("combobox")
+      await expect(input).toHaveAttribute("aria-expanded", "false")
+      await input.click()
       await expect(option).toBeVisible()
     } finally {
       release()
@@ -3547,4 +3552,43 @@ test("large author lists hydrate and filter without mounting the whole catalogue
   await input.click()
   await expect(input).toHaveAttribute("aria-expanded", "true")
   expect(await authors.getByRole("option").count()).toBeLessThan(100)
+})
+
+test("author catalogues retain keyboard navigation while selected filters refresh", async ({ page }) => {
+  await openSearch(page, "/sök?avancerad=1&fras=large-author-catalogue")
+  for (const selector of [".author_select", ".about_select"]) {
+    const menu = page.locator(selector)
+    const input = menu.getByRole("combobox")
+    await input.click()
+    const option = menu.locator('.multiselect__element[role="option"]').first()
+    await expect(option).toBeVisible()
+    // Keep the request pending throughout the assertions. Fast fixture
+    // responses must not conceal a catalogue disappearing during refresh.
+    let release!: () => void
+    const pending = new Promise<void>(resolve => { release = resolve })
+    let handled!: () => void
+    const finished = new Promise<void>(resolve => { handled = resolve })
+    const handler = async (route: Route) => {
+      await pending
+      try { await route.continue() } finally { handled() }
+    }
+    await page.route("**/api/v2/text-search/options", handler)
+    try {
+      const request = page.waitForRequest("**/api/v2/text-search/options")
+      await option.click()
+      await request
+      await expect(menu.locator(".select2-selection__choice")).toHaveCount(1)
+      await expect(menu.locator('.multiselect__element[role="option"]').first()).toBeVisible()
+      await input.press("Home")
+      await expect(input).toHaveAttribute("aria-activedescendant", /.+/)
+      await input.press("Escape")
+      await input.click()
+      await expect(input).toHaveAttribute("aria-expanded", "true")
+      await input.press("Escape")
+    } finally {
+      release()
+      await finished
+      await page.unroute("**/api/v2/text-search/options", handler)
+    }
+  }
 })
