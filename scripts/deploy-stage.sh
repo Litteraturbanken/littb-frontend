@@ -598,6 +598,7 @@ verification:
 EOF
 
 verification_started=$SECONDS
+PUBLIC_RESOURCE_ORIGIN=https://stage.litteraturbanken.se node "$repo_root/nuxt/scripts/verify-public-resource.mjs"
 (
   cd "$repo_root"
   LITTB_EXPECTED_GIT_SHA="$git_sha" \

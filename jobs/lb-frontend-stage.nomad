@@ -217,7 +217,6 @@ job "lb-frontend-stage" {
             exit 1
           fi
           export HOST=0.0.0.0 PORT="$NOMAD_PORT_http"
-          node scripts/verify-public-resource.mjs
           exec node .output/server/index.mjs
         EOT
         ]
