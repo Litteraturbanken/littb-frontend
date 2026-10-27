@@ -1,3 +1,4 @@
+import { textSearchCategoryOptions, textSearchLanguageOptions } from "./text-search-options"
 import { canonicalNuxtHref } from "./internal-navigation"
 
 export const DEFAULT_TEXT_SEARCH_HREF = "/s%C3%B6k"
@@ -89,6 +90,38 @@ export function rawTextSearchReturnQuery(fullPath: string): TextSearchRouteQuery
   return { s_return: values.length === 1 ? values[0]! : values }
 }
 
+// Recover named choices from production's flattened filter map without
+// discarding values that do not correspond to a current menu option.
+function restoreFilterChoices(fields: Record<string, unknown>, options: readonly (readonly [string, string])[]): string[] {
+  const originalTerms = Object.entries(fields).flatMap(([field, value]) =>
+    (Array.isArray(value) ? value : [value]).map(item => `${field}:${item}`))
+  const candidates = options.map(([value]) => ({
+    value,
+    terms: value.split("|").flatMap(expression => {
+      const colon = expression.indexOf(":")
+      return expression.slice(colon + 1).split(";").map(item => [expression.slice(0, colon), item] as const)
+    })
+  })).sort((a, b) => b.terms.length - a.terms.length)
+  const selected: string[] = []
+  for (const candidate of candidates) {
+    if (!candidate.terms.every(([field, value]) => {
+      const existing = fields[field]
+      return Array.isArray(existing) ? existing.includes(value) : existing === value
+    })) continue
+    selected.push(candidate.value)
+    for (const [field, value] of candidate.terms) {
+      const existing = fields[field]
+      if (Array.isArray(existing)) fields[field] = existing.filter(item => item !== value)
+      else fields[field] = []
+    }
+  }
+  return selected.sort((a, b) => {
+    const firstPosition = (value: string) => Math.min(...candidates.find(item => item.value === value)!.terms
+      .map(([field, term]) => originalTerms.indexOf(`${field}:${term}`)))
+    return firstPosition(a) - firstPosition(b)
+  })
+}
+
 export function parseTextSearchReturnHref(query: TextSearchRouteQuery): string | null {
   if (Object.hasOwn(query, "s_return")) return validateTextSearchReturnOrigin(query.s_return)
   // Production bookmarks encode the search context directly rather than an
@@ -130,6 +163,10 @@ export function parseTextSearchReturnHref(query: TextSearchRouteQuery): string |
         add("authorkeyword", fields["authorkeyword>authorid"])
         add("kön", fields["main_author.gender"])
         add("intervall", fields["sort_date_imprint.date:range"])
+        const restoredLanguages = restoreFilterChoices(fields, textSearchLanguageOptions)
+        if (restoredLanguages.length) params.set("languages", [...languageFlags, ...restoredLanguages].join(","))
+        const restoredCategories = restoreFilterChoices(fields, textSearchCategoryOptions)
+        if (restoredCategories.length) params.set("keywords", restoredCategories.join(","))
         const legacy: string[] = []
         for (const key of ["author_ids", "keyword", "language", "mediatype", "modernized", "proofread", "provenance.library", "source", "texttype"]) {
           const value = fields[key]
@@ -140,7 +177,8 @@ export function parseTextSearchReturnHref(query: TextSearchRouteQuery): string |
       }
     } catch { /* Malformed legacy filters must not prevent opening the selected hit. */ }
   }
-  return `${DEFAULT_TEXT_SEARCH_HREF}?${params.toString()}`
+  const advanced = ["forfattare", "authorkeyword", "titlar", "kön", "languages", "keywords"].some(key => params.has(key))
+  return `${DEFAULT_TEXT_SEARCH_HREF}?${advanced ? "avancerad&" : ""}${params.toString()}`
 }
 
 export function rememberedTextSearchHref(value: string): string | null {

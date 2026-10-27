@@ -3446,7 +3446,7 @@ test("renders a phrase hit as one accessible Reader link", async ({ page }) => {
 
 test("Search result return restores search filters and Reader hit without duplicate URL state", async ({ page }) => {
   const origin = "/s%C3%B6k?fras=frihet&traffsida=1&avancerad=1&forfattare=StrindbergA&utm=a+b&repeat=%2f&repeat=%2F"
-  const restored = "/s%C3%B6k?fras=frihet&forfattare=StrindbergA"
+  const restored = "/s%C3%B6k?avancerad&fras=frihet&forfattare=StrindbergA"
   await openSearch(page, origin)
   const readerHref = await page.locator("#results .match a").first().getAttribute("href")
   expect(readerHref).not.toBeNull()

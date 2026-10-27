@@ -106,11 +106,11 @@ describe("production bookmark return navigation", () => {
       })
     })
     expect(Object.fromEntries(new URL(href!, "https://example.test").searchParams)).toEqual({
-      fras: "kyrka", traffsida: "3", titlar: "lb3203777,lb1", sok_filter: "AuthorC",
+      avancerad: "", fras: "kyrka", traffsida: "3", titlar: "lb3203777,lb1", sok_filter: "AuthorC",
       lemma: "1", ej_modern: "1", prefix: "1", suffix: "1", fuzzy: "1",
       languages: "translation:true,foreign:true", forfattare: "AuthorA,AuthorB",
       authorkeyword: "AuthorD", kön: "female", intervall: "1248,2026",
-      keyword: "language:fin,source:sol,texttype:roman"
+      keywords: "texttype:roman,source:sol", keyword: "language:fin"
     })
   })
 

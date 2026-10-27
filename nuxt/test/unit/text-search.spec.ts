@@ -1565,3 +1565,31 @@ test("Reader bookmark round trip retains every value in multi-valued filters", (
   expect(JSON.parse(secondBookmark.searchParams.get("s_text_filter")!))
     .toEqual(JSON.parse(bookmark.searchParams.get("s_text_filter")!))
 })
+
+
+test.each([
+  { lemma: "1" }, { prefix: "1" }, { suffix: "1" },
+  { lemma: "1", prefix: "1", suffix: "1" }
+])("restores visible filter choices and matching flags %j from a reader bookmark", flags => {
+  const original = parseTextSearchRouteQuery({
+    fras: "hus", avancerad: null, forfattare: "StrindbergA,LagerlöfS",
+    keywords: "texttype:roman,texttype:novellsamling;novell",
+    languages: "language:swe,translation:true", intervall: "1800,1920", ...flags
+  })
+  const work = {
+    lbworkid: "lb1", author_id: "AuthorA", author_name: "A", title: "Work", title_id: "work",
+    mediatype: "etext" as const, has_more_highlights: false, highlights: []
+  }
+  const hit = { reader_target_status: "exact" as const, left_context: [], right_context: [],
+    match: [{ word: "hus", page_name: "12", word_id: "w12_4" }] }
+  const href = buildTextSearchReaderHref(work, hit, 0, original)!
+  const back = parseTextSearchReturnHref(Object.fromEntries(new URL(href, "https://example.test").searchParams))!
+  const restored = parseTextSearchRouteQuery(Object.fromEntries(new URL(back, "https://example.test").searchParams))
+  expect(restored.advanced).toBe(true)
+  expect(restored.categories).toEqual(original.categories)
+  expect([...restored.languages].sort()).toEqual([...original.languages].sort())
+  expect(restored.authorIds).toEqual(original.authorIds)
+  expect(restored.yearRange).toEqual(original.yearRange)
+  expect(restored.legacyFilters).toEqual([])
+  expect(restored).toMatchObject({ wordFormOnly: original.wordFormOnly, prefix: original.prefix, suffix: original.suffix })
+})
