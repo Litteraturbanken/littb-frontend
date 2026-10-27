@@ -164,48 +164,42 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
             </label>
         </div>
         <div class="title_select_container">
-            <label>
-                <span class="sr-only">Kategorier och utgivare</span>
-                <SearchMultiSelect
-                    data-library-keywords
-                    class="keyword_select"
-                    persistent-input-row
-                    accessible-name="Filtrera: Kategorier / Utgivare"
-                    :model-value="model.keywords"
-                    :options="model.collectionSelectOptions"
-                    :option-groups="model.collectionSelectGroups"
-                    :space-after-remove="false"
-                    searchable
-                    internal-search
-                    placeholder="Filtrera: Kategorier / Utgivare"
-                    @update:model-value="emitKeywords"
-                />
-            </label>
+            <SearchMultiSelect
+                data-library-keywords
+                class="keyword_select"
+                persistent-input-row
+                accessible-name="Filtrera: Kategorier / Utgivare"
+                :model-value="model.keywords"
+                :options="model.collectionSelectOptions"
+                :option-groups="model.collectionSelectGroups"
+                :space-after-remove="false"
+                searchable
+                internal-search
+                placeholder="Filtrera: Kategorier / Utgivare"
+                @update:model-value="emitKeywords"
+            />
         </div>
         <div
             v-if="!model.standalone && model.aboutAuthorOptions.length"
             class="title_select_container about_container"
         >
-            <label>
-                <span class="sr-only">Om ett författarskap</span>
-                <SearchMultiSelect
-                    data-library-about-authors
-                    class="about_select"
-                    accessible-name="Om ett författarskap"
-                    :model-value="model.aboutAuthorIds"
-                    :options="
-                        model.aboutAuthorOptions.map(author => ({
-                            value: author.id,
-                            label: author.label
-                        }))
-                    "
-                    placeholder="Om ett författarskap"
-                    searchable
-                    internal-search
-                    persistent-input-row
-                    @update:model-value="emitAboutAuthors"
-                />
-            </label>
+            <SearchMultiSelect
+                data-library-about-authors
+                class="about_select"
+                accessible-name="Om ett författarskap"
+                :model-value="model.aboutAuthorIds"
+                :options="
+                    model.aboutAuthorOptions.map(author => ({
+                        value: author.id,
+                        label: author.label
+                    }))
+                "
+                placeholder="Om ett författarskap"
+                searchable
+                internal-search
+                persistent-input-row
+                @update:model-value="emitAboutAuthors"
+            />
         </div>
         <div v-if="!model.standalone">
             <div class="text-sm mb-4 max-w-sm">
@@ -213,59 +207,50 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
                 <span class="sc">AVGRÄNSA SÖKNINGEN</span> här nedanför. Ju fler samlingar du
                 väljer, desto färre sökträffar får du.
             </div>
-            <label>
-                <span class="sr-only">Avgränsa sökningen</span>
-                <SearchMultiSelect
-                    data-library-narrowing
-                    class="keyword_select block"
-                    persistent-input-row
-                    accessible-name="Avgränsa sökningen"
-                    :model-value="model.narrowingKeywords"
-                    :options="model.collectionSelectOptions"
-                    :option-groups="narrowingSelectGroups"
-                    :space-after-remove="false"
-                    searchable
-                    internal-search
-                    placeholder="Avgränsa sökningen"
-                    @update:model-value="emitNarrowingKeywords"
-                />
-            </label>
+            <SearchMultiSelect
+                data-library-narrowing
+                class="keyword_select block"
+                persistent-input-row
+                accessible-name="Avgränsa sökningen"
+                :model-value="model.narrowingKeywords"
+                :options="model.collectionSelectOptions"
+                :option-groups="narrowingSelectGroups"
+                :space-after-remove="false"
+                searchable
+                internal-search
+                placeholder="Avgränsa sökningen"
+                @update:model-value="emitNarrowingKeywords"
+            />
         </div>
         <div v-if="!model.standalone" class="title_select_container">
-            <label>
-                <span class="sr-only">Utgivningsformat</span>
-                <SearchMultiSelect
-                    data-library-media
-                    class="keyword_select"
-                    persistent-input-row
-                    accessible-name="Utgivningsformat"
-                    :model-value="model.media"
-                    :options="model.mediaSelectOptions"
-                    :space-after-remove="false"
-                    searchable
-                    internal-search
-                    placeholder="Utgivningsformat"
-                    @update:model-value="emitMedia"
-                />
-            </label>
+            <SearchMultiSelect
+                data-library-media
+                class="keyword_select"
+                persistent-input-row
+                accessible-name="Utgivningsformat"
+                :model-value="model.media"
+                :options="model.mediaSelectOptions"
+                :space-after-remove="false"
+                searchable
+                internal-search
+                placeholder="Utgivningsformat"
+                @update:model-value="emitMedia"
+            />
         </div>
         <div class="title_select_container">
-            <label>
-                <span class="sr-only">Språk och status</span>
-                <SearchMultiSelect
-                    data-library-languages
-                    class="keyword_select"
-                    persistent-input-row
-                    accessible-name="Språk …"
-                    :model-value="model.languages"
-                    :options="model.languageSelectOptions"
-                    :space-after-remove="false"
-                    searchable
-                    internal-search
-                    placeholder="Språk …"
-                    @update:model-value="emitLanguages"
-                />
-            </label>
+            <SearchMultiSelect
+                data-library-languages
+                class="keyword_select"
+                persistent-input-row
+                accessible-name="Språk …"
+                :model-value="model.languages"
+                :options="model.languageSelectOptions"
+                :space-after-remove="false"
+                searchable
+                internal-search
+                placeholder="Språk …"
+                @update:model-value="emitLanguages"
+            />
         </div>
         <div
             v-if="!model.standalone"

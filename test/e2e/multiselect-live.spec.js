@@ -1,5 +1,28 @@
 const { test, expect } = require('@playwright/test')
 
+async function clickPoint(page, point) {
+    // Headless UI intentionally listens to touchend instead of mouse clicks
+    // on touch devices. Exercise the real gesture for each browser context.
+    if (await page.evaluate(() => navigator.maxTouchPoints > 0)) await page.touchscreen.tap(point.x, point.y)
+    else await page.mouse.click(point.x, point.y)
+}
+
+async function clickOutside(page) {
+    const point = await page.evaluate(() => {
+        // The popup can open above or below and obscure the heading. Choose
+        // visible, non-interactive page background, never click through it.
+        for (const x of [2, innerWidth - 2]) {
+            for (const y of [2, innerHeight / 2, innerHeight - 2]) {
+                const target = document.elementFromPoint(x, y)
+                if (target && !target.closest('.filter_select, a, button, input, select, textarea')) return { x, y }
+            }
+        }
+        return null
+    })
+    expect(point).not.toBeNull()
+    await clickPoint(page, point)
+}
+
 const cases = [
     ...['author', 'title', 'lang', 'about', 'keyword'].map(name => ({
         route: '/sök?avancerad=1', selector: `.${name}_select`, name: `text search ${name}`
@@ -26,6 +49,20 @@ for (const { route, selector, name } of cases) {
         for (const state of ['true', 'false', 'true']) {
             await input.click()
             await expect(input).toHaveAttribute('aria-expanded', state)
+        }
+        if (selector.startsWith('[data-library-')) {
+            const bounds = await menu.boundingBox()
+            const outside = { x: bounds.x + bounds.width + 50, y: bounds.y + 15 }
+            if (outside.x < page.viewportSize().width) {
+                // This used to be an invisible native-label activation area:
+                // Headless UI closed, then the label reopened the same menu.
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    await clickPoint(page, outside)
+                    await expect(input).toHaveAttribute('aria-expanded', 'false')
+                }
+                await input.click()
+                await expect(input).toHaveAttribute('aria-expanded', 'true')
+            }
         }
         await expect(options.first()).toBeVisible()
         await options.first().click()
@@ -90,6 +127,14 @@ for (const { route, selector, name } of cases) {
                 }
             }
         }
+        // Headless UI owns dismissal on non-focusable content too.
+        for (let attempt = 0; attempt < 3; attempt++) {
+            await input.click()
+            await expect(input).toHaveAttribute('aria-expanded', 'true')
+            await clickOutside(page)
+            await expect(input).toHaveAttribute('aria-expanded', 'false')
+            await expect(chips).toHaveCount(3)
+        }
         await input.click()
         await input.press('ArrowDown')
         await input.press('Tab')
@@ -104,6 +149,11 @@ for (const { route, selector, name } of cases) {
         await input.click()
         await expect(input).toHaveAttribute('aria-expanded', 'true')
         const label = await options.first().innerText()
+        await input.fill(label.trim().slice(0, 6))
+        await clickOutside(page)
+        await expect(input).toHaveAttribute('aria-expanded', 'false')
+        await input.click()
+        await expect(input).toHaveAttribute('aria-expanded', 'true')
         await input.fill(label.trim().slice(0, 6))
         await expect(options.first()).toBeVisible()
         await expect(options.first()).toContainText(label.trim().slice(0, 6), { ignoreCase: true })

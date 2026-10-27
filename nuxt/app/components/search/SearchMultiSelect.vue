@@ -61,7 +61,7 @@ function finishOptionPointer(event: MouseEvent) {
   if (!optionPointerDown) return
   optionPointerDown = false
   // Selecting on mousedown can move the mobile input under the pointer before
-  // click. Do not let that click toggle the input or activate its outer label.
+  // click. Do not let that click toggle the input.
   event.preventDefault()
   if (event.target instanceof Element && !event.target.closest('[role="option"]')) {
     event.stopPropagation()
@@ -243,7 +243,6 @@ async function keydown(event: KeyboardEvent, open: boolean) {
           />
           <span v-if="!open && !selectedOptions.length" class="multiselect__placeholder" aria-hidden="true" @click="toggle">{{ placeholder }}</span>
         </div>
-        <!-- Prevent enclosing Library labels from clicking the input a second time. -->
         <ComboboxOptions
           as="div"
           :unmount="false"
@@ -251,7 +250,6 @@ async function keydown(event: KeyboardEvent, open: boolean) {
           class="multiselect__content-wrapper"
           :style="{ maxHeight: `${maxHeight}px` }"
           :inert="!open || undefined"
-          @click.prevent
         >
           <SearchVirtualOptions
             v-if="windowedOptions && open"

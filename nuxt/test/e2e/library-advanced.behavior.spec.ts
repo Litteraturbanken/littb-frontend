@@ -1309,3 +1309,24 @@ for (const query of ["", "Selma"]) {
     await expect(page.locator('[data-library-tab="authors"]')).toContainText(query ? ": 1" : ": 156")
   })
 }
+
+test("empty space beside multiselects dismisses without activating an invisible label", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/bibliotek?avancerat=1")
+  await waitForHydration(page)
+  for (const marker of ["keywords", "about-authors", "narrowing", "media", "languages"]) {
+    const control = page.locator(`[data-library-${marker}]`)
+    const input = control.getByRole("combobox")
+    expect(await control.evaluate(element => element.closest("label"))).toBeNull()
+    await input.click()
+    await expect(input).toHaveAttribute("aria-expanded", "true")
+    const bounds = (await control.boundingBox())!
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await page.mouse.click(bounds.x + bounds.width + 12, bounds.y + 15)
+      await expect(input).toHaveAttribute("aria-expanded", "false")
+    }
+    await input.click()
+    await expect(input).toHaveAttribute("aria-expanded", "true")
+    await input.press("Escape")
+  }
+})
