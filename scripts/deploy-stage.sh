@@ -392,7 +392,7 @@ if [ "$builder_job" = "lb-frontend-stage-builder" ]; then
   nomad job validate "$builder_jobspec_file"
   builder_plan_status=0
   nomad job plan -no-color "$builder_jobspec_file" || builder_plan_status=$?
-  if [ "$builder_plan_status" -ne 0 ] && [ "$builder_plan_status" -ne 2 ]; then
+  if [ "$builder_plan_status" -ne 0 ] && [ "$builder_plan_status" -ne 1 ]; then
     exit "$builder_plan_status"
   fi
   nomad job run -detach "$builder_jobspec_file"
