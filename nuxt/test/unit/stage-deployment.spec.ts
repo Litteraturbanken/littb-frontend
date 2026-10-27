@@ -208,6 +208,10 @@ case "$1 $2" in
   *) exit 64 ;;
 esac
 `)
+  writeExecutable(directory, "node", `#!/bin/sh
+[ "$PUBLIC_RESOURCE_ORIGIN" = "https://stage.litteraturbanken.se" ] || exit 65
+[ "\${1##*/}" = "verify-public-resource.mjs" ] || exit 65
+`)
   writeExecutable(directory, "yarn", `#!/bin/sh
 [ "$LITTB_EXPECTED_GIT_SHA" = "${gitSha}" ] || exit 65
 [ "$LITTB_EXPECTED_IMAGE_DIGEST" = "${imageDigest}" ] || exit 65
@@ -429,6 +433,8 @@ fi
         PLAN_OUTPUT: plan.output,
         EXPECTED_PLAN_INDEX: plan.expectedIndex,
         BUILD_TIMEOUT_SECONDS: "5",
+        // Exercise generic deployment guards independently of builder registration.
+        BUILDER_JOB: "docker-builder-multiarch",
         REGISTRY_HOST: "registry.test:5000",
         LB_INFRA_REPOSITORY: directory,
         JOBSPEC_PATH: jobspecPath,
@@ -819,7 +825,7 @@ test("staging Nomad service exposes the digest-pinned Nuxt runtime through publi
   expect(jobspec).not.toContain('"caddy-tls=internal"')
   expect(normalizedJobspec).toContain('path = "/_deployment"')
   expect(normalizedJobspec).not.toContain('path = "/robots.txt"')
-  expect(normalizedJobspec).toContain('interval = "10s"')
+  expect(normalizedJobspec).toContain('interval = "5s"')
   expect(normalizedJobspec).toContain('timeout = "3s"')
   expect(jobspec).toMatch(/check_restart\s*\{[^}]*limit\s*=\s*3[^}]*grace\s*=\s*"2m"/su)
   expect(jobspec).toContain('if [ -z "$IMAGE_REF" ]; then')
@@ -843,16 +849,17 @@ test("staging jobspec rejects a noncanonical jobspec hash", () => {
   })).toThrow("Nomad jobspec evaluation failed")
 })
 
-test("staging rehearses the production two-host rolling topology", () => {
+test("staging uses one AMD64 allocation with a short healthy window", () => {
   const jobspec = readRepositoryFile("jobs/lb-frontend-stage.nomad")
   const group = jobspec.match(/group\s+"frontend"\s*\{([\s\S]*?)\n\s+network\s*\{/u)?.[1] ?? ""
 
-  expect(group).toMatch(/count\s*=\s*2/u)
+  expect(group).toMatch(/count\s*=\s*1/u)
   expect(group).toMatch(/shutdown_delay\s*=\s*"15s"/u)
-  expect(group).toMatch(/constraint\s*\{[^}]*distinct_hosts\s*=\s*true[^}]*\}/su)
+  expect(group).toContain('attribute = "${attr.cpu.arch}"')
+  expect(group).toContain('value     = "amd64"')
   expect(group).toMatch(/update\s*\{[^}]*max_parallel\s*=\s*1[^}]*\}/su)
   expect(group).toMatch(/health_check\s*=\s*"checks"/u)
-  expect(group).toMatch(/min_healthy_time\s*=\s*"30s"/u)
+  expect(group).toMatch(/min_healthy_time\s*=\s*"10s"/u)
   expect(group).toMatch(/healthy_deadline\s*=\s*"5m"/u)
   expect(group).toMatch(/progress_deadline\s*=\s*"10m"/u)
   expect(group).toMatch(/auto_revert\s*=\s*true/u)
@@ -1169,16 +1176,18 @@ test("staging entrypoint starts only with exact immutable identity values", () =
   const { result, trace } = runStageEntrypoint(gitSha, imageDigest)
 
   expect(result.status, result.stderr).toBe(0)
-  expect(trace).toEqual(["public resource verified", "started"])
+  expect(trace).toEqual(["started"])
 })
 
-test("staging entrypoint fails closed when the public resource preflight fails", () => {
+test("staging starts without depending on its own public route", () => {
   const { result, trace } = runStageEntrypoint(gitSha, imageDigest, undefined, {
     PROBE_SHOULD_FAIL: "1"
   })
 
-  expect(result.status).not.toBe(0)
-  expect(trace).toEqual(["public resource failed"])
+  expect(result.status).toBe(0)
+  expect(trace).toEqual(["started"])
+  const deploy = readRepositoryFile("scripts/deploy-stage.sh")
+  expect(deploy.indexOf("PUBLIC_RESOURCE_ORIGIN=https://stage.litteraturbanken.se node")).toBeGreaterThan(deploy.indexOf("\nwait_for_healthy_stage_allocations\n"))
 })
 
 test("staging runbook binds the live suite to the deployed Git and image identity", () => {
