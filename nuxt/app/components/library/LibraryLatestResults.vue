@@ -104,10 +104,10 @@ function imprintYearTo(year: string): RouteLocationRaw {
             <i aria-hidden="true" class="spinner fa fa-spinner fa-pulse" />
         </div>
         <div v-if="response.failed" data-library-error role="alert">Ett fel uppstod.</div>
-        <div v-else-if="!response.groups.length" data-library-empty class="pb-4">
+        <div v-else-if="!loading && !response.groups.length" data-library-empty class="pb-4">
             Inga träffar.
         </div>
-        <table v-else id="table" class="table w-full flex-grow -ml-2">
+        <table v-else-if="response.groups.length" id="table" class="table w-full flex-grow -ml-2">
             <tbody class="block">
                 <template v-for="group in response.groups" :key="group.imported">
                     <tr class="header grid grid-cols-1 w-full items-baseline">

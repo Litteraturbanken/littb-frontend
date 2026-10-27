@@ -3278,3 +3278,38 @@ for (const mode of ["authors", "works", "parts", "epub", "pdf"] as const) {
     expect(ledger.search.filter(entry => entry.body.mode === "authors")).toHaveLength(mode === "authors" ? 1 : 0)
   })
 }
+
+for (const empty of [false, true]) {
+  test(`Nytt waits for its response before showing ${empty ? "no results" : "rows"}`, async ({ page }) => {
+    await page.goto("/bibliotek?visa=works", { waitUntil: "networkidle" })
+    let release!: () => void
+    const pending = new Promise<void>(resolve => { release = resolve })
+    await page.route("**/api/v2/library/search", async route => {
+      if (route.request().postDataJSON()?.mode !== "latest") return route.continue()
+      await pending
+      if (empty) {
+        const response = await route.fetch()
+        const body = await response.json()
+        await route.fulfill({ response, json: { ...body, groups: [], total_works: 0, total_hits: 0 } })
+      } else {
+        await route.continue()
+      }
+    })
+    try {
+      await page.locator('[data-library-tab="latest"]').click()
+      await expect(page.locator('[data-library-tab="latest"]')).toHaveAttribute("aria-current", "page")
+      await expect(page.locator("[data-library-loading] .spinner")).toBeVisible()
+      await expect(page.locator("[data-library-empty]")).toHaveCount(0)
+      await expect(page.locator("[data-library-latest-row]")).toHaveCount(0)
+    } finally {
+      release()
+    }
+    await expect(page.locator("[data-library-loading]")).toHaveCount(0)
+    if (empty) {
+      await expect(page.locator("[data-library-empty]")).toHaveText("Inga träffar.")
+    } else {
+      await expect(page.locator("[data-library-latest-row]").first()).toBeVisible()
+      await expect(page.locator("[data-library-empty]")).toHaveCount(0)
+    }
+  })
+}
