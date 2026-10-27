@@ -1947,7 +1947,7 @@ async function signalLibraryPageReady() {
     const fullPath = route.fullPath
     await nextTick()
     if (mounted.value && !loading.value && route.fullPath === fullPath) {
-        await nuxtApp.callHook("library:page-ready", fullPath)
+        await nuxtApp.callHook("results:page-ready", fullPath)
     }
 }
 

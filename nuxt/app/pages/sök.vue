@@ -1412,6 +1412,16 @@ watch([resultViewport, results], async () => {
 
 const toolkitMounted = ref(false)
 const mobileSearchLayout = ref(false)
+async function signalSearchPageReady() {
+  if (!toolkitMounted.value || primaryLoading.value) return
+  const fullPath = route.fullPath
+  await nextTick()
+  if (toolkitMounted.value && !primaryLoading.value && route.fullPath === fullPath) {
+    await nuxtApp.callHook("results:page-ready", fullPath)
+  }
+}
+watch([primaryLoading, () => route.fullPath], signalSearchPageReady, { flush: "post" })
+
 let searchLayoutQuery: MediaQueryList | null = null
 function updateSearchLayout() {
   mobileSearchLayout.value = searchLayoutQuery?.matches ?? false
@@ -1432,9 +1442,11 @@ onMounted(() => {
   updateSearchLayout()
   searchLayoutQuery.addEventListener("change", updateSearchLayout)
   toolkitMounted.value = true
+  void signalSearchPageReady()
   document.addEventListener("keydown", handlePaginationKeydown)
 })
 onBeforeUnmount(() => {
+  toolkitMounted.value = false
   resultResizeObserver?.disconnect()
   searchLayoutQuery?.removeEventListener("change", updateSearchLayout)
   document.removeEventListener("keydown", handlePaginationKeydown)

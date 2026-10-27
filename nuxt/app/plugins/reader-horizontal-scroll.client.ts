@@ -14,8 +14,8 @@ type PendingReaderNavigation = {
   to: string
 }
 
-type PendingReaderScroll = {
-  library?: boolean
+type PendingPageScroll = {
+  results?: boolean
   initial?: boolean
   navigationId: number
   position: { left: number; top: number }
@@ -25,7 +25,7 @@ type PendingReaderScroll = {
 
 declare module "#app" {
   interface RuntimeNuxtHooks {
-    "library:page-ready": (fullPath: string) => void
+    "results:page-ready": (fullPath: string) => void
     "reader:page-ready": (fullPath: string, successful: boolean) => void
   }
 }
@@ -74,18 +74,18 @@ export default defineNuxtPlugin({
     let defaultScrollBehavior: RouterScrollBehavior | undefined
     let navigationId = 0
     let pendingNavigation: PendingReaderNavigation | null = null
-    let pendingScroll: PendingReaderScroll | null = null
+    let pendingScroll: PendingPageScroll | null = null
     const readyRoutes = new Set<string>()
     let initialReaderPositioned = false
-    let readyLibraryRoute: string | null = null
+    let readyResultsRoute: string | null = null
     // Match the side-by-side reader layout; narrow screens keep user scroll control.
     const initialPosition = () => window.innerWidth >= 1024
       ? { left: 1000, top: 0 }
       : false as const
 
     router.beforeEach((to, from) => {
-      readyLibraryRoute = null
-      if (pendingScroll?.library) {
+      readyResultsRoute = null
+      if (pendingScroll?.results) {
         pendingScroll.resolve(false)
         pendingScroll = null
       }
@@ -110,19 +110,19 @@ export default defineNuxtPlugin({
       }
     })
 
-    const readerScrollBehavior: RouterScrollBehavior = (to, from, savedPosition) => {
+    const pageScrollBehavior: RouterScrollBehavior = (to, from, savedPosition) => {
       navigationId += 1
       pendingScroll?.resolve(false)
       pendingScroll = null
-      if (savedPosition && ["/bibliotek", "/epub"].includes(to.path.replace(/\/$/, ""))) {
+      if (savedPosition && ["/bibliotek", "/epub", "/sok", "/sök", "/s%C3%B6k"].includes(to.path.replace(/\/$/, ""))) {
         readyRoutes.clear()
         pendingNavigation = null
-        // Library mounts before its client-fetched rows. Restoring earlier
+        // Result pages mount before their client-fetched rows. Restoring earlier
         // clamps the browser's saved offset to the short loading page.
-        if (readyLibraryRoute === to.fullPath) return savedPosition
+        if (readyResultsRoute === to.fullPath) return savedPosition
         return new Promise(resolve => {
           pendingScroll = {
-            library: true,
+            results: true,
             navigationId,
             position: { left: savedPosition.left, top: savedPosition.top },
             resolve,
@@ -180,11 +180,11 @@ export default defineNuxtPlugin({
       })
     }
 
-    nuxtApp.hooks.hook("library:page-ready", fullPath => {
+    nuxtApp.hooks.hook("results:page-ready", fullPath => {
       if (router.currentRoute.value.fullPath !== fullPath) return
-      readyLibraryRoute = fullPath
+      readyResultsRoute = fullPath
       const current = pendingScroll
-      if (current?.library && current.navigationId === navigationId && current.to === fullPath) {
+      if (current?.results && current.navigationId === navigationId && current.to === fullPath) {
         pendingScroll = null
         current.resolve(current.position)
       }
@@ -218,7 +218,7 @@ export default defineNuxtPlugin({
     // Register after that hook so this wrapper remains the router's active behavior.
     nuxtApp.hooks.hookOnce("app:created", () => {
       defaultScrollBehavior = router.options.scrollBehavior
-      router.options.scrollBehavior = readerScrollBehavior
+      router.options.scrollBehavior = pageScrollBehavior
     })
   }
 })

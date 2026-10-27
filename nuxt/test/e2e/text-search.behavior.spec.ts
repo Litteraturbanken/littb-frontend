@@ -3593,3 +3593,32 @@ test("author catalogues retain keyboard navigation while selected filters refres
     }
   }
 })
+
+
+for (const [width, delay] of [[1440, 0], [1440, 900], [390, 900]] as const) {
+  test(`Back restores deep Search scroll at ${width}px with ${delay}ms result delay`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 })
+    const path = "/s%C3%B6k?fras=scroll-restoration"
+    await openSearch(page, path)
+    const hit = page.locator("#results .match a").nth(40)
+    await hit.scrollIntoViewIfNeeded()
+    const savedY = await page.evaluate(() => scrollY)
+    expect(savedY).toBeGreaterThan(1000)
+    await hit.click()
+    await expect(page.locator(".reader_main")).toBeVisible()
+    await page.route("**/api/v2/text-search/results", async route => {
+      await new Promise(resolve => setTimeout(resolve, delay))
+      await route.continue()
+    })
+    for (let cycle = 0; cycle < 2; cycle++) {
+      await page.goBack()
+      await expect(page).toHaveURL(path)
+      await expect(hit).toBeAttached()
+      await expect.poll(() => page.evaluate(() => scrollY)).toBeCloseTo(savedY, 0)
+      if (cycle === 0) {
+        await page.goForward()
+        await expect(page.locator(".reader_main")).toBeVisible()
+      }
+    }
+  })
+}
