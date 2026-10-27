@@ -560,6 +560,11 @@
     overflow: visible;
 }
 
+// Unavailable primary categories must not look selected in the narrowing menu.
+[data-library-advanced-panel] [data-library-narrowing] .multiselect__option--disabled {
+    background: transparent !important;
+}
+
 [data-library-advanced-panel] [data-library-narrowing] .search-multiselect__input-row {
     padding-top: 4px;
     padding-bottom: 6px;
