@@ -2430,7 +2430,7 @@ watch(readerRequestIdentity, () => {
                 @click="queueReaderLink($event, draftNextPageName)"
               ><span class="submit btn navicon navicon-visual right ml-[2px]" aria-hidden="true"><i class="fa fa-angle-right right ml-[2px]" /></span>{{ " " }}</a>
 
-              <span class="expl small ml-1 mt-[14px] inline-block w-[170px] text-[0.7em]" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
+              <span class="expl small ml-1 mt-[14px] inline-block w-[170px] text-xs" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
             </nav>
 
             <div class="w-11/12 mb-5 block">

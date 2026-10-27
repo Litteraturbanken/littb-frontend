@@ -1488,7 +1488,7 @@ useHead(() => ({
             >av {{ page.endPageName }}</template></span></span></span>
             <NuxtLink v-if="page.previousIndex !== null" custom :to="href(page.previousIndex)"><a class="mr-[2px] sc -my-[3px] inline-block py-[3px]" rel="prev" :href="href(page.previousIndex)" aria-label="Föregående sida" @click="navigateLink($event, href(page.previousIndex))"><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span></a></NuxtLink>{{ " " }}
             <NuxtLink v-if="page.nextIndex !== null" custom :to="href(page.nextIndex)"><a class="mr-[2px] sc -my-[3px] inline-block py-[3px]" rel="next" :href="href(page.nextIndex)" aria-label="Nästa sida" @click="navigateLink($event, href(page.nextIndex))"><span class="submit btn navicon navicon-visual right ml-[2px]" aria-hidden="true"><i class="fa fa-angle-right right ml-[2px]" /></span></a></NuxtLink>
-            <span class="expl small ml-1 mt-[14px] inline-block w-[170px] text-[0.7em]" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
+            <span class="expl small ml-1 mt-[14px] inline-block w-[170px] text-xs" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
           </nav>
           <div v-if="page.pageCount !== null && page.pageIndexes === null" class="w-11/12 mb-5 block">
             <span class="rzslider mt-3 slider-large" :class="{ active: sliderDraft !== null }">
