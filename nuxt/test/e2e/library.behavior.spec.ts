@@ -3313,3 +3313,64 @@ for (const empty of [false, true]) {
     }
   })
 }
+
+
+for (const [width, delay] of [[1440, 0], [1440, 900], [390, 900]] as const) {
+  test(`Back restores deep Library scroll at ${width}px with ${delay}ms result delay`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 })
+    const path = "/bibliotek?filter=scroll-restoration"
+    await page.goto(path, { waitUntil: "networkidle" })
+    const books = page.locator('#mainview a[href*="/titlar/RodaRummet/"]')
+    await expect(books).toHaveCount(80)
+    await page.route("**/api/v2/library/search", async route => {
+      await new Promise(resolve => setTimeout(resolve, delay))
+      await route.continue()
+    })
+    for (const index of [50, 70]) {
+      await books.nth(index).scrollIntoViewIfNeeded()
+      const savedY = await page.evaluate(() => scrollY)
+      expect(savedY).toBeGreaterThan(1000)
+      await books.nth(index).click()
+      await expect(page.locator(".reader_main")).toBeVisible()
+      await page.goBack()
+      await expect(page).toHaveURL(path)
+      await expect(books).toHaveCount(80)
+      await expect.poll(() => page.evaluate(() => scrollY)).toBeCloseTo(savedY, 0)
+      await page.goForward()
+      await expect(page.locator(".reader_main")).toBeVisible()
+      await page.goBack()
+      await expect(books).toHaveCount(80)
+      await expect.poll(() => page.evaluate(() => scrollY)).toBeCloseTo(savedY, 0)
+    }
+  })
+}
+
+
+test("leaving a pending Library history restore cannot scroll the next page", async ({ page }) => {
+  const path = "/bibliotek?filter=scroll-restoration"
+  await page.goto(path, { waitUntil: "networkidle" })
+  const book = page.locator('#mainview a[href*="/titlar/RodaRummet/"]').nth(60)
+  await book.scrollIntoViewIfNeeded()
+  await book.click()
+  await expect(page.locator(".reader_main")).toBeVisible()
+  let release!: () => void
+  const held = new Promise<void>(resolve => { release = resolve })
+  let intercepted = false
+  await page.route("**/api/v2/library/search", async route => {
+    intercepted = true
+    await held
+    await route.continue().catch(() => {})
+  })
+  try {
+    await page.goBack()
+    await expect.poll(() => intercepted).toBe(true)
+    await page.locator(".mainnav").getByRole("link", { name: "Presentationer", exact: true }).click()
+    await expect(page).toHaveURL("/presentationer")
+    release()
+    await page.unrouteAll({ behavior: "wait" })
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0)
+    await expect(page).toHaveURL("/presentationer")
+  } finally {
+    release()
+  }
+})

@@ -15,6 +15,7 @@ type PendingReaderNavigation = {
 }
 
 type PendingReaderScroll = {
+  library?: boolean
   initial?: boolean
   navigationId: number
   position: { left: number; top: number }
@@ -24,6 +25,7 @@ type PendingReaderScroll = {
 
 declare module "#app" {
   interface RuntimeNuxtHooks {
+    "library:page-ready": (fullPath: string) => void
     "reader:page-ready": (fullPath: string, successful: boolean) => void
   }
 }
@@ -75,12 +77,18 @@ export default defineNuxtPlugin({
     let pendingScroll: PendingReaderScroll | null = null
     const readyRoutes = new Set<string>()
     let initialReaderPositioned = false
+    let readyLibraryRoute: string | null = null
     // Match the side-by-side reader layout; narrow screens keep user scroll control.
     const initialPosition = () => window.innerWidth >= 1024
       ? { left: 1000, top: 0 }
       : false as const
 
     router.beforeEach((to, from) => {
+      readyLibraryRoute = null
+      if (pendingScroll?.library) {
+        pendingScroll.resolve(false)
+        pendingScroll = null
+      }
       const readerPageNavigation = isReaderPageNavigation(to, from)
       if (readerPageNavigation) readyRoutes.delete(to.fullPath)
       pendingNavigation = readerPageNavigation
@@ -106,6 +114,22 @@ export default defineNuxtPlugin({
       navigationId += 1
       pendingScroll?.resolve(false)
       pendingScroll = null
+      if (savedPosition && ["/bibliotek", "/epub"].includes(to.path.replace(/\/$/, ""))) {
+        readyRoutes.clear()
+        pendingNavigation = null
+        // Library mounts before its client-fetched rows. Restoring earlier
+        // clamps the browser's saved offset to the short loading page.
+        if (readyLibraryRoute === to.fullPath) return savedPosition
+        return new Promise(resolve => {
+          pendingScroll = {
+            library: true,
+            navigationId,
+            position: { left: savedPosition.left, top: savedPosition.top },
+            resolve,
+            to: to.fullPath
+          }
+        })
+      }
       const enteringReader = readerRoute(to) !== null
         && readerRoute(to)?.identity !== readerRoute(from)?.identity
         && !savedPosition
@@ -155,6 +179,16 @@ export default defineNuxtPlugin({
         }
       })
     }
+
+    nuxtApp.hooks.hook("library:page-ready", fullPath => {
+      if (router.currentRoute.value.fullPath !== fullPath) return
+      readyLibraryRoute = fullPath
+      const current = pendingScroll
+      if (current?.library && current.navigationId === navigationId && current.to === fullPath) {
+        pendingScroll = null
+        current.resolve(current.position)
+      }
+    })
 
     nuxtApp.hooks.hook("reader:page-ready", (fullPath, successful) => {
       const current = pendingScroll

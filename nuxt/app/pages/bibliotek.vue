@@ -148,6 +148,7 @@ const partSorts: Array<{ key: PartSortKey; label: string }> = [
 
 const route = useRoute()
 const router = useRouter()
+const nuxtApp = useNuxtApp()
 const { rememberLibraryHref } = useLibraryNavigation()
 
 watch(
@@ -1941,6 +1942,17 @@ useHead(() => ({
     }
 }))
 
+async function signalLibraryPageReady() {
+    if (!mounted.value || loading.value) return
+    const fullPath = route.fullPath
+    await nextTick()
+    if (mounted.value && !loading.value && route.fullPath === fullPath) {
+        await nuxtApp.callHook("library:page-ready", fullPath)
+    }
+}
+
+watch([loading, () => route.fullPath], signalLibraryPageReady, { flush: "post" })
+
 async function loadInitialClientState(): Promise<void> {
     const version = ++requestVersion
     const state = requestState(routeState(route.path, route.query))
@@ -1956,6 +1968,7 @@ onMounted(() => {
     if (currentMode.value === "authors" && route.query.sida !== undefined) {
         void router.replace({ path: route.path, query: queryFor(currentState()) })
     }
+    void signalLibraryPageReady()
     const initialFailed = initialPageData.response.failed
     const state = currentState()
     if (!initialFailed)
@@ -1965,6 +1978,7 @@ onMounted(() => {
     }
 })
 onUnmounted(() => {
+    mounted.value = false
     disposeLibraryRequest()
     optionsAsyncData.clear()
     initialAsyncData.clear()

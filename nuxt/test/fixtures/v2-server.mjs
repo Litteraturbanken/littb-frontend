@@ -1782,6 +1782,14 @@ const libraryAllPaginationItems = [
 ]
 
 function libraryAllResponse(query, page) {
+  if (query === "scroll-restoration") return {
+    mode: "all", total_hits: 80,
+    items: Array.from({ length: 80 }, (_, index) => libraryAllText({
+      title: `Röda rummet ${index + 1}`, year: "1879",
+      author: libraryAuthors.strindberg, titleId: "RodaRummet"
+    }))
+  }
+
   if (query === "inga") return { mode: "all", total_hits: 0, items: [] }
   if (query === "Röda rummet") {
     return {
