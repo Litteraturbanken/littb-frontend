@@ -438,97 +438,59 @@ test('Virtual author boundaries keep the latest rapid key active across filterin
     expect(await persistentBoundary(true)).toEqual({ valid: true })
 })
 
-test('All title options keep virtual keyboard boundaries mounted through selection and reopening', async ({ page }) => {
+test('Title options stay bounded through search selection and reopening', async ({ page }) => {
+    const titleRequests = []
+    page.on('request', request => {
+        if (request.url().includes('/text-search/options') && request.method() === 'POST') {
+            titleRequests.push(request.postDataJSON())
+        }
+    })
     await page.goto('/sök?avancerad')
     await page.locator('[data-search-mounted="true"]').waitFor()
     const menu = page.locator('.title_select')
     const input = menu.getByRole('combobox')
-    const active = () => input.evaluate(element => {
-        const option = document.getElementById(element.getAttribute('aria-activedescendant'))
-        const list = document.getElementById(element.getAttribute('aria-controls'))
-        return {
-            mounted: !!option && !!list?.contains(option), text: option?.textContent,
-            position: Number(option?.getAttribute('aria-posinset')),
-            size: Number(option?.getAttribute('aria-setsize'))
-        }
-    })
-    const boundary = async last => {
-        const state = await active()
-        return state.mounted && state.size > 10000 && state.position === (last ? state.size : 1)
-    }
-    const persist = last => input.evaluate(async (element, last) => {
-        for (let frame = 0; frame < 40; frame++) {
-            await new Promise(resolve => requestAnimationFrame(resolve))
-            const option = document.getElementById(element.getAttribute('aria-activedescendant'))
-            const list = document.getElementById(element.getAttribute('aria-controls'))
-            const position = Number(option?.getAttribute('aria-posinset'))
-            const size = Number(option?.getAttribute('aria-setsize'))
-            if (!option || !list?.contains(option) || size <= 10000 || position !== (last ? size : 1)) {
-                return { valid: false, frame, position, size, id: element.getAttribute('aria-activedescendant') }
-            }
-        }
-        return { valid: true }
-    }, last)
     await input.click()
-    const before = page.url()
+    await expect(menu.locator('.title_limit_notice')).toHaveText('Skriv mer för att begränsa träffarna.')
+    await expect(menu.getByText(/^Visa alla /)).toHaveCount(0)
+    expect(await menu.getByRole('option').count()).toBeLessThanOrEqual(31)
+    const responseFor = query => page.waitForResponse(response => response.url().includes('/text-search/options')
+        && response.request().method() === 'POST' && response.ok()
+        && response.request().postDataJSON()?.title_filter === query
+        && response.request().postDataJSON()?.title_limit === 30)
+    const firstResponse = responseFor('dikter')
+    await input.fill('dikter')
+    const firstPayload = await (await firstResponse).json()
+    expect(firstPayload.title_options.length).toBeLessThanOrEqual(30)
+    await expect.poll(() => titleRequests.some(body => body.title_filter === 'dikter' && body.title_limit === 30)).toBe(true)
+    await expect(menu.locator('.spinner')).toBeHidden()
+    const last = menu.locator('[role="option"]:not([aria-disabled="true"])').last()
+    await expect(last).toBeVisible()
+    const expectedChoice = [...new Map(firstPayload.title_options.map(option => [option.work_id, option])).values()].at(-1)
+    await expect(last).toHaveText(expectedChoice.title)
+    const choice = expectedChoice.title
     await input.press('End')
-    await expect.poll(async () => (await active()).text).toMatch(/^Visa alla \d+ titlar$/)
-    await expect(menu.getByRole('option').last()).toHaveText((await active()).text)
-    await input.press('ArrowUp')
-    await expect.poll(async () => {
-        const state = await active()
-        return state.mounted && !/^Visa alla /.test(state.text ?? '')
-    }).toBe(true)
-    await input.press('ArrowDown')
-    await expect.poll(async () => (await active()).text).toMatch(/^Visa alla \d+ titlar$/)
-    const allResponse = page.waitForResponse(response => response.url().includes('/text-search/options')
-        && response.request().method() === 'POST'
-        && response.request().postDataJSON()?.title_limit === 'all' && response.ok(), { timeout: 30000 })
-    await input.press('Enter')
-    const allPayload = await (await allResponse).json()
-    const allChoices = [...new Map(allPayload.title_options.map(option => [option.work_id, option])).values()]
-    await expect.poll(() => menu.locator('[aria-setsize]').first().getAttribute('aria-setsize').then(Number)).toBeGreaterThan(10000)
-    await expect(input).toHaveAttribute('aria-expanded', 'true')
-    await expect(input).toHaveValue('')
-    await expect(menu.locator('.select2-selection__choice')).toHaveCount(0)
-    expect(page.url()).toBe(before)
-    expect(await menu.getByRole('option').count()).toBeLessThan(200)
-    for (const last of [true, false, true]) {
-        await input.press(last ? 'End' : 'Home')
-        const missingFrames = await input.evaluate(async element => {
-            const missing = []
-            for (let frame = 0; frame < 40; frame++) {
-                await new Promise(resolve => requestAnimationFrame(resolve))
-                const option = document.getElementById(element.getAttribute('aria-activedescendant'))
-                const list = document.getElementById(element.getAttribute('aria-controls'))
-                if (!option || !list?.contains(option)) missing.push(frame)
-            }
-            return missing
-        })
-        expect(missingFrames).toEqual([])
-        await expect.poll(() => boundary(last)).toBe(true)
-        expect(await persist(last)).toEqual({ valid: true })
-        expect(await menu.getByRole('option').count()).toBeLessThan(200)
-    }
-    await input.press('ArrowUp')
-    await expect.poll(async () => {
-        const state = await active()
-        return state.mounted && state.position === state.size - 1
-    }).toBe(true)
-    const selected = await active()
-    const choice = selected.text
-    const expectedChoice = allChoices[selected.position - 1]
-    expect(expectedChoice.title).toBe(choice)
+    await expect.poll(() => input.evaluate(element => document.getElementById(element.getAttribute('aria-activedescendant'))?.textContent?.trim())).toBe(choice)
     await input.press('Enter')
     await expect(menu.locator('.select2-selection__choice')).toHaveCount(1)
     await expect(menu.locator('.select2-selection__choice')).toContainText(choice)
     await expect.poll(() => new URL(page.url()).searchParams.get('titlar')).toBe(expectedChoice.work_id)
-    await expect(input).toHaveValue('')
+    const selected = new URL(page.url()).searchParams.get('titlar')
     await input.press('Escape')
     await expect(input).toHaveAttribute('aria-expanded', 'false')
     await input.click()
     await expect(input).toHaveAttribute('aria-expanded', 'true')
-    await input.press('Home')
-    await expect.poll(() => boundary(false)).toBe(true)
-    expect(await persist(false)).toEqual({ valid: true })
+    await expect(menu.locator('.select2-selection__choice')).toContainText(choice)
+    const secondResponse = responseFor('lager')
+    await input.fill('lager')
+    const secondPayload = await (await secondResponse).json()
+    expect(secondPayload.title_options.filter(option => option.work_id !== selected).length).toBeLessThanOrEqual(30)
+    await expect.poll(() => titleRequests.some(body => body.title_filter === 'lager' && body.title_limit === 30)).toBe(true)
+    await expect(menu.locator('.spinner')).toBeHidden()
+    await expect(menu.locator('.select2-selection__choice')).toContainText(choice)
+    expect(new URL(page.url()).searchParams.get('titlar')).toBe(selected)
+    await page.reload()
+    await expect(menu.locator('.select2-selection__choice')).toContainText(choice)
+    expect(new URL(page.url()).searchParams.get('titlar')).toBe(selected)
+    expect(titleRequests.length).toBeGreaterThan(0)
+    expect(titleRequests.every(body => body.title_limit !== 'all')).toBe(true)
 })

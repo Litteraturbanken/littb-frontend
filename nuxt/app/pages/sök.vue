@@ -766,13 +766,11 @@ const titleRequestOwner = createTextSearchRequestOwner()
 let titleTimer: ReturnType<typeof setTimeout> | null = null
 const titleLoading = ref(false)
 const titleOptionsFailed = ref(false)
-const titleOptionsExpanded = ref(false)
 const titleFilterText = ref("")
 let failedTitleOptionsRequest: Readonly<{
   titleFilter: string
-  titleLimit: 30 | "all"
 }> | null = null
-async function loadTitleOptions(titleFilter: string, titleLimit: 30 | "all" = 30) {
+async function loadTitleOptions(titleFilter: string) {
   const requestedState = state.value
   const identity = textSearchOptionsRequestIdentity(buildTextSearchOptionsRequest(requestedState))
   const request = titleRequestOwner.start(identity)
@@ -783,7 +781,7 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | "all" = 30
     const body = buildTextSearchOptionsRequest(requestedState, {
       titleFilter,
       selectedWorkIds: requestedState.workIds,
-      titleLimit,
+      titleLimit: 30,
       includeStaticOptions: false
     })
     const requestIdentity = textSearchOptionsRequestIdentity(body)
@@ -801,17 +799,16 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | "all" = 30
         titles: optionsView(accepted).titles,
         titleTotal: accepted.title_total
       }
-      titleOptionsExpanded.value = titleLimit === "all"
       failedTitleOptionsRequest = null
     } else if (titleRequestOwner.isCurrent(request, optionsIdentity.value)) {
       titleOptionsFailed.value = true
-      failedTitleOptionsRequest = { titleFilter, titleLimit }
+      failedTitleOptionsRequest = { titleFilter }
     }
   } catch (error) {
     if (!(error instanceof DOMException && error.name === "AbortError")) {
       if (titleRequestOwner.isCurrent(request, optionsIdentity.value)) {
         titleOptionsFailed.value = true
-        failedTitleOptionsRequest = { titleFilter, titleLimit }
+        failedTitleOptionsRequest = { titleFilter }
       }
     }
   } finally {
@@ -823,7 +820,6 @@ function queueTitleOptions(titleFilter: string) {
   if (titleFilterText.value !== titleFilter) {
     titleRequestOwner.cancel()
     titleLoading.value = false
-    titleOptionsExpanded.value = false
     titleOptionsFailed.value = false
     failedTitleOptionsRequest = null
   }
@@ -835,16 +831,10 @@ function queueTitleOptions(titleFilter: string) {
   }, 250)
 }
 
-function showAllTitleOptions() {
-  if (titleTimer) clearTimeout(titleTimer)
-  titleTimer = null
-  void loadTitleOptions(titleFilterText.value, "all")
-}
-
 function retryTitleOptions() {
   if (!failedTitleOptionsRequest) return
-  const { titleFilter, titleLimit } = failedTitleOptionsRequest
-  void loadTitleOptions(titleFilter, titleLimit)
+  const { titleFilter } = failedTitleOptionsRequest
+  void loadTitleOptions(titleFilter)
 }
 
 function cancelTitleOptions() {
@@ -853,7 +843,6 @@ function cancelTitleOptions() {
   titleTimer = null
   titleLoading.value = false
   titleOptionsFailed.value = false
-  titleOptionsExpanded.value = false
   titleFilterText.value = ""
   titleOptionsOverride.value = null
   failedTitleOptionsRequest = null
@@ -1064,7 +1053,7 @@ watch(
       }
       titleRequestOwner.cancel()
       titleLoading.value = false
-      if (titleFilterText.value && !titleOptionsExpanded.value) queueTitleOptions(titleFilterText.value)
+      if (titleFilterText.value) queueTitleOptions(titleFilterText.value)
       return
     }
     if (identity !== previousIdentity || !advanced) cancelTitleOptions()
@@ -1669,21 +1658,16 @@ v-for="item in [
               hide-selected
               preserve-search
               :loading="titleLoading"
-              :last-action-label="!titleOptionsFailed && !titleOptionsExpanded && (options?.titleTotal ?? 0) > 30
-                ? (titleFilterText ? `Visa alla ${options?.titleTotal} matchande titlar` : `Visa alla ${options?.titleTotal} titlar`) : undefined"
-              @last-action="showAllTitleOptions"
               @query="queueTitleOptions"
               @update:model-value="patchFilters({ workIds: $event })"
             >
               <template #beforeList>
                 <li
-                  v-if="!titleOptionsExpanded && (options?.titleTotal ?? 0) > 30"
+                  v-if="(options?.titleTotal ?? 0) > 30"
                   class="title_limit_notice select2-results__option"
                   role="option"
                   aria-disabled="true"
-                >{{ titleFilterText
-                  ? "Visar de första 30 matchande titlarna"
-                  : "Visar de första 30 titlarna" }}</li>
+                >Skriv mer för att begränsa träffarna.</li>
               </template>
               <template #afterList>
                 <li v-if="titleOptionsFailed" class="title_options_error" role="alert">

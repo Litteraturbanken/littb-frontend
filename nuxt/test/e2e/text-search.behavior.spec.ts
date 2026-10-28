@@ -3005,64 +3005,37 @@ test("static options are lazy and cached while title search is exact 250 ms late
   await expect(page.getByRole("option", { name: "Röda rummet" })).toHaveCount(0)
 })
 
-test("filtered title disclosure loads the expanded set and retries a local failure", async ({
-  page,
-  request
-}) => {
+test("overflow title search stays bounded and invites narrowing", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=overflow&avancerad=1")
   await request.delete(`${fixture}/_text_search/requests/options`)
-  await page.locator(".title_select input.select2-search__field").fill("doktor")
-  await expect(page.getByRole("button", { name: "Visa alla 43 matchande titlar" }))
-    .toBeVisible()
-  await request.put(`${fixture}/_text_search/failures`, {
-    data: { operation: "options" }
-  })
-
-  await page.getByRole("button", {
-    name: "Visa alla 43 matchande titlar"
-  }).click()
+  const input = page.locator(".title_select input.select2-search__field")
+  await input.fill("doktor")
+  await expect(page.locator(".title_limit_notice")).toHaveText(
+    "Skriv mer för att begränsa träffarna."
+  )
   await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
-    .toMatchObject({
-      title_filter: "doktor",
-      title_limit: "all",
-      include_static_options: false
-    })
-  const failure = page.getByRole("alert")
-  await expect(failure).toContainText("Fler titlar kunde inte hämtas")
-
-  await request.delete(`${fixture}/_text_search/failures/options`)
-  await failure.getByRole("button", { name: "Försök igen" }).click()
-  await expect.poll(async () => (await requests(request, "options")).length).toBe(3)
-  await expect(page.getByRole("option", { name: "Doktortitel 41" })).toBeVisible()
-})
-
-test("filtered title disclosure stops after every distinct option is loaded", async ({
-  page
-}) => {
-  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
-  await page.locator(".title_select input.select2-search__field").fill("doktor")
-  const showAll = page.getByRole("button", {
-    name: "Visa alla 43 matchande titlar"
-  })
-  await expect(showAll).toBeVisible()
-  await showAll.click()
-  await expect(page.locator(".title_select [role=option]")).toHaveCount(41)
-  await expect(showAll).toHaveCount(0)
-  await expect(page.getByRole("option", { name: "Doktortitel 41" })).toBeVisible()
+    .toMatchObject({ title_filter: "doktor", title_limit: 30 })
+  await expect(page.locator('.title_select [role="option"]:not([aria-disabled="true"])')).toHaveCount(30)
+  await expect(page.getByText(/^Visa alla /)).toHaveCount(0)
+  await input.press("End")
+  const lastTitle = await page.locator('.title_select [role="option"]:not([aria-disabled="true"])').last().textContent()
+  await expect.poll(() => input.evaluate(element => document.getElementById(element.getAttribute("aria-activedescendant") ?? "")?.textContent)).toBe(lastTitle)
+  await input.press("Enter")
+  await expect(page.locator(".title_select .select2-selection__choice")).toHaveCount(1)
+  expect((await requests(request, "options")).every(item => item.body.title_limit !== "all")).toBe(true)
 })
 
 test("closing advanced search clears the transient title filter notice", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
   await page.locator(".title_select input.select2-search__field").fill("doktor")
-  await expect(page.getByRole("button", { name: "Visa alla 43 matchande titlar" }))
-    .toBeVisible()
+  await expect(page.locator(".title_limit_notice")).toBeVisible()
 
   await page.locator("[data-search-advanced]").click()
   await expect(page).not.toHaveURL(/avancerad(?:&|$)/u)
   await page.locator("[data-search-advanced]").click()
   await expect(page).toHaveURL(/avancerad(?:&|$)/u)
 
-  await expect(page.getByText(/matchande titlarna/u)).toHaveCount(0)
+  await expect(page.locator(".title_select input")).toHaveValue("")
   await page.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
   await expect(page.getByRole("option", { name: "Gösta Berlings saga" })).toBeVisible()
   await expect(page.getByRole("option", { name: "Doktortitel 1", exact: true })).toHaveCount(0)
@@ -3079,36 +3052,22 @@ test("special title catalogs still resolve the selected route-owned title", asyn
   await expect(page.getByRole("button", { name: "Ta bort Röda rummet" })).toBeVisible()
 })
 
-test("changing the title filter immediately invalidates a delayed expansion", async ({
-  page,
-  request
-}) => {
+test("changing title filter invalidates a delayed bounded request", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
-  const input = page.locator(".title_select input.select2-search__field")
-  await input.fill("overflow")
-  const showAll = page.getByRole("button", {
-    name: "Visa alla 731 matchande titlar"
-  })
-  await expect(showAll).toBeVisible()
   await request.delete(`${fixture}/_text_search/requests/options`)
   await request.put(`${fixture}/_text_search/delays`, {
     data: { operation: "options", selector: "overflow", delay: 1000 }
   })
-
-  await showAll.click()
+  const input = page.locator(".title_select input.select2-search__field")
+  await input.fill("overflow")
   await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
-    .toMatchObject({ title_filter: "overflow", title_limit: "all" })
-  await expect(page.locator(".title_select .spinner")).toBeVisible()
-
+    .toMatchObject({ title_filter: "overflow", title_limit: 30 })
   await input.fill("doktor")
-  await expect(page.locator(".title_select .spinner"))
-    .toHaveClass(/multiselect__loading-leave-/, { timeout: 150 })
   await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
     .toMatchObject({ title_filter: "doktor", title_limit: 30 })
   await expect(page.getByRole("option", { name: "Doktortitel 1", exact: true })).toBeVisible()
   await page.waitForTimeout(1100)
-  await expect(page.getByRole("option", { name: "Överflödestitel 1", exact: true }))
-    .toHaveCount(0)
+  await expect(page.getByRole("option", { name: "Överflödestitel 1", exact: true })).toHaveCount(0)
 })
 
 test("title option retry repeats the exact failed filter and limit", async ({

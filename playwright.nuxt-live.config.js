@@ -40,9 +40,9 @@ module.exports = defineConfig({
             use: { browserName: "chromium", viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }
         },
         {
-            name: "nuxt-live-webkit-title-virtual",
+            name: "nuxt-live-webkit-title-bounded",
             testMatch: "multiselect-live.spec.js",
-            grep: /All title options keep virtual keyboard boundaries/,
+            grep: /Title options stay bounded/,
             use: { ...devices["Desktop Safari"] }
         }
     ]
