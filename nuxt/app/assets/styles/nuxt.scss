@@ -964,21 +964,6 @@
         .multiselect:not(.multiselect--active):has(input.search-multiselect__input-row)::after {
         z-index: 2;
     }
-
-    // Retain the original lower frame without a second interactive input.
-    [data-library-advanced-panel] .filter_select:not([data-library-about-authors])
-        .multiselect:not(.multiselect--active):has(input.search-multiselect__input-row)
-        .multiselect__tags::before {
-        content: "";
-        position: absolute;
-        top: 1.5px;
-        left: 0;
-        width: 350px;
-        height: 31.1875px;
-        border: 1px solid #999;
-        background: white;
-        pointer-events: none;
-    }
 }
 
 // Preserve the desktop input/chip row while bounding long selections to the

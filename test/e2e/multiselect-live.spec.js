@@ -73,6 +73,29 @@ for (const { route, selector, name } of cases) {
         if (selector.startsWith('[data-library-')) {
             await expect(input).toBeFocused()
             await expect(menu.locator('.multiselect')).toHaveCSS('outline-style', 'none')
+            // The real input is the only painted field frame. A legacy ::before
+            // on .multiselect__tags used to paint another full-size border 1.5px
+            // lower, visible beneath/right of the input even after outside blur.
+            const fieldFrames = () => menu.evaluate(root => {
+                const input = root.querySelector('input')
+                const field = input.getBoundingClientRect()
+                return [...root.querySelectorAll('.multiselect, .multiselect__tags')].flatMap(element => {
+                    const style = getComputedStyle(element)
+                    const frames = []
+                    if (parseFloat(style.borderTopWidth) > 0 || style.boxShadow !== 'none') frames.push(element.className)
+                    for (const pseudo of ['::before', '::after']) {
+                        const s = getComputedStyle(element, pseudo)
+                        if (s.content !== 'none' && s.display !== 'none'
+                            && parseFloat(s.width) >= field.width - 2
+                            && parseFloat(s.height) >= field.height - 2
+                            && (parseFloat(s.borderTopWidth) > 0 || s.boxShadow !== 'none')) {
+                            frames.push(`${element.className}${pseudo}`)
+                        }
+                    }
+                    return frames
+                })
+            })
+            expect(await fieldFrames()).toEqual([])
             await expect(input).toHaveCSS('border-top-width', '1px')
             await expect(input).toHaveCSS('border-top-color', 'rgb(122, 20, 0)')
             if (name === 'library keywords') {
@@ -89,7 +112,13 @@ for (const { route, selector, name } of cases) {
                 })
             }
             await clickOutside(page)
-            await expect(input).toHaveCSS('border-top-color', 'rgb(153, 153, 153)')
+            // WebKit retains input focus after a click on non-focusable page
+            // background. Its single keyboard-focus border remains valid.
+            await expect.poll(() => input.evaluate(element => {
+                const focused = element.matches(':focus-visible')
+                return getComputedStyle(element).borderTopColor === (focused ? 'rgb(122, 20, 0)' : 'rgb(153, 153, 153)')
+            })).toBe(true)
+            expect(await fieldFrames()).toEqual([])
         }
         await input.click()
         await expect(input).toHaveAttribute('aria-expanded', 'true')
