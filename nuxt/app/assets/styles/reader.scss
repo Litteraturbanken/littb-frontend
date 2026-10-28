@@ -324,6 +324,10 @@
     }
 
     .reader-facsimile-controls {
+        // Scans create stacking contexts when rotated. Keep the controls above
+        // both the scan and its OCR overlay (10), below modal/focus controls.
+        position: relative;
+        z-index: 20;
         text-align: right;
 
         h2 {
