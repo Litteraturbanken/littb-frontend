@@ -356,15 +356,86 @@ test('Latest book titles expand canonical links and restore them after reload', 
         const url = new URL(link.href)
         return url.origin === location.origin && !url.pathname.startsWith('//')
     }))).toBe(true)
-    expect(new URL(page.url()).searchParams.get('title')).toBeTruthy()
+    const title = new URL(page.url()).searchParams.get('title')
+    const titleAuthor = new URL(page.url()).searchParams.get('title_author')
+    expect(title).toBeTruthy()
+    expect(titleAuthor).toBeTruthy()
     expect(new URL(page.url()).searchParams.getAll('keep')).toEqual(['first', 'second'])
     await page.reload()
     await page.locator('[data-library-mounted="true"]').waitFor()
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
     await expect(actions).toBeVisible()
+    expect(new URL(page.url()).searchParams.get('title')).toBe(title)
+    expect(new URL(page.url()).searchParams.get('title_author')).toBe(titleAuthor)
     await toggle.press('Space')
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
     await expect(actions).toBeHidden()
     expect(new URL(page.url()).searchParams.has('title')).toBe(false)
     expect(new URL(page.url()).searchParams.get('visa')).toBe('latest')
+})
+
+test('Virtual author boundaries keep the latest rapid key active across filtering and reopening', async ({ page }) => {
+    await page.goto('/sök?avancerad')
+    await page.locator('[data-search-mounted="true"]').waitFor()
+    const input = page.locator('.author_select').getByRole('combobox')
+    await input.click()
+    await expect(input).toHaveAttribute('aria-expanded', 'true')
+    const boundary = last => input.evaluate((element, last) => {
+        const active = document.getElementById(element.getAttribute('aria-activedescendant'))
+        if (!active) return false
+        const position = Number(active.getAttribute('aria-posinset'))
+        const size = Number(active.getAttribute('aria-setsize'))
+        return size > 0 && position === (last ? size : 1)
+    }, last)
+    const persistentBoundary = last => input.evaluate(async (element, last) => {
+        // Observe beyond the overlapping scroll/registration frames: reaching
+        // the right row briefly must not leave aria-activedescendant dangling.
+        for (let frame = 0; frame < 24; frame++) {
+            await new Promise(resolve => requestAnimationFrame(resolve))
+            const active = document.getElementById(element.getAttribute('aria-activedescendant'))
+            const position = active?.getAttribute('aria-posinset')
+            const size = active?.getAttribute('aria-setsize')
+            if (!active || Number(position) !== (last ? Number(size) : 1)) {
+                return { valid: false, frame, id: element.getAttribute('aria-activedescendant'), position, size }
+            }
+        }
+        return { valid: true }
+    }, last)
+    await expect.poll(() => input.evaluate(element => Number(document.getElementById(element.getAttribute('aria-controls'))?.querySelector('[role="option"]')?.getAttribute('aria-setsize')))).toBeGreaterThan(500)
+    for (const keys of [['Home', 'End'], ['End', 'Home'], ['Home', 'End']]) {
+        // Deliver both keys in one browser turn to deterministically overlap
+        // the adapter's async boundary requests, as a fast keyboard user can.
+        await input.evaluate((element, keys) => {
+            for (const key of keys) element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+        }, keys)
+        const last = keys.at(-1) === 'End'
+        await expect.poll(() => boundary(last)).toBe(true)
+        expect(await persistentBoundary(last)).toEqual({ valid: true })
+    }
+    await input.press('ArrowUp')
+    await expect.poll(() => input.evaluate(element => {
+        const active = document.getElementById(element.getAttribute('aria-activedescendant'))
+        return Number(active?.getAttribute('aria-posinset')) === Number(active?.getAttribute('aria-setsize')) - 1
+    })).toBe(true)
+    await input.press('ArrowDown')
+    await expect.poll(() => boundary(true)).toBe(true)
+    await input.press('End')
+    await input.fill('Lagerlöf')
+    await expect(page.locator('.author_select [role="option"]').first()).toContainText(/Lagerlöf/i)
+    await input.press('Home')
+    await expect.poll(() => boundary(false)).toBe(true)
+    expect(await persistentBoundary(false)).toEqual({ valid: true })
+    await input.fill('')
+    await input.press('End')
+    await input.press('Escape')
+    await expect(input).toHaveAttribute('aria-expanded', 'false')
+    await input.click()
+    await input.press('Home')
+    await expect.poll(() => boundary(false)).toBe(true)
+    expect(await persistentBoundary(false)).toEqual({ valid: true })
+    await input.press('Enter')
+    await expect(page.locator('.author_select .select2-selection__choice')).toHaveCount(1)
+    await input.press('End')
+    await expect.poll(() => boundary(true)).toBe(true)
+    expect(await persistentBoundary(true)).toEqual({ valid: true })
 })

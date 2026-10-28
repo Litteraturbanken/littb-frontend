@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Headless UI Vue 1.7.23 declares a virtual prop but hardcodes its internal
 // virtual context to null. Keep this adapter until native support is enabled.
-import { computed, nextTick, ref } from "vue"
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue"
 import { ComboboxOption } from "@headlessui/vue"
 import { defaultRangeExtractor, useVirtualizer } from "@tanstack/vue-virtual"
 import type { SearchMultiSelectOption } from "./SearchMultiSelect.vue"
@@ -9,6 +9,13 @@ import type { SearchMultiSelectOption } from "./SearchMultiSelect.vue"
 const props = defineProps<{ options: readonly SearchMultiSelectOption[]; activeOption?: unknown }>()
 const root = ref<HTMLElement | null>(null)
 const pendingFocus = ref<number | null>(null)
+let boundaryRequest = 0
+function cancelBoundary() {
+  boundaryRequest += 1
+  pendingFocus.value = null
+}
+watch(() => props.options, cancelBoundary, { flush: "sync" })
+onBeforeUnmount(cancelBoundary)
 const virtualizer = useVirtualizer(computed(() => ({
   count: props.options.length,
   getScrollElement: () => root.value?.parentElement ?? null,
@@ -31,28 +38,45 @@ function measure(element: unknown) {
   if (node) virtualizer.value.measureElement(node)
 }
 async function focusBoundary(last: boolean) {
+  // A newer key or option context owns both activation and the pinned row.
+  // An older Home request must never clear a subsequent End request's pin.
+  const request = ++boundaryRequest
+  const current = () => request === boundaryRequest
   let index = last ? props.options.length - 1 : 0
   const direction = last ? -1 : 1
   while (props.options[index]?.disabled) index += direction
-  if (!props.options[index]) return
+  if (!props.options[index]) {
+    pendingFocus.value = null
+    return
+  }
   pendingFocus.value = index
   await nextTick()
+  if (!current()) return
   virtualizer.value.scrollToIndex(index, { align: last ? "end" : "start" })
   // Scrolling and measuring variable-height rows settles across animation frames.
   for (let frame = 0; frame < 60; frame++) {
     await nextTick()
+    if (!current()) return
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+    if (!current()) return
     const option = root.value?.querySelector<HTMLElement>(`[data-index="${index}"]`)
     if (!option || frame < 2 || virtualizer.value.isScrolling) continue
     // Headless UI registers newly mounted options on the next animation frame.
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
-    // Activate through Headless UI while DOM focus remains on the input.
-    option.dispatchEvent(new FocusEvent("focus"))
-    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+    if (!current()) return
+    if (!root.value?.contains(option)) continue
+    // Keep an already-active boundary stable. Re-dispatching focus would
+    // clear Headless UI's default first-option index until its next frame.
+    if ((props.activeOption as SearchMultiSelectOption | undefined)?.value !== props.options[index]?.value) {
+      // Activate through Headless UI while DOM focus remains on the input.
+      option.dispatchEvent(new FocusEvent("focus"))
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+      if (!current()) return
+    }
     pendingFocus.value = null
     return
   }
-  pendingFocus.value = null
+  if (current()) pendingFocus.value = null
 }
 defineExpose({ focusBoundary })
 </script>
