@@ -22,6 +22,10 @@ describe("configured pagination windows", () => {
     for (const page of [1, 2, current, 272, 273]) expect(items.some(item => item.page === page && item.label !== "...")).toBe(true)
     expect(items.every(item => item.page >= 1 && item.page <= 273)).toBe(true)
   })
+  test("four/five-digit pages keep the current page and useful end clusters within seven slots", () => {
+    const items = mobilePaginationItems(10000, 5000)
+    expect(items.map(item => item.label)).toEqual(["1", "2", "...", "5000", "...", "9999", "10000"])
+  })
   test("compact mode shows every page in a small set", () => {
     expect(mobilePaginationItems(5, 3).map(item => item.label)).toEqual(["1", "2", "3", "4", "5"])
   })

@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from "vue"
+import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue"
 import type { LibraryPaginationModel } from "~/lib/library/component-models"
 
 const props = withDefaults(defineProps<{ model: LibraryPaginationModel, compact?: boolean }>(), { compact: undefined })
 const emit = defineEmits<{ selectPage: [page: number] }>()
 const narrow = ref(false)
+const element = ref<HTMLElement | null>(null)
+const availableWidth = ref(Infinity)
+let resizeObserver: ResizeObserver | null = null
 let query: MediaQueryList | null = null
 function syncWidth() { narrow.value = query?.matches ?? false }
 onMounted(() => {
@@ -12,10 +15,16 @@ onMounted(() => {
     query = window.matchMedia("(max-width: 767px)")
     syncWidth()
     query.addEventListener("change", syncWidth)
+    resizeObserver = new ResizeObserver(entries => { availableWidth.value = entries[0]?.contentRect.width ?? Infinity })
+    if (element.value) resizeObserver.observe(element.value)
 })
-onBeforeUnmount(() => query?.removeEventListener("change", syncWidth))
-const compactLayout = computed(() => props.compact ?? narrow.value)
-const entries = computed(() => compactLayout.value ? props.model.compactEntries ?? props.model.entries : props.model.entries)
+watch(element, current => {
+    resizeObserver?.disconnect()
+    if (current) resizeObserver?.observe(current)
+})
+onBeforeUnmount(() => { query?.removeEventListener("change", syncWidth); resizeObserver?.disconnect() })
+const compactLayout = computed(() => (props.compact ?? narrow.value) || availableWidth.value < 520)
+const entries = computed(() => compactLayout.value || availableWidth.value < (props.model.pageCount >= 1000 ? 850 : 700) ? props.model.compactEntries ?? props.model.entries : props.model.entries)
 function select(event: MouseEvent, page: number) {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
@@ -24,8 +33,8 @@ function select(event: MouseEvent, page: number) {
 </script>
 
 <template>
-    <nav v-if="model.pageCount > 1" class="library-pagination" :class="{ compact: compactLayout }" aria-label="Sidnavigation">
-        <ul class="pagination pagination-sm sc">
+    <nav v-if="model.pageCount > 1" ref="element" class="library-pagination" :class="{ compact: compactLayout }" aria-label="Sidnavigation">
+        <ul class="pagination sc">
             <li class="direction previous" :class="{ disabled: model.previous === null }">
                 <span v-if="model.previous === null" data-library-pagination-previous aria-label="Föregående" aria-disabled="true"><span aria-hidden="true">←</span><span v-if="!compactLayout"> Föregående</span></span>
                 <NuxtLink v-else v-slot="{ href }" custom no-prefetch :to="model.previous"><a data-library-pagination-previous rel="prev" aria-label="Föregående" :href="href || ''" @click="select($event, model.currentPage - 1)"><span aria-hidden="true">←</span><span v-if="!compactLayout"> Föregående</span></a></NuxtLink>
@@ -46,6 +55,7 @@ function select(event: MouseEvent, page: number) {
 .library-pagination { max-width: 100%; }
 .pagination {
     display: flex;
+    font-size: 16px;
     flex-wrap: wrap;
     align-items: center;
     gap: .2em;
@@ -76,7 +86,7 @@ function select(event: MouseEvent, page: number) {
 .pagination > .direction > a { text-decoration: underline; text-underline-offset: .15em; }
 .pagination > .disabled > span { color: #777; }
 .pagination > .ellipsis > span { min-width: 1em; padding-inline: .15em; color: #333; }
-.compact .pagination { gap: .1em; }
+.compact .pagination { gap: .1em; font-size: 14px; }
 .compact .pagination > li > a,
 .compact .pagination > li > span { min-width: 24px; min-height: 40px; padding: .8em .3em; }
 .compact .pagination > .ellipsis > span { min-width: .7em; padding-inline: .1em; }

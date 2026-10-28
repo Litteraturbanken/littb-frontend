@@ -27,5 +27,5 @@ export function legacyPaginationItems(totalPages: number, currentPage: number, o
 }
 
 export function mobilePaginationItems(totalPages: number, currentPage: number): LegacyPaginationItem[] {
-  return legacyPaginationItems(totalPages, currentPage, { windowSize: 3, boundaryCount: 2 })
+  return legacyPaginationItems(totalPages, currentPage, { windowSize: totalPages >= 1000 ? 1 : 3, boundaryCount: 2 })
 }

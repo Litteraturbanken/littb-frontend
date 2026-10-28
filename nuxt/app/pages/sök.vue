@@ -1250,6 +1250,7 @@ const pagination = computed<LibraryPaginationModel>(() => {
     pageCount: totalPages.value,
     previous: displayedPage.value <= 1 ? null : pageHref(displayedPage.value - 1),
     next: displayedPage.value >= totalPages.value ? null : pageHref(displayedPage.value + 1),
+    compactEntries: mobilePaginationItems(totalPages.value, displayedPage.value).map(item => ({ ...item, to: pageHref(item.page), ellipsis: item.label === "..." })),
     entries: (mobileSearchLayout.value ? mobilePaginationItems : legacyPaginationItems)(totalPages.value, displayedPage.value)
       .map(item => ({
       ...item,

@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test"
 
-for (const width of [375, 1440]) {
+for (const width of [375, 1087, 1440]) {
   for (const kind of ["library", "search"]) {
     test(`${kind} pagination exposes useful boundaries, keyboard/history and fits at ${width}px`, async ({ page }, testInfo) => {
-      await page.setViewportSize({ width, height: 900 })
+      await page.setViewportSize({ width, height: width === 1087 ? 1475 : 900 })
       const total = kind === "library" ? 17 : 273
       if (kind === "search") await page.route("**/api/v2/text-search/results", async route => {
         const body = route.request().postDataJSON()
@@ -26,6 +26,12 @@ for (const width of [375, 1440]) {
         await expect(ellipsis).toBeVisible()
         expect(await ellipsis.evaluate(element => element.localName)).toBe("span")
         expect(await ellipsis.evaluate(element => element.closest("a"))).toBe(null)
+        expect(await pager.locator('[aria-current="page"]').evaluate(element => getComputedStyle(element).fontSize)).toBe(width < 768 ? "14px" : "16px")
+        if (width === 1087) {
+          await pager.screenshot({ path: testInfo.outputPath(`${kind}-pagination-1087-page-${current}.png`) })
+          const metrics = await pager.locator("a").evaluateAll(elements => elements.map(element => ({ text: element.textContent, size: getComputedStyle(element).fontSize, lineHeight: getComputedStyle(element).lineHeight, width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })))
+          await testInfo.attach(`${kind}-page-${current}-metrics`, { body: JSON.stringify({ kind, current, metrics }), contentType: "application/json" })
+        }
         const geometry = await pager.evaluate(element => {
           const frame = element.getBoundingClientRect()
           const items = Array.from(element.querySelectorAll("li > a, li > span"), item => item.getBoundingClientRect())
@@ -87,4 +93,48 @@ test("Search tail links respect the API page10000 limit with larger totals", asy
   await expect(pager.locator('[data-library-page="10001"]')).toHaveCount(0)
   await expect(pager.locator("[data-library-pagination-next]")).toHaveAttribute("aria-disabled", "true")
   expect(await pager.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+})
+
+for (const width of [375, 390]) {
+  test(`Search middle page5000 of10000 fits one row at${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.route("**/api/v2/text-search/results", async route => {
+      const body = route.request().postDataJSON()
+      const response = await route.fetch({ postData: { ...body, page: 1 } })
+      const data = await response.json()
+      data.page = body.page
+      data.totals = { works: 300000, documents: 300000, occurrences: 300000 }
+      await route.fulfill({ response, json: data })
+    })
+    await page.goto("/s%C3%B6k?fras=overflow&traffsida=5000", { waitUntil: "networkidle" })
+    const pager = page.locator(".library-pagination").first()
+    for (const number of [1, 2, 5000, 9999, 10000]) await expect(pager.locator(`[data-library-page="${number}"]`)).toBeVisible()
+    const geometry = await pager.evaluate(element => {
+      const boxes = Array.from(element.querySelectorAll("li > a, li > span"), item => item.getBoundingClientRect())
+      return { rows: new Set(boxes.map(box => Math.round(box.top))).size, overflow: element.scrollWidth - element.clientWidth }
+    })
+    expect(geometry).toEqual({ rows: 1, overflow: 0 })
+    expect(await pager.locator('[aria-current="page"]').evaluate(element => getComputedStyle(element).fontSize)).toBe("14px")
+  })
+}
+
+test("container measurement attaches when a single-page pager first becomes visible", async ({ page }) => {
+  await page.setViewportSize({ width: 1087, height: 1475 })
+  await page.route("**/api/v2/text-search/results", async route => {
+    const body = route.request().postDataJSON()
+    const response = await route.fetch({ postData: { ...body, page: 1 } })
+    const data = await response.json()
+    data.page = body.page
+    if (body.query === "overflow") data.totals = { works: 8190, documents: 8190, occurrences: 65520 }
+    await route.fulfill({ response, json: data })
+  })
+  await page.goto("/s%C3%B6k?fras=exact-totals", { waitUntil: "networkidle" })
+  await expect(page.locator(".library-pagination")).toHaveCount(0)
+  await page.getByRole("textbox", { name: "Sökfras", exact: true }).fill("overflow")
+  await page.getByRole("textbox", { name: "Sökfras", exact: true }).press("Enter")
+  const pager = page.locator(".library-pagination").first()
+  await expect(pager).toBeVisible()
+  await expect(pager.locator("[data-library-page]")).toHaveCount(5)
+  expect(await pager.locator('[aria-current="page"]').evaluate(element => getComputedStyle(element).fontSize)).toBe("16px")
+  expect(await pager.evaluate(element => element.scrollWidth - element.clientWidth)).toBe(0)
 })
