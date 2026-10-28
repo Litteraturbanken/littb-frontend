@@ -89,7 +89,7 @@ export function librarySortDirection(
     key: string,
     reversed: boolean
 ): "stigande" | "fallande" {
-    let descendingByDefault = false
+    let descendingByDefault: boolean
     if (mode === "latest") descendingByDefault = true
     else if (mode === "all") descendingByDefault = key === "relevans" || key === "kronologi"
     else if (mode === "authors" || mode === "parts") descendingByDefault = key === "popularitet"
@@ -154,4 +154,5 @@ export type LibraryPaginationModel = Readonly<{
     previous: RouteLocationRaw | null
     next: RouteLocationRaw | null
     entries: readonly LibraryPaginationEntry[]
+    compactEntries?: readonly LibraryPaginationEntry[]
 }>

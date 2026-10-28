@@ -250,22 +250,7 @@
                 }
             }
 
-            .pagination {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 4px;
-                margin-bottom: 0;
 
-                > li > a,
-                > li > span {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-width: 40px;
-                    min-height: 40px;
-                    margin: 0;
-                }
-            }
         }
     }
 }

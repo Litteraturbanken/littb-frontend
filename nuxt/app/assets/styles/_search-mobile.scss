@@ -150,14 +150,6 @@
             }
         }
 
-        .text-search-pagination .pagination {
-            flex-wrap: nowrap;
-
-            > li > a[data-library-pagination-ellipsis] {
-                min-width: 34px;
-            }
-        }
-
         .table_container > .littb_pager {
             margin-top: 16px;
             color: #333;

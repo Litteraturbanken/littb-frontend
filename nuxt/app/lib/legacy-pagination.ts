@@ -1,60 +1,21 @@
-export type LegacyPaginationItem = {
-  key: string
-  page: number
-  label: string
-}
+export type LegacyPaginationItem = { key: string, page: number, label: string }
+export type PaginationWindowOptions = { windowSize?: number, boundaryCount?: number }
 
-export function legacyPaginationItems(
-  totalPages: number,
-  currentPage: number
-): LegacyPaginationItem[] {
-  const maxSize = 10
-  if (totalPages <= 0) return []
-  const boundedCurrent = Math.max(1, Math.min(currentPage, totalPages))
-  const maxSized = maxSize < totalPages
-  let startPage = 1
-  let endPage = totalPages
-
-  if (maxSized) {
-    startPage = Math.max(boundedCurrent - Math.floor(maxSize / 2), 1)
-    endPage = startPage + maxSize - 1
-    if (endPage > totalPages) {
-      endPage = totalPages
-      startPage = endPage - maxSize + 1
-    }
-  }
-
-  const items = Array.from({ length: endPage - startPage + 1 }, (_, index) => {
-    const page = startPage + index
-    return { key: `page-${page}`, page, label: String(page) }
-  })
-  if (maxSized && startPage > 1) {
-    items.unshift({
-      key: `ellipsis-previous-${startPage - 1}`,
-      page: startPage - 1,
-      label: "..."
-    })
-  }
-  if (maxSized && endPage < totalPages) {
-    items.push({
-      key: `ellipsis-next-${endPage + 1}`,
-      page: endPage + 1,
-      label: "..."
-    })
-  }
-  return items
-}
-
-// Keep both endpoints and the current page within six slots on narrow screens.
-export function mobilePaginationItems(totalPages: number, currentPage: number): LegacyPaginationItem[] {
-  if (totalPages <= 0) return []
-  const current = Math.max(1, Math.min(currentPage, totalPages))
-  const nearby = Math.max(2, Math.min(current, totalPages - 2))
-  const pages = totalPages <= 6
-    ? Array.from({ length: totalPages }, (_, index) => index + 1)
-    : [...new Set([1, nearby, nearby + 1, totalPages])]
+// Vue adapter for the legacy rotating window/boundary-number options. Retain
+// several boundary pages so people can choose an end page without another hop.
+export function legacyPaginationItems(totalPages: number, currentPage: number, options: PaginationWindowOptions = {}): LegacyPaginationItem[] {
+  const total = Math.max(0, Math.floor(totalPages))
+  if (!total) return []
+  const current = Math.max(1, Math.min(Math.floor(currentPage), total))
+  const windowSize = Math.max(1, Math.floor(options.windowSize ?? 5))
+  const boundaries = Math.max(1, Math.floor(options.boundaryCount ?? 3))
+  const start = Math.max(1, Math.min(current - Math.floor((windowSize - 1) / 2), total - windowSize + 1))
+  const pages = new Set<number>()
+  for (let page = 1; page <= Math.min(total, boundaries); page++) pages.add(page)
+  for (let page = start; page <= Math.min(total, start + windowSize - 1); page++) pages.add(page)
+  for (let page = Math.max(1, total - boundaries + 1); page <= total; page++) pages.add(page)
   const items: LegacyPaginationItem[] = []
-  for (const page of pages) {
+  for (const page of [...pages].sort((a, b) => a - b)) {
     const previous = items.at(-1)?.page ?? 0
     if (page - previous > 1) {
       const target = Math.floor((previous + page) / 2)
@@ -63,4 +24,8 @@ export function mobilePaginationItems(totalPages: number, currentPage: number): 
     items.push({ key: `page-${page}`, page, label: String(page) })
   }
   return items
+}
+
+export function mobilePaginationItems(totalPages: number, currentPage: number): LegacyPaginationItem[] {
+  return legacyPaginationItems(totalPages, currentPage, { windowSize: 3, boundaryCount: 2 })
 }

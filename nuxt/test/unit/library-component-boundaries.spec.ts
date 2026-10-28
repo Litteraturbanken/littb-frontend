@@ -467,29 +467,34 @@ describe("Library component ownership", () => {
 
     const links = [...target.querySelectorAll<HTMLAnchorElement>("a")]
     expect(links.map(link => link.textContent)).toEqual([
-      "Föregående", "1", "2", "...", "3", "Nästa"
+      "← Föregående", "1", "2", "3", "Nästa →"
     ])
     expect(links.map(link => link.getAttribute("href"))).toEqual([
       "/bibliotek?page=1",
       "/bibliotek?page=1",
       "/bibliotek?page=2",
-      "/bibliotek?page=6",
       "/bibliotek?page=3",
       "/bibliotek?page=3"
     ])
     expect(links[2]?.getAttribute("aria-current")).toBe("page")
     expect(links[1]?.getAttribute("data-library-page")).toBe("1")
-    expect(links[3]?.hasAttribute("data-library-page")).toBe(false)
-    expect(links[3]?.hasAttribute("data-library-pagination-ellipsis")).toBe(true)
+    expect(target.querySelector("[data-library-pagination-ellipsis]")?.localName).toBe("span")
+    expect(target.querySelector("[data-library-pagination-ellipsis]")?.closest("a")).toBe(null)
+    expect(links[3]?.getAttribute("aria-label")).toBe("Sida 3")
     expect(links[0]?.hasAttribute("data-library-pagination-previous")).toBe(true)
-    expect(links[5]?.hasAttribute("data-library-pagination-next")).toBe(true)
+    expect(links[4]?.hasAttribute("data-library-pagination-next")).toBe(true)
 
+    for (const modifiers of [{ ctrlKey: true }, { metaKey: true }, { button: 1 }]) {
+      const modifiedClick = Object.assign(new document.defaultView!.Event("click", { bubbles: true, cancelable: true }), { button: 0, ...modifiers })
+      links[3]?.dispatchEvent(modifiedClick)
+      expect(modifiedClick.defaultPrevented).toBe(false)
+      expect(selectedPages).toEqual([])
+    }
     links[0]?.click()
     links[3]?.click()
     links[4]?.click()
-    links[5]?.click()
     await nextTick()
-    expect(selectedPages).toEqual([1, 6, 3, 3])
+    expect(selectedPages).toEqual([1, 3, 3])
     expect(routerNavigations).toBe(0)
 
     model.value = {

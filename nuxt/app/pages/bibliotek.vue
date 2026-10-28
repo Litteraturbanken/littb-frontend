@@ -6,7 +6,7 @@ import libraryBackground from "~/assets/img/biblioteket_bakgrund.jpg"
 import epubBackground from "~/assets/img/ljudlandskap.jpg"
 import { useEpub3Download } from "~/composables/useEpub3Download"
 import { useLbApiClient } from "~/composables/useLbApiClient"
-import { legacyPaginationItems, type LegacyPaginationItem } from "~/lib/legacy-pagination"
+import { legacyPaginationItems, mobilePaginationItems, type LegacyPaginationItem } from "~/lib/legacy-pagination"
 import type {
     LibraryAboutAuthorOption,
     LibraryAdvancedChange,
@@ -1133,7 +1133,7 @@ function selectSort(key: QueryState["sort"]) {
 
 function selectPage(page: number) {
     const boundedPage = Math.max(1, Math.min(page, Math.max(1, pageCount.value)))
-    beginIntent({ ...currentState(), page: boundedPage })
+    void router.push({ path: route.path, query: queryFor({ ...currentState(), page: boundedPage }) })
 }
 
 async function loadAllAuthors() {
@@ -1865,7 +1865,8 @@ function paginationModel(
         pageCount: pageCount.value,
         previous: currentPage.value <= 1 ? null : pageHref(currentPage.value - 1),
         next: currentPage.value >= pageCount.value ? null : pageHref(currentPage.value + 1),
-        entries
+        entries,
+        compactEntries: mobilePaginationItems(pageCount.value, currentPage.value).map(item => ({ ...item, to: pageHref(item.page), ellipsis: item.label === "..." }))
     }
 }
 

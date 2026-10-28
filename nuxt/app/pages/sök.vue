@@ -1231,7 +1231,7 @@ const resultRows = computed<readonly ResultRowView[]>(() => {
   return rows
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil((results.value?.totalWorks ?? 0) / 30)))
+const totalPages = computed(() => Math.min(10_000, Math.max(1, Math.ceil((results.value?.totalWorks ?? 0) / 30))))
 const pagerBasisReady = computed(() => results.value !== null)
 const paginationReady = computed(() => {
   const primary = acceptedPrimary.value
@@ -2020,28 +2020,6 @@ v-for="item in [
   max-width: 100%;
   min-width: 0;
 }
-
-.text-search-pagination :deep(.pagination) {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-@media (max-width: 767px) {
-  .text-search-pagination :deep(.pagination) {
-    gap: 4px;
-  }
-
-  .text-search-pagination :deep(.pagination > li > a),
-  .text-search-pagination :deep(.pagination > li > span) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 40px;
-    min-height: 40px;
-    margin: 0;
-  }
-}
-
 
 
 .reset {
