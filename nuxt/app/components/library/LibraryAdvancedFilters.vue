@@ -254,11 +254,11 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
             <button
                 type="button"
                 data-library-download-mode
-                class="library-download-mode-toggle sc btn btn-small"
+                class="library-download-mode-toggle sc"
                 :aria-pressed="model.downloadMode"
                 @click="emit('toggle-download-mode')"
             >
-                <i class="fa fa-download mr-1 text-xs" aria-hidden="true" />{{ " "
+                <i class="fa fa-download mr-1" aria-hidden="true" />{{ " "
                 }}<span>{{
                     model.downloadMode ? "Stäng källmaterial" : "Ladda ner källmaterial"
                 }}</span>
@@ -430,25 +430,25 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
 
 
 .library-download-mode-toggle {
-    display: inline-flex;
-    align-items: center;
+    display: inline;
     max-width: 100%;
-    padding: 4px 8px;
-    border: 1px solid #999;
-    background: white;
+    padding: 0;
+    border: 0;
+    background: transparent;
     color: var(--primary-color);
     font: inherit;
-    line-height: 1.2;
     white-space: normal;
     text-align: left;
     box-shadow: none;
     cursor: pointer;
 }
 
-.library-download-mode-toggle[aria-pressed="true"] {
-    border-color: var(--primary-color);
-    background: var(--primary-color);
-    color: white;
+.library-download-mode-toggle .fa {
+    font-size: 0.85em;
+}
+
+.library-download-mode-toggle:hover {
+    color: black;
 }
 
 .library-download-mode-toggle:focus-visible {
