@@ -1233,6 +1233,7 @@ const resultRows = computed<readonly ResultRowView[]>(() => {
 
 const totalPages = computed(() => Math.min(10_000, Math.max(1, Math.ceil((results.value?.totalWorks ?? 0) / 30))))
 const pagerBasisReady = computed(() => results.value !== null)
+const paginationSearchKey = computed(() => textSearchRouteIdentity({ ...state.value, page: 1 }))
 const paginationReady = computed(() => {
   const primary = acceptedPrimary.value
   return primary?.identity === primaryIdentity.value && primary.status === 200
@@ -1818,7 +1819,7 @@ v-for="item in [
                 Visar verk {{ firstVisibleWork }}-{{ lastVisibleWork }} av
                 {{ results?.totalWorks ?? 0 }}, sida {{ displayedPage }} av
                 {{ totalPages }}.
-                <TextSearchPageActions v-if="(results?.totalWorks ?? 0) > 1" :current-page="displayedPage" :page-count="totalPages" :ready="paginationReady" @select-page="goToPage" />
+                <TextSearchPageActions v-if="(results?.totalWorks ?? 0) > 1" :current-page="displayedPage" :page-count="totalPages" :ready="paginationReady" :search-key="paginationSearchKey" @select-page="goToPage" />
               </div>
             </div>
           </Teleport>
