@@ -1,14 +1,18 @@
-// Keep filter transitions on the resting elements too, so closing fades the
-// existing blur back out as modal-open is removed.
-.site-shell > #mainview,
-#leftCorridor.site-navigation,
+// Keep transitions on the background itself: it survives dialog teardown, so
+// closing can fade the blur out even when the modal immediately unmounts.
+#mainview,
+#leftCorridor,
 #rightCorridor {
     transition: filter 140ms ease-in;
 }
 
-body.modal-open .site-shell > #mainview,
-body.modal-open #leftCorridor.site-navigation,
-body.modal-open #rightCorridor {
+// Reader/editor image and metadata dialogs do not all own the legacy body
+// class. Follow the actual semantic modal too; nonmodal format popovers remain
+// unaffected, and replacing one modal with another keeps the existing blur.
+body.modal-open :is(#mainview, #leftCorridor, #rightCorridor),
+body:has(.modal[role="dialog"][aria-modal="true"]) :is(#mainview, #leftCorridor, #rightCorridor) {
+    -webkit-filter: blur(4px);
+    filter: blur(4px);
     transition-duration: 180ms;
     transition-timing-function: ease-out;
 }
@@ -58,8 +62,8 @@ body.modal-open #rightCorridor {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .site-shell > #mainview,
-    #leftCorridor.site-navigation,
+    #mainview,
+    #leftCorridor,
     #rightCorridor,
     .quick-search-presentation,
     .quick-search-presentation > .modal-dialog {
