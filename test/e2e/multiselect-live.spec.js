@@ -377,27 +377,28 @@ test('Virtual author boundaries keep the latest rapid key active across filterin
     const input = page.locator('.author_select').getByRole('combobox')
     await input.click()
     await expect(input).toHaveAttribute('aria-expanded', 'true')
-    const boundary = last => input.evaluate((element, last) => {
-        const active = document.getElementById(element.getAttribute('aria-activedescendant'))
-        if (!active) return false
-        const position = Number(active.getAttribute('aria-posinset'))
-        const size = Number(active.getAttribute('aria-setsize'))
-        return size > 0 && position === (last ? size : 1)
-    }, last)
-    const persistentBoundary = last => input.evaluate(async (element, last) => {
-        // Observe beyond the overlapping scroll/registration frames: reaching
-        // the right row briefly must not leave aria-activedescendant dangling.
-        for (let frame = 0; frame < 24; frame++) {
-            await new Promise(resolve => requestAnimationFrame(resolve))
+    const inspectBoundary = (last, frames = 0) => input.evaluate(async (element, { last, frames }) => {
+        // Virtual rows must retain their logical position metadata. A complete
+        // ordinary list instead exposes every enabled option in DOM order.
+        for (let frame = 0; frame < Math.max(1, frames); frame++) {
+            if (frames) await new Promise(resolve => requestAnimationFrame(resolve))
+            const list = document.getElementById(element.getAttribute('aria-controls'))
             const active = document.getElementById(element.getAttribute('aria-activedescendant'))
             const position = active?.getAttribute('aria-posinset')
             const size = active?.getAttribute('aria-setsize')
-            if (!active || Number(position) !== (last ? Number(size) : 1)) {
-                return { valid: false, frame, id: element.getAttribute('aria-activedescendant'), position, size }
-            }
+            const virtual = !!list?.querySelector('[data-index], [data-option-index], [aria-posinset], [aria-setsize]')
+            const enabled = [...(list?.querySelectorAll('[role="option"]:not([aria-disabled="true"])') ?? [])]
+            const mounted = !!active && !!list?.contains(active) && enabled.includes(active)
+            const valid = virtual
+                ? mounted && Number(size) > 0 && Number(position) === (last ? Number(size) : 1)
+                : mounted && !!list?.querySelector('ul.multiselect__content') && enabled.length <= 500
+                    && active === (last ? enabled.at(-1) : enabled[0])
+            if (!valid) return { valid: false, frame, id: element.getAttribute('aria-activedescendant'), position, size }
         }
         return { valid: true }
-    }, last)
+    }, { last, frames })
+    const boundary = async last => (await inspectBoundary(last)).valid
+    const persistentBoundary = last => inspectBoundary(last, 24)
     await expect.poll(() => input.evaluate(element => Number(document.getElementById(element.getAttribute('aria-controls'))?.querySelector('[role="option"]')?.getAttribute('aria-setsize')))).toBeGreaterThan(500)
     for (const keys of [['Home', 'End'], ['End', 'Home'], ['Home', 'End']]) {
         // Deliver both keys in one browser turn to deterministically overlap

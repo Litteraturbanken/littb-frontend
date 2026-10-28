@@ -100,7 +100,10 @@ const navigableOptions = computed(() => [
   ...groups.value.flatMap(group => group.options),
   ...(props.lastActionLabel ? [lastAction.value] : [])
 ])
-const windowedOptions = computed(() => !props.optionGroups.length && navigableOptions.value.length > 500)
+// Keep the renderer stable while a large catalog is filtered down. Replacing
+// it with regular options discards pending boundary focus and virtual ARIA rows.
+const windowedOptions = computed(() => !props.optionGroups.length
+  && (props.options.length > 500 || navigableOptions.value.length > 500))
 const virtualList = ref<InstanceType<typeof SearchVirtualOptions> | null>(null)
 function selectedLabel(option: SearchMultiSelectOption) {
   return option.selectionLabel ?? option.label

@@ -371,3 +371,39 @@ describe("SearchMultiSelect scalar mode", () => {
     } finally { app.unmount(); target.remove() }
   })
 })
+
+
+test("filtering a large catalog preserves its virtual renderer across the 500-row boundary", async () => {
+  const [{ createApp, h, nextTick, ssrContextKey }, { default: SearchMultiSelect }] = await Promise.all([
+    import("vue"), import("../../app/components/search/SearchMultiSelect.vue")
+  ])
+  const target = document.createElement("div")
+  document.body.append(target)
+  const options = Array.from({ length: 600 }, (_, index) => ({
+    value: `author-${index}`, label: index === 10 ? "Lagerlöf, Selma" : `Author ${index}`
+  }))
+  const app = createApp({ setup: () => () => h(SearchMultiSelect, {
+    modelValue: [], options, placeholder: "Authors", searchable: true, internalSearch: true
+  }) })
+  app.provide(ssrContextKey, { modules: new Set<string>() })
+  app.mount(target)
+  try {
+    target.querySelector<HTMLButtonElement>(".multiselect__select")!.click()
+    await nextTick()
+    const virtualRoot = () => target.querySelector<HTMLElement>('[role="presentation"][style*="position: relative"]')
+    const initial = virtualRoot()!
+    expect(initial).not.toBeNull()
+    expect(initial.style.height).toBe("16800px")
+    const input = target.querySelector<HTMLInputElement>("input")!
+    input.value = "Lagerlöf"
+    input.dispatchEvent(new window.Event("input", { bubbles: true }))
+    await nextTick()
+    expect(virtualRoot()).toBe(initial)
+    expect(initial.style.height).toBe("28px")
+    input.value = ""
+    input.dispatchEvent(new window.Event("input", { bubbles: true }))
+    await nextTick()
+    expect(virtualRoot()).toBe(initial)
+    expect(initial.style.height).toBe("16800px")
+  } finally { app.unmount(); target.remove() }
+})
