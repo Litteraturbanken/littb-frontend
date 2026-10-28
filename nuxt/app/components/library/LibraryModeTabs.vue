@@ -24,8 +24,8 @@ function navigateTab(
 </script>
 
 <template>
-    <template v-for="tab in tabs" :key="tab.mode">
-        <template v-if="tab.separatorBefore">{{ " " }}</template>
+    <template v-for="(tab, index) in tabs" :key="tab.mode">
+        <template v-if="index > 0">{{ " " }}</template>
         <NuxtLink
             v-slot="{ href, navigate }"
             custom
@@ -66,9 +66,5 @@ function navigateTab(
 .library-tab-disabled-look {
     opacity: 0.65;
     box-shadow: none;
-}
-
-[data-library-tab] {
-    margin-right: calc(0.2em + 4px);
 }
 </style>
