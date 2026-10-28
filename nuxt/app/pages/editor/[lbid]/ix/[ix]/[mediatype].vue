@@ -1541,7 +1541,7 @@ useHead(() => ({
                   :aria-expanded="workSearchOpen"
                   @click="toggleWorkSearch"
                 >Sök i verket</button>
-                <div v-show="workSearchOpen" class="searchbox">
+                <ReaderWorkSearchDisclosure :open="workSearchOpen">
                   <div class="collapse-content">
                     <div class="header">
                       <div class="auth">Sök i <span class="author min-h-[1em] mb-[0.3em] text-[1em] sc [&_a]:text-primary"><ReaderContributors :contributors="page.contributors" /></span></div>
@@ -1565,7 +1565,7 @@ useHead(() => ({
                       </ul>
                     </div>
                   </div>
-                </div>
+                </ReaderWorkSearchDisclosure>
               </li>
               <li v-else aria-disabled="true"><a class="disabled -my-[3px] inline-block py-[3px]" aria-disabled="true" tabindex="-1">Sök i verket</a></li>
               <li><NuxtLink v-if="authorSearchHref" class="-my-[3px] inline-block py-[3px]" :to="authorSearchHref">Sök i författarens texter</NuxtLink><span v-else>Sök i författarens texter</span></li>

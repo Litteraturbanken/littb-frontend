@@ -9,7 +9,7 @@ function cancel(element: Element): void {
     const animation = motion.get(panel)
     if (!animation) return
     const current = getComputedStyle(panel)
-    panel.style.height = `${panel.getBoundingClientRect().height}px`
+    panel.style.height = current.height
     panel.style.opacity = current.opacity
     panel.style.marginTop = current.marginTop
     panel.style.marginBottom = current.marginBottom
@@ -27,12 +27,18 @@ function animate(element: Element, done: () => void, entering: boolean): void {
     const style = getComputedStyle(panel)
     const interrupted = panel.style.height !== ""
     if (!spacing.has(panel)) spacing.set(panel, { marginTop: style.marginTop, marginBottom: style.marginBottom })
-    const expanded = { height: `${panel.scrollHeight}px`, opacity: 1, ...spacing.get(panel)! }
-    const collapsed = { height: "0px", opacity: 0, marginTop: "0px", marginBottom: "0px" }
     const current = {
-        height: `${panel.getBoundingClientRect().height}px`, opacity: style.opacity,
+        height: style.height, opacity: style.opacity,
         marginTop: style.marginTop, marginBottom: style.marginBottom
     }
+    // Measure the natural CSS height, including borders for border-box panels.
+    // Temporarily release a cancelled transition's fixed height before measuring.
+    const heldHeight = panel.style.height
+    panel.style.removeProperty("height")
+    const naturalHeight = getComputedStyle(panel).height
+    panel.style.height = heldHeight
+    const expanded = { height: naturalHeight, opacity: 1, ...spacing.get(panel)! }
+    const collapsed = { height: "0px", opacity: 0, marginTop: "0px", marginBottom: "0px" }
     panel.style.overflow = "hidden"
     const animation = panel.animate(
         [entering && !interrupted ? collapsed : current, entering ? expanded : collapsed],

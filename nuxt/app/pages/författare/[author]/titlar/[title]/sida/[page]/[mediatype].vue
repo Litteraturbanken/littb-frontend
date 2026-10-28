@@ -2503,7 +2503,7 @@ ref="sidebarSourceInfoTrigger"
                     :aria-expanded="workSearchOpen"
                     @click.prevent="toggleWorkSearch"
                   >Sök i verket</component>
-                  <div v-show="workSearchOpen" class="searchbox">
+                  <ReaderWorkSearchDisclosure :open="workSearchOpen">
                     <div class="collapse-content">
                       <div class="header">
                         <div class="auth">
@@ -2547,7 +2547,7 @@ ref="sidebarSourceInfoTrigger"
                         </ul>
                       </div>
                     </div>
-                  </div>
+                  </ReaderWorkSearchDisclosure>
                 </li>
                 <li v-else aria-disabled="true">
                   <a class="disabled -my-[3px] inline-block py-[3px]" aria-disabled="true" tabindex="-1">Sök i verket</a>
