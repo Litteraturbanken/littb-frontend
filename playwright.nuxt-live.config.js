@@ -42,7 +42,7 @@ module.exports = defineConfig({
         {
             name: "nuxt-live-webkit-title-bounded",
             testMatch: "multiselect-live.spec.js",
-            grep: /Title options stay bounded/,
+            grep: /Filtered title options show every match/,
             use: { ...devices["Desktop Safari"] }
         }
     ]

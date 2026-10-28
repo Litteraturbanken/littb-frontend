@@ -3005,30 +3005,48 @@ test("static options are lazy and cached while title search is exact 250 ms late
   await expect(page.getByRole("option", { name: "Röda rummet" })).toHaveCount(0)
 })
 
-test("overflow title search stays bounded and invites narrowing", async ({ page, request }) => {
+test("filtered title search loads all matches virtually and blank stays bounded", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=overflow&avancerad=1")
   await request.delete(`${fixture}/_text_search/requests/options`)
   const input = page.locator(".title_select input.select2-search__field")
-  await input.fill("doktor")
-  await expect(page.locator(".title_limit_notice")).toHaveText(
-    "Skriv mer för att begränsa träffarna."
-  )
+  for (const short of ["o", "  ov  "]) {
+    await input.fill(short)
+    await expect(page.getByText("Skriv minst 3 tecken för att söka efter titlar.")).toBeVisible()
+    await expect(page.locator('.title_select [role="option"]')).toHaveCount(0)
+    await page.waitForTimeout(400)
+    expect(await requests(request, "options")).toEqual([])
+  }
+  await input.fill("  lag  ")
   await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
-    .toMatchObject({ title_filter: "doktor", title_limit: 30 })
-  await expect(page.locator('.title_select [role="option"]:not([aria-disabled="true"])')).toHaveCount(30)
+    .toMatchObject({ title_filter: "lag", title_limit: "all" })
+  await expect(page.getByRole("option", { name: "Gösta Berlings saga" })).toBeVisible()
+  await input.fill("inga")
+  await expect(page.getByText("Inga matchande alternativ.")).toBeVisible()
+  await expect(page.getByText("Skriv minst 3 tecken för att söka efter titlar.")).toHaveCount(0)
+  await input.fill("overflow")
+  await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
+    .toMatchObject({ title_filter: "overflow", title_limit: "all" })
+  await expect(page.locator('.title_select [aria-setsize]').first()).toHaveAttribute("aria-setsize", "731")
+  expect(await page.locator('.title_select [role="option"]').count()).toBeLessThan(200)
+  await expect(page.locator(".title_limit_notice")).toHaveCount(0)
   await expect(page.getByText(/^Visa alla /)).toHaveCount(0)
   await input.press("End")
-  const lastTitle = await page.locator('.title_select [role="option"]:not([aria-disabled="true"])').last().textContent()
-  await expect.poll(() => input.evaluate(element => document.getElementById(element.getAttribute("aria-activedescendant") ?? "")?.textContent)).toBe(lastTitle)
+  await expect.poll(() => input.evaluate(element => document.getElementById(element.getAttribute("aria-activedescendant") ?? "")?.textContent)).toBe("Överflödestitel 731")
   await input.press("Enter")
   await expect(page.locator(".title_select .select2-selection__choice")).toHaveCount(1)
-  expect((await requests(request, "options")).every(item => item.body.title_limit !== "all")).toBe(true)
+  await input.click()
+  await input.fill("   ")
+  await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
+    .toMatchObject({ title_filter: "", title_limit: 30 })
+  await expect(page.locator(".title_limit_notice")).toBeVisible()
+  await expect(page.locator(".title_select .select2-selection__choice")).toHaveCount(1)
 })
 
 test("closing advanced search clears the transient title filter notice", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
   await page.locator(".title_select input.select2-search__field").fill("doktor")
-  await expect(page.locator(".title_limit_notice")).toBeVisible()
+  await expect(page.getByRole("option", { name: "Doktortitel 41" })).toBeVisible()
+  await expect(page.locator(".title_limit_notice")).toHaveCount(0)
 
   await page.locator("[data-search-advanced]").click()
   await expect(page).not.toHaveURL(/avancerad(?:&|$)/u)
@@ -3052,7 +3070,7 @@ test("special title catalogs still resolve the selected route-owned title", asyn
   await expect(page.getByRole("button", { name: "Ta bort Röda rummet" })).toBeVisible()
 })
 
-test("changing title filter invalidates a delayed bounded request", async ({ page, request }) => {
+test("clearing title filter invalidates delayed all matches", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
   await request.delete(`${fixture}/_text_search/requests/options`)
   await request.put(`${fixture}/_text_search/delays`, {
@@ -3061,11 +3079,16 @@ test("changing title filter invalidates a delayed bounded request", async ({ pag
   const input = page.locator(".title_select input.select2-search__field")
   await input.fill("overflow")
   await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
-    .toMatchObject({ title_filter: "overflow", title_limit: 30 })
-  await input.fill("doktor")
+    .toMatchObject({ title_filter: "overflow", title_limit: "all" })
+  await input.fill("ov")
+  await expect(page.getByText("Skriv minst 3 tecken för att söka efter titlar.")).toBeVisible()
+  await page.waitForTimeout(1100)
+  expect(await requests(request, "options")).toHaveLength(1)
+  await expect(page.locator('.title_select [role="option"]')).toHaveCount(0)
+  await input.fill("   ")
   await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
-    .toMatchObject({ title_filter: "doktor", title_limit: 30 })
-  await expect(page.getByRole("option", { name: "Doktortitel 1", exact: true })).toBeVisible()
+    .toMatchObject({ title_filter: "", title_limit: 30 })
+  await expect(page.getByRole("option", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
   await page.waitForTimeout(1100)
   await expect(page.getByRole("option", { name: "Överflödestitel 1", exact: true })).toHaveCount(0)
 })
@@ -3089,7 +3112,7 @@ test("title option retry repeats the exact failed filter and limit", async ({
 
   await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
   await expect.poll(async () => (await requests(request, "options"))[0]?.body)
-    .toMatchObject({ title_filter: "lager", title_limit: 30 })
+    .toMatchObject({ title_filter: "lager", title_limit: "all" })
   await expect(page.getByRole("option", { name: "Gösta Berlings saga" })).toBeVisible()
 })
 

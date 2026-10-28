@@ -767,6 +767,10 @@ let titleTimer: ReturnType<typeof setTimeout> | null = null
 const titleLoading = ref(false)
 const titleOptionsFailed = ref(false)
 const titleFilterText = ref("")
+const titleQueryTooShort = computed(() => {
+  const length = titleFilterText.value.trim().length
+  return length > 0 && length < 3
+})
 let failedTitleOptionsRequest: Readonly<{
   titleFilter: string
 }> | null = null
@@ -781,7 +785,7 @@ async function loadTitleOptions(titleFilter: string) {
     const body = buildTextSearchOptionsRequest(requestedState, {
       titleFilter,
       selectedWorkIds: requestedState.workIds,
-      titleLimit: 30,
+      titleLimit: titleFilter.trim() ? "all" : 30,
       includeStaticOptions: false
     })
     const requestIdentity = textSearchOptionsRequestIdentity(body)
@@ -825,6 +829,8 @@ function queueTitleOptions(titleFilter: string) {
   }
   titleFilterText.value = titleFilter
   if (titleTimer) clearTimeout(titleTimer)
+  titleTimer = null
+  if (titleQueryTooShort.value) return
   titleTimer = setTimeout(() => {
     titleTimer = null
     void loadTitleOptions(titleFilter)
@@ -1652,7 +1658,7 @@ v-for="item in [
               class="title_select"
               persistent-input-row
               :model-value="state.workIds"
-              :options="titleChoices"
+              :options="titleQueryTooShort ? [] : titleChoices"
               placeholder="Titlar"
               searchable
               hide-selected
@@ -1661,9 +1667,12 @@ v-for="item in [
               @query="queueTitleOptions"
               @update:model-value="patchFilters({ workIds: $event })"
             >
+              <template v-if="titleQueryTooShort" #empty>
+                Skriv minst 3 tecken för att söka efter titlar.
+              </template>
               <template #beforeList>
                 <li
-                  v-if="(options?.titleTotal ?? 0) > 30"
+                  v-if="!titleFilterText.trim() && (options?.titleTotal ?? 0) > 30"
                   class="title_limit_notice select2-results__option"
                   role="option"
                   aria-disabled="true"

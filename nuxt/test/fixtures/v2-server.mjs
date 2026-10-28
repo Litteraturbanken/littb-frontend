@@ -2854,9 +2854,14 @@ const textSearchTitleCatalog = [
 function selectedTextSearchTitleOptions(body, options) {
   const merged = [...options]
   for (const selectedWorkId of body.selected_work_ids || []) {
+    const overflowNumber = /^lb-overflow-(\d+)$/u.exec(selectedWorkId)?.[1]
     const selected = textSearchTitleCatalog.find(
       item => item.option.work_id === selectedWorkId
-    )?.option
+    )?.option ?? (overflowNumber && Number(overflowNumber) <= 731 ? {
+      work_id: selectedWorkId,
+      title: `Överflödestitel ${overflowNumber}`,
+      author_name: "Test Överflöd"
+    } : undefined)
     if (selected && !merged.some(option => option.work_id === selectedWorkId)) {
       merged.unshift(selected)
     }

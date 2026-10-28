@@ -438,7 +438,7 @@ test('Virtual author boundaries keep the latest rapid key active across filterin
     expect(await persistentBoundary(true)).toEqual({ valid: true })
 })
 
-test('Title options stay bounded through search selection and reopening', async ({ page }) => {
+test('Filtered title options show every match through selection and reopening', async ({ page }) => {
     const titleRequests = []
     page.on('request', request => {
         if (request.url().includes('/text-search/options') && request.method() === 'POST') {
@@ -455,21 +455,37 @@ test('Title options stay bounded through search selection and reopening', async 
     expect(await menu.getByRole('option').count()).toBeLessThanOrEqual(31)
     const responseFor = query => page.waitForResponse(response => response.url().includes('/text-search/options')
         && response.request().method() === 'POST' && response.ok()
-        && response.request().postDataJSON()?.title_filter === query
-        && response.request().postDataJSON()?.title_limit === 30)
+        && response.request().postDataJSON()?.title_filter === query.trim()
+        && response.request().postDataJSON()?.title_limit === (query.trim() ? 'all' : 30), { timeout: 30000 })
+    for (const short of ['d', '  di  ']) {
+        const beforeShort = titleRequests.length
+        await input.fill(short)
+        await expect(menu.getByText('Skriv minst 3 tecken för att söka efter titlar.')).toBeVisible()
+        await expect(menu.getByRole('option')).toHaveCount(0)
+        await page.waitForTimeout(400)
+        expect(titleRequests.length).toBe(beforeShort)
+    }
     const firstResponse = responseFor('dikter')
     await input.fill('dikter')
     const firstPayload = await (await firstResponse).json()
-    expect(firstPayload.title_options.length).toBeLessThanOrEqual(30)
-    await expect.poll(() => titleRequests.some(body => body.title_filter === 'dikter' && body.title_limit === 30)).toBe(true)
+    expect(firstPayload.title_options.length).toBeGreaterThan(500)
+    await expect.poll(() => titleRequests.some(body => body.title_filter === 'dikter' && body.title_limit === 'all')).toBe(true)
     await expect(menu.locator('.spinner')).toBeHidden()
-    const last = menu.locator('[role="option"]:not([aria-disabled="true"])').last()
-    await expect(last).toBeVisible()
     const expectedChoice = [...new Map(firstPayload.title_options.map(option => [option.work_id, option])).values()].at(-1)
-    await expect(last).toHaveText(expectedChoice.title)
     const choice = expectedChoice.title
+    await expect(menu.locator('.title_limit_notice')).toHaveCount(0)
+    expect(await menu.getByRole('option').count()).toBeLessThan(200)
     await input.press('End')
     await expect.poll(() => input.evaluate(element => document.getElementById(element.getAttribute('aria-activedescendant'))?.textContent?.trim())).toBe(choice)
+    expect(await input.evaluate(async element => {
+        for (let frame = 0; frame < 40; frame++) {
+            await new Promise(resolve => requestAnimationFrame(resolve))
+            const option = document.getElementById(element.getAttribute('aria-activedescendant'))
+            const list = document.getElementById(element.getAttribute('aria-controls'))
+            if (!option || !list?.contains(option) || option.getAttribute('aria-posinset') !== option.getAttribute('aria-setsize')) return false
+        }
+        return true
+    })).toBe(true)
     await input.press('Enter')
     await expect(menu.locator('.select2-selection__choice')).toHaveCount(1)
     await expect(menu.locator('.select2-selection__choice')).toContainText(choice)
@@ -480,17 +496,23 @@ test('Title options stay bounded through search selection and reopening', async 
     await input.click()
     await expect(input).toHaveAttribute('aria-expanded', 'true')
     await expect(menu.locator('.select2-selection__choice')).toContainText(choice)
-    const secondResponse = responseFor('lager')
-    await input.fill('lager')
-    const secondPayload = await (await secondResponse).json()
-    expect(secondPayload.title_options.filter(option => option.work_id !== selected).length).toBeLessThanOrEqual(30)
-    await expect.poll(() => titleRequests.some(body => body.title_filter === 'lager' && body.title_limit === 30)).toBe(true)
-    await expect(menu.locator('.spinner')).toBeHidden()
+    const beforeShort = titleRequests.length
+    await input.fill('di')
+    await expect(menu.getByText('Skriv minst 3 tecken för att söka efter titlar.')).toBeVisible()
+    await expect(menu.getByRole('option')).toHaveCount(0)
+    await expect(menu.locator('.select2-selection__choice')).toContainText(choice)
+    await page.waitForTimeout(400)
+    expect(titleRequests.length).toBe(beforeShort)
+    const clearedResponse = responseFor('   ')
+    await input.fill('   ')
+    const clearedPayload = await (await clearedResponse).json()
+    expect(clearedPayload.title_options.filter(option => option.work_id !== selected).length).toBeLessThanOrEqual(30)
+    await expect(menu.locator('.title_limit_notice')).toBeVisible()
     await expect(menu.locator('.select2-selection__choice')).toContainText(choice)
     expect(new URL(page.url()).searchParams.get('titlar')).toBe(selected)
     await page.reload()
     await expect(menu.locator('.select2-selection__choice')).toContainText(choice)
     expect(new URL(page.url()).searchParams.get('titlar')).toBe(selected)
     expect(titleRequests.length).toBeGreaterThan(0)
-    expect(titleRequests.every(body => body.title_limit !== 'all')).toBe(true)
+    expect(titleRequests.filter(body => !body.title_filter?.trim()).every(body => body.title_limit !== 'all')).toBe(true)
 })

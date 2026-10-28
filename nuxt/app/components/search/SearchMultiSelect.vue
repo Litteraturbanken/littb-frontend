@@ -287,7 +287,7 @@ class="multiselect__option" :class="{
                 }"><span class="select2-results__option" :aria-disabled="option.disabled || undefined">{{ option.label }}</span></span>
               </ComboboxOption>
             </template>
-            <li v-if="!groups.length" role="presentation"><span class="multiselect__option">{{ query ? 'Inga matchande alternativ.' : 'Inga alternativ att visa.' }}</span></li>
+            <li v-if="!groups.length" role="presentation"><span class="multiselect__option"><slot name="empty">{{ query ? 'Inga matchande alternativ.' : 'Inga alternativ att visa.' }}</slot></span></li>
             <slot name="afterList" />
             <ComboboxOption v-if="lastActionLabel" v-slot="{ active }" :value="lastAction" :order="flatOptions.length * (groups.length + 1)" class="multiselect__element">
               <span class="multiselect__option title_select_show_all select2-results__option" :class="{ 'multiselect__option--highlight': active }">{{ lastActionLabel }}</span>
