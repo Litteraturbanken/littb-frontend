@@ -3,6 +3,7 @@ import { formatAuthorYears } from "#shared/utils/author-years"
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/vue"
 import type { LocationQueryRaw } from "vue-router"
 
+import TextSearchPageActions from "~/components/search/TextSearchPageActions.vue"
 import LibraryPagination from "~/components/library/LibraryPagination.vue"
 import type { LibraryPaginationModel } from "~/lib/library/component-models"
 import { legacyPaginationItems, mobilePaginationItems } from "~/lib/legacy-pagination"
@@ -1817,6 +1818,7 @@ v-for="item in [
                 Visar verk {{ firstVisibleWork }}-{{ lastVisibleWork }} av
                 {{ results?.totalWorks ?? 0 }}, sida {{ displayedPage }} av
                 {{ totalPages }}.
+                <TextSearchPageActions v-if="(results?.totalWorks ?? 0) > 1" :current-page="displayedPage" :page-count="totalPages" :ready="paginationReady" @select-page="goToPage" />
               </div>
             </div>
           </Teleport>
@@ -2157,19 +2159,6 @@ v-for="item in [
 .bottom_row {
   margin-top: 2em !important;
   margin-bottom: calc(2em - 34px) !important;
-}
-
-.littb_pager .ctrl li:not(.arrows) > button {
-  display: inline !important;
-  width: auto !important;
-  height: auto !important;
-  margin: 0 !important;
-  color: #7a1400;
-  white-space: nowrap;
-}
-
-.littb_pager .ctrl li:not(.arrows) > button:disabled {
-  color: #333;
 }
 
 @media (max-width: 767px) {
