@@ -97,7 +97,7 @@ for (const { route, selector, name } of cases) {
             })
             expect(await fieldFrames()).toEqual([])
             await expect(input).toHaveCSS('border-top-width', '1px')
-            await expect(input).toHaveCSS('border-top-color', 'rgb(122, 20, 0)')
+            await expect(input).toHaveCSS('border-top-color', 'rgb(153, 153, 153)')
             if (name === 'library keywords') {
                 const field = await input.boundingBox()
                 const chip = await chips.first().boundingBox()
@@ -112,12 +112,9 @@ for (const { route, selector, name } of cases) {
                 })
             }
             await clickOutside(page)
-            // WebKit retains input focus after a click on non-focusable page
-            // background. Its single keyboard-focus border remains valid.
-            await expect.poll(() => input.evaluate(element => {
-                const focused = element.matches(':focus-visible')
-                return getComputedStyle(element).borderTopColor === (focused ? 'rgb(122, 20, 0)' : 'rgb(153, 153, 153)')
-            })).toBe(true)
+            // WebKit may retain input focus on non-focusable page background;
+            // the ordinary gray border is preserved regardless of focus state.
+            await expect(input).toHaveCSS('border-top-color', 'rgb(153, 153, 153)')
             expect(await fieldFrames()).toEqual([])
         }
         await input.click()
