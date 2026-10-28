@@ -81,6 +81,20 @@ describe("virtual option boundary request ownership", () => {
       expect(controls.scrollToIndex).toHaveBeenCalledWith(0, { align: "start" })
     } finally { mounted.unmount() }
   })
+  test("an equal option refresh preserves a pending End activation", async () => {
+    const mounted = await mountOptions()
+    try {
+      const end = mounted.instance.value!.focusBoundary(true)
+      await mounted.nextTick()
+      await vi.advanceTimersByTimeAsync(32)
+      // Filter responses rebuild author objects while scrolling settles.
+      mounted.options.value = mounted.options.value.map(option => ({ ...option }))
+      await mounted.nextTick()
+      await vi.advanceTimersByTimeAsync(200)
+      await end
+      expect(controls.focused).toEqual(["old-59"])
+    } finally { mounted.unmount() }
+  })
   test("changing the option context cancels a pending boundary activation", async () => {
     const mounted = await mountOptions()
     try {

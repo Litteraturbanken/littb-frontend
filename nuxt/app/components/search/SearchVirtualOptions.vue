@@ -14,7 +14,13 @@ function cancelBoundary() {
   boundaryRequest += 1
   pendingFocus.value = null
 }
-watch(() => props.options, cancelBoundary, { flush: "sync" })
+watch(() => props.options, (options, previous) => {
+  // Filter responses can replace every author object without changing the list.
+  // Only a different navigable context invalidates an in-flight boundary key.
+  if (options.length !== previous.length || options.some((option, index) =>
+    option.value !== previous[index]?.value || !!option.disabled !== !!previous[index]?.disabled
+  )) cancelBoundary()
+}, { flush: "sync" })
 onBeforeUnmount(cancelBoundary)
 const virtualizer = useVirtualizer(computed(() => ({
   count: props.options.length,
