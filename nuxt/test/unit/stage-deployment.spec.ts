@@ -314,6 +314,15 @@ elif [ "$1" = "-" ] && [ -n "$2" ] && [ "$2" = "\${LB_STAGE_LOCK_FD:-}" ]; then
   status=$?
   [ "$status" -eq 0 ] && printf '%s\\n' 'stage lock verified' >> "$TRACE_FILE"
   exit "$status"
+elif [ "\${1##*/}" = "stage-release.py" ]; then
+  case "$2" in
+    prepare|finish) ;;
+    validate)
+      printf '%s\\n' '{"source":{"git_sha":"${gitSha}"},"image":{"digest":"${imageDigest}","reference":"registry.test:5000/lb-frontend@${imageDigest}"}}' > "$6"
+      printf '%s\\n' 'record'
+      ;;
+    *) exit 64 ;;
+  esac
 elif [ "\${1##*/}" = "stage.py" ]; then
   case "$2" in
     preflight)
@@ -404,6 +413,8 @@ elif printf '%s' "\${2:-}" | grep -q 'allocs = json.load'; then
   cat >/dev/null
   printf '%s\\n' 'build complete' >> "$TRACE_FILE"
   printf '%s\\n' 'complete'
+elif printf '%s' "\${2:-}" | grep -q 'd\\["source"\\]'; then
+  /usr/bin/python3 "$@"
 elif printf '%s' "\${2:-}" | grep -q 'candidate_sha'; then
   printf '%s\\n' '${gitSha}'
 elif printf '%s' "\${2:-}" | grep -q 'JobModifyIndex'; then
@@ -1294,4 +1305,24 @@ test.each(["missing", "other"])("build status does not hide a failure with an in
   })
   expect(result.status).toBe(0)
   expect(result.stdout.trim()).toBe("failed")
+})
+
+
+test("resume verifies and records under the lock without building or registering", () => {
+  const { result, trace } = runDeployStage("1", undefined, { arguments: ["--resume"] })
+  expect(result.status, result.stderr).toBe(0)
+  expect(trace).toEqual([
+    "stage lock", "stage lock verified", "public identity verified", "capture", "record",
+    "stage lock release verified", "stage lock released"
+  ])
+})
+
+test("resume retains the receipt when recording fails without registering again", () => {
+  const { result, trace } = runDeployStage("1", undefined, {
+    arguments: ["--resume"], recordFails: true
+  })
+  expect(result.status).toBe(2)
+  expect(result.stderr).toContain("Retained receipt")
+  expect(trace).not.toContain("nomad run")
+  expect(trace).not.toContain("dispatch")
 })

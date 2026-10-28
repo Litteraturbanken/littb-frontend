@@ -146,7 +146,6 @@ PY
 fi
 
 requested_ref="${1:-HEAD}"
-requested_git_sha="$(git rev-parse --verify "${requested_ref}^{commit}")"
 
 stage_tmpdir="${TMPDIR:-/tmp}"
 stage_tmpdir="${stage_tmpdir%/}"
@@ -157,9 +156,21 @@ jobspec_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-jobspec.XXXXXX")"
 builder_jobspec_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-builder.XXXXXX")"
 stage_job_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-job.XXXXXX")"
 stage_allocations_file="$(mktemp "${stage_tmpdir}/lb-stage-frontend-allocations.XXXXXX")"
-trap 'rm -f "$lease_file" "$recheck_file" "$deployment_file" "$jobspec_file" "$stage_job_file" "$stage_allocations_file" "$builder_jobspec_file"' EXIT
+trap '[ ! -e "$repo_root/.stage-receipts/frontend-pending.json" ] || echo "Release journal retained. Retry with: WAIT_FOR_BUILD=1 LB_INFRA_REPOSITORY=$LB_INFRA_REPOSITORY ./scripts/deploy-stage.sh --resume" >&2; rm -f "$lease_file" "$recheck_file" "$deployment_file" "$jobspec_file" "$stage_job_file" "$stage_allocations_file" "$builder_jobspec_file"' EXIT
 
 stage_cli=(python3 "$LB_INFRA_REPOSITORY/scripts/stage.py")
+release_cli=(python3 "$repo_root/scripts/stage-release.py")
+if [ "$requested_ref" = "--resume" ]; then
+  record_command="$("${release_cli[@]}" validate "$repo_root" "$LB_INFRA_REPOSITORY" "$lease_file" "$deployment_file")"
+  read -r git_sha image_digest immutable_image_ref <<EOF
+$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["source"]["git_sha"], d["image"]["digest"], d["image"]["reference"])' "$deployment_file")
+EOF
+else
+if [ -e "$repo_root/.stage-receipts/frontend-pending.json" ]; then
+  echo "Pending Stage release retained; run this command with --resume before starting another deployment." >&2
+  exit 2
+fi
+requested_git_sha="$(git rev-parse --verify "${requested_ref}^{commit}")"
 "${stage_cli[@]}" preflight frontend --source-repository "$repo_root" >"$lease_file"
 git_sha="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["candidate_sha"])' "$lease_file")"
 
@@ -567,35 +578,13 @@ case "$plan_modify_index" in
 esac
 
 recheck_lease "before Nomad registration"
+"${release_cli[@]}" prepare "$repo_root" "$LB_INFRA_REPOSITORY" "$lease_file" "$immutable_image_ref" "$image_digest" "$jobspec_blob_sha256"
 nomad run -check-index "$plan_modify_index" -detach "${nomad_identity_vars[@]}" "$jobspec_file"
 
 wait_for_healthy_stage_allocations
 echo "Stage rollout ready in $((SECONDS - rollout_started))s"
-read -r stage_job_version stage_job_modify_index <<EOF
-$(python3 -c 'import json,sys; job=json.load(open(sys.argv[1])); print(job["Version"], job["JobModifyIndex"])' "$stage_job_file")
-EOF
-
-verified_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-cat >"$deployment_file" <<EOF
-source:
-  repository: littb
-  git_sha: $git_sha
-image:
-  reference: $immutable_image_ref
-  digest: $image_digest
-jobspec:
-  repository: littb
-  git_sha: $git_sha
-  path: jobs/lb-frontend-stage.nomad
-  blob_sha256: $jobspec_blob_sha256
-nomad:
-  job_id: lb-frontend-stage
-  job_version: $stage_job_version
-  job_modify_index: $stage_job_modify_index
-verification:
-  verified_at: "$verified_at"
-  identity_endpoint: https://stage.litteraturbanken.se/_deployment
-EOF
+record_command="$("${release_cli[@]}" validate "$repo_root" "$LB_INFRA_REPOSITORY" "$lease_file" "$deployment_file")"
+fi
 
 verification_started=$SECONDS
 PUBLIC_RESOURCE_ORIGIN=https://stage.litteraturbanken.se node "$repo_root/nuxt/scripts/verify-public-resource.mjs"
@@ -609,6 +598,7 @@ PUBLIC_RESOURCE_ORIGIN=https://stage.litteraturbanken.se node "$repo_root/nuxt/s
 
 echo "Stage browser verification completed in $((SECONDS - verification_started))s"
 
+record_command="$("${release_cli[@]}" validate "$repo_root" "$LB_INFRA_REPOSITORY" "$lease_file" "$deployment_file")"
 receipt_file="$repo_root/.stage-receipts/frontend-$git_sha.json"
 "${stage_cli[@]}" capture frontend \
   --lease "$lease_file" \
@@ -617,14 +607,20 @@ receipt_file="$repo_root/.stage-receipts/frontend-$git_sha.json"
   --receipt "$receipt_file"
 
 set +e
-record_output="$("${stage_cli[@]}" record frontend --receipt "$receipt_file" --infra-repository "$LB_INFRA_REPOSITORY")"
-record_status=$?
+if [ "$record_command" = "retry-push" ]; then
+  record_output="$("${release_cli[@]}" publish "$repo_root" "$LB_INFRA_REPOSITORY")"
+  record_status=$?
+else
+  record_output="$("${stage_cli[@]}" record frontend --receipt "$receipt_file" --infra-repository "$LB_INFRA_REPOSITORY")"
+  record_status=$?
+fi
 set -e
 if [ "$record_status" -ne 0 ]; then
   echo "Stage frontend is live but its receipt was not recorded. Retained receipt: $receipt_file" >&2
   exit "$record_status"
 fi
 
+"${release_cli[@]}" finish "$repo_root" "$LB_INFRA_REPOSITORY"
 echo
 echo "Deployed lb-frontend-stage from git_sha=$git_sha"
 echo "Image: $immutable_image_ref"
