@@ -2195,10 +2195,11 @@ onBeforeUnmount(() => {
 function selectContentsPage(pageName: string): void {
   const currentReader = reader.value
   if (!currentReader || !currentReader.pageNames.includes(pageName)) return
+  // Back should return to the reading page, without reopening its contents modal.
   void navigateRawFullPath(
     pageHref(pageName),
     false,
-    rawFullPath.value
+    contentsNeutralFullPath.value
   )
 }
 

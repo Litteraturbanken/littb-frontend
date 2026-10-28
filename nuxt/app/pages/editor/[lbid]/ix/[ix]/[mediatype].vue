@@ -224,11 +224,14 @@ function currentPartAuthorLabel(index: number): string {
 function browserFullPath(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`
 }
-function navigateRawFullPath(fullPath: string, replace = false): Promise<void> {
+function navigateRawFullPath(
+  fullPath: string,
+  replace = false,
+  previousFullPath = rawFullPath.value
+): Promise<void> {
   if (!import.meta.client) {
     return (replace ? router.replace(fullPath) : router.push(fullPath)).then(() => undefined)
   }
-  const previousFullPath = rawFullPath.value
   return new Promise<void>((resolve, reject) => {
     const removeAfterEach = router.afterEach((_to, _from, failure) => {
       removeAfterEach()
@@ -421,7 +424,11 @@ async function closeContents(): Promise<void> {
 function selectContentsPage(pageName: string): void {
   const part = page.value?.parts.find(item => item.start_page_name === pageName)
   if (!part) return
-  void navigateRawFullPath(readerContentsNeutralFullPath(href(part.start_page_index)))
+  void navigateRawFullPath(
+    readerContentsNeutralFullPath(href(part.start_page_index)),
+    false,
+    contentsNeutralHref.value
+  )
 }
 
 const sourceInfoRequested = computed(() => readerSourceInfoIsOpen(route.query["om-boken"]))

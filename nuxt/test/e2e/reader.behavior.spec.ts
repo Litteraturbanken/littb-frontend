@@ -1587,7 +1587,7 @@ test("empty errata hides the legacy correction copy and controls", async ({ page
   expect(problems).toEqual([])
 })
 
-test("contents rows use surnames and selecting a nested part pushes its raw target", async ({
+test("contents rows use surnames and selecting a nested part pushes its target with a neutral back entry", async ({
   page,
   request
 }) => {
@@ -1614,7 +1614,8 @@ test("contents rows use surnames and selecting a nested part pushes its raw targ
   )
   const rows = dialog.locator(".part_menu > li")
   await expect(rows).toHaveCount(5)
-  await expect(rows.nth(0)).toHaveAttribute("title", "Den yttre delen")
+  await rows.nth(0).locator(".title a").focus()
+  await expect(dialog.getByRole("tooltip")).toHaveText("Den yttre delen")
   await expect(rows.nth(0).locator(".author")).toHaveText("Söderberg")
   await expect(rows.nth(1).locator(".author")).toHaveText("Mörike")
   await expect(rows.nth(2).locator(".author")).toHaveText(["Rilke, ", "Shelley"])
@@ -1653,14 +1654,14 @@ test("contents rows use surnames and selecting a nested part pushes its raw targ
   expect(selectedHitRequests).toHaveLength(1)
   expect(await readerHitRequests(request)).toHaveLength(1)
 
-  const contentsEncodedPath =
+  const previousEncodedPath =
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-1/etext" +
-    rawQuery
+    retainedQuery
   await page.goBack()
-  await expect(page).toHaveURL(`${readerPartsPath}${rawQuery}`)
-  await expect(dialog).toHaveCount(1)
+  await expect(page).toHaveURL(`${readerPartsPath}${retainedQuery}`)
+  await expect(dialog).toHaveCount(0)
   expect(await page.evaluate(() => window.history.state.current))
-    .toBe(contentsEncodedPath)
+    .toBe(previousEncodedPath)
   await page.goForward()
   await expect(page).toHaveURL(selectedPath)
   await expect(dialog).toHaveCount(0)
@@ -5661,4 +5662,39 @@ test("production kyrka bookmark keeps highlighting and hit navigation without du
     .toHaveAttribute("href", "/s%C3%B6k?fras=kyrka&intervall=1248%2C2026")
   await nav.getByRole("button", { name: "Stäng träffvisningen" }).click()
   expect(new URL(page.url()).search).toBe("")
+})
+
+
+test("contents modal replaces its state while real reading pages remain in Back history", async ({ page }) => {
+  const rawQuery = "?bare&repeat=%2f&repeat=%2F&storlek=3"
+  const previousPage = `${readerPartsPath}${rawQuery}`
+  const currentPage = `/författare/SöderbergH/titlar/DoktorGlasParts/sida/1/etext${rawQuery}`
+  await page.goto(previousPage, { waitUntil: "networkidle" })
+  await page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" }).click()
+  await expect(page).toHaveURL(currentPage)
+  const trigger = page.locator(".reader-context .subnav").getByRole("link", { name: "Innehållsförteckning" })
+  const dialog = page.getByRole("dialog", { name: "Innehållsförteckning" })
+  const historyLength = await page.evaluate(() => history.length)
+  await trigger.click()
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole("button", { name: "Stäng" }).click()
+  await expect(page).toHaveURL(currentPage)
+  expect(await page.evaluate(() => history.length)).toBe(historyLength)
+  await page.goBack()
+  await expect(page).toHaveURL(previousPage)
+  await expect(dialog).toHaveCount(0)
+  await page.goForward()
+  await expect(page).toHaveURL(currentPage)
+  await trigger.click()
+  await expect(dialog).toBeVisible()
+  await page.reload({ waitUntil: "networkidle" })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole("link", { name: "Mellandelen" }).click()
+  await expect(page).toHaveURL(`/författare/SöderbergH/titlar/DoktorGlasParts/sida/-3/etext${rawQuery}`)
+  await page.goBack()
+  await expect(page).toHaveURL(currentPage)
+  await expect(dialog).toHaveCount(0)
+  await page.goBack()
+  await expect(page).toHaveURL(previousPage)
+  await expect(dialog).toHaveCount(0)
 })

@@ -621,6 +621,12 @@ test("editor contents links keep modified clicks native and select normally", as
   )
   await expect(dialog).toHaveCount(0)
   expect(await page.evaluate(() => window.history.length)).toBe(historyLength + 1)
+  await page.goBack()
+  await expect(page).toHaveURL("/editor/lb-editor-boye/ix/4/f?bare&keep=%2f&keep=%2F#part")
+  await expect(dialog).toHaveCount(0)
+  await page.goForward()
+  await expect(page).toHaveURL("/editor/lb-editor-boye/ix/8/f?bare&keep=%2f&keep=%2F#part")
+  await expect(dialog).toHaveCount(0)
 })
 
 test("editor Reader restores focus mode through raw-preserving router history", async ({ page }) => {
