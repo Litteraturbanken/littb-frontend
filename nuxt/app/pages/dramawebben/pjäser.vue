@@ -659,14 +659,40 @@ function chooseAuthor(author: CatalogAuthor | null) {
   void setQuery("author", author?.author_id ?? null)
 }
 
-function setRange(key: RangeKey, side: "from" | "to", value: string) {
+const rangeDrafts = ref<Partial<Record<RangeKey, { from: number, to: number }>>>({})
+
+// Native inputs move before change commits the filter to the route.
+function displayedRange(key: RangeKey): { from: number, to: number } {
+  return rangeDrafts.value[key] ?? selectedRange(key)
+}
+
+function draftRange(key: RangeKey, side: "from" | "to", value: string) {
+  const current = selectedRange(key, latestRouteQuery())
+  const bounds = ranges.value[key]
+  const number = Math.max(bounds.floor, Math.min(bounds.ceil, Number(value)))
+  if (!Number.isFinite(number)) return
+  rangeDrafts.value[key] = {
+    from: side === "from" ? Math.min(number, current.to) : current.from,
+    to: side === "to" ? Math.max(number, current.from) : current.to
+  }
+}
+
+watch(() => rangeFields.map(({ key }) => oneQuery(route.query[key])), (values, previous) => {
+  rangeFields.forEach(({ key }, index) => {
+    if (values[index] !== previous[index]) rangeDrafts.value[key] = undefined
+  })
+})
+
+async function setRange(key: RangeKey, side: "from" | "to", value: string) {
   const current = selectedRange(key, latestRouteQuery())
   const number = Number(value)
   if (!Number.isFinite(number)) return
   const from = side === "from" ? Math.min(number, current.to) : current.from
   const to = side === "to" ? Math.max(number, current.from) : current.to
   const bounds = ranges.value[key]
-  void setQuery(key, from === bounds.floor && to === bounds.ceil ? null : `${from},${to}`)
+  const draft = rangeDrafts.value[key]
+  await setQuery(key, from === bounds.floor && to === bounds.ceil ? null : `${from},${to}`)
+  if (rangeDrafts.value[key] === draft) rangeDrafts.value[key] = undefined
 }
 
 const rangePointer = ref<{
@@ -700,6 +726,14 @@ function beginRangePointer(event: PointerEvent, key: RangeKey) {
   track.querySelector<HTMLInputElement>(`input[data-range-endpoint="${side}"]`)
     ?.focus({ preventScroll: true })
   track.setPointerCapture(event.pointerId)
+  draftRange(key, side, String(value))
+}
+
+function moveRangePointer(event: PointerEvent, key: RangeKey) {
+  const pointer = rangePointer.value
+  if (!pointer || pointer.key !== key || pointer.pointerId !== event.pointerId) return
+  const value = rangePointerValue(event, key)
+  if (value !== null) draftRange(key, pointer.side, String(value))
 }
 
 function finishRangePointer(event: PointerEvent, key: RangeKey) {
@@ -715,8 +749,13 @@ function finishRangePointer(event: PointerEvent, key: RangeKey) {
   setRange(key, pointer.side, String(bounded))
 }
 
-function cancelRangePointer(event: PointerEvent) {
-  if (rangePointer.value?.pointerId !== event.pointerId) return
+function cancelRangePointer(event: PointerEvent, key: RangeKey) {
+  if (!rangePointer.value) {
+    if (event.type === "pointercancel") rangeDrafts.value[key] = undefined
+    return
+  }
+  if (rangePointer.value.pointerId !== event.pointerId) return
+  rangeDrafts.value[rangePointer.value.key] = undefined
   rangePointer.value = null
 }
 
@@ -871,19 +910,25 @@ useHead(() => ({
                 <div
                   class="number_input catalog_range"
                   :data-drama-range="field.key"
+                  :style="{
+                    '--range-from': `${100 * (displayedRange(field.key).from - ranges[field.key].floor) / (ranges[field.key].ceil - ranges[field.key].floor || 1)}%`,
+                    '--range-to': `${100 * (displayedRange(field.key).to - ranges[field.key].floor) / (ranges[field.key].ceil - ranges[field.key].floor || 1)}%`
+                  }"
                   @pointerdown="beginRangePointer($event, field.key)"
+                  @pointermove="moveRangePointer($event, field.key)"
                   @pointerup="finishRangePointer($event, field.key)"
-                  @pointercancel="cancelRangePointer"
-                  @lostpointercapture="cancelRangePointer"
+                  @pointercancel="cancelRangePointer($event, field.key)"
+                  @lostpointercapture="cancelRangePointer($event, field.key)"
                 >
-                  <span class="range_values"><span>{{ selectedRange(field.key).from }}</span><span>{{ selectedRange(field.key).to }}</span></span>
+                  <span class="range_values"><span>{{ displayedRange(field.key).from }}</span><span>{{ displayedRange(field.key).to }}</span></span>
                   <input
                     type="range"
                     data-range-endpoint="from"
                     :aria-label="`${field.label} från`"
                     :min="ranges[field.key].floor"
                     :max="ranges[field.key].ceil"
-                    :value="selectedRange(field.key).from"
+                    :value="displayedRange(field.key).from"
+                    @input="draftRange(field.key, 'from', ($event.target as HTMLInputElement).value)"
                     @change="setRange(field.key, 'from', ($event.target as HTMLInputElement).value)"
                   >
                   <input
@@ -892,7 +937,8 @@ useHead(() => ({
                     :aria-label="`${field.label} till`"
                     :min="ranges[field.key].floor"
                     :max="ranges[field.key].ceil"
-                    :value="selectedRange(field.key).to"
+                    :value="displayedRange(field.key).to"
+                    @input="draftRange(field.key, 'to', ($event.target as HTMLInputElement).value)"
                     @change="setRange(field.key, 'to', ($event.target as HTMLInputElement).value)"
                   >
                 </div>
@@ -1026,7 +1072,7 @@ useHead(() => ({
   background: white !important;
   text-align: left;
 }
-.catalog_select input.select2-selection__rendered {
+.controls .catalog_select input.select2-selection__rendered {
   display: block !important;
   max-width: none !important;
   width: 100%;
@@ -1034,8 +1080,8 @@ useHead(() => ({
   padding: 0;
   border: 0 !important;
   background: transparent;
-  font-family: inherit;
-  font-size: inherit;
+  font-family: "Requiem Text SC A", "Requiem Text SC B";
+  font-size: 16px;
   outline: 0;
 }
 .catalog_select input.select2-selection__rendered:focus-visible:not(.author_pointer_focused) {
@@ -1096,6 +1142,14 @@ useHead(() => ({
   background: #fff;
   color: #333;
   box-shadow: none;
+  padding: 4px 12px;
+  font-size: 16px;
+  line-height: 24px;
+}
+.controls > .btn-group:first-child .btn:hover,
+.controls > .btn-group:first-child .btn:focus-visible {
+  color: white;
+  background: var(--primary-color);
 }
 .controls > .btn-group:first-child .btn.active {
   color: #fff !important;
@@ -1118,6 +1172,31 @@ useHead(() => ({
   min-height: 34px;
   margin: 0;
 }
+.controls :deep(.filter_btn),
+.controls > .clear_filter {
+  font-family: "Requiem Text SC A", "Requiem Text SC B";
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: normal;
+  text-transform: lowercase;
+  padding: 4px 12px;
+}
+.controls > input.filter {
+  font-family: "Requiem Text A", "Requiem Text B", georgia, serif;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: normal;
+  text-transform: none;
+  padding: 4px 8px;
+}
+.controls > input.filter:focus-visible,
+.controls > .btn-group:first-child .btn:focus-visible,
+.controls > .clear_filter:focus-visible,
+.controls .catalog_select button.select2-selection--single:focus-visible {
+  outline: 1px solid #7a1400;
+  outline-offset: 0;
+  box-shadow: none;
+}
 .catalog_select .select2-selection__rendered { line-height: 30px; }
 .controls .auth_select_container .btn-group {
   position: relative;
@@ -1128,7 +1207,16 @@ useHead(() => ({
   color: #555;
   font-family: "Requiem Text SC A", "Requiem Text SC B";
   font-variant: normal;
+  font-size: 16px;
+  letter-spacing: normal;
   text-transform: lowercase !important;
+}
+.catalog_options {
+  font-family: "Requiem Text SC A", "Requiem Text SC B";
+  font-size: 16px;
+  line-height: 1.2;
+  letter-spacing: normal;
+  text-transform: lowercase;
 }
 .catalog_select .select2-selection__rendered.catalog_placeholder,
 .catalog_select input.select2-selection__rendered::placeholder,
@@ -1171,11 +1259,12 @@ useHead(() => ({
 }
 .catalog_range input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
-  background: #7a1400;
+  /* Native thumb centers travel within the 15px inset rail. */
+  background: linear-gradient(to right, #ddd var(--range-from), #7a1400 var(--range-from), #7a1400 var(--range-to), #ddd var(--range-to)) center / calc(100% - 15px) 100% no-repeat #ddd;
 }
 .catalog_range input[type="range"]::-moz-range-track {
   height: 4px;
-  background: #7a1400;
+  background: linear-gradient(to right, #ddd var(--range-from), #7a1400 var(--range-from), #7a1400 var(--range-to), #ddd var(--range-to)) center / calc(100% - 15px) 100% no-repeat #ddd;
 }
 .catalog_range input[type="range"]:last-of-type::-webkit-slider-runnable-track {
   background: transparent;
@@ -1217,6 +1306,18 @@ useHead(() => ({
   box-shadow: none !important;
 }
 @media (max-width: 639px) {
+  .controls > .auth_select_container:has(.filter_btn) {
+    position: relative;
+    width: 100%;
+  }
+  .controls .auth_select_container:has(.filter_btn) .btn-group {
+    position: static;
+  }
+  .controls .auth_select_container :deep(.dropdown-menu) {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+  }
   .catalog_page.catalog_plays::after {
     display: block;
     height: 62px;

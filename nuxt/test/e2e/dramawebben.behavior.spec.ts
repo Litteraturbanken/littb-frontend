@@ -1454,6 +1454,34 @@ test("all drama range tracks share pointer behavior while native keyboard input 
   expect(page.url()).toBe(beforeRightClick)
 })
 
+test("drama range labels and selected rail follow native drafts before committing all six filters", async ({ page }) => {
+  await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Akter och roller", exact: true }).click()
+
+  for (const key of ["number_of_acts", "number_of_roles", "number_of_pages", "female_roles", "male_roles", "other_roles"]) {
+    const track = page.locator(`[data-drama-range=${key}]`)
+    const from = track.locator('input[data-range-endpoint="from"]')
+    const to = track.locator('input[data-range-endpoint="to"]')
+    const min = Number(await from.getAttribute("min"))
+    const max = Number(await from.getAttribute("max"))
+    const box = (await to.boundingBox())!
+    const beforeUrl = page.url()
+    const beforeRows = await page.locator(".contenttable tbody tr").allTextContents()
+    await page.mouse.move(box.x + box.width - 7.5, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(box.x + 7.5 + (box.width - 15) * 0.6, box.y + box.height / 2, { steps: 5 })
+    const draft = await to.inputValue()
+    expect(Number(draft)).toBeLessThan(max)
+    await expect(track.locator(".range_values span").last()).toHaveText(draft)
+    await expect(track).toHaveCSS("--range-to", `${100 * (Number(draft) - min) / (max - min)}%`)
+    expect(page.url()).toBe(beforeUrl)
+    expect(await page.locator(".contenttable tbody tr").allTextContents()).toEqual(beforeRows)
+    await page.mouse.up()
+    await expectQuery(page, key, `${min},${draft}`)
+    await expect(track.locator(".range_values span").last()).toHaveText(draft)
+  }
+})
+
 test("native drama range endpoints constrain only the endpoint being edited", async ({ page }) => {
   await page.goto(
     "/dramawebben/pj%C3%A4ser?number_of_pages=24,60",
@@ -1474,6 +1502,28 @@ test("native drama range endpoints constrain only the endpoint being edited", as
     element.dispatchEvent(new Event("change", { bubbles: true }))
   })
   await expectQuery(page, "number_of_pages", "60,60")
+})
+
+test("an unrelated catalog query commit preserves an in-progress range draft", async ({ page }) => {
+  await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Akter och roller", exact: true }).click()
+  const track = page.locator("[data-drama-range=number_of_pages]")
+  const to = track.locator('input[data-range-endpoint="to"]')
+  await to.evaluate((element: HTMLInputElement) => {
+    element.value = "100"
+    element.dispatchEvent(new Event("input", { bubbles: true }))
+  })
+  await expect(track.locator(".range_values span").last()).toHaveText("100")
+  await page.getByRole("textbox", { name: "Sök", exact: true }).evaluate((element: HTMLInputElement) => {
+    element.value = "Julie"
+    element.dispatchEvent(new Event("input", { bubbles: true }))
+  })
+  await expectQuery(page, "filterTxt", "Julie")
+  await expect(track.locator(".range_values span").last()).toHaveText("100")
+  await expect(to).toHaveValue("100")
+  await to.dispatchEvent("change")
+  await expectQuery(page, "number_of_pages", "18,100")
+  await expectQuery(page, "filterTxt", "Julie")
 })
 
 test("drama range pointers ignore completion and cancellation from other pointers", async ({
