@@ -57,6 +57,18 @@ async function mountOptions() {
 }
 
 describe("virtual option boundary request ownership", () => {
+  test("End includes the final action in the logical virtual row count", async () => {
+    const mounted = await mountOptions()
+    try {
+      mounted.options.value.push({ value: "show-all-action", label: "Show all titles" })
+      await mounted.nextTick()
+      const end = mounted.instance.value!.focusBoundary(true)
+      await vi.advanceTimersByTimeAsync(200)
+      await end
+      expect(controls.scrollToIndex).toHaveBeenLastCalledWith(60, { align: "end" })
+      expect(controls.focused).toEqual(["show-all-action"])
+    } finally { mounted.unmount() }
+  })
   test.each([false, true])("rapid opposing boundaries only activate the latest request (last=%s)", async (last) => {
     const mounted = await mountOptions()
     try {

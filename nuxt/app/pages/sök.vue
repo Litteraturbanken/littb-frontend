@@ -1669,6 +1669,9 @@ v-for="item in [
               hide-selected
               preserve-search
               :loading="titleLoading"
+              :last-action-label="!titleOptionsFailed && !titleOptionsExpanded && (options?.titleTotal ?? 0) > 30
+                ? (titleFilterText ? `Visa alla ${options?.titleTotal} matchande titlar` : `Visa alla ${options?.titleTotal} titlar`) : undefined"
+              @last-action="showAllTitleOptions"
               @query="queueTitleOptions"
               @update:model-value="patchFilters({ workIds: $event })"
             >
@@ -1686,16 +1689,6 @@ v-for="item in [
                 <li v-if="titleOptionsFailed" class="title_options_error" role="alert">
                   Fler titlar kunde inte hämtas.
                   <button type="button" @mousedown.prevent @click="retryTitleOptions">Försök igen</button>
-                </li>
-                <li v-else-if="!titleOptionsExpanded && (options?.titleTotal ?? 0) > 30">
-                  <button
-                    type="button"
-                    class="title_select_show_all select2-results__option"
-                    @mousedown.prevent
-                    @click="showAllTitleOptions"
-                  >{{ titleFilterText
-                    ? `Visa alla ${options?.titleTotal} matchande titlar`
-                    : `Visa alla ${options?.titleTotal} titlar` }}</button>
                 </li>
               </template>
             </SearchMultiSelect>

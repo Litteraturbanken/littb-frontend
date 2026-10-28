@@ -95,22 +95,22 @@ describe("SearchMultiSelect grouped normalization", () => {
     }
   })
 
-  test("renders title options beyond the multiselect default limit", async () => {
+  test("virtualizes externally searched title options beyond the default limit", async () => {
     const target = document.createElement("div")
     document.body.append(target)
     const [{ createApp, h, nextTick, ssrContextKey }, { default: SearchMultiSelect }] = await Promise.all([
       import("vue"), import("../../app/components/search/SearchMultiSelect.vue")
     ])
     const app = createApp({ setup: () => () => h(SearchMultiSelect, {
-      modelValue: [], placeholder: "Titlar",
+      modelValue: [], placeholder: "Titlar", lastActionLabel: "Show all titles",
       options: Array.from({ length: 1501 }, (_, i) => ({ value: `lb${i}`, label: `Title ${i}` }))
     }) })
     app.provide(ssrContextKey, { modules: new Set<string>() })
     app.mount(target)
     target.querySelector<HTMLButtonElement>(".multiselect__select")!.click()
     await nextTick()
-    expect(target.querySelectorAll('[role="option"]')).toHaveLength(1501)
-    expect(target.textContent).toContain("Title 1500")
+    expect(target.querySelectorAll('[role="option"]').length).toBeLessThan(100)
+    expect(target.querySelector('[role="presentation"][style*="position: relative"]')?.getAttribute("style")).toContain("42056px")
     app.unmount()
   })
 
@@ -273,4 +273,53 @@ describe("SearchMultiSelect grouped normalization", () => {
       .toBeLessThan([...searchableInput!.parentElement!.children].indexOf(searchableInput!))
     app.unmount()
   })
+})
+
+
+test.each(["Enter", "click"])("last action is navigable and expands without emitting a selection (%s)", async activation => {
+  const [{ createApp, h, nextTick, ssrContextKey }, { default: SearchMultiSelect }] = await Promise.all([
+    import("vue"), import("../../app/components/search/SearchMultiSelect.vue")
+  ])
+  const target = document.createElement("div")
+  document.body.append(target)
+  const updates: string[][] = []
+  const queries: string[] = []
+  let actions = 0
+  const app = createApp({ setup: () => () => h(SearchMultiSelect, {
+    modelValue: ["one"], options: [{ value: "one", label: "One" }, { value: "two", label: "Two" }],
+    searchable: true, preserveSearch: true, placeholder: "Titles", lastActionLabel: "Show all titles",
+    onLastAction: () => { actions++ }, "onUpdate:modelValue": (value: string[]) => updates.push(value),
+    onQuery: (value: string) => queries.push(value)
+  }) })
+  app.provide(ssrContextKey, { modules: new Set<string>() })
+  app.mount(target)
+  const frame = async () => { await new Promise(resolve => requestAnimationFrame(resolve)); await nextTick() }
+  const input = target.querySelector<HTMLInputElement>("input")!
+  const press = async (key: string) => {
+    input.dispatchEvent(new window.KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }))
+    await frame()
+  }
+  try {
+    target.querySelector<HTMLButtonElement>(".multiselect__select")!.click()
+    await frame()
+    input.value = "kept query"
+    input.dispatchEvent(new window.Event("input", { bubbles: true }))
+    await frame()
+    const options = target.querySelectorAll<HTMLElement>('[role="option"]')
+    expect(options[options.length - 1]?.textContent).toBe("Show all titles")
+    await press("End")
+    expect(input.getAttribute("aria-activedescendant")).toBe(options[options.length - 1]!.id)
+    await press("ArrowUp")
+    expect(input.getAttribute("aria-activedescendant")).toBe(options[options.length - 2]!.id)
+    await press("ArrowDown")
+    expect(input.getAttribute("aria-activedescendant")).toBe(options[options.length - 1]!.id)
+    if (activation === "Enter") await press("Enter")
+    else { options[options.length - 1]!.dispatchEvent(new window.MouseEvent("mousedown", { bubbles: true, button: 0 })); await frame() }
+    expect(actions).toBe(1)
+    expect(updates).toEqual([])
+    expect(queries).toEqual(["kept query"])
+    expect(input.value).toBe("kept query")
+    expect(input.getAttribute("aria-expanded")).toBe("true")
+    expect(target.querySelectorAll(".select2-selection__choice")).toHaveLength(1)
+  } finally { app.unmount(); target.remove() }
 })

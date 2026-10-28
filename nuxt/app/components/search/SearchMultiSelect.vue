@@ -30,6 +30,7 @@ const props = withDefaults(defineProps<{
   persistentInputRow?: boolean
   hideSelected?: boolean
   preserveSearch?: boolean
+  lastActionLabel?: string
 }>(), {
   optionGroups: () => [],
   accessibleName: undefined,
@@ -39,12 +40,14 @@ const props = withDefaults(defineProps<{
   spaceAfterRemove: true,
   persistentInputRow: false,
   hideSelected: false,
-  preserveSearch: false
+  preserveSearch: false,
+  lastActionLabel: undefined
 })
 
 const emit = defineEmits<{
   "update:modelValue": [value: string[]]
   query: [value: string]
+  lastAction: []
 }>()
 
 
@@ -82,12 +85,22 @@ const groups = computed(() => {
     return { label: group.label, options }
   }).filter(group => group.options.length)
 })
-const windowedOptions = computed(() => props.internalSearch && !props.optionGroups.length && props.options.length > 500)
+// Actions belong to the same Headless UI navigation order as real choices.
+const lastAction = computed<SearchMultiSelectOption>(() => ({ value: `${inputId}-last-action`, label: props.lastActionLabel ?? "" }))
+const navigableOptions = computed(() => [
+  ...groups.value.flatMap(group => group.options),
+  ...(props.lastActionLabel ? [lastAction.value] : [])
+])
+const windowedOptions = computed(() => !props.optionGroups.length && navigableOptions.value.length > 500)
 const virtualList = ref<InstanceType<typeof SearchVirtualOptions> | null>(null)
 function selectedLabel(option: SearchMultiSelectOption) {
   return option.selectionLabel ?? option.label
 }
 function update(values: SearchMultiSelectOption[]) {
+  if (values.some(option => option.value === lastAction.value.value)) {
+    emit("lastAction")
+    return
+  }
   values.forEach(rememberOption)
   const selected = new Set(values.map(option => option.value))
   const known = flatOptions.value.filter(option => selected.has(option.value)).map(option => option.value)
@@ -233,7 +246,8 @@ function keydown(event: KeyboardEvent, open: boolean) {
           <SearchVirtualOptions
             v-if="windowedOptions && open"
             ref="virtualList"
-            :options="groups[0]?.options ?? []"
+            :options="navigableOptions"
+            :action-value="lastActionLabel ? lastAction.value : undefined"
             :active-option="activeOption"
           />
           <ul v-else-if="!windowedOptions" class="multiselect__content" style="display: inline-block" role="presentation">
@@ -253,6 +267,9 @@ class="multiselect__option" :class="{
             </template>
             <li v-if="!groups.length" role="presentation"><span class="multiselect__option">{{ query ? 'Inga matchande alternativ.' : 'Inga alternativ att visa.' }}</span></li>
             <slot name="afterList" />
+            <ComboboxOption v-if="lastActionLabel" v-slot="{ active }" :value="lastAction" :order="flatOptions.length * (groups.length + 1)" class="multiselect__element">
+              <span class="multiselect__option title_select_show_all select2-results__option" :class="{ 'multiselect__option--highlight': active }">{{ lastActionLabel }}</span>
+            </ComboboxOption>
           </ul>
         </ComboboxOptions>
       </div>

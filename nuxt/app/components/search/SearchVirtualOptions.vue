@@ -6,7 +6,7 @@ import { ComboboxOption } from "@headlessui/vue"
 import { defaultRangeExtractor, useVirtualizer } from "@tanstack/vue-virtual"
 import type { SearchMultiSelectOption } from "./SearchMultiSelect.vue"
 
-const props = defineProps<{ options: readonly SearchMultiSelectOption[]; activeOption?: unknown }>()
+const props = defineProps<{ options: readonly SearchMultiSelectOption[]; activeOption?: unknown; actionValue?: string }>()
 const root = ref<HTMLElement | null>(null)
 const pendingFocus = ref<number | null>(null)
 let boundaryRequest = 0
@@ -110,7 +110,7 @@ class="multiselect__option" :class="{
         'multiselect__option--highlight': active,
         'multiselect__option--selected': selected,
         'multiselect__option--disabled': options[item.index]?.disabled
-      }"><span class="select2-results__option">{{ options[item.index]?.label }}</span></span>
+      }"><span class="select2-results__option" :class="{ title_select_show_all: options[item.index]?.value === actionValue }">{{ options[item.index]?.label }}</span></span>
     </ComboboxOption>
   </div>
 </template>
