@@ -36,7 +36,7 @@ const cases = [
 ]
 
 for (const { route, selector, name } of cases) {
-    test(`${name}: real options, multiple chips, keyboard and repeated reopening`, async ({ page }) => {
+    test(`${name}: real options, multiple chips, keyboard and repeated reopening`, async ({ page }, testInfo) => {
         const errors = []
         page.on('pageerror', error => errors.push(error.message))
         expect((await page.goto(route)).status()).toBe(200)
@@ -70,6 +70,27 @@ for (const { route, selector, name } of cases) {
         await expect(input).toHaveAttribute('aria-expanded', 'true')
         await input.press('Escape')
         await expect(input).toHaveAttribute('aria-expanded', 'false')
+        if (selector.startsWith('[data-library-')) {
+            await expect(input).toBeFocused()
+            await expect(menu.locator('.multiselect')).toHaveCSS('outline-style', 'none')
+            await expect(input).toHaveCSS('border-top-width', '1px')
+            await expect(input).toHaveCSS('border-top-color', 'rgb(122, 20, 0)')
+            if (name === 'library keywords') {
+                const field = await input.boundingBox()
+                const chip = await chips.first().boundingBox()
+                const viewport = page.viewportSize()
+                await page.screenshot({
+                    path: testInfo.outputPath('selected-chip-border.png'),
+                    clip: {
+                        x: Math.max(0, field.x - 4), y: Math.max(0, field.y - 4),
+                        width: Math.min(viewport.width - Math.max(0, field.x - 4), Math.max(field.x + field.width, chip.x + chip.width) - field.x + 8),
+                        height: Math.max(field.height, chip.y + chip.height - field.y) + 8
+                    }
+                })
+            }
+            await clickOutside(page)
+            await expect(input).toHaveCSS('border-top-color', 'rgb(153, 153, 153)')
+        }
         await input.click()
         await expect(input).toHaveAttribute('aria-expanded', 'true')
         // Choose two additional, unselected live values using only the keyboard.

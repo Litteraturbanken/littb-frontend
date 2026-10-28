@@ -438,6 +438,22 @@
         margin-right: 0 !important;
     }
 
+    // The visible input already owns the field border. Outlining its taller
+    // outer chip container creates a second rectangle after selection.
+    .multiselect:has(input.multiselect__input:focus-visible) {
+        outline: none;
+    }
+
+    #mainview & input.multiselect__input:focus-visible {
+        border-color: #7a1400 !important;
+    }
+
+    @media (forced-colors: active) {
+        #mainview & input.multiselect__input:focus-visible {
+            border-color: Highlight !important;
+        }
+    }
+
     .multiselect:has(.select2-selection__choice),
     .multiselect:has(.select2-selection__choice) .multiselect__tags {
         width: 350px;
