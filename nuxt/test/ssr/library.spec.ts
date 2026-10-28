@@ -815,7 +815,7 @@ test("SSR canonicalizes all-results pages against response hits and preserves qu
   request
 }) => {
   const response = await request.get(
-    "/bibliotek?keep&keep=ja&filter=all-pagination&sida=100"
+    "/bibliotek?keep&keep=ja&filter=all-pagination&sida=101"
   )
   const document = parseHTML(await response.text()).document
   const url = new URL(response.url())
@@ -831,7 +831,7 @@ test("SSR canonicalizes all-results pages against response hits and preserves qu
     .toBe("page")
   expect((await libraryV2Requests(request)).search
     .filter(entry => entry.body.mode === "all")
-    .map(entry => entry.body.page)).toEqual([100, 2])
+    .map(entry => entry.body.page)).toEqual([101, 2])
 })
 
 test("SSR canonicalizes empty and out-of-schema all-results pages without redirect loops", async ({
@@ -840,7 +840,7 @@ test("SSR canonicalizes empty and out-of-schema all-results pages without redire
   for (const { filter, page, expectedPages } of [
     { filter: "inga", page: 2, expectedPages: [2, 1] },
     { filter: "all-pagination", page: 0, expectedPages: [1, 1] },
-    { filter: "all-pagination", page: 101, expectedPages: [1, 1] }
+    { filter: "all-pagination", page: 9007199254740992, expectedPages: [1, 1] }
   ]) {
     await reset(request)
     const response = await request.get(
@@ -858,14 +858,14 @@ test("SSR canonicalizes empty and out-of-schema all-results pages without redire
   }
 })
 
-test("SSR caps rendered pagination at the v2 page maximum", async ({ request }) => {
+test("SSR reaches the actual PDF last page beyond the old page maximum", async ({ request }) => {
   const document = parseHTML(await (await request.get(
-    "/bibliotek?visa=pdf&filter=bounded&sort=popularitet&sida=100"
+    "/bibliotek?visa=pdf&filter=bounded&sort=popularitet&sida=101"
   )).text()).document
 
-  expect(document.querySelector('[data-library-page="100"]')?.getAttribute("aria-current"))
+  expect(document.querySelector('[data-library-page="101"]')?.getAttribute("aria-current"))
     .toBe("page")
-  expect(document.querySelector('[data-library-page="101"]')).toBeNull()
+  expect(document.querySelector('[data-library-page="102"]')).toBeNull()
   expect(document.querySelector("[data-library-pagination-next]")?.getAttribute("aria-disabled"))
     .toBe("true")
   expect((await libraryV2Requests(request)).search[0]?.body).toEqual({
@@ -873,13 +873,13 @@ test("SSR caps rendered pagination at the v2 page maximum", async ({ request }) 
     filters: filters({ query: "bounded" }),
     sort: "popularity",
     reverse: false,
-    page: 100
+    page: 101
   })
 })
 
 test("standalone EPUB defaults unsupported mode, sort, and page values", async ({ request }) => {
   const document = parseHTML(await (await request.get(
-    "/epub?visa=unsupported&sort=saknas&sida=101"
+    "/epub?visa=unsupported&sort=saknas&sida=malformed"
   )).text()).document
 
   expect(document.querySelector('[data-library-tab="epub"]')?.getAttribute("aria-current"))
@@ -903,3 +903,27 @@ test("Library route aliases preserve supported query bytes", async ({ request })
   expect(redirect.headers().location)
     .toBe("/bibliotek?visa=works&keywords=texttype:roman&keep=ja")
 })
+
+
+for (const { mode, last, tail, selector } of [
+  { mode: "all", last: 1004, tail: 60, selector: "[data-library-result]" },
+  { mode: "works", last: 167, tail: 61, selector: "[data-library-work-row]" }
+]) {
+  test(`SSR reaches page 101 and the actual ${mode} end with query state intact`, async ({ request }) => {
+    for (const page of [101, last]) {
+      const response = await request.get(`/bibliotek?visa=${mode}&filter=deep-pagination&sort=titlar&sida=${page}&keep=ja`)
+      expect(response.status()).toBe(200)
+      const url = new URL(response.url())
+      expect(url.searchParams.get("sida")).toBe(String(page))
+      expect(url.searchParams.get("keep")).toBe("ja")
+      const { document } = parseHTML(await response.text())
+      expect(document.querySelectorAll(selector)).toHaveLength(page === last ? tail : 100)
+      expect(document.querySelector(`[data-library-page="${page}"]`)?.getAttribute("aria-current")).toBe("page")
+      if (page === last) {
+        expect(document.querySelector("[data-library-pagination-next]")?.getAttribute("aria-disabled")).toBe("true")
+        expect(document.querySelector(`[data-library-page="${last + 1}"]`)).toBeNull()
+      }
+    }
+    expect((await libraryV2Requests(request)).search.map(entry => entry.body.page)).toEqual([101, last])
+  })
+}

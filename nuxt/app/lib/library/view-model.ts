@@ -113,11 +113,11 @@ export type LatestResult = {
 }
 
 export type LibraryPageData =
-  | { mode: "all", response: { data: LibraryResult[], hits: number, suggest: never[], failed: false } }
-  | { mode: "authors", response: { data: LibraryResult[], hits: number, workCount: number, partCount: number, workAuthorIds: LibraryAuthorIds, partAuthorIds: LibraryAuthorIds, suggest: never[], failed: false } }
-  | { mode: "works" | "parts", response: { data: BrowseResult[], hits: number, distinctHits: number, authorIds: LibraryAuthorIds, suggest: never[], failed: false } }
-  | { mode: "latest", response: { groups: { imported: string, label: string, results: LatestResult[] }[], hits: number, distinctHits: number, suggest: never[], failed: false } }
-  | { mode: "epub" | "pdf", response: { data: DownloadResult[], hits: number, distinctHits: number, suggest: never[], failed: false } }
+  | { mode: "all", response: { paginationTotal?: number, data: LibraryResult[], hits: number, suggest: never[], failed: false } }
+  | { mode: "authors", response: { paginationTotal?: number, data: LibraryResult[], hits: number, workCount: number, partCount: number, workAuthorIds: LibraryAuthorIds, partAuthorIds: LibraryAuthorIds, suggest: never[], failed: false } }
+  | { mode: "works" | "parts", response: { paginationTotal?: number, data: BrowseResult[], hits: number, distinctHits: number, authorIds: LibraryAuthorIds, suggest: never[], failed: false } }
+  | { mode: "latest", response: { paginationTotal?: number, groups: { imported: string, label: string, results: LatestResult[] }[], hits: number, distinctHits: number, suggest: never[], failed: false } }
+  | { mode: "epub" | "pdf", response: { paginationTotal?: number, data: DownloadResult[], hits: number, distinctHits: number, suggest: never[], failed: false } }
 
 function contribution(role: LibraryAuthor["role"]): "" | "(red.)" | "(ill.)" {
   return role === "editor" ? "(red.)" : role === "illustrator" ? "(ill.)" : ""
@@ -481,7 +481,7 @@ export function formatLibrarySourceExportSize(size: number): string {
 export function toLibrarySearchView(response: LibrarySearchResponse): LibraryPageData {
   switch (response.mode) {
     case "all":
-      return { mode: response.mode, response: { data: response.items.map(mapAllItem), hits: response.total_hits, suggest: [], failed: false } }
+      return { mode: response.mode, response: { paginationTotal: response.pagination?.total_items, data: response.items.map(mapAllItem), hits: response.total_hits, suggest: [], failed: false } }
     case "authors":
       return {
         mode: response.mode,
@@ -497,13 +497,14 @@ export function toLibrarySearchView(response: LibrarySearchResponse): LibraryPag
         }
       }
     case "works":
-      return { mode: response.mode, response: { data: response.items.map(mapBrowseItem), hits: response.total_hits, distinctHits: response.total_works, authorIds: [], suggest: [], failed: false } }
+      return { mode: response.mode, response: { paginationTotal: response.pagination?.total_items, data: response.items.map(mapBrowseItem), hits: response.total_hits, distinctHits: response.total_works, authorIds: [], suggest: [], failed: false } }
     case "parts":
-      return { mode: response.mode, response: { data: response.items.map(mapBrowseItem), hits: response.total_parts, distinctHits: response.total_parts, authorIds: [], suggest: [], failed: false } }
+      return { mode: response.mode, response: { paginationTotal: response.pagination?.total_items, data: response.items.map(mapBrowseItem), hits: response.total_parts, distinctHits: response.total_parts, authorIds: [], suggest: [], failed: false } }
     case "latest":
       return {
         mode: response.mode,
         response: {
+          paginationTotal: response.pagination?.total_items,
           groups: response.groups.map(group => ({
             imported: group.imported_on,
             label: `${formatLibraryImportedDate(group.imported_on)}${group.source_count === null ? "" : ` (${group.source_count} verk)`}`,
@@ -517,7 +518,7 @@ export function toLibrarySearchView(response: LibrarySearchResponse): LibraryPag
       }
     case "epub":
     case "pdf":
-      return { mode: response.mode, response: { data: response.items.map(item => mapDownloadItem(item, response.mode)), hits: response.total_hits, distinctHits: response.total_works, suggest: [], failed: false } }
+      return { mode: response.mode, response: { paginationTotal: response.pagination?.total_items, data: response.items.map(item => mapDownloadItem(item, response.mode)), hits: response.total_hits, distinctHits: response.total_works, suggest: [], failed: false } }
     default:
       return assertNever(response)
   }

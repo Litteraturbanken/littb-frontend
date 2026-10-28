@@ -38,7 +38,6 @@ import {
 import {
     authorSortKey,
     epubSortKey,
-    libraryPageMaximum,
     partSortKey,
     relevanceSortKey,
     type AuthorSortKey,
@@ -434,12 +433,14 @@ const { data: initialData } = initialAsyncData
 const initialDataWasLoaded = initialAsyncData.status.value === "success"
 const initialPageData = initialData.value?.page ?? emptyPageData(initialState.mode)
 
-function canonicalAllResultPage(
+function canonicalResultPage(
     state: QueryState,
     pageData: LibraryPageState
 ): number | null {
-    if (pageData.mode !== "all" || pageData.response.failed) return null
-    return canonicalLibraryResultPage(state.page, pageData.response.hits)
+    if (pageData.mode === "authors" || pageData.response.failed) return null
+    const total = pageData.response.paginationTotal
+        ?? ("distinctHits" in pageData.response ? pageData.response.distinctHits : pageData.response.hits)
+    return canonicalLibraryResultPage(state.page, total)
 }
 
 function hasCanonicalPageQuery(page: number): boolean {
@@ -448,7 +449,7 @@ function hasCanonicalPageQuery(page: number): boolean {
         : route.query.sida === undefined
 }
 
-const initialCanonicalPage = canonicalAllResultPage(requestState(initialState), initialPageData)
+const initialCanonicalPage = canonicalResultPage(requestState(initialState), initialPageData)
 if (
     import.meta.server
     && initialCanonicalPage !== null
@@ -982,13 +983,13 @@ function refreshAfterPageRequest(state: QueryState, pageData: LibraryPageState):
     }
 }
 
-async function reconcileAllResultPage(
+async function reconcileResultPage(
     state: QueryState,
     pageData: LibraryPageState,
     version: number,
     activeController: AbortController
 ): Promise<boolean> {
-    const canonicalPage = canonicalAllResultPage(state, pageData)
+    const canonicalPage = canonicalResultPage(state, pageData)
     if (canonicalPage === null) return true
     const canonicalState = { ...state, page: canonicalPage }
     if (canonicalPage !== state.page) {
@@ -1024,7 +1025,7 @@ async function runBrowserRequest(state: QueryState, version: number) {
         () => null
     )
     if (!isCurrentLibraryPageRequest(state, version, activeController, pageData)) return
-    if (!await reconcileAllResultPage(state, pageData, version, activeController)) return
+    if (!await reconcileResultPage(state, pageData, version, activeController)) return
     assignLibraryPageResult(pageData, pageResultHandlers)
     updatePageModeState(state, pageData)
     updateLibrarySummaryFromPage(state, pageData)
@@ -1834,19 +1835,17 @@ const pdfTabCount = computed(() =>
 )
 
 function currentResultHitCount(): number {
-    if (currentMode.value === "all") return results.value.hits
-    if (currentMode.value === "latest") return latestResults.value.distinctHits
+    if (currentMode.value === "all") return results.value.paginationTotal ?? results.value.hits
+    if (currentMode.value === "latest") return latestResults.value.paginationTotal ?? latestResults.value.distinctHits
     if (currentMode.value === "authors") return 0
-    if (currentMode.value === "works") return workResults.value.distinctHits
-    if (currentMode.value === "parts") return partResults.value.hits
-    return downloadDistinctHits.value
+    if (currentMode.value === "works") return workResults.value.paginationTotal ?? workResults.value.distinctHits
+    if (currentMode.value === "parts") return partResults.value.paginationTotal ?? partResults.value.hits
+    return (currentMode.value === "pdf" ? pdfResults.value.paginationTotal : epubResults.value.paginationTotal)
+        ?? downloadDistinctHits.value
 }
 
 const pageCount = computed(() =>
-    Math.min(
-        libraryPageMaximum,
-        Math.ceil(currentResultHitCount() / 100)
-    )
+    Math.ceil(currentResultHitCount() / 100)
 )
 const pages = computed(() => legacyPaginationItems(pageCount.value, currentPage.value))
 

@@ -590,3 +590,11 @@ test("latest keeps canonical action metadata and treats older responses as direc
     key: null, titlePath: null, actions: null, titleHref: item.title_url
   })
 })
+
+test("keeps raw tab counts separate from exact logical pagination totals", () => {
+  const view = toLibrarySearchView({
+    mode: "works", items: [], total_hits: 17420, total_works: 16661,
+    pagination: { total_items: 16661, page: 167, page_size: 100 }
+  })
+  expect(view.response).toMatchObject({ hits: 17420, paginationTotal: 16661 })
+})

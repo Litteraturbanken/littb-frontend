@@ -12,10 +12,11 @@ const filters = Object.freeze({ marker: "advanced" })
 describe("parseLibraryRouteState", () => {
   it.each([
     ["/bibliotek", {}, "all", "relevans", 1],
+    ["/bibliotek", { sida: "9007199254740992" }, "all", "relevans", 1],
     ["/bibliotek", { sida: "0" }, "all", "relevans", 1],
     ["/bibliotek", { sida: "2" }, "all", "relevans", 2],
     ["/bibliotek", { sida: "100" }, "all", "relevans", 100],
-    ["/bibliotek", { sida: "101" }, "all", "relevans", 1],
+    ["/bibliotek", { sida: "101" }, "all", "relevans", 101],
     ["/bibliotek", { visa: "authors", sort: "namn", sida: "7" }, "authors", "namn", 1],
     ["/bibliotek", { visa: "parts" }, "parts", "popularitet", 1],
     ["/bibliotek", { visa: "parts", sort: "titlar" }, "parts", "titlar", 1],
@@ -23,7 +24,7 @@ describe("parseLibraryRouteState", () => {
     ["/bibliotek", { visa: "parts", sort: "popularitet", sida: "2" }, "parts", "popularitet", 2],
     ["/bibliotek", { visa: "latest", sort: "titlar", hide1800: null }, "latest", "nytillkommet", 1],
     ["/bibliotek", { visa: "pdf", sort: "kronologi", sida: "100" }, "pdf", "kronologi", 100],
-    ["/epub", { visa: "works", sort: "invalid", sida: "101" }, "epub", "popularitet", 1]
+    ["/epub", { visa: "works", sort: "invalid", sida: "101" }, "epub", "popularitet", 101]
   ])("normalizes %s %o", (path, query, mode, sort, page) => {
     expect(parseLibraryRouteState(path, query, filters)).toMatchObject({
       mode,

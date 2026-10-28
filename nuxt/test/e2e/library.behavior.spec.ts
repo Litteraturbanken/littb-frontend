@@ -2426,7 +2426,7 @@ test("all-results canonicalizes raw page-one aliases without requesting or retai
   await expect(page.locator("[data-library-result]")).toHaveCount(100)
   await reset(request)
 
-  for (const pageQuery of ["sida", "sida=1", "sida=0", "sida=101", "sida=malformed"]) {
+  for (const pageQuery of ["sida", "sida=1", "sida=0", "sida=9007199254740992", "sida=malformed"]) {
     await pushRoute(
       page,
       `/bibliotek?keep&keep=ja&filter=all-pagination&${pageQuery}`,
@@ -3374,3 +3374,23 @@ test("leaving a pending Library history restore cannot scroll the next page", as
     release()
   }
 })
+
+for (const { mode, last, tail, selector } of [
+  { mode: "all", last: 1004, tail: 60, selector: "[data-library-result]" },
+  { mode: "works", last: 167, tail: 61, selector: "[data-library-work-row]" }
+]) {
+  test(`deep ${mode} pagination reaches the real end and restores browser history`, async ({ page }) => {
+    await page.goto(`/bibliotek?visa=${mode}&filter=deep-pagination&sort=titlar&sida=101&keep=ja`)
+    await expect(page.locator(selector)).toHaveCount(100)
+    await page.locator(`[data-library-page="${last}"]`).first().click()
+    await expect(page).toHaveURL(new RegExp(`sida=${last}(?:&|$)`))
+    await expect(page.locator(selector)).toHaveCount(tail)
+    expect(new URL(page.url()).searchParams.get("keep")).toBe("ja")
+    await expect(page.locator("[data-library-pagination-next]").first()).toHaveAttribute("aria-disabled", "true")
+    await page.locator(`[data-library-page="${last - 1}"]`).first().click()
+    await expect(page.locator(selector)).toHaveCount(100)
+    await page.goBack()
+    await expect(page).toHaveURL(new RegExp(`sida=${last}(?:&|$)`))
+    await expect(page.locator(selector)).toHaveCount(tail)
+  })
+}

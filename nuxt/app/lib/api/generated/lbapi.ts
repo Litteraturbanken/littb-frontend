@@ -1784,6 +1784,7 @@ export interface components {
              * @enum {string}
              */
             mode: "all";
+            pagination?: components["schemas"]["LibraryPagination"] | null;
             /** Total Hits */
             total_hits: number;
         };
@@ -2027,6 +2028,7 @@ export interface components {
              * @enum {string}
              */
             mode: "epub";
+            pagination?: components["schemas"]["LibraryPagination"] | null;
             /** Total Hits */
             total_hits: number;
             /** Total Works */
@@ -2225,6 +2227,7 @@ export interface components {
              * @enum {string}
              */
             mode: "latest";
+            pagination?: components["schemas"]["LibraryPagination"] | null;
             /** Total Hits */
             total_hits: number;
             /** Total Works */
@@ -2235,6 +2238,22 @@ export interface components {
             /** About Authors */
             about_authors: components["schemas"]["LibraryAboutAuthor"][] | null;
             chronology: components["schemas"]["LibraryChronology"] | null;
+        };
+        /**
+         * LibraryPagination
+         * @description Representation or grouped-identity count and canonical snapshot page.
+         */
+        LibraryPagination: {
+            /** Page */
+            page: number;
+            /**
+             * Page Size
+             * @default 100
+             * @constant
+             */
+            page_size: 100;
+            /** Total Items */
+            total_items: number;
         };
         /** LibraryPartsCountRequest */
         LibraryPartsCountRequest: {
@@ -2279,6 +2298,7 @@ export interface components {
              * @enum {string}
              */
             mode: "parts";
+            pagination?: components["schemas"]["LibraryPagination"] | null;
             /** Total Parts */
             total_parts: number;
         };
@@ -2325,6 +2345,7 @@ export interface components {
              * @enum {string}
              */
             mode: "pdf";
+            pagination?: components["schemas"]["LibraryPagination"] | null;
             /** Total Hits */
             total_hits: number;
             /** Total Works */
@@ -2395,6 +2416,7 @@ export interface components {
              * @enum {string}
              */
             mode: "works";
+            pagination?: components["schemas"]["LibraryPagination"] | null;
             /** Total Hits */
             total_hits: number;
             /** Total Works */

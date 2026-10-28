@@ -21,7 +21,6 @@ export type LibraryRouteState<AdvancedFilters> = {
   advancedFilters: AdvancedFilters
 }
 
-export const libraryPageMaximum = 100
 const relevanceSorts = new Set<RelevanceSortKey>([
   "relevans", "forfattare", "titlar", "kronologi"
 ])
@@ -82,7 +81,7 @@ function librarySort(mode: LibraryMode, value: unknown): LibrarySortKey {
 function libraryPage(mode: LibraryMode, value: unknown): number {
   if (mode === "authors") return 1
   const parsed = Number(queryValue(value))
-  return Number.isInteger(parsed) && parsed >= 1 && parsed <= libraryPageMaximum
+  return Number.isSafeInteger(parsed) && parsed >= 1
     ? parsed
     : 1
 }

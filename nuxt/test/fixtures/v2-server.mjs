@@ -1539,7 +1539,7 @@ function validLibrarySearchBody(body) {
     || typeof body.reverse !== "boolean") return false
   if (body.mode !== "latest" && !librarySorts[body.mode].has(body.sort)) return false
   if (body.mode === "authors") return Number.isInteger(body.limit) && body.limit >= 150 && body.limit <= 10_000
-  if (!Number.isInteger(body.page) || body.page < 1 || body.page > 100) return false
+  if (!Number.isSafeInteger(body.page) || body.page < 1) return false
   if (body.mode === "works") return typeof body.source_only === "boolean"
   if (body.mode === "latest") return typeof body.hide_1800 === "boolean"
   return true
@@ -2100,6 +2100,19 @@ function libraryWorksAuthorIds(query, empty) {
 
 function librarySearchResponse(body) {
   const query = body.filters.query
+  if (query === "deep-pagination" && ["all", "works"].includes(body.mode)) {
+    const total = body.mode === "all" ? 100360 : 16661
+    const page = Math.min(body.page, Math.ceil(total / 100))
+    const start = (page - 1) * 100
+    const items = Array.from({ length: Math.min(100, total - start) }, (_, offset) => {
+      const titleId = `Deep${start + offset}`
+      const common = { title: `Titel ${start + offset}`, year: "1900", author: libraryAuthors.strindberg, titleId }
+      return body.mode === "all" ? libraryAllText(common) : libraryBrowseItem({ ...common, fullTitle: common.title })
+    })
+    return { mode: body.mode, items, total_hits: body.mode === "all" ? total : 17420,
+      ...(body.mode === "works" ? { total_works: 16661 } : {}),
+      pagination: { total_items: total, page, page_size: 100 } }
+  }
   if (body.mode === "all") return libraryAllResponse(query, body.page)
   if (body.mode === "authors") return libraryAuthorsResponse(query, body.limit)
   if (body.mode === "works") return libraryWorksResponse(query, body.page)
