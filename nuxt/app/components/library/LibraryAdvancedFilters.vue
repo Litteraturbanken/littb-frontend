@@ -324,18 +324,6 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
     margin: 5px 0;
 }
 
-.library-gender-control [data-library-gender]:focus-visible {
-    outline: 1px solid #7a1400;
-    outline-offset: 0;
-    box-shadow: none;
-}
-
-@media (forced-colors: active) {
-    .library-gender-control [data-library-gender]:focus-visible {
-        outline-color: Highlight;
-    }
-}
-
 .library-gender-control [data-library-gender-visual] {
     box-sizing: border-box;
     display: block;

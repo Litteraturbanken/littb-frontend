@@ -84,6 +84,16 @@
     color: #7a1400;
 }
 
+.page-search .chronology {
+    display: flex;
+    align-items: center;
+    column-gap: 0.25em;
+
+    .sc {
+        margin-top: 0;
+    }
+}
+
 .page-search .filter_btn .caret {
     background-image: none !important;
 }
@@ -437,22 +447,6 @@
 
     .search-multiselect__main-trigger {
         margin-right: 0 !important;
-    }
-
-    // The visible input already owns the field border. Outlining its taller
-    // outer chip container creates a second rectangle after selection.
-    .multiselect:has(input.multiselect__input:focus-visible) {
-        outline: none;
-    }
-
-    #mainview & input.multiselect__input:focus-visible {
-        border-color: #7a1400 !important;
-    }
-
-    @media (forced-colors: active) {
-        #mainview & input.multiselect__input:focus-visible {
-            border-color: Highlight !important;
-        }
     }
 
     .multiselect:has(.select2-selection__choice),

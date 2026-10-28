@@ -380,10 +380,11 @@
         .goto {
             input {
                 width: 38px;
-                height: 16px;
+                height: 18px;
                 vertical-align: bottom;
                 margin-left: 6px;
-                font-size: 0.7em;
+                font-size: 0.8em;
+                text-transform: inherit;
                 border: 1px solid lightgray;
             }
 
