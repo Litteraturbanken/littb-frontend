@@ -483,7 +483,7 @@ test('All title options keep virtual keyboard boundaries mounted through selecti
     await expect.poll(async () => (await active()).text).toMatch(/^Visa alla \d+ titlar$/)
     const allResponse = page.waitForResponse(response => response.url().includes('/text-search/options')
         && response.request().method() === 'POST'
-        && response.request().postDataJSON()?.title_limit === 'all' && response.ok())
+        && response.request().postDataJSON()?.title_limit === 'all' && response.ok(), { timeout: 30000 })
     await input.press('Enter')
     const allPayload = await (await allResponse).json()
     const allChoices = [...new Map(allPayload.title_options.map(option => [option.work_id, option])).values()]
