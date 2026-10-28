@@ -376,7 +376,7 @@ onMounted(() => {
               <table>
                 <tbody>
                   <tr v-for="work in similarWorks" :key="`${work.author_id}:${work.title_id}:${work.start_page}:${work.media_type}`">
-                    <td class="text-right pr-4"><span class="sc text-primary">{{ work.author_surname }}</span></td>
+                    <td class="text-right pr-4 whitespace-nowrap"><span class="sc text-primary">{{ work.author_surname }}</span></td>
                     <td><NuxtLink :to="similarWorkHref(work)">{{ work.label }}</NuxtLink></td>
                   </tr>
                 </tbody>
