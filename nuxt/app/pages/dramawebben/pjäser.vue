@@ -1,15 +1,6 @@
 <script setup lang="ts">
 import { formatAuthorYears } from "#shared/utils/author-years"
 import {
-  Combobox,
-  ComboboxButton,
-  ComboboxInput,
-  ComboboxOption,
-  ComboboxOptions,
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions,
   Popover,
   PopoverButton,
   PopoverPanel
@@ -18,6 +9,8 @@ import { defineComponent, Fragment as VueFragment, h } from "vue"
 import type { LocationQueryRaw } from "vue-router"
 
 import DramawebbenShell from "~/components/dramawebben/DramawebbenShell.vue"
+import SearchSingleSelect from "~/components/search/SearchSingleSelect.vue"
+import SearchMultiSelect from "~/components/search/SearchMultiSelect.vue"
 import ReaderSourceInfoDialog from "~/components/reader/ReaderSourceInfoDialog.vue"
 import dramawebbenBackground from "~/assets/img/dramawebben.jpg"
 import dramawebbenSubpageBackground from "~/assets/img/dramawebben_fade.jpg"
@@ -235,9 +228,6 @@ function authorName(author: CatalogAuthor) {
   return { surname: surname || author.surname || author.full_name, given: given.join(",").trim() }
 }
 
-function selectedAuthorLabel(value: unknown): string {
-  return isCatalogAuthor(value) ? value.surname || value.full_name : ""
-}
 
 function mediaHref(media: CatalogMedia): string {
   return media.downloadable ? media.url : canonicalNuxtHref(`${media.url}#dw`)
@@ -526,8 +516,6 @@ const catalogFiltersActive = computed(() => (
   Object.keys(route.query).some(key => catalogFilterKeys.has(key))
 ))
 const authorSearch = ref("")
-const authorPointerFocused = ref(false)
-const authorToggle = ref<{ $el: HTMLButtonElement } | null>(null)
 const filterPointerFocused = ref(false)
 
 const mediaAuthorIds = computed<ReadonlySet<string>>(() => {
@@ -594,9 +582,14 @@ const authorOptions = computed(() => {
   )))
 })
 
-const selectedAuthor = computed(() => (
-  catalog.value?.authors.find(author => author.author_id === authorId.value) ?? null
-))
+const authorSelectOptions = computed(() => [
+  { value: "all", label: "Alla författare" },
+  ...authorOptions.value.map(author => ({
+    value: author.author_id,
+    label: `${author.name_for_index} ${authorYear(author)}`.trim(),
+    selectionLabel: author.surname || author.full_name
+  }))
+])
 
 const filteredWorks = computed(() => {
   const tokens = normalizedTokens(filterText.value)
@@ -654,9 +647,9 @@ function clearFilters(): void {
   void writeRouteQuery(queryWithoutKeys(latestRouteQuery(), catalogFilterKeys), "replace")
 }
 
-function chooseAuthor(author: CatalogAuthor | null) {
+function chooseAuthor(value: string | null) {
   authorSearch.value = ""
-  void setQuery("author", author?.author_id ?? null)
+  void setQuery("author", !value || value === "all" ? null : value)
 }
 
 const rangeDrafts = ref<Partial<Record<RangeKey, { from: number, to: number }>>>({})
@@ -818,78 +811,39 @@ useHead(() => ({
         </div>
 
         <div v-show="listType === 'pjäser'" class="auth_select_container">
-          <Combobox v-slot="{ open: authorOptionsOpen }" :model-value="selectedAuthor" nullable @update:model-value="chooseAuthor">
-            <div
-              class="catalog_select select2 select2-container select2-container--default"
-              @keydown.capture="authorPointerFocused = false"
-              @pointerdown.capture="authorPointerFocused = true"
-            >
-              <div class="select2-selection select2-selection--single">
-                <ComboboxInput
-                  class="select2-selection__rendered"
-                  :class="{ author_pointer_focused: authorPointerFocused }"
-                  aria-label="Författare"
-                  placeholder="Välj författare"
-                  :display-value="selectedAuthorLabel"
-                  @blur="authorPointerFocused = false"
-                  @click="!authorOptionsOpen && authorToggle?.$el.click()"
-                  @change="authorSearch = ($event.target as HTMLInputElement).value"
-                />
-                <ComboboxButton ref="authorToggle" class="select2-selection__arrow" aria-label="Visa författare"><b /></ComboboxButton>
-              </div>
-              <ComboboxOptions class="catalog_options select2-results__options">
-                <ComboboxOption v-slot="{ active }" :value="null" as="template">
-                  <li class="select2-results__option" :class="{ 'select2-results__option--highlighted': active }">Alla författare</li>
-                </ComboboxOption>
-                <ComboboxOption
-                  v-for="author in authorOptions"
-                  :key="author.author_id"
-                  v-slot="{ active, selected }"
-                  :value="author"
-                  as="template"
-                >
-                  <li class="select2-results__option" :class="{ 'select2-results__option--highlighted': active, 'select2-results__option--selected': selected }">
-                    {{ author.name_for_index }} {{ authorYear(author) }}
-                  </li>
-                </ComboboxOption>
-              </ComboboxOptions>
-            </div>
-          </Combobox>
+          <SearchMultiSelect
+            class="catalog_select author_select"
+            single
+            :single-value="authorId === 'all' ? null : authorId"
+            :options="authorSelectOptions"
+            accessible-name="Visa författare"
+            placeholder="Välj författare"
+            searchable
+            @query="authorSearch = $event"
+            @update:single-value="chooseAuthor"
+          />
         </div>
 
-        <Listbox :model-value="gender" @update:model-value="setSelectQuery('gender', $event as string)">
-          <div class="catalog_select gender_select select2 select2-container select2-container--default">
-            <ListboxButton
-              class="select2-selection select2-selection--single"
-              :aria-label="gender === 'all' ? 'Kön' : `Kön: ${genderLabel}`"
-            >
-              <span class="select2-selection__rendered" :class="{ catalog_placeholder: gender === 'all' }">{{ genderLabel }}</span>
-              <span class="select2-selection__arrow"><b /></span>
-            </ListboxButton>
-            <ListboxOptions class="catalog_options select2-results__options">
-              <ListboxOption v-for="option in genderOptions" :key="option.value" v-slot="{ active, selected }" :value="option.value" as="template">
-                <li class="select2-results__option" :class="{ 'select2-results__option--highlighted': active, 'select2-results__option--selected': selected }">{{ option.label }}</li>
-              </ListboxOption>
-            </ListboxOptions>
-          </div>
-        </Listbox>
+        <SearchSingleSelect
+          class="catalog_select gender_select select2"
+          :model-value="gender"
+          :options="genderOptions"
+          :accessible-name="gender === 'all' ? 'Kön' : `Kön: ${genderLabel}`"
+          :display-label="genderLabel"
+          :placeholder="gender === 'all'"
 
-        <Listbox :model-value="mediaType" @update:model-value="setSelectQuery('mediatype', $event as string)">
-          <div class="catalog_select filter_select keyword_select select2 select2-container select2-container--default">
-            <ListboxButton
-              class="select2-selection select2-selection--single"
-              :aria-label="mediaType === 'all' ? 'Utgivningsformat' : `Utgivningsformat: ${mediaLabel}`"
-            >
-              <span class="select2-selection__rendered" :class="{ catalog_placeholder: mediaType === 'all' }">{{ mediaLabel }}</span>
-              <span class="select2-selection__arrow"><b /></span>
-            </ListboxButton>
-            <ListboxOptions class="catalog_options select2-results__options">
-              <ListboxOption v-for="option in mediaOptions" :key="option.value" v-slot="{ active, selected }" :value="option.value" as="template">
-                <li class="select2-results__option" :class="{ 'select2-results__option--highlighted': active, 'select2-results__option--selected': selected }">{{ option.label }}</li>
-              </ListboxOption>
-            </ListboxOptions>
-          </div>
-        </Listbox>
+          @update:model-value="setSelectQuery('gender', $event)"
+        />
+        <SearchSingleSelect
+          class="catalog_select filter_select keyword_select select2"
+          :model-value="mediaType"
+          :options="mediaOptions"
+          :accessible-name="mediaType === 'all' ? 'Utgivningsformat' : `Utgivningsformat: ${mediaLabel}`"
+          :display-label="mediaLabel"
+          :placeholder="mediaType === 'all'"
+
+          @update:model-value="setSelectQuery('mediatype', $event)"
+        />
 
         <div v-if="listType === 'pjäser'" class="auth_select_container">
           <Popover v-slot="{ open: isOpen }">
@@ -1060,70 +1014,6 @@ useHead(() => ({
   width: 200px !important;
   margin-bottom: 0;
 }
-.catalog_select .select2-selection--single {
-  position: relative;
-  display: block;
-  box-sizing: border-box;
-  width: 100%;
-  height: 34px;
-  min-height: 34px;
-  padding: 1px 20px 0 8px;
-  border: 1px solid #999 !important;
-  background: white !important;
-  text-align: left;
-}
-.controls .catalog_select input.select2-selection__rendered {
-  display: block !important;
-  max-width: none !important;
-  width: 100%;
-  height: 30px;
-  padding: 0;
-  border: 0 !important;
-  background: transparent;
-  font-family: "Requiem Text SC A", "Requiem Text SC B";
-  font-size: 16px;
-  outline: 0;
-}
-.catalog_select input.select2-selection__rendered:focus-visible:not(.author_pointer_focused) {
-  outline: 1px solid #7A1400;
-  outline-offset: 0;
-  box-shadow: none;
-}
-.catalog_select .select2-selection__arrow {
-  position: absolute;
-  top: 0;
-  right: 1px;
-  width: 20px;
-  height: 32px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-.catalog_select .select2-selection__arrow b {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  margin-top: -2px;
-  margin-left: -4px;
-  border-color: #888 transparent transparent;
-  border-style: solid;
-  border-width: 5px 4px 0;
-}
-.catalog_options {
-  position: absolute;
-  z-index: 30;
-  width: 200px;
-  max-height: 350px;
-  overflow-y: auto;
-  padding: 0;
-  border: 1px solid #aaa;
-  background: white;
-  color: #333;
-  list-style: none;
-}
-.catalog_options .select2-results__option { padding: 6px; }
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -1197,36 +1087,14 @@ useHead(() => ({
   outline-offset: 0;
   box-shadow: none;
 }
-.catalog_select .select2-selection__rendered { line-height: 30px; }
 .controls .auth_select_container .btn-group {
   position: relative;
   display: inline-block;
   vertical-align: middle;
 }
-.catalog_select .select2-selection__rendered {
-  color: #555;
-  font-family: "Requiem Text SC A", "Requiem Text SC B";
-  font-variant: normal;
-  font-size: 16px;
-  letter-spacing: normal;
-  text-transform: lowercase !important;
-}
-.catalog_options {
-  font-family: "Requiem Text SC A", "Requiem Text SC B";
-  font-size: 16px;
-  line-height: 1.2;
-  letter-spacing: normal;
-  text-transform: lowercase;
-}
-.catalog_select .select2-selection__rendered.catalog_placeholder,
-.catalog_select input.select2-selection__rendered::placeholder,
 .controls input.filter::placeholder {
   color: #999;
   opacity: 1;
-}
-.catalog_select input.select2-selection__rendered::placeholder {
-  font-family: "Requiem Text SC A", "Requiem Text SC B";
-  text-transform: lowercase;
 }
 .controls .dropdown-menu > li:not(:last-child) { min-height: 54px; }
 .controls .dropdown-menu > li:last-child { min-height: 18px; }

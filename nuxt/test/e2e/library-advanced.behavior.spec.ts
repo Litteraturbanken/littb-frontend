@@ -209,7 +209,7 @@ test("advanced disclosure and controls use push history and restore from the URL
   }
 })
 
-test("gender listbox keeps its geometry and keyboard focus indicator", async ({
+test("shared gender listbox keeps geometry and keyboard focus without a custom outline", async ({
   page
 }) => {
   await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })
@@ -242,13 +242,7 @@ test("gender listbox keeps its geometry and keyboard focus indicator", async ({
   await page.locator("[data-library-advanced]").focus()
   await page.keyboard.press("Tab")
   await expect(gender).toBeFocused()
-  expect(await focusTreatment()).toEqual({
-    boxShadow: "none",
-    outlineColor: "rgb(122, 20, 0)",
-    outlineOffset: "0px",
-    outlineStyle: "solid",
-    outlineWidth: "1px"
-  })
+  expect(await focusTreatment()).toMatchObject({ boxShadow: "none", outlineStyle: "none" })
   expect(await layoutBox(gender)).toEqual(initialGenderBox)
   expect(await layoutBox(visual)).toEqual(initialVisualBox)
 
@@ -264,13 +258,7 @@ test("gender listbox keeps its geometry and keyboard focus indicator", async ({
 
   await page.keyboard.press("Escape")
   await expect(gender).toBeFocused()
-  expect(await focusTreatment()).toEqual({
-    boxShadow: "none",
-    outlineColor: "rgb(122, 20, 0)",
-    outlineOffset: "0px",
-    outlineStyle: "solid",
-    outlineWidth: "1px"
-  })
+  expect(await focusTreatment()).toMatchObject({ boxShadow: "none", outlineStyle: "none" })
   expect(await layoutBox(gender)).toEqual(initialGenderBox)
   expect(await layoutBox(visual)).toEqual(initialVisualBox)
 })

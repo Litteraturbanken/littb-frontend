@@ -323,3 +323,51 @@ test.each(["Enter", "click"])("last action is navigable and expands without emit
     expect(target.querySelectorAll(".select2-selection__choice")).toHaveLength(1)
   } finally { app.unmount(); target.remove() }
 })
+
+describe("SearchMultiSelect scalar mode", () => {
+  test("uses a single Headless value, replaces exclusively, and displays a plain selected label", async () => {
+    const target = document.createElement("div")
+    document.body.append(target)
+    const [{ createApp, h, ref, nextTick, ssrContextKey }, { default: SearchMultiSelect }] = await Promise.all([
+      import("vue"), import("../../app/components/search/SearchMultiSelect.vue")
+    ])
+    const selected = ref<string | null>(null)
+    const updates: (string | null)[] = []
+    const app = createApp({ setup: () => () => h(SearchMultiSelect, {
+      single: true, singleValue: selected.value, searchable: true, placeholder: "Author",
+      options: [{ value: "a", label: "Author A", selectionLabel: "A" }, { value: "b", label: "Author B", selectionLabel: "B" }],
+      "onUpdate:singleValue": (value: string | null) => { selected.value = value; updates.push(value) }
+    }) })
+    app.provide(ssrContextKey, { modules: new Set<string>() })
+    app.mount(target)
+    const settle = async () => { await nextTick(); await new Promise(resolve => requestAnimationFrame(resolve)); await nextTick() }
+    try {
+      const input = target.querySelector<HTMLInputElement>("input")!
+      input.click()
+      await settle()
+      expect(target.querySelector('[role="listbox"]')?.getAttribute("aria-multiselectable")).not.toBe("true")
+      ;[...target.querySelectorAll<HTMLElement>('[role="option"]')].find(e => e.textContent === "Author A")!.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }))
+      await settle()
+      expect(selected.value).toBe("a")
+      expect(input.value).toBe("A")
+      expect(target.querySelector(".select2-selection__choice")).toBeNull()
+      input.click()
+      await settle()
+      ;[...target.querySelectorAll<HTMLElement>('[role="option"]')].find(e => e.textContent === "Author B")!.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }))
+      await settle()
+      expect(updates).toEqual(["a", "b"])
+      expect(input.value).toBe("B")
+      input.click()
+      await settle()
+      expect(input.getAttribute("aria-expanded")).toBe("true")
+      input.click()
+      await settle()
+      expect(input.getAttribute("aria-expanded")).toBe("false")
+      expect(input.value).toBe("B")
+      input.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Backspace", bubbles: true }))
+      await settle()
+      expect(selected.value).toBe("b")
+      expect(updates).toEqual(["a", "b"])
+    } finally { app.unmount(); target.remove() }
+  })
+})

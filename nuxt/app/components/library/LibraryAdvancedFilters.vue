@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from "@headlessui/vue"
 import type {
     LibraryAdvancedChange,
     LibraryAdvancedControlsModel
@@ -8,6 +7,7 @@ import type {
 import type { LibraryCategory, LibraryLanguage, LibraryMedia } from "~/lib/library/filter-options"
 import ChronologyRangeSlider from "../global/ChronologyRangeSlider.vue"
 import SearchMultiSelect from "../search/SearchMultiSelect.vue"
+import SearchSingleSelect from "../search/SearchSingleSelect.vue"
 import WipeTransition from "../global/WipeTransition.vue"
 
 type ChronologyEndpoint = "from" | "to"
@@ -118,44 +118,17 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
         class="more_container show_more mt-2 mb-4"
     >
         <div class="title_select_container">
-            <Listbox
-                v-slot="{ open }"
+            <SearchSingleSelect
+                class="library-gender-control"
                 :model-value="model.gender"
+                :options="genderOptions"
+                accessible-name="Författarkön"
+                :display-label="genderLabel"
+                :display-title="model.gender === '' ? 'Alla författare' : undefined"
+
+                :button-attrs="{ 'data-library-gender': '', 'data-library-gender-visual': '' }"
                 @update:model-value="emitGender"
-            >
-                <div
-                    class="library-gender-control select2-container select2-container--default"
-                    :class="{ 'select2-container--open': open }"
-                >
-                    <ListboxLabel class="sr-only">Författarkön</ListboxLabel>
-                    <ListboxButton
-                        data-library-gender
-                        data-library-gender-visual
-                        :value="model.gender"
-                        class="select2-selection select2-selection--single"
-                    >
-                        <span
-                            class="select2-selection__rendered"
-                            :title="model.gender === '' ? 'Alla författare' : undefined"
-                        >{{ genderLabel }}</span>
-                        <span class="select2-selection__arrow" aria-hidden="true"><b /></span>
-                    </ListboxButton>
-                    <ListboxOptions class="library-gender-options select2-dropdown select2-dropdown--below">
-                        <ListboxOption
-                            v-for="option in genderOptions"
-                            :key="option.value"
-                            v-slot="{ active }"
-                            :value="option.value"
-                            as="template"
-                        >
-                            <li
-                                class="select2-results__option"
-                                :class="{ 'select2-results__option--highlighted': active }"
-                            >{{ option.label }}</li>
-                        </ListboxOption>
-                    </ListboxOptions>
-                </div>
-            </Listbox>
+            />
         </div>
         <div class="title_select_container">
             <SearchMultiSelect
@@ -315,93 +288,6 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
 </template>
 
 <style scoped>
-.library-gender-control {
-    position: relative;
-    display: block;
-    width: 350px;
-    max-width: 100%;
-    height: 31px;
-    margin: 5px 0;
-}
-
-.library-gender-control [data-library-gender-visual] {
-    box-sizing: border-box;
-    display: block;
-    width: 100%;
-    height: 31px;
-    text-align: left;
-}
-
-.library-gender-control .select2-selection__rendered {
-    display: inline-flex;
-    align-items: center;
-    height: 28px;
-    padding: 0;
-    overflow: visible;
-    line-height: 28px;
-}
-
-.library-gender-control .select2-selection__arrow {
-    position: absolute;
-    top: 1px;
-    right: 1px;
-    display: block;
-    width: 20px;
-    height: 26px;
-}
-
-.library-gender-control .select2-selection__arrow b {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    margin-top: -2px;
-    margin-left: -4px;
-    border-color: #888 transparent transparent;
-    border-style: solid;
-    border-width: 5px 4px 0;
-}
-
-.library-gender-control.select2-container--open .select2-selection__arrow b {
-    border-color: transparent transparent #888;
-    border-width: 0 4px 5px;
-}
-
-.library-gender-control .library-gender-options {
-    position: absolute;
-    top: calc(100% - 2px);
-    left: 0;
-    z-index: 1051;
-    box-sizing: border-box;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    border: 1px solid #333;
-    border-top: 0;
-    border-radius: 0;
-    background: white;
-    box-shadow: none;
-    outline: none;
-    font-size: 16px;
-    line-height: 1.2;
-}
-
-.library-gender-options .select2-results__option {
-    padding: 6px;
-    cursor: pointer;
-}
-
-.library-gender-options .select2-results__option[aria-selected="true"] {
-    background: #ddd;
-}
-
-.library-gender-options .select2-results__option--highlighted[aria-selected] {
-    color: black;
-    background: #ededed;
-}
-
 [data-library-advanced-panel] :deep(.multiselect__input::placeholder),
 [data-library-advanced-panel] :deep(.search-multiselect__input-row) {
     color: #9e9e9e !important;

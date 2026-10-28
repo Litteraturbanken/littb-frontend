@@ -1045,7 +1045,7 @@ test("the list toggle pushes query-owned history and Back/Forward restores each 
   request
 }) => {
   const problems = collectProblems(page)
-  await page.goto("/dramawebben/pjäser", { waitUntil: "domcontentloaded" })
+  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
   await expectPlayRows(page, dramawebbenCatalogExpected.plays)
   await expect(page.getByRole("combobox", { name: "Visa författare", exact: true })).toBeVisible()
   await expect(page.getByRole("button", { name: "Pjäser", exact: true })).toHaveClass(/\bactive\b/u)
@@ -1722,7 +1722,7 @@ test("range filter button shows its narrow focus indicator only for keyboard use
   expect(await filterButton.boundingBox()).toEqual(initialBox)
 })
 
-test("author combobox shows its narrow focus indicator only for keyboard use", async ({
+test("shared author combobox preserves geometry and focus without a custom outline", async ({
   page
 }) => {
   await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
@@ -1747,13 +1747,7 @@ test("author combobox shows its narrow focus indicator only for keyboard use", a
   await page.getByRole("button", { name: "Författare", exact: true }).focus()
   await page.keyboard.press("Tab")
   await expect(authorInput).toBeFocused()
-  expect(await focusTreatment()).toEqual({
-    boxShadow: "none",
-    outlineColor: "rgb(122, 20, 0)",
-    outlineOffset: "0px",
-    outlineStyle: "solid",
-    outlineWidth: "1px"
-  })
+  expect(await focusTreatment()).toMatchObject({ boxShadow: "none", outlineStyle: "none" })
   expect(await authorInput.boundingBox()).toEqual(initialInputBox)
   expect(await authorSelection.boundingBox()).toEqual(initialSelectionBox)
 
@@ -1762,8 +1756,7 @@ test("author combobox shows its narrow focus indicator only for keyboard use", a
   await expect(authorInput).toBeFocused()
   expect(await focusTreatment()).toMatchObject({
     boxShadow: "none",
-    outlineStyle: "none",
-    outlineWidth: "0px"
+    outlineStyle: "none"
   })
   expect(await authorInput.boundingBox()).toEqual(initialInputBox)
   expect(await authorSelection.boundingBox()).toEqual(initialSelectionBox)
@@ -1773,20 +1766,13 @@ test("author combobox shows its narrow focus indicator only for keyboard use", a
   await expect(authorInput).toBeFocused()
   expect(await focusTreatment()).toMatchObject({
     boxShadow: "none",
-    outlineStyle: "none",
-    outlineWidth: "0px"
+    outlineStyle: "none"
   })
   expect(await authorInput.boundingBox()).toEqual(initialInputBox)
   expect(await authorSelection.boundingBox()).toEqual(initialSelectionBox)
 
   await page.keyboard.press("ArrowDown")
-  expect(await focusTreatment()).toEqual({
-    boxShadow: "none",
-    outlineColor: "rgb(122, 20, 0)",
-    outlineOffset: "0px",
-    outlineStyle: "solid",
-    outlineWidth: "1px"
-  })
+  expect(await focusTreatment()).toMatchObject({ boxShadow: "none", outlineStyle: "none" })
   expect(await authorInput.boundingBox()).toEqual(initialInputBox)
   expect(await authorSelection.boundingBox()).toEqual(initialSelectionBox)
 
@@ -1795,19 +1781,20 @@ test("author combobox shows its narrow focus indicator only for keyboard use", a
   await expect(authorInput).toBeFocused()
   expect(await focusTreatment()).toMatchObject({
     boxShadow: "none",
-    outlineStyle: "none",
-    outlineWidth: "0px"
+    outlineStyle: "none"
   })
   expect(await authorInput.boundingBox()).toEqual(initialInputBox)
   expect(await authorSelection.boundingBox()).toEqual(initialSelectionBox)
 })
 
-test("clicking the author input opens and reopens the options", async ({ page }) => {
-  await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "domcontentloaded" })
+test("clicking the shared author input repeatedly toggles the options", async ({ page }) => {
+  await page.goto("/dramawebben/pj%C3%A4ser", { waitUntil: "networkidle" })
   const input = page.getByRole("combobox", { name: "Visa författare", exact: true })
   const option = page.getByRole("option", { name: "Alla författare", exact: true })
   await input.click()
   await expect(option).toBeVisible()
+  await input.click()
+  await expect(option).toBeHidden()
   await input.click()
   await expect(option).toBeVisible()
   await input.press("Escape")
@@ -1817,6 +1804,30 @@ test("clicking the author input opens and reopens the options", async ({ page })
   await input.fill("Strindberg")
   await page.getByRole("option", { name: "Strindberg, August 1849-1912" }).click()
   await expectQuery(page, "author", "StrindbergA")
+})
+
+test("the shared author dropdown replaces one author, clears, and restores its label on reload", async ({ page }) => {
+  await page.goto("/dramawebben/pj%C3%A4ser?keep=shared", { waitUntil: "networkidle" })
+  const input = page.getByRole("combobox", { name: "Visa författare", exact: true })
+  await input.click()
+  await input.fill("Strindberg")
+  await page.getByRole("option", { name: "Strindberg, August 1849-1912" }).click()
+  await expectQuery(page, "author", "StrindbergA")
+  await expect(input).toHaveValue("Strindberg")
+  await input.click()
+  await input.fill("Agrell")
+  await page.getByRole("option", { name: "Agrell, Alfhild 1849-1923" }).click()
+  await expectQuery(page, "author", "AgrellA")
+  expect(new URL(page.url()).searchParams.getAll("author")).toEqual(["AgrellA"])
+  await expect(input).toHaveValue("Agrell")
+  await expect(page.locator(".author_select .select2-selection__choice")).toHaveCount(0)
+  await page.reload({ waitUntil: "networkidle" })
+  await expect(input).toHaveValue("Agrell")
+  await input.click()
+  await page.getByRole("option", { name: "Alla författare", exact: true }).click()
+  await expectQuery(page, "author", null)
+  await expectQuery(page, "keep", "shared")
+  await expect(input).toHaveValue("")
 })
 
 test("Headless UI catalog controls support keyboard, Escape, outside close, and focus return", async ({

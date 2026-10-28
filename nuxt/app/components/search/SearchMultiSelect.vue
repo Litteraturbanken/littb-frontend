@@ -18,7 +18,9 @@ export type SearchMultiSelectOptionGroup = Readonly<{
 }>
 
 const props = withDefaults(defineProps<{
-  modelValue: readonly string[]
+  modelValue?: readonly string[]
+  single?: boolean
+  singleValue?: string | null
   options: readonly SearchMultiSelectOption[]
   optionGroups?: readonly SearchMultiSelectOptionGroup[]
   placeholder: string
@@ -32,6 +34,9 @@ const props = withDefaults(defineProps<{
   preserveSearch?: boolean
   lastActionLabel?: string
 }>(), {
+  modelValue: () => [],
+  single: false,
+  singleValue: null,
   optionGroups: () => [],
   accessibleName: undefined,
   searchable: false,
@@ -46,6 +51,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   "update:modelValue": [value: string[]]
+  "update:singleValue": [value: string | null]
   query: [value: string]
   lastAction: []
 }>()
@@ -67,7 +73,10 @@ function rememberOption(option: SearchMultiSelectOption) {
   if (option.label !== option.value || !remembered) knownOptions.set(option.value, option)
 }
 watch(flatOptions, options => options.forEach(rememberOption), { immediate: true })
-const selectedOptions = computed(() => props.modelValue.map(value => {
+const selectedValues = computed(() => props.single
+  ? props.singleValue === null ? [] : [props.singleValue]
+  : props.modelValue)
+const selectedOptions = computed(() => selectedValues.value.map(value => {
   const current = flatOptions.value.find(option => option.value === value)
   const remembered = knownOptions.get(value)
   if (current?.label === value && remembered && remembered.label !== value) return remembered
@@ -78,7 +87,7 @@ const groups = computed(() => {
   const source = props.optionGroups.length ? props.optionGroups : [{ label: "", options: props.options }]
   return source.map(group => {
     let options = group.options.filter(option => (
-      (!props.hideSelected || !props.modelValue.includes(option.value))
+      (!props.hideSelected || !selectedValues.value.includes(option.value))
       && (!search || option.label.toLowerCase().includes(search))
     ))
     if (search) options = options.toSorted((a, b) => a.label.length - b.label.length)
@@ -96,7 +105,16 @@ const virtualList = ref<InstanceType<typeof SearchVirtualOptions> | null>(null)
 function selectedLabel(option: SearchMultiSelectOption) {
   return option.selectionLabel ?? option.label
 }
-function update(values: SearchMultiSelectOption[]) {
+function update(value: SearchMultiSelectOption[] | SearchMultiSelectOption | null) {
+  if (props.single) {
+    const option = !Array.isArray(value) ? value : null
+    if (option?.value === lastAction.value.value) { emit("lastAction"); return }
+    if (option) rememberOption(option)
+    emit("update:singleValue", option?.value ?? null)
+    clearQuery()
+    return
+  }
+  const values = Array.isArray(value) ? value : []
   if (values.some(option => option.value === lastAction.value.value)) {
     emit("lastAction")
     return
@@ -110,6 +128,7 @@ function update(values: SearchMultiSelectOption[]) {
   clearQuery()
 }
 function remove(option: SearchMultiSelectOption) {
+  if (props.single) { emit("update:singleValue", null); clearQuery(); return }
   update(selectedOptions.value.filter(value => value.value !== option.value))
 }
 function changeQuery(event: Event) {
@@ -145,7 +164,7 @@ function keydown(event: KeyboardEvent, open: boolean) {
   if (event.isComposing) return
   if (["Escape", "Tab"].includes(event.key)) clearQuery()
   if (!(event.target instanceof HTMLInputElement)) return
-  if (event.key === "Backspace" && !query.value && selectedOptions.value.length) {
+  if (!props.single && event.key === "Backspace" && !query.value && selectedOptions.value.length) {
     remove(selectedOptions.value.at(-1)!)
   }
   if (open && virtualList.value && ["Home", "End"].includes(event.key)) {
@@ -177,7 +196,7 @@ function keydown(event: KeyboardEvent, open: boolean) {
 
 <template>
   <span
-    :class="$attrs.class"
+    :class="[$attrs.class, { 'search-multiselect--single': single }]"
     :data-library-about-authors="$attrs['data-library-about-authors']"
     :data-library-keywords="$attrs['data-library-keywords']"
     :data-library-languages="$attrs['data-library-languages']"
@@ -186,12 +205,12 @@ function keydown(event: KeyboardEvent, open: boolean) {
     :data-preserve-search="preserveSearch || undefined"
     class="filter_select select2 select2-container select2-container--default"
   >
-    <Combobox v-slot="{ open, activeOption }" :model-value="selectedOptions" by="value" multiple @update:model-value="update">
-      <ComboboxLabel class="sr-only">{{ controlName }}</ComboboxLabel>
+    <Combobox v-slot="{ open, activeOption }" :model-value="single ? selectedOptions[0] ?? null : selectedOptions" by="value" :multiple="!single" :nullable="single" @update:model-value="update">
+      <ComboboxLabel v-if="!single" class="sr-only">{{ controlName }}</ComboboxLabel>
       <div
         ref="root"
-        class="multiselect select2-selection select2-selection--multiple"
-        :class="{ 'multiselect--active': open, 'multiselect--above': above }"
+        class="multiselect select2-selection"
+        :class="{ 'multiselect--active': open, 'multiselect--above': above, 'select2-selection--single': single, 'select2-selection--multiple': !single }"
         @mousedown="positionOptions"
         @focusin="positionOptions"
         @keydown.capture="keydown($event, open)"
@@ -199,11 +218,11 @@ function keydown(event: KeyboardEvent, open: boolean) {
         <ComboboxButton
           ref="trigger"
           class="select2-selection__arrow multiselect__select"
-          :aria-label="`Visa alternativ för ${placeholder}`"
+          :aria-label="single ? controlName : `Visa alternativ för ${placeholder}`"
           @click="open && clearQuery()"
         ><b aria-hidden="true" /></ComboboxButton>
         <div class="multiselect__tags">
-          <div v-if="selectedOptions.length" class="multiselect__tags-wrap" @pointerdown="chipClickWasOpen = open" @mousedown.prevent @click.prevent.stop="!chipClickWasOpen && toggle()">
+          <div v-if="!single && selectedOptions.length" class="multiselect__tags-wrap" @pointerdown="chipClickWasOpen = open" @mousedown.prevent @click.prevent.stop="!chipClickWasOpen && toggle()">
             <span v-for="option in selectedOptions" :key="option.value" class="select2-selection__choice" :title="option.label">
               <button
                 type="button"
@@ -220,10 +239,10 @@ function keydown(event: KeyboardEvent, open: boolean) {
           <ComboboxInput
             :id="inputId"
             class="multiselect__input select2-search__field"
-            :class="selectedOptions.length && persistentInputRow && !open && !preserveSearch
+            :class="!single && selectedOptions.length && persistentInputRow && !open && !preserveSearch
               ? 'search-multiselect__input-row' : 'search-multiselect__native-search'"
-            :style="open || selectedOptions.length ? { width: '100%' } : { width: '0', position: 'absolute', padding: '0' }"
-            :display-value="() => query"
+            :style="single || open || selectedOptions.length ? { width: '100%' } : { width: '0', position: 'absolute', padding: '0' }"
+            :display-value="() => single && !open ? selectedOptions[0] ? selectedLabel(selectedOptions[0]) : '' : query"
             :placeholder="placeholder"
             :aria-label="controlName"
             :readonly="!searchable"
@@ -233,7 +252,7 @@ function keydown(event: KeyboardEvent, open: boolean) {
             @click="clickInput(open)"
             @blur="blurInput"
           />
-          <span v-if="!open && !selectedOptions.length" class="multiselect__placeholder" aria-hidden="true" @click="toggle">{{ placeholder }}</span>
+          <span v-if="!single && !open && !selectedOptions.length" class="multiselect__placeholder" aria-hidden="true" @click="toggle">{{ placeholder }}</span>
         </div>
         <ComboboxOptions
           as="div"
@@ -279,6 +298,51 @@ class="multiselect__option" :class="{
 
 <style src="~/assets/styles/search-multi-select.css"></style>
 <style scoped>
+.search-multiselect--single {
+  width: 200px;
+  max-width: 100%;
+}
+.search-multiselect--single .multiselect {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0;
+  min-height: 34px;
+  height: 34px;
+  border: 1px solid #999 !important;
+  background: white;
+}
+.search-multiselect--single .multiselect__tags {
+  display: block;
+  height: 32px;
+  min-height: 0;
+}
+.search-multiselect--single .multiselect__select::before { display: none; }
+.search-multiselect--single .multiselect input.multiselect__input {
+  display: block;
+  position: static;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  height: 32px;
+  padding: 0 20px 0 8px;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  font-family: "Requiem Text SC A", "Requiem Text SC B";
+  font-size: 16px;
+  line-height: 30px;
+  text-transform: lowercase;
+  outline: none;
+}
+.search-multiselect--single .multiselect__content-wrapper {
+  width: 100%;
+  border-radius: 0;
+  font-family: "Requiem Text SC A", "Requiem Text SC B";
+  font-size: 16px;
+  line-height: 1.2;
+  text-transform: lowercase;
+}
+
 /* The visible row is now the actual accessible combobox input. */
 input.search-multiselect__input-row {
   pointer-events: auto;
