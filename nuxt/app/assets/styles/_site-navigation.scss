@@ -24,6 +24,10 @@
         background-attachment: inherit;
     }
 
+    body.page-dramaweb:has(.site-shell) {
+        background-repeat: no-repeat;
+    }
+
     // The legacy device stylesheet suppresses these route backgrounds.
     body:is(.page-search, .page-authorInfo):has(.site-shell) {
         background-image: inherit !important;
