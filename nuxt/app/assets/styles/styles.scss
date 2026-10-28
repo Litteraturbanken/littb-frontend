@@ -3373,8 +3373,8 @@ grundform-clean {
     &.bkg-add-border .content {
         padding: 1em 2em;
         border: 1px solid #333;
-        height: 75vh;
-        overflow-y: auto;
+        height: auto;
+        overflow-y: visible;
         background-color : rgba(255, 255, 255, 0.75);
     }
 
