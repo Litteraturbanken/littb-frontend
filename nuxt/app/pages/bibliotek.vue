@@ -1115,6 +1115,7 @@ function resetSearch() {
     chronologyFromDraft.value = String(chronologyBounds.value?.from ?? "")
     chronologyToDraft.value = String(chronologyBounds.value?.to ?? "")
     invalidateIntent()
+    filter.value = ""
     void router.push({ path: route.path, query })
 }
 

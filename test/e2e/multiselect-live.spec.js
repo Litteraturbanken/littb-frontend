@@ -298,3 +298,44 @@ test('Library single select matches production and supports reopening, outside c
     await expect(button).toHaveAttribute('value', '')
     await expect.poll(() => new URL(page.url()).searchParams.has('kön')).toBe(false)
 })
+
+test('Library search field and advanced-button gap stay fixed when the clear control appears', async ({ page }, testInfo) => {
+    const widths = testInfo.project.name.includes('mobile') ? [390] : [1087, 1440]
+    for (const width of widths) {
+        await page.setViewportSize({ width, height: 1475 })
+        await page.goto('/bibliotek?avancerat=&visa=works&sort=popularitet&title=Giftas')
+        await page.locator('[data-library-mounted="true"]').waitFor()
+        await page.evaluate(() => document.fonts.ready)
+        const input = page.locator('[data-library-filter]')
+        const clear = page.locator('[data-library-reset]')
+        const geometry = () => page.locator('.main_input').evaluate(row => {
+            const box = element => {
+                const r = element.getBoundingClientRect()
+                return { x: r.x, y: r.y, width: r.width, height: r.height }
+            }
+            return { input: box(row.querySelector('[data-library-filter]')), advanced: box(row.querySelector('[data-library-advanced]')) }
+        })
+        await expect(input).toHaveValue('')
+        await expect(clear).toBeHidden()
+        const empty = await geometry()
+        await page.locator('.main_input').screenshot({ path: testInfo.outputPath(`search-controls-${width}-empty.png`) })
+        await input.fill('Giftas')
+        await expect(clear).toBeVisible()
+        await expect.poll(geometry).toEqual(empty)
+        await page.locator('.main_input').screenshot({ path: testInfo.outputPath(`search-controls-${width}-active.png`) })
+        await clear.focus()
+        await clear.press('Enter')
+        await expect(input).toHaveValue('')
+        await expect(clear).toBeHidden()
+        await expect.poll(geometry).toEqual(empty)
+        await page.locator('[data-library-gender]').click()
+        await page.getByRole('option', { name: 'Kvinnliga författare', exact: true }).click()
+        await expect(clear).toBeVisible()
+        await expect.poll(geometry).toEqual(empty)
+        await clear.focus()
+        await clear.press('Enter')
+        await expect(clear).toBeHidden()
+        await expect.poll(() => new URL(page.url()).searchParams.has('kön')).toBe(false)
+        await expect.poll(geometry).toEqual(empty)
+    }
+})

@@ -57,9 +57,10 @@ function inputValue(event: Event): string {
             >
             <button type="submit" class="sr-only" tabindex="-1">Sök</button>
             <button
-                v-show="hasActiveFilters"
                 type="button"
                 data-library-reset
+                :class="{ invisible: !hasActiveFilters }"
+                :disabled="!hasActiveFilters"
                 class="reset text-gray-700 transition duration-200 w-6 h-6 relative -left-14 top-0 -mr-8 cursor-pointer bg-transparent border-0 p-0"
                 aria-label="Rensa sökning"
                 @click="emit('reset')"
