@@ -8,16 +8,29 @@ const controls = vi.hoisted(() => ({ scrollToIndex: vi.fn(), focused: [] as stri
 vi.mock("@tanstack/vue-virtual", async () => {
   const { computed } = await import("vue")
   return {
-    defaultRangeExtractor: () => [],
-    useVirtualizer: (config: { value: { count: number; getItemKey: (index: number) => string } }) => computed(() => ({
-      getTotalSize: () => config.value.count * 28,
-      getVirtualItems: () => Array.from({ length: config.value.count }, (_, index) => ({
-        index, key: config.value.getItemKey(index), start: index * 28
-      })),
-      measureElement: () => {},
-      scrollToIndex: controls.scrollToIndex,
-      isScrolling: false
-    }))
+    defaultRangeExtractor: () => [0, 1, 2, 3],
+    useVirtualizer: (config: { value: { count: number; getItemKey: (index: number) => string; rangeExtractor: (range: unknown) => number[] } }) => {
+      let extractor: unknown
+      let count = -1
+      let indices: number[] = []
+      return computed(() => {
+        const current = config.value
+        // Match Tanstack's memo: active/pending reads inside an unchanged
+        // extractor cannot invalidate a stable visible range by themselves.
+        if (extractor !== current.rangeExtractor || count !== current.count) {
+          extractor = current.rangeExtractor
+          count = current.count
+          indices = current.rangeExtractor({})
+        }
+        return {
+          getTotalSize: () => current.count * 28,
+          getVirtualItems: () => indices.map(index => ({ index, key: current.getItemKey(index), start: index * 28 })),
+          measureElement: () => {},
+          scrollToIndex: controls.scrollToIndex,
+          isScrolling: false
+        }
+      })
+    }
   }
 })
 vi.mock("@headlessui/vue", async () => {
@@ -53,10 +66,25 @@ async function mountOptions() {
   app.provide(ssrContextKey, { modules: new Set<string>() })
   app.mount(target)
   await nextTick()
-  return { options, activeOption, instance, nextTick, unmount: () => { app.unmount(); target.remove() } }
+  return { target, options, activeOption, instance, nextTick, unmount: () => { app.unmount(); target.remove() } }
 }
 
 describe("virtual option boundary request ownership", () => {
+  test("active pin changes invalidate memoized indices without a scroll-range change", async () => {
+    const mounted = await mountOptions()
+    try {
+      mounted.activeOption.value = mounted.options.value[40]
+      await mounted.nextTick()
+      expect(mounted.target.querySelector('[data-index="40"]')).not.toBeNull()
+      mounted.activeOption.value = undefined
+      await mounted.nextTick()
+      expect(mounted.target.querySelector('[data-index="40"]')).not.toBeNull()
+      mounted.activeOption.value = mounted.options.value[41]
+      await mounted.nextTick()
+      expect(mounted.target.querySelector('[data-index="41"]')).not.toBeNull()
+      expect(mounted.target.querySelector('[data-index="40"]')).toBeNull()
+    } finally { mounted.unmount() }
+  })
   test("End includes the final action in the logical virtual row count", async () => {
     const mounted = await mountOptions()
     try {

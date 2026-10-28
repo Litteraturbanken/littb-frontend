@@ -9,6 +9,12 @@ import type { SearchMultiSelectOption } from "./SearchMultiSelect.vue"
 const props = defineProps<{ options: readonly SearchMultiSelectOption[]; activeOption?: unknown; actionValue?: string }>()
 const root = ref<HTMLElement | null>(null)
 const pendingFocus = ref<number | null>(null)
+const retainedActive = ref<string>()
+watch(() => (props.activeOption as SearchMultiSelectOption | undefined)?.value, value => {
+  // Headless UI briefly clears its implicit first-option activation while
+  // scheduling explicit focus. Keep that outgoing row registered meanwhile.
+  if (value !== undefined) retainedActive.value = value
+}, { immediate: true, flush: "sync" })
 let boundaryRequest = 0
 function cancelBoundary() {
   boundaryRequest += 1
@@ -22,7 +28,13 @@ watch(() => props.options, (options, previous) => {
   )) cancelBoundary()
 }, { flush: "sync" })
 onBeforeUnmount(cancelBoundary)
-const virtualizer = useVirtualizer(computed(() => ({
+const virtualizer = useVirtualizer(computed(() => {
+  // Tanstack memoizes the extracted indices by callback identity. Capture pins
+  // reactively here so changing Headless UI activation invalidates that memo,
+  // even when the visible scroll range itself has not changed.
+  const active = props.options.findIndex(option => option.value === retainedActive.value)
+  const pending = pendingFocus.value
+  return ({
   count: props.options.length,
   getScrollElement: () => root.value?.parentElement ?? null,
   estimateSize: () => 28,
@@ -31,13 +43,13 @@ const virtualizer = useVirtualizer(computed(() => ({
   // Otherwise unregistering it activates another row and scrolls back.
   rangeExtractor: range => {
     const indices = defaultRangeExtractor(range)
-    const active = props.options.findIndex(option => option.value === (props.activeOption as SearchMultiSelectOption | undefined)?.value)
     if (active >= 0 && !indices.includes(active)) indices.push(active)
-    if (pendingFocus.value !== null && !indices.includes(pendingFocus.value)) indices.push(pendingFocus.value)
+    if (pending !== null && !indices.includes(pending)) indices.push(pending)
     return indices.sort((a, b) => a - b)
   },
   getItemKey: (index: number) => props.options[index]!.value
-})))
+  })
+}))
 const items = computed(() => virtualizer.value.getVirtualItems())
 function measure(element: unknown) {
   const node = (element as { $el?: HTMLElement } | null)?.$el
@@ -58,6 +70,15 @@ async function focusBoundary(last: boolean) {
   pendingFocus.value = index
   await nextTick()
   if (!current()) return
+  const outgoing = root.value?.querySelector<HTMLElement>('[aria-selected][data-headlessui-state~="active"]')
+  if (outgoing && outgoing.dataset.index !== String(index)) {
+    // Commit Headless UI's implicit first activation before the long scroll.
+    // Otherwise its delayed specific-focus call clears aria-activedescendant
+    // while the default index is still null, and row removal cancels that call.
+    outgoing.dispatchEvent(new FocusEvent("focus"))
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+    if (!current()) return
+  }
   virtualizer.value.scrollToIndex(index, { align: last ? "end" : "start" })
   // Scrolling and measuring variable-height rows settles across animation frames.
   for (let frame = 0; frame < 60; frame++) {
