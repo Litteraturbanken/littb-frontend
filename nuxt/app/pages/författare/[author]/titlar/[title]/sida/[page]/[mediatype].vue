@@ -1535,12 +1535,15 @@ function syncWorkSearchFromRoute(): void {
 }
 
 watch(
-  () => [
-    route.query.q,
-    route.query.lemma,
-    route.query.ej_modern,
-    route.query.prefix,
-    route.query.suffix
+  [
+    authorParam,
+    titleParam,
+    mediaTypeParam,
+    () => route.query.q,
+    () => route.query.lemma,
+    () => route.query.ej_modern,
+    () => route.query.prefix,
+    () => route.query.suffix
   ],
   syncWorkSearchFromRoute,
   { immediate: true }

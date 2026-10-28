@@ -100,3 +100,36 @@ for (const item of cases) {
     await expectRetainedReader(page, 180)
   })
 }
+
+for (const item of cases.filter(item => !item.editor)) {
+  test(`${item.name} retains an unsent work-search draft across page navigation and history`, async ({ page }) => {
+    await page.goto(`${item.initial}?show_search_work&keep=one`, { waitUntil: "networkidle" })
+    const panel = page.locator(".reader-context .searchbox")
+    const input = panel.getByRole("searchbox", { name: "Sök i verket" })
+    const trigger = page.locator(".reader-context .subnav").getByRole("button", { name: "Sök i verket", exact: true })
+    await expect(input).toBeVisible()
+    await input.fill("havet")
+    const originalInput = await input.elementHandle()
+    // Activation leaves focus in the search field to isolate reader focus loss.
+    await page.getByRole("link", { name: "Nästa sida", exact: true }).first()
+      .evaluate(link => (link as HTMLAnchorElement).click())
+    await expect(page).toHaveURL(new RegExp(item.target + "\\?"))
+    await expect(input).toHaveValue("havet")
+    await expect(input).toBeFocused()
+    expect(await input.evaluate((element, original) => element === original, originalInput)).toBe(true)
+    await expect(trigger).toHaveAttribute("aria-expanded", "true")
+    await page.goBack()
+    await expect(page).toHaveURL(new RegExp(encodeURI(item.initial) + "\\?"))
+    await expect(input).toHaveValue("havet")
+    await page.goForward()
+    await expect(page).toHaveURL(new RegExp(item.target + "\\?"))
+    await expect(input).toHaveValue("havet")
+    expect(new URL(page.url()).searchParams.get("keep")).toBe("one")
+    // Public reopening deliberately restores the submitted URL state.
+    await trigger.click()
+    await trigger.click()
+    await expect(input).toHaveValue("")
+    await expect(input).toBeFocused()
+    await originalInput?.dispose()
+  })
+}
