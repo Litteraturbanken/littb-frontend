@@ -21,6 +21,11 @@ body:has(.modal[role="dialog"][aria-modal="true"]) :is(#mainview, #leftCorridor,
     opacity: 0.8;
 }
 
+.quick-search-modal > .quick-search-presentation {
+    // Preserve the viewport-height containing block for the dialog's top: 5%.
+    height: 100%;
+}
+
 .quick-search-presentation > .modal-dialog {
     z-index: 1050;
 }
