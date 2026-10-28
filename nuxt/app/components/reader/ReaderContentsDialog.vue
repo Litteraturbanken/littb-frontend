@@ -75,21 +75,23 @@ onMounted(() => {
         tabindex="-1"
       >
         <div class="chapters-modal modal-body">
-          <button
-            class="close_btn submit btn pull-right"
-            type="button"
-            @click="emit('close')"
-          >Stäng</button>
-          <component
-            :is="headlessReady ? DialogTitle : 'h2'"
-            class="sr-only"
-          >Innehållsförteckning</component>
+          <div class="chapters-modal-heading">
+            <button
+              class="close_btn submit btn pull-right"
+              type="button"
+              @click="emit('close')"
+            >Stäng</button>
+            <component
+              :is="headlessReady ? DialogTitle : 'h2'"
+              class="sr-only"
+            >Innehållsförteckning</component>
 
-          <div class="header">
-            <h2 class="author sc"><ReaderContributors :contributors="contributors" /></h2>
-            <h2 class="title">
-              {{ title }} <span v-if="imprintYear">({{ imprintYear }})</span>
-            </h2>
+            <div class="header">
+              <h2 class="author sc"><ReaderContributors :contributors="contributors" /></h2>
+              <h2 class="title">
+                {{ title }} <span v-if="imprintYear">({{ imprintYear }})</span>
+              </h2>
+            </div>
           </div>
 
           <ul class="part_menu">

@@ -108,18 +108,6 @@
     }
 }
 
-@media (max-width: 767px) {
-    body.modal-open:has(.site-shell) {
-        padding: max(2%, env(safe-area-inset-top, 0px)) max(2%, env(safe-area-inset-right, 0px)) max(2%, env(safe-area-inset-bottom, 0px)) max(2%, env(safe-area-inset-left, 0px));
-        background-color: white;
-    }
-
-    body.modal-open #leftCorridor.site-navigation,
-    body.modal-open .site-shell > #mainview {
-        display: none;
-    }
-}
-
 @media (max-width: 639px) {
     body:is(.page-about, .page-presentation) #mainview .content {
         padding-left: 12px;

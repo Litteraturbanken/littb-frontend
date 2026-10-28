@@ -323,16 +323,6 @@ and (max-device-width : 568px) {
     .page-authorInfo {
         background : none !important;
     }
-    .modal-open {
-        // padding-top : 2%;
-        // padding-left : 4%;
-        padding: 2%;
-        width : 100%;
-        background-color : #333;
-        #mainview, #leftCorridor, .header, .modal-backdrop {
-            display : none;
-        }
-    }
     .so_modal {
         
         .modal-header h4 {
