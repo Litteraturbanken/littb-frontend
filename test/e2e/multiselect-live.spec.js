@@ -87,6 +87,14 @@ for (const { route, selector, name } of cases) {
                 await expect(input).not.toHaveAttribute('aria-activedescendant', previous)
             }
             await expect.poll(() => input.evaluate(el => document.getElementById(el.getAttribute('aria-activedescendant'))?.getAttribute('aria-selected'))).toBe('false')
+            const highlight = await input.evaluate(el => {
+                const row = document.getElementById(el.getAttribute('aria-activedescendant'))
+                const option = row.querySelector('.multiselect__option')
+                const parent = row.getBoundingClientRect(), child = option.getBoundingClientRect()
+                return { left: child.left - parent.left, right: parent.right - child.right }
+            })
+            expect(Math.abs(highlight.left)).toBeLessThan(0.1)
+            expect(Math.abs(highlight.right)).toBeLessThan(0.1)
             await input.press('Enter')
             await expect(chips).toHaveCount(count)
         }
@@ -189,4 +197,54 @@ test('Library selected categories stay disabled with text-only styling in narrow
     await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
     await expect(narrowing.locator('.select2-selection__choice')).toHaveCount(0)
     await expect(keywords.locator('.select2-selection__choice')).toHaveCount(1)
+})
+
+
+test('Library single select matches production and supports reopening, outside click, keyboard and reload', async ({ page }, testInfo) => {
+    await page.goto('/bibliotek?avancerat')
+    await page.locator('[data-library-mounted="true"]').waitFor()
+    const button = page.locator('[data-library-gender]')
+    const list = page.locator('.library-gender-options')
+    await expect(button).toHaveAccessibleName(/Författarkön/)
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await button.click()
+        await expect(list).toBeVisible()
+        await clickOutside(page)
+        await expect(list).toHaveCount(0)
+    }
+    await button.click()
+    const buttonBox = await button.boundingBox(), listBox = await list.boundingBox()
+    expect(buttonBox.height).toBeCloseTo(31, 1)
+    expect(listBox.width).toBeCloseTo(buttonBox.width, 1)
+    expect(listBox.x).toBeCloseTo(buttonBox.x, 1)
+    expect(listBox.y).toBeCloseTo(buttonBox.y + buttonBox.height - 2, 1)
+    await expect(list.getByRole('option').first()).toHaveCSS('padding', '6px')
+    await expect(list.getByRole('option').first()).toHaveCSS('font-size', '16px')
+    await expect(list.getByRole('option').first()).toHaveCSS('background-color', 'rgb(237, 237, 237)')
+    await page.screenshot({
+        path: testInfo.outputPath('library-select.png'),
+        clip: { x: buttonBox.x, y: buttonBox.y, width: buttonBox.width, height: listBox.y + listBox.height - buttonBox.y }
+    })
+    await list.press('End')
+    await list.press('Enter')
+    await expect(button).toHaveAttribute('value', 'male')
+    await expect(list).toHaveCount(0)
+    await expect(page).toHaveURL(/k%C3%B6n=male/)
+    await page.reload()
+    await page.locator('[data-library-mounted="true"]').waitFor()
+    await expect(button).toHaveAttribute('value', 'male')
+    await button.press('Enter')
+    await expect(list).toBeVisible()
+    await expect(list.getByRole('option', { name: 'Manliga författare', exact: true })).toHaveAttribute('aria-selected', 'true')
+    await list.press('Home')
+    await list.press('ArrowDown')
+    await list.press('Enter')
+    await expect(button).toHaveAttribute('value', 'female')
+    await button.click()
+    await list.press('Escape')
+    await expect(button).toBeFocused()
+    await button.click()
+    await list.getByRole('option', { name: 'Alla författare', exact: true }).click()
+    await expect(button).toHaveAttribute('value', '')
+    await expect.poll(() => new URL(page.url()).searchParams.has('kön')).toBe(false)
 })

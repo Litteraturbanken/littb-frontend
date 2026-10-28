@@ -64,7 +64,7 @@ test("advanced Library controls remain labelled and keyboard operable on mobile"
   })
   await page.locator('[data-library-mounted="true"]').waitFor({ state: "attached" })
 
-  await expect(page.locator("[data-library-gender]")).toHaveAccessibleName("Författarkön")
+  await expect(page.locator("[data-library-gender]")).toHaveAccessibleName(/Författarkön/)
   await expect(page.getByRole("combobox", { name: "Utgivningsformat", exact: true }))
     .toBeVisible()
   await expect(page.getByRole("combobox", { name: "Språk …", exact: true })).toBeVisible()

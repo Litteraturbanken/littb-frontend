@@ -193,7 +193,7 @@ test("SSR sends advanced Library filters as one exact typed body", async ({ requ
 
   expect(document.querySelector("[data-library-advanced]")?.getAttribute("aria-expanded"))
     .toBe("true")
-  expect(document.querySelector<HTMLOptionElement>("[data-library-gender] option[selected]")?.value)
+  expect(document.querySelector("[data-library-gender]")?.getAttribute("value"))
     .toBe("female")
   expect(selectedChipTitles(document, "[data-library-keywords]")).toEqual([
     "Romaner", "Svenska Akademien"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
+import { computed } from "vue"
+import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from "@headlessui/vue"
 import type {
     LibraryAdvancedChange,
     LibraryAdvancedControlsModel
@@ -20,7 +21,14 @@ const emit = defineEmits<{
     "select-visible-source-works": []
     "deselect-visible-source-works": []
 }>()
-const genderPointerFocused = ref(false)
+const genderOptions = [
+    { value: "", label: "Alla författare" },
+    { value: "female", label: "Kvinnliga författare" },
+    { value: "male", label: "Manliga författare" }
+] as const
+const genderLabel = computed(() => props.model.gender
+    ? genderOptions.find(option => option.value === props.model.gender)?.label
+    : "Filtrera: kvinnliga / manliga / alla")
 
 const narrowingSelectGroups = computed(() =>
     props.model.collectionSelectGroups.map(group => ({
@@ -36,8 +44,7 @@ function inputValue(event: Event): string {
     return (event.target as HTMLInputElement).value
 }
 
-function emitGender(event: Event): void {
-    const value = inputValue(event)
+function emitGender(value: string): void {
     if (value !== "" && value !== "female" && value !== "male") return
     emit("change", { field: "gender", value })
 }
@@ -113,55 +120,44 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
         class="more_container show_more mt-2 mb-4"
     >
         <div class="title_select_container">
-            <label
-                class="library-gender-control select2-container select2-container--default"
-                @keydown.capture="genderPointerFocused = false"
-                @mousedown.capture="genderPointerFocused = true"
-                @touchstart.capture="genderPointerFocused = true"
+            <Listbox
+                v-slot="{ open }"
+                :model-value="model.gender"
+                @update:model-value="emitGender"
             >
-                <span class="sr-only">Författarkön</span>
-                <select
-                    :value="model.gender"
-                    data-library-gender
-                    class="gender_select"
-                    :class="{
-                        'library-select-placeholder': !model.gender,
-                        'library-gender-pointer-focused': genderPointerFocused
-                    }"
-                    aria-label="Författarkön"
-                    @blur="genderPointerFocused = false"
-                    @change="emitGender"
+                <div
+                    class="library-gender-control select2-container select2-container--default"
+                    :class="{ 'select2-container--open': open }"
                 >
-                    <option value="" :selected="model.gender === ''">
-                        Filtrera: kvinnliga / manliga / alla
-                    </option>
-                    <option value="female" :selected="model.gender === 'female'">
-                        Kvinnliga författare
-                    </option>
-                    <option value="male" :selected="model.gender === 'male'">
-                        Manliga författare
-                    </option>
-                </select>
-                <span class="selection" aria-hidden="true">
-                    <span
+                    <ListboxLabel class="sr-only">Författarkön</ListboxLabel>
+                    <ListboxButton
+                        data-library-gender
                         data-library-gender-visual
+                        :value="model.gender"
                         class="select2-selection select2-selection--single"
                     >
                         <span
                             class="select2-selection__rendered"
                             :title="model.gender === '' ? 'Alla författare' : undefined"
-                            >{{
-                                model.gender === "female"
-                                    ? "Kvinnliga författare"
-                                    : model.gender === "male"
-                                      ? "Manliga författare"
-                                      : "Filtrera: kvinnliga / manliga / alla"
-                            }}</span
+                        >{{ genderLabel }}</span>
+                        <span class="select2-selection__arrow" aria-hidden="true"><b /></span>
+                    </ListboxButton>
+                    <ListboxOptions class="library-gender-options select2-dropdown select2-dropdown--below">
+                        <ListboxOption
+                            v-for="option in genderOptions"
+                            :key="option.value"
+                            v-slot="{ active }"
+                            :value="option.value"
+                            as="template"
                         >
-                        <span class="select2-selection__arrow"><b /></span>
-                    </span>
-                </span>
-            </label>
+                            <li
+                                class="select2-results__option"
+                                :class="{ 'select2-results__option--highlighted': active }"
+                            >{{ option.label }}</li>
+                        </ListboxOption>
+                    </ListboxOptions>
+                </div>
+            </Listbox>
         </div>
         <div class="title_select_container">
             <SearchMultiSelect
@@ -321,23 +317,6 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
 </template>
 
 <style scoped>
-[data-library-advanced-panel] select {
-    display: block;
-    width: 350px;
-    max-width: 100%;
-    height: 31px;
-    padding: 3px 28px 3px 10px;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    font-family: "Requiem Text SC A", "Requiem Text SC B";
-    font-size: 0.8em;
-    line-height: 1.2;
-    text-transform: lowercase;
-    color: #444;
-    background: white;
-    border: 1px solid #999;
-}
-
 .library-gender-control {
     position: relative;
     display: block;
@@ -347,41 +326,16 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
     margin: 5px 0;
 }
 
-[data-library-advanced-panel] .library-gender-control select[data-library-gender] {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    width: 100%;
-    height: 31px;
-    padding: 0;
-    margin: 0;
-    cursor: pointer;
-    opacity: 0;
-}
-
-[data-library-advanced-panel]
-    .library-gender-control
-    select[data-library-gender]:focus-visible:not(.library-gender-pointer-focused)
-    + .selection
-    [data-library-gender-visual] {
+.library-gender-control [data-library-gender]:focus-visible {
     outline: 1px solid #7a1400;
     outline-offset: 0;
     box-shadow: none;
 }
 
 @media (forced-colors: active) {
-    [data-library-advanced-panel]
-        .library-gender-control
-        select[data-library-gender]:focus-visible:not(.library-gender-pointer-focused)
-        + .selection
-        [data-library-gender-visual] {
+    .library-gender-control [data-library-gender]:focus-visible {
         outline-color: Highlight;
     }
-}
-
-.library-gender-control .selection {
-    display: block;
-    height: 31px;
 }
 
 .library-gender-control [data-library-gender-visual] {
@@ -389,6 +343,7 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
     display: block;
     width: 100%;
     height: 31px;
+    text-align: left;
 }
 
 .library-gender-control .select2-selection__rendered {
@@ -422,9 +377,43 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
     border-width: 5px 4px 0;
 }
 
-[data-library-advanced-panel] select.library-select-placeholder {
-    color: #999 !important;
-    opacity: 1;
+.library-gender-control.select2-container--open .select2-selection__arrow b {
+    border-color: transparent transparent #888;
+    border-width: 0 4px 5px;
+}
+
+.library-gender-control .library-gender-options {
+    position: absolute;
+    top: calc(100% - 2px);
+    left: 0;
+    z-index: 1051;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid #333;
+    border-top: 0;
+    border-radius: 0;
+    background: white;
+    box-shadow: none;
+    outline: none;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.library-gender-options .select2-results__option {
+    padding: 6px;
+    cursor: pointer;
+}
+
+.library-gender-options .select2-results__option[aria-selected="true"] {
+    background: #ddd;
+}
+
+.library-gender-options .select2-results__option--highlighted[aria-selected] {
+    color: black;
+    background: #ededed;
 }
 
 [data-library-advanced-panel] :deep(.multiselect__input::placeholder),

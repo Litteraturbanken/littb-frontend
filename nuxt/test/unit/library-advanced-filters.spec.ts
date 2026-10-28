@@ -178,9 +178,13 @@ describe("Library advanced filter integration", () => {
     await nextTick()
     expect(advancedTarget.querySelector("[data-library-chronology-unavailable]")?.textContent)
       .toContain("Tidslinjen kunde inte hämtas.")
-    const gender = advancedTarget.querySelector<HTMLSelectElement>("[data-library-gender]")!
-    gender.value = "female"
-    gender.dispatchEvent(new window.Event("change"))
+    const gender = advancedTarget.querySelector<HTMLButtonElement>("[data-library-gender]")!
+    gender.click()
+    await nextTick()
+    const female = [...advancedTarget.querySelectorAll<HTMLElement>('[role="option"]')]
+      .find(option => option.textContent === "Kvinnliga författare")!
+    female.click()
+    await nextTick()
     expect(changes).toContainEqual({ field: "gender", value: "female" })
 
     model.value = {

@@ -2,6 +2,12 @@ import { expect, test, type APIRequestContext, type Locator } from "@playwright/
 
 import type { operations } from "../../app/lib/api/generated/lbapi"
 
+async function selectGender(page: import("@playwright/test").Page, value: "" | "female" | "male") {
+  await page.locator("[data-library-gender]").click()
+  const label = value === "female" ? "Kvinnliga författare" : value === "male" ? "Manliga författare" : "Alla författare"
+  await page.getByRole("option", { name: label, exact: true }).click()
+}
+
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 type LibrarySearchRequest = operations["v2_post_library_search"]["requestBody"]["content"]["application/json"]
 type LibraryFilters = LibrarySearchRequest["filters"]
@@ -164,8 +170,8 @@ test("advanced disclosure and controls use push history and restore from the URL
   expect(await relevanceQueries(request)).toEqual([])
 
   const gender = page.locator("[data-library-gender]")
-  await expect(gender).toHaveAccessibleName("Författarkön")
-  await gender.selectOption("female")
+  await expect(gender).toHaveAccessibleName(/Författarkön/)
+  await selectGender(page, "female")
   await expect.poll(() => new URL(page.url()).searchParams.get("kön")).toBe("female")
   expect(new URL(page.url()).searchParams.has("sida")).toBe(false)
   expect(new URL(page.url()).searchParams.get("keep")).toBe("ja")
@@ -175,7 +181,7 @@ test("advanced disclosure and controls use push history and restore from the URL
 
   await page.goBack()
   await expect.poll(() => new URL(page.url()).searchParams.has("kön")).toBe(false)
-  await expect(gender).toHaveValue("")
+  await expect(gender).toHaveAttribute("value", "")
   await expect(advanced).toHaveAttribute("aria-expanded", "true")
 
   await page.goBack()
@@ -185,9 +191,9 @@ test("advanced disclosure and controls use push history and restore from the URL
   await page.goForward()
   await page.goForward()
   await expect.poll(() => new URL(page.url()).searchParams.get("kön")).toBe("female")
-  await expect(gender).toHaveValue("female")
+  await expect(gender).toHaveAttribute("value", "female")
   await page.reload({ waitUntil: "networkidle" })
-  await expect(page.locator("[data-library-gender]")).toHaveValue("female")
+  await expect(page.locator("[data-library-gender]")).toHaveAttribute("value", "female")
 
   if (testInfo.project.name === "mobile-chromium") {
     for (const control of [
@@ -203,7 +209,7 @@ test("advanced disclosure and controls use push history and restore from the URL
   }
 })
 
-test("gender proxy shows its narrow focus indicator only for keyboard use", async ({
+test("gender listbox keeps its geometry and keyboard focus indicator", async ({
   page
 }) => {
   await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })
@@ -248,7 +254,7 @@ test("gender proxy shows its narrow focus indicator only for keyboard use", asyn
 
   await page.getByRole("heading", { name: "Botanisera i biblioteket" }).click()
   await gender.click()
-  await expect(gender).toBeFocused()
+  await expect(page.locator(".library-gender-options")).toBeFocused()
   expect(await focusTreatment()).toMatchObject({
     boxShadow: "none",
     outlineStyle: "none"
@@ -438,7 +444,7 @@ test("a delayed advanced request cannot replace a newer route-owned result", asy
   } })
   await page.goto("/bibliotek?avancerat=1", { waitUntil: "networkidle" })
 
-  await page.locator("[data-library-gender]").selectOption("female")
+  await selectGender(page, "female")
   await expect.poll(() => new URL(page.url()).searchParams.get("kön")).toBe("female")
   await page.locator("[data-library-filter]").fill("Senaste")
   await page.locator("[data-library-filter]").press("Enter")
@@ -457,7 +463,7 @@ test("advanced facets retain a filter still waiting in the debounce window", asy
   await resetRequests(request)
 
   await page.locator("[data-library-filter]").fill("Senaste")
-  await page.locator("[data-library-gender]").selectOption("female")
+  await selectGender(page, "female")
 
   await expect.poll(() => {
     const params = new URL(page.url()).searchParams
@@ -482,10 +488,11 @@ test("overlapping advanced facet commits compose from the live controls", async 
   await waitForHydration(page)
   await resetRequests(request)
 
+  await page.locator("[data-library-gender]").click()
   await page.evaluate(() => {
-    const gender = document.querySelector<HTMLSelectElement>("[data-library-gender]")!
-    gender.value = "female"
-    gender.dispatchEvent(new Event("change", { bubbles: true }))
+    const female = [...document.querySelectorAll<HTMLElement>('.library-gender-options [role="option"]')]
+      .find(option => option.textContent === "Kvinnliga författare")!
+    female.click()
     const from = document.querySelector<HTMLInputElement>(
       "[data-library-chronology-range] input[type=range]"
     )!
@@ -522,7 +529,7 @@ test("unavailable option sections retain their routed advanced values", async ({
   )
   await waitForHydration(page)
 
-  await page.locator("[data-library-gender]").selectOption("female")
+  await selectGender(page, "female")
   await expect.poll(() => {
     const params = new URL(page.url()).searchParams
     return {
@@ -553,13 +560,14 @@ for (const { label, draft } of [
     await waitForHydration(page)
     await resetRequests(request)
 
+    await page.locator("[data-library-gender]").click()
     await page.evaluate(value => {
       const from = document.querySelector<HTMLInputElement>("[aria-label='Från tryckår']")!
       from.value = value
       from.dispatchEvent(new Event("input", { bubbles: true }))
-      const gender = document.querySelector<HTMLSelectElement>("[data-library-gender]")!
-      gender.value = "female"
-      gender.dispatchEvent(new Event("change", { bubbles: true }))
+      const female = [...document.querySelectorAll<HTMLElement>('.library-gender-options [role="option"]')]
+        .find(option => option.textContent === "Kvinnliga författare")!
+      female.click()
     }, draft)
 
     await expect.poll(() => {
@@ -835,7 +843,7 @@ test("repeated advanced filters hydrate in order and canonicalize on the next hi
     }))
 
   await resetRequests(request)
-  await page.locator("[data-library-gender]").selectOption("female")
+  await selectGender(page, "female")
   await expect.poll(() => {
     const query = new URL(page.url()).searchParams
     return {
@@ -859,13 +867,13 @@ test("repeated advanced filters hydrate in order and canonicalize on the next hi
   await expect.poll(() => new URL(page.url()).searchParams.getAll("keywords")).toEqual([
     "texttype:roman", "provenance.library:SA,keyword:Humor", ""
   ])
-  await expect(page.locator("[data-library-gender]")).toHaveValue("")
+  await expect(page.locator("[data-library-gender]")).toHaveAttribute("value", "")
   await expect(keywords).toHaveCount(3)
   await page.goForward()
   await expect.poll(() => new URL(page.url()).searchParams.getAll("keywords")).toEqual([
     "texttype:roman,provenance.library:SA,keyword:Humor"
   ])
-  await expect(page.locator("[data-library-gender]")).toHaveValue("female")
+  await expect(page.locator("[data-library-gender]")).toHaveAttribute("value", "female")
   await expect(narrowing).toContainText("Brev")
 })
 
@@ -1293,7 +1301,7 @@ for (const query of ["", "Selma"]) {
     expect((await authorCounts()).map((entry: { body: { filters: LibraryFilters } }) => entry.body.filters)).toEqual([selected])
     expect((await ledger()).search.filter((entry: { body: { mode: string } }) => entry.body.mode === "authors")).toHaveLength(0)
 
-    await page.locator("[data-library-gender]").selectOption("female")
+    await selectGender(page, "female")
     await expect.poll(async () => (await authorCounts()).at(-1)?.body.filters)
       .toEqual({ ...selected, gender: "female" })
     await page.goBack()
