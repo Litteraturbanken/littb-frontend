@@ -8,6 +8,67 @@ import {
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 
+test("cached Reader hit navigation retains the panel without requests or spinner flashes", async ({ page }) => {
+  await page.goto(`${readerPath.replace("sida/-2", "sida/-3")}?q=doktor%20glas&hit=0&snapshot=gen-0123456789abcdef`, {
+    waitUntil: "networkidle"
+  })
+  const navigation = page.locator("#search_nav")
+  await expect(navigation).toContainText("Träff 1, sida -3")
+  const searchRequests: string[] = []
+  page.on("request", request => {
+    if (new URL(request.url()).pathname.endsWith("/search-hits")) searchRequests.push(request.url())
+  })
+  const observed = await page.evaluateHandle(() => {
+    const panel = document.querySelector("#search_nav .text")
+    const busy: string[] = []
+    const observer = new MutationObserver(records => {
+      for (const record of records) {
+        if (record.target instanceof Element && record.target.matches(".spinner_search")) {
+          busy.push(record.target.className)
+        }
+      }
+    })
+    observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] })
+    return { panel, busy, observer }
+  })
+  try {
+    // The first cached neighbour changes the reader page; the second stays on it.
+    for (const ordinal of [2, 3]) {
+      await navigation.getByRole("link", { name: "Nästa sökträff" }).click()
+      await expect(navigation).toContainText(`Träff ${ordinal}, sida -2`)
+      await page.waitForLoadState("networkidle")
+      expect(searchRequests).toEqual([])
+      expect(await observed.evaluate(value => value.busy)).toEqual([])
+      expect(await observed.evaluate(value => value.panel === document.querySelector("#search_nav .text"))).toBe(true)
+    }
+
+    // At the window boundary there really is asynchronous work. Hold that
+    // request long enough to assert loading, then prove its response is reused.
+    let releaseRequest!: () => void
+    const released = new Promise<void>(resolve => { releaseRequest = resolve })
+    await page.route("**/api/v2/works/*/search-hits?**", async route => {
+      await released
+      await route.continue()
+    })
+    try {
+      await navigation.getByRole("button", { name: "Nästa sökträff" }).click()
+      await expect(page.locator(".spinner_search")).toHaveClass(/searching/)
+      expect(searchRequests).toHaveLength(1)
+    } finally {
+      releaseRequest()
+    }
+    await expect(navigation).toContainText("Träff 4, sida -1")
+    await page.waitForLoadState("networkidle")
+    expect(searchRequests).toHaveLength(1)
+    expect(new URL(searchRequests[0]!).searchParams.get("offset")).toBe("2")
+    await expect(page.locator(".spinner_search")).not.toHaveClass(/searching/)
+    expect(await observed.evaluate(value => value.panel === document.querySelector("#search_nav .text"))).toBe(true)
+  } finally {
+    await observed.evaluate(value => value.observer.disconnect())
+    await observed.dispose()
+  }
+})
+
 test("snapshot pins initial and next public Reader requests", async ({ page, request }) => {
   await page.goto(`${readerPath}?q=doktor%20glas&hit=1&snapshot=gen-0123456789abcdef`, {
     waitUntil: "networkidle"
@@ -16,7 +77,7 @@ test("snapshot pins initial and next public Reader requests", async ({ page, req
   await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
   await expect(page.locator("#search_nav")).toContainText("Träff 3, sida -2")
   const requests = await readerHitRequests(request)
-  expect(requests.length).toBeGreaterThanOrEqual(2)
+  expect(requests).toHaveLength(1)
   expect(requests.map(item => new URLSearchParams(item.query).get("snapshot")))
     .toEqual(requests.map(() => "gen-0123456789abcdef"))
 })
@@ -3409,20 +3470,12 @@ test("faksimil search state requests its own hits and exposes live navigation", 
   await expect(toolkit).toContainText("Träff 2, sida 99")
   const window0 = "media_type=faksimil&query=kyrka&offset=0&limit=3" +
     "&word_forms=false&include_older_spellings=true&prefix=false&suffix=false"
-  const pinnedWindow0 = `${window0}&snapshot=gen-fixture-0001`
-  const window1 = pinnedWindow0.replace("offset=0", "offset=1")
+  // All three hits were included in the initial pinned result window. Native
+  // links, history, and direct navigation must reuse that same window.
   expect(await readerHitRequests(request)).toEqual([
-    { path: "/private-v2/works/lb3203777/search-hits", query: window0 },
-    { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 },
-    { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 },
-    { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 },
-    { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 },
-    { path: "/v2/works/lb3203777/search-hits", query: window1 },
-    { path: "/v2/works/lb3203777/search-hits", query: pinnedWindow0 }
+    { path: "/private-v2/works/lb3203777/search-hits", query: window0 }
   ])
-  expect(publicHitRequests).toHaveLength(6)
-  expect(publicHitRequests.every(url => new URL(url).searchParams.get("media_type") === "faksimil"))
-    .toBe(true)
+  expect(publicHitRequests).toEqual([])
   expect(problems).toEqual([])
 })
 

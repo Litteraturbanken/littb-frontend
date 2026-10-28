@@ -1030,17 +1030,20 @@ function recoveredSearchPath(snapshot: string, hit: WorkSearchHit | null): strin
   return path
 }
 
+// The selected page and hit are cursors inside a search, not a new search.
+const hitSearchIdentity = computed(() => {
+  const current = reader.value
+  const state = searchState.value
+  return current && state
+    ? workSearchSnapshotIdentity(current.workId, current.mediaType, state)
+    : "inactive"
+})
 const hitFetch = await useAsyncData(
-  computed(() => [
-        "reader-hit",
-        dialogNeutralIdentity.value,
-        reader.value?.workId ?? "pending",
-        reader.value?.pageName ?? "pending"
-      ].join(":")),
+  `reader-hit:${authorParam.value}:${titleParam.value}:${mediaTypeParam.value}`,
       async (_nuxtApp, { signal }) => {
         activeHitRequestController?.abort()
         activeHitRequestController = null
-        const identity = dialogNeutralIdentity.value
+        const identity = hitSearchIdentity.value
         const state = searchState.value
         const currentReader = reader.value
         if (
@@ -1072,7 +1075,7 @@ const hitFetch = await useAsyncData(
               }
             }
           })
-          if (requestSignal.aborted || identity !== dialogNeutralIdentity.value) {
+          if (requestSignal.aborted || identity !== hitSearchIdentity.value) {
             return { status: "inactive" as const, identity }
           }
           if (isSnapshotUnavailable(result)) {
@@ -1092,22 +1095,21 @@ const hitFetch = await useAsyncData(
           }
           return { status: "success" as const, identity, response: result.data }
         } catch (error) {
-          if (isAbortError(error) || identity !== dialogNeutralIdentity.value) {
+          if (isAbortError(error) || identity !== hitSearchIdentity.value) {
             return { status: "inactive" as const, identity }
           }
           return { status: "error" as const, identity }
         } finally {
           if (activeHitRequestController === controller) activeHitRequestController = null
         }
-      },
-      { watch: [dialogNeutralIdentity, () => reader.value?.pageName] }
+      }
     )
 
 // A saved URL can outlive an index generation. Replace only its search cursor;
 // keep the book, page, options, return link and browser history entry intact.
 onMounted(() => {
   watch(hitFetch.data, value => {
-    if (value?.status !== "recovered" || value.identity !== dialogNeutralIdentity.value) return
+    if (value?.status !== "recovered" || value.identity !== hitSearchIdentity.value) return
     void navigateRawFullPath(recoveredSearchPath(value.snapshot, value.hit), true, rawFullPath.value)
   }, { immediate: true })
 })
@@ -1115,10 +1117,20 @@ onMounted(() => {
 const hitResponse = computed(() => {
   const value = hitFetch.data.value
   return value?.status === "success" &&
-    value.identity === dialogNeutralIdentity.value &&
-    reader.value?.pageName === pageParam.value
+    value.identity === hitSearchIdentity.value &&
+    (!searchState.value?.snapshot || value.response.snapshot === searchState.value.snapshot)
     ? value.response
     : null
+})
+// Refresh only for a different search/snapshot or a hit outside the current
+// result window. Cached same-page and cross-page navigation keeps the sidebar.
+watch([hitSearchIdentity, () => searchState.value?.snapshot,
+  () => searchState.value?.hit, () => reader.value?.pageName], () => {
+  const state = searchState.value
+  if (!state || !reader.value || reader.value.pageName !== pageParam.value) return
+  const response = hitResponse.value
+  if (response && (response.total_hits === 0 || workSearchHitAt(response.items, state.hit))) return
+  void hitFetch.refresh()
 })
 watch(hitResponse, response => {
   const state = searchState.value
@@ -1130,7 +1142,7 @@ watch(hitResponse, response => {
 }, { immediate: true, flush: "sync" })
 const hitRequestFailed = computed(
   () => (hitFetch.data.value?.status === "error" &&
-    hitFetch.data.value.identity === dialogNeutralIdentity.value)
+    hitFetch.data.value.identity === hitSearchIdentity.value)
     || (hitContinuationFailure.value?.identity === dialogNeutralIdentity.value && hitContinuationFailure.value.status === "error")
 )
 const hitContinuationFailure = shallowRef<{ identity: string, status: "error" } | null>(null)
@@ -1377,6 +1389,7 @@ async function fetchHitAtIndex(
     return null
   }
   if (result.data.total_hits !== response.total_hits || !hitLookupIsCurrent(context)) return null
+  hitFetch.data.value = { status: "success", identity: hitSearchIdentity.value, response: result.data }
   return workSearchHitAt(result.data.items, index)
 }
 
@@ -1433,7 +1446,7 @@ async function navigateToHit(index: number): Promise<void> {
   }
   const controller = new AbortController()
   hitNavigationController = controller
-  gotoHitPending.value = true
+  gotoHitPending.value = !hitResponse.value || !workSearchHitAt(hitResponse.value.items, index)
   try {
     const hit = await hitAtIndex(index, controller.signal)
     if (generation !== hitNavigationGeneration) return
@@ -2604,7 +2617,7 @@ ref="sidebarSourceInfoTrigger"
         <i
           v-if="searchState"
           class="spinner_search fa fa-spinner fa-pulse"
-          :class="{ searching: hitFetch?.status.value === 'pending' }"
+          :class="{ searching: hitFetch?.status.value === 'pending' || gotoHitPending }"
           aria-hidden="true"
         />
         <nav id="search_nav" class="active" aria-label="Sökträffsnavigering">
@@ -2635,7 +2648,14 @@ ref="sidebarSourceInfoTrigger"
                 aria-label="Föregående sökträff"
                 @click="navigate"
               ><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span></a></NuxtLink>
-              <button v-else rel="prev" class="submit btn navicon left" disabled aria-hidden="true" tabindex="-1"><i class="fa fa-angle-left" /></button>
+              <button
+                v-else
+                rel="prev"
+                class="submit btn navicon left"
+                aria-label="Föregående sökträff"
+                :disabled="!searchState || searchState.hit === 0 || gotoHitPending"
+                @click="navigateToHit((searchState?.hit ?? 0) - 1)"
+              ><i class="fa fa-angle-left" /></button>
               <NuxtLink
                 v-if="nextHit"
                 v-slot="{ navigate }"
@@ -2647,7 +2667,14 @@ ref="sidebarSourceInfoTrigger"
                 aria-label="Nästa sökträff"
                 @click="navigate"
               ><span class="submit btn navicon navicon-visual" aria-hidden="true"><i class="fa fa-angle-right" /></span></a></NuxtLink>
-              <button v-else rel="next" class="submit btn navicon" disabled aria-hidden="true" tabindex="-1"><i class="fa fa-angle-right" /></button>
+              <button
+                v-else
+                rel="next"
+                class="submit btn navicon"
+                aria-label="Nästa sökträff"
+                :disabled="!searchState || searchState.hit + 1 >= hitResponse.total_hits || gotoHitPending"
+                @click="navigateToHit((searchState?.hit ?? 0) + 1)"
+              ><i class="fa fa-angle-right" /></button>
             </li>
             <li><button type="button" class="reader-action-button" @click="navigateToHit(0)">Gå till första träffen</button></li>
             <li><button
