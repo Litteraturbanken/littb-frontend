@@ -81,7 +81,7 @@ const commands: Command[] = [
 const inputId = useId()
 const trigger = ref<HTMLAnchorElement | null>(null)
 const isOpen = ref(props.modelValue ?? props.initiallyOpen)
-// Dialog owns interaction state; retain its shell until its presentation leaves.
+// Dialog owns interaction state; its closed shell is inert while presentation leaves.
 const isPresented = ref(isOpen.value)
 const query = ref("")
 const remoteItems = ref<QuickSearchItem[]>([])
@@ -458,6 +458,7 @@ onBeforeUnmount(() => {
       v-if="isPresented || inline"
       :open="isOpen"
       :static="!inline"
+      :inert="!inline && !isOpen ? true : undefined"
       as="div"
       :class="inline ? 'menu-quick-search' : 'modal autocomplete quick-search-modal'"
       @close="close"
