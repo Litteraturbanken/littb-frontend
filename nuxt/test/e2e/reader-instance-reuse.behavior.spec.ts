@@ -133,3 +133,49 @@ for (const item of cases.filter(item => !item.editor)) {
     await originalInput?.dispose()
   })
 }
+
+test("facsimile page turns keep document height while a different-aspect scan is decoding", async ({ page }) => {
+  let releaseImage!: () => void
+  let imageRequested!: () => void
+  const pendingImage = new Promise<void>(resolve => { releaseImage = resolve })
+  const requested = new Promise<void>(resolve => { imageRequested = resolve })
+  await page.route("**/txt/lb-reader-gosta-berlings-saga/**", async route => {
+    if (route.request().url().endsWith("_0012.jpeg")) {
+      imageRequested()
+      await pendingImage
+    }
+    // Real browser image geometry, deliberately unlike the 625:900 fallback.
+    // Both pages have this same aspect; no synthetic height is added to the DOM.
+    await route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="1491" height="2050"><rect width="1491" height="2050" fill="white"/></svg>'
+    })
+  })
+  await page.goto("/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/3/faksimil?storlek=5", { waitUntil: "networkidle" })
+  await page.locator("img.faksimil").evaluate(image => (image as HTMLImageElement).decode())
+  const baseline = await page.evaluate(() => document.documentElement.scrollHeight)
+  const sampledHeights = page.evaluate(() => new Promise<number[]>(resolve => {
+    const heights: number[] = []
+    const sample = () => {
+      heights.push(document.documentElement.scrollHeight)
+      const image = document.querySelector<HTMLImageElement>("img.faksimil")!
+      if (image.src.endsWith("_0012.jpeg") && image.complete && image.naturalWidth > 0) {
+        resolve(heights)
+      } else requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  }))
+  try {
+    await page.getByRole("link", { name: "Nästa sida", exact: true }).first().click()
+    await requested
+    // Give the pending state two paints; the image response remains held.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(baseline)
+    expect(await page.locator("img.faksimil").getAttribute("src")).not.toMatch(/_0012\.jpeg$/)
+  } finally {
+    releaseImage()
+    await sampledHeights
+  }
+  expect(new Set(await sampledHeights)).toEqual(new Set([baseline]))
+  await expect(page.locator("img.faksimil")).toHaveAttribute("src", /_0012\.jpeg$/)
+})

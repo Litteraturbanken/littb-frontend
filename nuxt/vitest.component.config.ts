@@ -25,6 +25,7 @@ export default defineProject({
       "test/unit/reader-contents-dialog.spec.ts",
       "test/unit/reader-dictionary-lookup.spec.ts",
       "test/unit/reader-focus-controls.spec.ts",
+      "test/unit/reader-facsimile-image.spec.ts",
       "test/unit/reader-source-info-dialog.spec.ts"
     ]
   }

@@ -42,47 +42,86 @@ const sourceSet = computed(() => retinaSource.value
   ? `${selectedSource.value.url} 1x, ${retinaSource.value.url} 2x`
   : undefined
 )
+// A page's OCR dimensions can arrive after its image URL. Keep the rendered
+// scan (including its geometry) until the next scan is decoded, instead of
+// briefly rendering the fallback aspect ratio on every page turn.
+const rendered = shallowRef({
+  page: props.page,
+  source: selectedSource.value,
+  sourceSet: sourceSet.value,
+  aspect: null as { width: number, height: number } | null
+})
+const renderedPage = computed(() => rendered.value.source.url === selectedSource.value.url
+  ? props.page
+  : rendered.value.page)
+const renderedWidth = computed(() => rendered.value.page.workId === props.page.workId
+  && rendered.value.page.imageNumber === props.page.imageNumber
+  ? selectedSource.value.width
+  : rendered.value.source.width)
 const selectedHeight = computed(() => {
-  const overlay = props.page.ocrOverlay
-  const aspect = overlay && overlay.width > 0 && overlay.height > 0
+  const overlay = renderedPage.value.ocrOverlay
+  const aspect = rendered.value.aspect ?? (overlay && overlay.width > 0 && overlay.height > 0
     ? overlay
-    : fallbackFacsimileAspect
-  return Math.round(selectedSource.value.width * aspect.height / aspect.width)
+    : fallbackFacsimileAspect)
+  return Math.round(renderedWidth.value * aspect.height / aspect.width)
 })
 const imageAreaStyle = computed(() => ({
-  width: `${selectedSource.value.width}px`
+  width: `${renderedWidth.value}px`
 }))
 const overlayStyle = computed(() => {
-  const overlay = props.page.ocrOverlay
+  const overlay = renderedPage.value.ocrOverlay
   if (!overlay) return undefined
   return {
     width: `${overlay.width}px`,
     height: `${overlay.height}px`,
-    transform: `scale(${selectedSource.value.width / overlay.width})`
+    transform: `scale(${renderedWidth.value / overlay.width})`
   }
-})
-const pageIdentity = computed(() => [
-  props.page.workId,
-  props.page.pageName,
-  props.page.imageNumber
-].join(":"))
-const selectedSourceIdentity = computed(() => selectedSource.value.url)
-
-watch(pageIdentity, () => {
-  imageFailed.value = false
 })
 watch(() => props.page.workId, () => {
   rotation.value = 0
 })
-watch(selectedSourceIdentity, () => {
-  imageFailed.value = false
-})
+let requestVersion = 0
+onMounted(() => watch([() => selectedSource.value.url, sourceSet], async () => {
+  const version = ++requestVersion
+  const next = { page: props.page, source: selectedSource.value, sourceSet: sourceSet.value }
+  const image = new Image()
+  // Set srcset first so Safari requests only the appropriate density source.
+  if (next.sourceSet) image.srcset = next.sourceSet
+  image.src = next.source.url
+  try {
+    await image.decode()
+    if (version !== requestVersion) return
+    rendered.value = {
+      ...next,
+      aspect: { width: image.naturalWidth, height: image.naturalHeight }
+    }
+    imageFailed.value = false
+  } catch {
+    if (version === requestVersion) imageFailed.value = true
+  }
+}))
+onBeforeUnmount(() => { requestVersion++ })
+
+function imageLoaded(event: Event) {
+  const image = event.target as HTMLImageElement
+  if (image.getAttribute("src") !== rendered.value.source.url) return
+  if (image.naturalWidth && image.naturalHeight) {
+    rendered.value = {
+      ...rendered.value,
+      aspect: { width: image.naturalWidth, height: image.naturalHeight }
+    }
+  }
+}
+function imageError(event: Event) {
+  const image = event.target as HTMLImageElement
+  if (image.getAttribute("src") === rendered.value.source.url) imageFailed.value = true
+}
 </script>
 
 <template>
   <div class="img_area" :style="imageAreaStyle">
     <div
-      v-if="page.ocrOverlay"
+      v-if="renderedPage.ocrOverlay && !imageFailed"
       class="reader-ocr-layer absolute left-0 top-0 overflow-hidden h-full w-full"
       :aria-hidden="!ocrMode"
     >
@@ -90,29 +129,30 @@ watch(selectedSourceIdentity, () => {
         as="div"
         class="overlay overflow-hidden origin-top-left"
         :style="overlayStyle"
-        :html="page.ocrOverlay.html"
+        :html="renderedPage.ocrOverlay.html"
       />
     </div>
     <img
-      v-show="!imageFailed"
-      :key="selectedSourceIdentity"
+      :key="rendered.source.url"
       class="faksimil"
-      :srcset="sourceSet"
-      :src="selectedSource.url"
-      :width="selectedSource.width"
+      :srcset="rendered.sourceSet"
+      :src="rendered.source.url"
+      :width="renderedWidth"
       :height="selectedHeight"
-      :alt="`${page.title} av ${page.author.full_name}, sida ${page.pageName}`"
+      :alt="`${renderedPage.title} av ${renderedPage.author.full_name}, sida ${renderedPage.pageName}`"
+      :aria-hidden="imageFailed"
       :style="{
-        width: `${selectedSource.width}px`,
-        maxWidth: `${selectedSource.width}px`,
+        width: `${renderedWidth}px`,
+        maxWidth: `${renderedWidth}px`,
+        visibility: imageFailed ? 'hidden' : undefined,
         transform: `rotate(${rotation}deg)`
       }"
-      @load="imageFailed = false"
-      @error="imageFailed = true"
+      @load="imageLoaded"
+      @error="imageError"
     >
     <p
       v-if="imageFailed"
-      class="reader-facsimile-error"
+      class="reader-facsimile-error absolute left-0 top-0"
       role="alert"
     >Faksimilbilden kunde inte hämtas.</p>
   </div>
