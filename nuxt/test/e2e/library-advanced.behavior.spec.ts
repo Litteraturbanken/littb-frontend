@@ -1338,3 +1338,53 @@ test("empty space beside multiselects dismisses without activating an invisible 
     await input.press("Escape")
   }
 })
+
+
+test("advanced controls wipe and fade, survive rapid reversal, and leave dropdowns unclipped", async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  const toggle = page.locator("[data-library-advanced]")
+  const panel = page.locator("[data-library-advanced-panel]")
+  const openingAnimations = await toggle.evaluate(element => {
+    ;(element as HTMLElement).click()
+    return new Promise<number>(resolve => {
+      const inspect = () => {
+        const panel = document.querySelector("[data-library-advanced-panel]")
+        if (panel) resolve(panel.getAnimations().length)
+        else requestAnimationFrame(inspect)
+      }
+      requestAnimationFrame(inspect)
+    })
+  })
+  expect(openingAnimations).toBeGreaterThan(0)
+  await expect.poll(() => panel.evaluate(element => getComputedStyle(element).overflow)).toBe("visible")
+  const restingHeight = await panel.evaluate(element => element.getBoundingClientRect().height)
+  await toggle.click()
+  await expect.poll(() => panel.evaluate(element => element.inert)).toBe(true)
+  await toggle.evaluate(element => (element as HTMLElement).click())
+  await expect(toggle).toHaveAttribute("aria-expanded", "true")
+  await expect.poll(() => panel.evaluate(element => element.getAnimations().length)).toBe(0)
+  await expect(panel).not.toHaveAttribute("inert")
+  expect(await panel.evaluate(element => element.getBoundingClientRect().height)).toBeCloseTo(restingHeight, 1)
+  await expect(panel).toHaveCSS("overflow", "visible")
+  await page.getByRole("combobox", { name: "Språk …", exact: true }).click()
+  await expect(page.locator("[data-library-languages] [role=option]").first()).toBeVisible()
+  await page.screenshot({ path: testInfo.outputPath("advanced-open.png") })
+  await page.keyboard.press("Escape")
+  await toggle.click()
+  await expect(panel).toHaveCount(0)
+})
+
+test("advanced controls respect reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  await page.locator("[data-library-advanced]").click()
+  const panel = page.locator("[data-library-advanced-panel]")
+  await expect(panel).toBeVisible()
+  expect(await panel.evaluate(element => element.getAnimations().length)).toBe(0)
+  await expect(panel).toHaveCSS("overflow", "visible")
+  await page.locator("[data-library-advanced]").click()
+  await expect(panel).toHaveCount(0)
+})

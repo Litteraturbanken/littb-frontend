@@ -319,3 +319,53 @@ test("footer closes and navigates to the library", async ({ page }) => {
   await expect(page).toHaveURL("/bibliotek")
   await expect(page.getByRole("dialog")).toHaveCount(0)
 })
+
+
+test("menu and background blur animate together on opening and closing", async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await openShell(page)
+  await openQuickSearch(page)
+  const main = page.locator(".site-shell > #mainview")
+  await expect(main).toHaveCSS("filter", "blur(4px)")
+  await expect(page.locator(".quick-search-backdrop")).toHaveCSS("opacity", "0.8")
+  await expect(page.locator(".quick-search-presentation")).not.toHaveClass(/quick-search-enter-active/)
+  await page.screenshot({ path: testInfo.outputPath("quick-search-open.png") })
+  const leaving = await page.evaluate(() => {
+    const input = document.querySelector<HTMLInputElement>("#autocomplete")!
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))
+    return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => {
+      const main = document.querySelector(".site-shell > #mainview")!
+      resolve({
+        dialogPresent: document.querySelector('[role="dialog"]') !== null,
+        blur: getComputedStyle(main).filter,
+        animations: document.getAnimations().length
+      })
+    })))
+  }) as { dialogPresent: boolean, blur: string, animations: number }
+  expect(leaving.dialogPresent).toBe(true)
+  expect(leaving.blur).not.toBe("none")
+  expect(leaving.blur).not.toBe("blur(4px)")
+  expect(leaving.animations).toBeGreaterThan(0)
+  const trigger = page.getByRole("button", { name: "Snabbsökning", exact: true })
+  // Reopen while the leave transition is still active, rather than waiting for
+  // removal. The existing presentation must survive and regain input focus.
+  await trigger.evaluate(element => (element as HTMLElement).click())
+  await expect(page.getByRole("dialog")).toHaveCount(1)
+  await expect(page.locator("#autocomplete")).toBeFocused()
+  await expect(page.locator(".quick-search-presentation")).not.toHaveClass(/quick-search-enter-active/)
+  await page.keyboard.press("Escape")
+  await expect(page.getByRole("dialog")).toHaveCount(0)
+  await expect(main).toHaveCSS("filter", "none")
+  await expect(trigger).toBeFocused()
+})
+
+test("quick search respects reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await openShell(page)
+  await openQuickSearch(page)
+  expect(await page.evaluate(() => document.getAnimations().length)).toBe(0)
+  await expect(page.locator(".quick-search-backdrop")).toHaveCSS("opacity", "0.8")
+  await page.keyboard.press("Escape")
+  await expect(page.getByRole("dialog")).toHaveCount(0)
+  await expect(page.locator(".site-shell > #mainview")).toHaveCSS("filter", "none")
+})

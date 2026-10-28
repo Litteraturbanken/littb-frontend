@@ -1,0 +1,73 @@
+// Keep filter transitions on the resting elements too, so closing fades the
+// existing blur back out as modal-open is removed.
+.site-shell > #mainview,
+#leftCorridor.site-navigation,
+#rightCorridor {
+    transition: filter 140ms ease-in;
+}
+
+body.modal-open .site-shell > #mainview,
+body.modal-open #leftCorridor.site-navigation,
+body.modal-open #rightCorridor {
+    transition-duration: 180ms;
+    transition-timing-function: ease-out;
+}
+
+.quick-search-backdrop {
+    opacity: 0.8;
+}
+
+.quick-search-presentation > .modal-dialog {
+    z-index: 1050;
+}
+
+.quick-search-enter-active {
+    transition: opacity 180ms ease-out;
+}
+
+.quick-search-leave-active {
+    transition: opacity 140ms ease-in;
+}
+
+.quick-search-enter-active > .modal-dialog {
+    transition: transform 180ms cubic-bezier(.2, .7, .2, 1);
+}
+
+.quick-search-leave-active > .modal-dialog {
+    transition: transform 140ms ease-in;
+}
+
+.quick-search-enter-from,
+.quick-search-leave-to {
+    opacity: 0;
+}
+
+.quick-search-enter-to,
+.quick-search-leave-from {
+    opacity: 1;
+}
+
+.quick-search-enter-from > .modal-dialog,
+.quick-search-leave-to > .modal-dialog {
+    transform: translateY(-8px);
+}
+
+.quick-search-enter-to > .modal-dialog,
+.quick-search-leave-from > .modal-dialog {
+    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-shell > #mainview,
+    #leftCorridor.site-navigation,
+    #rightCorridor,
+    .quick-search-presentation,
+    .quick-search-presentation > .modal-dialog {
+        transition: none !important;
+    }
+
+    .quick-search-enter-from > .modal-dialog,
+    .quick-search-leave-to > .modal-dialog {
+        transform: none;
+    }
+}

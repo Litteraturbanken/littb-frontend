@@ -47,14 +47,17 @@ type DeveloperOutput =
 const props = withDefaults(defineProps<{
   inline?: boolean
   initiallyOpen?: boolean
+  modelValue?: boolean
   showContextInfoInitially?: boolean
 }>(), {
   inline: false,
   initiallyOpen: false,
+  modelValue: undefined,
   showContextInfoInitially: false
 })
 const emit = defineEmits<{
   closed: []
+  "update:modelValue": [value: boolean]
 }>()
 
 const commands: Command[] = [
@@ -77,7 +80,9 @@ const commands: Command[] = [
 
 const inputId = useId()
 const trigger = ref<HTMLAnchorElement | null>(null)
-const isOpen = ref(props.initiallyOpen)
+const isOpen = ref(props.modelValue ?? props.initiallyOpen)
+// Dialog owns interaction state; retain its shell until its presentation leaves.
+const isPresented = ref(isOpen.value)
 const query = ref("")
 const remoteItems = ref<QuickSearchItem[]>([])
 const correction = ref<string | null>(null)
@@ -247,7 +252,12 @@ watch(query, value => {
 
 function open() {
   if (isOpen.value) return
+  query.value = ""
+  resetResults()
+  developerOutput.value = null
+  isPresented.value = true
   isOpen.value = true
+  emit("update:modelValue", true)
   document.body.classList.add("modal-open")
   void nextTick(() => inputElement()?.focus())
 }
@@ -262,14 +272,26 @@ function close() {
   }
   if (!isOpen.value) return
   isOpen.value = false
+  emit("update:modelValue", false)
   cancelPendingSearch()
+  document.body.classList.remove("modal-open")
+  void nextTick(() => trigger.value?.focus())
+}
+
+function finishClose(): void {
+  if (isOpen.value) return
   query.value = ""
   resetResults()
   developerOutput.value = null
-  document.body.classList.remove("modal-open")
-  void nextTick(() => trigger.value?.focus())
+  isPresented.value = false
   emit("closed")
 }
+
+watch(() => props.modelValue, value => {
+  if (value === undefined) return
+  if (value) open()
+  else close()
+})
 
 function onGlobalKeydown(event: KeyboardEvent) {
   if (event.key !== "s" || isOpen.value) return
@@ -414,7 +436,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", onGlobalKeydown)
   cancelPendingSearch()
-  if (!props.inline) document.body.classList.remove("modal-open")
+  if (!props.inline && isOpen.value) document.body.classList.remove("modal-open")
 })
 </script>
 
@@ -431,15 +453,23 @@ onBeforeUnmount(() => {
     @keydown.space.prevent="open"
   >Snabbsökning</a>
   <ClientOnly>
-      <component
+    <component
       :is="inline ? 'div' : Dialog"
-      v-if="isOpen || inline"
+      v-if="isPresented || inline"
       :open="isOpen"
+      :static="!inline"
       as="div"
-      :class="inline ? 'menu-quick-search' : 'modal autocomplete fade in'"
+      :class="inline ? 'menu-quick-search' : 'modal autocomplete quick-search-modal'"
       @close="close"
     >
-      <div v-if="!inline" class="modal-backdrop fade in" aria-hidden="true" @click="close" />
+      <Transition
+        name="quick-search"
+        :css="!inline"
+        :appear="!inline"
+        @after-leave="finishClose"
+      >
+      <div v-if="isOpen || inline" class="quick-search-presentation">
+      <div v-if="!inline" class="modal-backdrop quick-search-backdrop" aria-hidden="true" @click="close" />
       <div :class="inline ? 'menu-search-content' : 'modal-dialog modal-sm'">
         <component :is="inline ? 'div' : DialogPanel" :class="{ 'modal-content': !inline }">
           <component :is="inline ? 'label' : DialogTitle" :for="inline ? inputId : undefined" :class="inline ? 'menu-search-label' : 'sr-only'">Snabbsökning</component>
@@ -530,6 +560,8 @@ onBeforeUnmount(() => {
           </div>
         </component>
       </div>
-      </component>
+      </div>
+      </Transition>
+    </component>
   </ClientOnly>
 </template>

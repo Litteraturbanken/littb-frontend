@@ -16,6 +16,7 @@ const router = useRouter()
 const route = useRoute()
 const isStartPage = computed(() => !authorNavigationPending.value && route.path === "/")
 const quickSearchOpen = ref(false)
+const quickSearchPresented = ref(false)
 const quickSearchInfoRequested = ref(false)
 const quickSearchTrigger = ref<HTMLAnchorElement | null>(null)
 const layoutFontsLoading = ref(true)
@@ -81,19 +82,25 @@ function onShellKeydown(event: KeyboardEvent) {
 function openQuickSearch(showContextInfo = false): void {
   if (quickSearchOpen.value) return
   quickSearchInfoRequested.value = showContextInfo
+  quickSearchPresented.value = true
   quickSearchOpen.value = true
   document.body.classList.add("modal-open")
 }
 
 function closeQuickSearch(): void {
-  quickSearchOpen.value = false
+  if (quickSearchOpen.value) return
+  quickSearchPresented.value = false
   quickSearchInfoRequested.value = false
-  document.body.classList.remove("modal-open")
   void nextTick(() => {
+    if (document.body.classList.contains("modal-open")) return
     const trigger = quickSearchTrigger.value
     if (trigger?.getClientRects().length) trigger.focus()
   })
 }
+
+watch(quickSearchOpen, open => {
+  if (!open) void nextTick(() => quickSearchTrigger.value?.focus())
+})
 
 function onShellPaste(event: ClipboardEvent) {
   if (isPublicShellPasteGuarded(event)) return
@@ -204,7 +211,8 @@ onBeforeUnmount(() => {
       </div>
     </div>{{ " " }}
     <LazyQuickSearch
-      v-if="quickSearchOpen"
+      v-if="quickSearchPresented"
+      v-model="quickSearchOpen"
       initially-open
       :show-context-info-initially="quickSearchInfoRequested"
       @closed="closeQuickSearch"
