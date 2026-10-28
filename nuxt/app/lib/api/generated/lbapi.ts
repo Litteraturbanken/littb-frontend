@@ -2163,6 +2163,8 @@ export interface components {
         };
         /** LibraryLatestItem */
         LibraryLatestItem: {
+            /** Actions */
+            actions?: components["schemas"]["LibraryAction"][] | null;
             author: components["schemas"]["LibraryAuthor"];
             /** Author Url */
             author_url: string;
@@ -2170,6 +2172,8 @@ export interface components {
             full_title: string | null;
             /** Imported On */
             imported_on: string;
+            /** Key */
+            key?: string | null;
             /** Route Author Id */
             route_author_id: string;
             /**
@@ -2181,6 +2185,8 @@ export interface components {
             route_title_id: string;
             /** Title */
             title: string;
+            /** Title Path */
+            title_path?: string | null;
             /** Title Url */
             title_url: string;
             /** Year */

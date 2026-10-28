@@ -13,6 +13,8 @@ import {
 import type { BrowseSortKey } from "~/lib/library/navigation"
 import type { BrowseResponse } from "~/lib/library/page-results"
 import LibraryPagination from "./LibraryPagination.vue"
+import LibraryWorkActions from "./LibraryWorkActions.vue"
+import LibraryWorkTitle from "./LibraryWorkTitle.vue"
 
 const props = defineProps<{
     mode: LibraryBrowseMode
@@ -101,46 +103,21 @@ function workActionsId(key: string): string {
                         <div class="min-w-0 items-center gap-2">
                             <div class="header block text-lg leading-tight">
                                 <span class="title_inner">
-                                    <button
-                                        v-library-tooltip="item.titleTooltip"
-                                        type="button"
-                                        data-library-work-toggle
-                                        data-library-tooltip-kind="title"
-                                        class="library-work-toggle"
-                                        :aria-controls="workActionsId(item.key)"
-                                        :aria-expanded="expandedKey === item.key"
+                                    <LibraryWorkTitle
+                                        :label="item.title"
+                                        :tooltip="item.titleTooltip"
+                                        :controls="workActionsId(item.key)"
+                                        :expanded="expandedKey === item.key"
                                         @click="emit('toggleWork', item.key)"
-                                    >
-                                        {{ item.title }}
-                                    </button>
+                                    />
                                 </span>
                             </div>
                         </div>
-                        <div
-                            v-show="expandedKey === item.key"
+                        <LibraryWorkActions
                             :id="workActionsId(item.key)"
-                            data-library-work-actions
-                            class="collapse-content"
-                        >
-                            <ul class="links">
-                                <li
-                                    v-for="(action, actionIndex) in item.actions"
-                                    :key="`${action.kind}:${action.href}:${action.label}:${actionIndex}`"
-                                >
-                                    <a
-                                        v-if="action.href && action.kind === 'download'"
-                                        :href="action.href"
-                                        target="_self"
-                                        :download="action.downloadFilename"
-                                        >{{ action.label }}</a
-                                    >
-                                    <NuxtLink v-else-if="action.href" :to="canonicalNuxtHref(action.href)">
-                                        {{ action.label }}
-                                    </NuxtLink>
-                                    <span v-else>{{ action.label }}</span>
-                                </li>
-                            </ul>
-                        </div>
+                            :open="expandedKey === item.key"
+                            :actions="item.actions"
+                        />
                     </td>
                     <td class="text-left hidden sm:block w-28 text-base">
                         <NuxtLink
@@ -244,25 +221,3 @@ function workActionsId(key: string): string {
         </template>
     </div>
 </template>
-
-<style scoped>
-.library-work-toggle {
-    display: inline-block;
-    max-width: 100%;
-    overflow: hidden;
-    padding: 0;
-    color: #333;
-    text-align: left;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: bottom;
-    cursor: pointer;
-    background: transparent;
-    border: 0;
-}
-
-.library-work-toggle:hover,
-.library-work-toggle:focus-visible {
-    color: #7a1400;
-}
-</style>

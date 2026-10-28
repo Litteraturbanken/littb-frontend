@@ -636,10 +636,12 @@ const displayedLibrarySummary = computed<LibrarySummary>(previous => displayedSu
 const browseResults = computed(() =>
     currentMode.value === "parts" ? partResults.value : workResults.value
 )
+const expandableResults = computed(() => currentMode.value === "latest"
+    ? latestResults.value.groups.flatMap(group => group.results)
+    : workResults.value.data)
 const expandedWorkKey = ref(
-    initialState.mode === "works"
-        ? (workResults.value.data.find(item => item.titlePath === queryValue(route.query.title))
-              ?.key ?? "")
+    initialState.mode === "works" || initialState.mode === "latest"
+        ? (expandableResults.value.find(item => item.titlePath === queryValue(route.query.title))?.key ?? "")
         : ""
 )
 const libraryOptionsReady = ref(initialDataWasLoaded)
@@ -960,10 +962,12 @@ function updatePageModeState(state: QueryState, pageData: LibraryPageState): voi
         }
         return
     }
-    if (pageData.mode === "works") {
+    if (pageData.mode === "works" || pageData.mode === "latest") {
+        const results = pageData.mode === "latest"
+            ? pageData.response.groups.flatMap(group => group.results)
+            : pageData.response.data
         expandedWorkKey.value =
-            pageData.response.data.find(item => item.titlePath === queryValue(route.query.title))
-                ?.key ?? ""
+            results.find(item => item.titlePath === queryValue(route.query.title))?.key ?? ""
     }
 }
 
@@ -1462,12 +1466,12 @@ watch(
 watch(
     () => queryValue(route.query.title),
     titlePath => {
-        if (currentMode.value !== "works") {
+        if (currentMode.value !== "works" && currentMode.value !== "latest") {
             expandedWorkKey.value = ""
             return
         }
         expandedWorkKey.value =
-            workResults.value.data.find(item => item.titlePath === titlePath)?.key ?? ""
+            expandableResults.value.find(item => item.titlePath === titlePath)?.key ?? ""
     },
     { flush: "sync" }
 )
@@ -1903,7 +1907,7 @@ const latestPagination = computed(() => paginationModel(latestPageHref))
 const browsePagination = computed(() => paginationModel(browsePageHref))
 const epubPagination = computed(() => paginationModel(epubPageHref))
 
-function toggleWorkActions(item: BrowseResult) {
+function toggleWorkActions(item: Pick<BrowseResult, "key" | "titlePath">) {
     const opening = expandedWorkKey.value !== item.key
     expandedWorkKey.value = opening ? item.key : ""
     const query: LocationQuery = { ...route.query }
@@ -1912,9 +1916,9 @@ function toggleWorkActions(item: BrowseResult) {
     void router.push({ path: route.path, query })
 }
 
-function toggleBrowseWork(key: string) {
-    const item = browseResults.value.data.find(result => result.key === key)
-    if (item) toggleWorkActions(item)
+function toggleWorkByKey(key: string) {
+    const item = expandableResults.value.find(result => result.key === key)
+    if (item?.key && item.titlePath) toggleWorkActions({ key: item.key, titlePath: item.titlePath })
 }
 
 function disposeLibraryRequest() {
@@ -2043,6 +2047,7 @@ onUnmounted(() => {
                     <LibraryLatestResults
                         v-else-if="currentMode === 'latest'"
                         :response="latestResults"
+                        :expanded-key="expandedWorkKey"
                         :sort-options="latestSortOptions"
                         :sort-reversed="latestSortReversed"
                         :hide1800="hide1800"
@@ -2051,6 +2056,7 @@ onUnmounted(() => {
                         :pagination="latestPagination"
                         @select-sort="selectSort"
                         @toggle-hide-1800="toggle1800"
+                        @toggle-work="toggleWorkByKey"
                         @select-page="selectPage"
                     />
                     <LibraryAuthorResults
@@ -2076,7 +2082,7 @@ onUnmounted(() => {
                         :imprint-year-targets="browseImprintYearTargets"
                         @select-sort="selectSort"
                         @select-page="selectPage"
-                        @toggle-work="toggleBrowseWork"
+                        @toggle-work="toggleWorkByKey"
                     />
                     <LibraryDownloadResults
                         v-else-if="currentMode === 'epub' || currentMode === 'pdf'"

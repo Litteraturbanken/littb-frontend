@@ -1,0 +1,85 @@
+import { expect, test } from "@playwright/test"
+
+for (const width of [390, 1440]) {
+  test(`Nytt expands to the same work links, preserves history, and navigates at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 1000 })
+    await page.goto("/bibliotek?visa=works&filter=latest-actions", { waitUntil: "networkidle" })
+    const work = page.locator("[data-library-work-row]").filter({ hasText: "Doktor Glas" })
+    await work.locator("[data-library-work-toggle]").click()
+    const expectedLinks = await work.locator("[data-library-work-actions] a").evaluateAll(elements => elements.map(element => ({
+      label: element.textContent?.trim(), href: element.getAttribute("href"), download: element.getAttribute("download")
+    })))
+    expect(expectedLinks).toHaveLength(6)
+
+    const path = "/bibliotek?visa=latest&sort=nytillkommet&filter=latest-actions&keep=first&keep=second"
+    await page.goto(path, { waitUntil: "networkidle" })
+    const row = page.locator("[data-library-latest-row]").first()
+    const toggle = row.getByRole("button", { name: "Doktor Glas", exact: true })
+    const actions = row.locator("[data-library-work-actions]")
+    await expect(toggle).toHaveAttribute("aria-expanded", "false")
+    await toggle.focus()
+    await page.keyboard.press("Enter")
+    await expect(toggle).toHaveAttribute("aria-expanded", "true")
+    await expect(actions).toBeVisible()
+    await expect.poll(() => actions.evaluate(element => element.getAnimations().length)).toBe(0)
+    expect(await actions.locator("a").evaluateAll(elements => elements.map(element => ({
+      label: element.textContent?.trim(), href: element.getAttribute("href"), download: element.getAttribute("download")
+    })))).toEqual(expectedLinks)
+    expect(new URL(page.url()).pathname).toBe("/bibliotek")
+    expect(new URL(page.url()).searchParams.get("visa")).toBe("latest")
+    expect(new URL(page.url()).searchParams.get("title")).toBe("DoktorGlas")
+    expect(new URL(page.url()).searchParams.getAll("keep")).toEqual(["first", "second"])
+    await row.screenshot({ path: testInfo.outputPath("latest-expanded-links.png") })
+    await page.reload({ waitUntil: "networkidle" })
+    await expect(toggle).toHaveAttribute("aria-expanded", "true")
+    await expect(actions).toBeVisible()
+    await toggle.press("Space")
+    await expect(toggle).toHaveAttribute("aria-expanded", "false")
+    await expect(actions).toBeHidden()
+    await page.goBack()
+    await expect(toggle).toHaveAttribute("aria-expanded", "true")
+    await expect(actions).toBeVisible()
+    await actions.getByRole("link", { name: "Läs som etext", exact: true }).click()
+    await expect(page).toHaveURL(/\/titlar\/DoktorGlas\/sida\/-2\/etext$/)
+  })
+}
+
+for (const mode of ["works", "latest"]) {
+  test(`${mode} links wipe quickly, reverse cleanly, and respect reduced motion`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" })
+    await page.goto(`/bibliotek?visa=${mode}&filter=latest-actions`, { waitUntil: "networkidle" })
+    await page.locator('[data-library-mounted="true"]').waitFor({ state: "attached" })
+    const row = page.locator(mode === "latest" ? "[data-library-latest-row]" : "[data-library-work-row]").first()
+    const toggle = row.locator("[data-library-work-toggle]")
+    const actions = row.locator("[data-library-work-actions]")
+    const frames = await toggle.evaluate(element => {
+      (element as HTMLElement).click()
+      return new Promise<{ animations: number, opacity: number }>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => {
+        const panel = document.getElementById(element.getAttribute("aria-controls")!)!
+        resolve({ animations: panel.getAnimations().length, opacity: Number(getComputedStyle(panel).opacity) })
+      })))
+    })
+    expect(frames.animations).toBeGreaterThan(0)
+    expect(frames.opacity).toBeLessThan(1)
+    await expect.poll(() => actions.evaluate(element => element.getAnimations().length)).toBe(0)
+    const restingHeight = await actions.evaluate(element => element.getBoundingClientRect().height)
+    await toggle.evaluate(element => { (element as HTMLElement).click(); requestAnimationFrame(() => (element as HTMLElement).click()) })
+    await expect(toggle).toHaveAttribute("aria-expanded", "true")
+    await expect.poll(() => actions.evaluate(element => element.getAnimations().length)).toBe(0)
+    await expect(actions).not.toHaveAttribute("inert")
+    expect(await actions.evaluate(element => element.getBoundingClientRect().height)).toBeCloseTo(restingHeight, 1)
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await toggle.click()
+    await expect(actions).toBeHidden()
+    await toggle.click()
+    await expect(actions).toBeVisible()
+    expect(await actions.evaluate(element => element.getAnimations().length)).toBe(0)
+  })
+}
+
+test("older latest responses retain their existing safe navigation", async ({ page }) => {
+  await page.goto("/bibliotek?visa=latest", { waitUntil: "networkidle" })
+  const row = page.locator("[data-library-latest-row]").first()
+  await expect(row.locator("[data-library-work-toggle]")).toHaveCount(0)
+  await expect(row.locator("[data-library-latest-title]")).toHaveAttribute("href", "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/etext?om-boken")
+})

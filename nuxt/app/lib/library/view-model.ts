@@ -65,7 +65,7 @@ export type DownloadResult = {
   epub3Lookup?: { authorId: string, titlePath: string }
 }
 
-type BrowseAction = {
+export type BrowseAction = {
   kind: components["schemas"]["LibraryAction"]["kind"]
   label: string
   href: string
@@ -95,6 +95,9 @@ export type BrowseResult = {
 }
 
 export type LatestResult = {
+  key?: string | null
+  titlePath?: string | null
+  actions?: BrowseAction[] | null
   title: string
   titleTooltip: string
   titleId: string
@@ -430,6 +433,14 @@ function mapBrowseItem(item: BrowseItem): BrowseResult {
 function mapLatestItem(item: LatestItem): LatestResult {
   const surname = item.author.surname ?? item.author.full_name ?? ""
   return {
+    key: item.key ?? null,
+    titlePath: item.title_path ?? null,
+    actions: item.actions?.map(action => ({
+      kind: action.kind,
+      label: action.label,
+      href: safeBrowseActionHref(action) ?? "",
+      downloadFilename: action.download_filename ?? ""
+    })) ?? null,
     title: item.title,
     titleTooltip: usefulLibraryTooltipText(item.full_title, item.title),
     titleId: item.route_title_id,

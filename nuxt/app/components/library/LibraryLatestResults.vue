@@ -12,20 +12,25 @@ import {
 import type { LatestSortKey } from "~/lib/library/navigation"
 import type { LatestResponse } from "~/lib/library/page-results"
 import LibraryPagination from "./LibraryPagination.vue"
+import LibraryWorkActions from "./LibraryWorkActions.vue"
+import LibraryWorkTitle from "./LibraryWorkTitle.vue"
+import type { LatestResult } from "../../lib/library/view-model"
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     response: LatestResponse
+    expandedKey?: string
     sortOptions: readonly LibrarySortOption<LatestSortKey>[]
     sortReversed: boolean
     hide1800: boolean
     imprintYearTargets: readonly LibraryImprintYearTarget[]
     loading: boolean
     pagination: LibraryPaginationModel
-}>()
+}>(), { expandedKey: "" })
 const emit = defineEmits<{
     selectSort: [sort: LatestSortKey]
     toggleHide1800: []
     selectPage: [page: number]
+    toggleWork: [key: string]
 }>()
 
 const vLibraryTooltip = libraryTooltipDirective
@@ -40,6 +45,9 @@ function hasImprintYearTarget(year: string): boolean {
 
 function imprintYearTo(year: string): RouteLocationRaw {
     return imprintYearTargetsByYear.value.get(year)!
+}
+function workActionsId(item: LatestResult): string {
+    return `library-work-actions-${encodeURIComponent(item.key || item.titleId)}`
 }
 </script>
 
@@ -132,8 +140,17 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                         class="header block overflow-hidden text-ellipsis whitespace-nowrap text-lg leading-tight"
                                     >
                                         <span class="title_inner">
+                                            <LibraryWorkTitle
+                                                v-if="item.actions?.length && item.key && item.titlePath"
+                                                :data-library-latest-title="item.titleId"
+                                                :label="item.title"
+                                                :tooltip="item.titleTooltip"
+                                                :controls="workActionsId(item)"
+                                                :expanded="expandedKey === item.key"
+                                                @click="emit('toggleWork', item.key)"
+                                            />
                                             <NuxtLink
-                                                v-if="item.titleHref"
+                                                v-else-if="item.titleHref"
                                                 v-library-tooltip="item.titleTooltip"
                                                 :data-library-latest-title="item.titleId"
                                                 data-library-tooltip-kind="title"
@@ -151,6 +168,12 @@ function imprintYearTo(year: string): RouteLocationRaw {
                                     </div>
                                 </div>
                             </div>
+                            <LibraryWorkActions
+                                v-if="item.actions?.length && item.key && item.titlePath"
+                                :id="workActionsId(item)"
+                                :open="expandedKey === item.key"
+                                :actions="item.actions"
+                            />
                         </td>
                         <td class="text-left hidden sm:block w-28 text-base">
                             <NuxtLink

@@ -555,3 +555,38 @@ describe("typed Library boundary", () => {
     expect(view.response.groups[0].label).toBe("27 juli 2026 (3 verk)")
   })
 })
+
+
+test("latest keeps canonical action metadata and treats older responses as direct navigation", () => {
+  const item = {
+    author, author_url: "/författare/LagerlofS", full_title: "Full titel",
+    route_author_id: "LagerlofS", route_media_type: "etext" as const,
+    route_title_id: "Titel", title: "Titel", title_url: "/författare/LagerlofS/titlar/Titel/sida/1/etext",
+    year: "1900", imported_on: "2026-10-28", key: '["Titel","lb1"]', title_path: "Titel",
+    actions: [
+      { kind: "read" as const, label: "Läs som etext", url: "/författare/LagerlofS/titlar/Titel/sida/1/etext", download_filename: null },
+      { kind: "download" as const, label: "Ladda ner epub", url: "/txt/epub/LagerlofS_Titel.epub", download_filename: "LagerlofS_Titel.epub" },
+      { kind: "read" as const, label: "Unsafe", url: "javascript:alert(1)", download_filename: null }
+    ]
+  }
+  const response = {
+    mode: "latest" as const, total_hits: 1, total_works: 1,
+    groups: [{ imported_on: item.imported_on, source_count: 1, items: [item] }]
+  }
+  const view = toLibrarySearchView(response)
+  if (view.mode !== "latest") throw new Error("expected latest view")
+  expect(view.response.groups[0]?.results[0]).toMatchObject({
+    key: item.key, titlePath: "Titel",
+    actions: [
+      { kind: "read", href: item.actions[0].url },
+      { kind: "download", href: item.actions[1].url, downloadFilename: "LagerlofS_Titel.epub" },
+      { kind: "read", href: "" }
+    ]
+  })
+  const { actions: _actions, key: _key, title_path: _titlePath, ...oldItem } = item
+  const old = toLibrarySearchView({ ...response, groups: [{ ...response.groups[0], items: [oldItem] }] })
+  if (old.mode !== "latest") throw new Error("expected old latest view")
+  expect(old.response.groups[0]?.results[0]).toMatchObject({
+    key: null, titlePath: null, actions: null, titleHref: item.title_url
+  })
+})

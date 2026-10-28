@@ -2102,6 +2102,15 @@ function librarySearchResponse(body) {
     return { mode: "parts", total_parts: query ? 0 : 201, items: query ? [] : [partItem] }
   }
   if (body.mode === "latest") {
+    if (query === "latest-actions") {
+      return {
+        mode: "latest", total_hits: 1, total_works: 1,
+        groups: [{
+          imported_on: "2026-07-18", source_count: 1,
+          items: [{ ...doktorGlasWork, imported_on: "2026-07-18" }]
+        }]
+      }
+    }
     const filtered = query.includes("Selma")
     return {
       mode: "latest", total_hits: filtered ? 1 : 4, total_works: filtered ? 1 : 4,

@@ -8,53 +8,7 @@ import type {
 import type { LibraryCategory, LibraryLanguage, LibraryMedia } from "~/lib/library/filter-options"
 import ChronologyRangeSlider from "../global/ChronologyRangeSlider.vue"
 import SearchMultiSelect from "../search/SearchMultiSelect.vue"
-
-// Animate the measured panel rather than a fixed max-height, so content and
-// mobile layouts keep their natural size and dropdowns are unclipped at rest.
-const panelMotion = new WeakMap<HTMLElement, Animation>()
-const panelSpacing = new WeakMap<HTMLElement, { marginTop: string, marginBottom: string }>()
-function cancelPanelMotion(element: Element): void {
-    const panel = element as HTMLElement
-    const animation = panelMotion.get(panel)
-    if (!animation) return
-    const current = getComputedStyle(panel)
-    panel.style.height = `${panel.getBoundingClientRect().height}px`
-    panel.style.opacity = current.opacity
-    panel.style.marginTop = current.marginTop
-    panel.style.marginBottom = current.marginBottom
-    animation.cancel()
-    panelMotion.delete(panel)
-}
-function animatePanel(element: Element, done: () => void, entering: boolean): void {
-    const panel = element as HTMLElement
-    panel.inert = !entering
-    if (typeof panel.animate !== "function" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        done()
-        return
-    }
-    const style = getComputedStyle(panel)
-    const interrupted = panel.style.height !== ""
-    if (!panelSpacing.has(panel)) panelSpacing.set(panel, { marginTop: style.marginTop, marginBottom: style.marginBottom })
-    const expanded = { height: `${panel.scrollHeight}px`, opacity: 1, ...panelSpacing.get(panel)! }
-    const collapsed = { height: "0px", opacity: 0, marginTop: "0px", marginBottom: "0px" }
-    const current = {
-        height: `${panel.getBoundingClientRect().height}px`, opacity: style.opacity,
-        marginTop: style.marginTop, marginBottom: style.marginBottom
-    }
-    panel.style.overflow = "hidden"
-    const animation = panel.animate(
-        [entering && !interrupted ? collapsed : current, entering ? expanded : collapsed],
-        { duration: entering ? 180 : 140, easing: entering ? "cubic-bezier(.2,.7,.2,1)" : "ease-in", fill: "both" }
-    )
-    panelMotion.set(panel, animation)
-    animation.onfinish = () => {
-        panelMotion.delete(panel)
-        panelSpacing.delete(panel)
-        animation.cancel()
-        for (const property of ["height", "opacity", "overflow", "margin-top", "margin-bottom"]) panel.style.removeProperty(property)
-        done()
-    }
-}
+import WipeTransition from "../global/WipeTransition.vue"
 
 type ChronologyEndpoint = "from" | "to"
 
@@ -86,10 +40,6 @@ const narrowingSelectGroups = computed(() =>
         }))
     }))
 )
-
-function inputValue(event: Event): string {
-    return (event.target as HTMLInputElement).value
-}
 
 function emitGender(value: string): void {
     if (value !== "" && value !== "female" && value !== "male") return
@@ -160,13 +110,7 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
 </script>
 
 <template>
-    <Transition
-        :css="false"
-        @enter="(element, done) => animatePanel(element, done, true)"
-        @leave="(element, done) => animatePanel(element, done, false)"
-        @enter-cancelled="cancelPanelMotion"
-        @leave-cancelled="cancelPanelMotion"
-    >
+    <WipeTransition>
     <div
         v-if="model.advancedOpen"
         id="library-advanced-panel"
@@ -341,7 +285,7 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
             </button>
         </div>
     </div>
-    </Transition>
+    </WipeTransition>
     <div class="chronology primarycolor ml-px pl-px">
         <i class="fa fa-clock-o mr-1 ml-px" />{{ " " }}
         <span class="sc mt-8">Tidslinje: kronologisk sökning</span>
