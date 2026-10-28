@@ -82,6 +82,7 @@ type SourceExport = {
 export type BrowseResult = {
   key: string
   titlePath: string
+  mainAuthorId: string
   title: string
   titleTooltip: string
   year: string
@@ -97,6 +98,7 @@ export type BrowseResult = {
 export type LatestResult = {
   key?: string | null
   titlePath?: string | null
+  mainAuthorId?: string | null
   actions?: BrowseAction[] | null
   title: string
   titleTooltip: string
@@ -405,6 +407,7 @@ function mapBrowseItem(item: BrowseItem): BrowseResult {
   return {
     key: item.key,
     titlePath: item.title_path,
+    mainAuthorId: item.author.author_id,
     title: item.title,
     titleTooltip: usefulLibraryTooltipText(item.full_title, item.title),
     year: item.year ?? "",
@@ -435,6 +438,7 @@ function mapLatestItem(item: LatestItem): LatestResult {
   return {
     key: item.key ?? null,
     titlePath: item.title_path ?? null,
+    mainAuthorId: item.author.author_id,
     actions: item.actions?.map(action => ({
       kind: action.kind,
       label: action.label,

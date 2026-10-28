@@ -1668,6 +1668,13 @@ const doktorGlasWork = libraryBrowseItem({
     { format: "pdf", media_type: "faksimil", size: 730000, work_id: "lb1728740" }
   ]
 })
+const duplicateTitleWorks = [libraryAuthors.soderberg, libraryAuthors.strindberg].map(author => libraryBrowseItem({
+  title: "Samlade skrifter", fullTitle: `Samlade skrifter av ${author.full_name}`, year: "1905",
+  author, titleId: "SamladeSkrifter", workId: `lb-${author.author_id}`,
+  // Reader routing may use a different author; disclosure identity must use main author metadata.
+  routeAuthorId: "ReaderAlias",
+  actions: [libraryReadAction(author.author_id, "SamladeSkrifter"), libraryAboutAction(author.author_id, "SamladeSkrifter")]
+}))
 const folkvisorWork = libraryBrowseItem({
   title: "Svenska folkvisor", fullTitle: "Svenska folkvisor", year: "1814",
   author: libraryAuthors.geijer, titleId: "SvenskaFolkvisor",
@@ -1911,6 +1918,7 @@ function libraryAuthorsResponse(query, limit) {
 }
 
 function libraryWorksResponse(query, page) {
+  if (query === "duplicate-titles") return { mode: "works", total_hits: 2, total_works: 2, items: duplicateTitleWorks }
   if (query === "inga") return { mode: "works", total_hits: 0, total_works: 0, items: [] }
   if (query === "source-pagination") {
     return {
@@ -2102,6 +2110,7 @@ function librarySearchResponse(body) {
     return { mode: "parts", total_parts: query ? 0 : 201, items: query ? [] : [partItem] }
   }
   if (body.mode === "latest") {
+    if (query === "duplicate-titles") return { mode: "latest", total_hits: 2, total_works: 2, groups: [{ imported_on: "2026-07-18", source_count: 2, items: duplicateTitleWorks.map(item => ({ ...item, imported_on: "2026-07-18" })) }] }
     if (query === "latest-actions") {
       return {
         mode: "latest", total_hits: 1, total_works: 1,

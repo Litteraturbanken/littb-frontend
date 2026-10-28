@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { expandedLibraryWork, libraryWorkDisclosureQuery } from "~/lib/library/work-disclosure"
 import { displayedSummary } from "~/lib/library/displayed-summary"
 import type { LocationQuery, RouteLocationRaw } from "vue-router"
 import libraryBackground from "~/assets/img/biblioteket_bakgrund.jpg"
@@ -73,7 +74,7 @@ import {
     type LibraryResponse,
     type PdfResponse
 } from "~/lib/library/page-results"
-import { toLibrarySearchView, type BrowseResult } from "~/lib/library/view-model"
+import { toLibrarySearchView } from "~/lib/library/view-model"
 
 type LibraryGender = LibraryAdvancedFilters["gender"]
 
@@ -641,7 +642,7 @@ const expandableResults = computed(() => currentMode.value === "latest"
     : workResults.value.data)
 const expandedWorkKey = ref(
     initialState.mode === "works" || initialState.mode === "latest"
-        ? (expandableResults.value.find(item => item.titlePath === queryValue(route.query.title))?.key ?? "")
+        ? expandedLibraryWork(expandableResults.value, route.query)
         : ""
 )
 const libraryOptionsReady = ref(initialDataWasLoaded)
@@ -920,6 +921,7 @@ function clearLibraryQuery(query: LocationQuery): void {
     delete query.hide1800
     delete query.nedladdning
     delete query.title
+    delete query.title_author
 }
 
 function queryIncludesLibraryMode(state: QueryState): boolean {
@@ -967,7 +969,7 @@ function updatePageModeState(state: QueryState, pageData: LibraryPageState): voi
             ? pageData.response.groups.flatMap(group => group.results)
             : pageData.response.data
         expandedWorkKey.value =
-            results.find(item => item.titlePath === queryValue(route.query.title))?.key ?? ""
+            expandedLibraryWork(results, route.query)
     }
 }
 
@@ -1170,6 +1172,7 @@ async function toggleDownloadMode() {
     delete query.sida
     delete query.hide1800
     delete query.title
+    delete query.title_author
     query.visa = "works"
     query.sort = "popularitet"
     if (downloadMode.value) delete query.nedladdning
@@ -1464,14 +1467,14 @@ watch(
 )
 
 watch(
-    () => queryValue(route.query.title),
-    titlePath => {
+    () => [queryValue(route.query.title), queryValue(route.query.title_author)],
+    () => {
         if (currentMode.value !== "works" && currentMode.value !== "latest") {
             expandedWorkKey.value = ""
             return
         }
         expandedWorkKey.value =
-            expandableResults.value.find(item => item.titlePath === titlePath)?.key ?? ""
+            expandedLibraryWork(expandableResults.value, route.query)
     },
     { flush: "sync" }
 )
@@ -1483,7 +1486,7 @@ const ownedQueryKeys = new Set([
     "sida",
     "hide1800",
     "nedladdning",
-    "title"
+    "title", "title_author"
 ])
 
 function appendPreservedQueryValue(
@@ -1551,6 +1554,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
     const query = queryFromLiveAdvancedControls()
     delete query.sida
     delete query.title
+    delete query.title_author
     replaceQueryValue(query, "intervall", `${year},${year}`)
     return { path: route.path, query }
 }
@@ -1907,18 +1911,12 @@ const latestPagination = computed(() => paginationModel(latestPageHref))
 const browsePagination = computed(() => paginationModel(browsePageHref))
 const epubPagination = computed(() => paginationModel(epubPageHref))
 
-function toggleWorkActions(item: Pick<BrowseResult, "key" | "titlePath">) {
-    const opening = expandedWorkKey.value !== item.key
-    expandedWorkKey.value = opening ? item.key : ""
-    const query: LocationQuery = { ...route.query }
-    if (opening) query.title = item.titlePath
-    else delete query.title
-    void router.push({ path: route.path, query })
-}
-
 function toggleWorkByKey(key: string) {
     const item = expandableResults.value.find(result => result.key === key)
-    if (item?.key && item.titlePath) toggleWorkActions({ key: item.key, titlePath: item.titlePath })
+    if (!item?.key || !item.titlePath || !item.mainAuthorId) return
+    const opening = expandedWorkKey.value !== item.key
+    expandedWorkKey.value = opening ? item.key : ""
+    void router.push({ path: route.path, query: libraryWorkDisclosureQuery(route.query, item, opening) })
 }
 
 function disposeLibraryRequest() {
