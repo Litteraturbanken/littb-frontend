@@ -253,19 +253,18 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
             class="more ml-[2px] relative"
             :class="{ show_more: model.downloadMode }"
         >
-            <a
+            <button
+                type="button"
                 data-library-download-mode
-                role="button"
-                tabindex="0"
-                @click.prevent="emit('toggle-download-mode')"
-                @keydown.enter.prevent="emit('toggle-download-mode')"
-                @keydown.space.prevent="emit('toggle-download-mode')"
+                class="library-download-mode-toggle sc btn btn-small"
+                :aria-pressed="model.downloadMode"
+                @click="emit('toggle-download-mode')"
             >
-                <i class="fa fa-download color-black mr-1 text-xs" />{{ " "
+                <i class="fa fa-download mr-1 text-xs" aria-hidden="true" />{{ " "
                 }}<span>{{
                     model.downloadMode ? "Stäng källmaterial" : "Ladda ner källmaterial"
                 }}</span>
-            </a>
+            </button>
         </div>
         <div v-if="model.downloadMode" class="more_container h-8 relative mb-4 show_more">
             <button
@@ -430,5 +429,38 @@ function emitChronologyRange(endpoint: ChronologyEndpoint, value: string): void 
     display: none;
 }
 
+
+.library-download-mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #999;
+    background: white;
+    color: var(--primary-color);
+    font: inherit;
+    line-height: 1.2;
+    white-space: normal;
+    text-align: left;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.library-download-mode-toggle[aria-pressed="true"] {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+}
+
+.library-download-mode-toggle:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+    .library-download-mode-toggle:focus-visible {
+        outline-color: Highlight;
+    }
+}
 
 </style>
