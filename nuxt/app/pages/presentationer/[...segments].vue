@@ -35,6 +35,8 @@ definePageMeta({
 })
 
 const route = useRoute()
+const nuxtApp = useNuxtApp()
+const mounted = ref(false)
 const config = useRuntimeConfig()
 const requestFetch = useRequestFetch()
 const segments = computed(() =>
@@ -147,24 +149,38 @@ async function scrollToIndexAnchor(value: unknown) {
   if (!import.meta.client || !isIndex.value) return
   await nextTick()
   await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
-  if (typeof value !== "string" || !value) {
-    window.scrollTo({ top: 0 })
-    return
-  }
+  if (typeof value !== "string" || !value) return
   const anchor = document.getElementById(value)
   if (!anchor) return
   window.scrollTo({ top: window.scrollY + anchor.getBoundingClientRect().top })
 }
 
+// History restoration belongs to the router. Only an explicit anchor (or
+// removing one while staying on the index) should override the document scroll.
 watch(
-  [
-    () => route.query.ankare,
-    () => pageData.value.document.bodyHtml,
-    isIndex
-  ],
-  ([value]) => { void scrollToIndexAnchor(value) },
+  [() => route.query.ankare, () => pageData.value.document.bodyHtml, isIndex],
+  ([value], previous) => {
+    if (value) void scrollToIndexAnchor(value)
+    else if (isIndex.value && previous?.[2] && previous[0]) window.scrollTo({ top: 0 })
+  },
   { immediate: true, flush: "post" }
 )
+
+async function signalPresentationReady() {
+  if (!mounted.value || presentationPending.value) return
+  const fullPath = route.fullPath
+  await nextTick()
+  if (mounted.value && !presentationPending.value && route.fullPath === fullPath) {
+    await nuxtApp.callHook("presentation:page-ready", fullPath)
+  }
+}
+
+watch([presentationPending, () => route.fullPath], signalPresentationReady, { flush: "post" })
+onMounted(() => {
+  mounted.value = true
+  void signalPresentationReady()
+})
+onBeforeUnmount(() => { mounted.value = false })
 
 useSeoMeta({
   title: () => metadata.value.title,

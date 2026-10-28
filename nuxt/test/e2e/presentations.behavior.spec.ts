@@ -734,3 +734,28 @@ test("managed Presentation links use Nuxt navigation and preserve Back history",
   expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
     .toBe("presentation-spa")
 })
+
+for (const width of [390, 1440]) {
+  test(`Presentation index Back waits for delayed content at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 })
+    await routeFixtureAssetsAndBlockProduction(page)
+    let delayIndex = false
+    await page.route(`**${indexContentPath}`, async route => {
+      if (delayIndex) await new Promise(resolve => setTimeout(resolve, 700))
+      await route.continue()
+    })
+    await page.goto("/presentationer", { waitUntil: "networkidle" })
+    const link = page.locator('a[href="/presentationer/specialomraden/Censur.html"]').first()
+    await link.scrollIntoViewIfNeeded()
+    const before = await page.evaluate(() => ({ y: window.scrollY, height: document.documentElement.scrollHeight }))
+    expect(before.y).toBeGreaterThan(500)
+    await link.click()
+    await expect(page).toHaveURL("/presentationer/specialomraden/Censur.html")
+    await expect(page.locator("#mainview .content h1")).toBeVisible()
+    delayIndex = true
+    await page.goBack()
+    await expect(page).toHaveURL("/presentationer")
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeCloseTo(before.y, 0)
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(before.height)
+  })
+}

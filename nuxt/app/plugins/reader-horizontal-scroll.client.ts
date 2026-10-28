@@ -21,6 +21,7 @@ type PendingPageScroll = {
 declare module "#app" {
   interface RuntimeNuxtHooks {
     "results:page-ready": (fullPath: string) => void
+    "presentation:page-ready": (fullPath: string) => void
     "reader:page-ready": (fullPath: string, successful: boolean) => void
   }
 }
@@ -102,9 +103,10 @@ export default defineNuxtPlugin({
       navigationId += 1
       pendingScroll?.resolve(false)
       pendingScroll = null
-      if (savedPosition && ["/bibliotek", "/epub", "/sok", "/sök", "/s%C3%B6k"].includes(to.path.replace(/\/$/, ""))) {
+      if (savedPosition && (["/bibliotek", "/epub", "/sok", "/sök", "/s%C3%B6k"].includes(to.path.replace(/\/$/, ""))
+        || /^\/presentationer(?:\/|$)/.test(to.path))) {
         readyRoutes.clear()
-        // Result pages mount before their client-fetched rows. Restoring earlier
+        // Lazy content pages mount before their client-fetched content. Restoring earlier
         // clamps the browser's saved offset to the short loading page.
         if (readyResultsRoute === to.fullPath) return savedPosition
         return new Promise(resolve => {
@@ -144,7 +146,7 @@ export default defineNuxtPlugin({
       return savedPosition ?? false
     }
 
-    nuxtApp.hooks.hook("results:page-ready", fullPath => {
+    const contentPageReady = (fullPath: string) => {
       if (router.currentRoute.value.fullPath !== fullPath) return
       readyResultsRoute = fullPath
       const current = pendingScroll
@@ -152,7 +154,9 @@ export default defineNuxtPlugin({
         pendingScroll = null
         current.resolve(current.position)
       }
-    })
+    }
+    nuxtApp.hooks.hook("results:page-ready", contentPageReady)
+    nuxtApp.hooks.hook("presentation:page-ready", contentPageReady)
 
     nuxtApp.hooks.hook("reader:page-ready", (fullPath, successful) => {
       const current = pendingScroll
