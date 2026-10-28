@@ -1,4 +1,5 @@
 import { createError, type H3Event } from "h3"
+import { Parser } from "htmlparser2"
 
 import type {
   ReaderFacsimileSize,
@@ -298,6 +299,54 @@ export function readerMetadataFromManifest(
   }
 }
 
+const readerHtmlVoidElements = new Set([
+  "area", "base", "basefont", "br", "col", "command", "embed", "frame", "hr", "img", "input", "isindex", "keygen", "link", "meta", "param", "source", "track", "wbr"
+])
+
+class ReaderHtmlParser extends Parser {
+  selfClosingToken = false
+  override onselfclosingtag(endIndex: number): void {
+    this.selfClosingToken = true
+    super.onselfclosingtag(endIndex)
+    this.selfClosingToken = false
+  }
+}
+
+export function normalizeReaderPageHtml(source: string): string {
+  // Published etext is XHTML-like. In HTML, <div/> stays open and can swallow
+  // the enclosing Reader's SSR fragment markers. Edit only token boundaries;
+  // do not reserialize text, attributes, comments, or foreign SVG/MathML.
+  let copied = 0
+  let output = ""
+  let rawTextUntil = 0
+  const rawTextElements = new Set(["script", "style", "title", "textarea", "xmp", "iframe", "noembed", "noframes", "noscript"])
+  const foreign: boolean[] = []
+  const parser: ReaderHtmlParser = new ReaderHtmlParser({
+    onopentag(name, _attributes, implied) {
+      const isForeign = foreign.at(-1) === true || name === "svg" || name === "math"
+      foreign.push(isForeign)
+      if (implied || isForeign || parser.startIndex < rawTextUntil) return
+      // Preserve browser raw text even where htmlparser2 emits element tokens.
+      // Plaintext has no closing-tag escape: its remaining bytes stay literal.
+      if (name === "plaintext") { rawTextUntil = source.length; return }
+      if (!parser.selfClosingToken && rawTextElements.has(name)) {
+        const closing = new RegExp(`</${name}(?=[\\t\\n\\f\\r />])`, "iu")
+          .exec(source.slice(parser.endIndex + 1))
+        rawTextUntil = closing ? parser.endIndex + 1 + closing.index : source.length
+      }
+      if (!parser.selfClosingToken || readerHtmlVoidElements.has(name)) return
+      const token = source.slice(parser.startIndex, parser.endIndex + 1)
+      const originalName = /^<([^\s/>]+)/u.exec(token)?.[1]
+      if (!originalName) return
+      output += source.slice(copied, parser.endIndex - 1) + `></${originalName}>`
+      copied = parser.endIndex + 1
+    },
+    onclosetag() { foreign.pop() }
+  }, { decodeEntities: false, recognizeSelfClosing: true })
+  parser.end(source)
+  return copied ? output + source.slice(copied) : source
+}
+
 export async function fetchReaderPageHtml(
   base: string,
   workId: string,
@@ -306,12 +355,12 @@ export async function fetchReaderPageHtml(
   const filename = String(pageIndex).padStart(5, "0")
   const url = `${base}/txt/${encodeURIComponent(workId)}/res_${filename}.html?username=app`
   try {
-    return await fetchManagedText(url, {
+    return normalizeReaderPageHtml(await fetchManagedText(url, {
       authorityOrigin: new URL(base).origin,
       allowedPathPrefixes: ["/txt/"],
       allowedContentTypes: ["text/html"],
       maximumBytes: maximumReaderEtextBytes
-    })
+    }))
   } catch {
     throw createError({ statusCode: 502, statusMessage: "Reader source unavailable" })
   }
