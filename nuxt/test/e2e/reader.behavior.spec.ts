@@ -2793,7 +2793,7 @@ for (const width of [390, 818, 1023, 1024, 1280]) {
   })
 }
 
-test("page navigation preserves each page's horizontal history position", async ({
+test("page navigation preserves each page's horizontal and vertical history position", async ({
   isMobile,
   page
 }) => {
@@ -2853,7 +2853,7 @@ test("page navigation preserves each page's horizontal history position", async 
   })
   await expect(page).toHaveURL(/\/sida\/-1\/etext$/)
   await expect.poll(() => page.evaluate(() => [window.scrollX, window.scrollY]))
-    .toEqual([100, 0])
+    .toEqual([100, 150])
 
   await page.evaluate(() => window.scrollTo(200, 200))
   await expect.poll(() => page.evaluate(() => [window.scrollX, window.scrollY]))

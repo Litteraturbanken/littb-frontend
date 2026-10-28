@@ -27,6 +27,8 @@ const visualE2eSpec = /e2e\/.*\.visual\.spec\.ts/
 const productionLayoutShiftSpec = /e2e\/layout-shift-production\.behavior\.spec\.ts/
 const mobileBehaviorSpecs = [
   /e2e\/reader\.behavior\.spec\.ts/,
+  /e2e\/reader-instance-reuse\.behavior\.spec\.ts/,
+  /e2e\/reader-work-search-motion\.behavior\.spec\.ts/,
   /e2e\/reader-production\.behavior\.spec\.ts/,
   /e2e\/editor-reader\.mobile\.behavior\.spec\.ts/,
   /e2e\/library-advanced\.behavior\.spec\.ts/,

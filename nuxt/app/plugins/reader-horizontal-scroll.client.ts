@@ -6,12 +6,7 @@ import type {
 type ReaderRoute = {
   identity: string
   page: string
-}
-
-type PendingReaderNavigation = {
-  from: string
-  left: number
-  to: string
+  kind: "public" | "editor"
 }
 
 type PendingPageScroll = {
@@ -35,6 +30,17 @@ function stringParam(value: unknown): string | null {
 }
 
 function readerRoute(route: RouteLocationNormalized): ReaderRoute | null {
+  const editorWork = stringParam(route.params.lbid)
+  const editorIndex = stringParam(route.params.ix)
+  const editorMedia = stringParam(route.params.mediatype)
+  if (editorWork && editorIndex && editorMedia
+    && /^\/editor\/[^/]+\/ix\/[^/]+\/[^/]+\/?$/.test(route.path)) {
+    return {
+      identity: JSON.stringify(["editor", editorWork, editorMedia]),
+      page: editorIndex,
+      kind: "editor"
+    }
+  }
   const author = stringParam(route.params.author)
   const title = stringParam(route.params.title)
   const page = stringParam(route.params.page)
@@ -49,8 +55,9 @@ function readerRoute(route: RouteLocationNormalized): ReaderRoute | null {
     return null
   }
   return {
-    identity: JSON.stringify([author, title, mediaType]),
-    page
+    identity: JSON.stringify(["public", author, title, mediaType]),
+    page,
+    kind: "public"
   }
 }
 
@@ -73,7 +80,6 @@ export default defineNuxtPlugin({
     const router = useRouter()
     let defaultScrollBehavior: RouterScrollBehavior | undefined
     let navigationId = 0
-    let pendingNavigation: PendingReaderNavigation | null = null
     let pendingScroll: PendingPageScroll | null = null
     const readyRoutes = new Set<string>()
     let initialReaderPositioned = false
@@ -89,25 +95,7 @@ export default defineNuxtPlugin({
         pendingScroll.resolve(false)
         pendingScroll = null
       }
-      const readerPageNavigation = isReaderPageNavigation(to, from)
-      if (readerPageNavigation) readyRoutes.delete(to.fullPath)
-      pendingNavigation = readerPageNavigation
-        ? {
-            from: from.fullPath,
-            left: window.scrollX,
-            to: to.fullPath
-          }
-        : null
-    })
-
-    router.afterEach((to, from, failure) => {
-      if (
-        failure
-        && pendingNavigation?.from === from.fullPath
-        && pendingNavigation.to === to.fullPath
-      ) {
-        pendingNavigation = null
-      }
+      if (isReaderPageNavigation(to, from)) readyRoutes.clear()
     })
 
     const pageScrollBehavior: RouterScrollBehavior = (to, from, savedPosition) => {
@@ -116,7 +104,6 @@ export default defineNuxtPlugin({
       pendingScroll = null
       if (savedPosition && ["/bibliotek", "/epub", "/sok", "/sök", "/s%C3%B6k"].includes(to.path.replace(/\/$/, ""))) {
         readyRoutes.clear()
-        pendingNavigation = null
         // Result pages mount before their client-fetched rows. Restoring earlier
         // clamps the browser's saved offset to the short loading page.
         if (readyResultsRoute === to.fullPath) return savedPosition
@@ -130,12 +117,11 @@ export default defineNuxtPlugin({
           }
         })
       }
-      const enteringReader = readerRoute(to) !== null
+      const enteringReader = readerRoute(to)?.kind === "public"
         && readerRoute(to)?.identity !== readerRoute(from)?.identity
         && !savedPosition
       if (enteringReader) {
         initialReaderPositioned = true
-        pendingNavigation = null
         if (readyRoutes.delete(to.fullPath)) return initialPosition()
         return new Promise(resolve => {
           pendingScroll = {
@@ -149,35 +135,13 @@ export default defineNuxtPlugin({
       }
       if (!isReaderPageNavigation(to, from)) {
         readyRoutes.clear()
-        pendingNavigation = null
         return defaultScrollBehavior?.(to, from, savedPosition)
       }
 
-      const currentNavigationId = navigationId
-      const captured = pendingNavigation
-      pendingNavigation = null
-      const position = savedPosition
-        ? { left: savedPosition.left, top: savedPosition.top }
-        : {
-            left: captured?.from === from.fullPath
-              && captured.to === to.fullPath
-              ? captured.left
-              : window.scrollX,
-            top: 0
-          }
-
-      if (readyRoutes.delete(to.fullPath)) {
-        return position
-      }
-
-      return new Promise(resolve => {
-        pendingScroll = {
-          navigationId: currentNavigationId,
-          position,
-          resolve,
-          to: to.fullPath
-        }
-      })
+      // Same-work page turns reuse the reader and its viewport. Forward
+      // navigation needs no scroll operation; Back/Forward keeps native saved
+      // positions rather than forcing every new page to the top.
+      return savedPosition ?? false
     }
 
     nuxtApp.hooks.hook("results:page-ready", fullPath => {

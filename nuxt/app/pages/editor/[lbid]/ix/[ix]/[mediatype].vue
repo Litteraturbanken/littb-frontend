@@ -48,6 +48,7 @@ import {
 
 definePageMeta({
   layout: "reader",
+  key: route => JSON.stringify([route.params.lbid, route.params.mediatype]),
   validate: route => isEditorRouteIdentity(
     route.params.lbid,
     route.params.ix,
@@ -141,9 +142,16 @@ watch(loadedPage, candidate => {
     loadedIdentity.value = initialIdentity
   }
 }, { immediate: true, flush: "sync" })
-const page = computed(() => acceptedPage.value?.identity === requestIdentity.value
-  ? acceptedPage.value.page
-  : null)
+const page = computed(() => {
+  const accepted = acceptedPage.value
+  if (!accepted) return null
+  const [acceptedWorkId, , acceptedMedia] = JSON.parse(accepted.identity) as string[]
+  // A page turn updates this work's content in place. Keep the viewport mounted
+  // while its request is pending, rather than collapsing the document to zero.
+  return acceptedWorkId === workId.value && acceptedMedia === alias.value
+    ? accepted.page
+    : null
+})
 const ocrMode = computed(() => route.query.ocr !== undefined && Boolean(page.value?.overlayHtml))
 const authorSearchHref = computed(() => page.value?.authorId
   ? `/s%C3%B6k?avancerad&forfattare=${encodeURIComponent(page.value.authorId)}`
