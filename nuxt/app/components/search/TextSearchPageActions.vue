@@ -61,6 +61,14 @@ function submitDestination() {
 </template>
 
 <style scoped>
+/* Override the legacy #toolkit pager's fixed circular button dimensions. */
+#toolkit .littb_pager .ctrl li:not(.arrows) > button,
+#toolkit .littb_pager .ctrl .goto-submit {
+  width: auto;
+  height: auto;
+  margin-bottom: 0;
+  border-radius: 0;
+}
 .ctrl li:not(.arrows) > button,
 .ctrl .goto-submit {
   display: inline;

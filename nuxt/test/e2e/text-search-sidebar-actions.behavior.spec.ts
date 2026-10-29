@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test"
 
-for (const width of [390, 1440]) {
+for (const width of [390, 1230, 1440]) {
   test(`production search navigation actions coexist with pagination at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 900 })
+    await page.setViewportSize({ width, height: width === 1230 ? 1439 : 900 })
     await page.goto("/s%C3%B6k?fras=overflow&keep=first&keep=second", { waitUntil: "networkidle" })
     const actions = page.locator("[data-text-search-page-actions]")
     await expect(actions).toBeVisible()
@@ -10,6 +10,17 @@ for (const width of [390, 1440]) {
     if (width > 767) {
       expect(await page.locator(".littb_pager").evaluate(element => element.compareDocumentPosition(document.querySelector(".navigator")!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTruthy()
       await expect(actions.locator("xpath=ancestor::*[@id='search-pager-toolkit']")).toHaveCount(1)
+      const card = await page.locator(".littb_pager").boundingBox()
+      for (const button of await actions.locator("li:not(.arrows) > button").all()) {
+        const box = await button.boundingBox()
+        expect(box!.width).toBeGreaterThan(25)
+        expect(box!.x).toBeGreaterThanOrEqual(card!.x)
+        expect(box!.x + box!.width).toBeLessThanOrEqual(card!.x + card!.width)
+      }
+      for (const button of await actions.locator(".arrows button").all()) {
+        expect((await button.boundingBox())!.width).toBe(25)
+        expect((await button.boundingBox())!.height).toBe(25)
+      }
     } else await expect(actions.locator("xpath=ancestor::*[@id='results']")).toHaveCount(1)
     await expect(actions.getByRole("button", { name: "Föregående träffsida" })).toBeDisabled()
     await actions.getByRole("button", { name: "Nästa träffsida", exact: true }).click()
