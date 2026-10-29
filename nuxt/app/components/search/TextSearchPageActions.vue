@@ -87,6 +87,13 @@ function submitDestination() {
 .ctrl li:not(.arrows) > button { white-space: nowrap; }
 .ctrl button:disabled { color: #777; cursor: default; }
 .ctrl button:focus-visible { outline: 2px solid #7a1400; outline-offset: 2px; }
+#toolkit .littb_pager .ctrl li form,
+.ctrl form {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-bottom: 0;
+}
 .ctrl form input[type="number"] {
   width: 4em;
   height: 1.5em;
@@ -94,5 +101,6 @@ function submitDestination() {
   vertical-align: middle;
   font-size: .8em;
 }
+#toolkit .littb_pager .ctrl form input[type="number"] { width: 3.5em; }
 .ctrl .goto-submit { margin-left: .3em; }
 </style>

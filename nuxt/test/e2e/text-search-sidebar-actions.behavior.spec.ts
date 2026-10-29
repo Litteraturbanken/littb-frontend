@@ -34,6 +34,15 @@ for (const width of [390, 1230, 1440]) {
     await actions.getByRole("button", { name: "Gå till träffsida . . .", exact: true }).click()
     const input = actions.getByRole("spinbutton", { name: "Träffsida" })
     await expect(input).toBeFocused()
+    const inputBox = (await input.boundingBox())!
+    const submitBox = (await actions.getByRole("button", { name: "Gå till angiven träffsida" }).boundingBox())!
+    const labelBox = (await actions.getByRole("button", { name: "Gå till träffsida . . .", exact: true }).boundingBox())!
+    const actionBox = (await actions.boundingBox())!
+    expect(submitBox.x).toBeGreaterThanOrEqual(inputBox.x + inputBox.width)
+    expect(Math.abs(submitBox.y + submitBox.height / 2 - inputBox.y - inputBox.height / 2)).toBeLessThan(1)
+    expect(inputBox.x).toBeGreaterThanOrEqual(labelBox.x + labelBox.width)
+    expect(Math.abs(labelBox.y + labelBox.height / 2 - inputBox.y - inputBox.height / 2)).toBeLessThan(3)
+    expect(submitBox.x + submitBox.width).toBeLessThanOrEqual(actionBox.x + actionBox.width)
     await input.fill("2")
     await input.press("Enter")
     await expect(page).toHaveURL(/traffsida=2/)
