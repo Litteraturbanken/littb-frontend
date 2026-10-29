@@ -21,6 +21,14 @@ body:has(.modal[role="dialog"][aria-modal="true"]) :is(#mainview, #leftCorridor,
     opacity: 0.8;
 }
 
+// Keep desktop centering independent of the scrollbar restored during leave.
+// Match the legacy modal's desktop range, preserving mobile/tablet insets.
+@media (min-width: 761px) and (min-device-width: 1025px) {
+    .quick-search-modal {
+        width: 100vw;
+    }
+}
+
 .quick-search-modal > .quick-search-presentation {
     // Preserve the viewport-height containing block for the dialog's top: 5%.
     height: 100%;
