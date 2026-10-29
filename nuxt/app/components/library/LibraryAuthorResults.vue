@@ -65,10 +65,10 @@ function formattedCount(value: number): string {
             <i aria-hidden="true" class="spinner fa fa-spinner fa-pulse" />
         </div>
         <div v-if="response.failed" data-library-error role="alert">Ett fel uppstod.</div>
-        <div v-else-if="!response.data.length" data-library-empty class="pb-4">
+        <div v-else-if="!loading && !response.data.length" data-library-empty class="pb-4">
             Inga träffar.
         </div>
-        <table v-else class="table flex-grow w-full">
+        <table v-else-if="response.data.length" class="table flex-grow w-full">
             <tbody>
                 <tr
                     v-for="(item, index) in response.data"
