@@ -305,6 +305,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/library/download-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Library Download Categories */
+        get: operations["v2_get_library_download_categories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/library/options": {
         parameters: {
             query?: never;
@@ -5052,6 +5069,62 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LibraryAuthorsCountResponse"] | components["schemas"]["LibraryDownloadCountResponse"] | components["schemas"]["LibraryBrowseCountResponse"];
+                };
+            };
+            /** @description Search snapshot unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_library_download_categories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": ("texttype:brev;brevsamling" | "texttype:drama;dramasamling" | "texttype:essä;essäsamling" | "texttype:novellsamling;novell" | "texttype:diktsamling;dikt" | "texttype:roman" | "texttype:sakprosa;kringtexter;avhandling;referensverk" | "texttype:tal" | "keyword:Barnlitteratur" | "keyword:Biografika|texttype:brev;brevsamling" | "keyword:Finlandssvenskt" | "keyword:Flickböcker" | "texttype:herdaminne" | "keyword:Humor" | "texttype:kistebrev" | "texttype:kringtext" | "texttype:kåseri;kåserisamling" | "texttype:reseskildring" | "keyword:Rösträtt" | "keyword:Sapmi" | "keyword:Folktryck" | "keyword:sentpajorden" | "keyword:OrdenPrövas" | "keyword:LB-antologi" | "keyword:1800" | "source:bibliotekariesidor" | "source:diktensmuseum" | "keyword:Dramawebben" | "source:skolan" | "source:litteraturkartan" | "source:ljudochbild" | "source:sol" | "keyword:SLS-FI" | "provenance.library:SVELITT" | "provenance.library:SA" | "provenance.library:SFS" | "provenance.library:SVA" | "author_ids:KunglSamfundet" | "provenance.library:SVS")[];
                 };
             };
             /** @description Search snapshot unavailable */

@@ -13,3 +13,14 @@ describe("displayed library counts", () => {
     expect(displayedSummary({ identity: "first", works: null })).toEqual({ identity: "first", works: null })
   })
 })
+
+
+test("download counts survive invalidation and independently arriving responses", () => {
+  const old = { identity: "old", epub: 132, pdf: 81 }
+  const pending = displayedSummary({ identity: "new", epub: null, pdf: null }, old)
+  expect(pending).toEqual({ identity: "new", epub: 132, pdf: 81 })
+  const epub = displayedSummary({ identity: "new", epub: 62, pdf: null }, pending)
+  expect(epub).toEqual({ identity: "new", epub: 62, pdf: 81 })
+  expect(displayedSummary({ identity: "new", epub: 62, pdf: 0 }, epub))
+    .toEqual({ identity: "new", epub: 62, pdf: 0 })
+})

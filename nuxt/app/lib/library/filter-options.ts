@@ -132,3 +132,16 @@ export function createLibraryFilterOptions() {
     languageValues: new Set<LibraryLanguage>(languageOptions.map(option => option.value))
   }
 }
+
+/** Filter against the downloadable catalogue, independently of the current search. */
+export function availableLibraryCollectionGroups<T extends { label: string; options: Array<{ value: LibraryCategory; label: string }> }>(
+  groups: T[],
+  available?: readonly LibraryCategory[] | null
+): T[] {
+  if (available == null) return groups
+  const values = new Set(available)
+  return groups.map(group => ({
+    ...group,
+    options: group.options.filter(option => values.has(option.value))
+  })).filter(group => group.options.length > 0)
+}

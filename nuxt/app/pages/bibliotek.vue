@@ -26,11 +26,12 @@ import {
     type LibraryCountMode,
     type LibraryCountResponse,
     type LibraryFilterState,
-    type LibraryOptionsResponse,
+    type LibraryOptionsResponse as LibraryBaseOptionsResponse,
     type LibrarySearchState
 } from "~/lib/library"
 import {
     createLibraryFilterOptions,
+    availableLibraryCollectionGroups,
     type LibraryCategory,
     type LibraryLanguage,
     type LibraryMedia
@@ -74,6 +75,8 @@ import {
     type PdfResponse
 } from "~/lib/library/page-results"
 import { toLibrarySearchView } from "~/lib/library/view-model"
+
+type LibraryOptionsResponse = LibraryBaseOptionsResponse & { download_categories?: LibraryCategory[] | null }
 
 type LibraryGender = LibraryAdvancedFilters["gender"]
 
@@ -353,8 +356,16 @@ async function fetchLibrarySummary(
 
 async function fetchLibraryOptions(signal?: AbortSignal): Promise<LibraryOptionsResponse> {
     try {
-        const { data } = await libraryClient.GET("/library/options", { signal })
-        return data ?? { chronology: null, about_authors: null }
+        const [options, categories] = await Promise.all([
+            libraryClient.GET("/library/options", { signal }),
+            route.path === "/epub"
+                ? libraryClient.GET("/library/download-categories", { signal }).catch(() => null)
+                : Promise.resolve(null)
+        ])
+        return {
+            ...(options.data ?? { chronology: null, about_authors: null }),
+            download_categories: categories?.data ?? null
+        }
     } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") throw error
         return { chronology: null, about_authors: null }
@@ -517,6 +528,10 @@ const hasActiveFilters = computed(() =>
         queryYearRange(`${chronologyFromDraft.value},${chronologyToDraft.value}`)
     )
 )
+const visibleCollectionGroups = computed(() => availableLibraryCollectionGroups(
+    collectionSelectGroups,
+    standalone.value ? libraryOptionsData.value?.download_categories : undefined
+))
 const advancedControls = computed<LibraryAdvancedControlsModel>(() => ({
     advancedOpen: advancedOpen.value,
     gender: selectedGender.value,
@@ -525,8 +540,8 @@ const advancedControls = computed<LibraryAdvancedControlsModel>(() => ({
     aboutAuthorIds: selectedAboutAuthorIds.value,
     media: selectedMedia.value,
     languages: selectedLanguages.value,
-    collectionSelectOptions,
-    collectionSelectGroups,
+    collectionSelectOptions: visibleCollectionGroups.value.flatMap(group => group.options),
+    collectionSelectGroups: visibleCollectionGroups.value,
     aboutAuthorOptions: aboutAuthorOptions.value,
     mediaSelectOptions,
     languageSelectOptions,
@@ -570,6 +585,7 @@ const downloadCounts = ref<DownloadCounts>({
             ? initialPageData.response.distinctHits
             : null
 })
+const displayedDownloadCounts = computed<DownloadCounts>(previous => displayedSummary(downloadCounts.value, previous))
 const latestResults = ref(
     initialPageData.mode === "latest" ? initialPageData.response : emptyLatestResponse()
 )
@@ -1828,10 +1844,10 @@ const downloadDistinctHits = computed(() =>
     currentMode.value === "pdf" ? pdfResults.value.distinctHits : epubResults.value.distinctHits
 )
 const epubTabCount = computed(() =>
-    standalone.value ? downloadCounts.value.epub : displayedLibrarySummary.value.epub
+    standalone.value ? displayedDownloadCounts.value.epub : displayedLibrarySummary.value.epub
 )
 const pdfTabCount = computed(() =>
-    standalone.value ? downloadCounts.value.pdf : displayedLibrarySummary.value.pdf
+    standalone.value ? displayedDownloadCounts.value.pdf : displayedLibrarySummary.value.pdf
 )
 
 function currentResultHitCount(): number {
