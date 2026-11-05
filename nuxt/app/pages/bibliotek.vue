@@ -1700,11 +1700,11 @@ const libraryModeTabs = computed<readonly LibraryModeTab[]>(() => {
 
     if (standalone.value) {
         return [
-            libraryModeTab("epub", "Epub", epubTabCount.value || null, epubHref, false, false, false),
+            libraryModeTab("epub", "Epub", epubTabCount.value, epubHref, false, false, false),
             libraryModeTab(
                 "pdf",
                 "PDF",
-                pdfTabCount.value || null,
+                pdfTabCount.value,
                 pdfHref,
                 currentMode.value !== "pdf" && !pdfTabCount.value,
                 false,
