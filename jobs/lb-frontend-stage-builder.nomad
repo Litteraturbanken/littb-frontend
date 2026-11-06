@@ -58,7 +58,7 @@ registry="$${NOMAD_META_REGISTRY_HOST:-registry.service.consul:5000}"
 image="$registry/lb-frontend:$sha"
 
 # Public repository: fetch only the immutable commit, without credentials or
-# repository history. Reuse the node's existing Docker layer cache.
+# repository history. Refresh every layer for current system CA certificates.
 work="$NOMAD_TASK_DIR/src"
 mkdir -p "$work"
 cd "$work"
@@ -75,7 +75,7 @@ docker_cmd() {
     docker "$@"
   fi
 }
-docker_cmd buildx build --platform linux/amd64 --load \
+docker_cmd buildx build --pull --no-cache --platform linux/amd64 --load \
   --label "org.opencontainers.image.revision=$sha" \
   --label "org.opencontainers.image.version=$sha" \
   --build-arg "NUXT_BUILD_ID=$sha" -t "$image" .

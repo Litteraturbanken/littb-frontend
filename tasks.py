@@ -89,7 +89,7 @@ def _backend_python(settings: Settings) -> str:
     configured = os.environ.get("LB_BACKEND_PYTHON")
     if configured:
         return configured
-    virtualenv_python = settings.backend_dir / "virtual_env" / "bin" / "python"
+    virtualenv_python = settings.backend_dir / ".venv" / "bin" / "python"
     return str(virtualenv_python) if virtualenv_python.is_file() else sys.executable
 
 
