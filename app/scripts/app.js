@@ -1,5 +1,7 @@
 /** @format */
 
+import { legacySourceInfoUrl } from "./legacySourceInfoUrl.mjs"
+
 import collapse from "angular-ui-bootstrap/src/collapse"
 import tooltip from "angular-ui-bootstrap/src/tooltip"
 import modal from "angular-ui-bootstrap/src/modal"
@@ -500,9 +502,7 @@ window.littb = angular
                             .getSourceInfo(params)
                             .then(data =>
                                 $location
-                                    .url(
-                                        `/författare/${$routeParams.author}/titlar/${$routeParams.title}/sida/${data.startpagename}/${data.mediatype}?om-boken`
-                                    )
+                                    .url(legacySourceInfoUrl(params, data))
                                     .replace()
                             )
                     }
