@@ -650,22 +650,21 @@ function executePrimary(identity: string, cause: "initial" | "refresh:manual"): 
     if (freshPrimaryIdentity.value === identity) freshPrimaryIdentity.value = null
   })
 }
-const lastAcceptedAdvancedChronologyBounds = shallowRef({
-  yearFrom: options.value?.yearFrom ?? DEFAULT_CHRONOLOGY_FLOOR,
-  yearTo: options.value?.yearTo ?? DEFAULT_CHRONOLOGY_CEILING
-})
+const lastAcceptedAdvancedChronologyBounds = shallowRef<ChronologyBounds | null>(null)
 watch(options, candidate => {
   if (candidate?.yearFrom == null || candidate.yearTo == null) return
   lastAcceptedAdvancedChronologyBounds.value = {
     yearFrom: candidate.yearFrom,
     yearTo: candidate.yearTo
   }
-}, { flush: "sync" })
+}, { immediate: true, flush: "sync" })
 const advancedChronologyBounds = computed(() => {
+  // Keep loaded simple-search bounds while the first advanced options request settles.
+  const fallback = lastAcceptedAdvancedChronologyBounds.value ?? chronologyData.value?.bounds
   const yearFrom = options.value?.yearFrom
-    ?? lastAcceptedAdvancedChronologyBounds.value.yearFrom
+    ?? fallback?.yearFrom ?? DEFAULT_CHRONOLOGY_FLOOR
   const yearTo = options.value?.yearTo
-    ?? lastAcceptedAdvancedChronologyBounds.value.yearTo
+    ?? fallback?.yearTo ?? DEFAULT_CHRONOLOGY_CEILING
   return [Math.min(yearFrom, yearTo), Math.max(yearFrom, yearTo)] as const
 })
 const baseChronologyFloor = computed(() => (
