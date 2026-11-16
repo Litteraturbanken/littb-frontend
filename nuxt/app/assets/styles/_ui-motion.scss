@@ -88,3 +88,23 @@ body:has(.modal[role="dialog"][aria-modal="true"]) :is(#mainview, #leftCorridor,
         transform: none;
     }
 }
+
+// Keep the outgoing artwork above the body background but below all content.
+// No transforms on the shell: sticky/fixed controls keep their containing blocks.
+body.background-crossfade-active {
+    isolation: isolate;
+}
+
+.background-crossfade-layer {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    contain: strict;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .background-crossfade-layer {
+        display: none;
+    }
+}
