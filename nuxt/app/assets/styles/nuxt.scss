@@ -84,6 +84,12 @@
     color: #7a1400;
 }
 
+.page-search .navigator button.link-control:not(:disabled):hover,
+.page-search .navigator button.link-control:not(:disabled):focus-visible {
+    color: #7a1400;
+    text-decoration: underline;
+}
+
 .page-search .chronology {
     display: flex;
     align-items: center;

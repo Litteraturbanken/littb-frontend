@@ -85,7 +85,9 @@ function submitDestination() {
   cursor: pointer;
 }
 .ctrl li:not(.arrows) > button { white-space: nowrap; }
-.ctrl button:disabled { color: #777; cursor: default; }
+.ctrl li:not(.arrows) button:not(:disabled):hover,
+.ctrl li:not(.arrows) button:not(:disabled):focus-visible { color: #333; text-decoration: underline; }
+.ctrl li button:disabled { color: #777; cursor: default; }
 .ctrl button:focus-visible { outline: 2px solid #7a1400; outline-offset: 2px; }
 #toolkit .littb_pager .ctrl li form,
 .ctrl form {
