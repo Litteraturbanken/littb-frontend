@@ -13,8 +13,11 @@ does not replace their source of truth or animate the page content.
 
 Only navigation between different single-image backgrounds participates.
 Same-path/query changes and identical backgrounds do not animate. Reduced
-motion skips the effect. Image decoding has a 150 ms visual budget; failure or
-expiry removes the outgoing layer without delaying the new page. Another
+motion skips the effect. Image decoding has a 150 ms visual budget (750 ms for
+the larger, remotely served homepage artwork); failure or expiry removes the
+outgoing layer without delaying the new page. The lazy homepage can retain
+the outgoing artwork for up to 1 second while its background metadata arrives.
+This wait affects only the background; content remains interactive throughout. Another
 navigation, resize, or reduced-motion change cancels the current effect.
 
 ## Verification
@@ -53,3 +56,18 @@ node .output/server/index.mjs
 
 Open `/s%C3%B6k` and use the main navigation to switch to **Presentationer** and
 back to **Sök i texterna**. Initial document loads do not crossfade.
+
+## Homepage follow-up (2026-11-17)
+
+The homepage temporarily clears its background while loading editorial content,
+and clears that content before the global navigation guard when leaving. The
+plugin now retains the last valid snapshot for departures from home and keeps
+the outgoing artwork through the incoming homepage's metadata gap. Its larger
+image gets a bounded 750 ms decode budget: an observed uncached load was about
+389 ms for 1.1 MB. No router hook waits for either budget.
+
+Logo → home and home → Search crossfades passed on desktop and a 390 px
+viewport, including a 450 ms delay on homepage metadata. With a 1600 ms
+metadata delay, the artwork overlay timed out and a subsequent navigation to
+Search remained clean after the abandoned response arrived. Lint, type checking,
+and the production build passed for this follow-up.

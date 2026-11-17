@@ -2,6 +2,8 @@
 // Never return an image/animation promise from a navigation or Nuxt hook.
 const FADE_MS = 240
 const IMAGE_BUDGET_MS = 150
+const BACKGROUND_METADATA_BUDGET_MS = 1000
+const HOME_IMAGE_BUDGET_MS = 750
 
 type Background = {
   image: string
@@ -48,6 +50,7 @@ export default defineNuxtPlugin(nuxtApp => {
   const router = useRouter()
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
   let previous: ReturnType<typeof readBackground> = null
+  let lastBackground: ReturnType<typeof readBackground> = null
   let layer: HTMLDivElement | null = null
   let animation: Animation | null = null
   let timeout: ReturnType<typeof setTimeout> | undefined
@@ -67,19 +70,16 @@ export default defineNuxtPlugin(nuxtApp => {
 
   const removeGuard = router.beforeEach((to, from) => {
     cancel()
-    if (to.path !== from.path && !reducedMotion.matches) previous = readBackground()
+    if (to.path !== from.path && !reducedMotion.matches) {
+      // Home clears its lazy content in onBeforeRouteLeave, before this guard.
+      previous = readBackground() ?? (from.path === "/" ? lastBackground : null)
+    }
   })
   const removeAfter = router.afterEach((_to, _from, failure) => { if (failure) cancel() })
   const removeError = router.onError(cancel)
 
-  function onBackgroundChange() {
-    if (!previous || reducedMotion.matches) return
-    const next = readBackground()
-    if (!next) { cancel(); return }
-    if (next.image === previous.image) return
-    const old = previous
-    previous = null
-    const currentRevision = revision
+  function showOutgoing(old: NonNullable<ReturnType<typeof readBackground>>) {
+    if (layer) return layer
     const outgoing = document.createElement("div")
     outgoing.className = "background-crossfade-layer"
     outgoing.setAttribute("aria-hidden", "true")
@@ -103,8 +103,36 @@ export default defineNuxtPlugin(nuxtApp => {
     document.body.classList.add("background-crossfade-active")
     document.body.prepend(outgoing)
 
+    return outgoing
+  }
+
+  function onBackgroundChange() {
+    const next = readBackground()
+    if (next) lastBackground = next
+    if (!previous || reducedMotion.matches) return
+    if (!next) {
+      if (router.currentRoute.value.path !== "/") { cancel(); return }
+      // Lazy home metadata briefly removes the image. Keep only the artwork;
+      // the destination content continues rendering and remains interactive.
+      if (!layer) {
+        showOutgoing(previous)
+        timeout = setTimeout(cancel, BACKGROUND_METADATA_BUDGET_MS)
+      }
+      return
+    }
+    if (next.image === previous.image) {
+      if (layer) cancel()
+      return
+    }
+    const outgoing = showOutgoing(previous)
+    previous = null
+    const currentRevision = revision
+    clearTimeout(timeout)
+
     // A slow or failed image skips the effect. The new page is already interactive.
-    timeout = setTimeout(cancel, IMAGE_BUDGET_MS)
+    timeout = setTimeout(cancel, router.currentRoute.value.path === "/"
+      ? HOME_IMAGE_BUDGET_MS
+      : IMAGE_BUDGET_MS)
     const image = new Image()
     image.src = next.image.slice(5, -2)
     void image.decode().then(() => {
@@ -122,6 +150,7 @@ export default defineNuxtPlugin(nuxtApp => {
   }
 
   nuxtApp.hook("app:mounted", () => {
+    lastBackground = readBackground()
     observer = new MutationObserver(onBackgroundChange)
     for (const target of [document.documentElement, document.body]) {
       observer.observe(target, { attributes: true, attributeFilter: ["style", "class"] })
