@@ -2220,6 +2220,21 @@ for (const status of [422, 503, 502]) {
   })
 }
 
+test("search summary groups thousands with Swedish nonbreaking spaces", async ({ page }) => {
+  await page.route("**/api/v2/text-search/results", async route => {
+    const body = route.request().postDataJSON()
+    const response = await route.fetch({ postData: { ...body, page: 1 } })
+    const data = await response.json()
+    await route.fulfill({
+      json: { ...data, page: body.page, totals: { occurrences: 15728, documents: 1797, works: 1797 } }
+    })
+  })
+  await openSearch(page, "/s%C3%B6k?fras=frihet&traffsida=60")
+  const pager = page.locator("#toolkit .littb_pager")
+  await expect(pager.locator(".hits")).toHaveJSProperty("textContent", "15\u00a0728")
+  await expect(pager).toContainText(/Visar verk 1\u00a0771-1\u00a0772 av\s+1\u00a0797, sida 60 av\s+60\./u)
+})
+
 test("zero-result pager uses guarded one-page bounds", async ({ page }) => {
   await openSearch(page, "/s%C3%B6k?fras=inga")
 

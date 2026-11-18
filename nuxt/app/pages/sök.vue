@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatSwedishCount } from "#shared/utils/format-count"
 import { formatAuthorYears } from "#shared/utils/author-years"
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/vue"
 import type { LocationQueryRaw } from "vue-router"
@@ -1794,7 +1795,7 @@ v-for="item in [
               <div>
                 <div class="hits_info">
                   <div>
-                    <div v-show="(results?.totalOccurrences ?? 0) > 0" class="hits">{{ results?.totalOccurrences ?? 0 }}</div>{{ " " }}
+                    <div v-show="(results?.totalOccurrences ?? 0) > 0" class="hits">{{ formatSwedishCount(results?.totalOccurrences ?? 0) }}</div>{{ " " }}
                     <div class="hits_sub">
                       <span v-show="(results?.totalOccurrences ?? 0) > 1">sökträffar</span>
                       <span v-show="results?.totalOccurrences === 1">sökträff</span>
@@ -1802,9 +1803,9 @@ v-for="item in [
                   </div>
                 </div>
 
-                Visar verk {{ firstVisibleWork }}-{{ lastVisibleWork }} av
-                {{ results?.totalWorks ?? 0 }}, sida {{ displayedPage }} av
-                {{ totalPages }}.
+                Visar verk {{ formatSwedishCount(firstVisibleWork) }}-{{ formatSwedishCount(lastVisibleWork) }} av
+                {{ formatSwedishCount(results?.totalWorks ?? 0) }}, sida {{ formatSwedishCount(displayedPage) }} av
+                {{ formatSwedishCount(totalPages) }}.
                 <TextSearchPageActions v-if="(results?.totalWorks ?? 0) > 1" :current-page="displayedPage" :page-count="totalPages" :ready="paginationReady" :search-key="paginationSearchKey" @select-page="goToPage" />
               </div>
             </div>

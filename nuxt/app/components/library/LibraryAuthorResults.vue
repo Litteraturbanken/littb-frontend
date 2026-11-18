@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatSwedishCount } from "#shared/utils/format-count"
 import { useId } from "vue"
 import { canonicalNuxtHref } from "../../lib/internal-navigation"
 import {
@@ -23,7 +24,7 @@ const emit = defineEmits<{
 const sortDirectionId = `library-author-sort-direction-${useId()}`
 
 function formattedCount(value: number): string {
-    return value.toLocaleString("sv-SE").replaceAll("\u00a0", " ")
+    return formatSwedishCount(value).replaceAll("\u00a0", " ")
 }
 </script>
 
