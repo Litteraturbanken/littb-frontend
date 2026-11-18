@@ -189,3 +189,27 @@ test("both search pagers keep the full navigation on one row as their container 
   await expectOneRow(142)
   await expect(pager.locator("[data-library-page]")).toHaveCount(initialCount)
 })
+
+test("the library pager reduces its page window when the result pane narrows", async ({ page }) => {
+  await page.setViewportSize({ width: 1020, height: 900 })
+  await page.goto("/bibliotek?visa=epub&filter=pagination%20window&sida=9", { waitUntil: "networkidle" })
+  const pager = page.locator(".library-pagination").first()
+  const pageNumbers = pager.locator("[data-library-page]")
+  await expect(pager.locator('[aria-current="page"]')).toHaveText("9")
+  await expect(pager.locator('[data-library-page="16"]')).toBeVisible()
+  const initialCount = await pageNumbers.count()
+
+  await pager.evaluate(element => { element.style.width = "195px" })
+  await expect.poll(() => pager.evaluate(element => {
+    const boxes = Array.from(element.querySelectorAll("li > a, li > span"), item => item.getBoundingClientRect())
+    return Math.max(...boxes.map(box => box.top)) - Math.min(...boxes.map(box => box.top)) < 2
+      && element.scrollWidth - element.clientWidth <= 1
+  })).toBe(true)
+  for (const number of [1, 9, 17]) await expect(pager.locator(`[data-library-page="${number}"]`)).toBeVisible()
+  await expect(pager.getByRole("link", { name: "Föregående" })).toHaveAttribute("rel", "prev")
+  await expect(pager.getByRole("link", { name: "Nästa" })).toHaveAttribute("rel", "next")
+
+  expect(await pageNumbers.count()).toBeLessThan(initialCount)
+  await pager.evaluate(element => { element.style.removeProperty("width") })
+  await expect(pageNumbers).toHaveCount(initialCount)
+})

@@ -216,6 +216,7 @@ function workActionsId(key: string): string {
             <LibraryPagination
                 v-if="pagination.pageCount > 1"
                 :model="pagination"
+                fit-container
                 @select-page="emit('selectPage', $event)"
             />
         </template>

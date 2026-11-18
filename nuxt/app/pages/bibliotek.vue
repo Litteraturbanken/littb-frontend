@@ -1863,25 +1863,23 @@ function currentResultHitCount(): number {
 const pageCount = computed(() =>
     Math.ceil(currentResultHitCount() / 100)
 )
-const pages = computed(() => legacyPaginationItems(pageCount.value, currentPage.value))
 
 function paginationModel(
     pageHref: (page: number) => RouteLocationRaw
 ): LibraryPaginationModel {
-    const entries = pages.value.map(
-        (item: LegacyPaginationItem): LibraryPaginationEntry => ({
-            ...item,
-            to: pageHref(item.page),
-            ellipsis: item.label === "..."
-        })
-    )
+    const pageEntry = (item: LegacyPaginationItem): LibraryPaginationEntry => ({
+        ...item,
+        to: pageHref(item.page),
+        ellipsis: item.label === "..."
+    })
     return {
         currentPage: currentPage.value,
         pageCount: pageCount.value,
         previous: currentPage.value <= 1 ? null : pageHref(currentPage.value - 1),
         next: currentPage.value >= pageCount.value ? null : pageHref(currentPage.value + 1),
-        entries,
-        compactEntries: mobilePaginationItems(pageCount.value, currentPage.value).map(item => ({ ...item, to: pageHref(item.page), ellipsis: item.label === "..." }))
+        entries: legacyPaginationItems(pageCount.value, currentPage.value).map(pageEntry),
+        compactEntries: mobilePaginationItems(pageCount.value, currentPage.value).map(pageEntry),
+        minimumEntries: legacyPaginationItems(pageCount.value, currentPage.value, { boundaryCount: 1, windowSize: 1 }).map(pageEntry)
     }
 }
 

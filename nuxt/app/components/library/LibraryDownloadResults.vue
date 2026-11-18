@@ -228,6 +228,7 @@ function imprintYearTo(year: string): RouteLocationRaw {
         <LibraryPagination
             v-if="pagination.pageCount > 1"
             :model="pagination"
+            fit-container
             @select-page="emit('selectPage', $event)"
         />
     </div>
