@@ -665,9 +665,20 @@
     }
 
     .multiselect__content-wrapper {
+        margin-top: 0;
+        border: 1px solid lightgrey;
+        border-top: 0;
         font-family: "Requiem Text A", "Requiem Text B", georgia, serif;
         font-size: 1rem;
         text-transform: none;
+    }
+
+    .multiselect--above .multiselect__content-wrapper {
+        border-top: 1px solid lightgrey;
+    }
+
+    .multiselect--above:not(:has(.multiselect__tags-wrap)) .multiselect__content-wrapper {
+        border-bottom: 0;
     }
 
     .multiselect__tags {
