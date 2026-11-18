@@ -1801,6 +1801,9 @@ body > .header {
                     text-transform: uppercase;
                     a {
                         color: $primarycolor;
+                        &:hover {
+                            text-decoration: underline;
+                        }
                     }
                 }
                 td.title {
