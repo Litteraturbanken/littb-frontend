@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import type { NuxtError } from "#app"
-import { readerMissingPageName } from "~/lib/reader-missing-page"
 
 const props = defineProps<{ error: NuxtError }>()
 const isNotFound = computed(() => props.error.statusCode === 404)
-const missingReaderPageName = computed(() => isNotFound.value
-  ? readerMissingPageName(props.error.data)
-  : null)
 
 useSeoMeta({
   title: computed(() => isNotFound.value
@@ -22,10 +18,7 @@ useHead({
 
 <template>
   <NuxtLayout name="default">
-    <p v-if="missingReaderPageName">
-      Hittar ingen sida '{{ missingReaderPageName }}' i verket.
-    </p>
-    <template v-else-if="isNotFound">
+    <template v-if="isNotFound">
       <p>Du har angett en adress som inte finns på Litteraturbanken.</p>
       <p>
         Använd webbläsarens bakåtknapp för att komma tillbaka till

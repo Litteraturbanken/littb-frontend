@@ -7,7 +7,7 @@ import type {
 } from "#shared/types/reader"
 import type { ManagedAssetHtml, ManagedStyleText } from "#shared/types/renderable-html"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
-import type { ReaderPageData } from "#shared/types/reader-data"
+import type { ReaderMissingPageData, ReaderPageData } from "#shared/types/reader-data"
 import { adjacentFacsimileSize } from "#shared/utils/facsimile-source"
 import {
   emptyRenderableHtml
@@ -25,7 +25,6 @@ import {
   markReaderSearchOcrHtml
 } from "~/lib/search-hit-highlight"
 import { toBoundedDeveloperValue } from "~/lib/quick-search-developer"
-import { readerMissingPageErrorData } from "~/lib/reader-missing-page"
 import {
   fetchFacsimileOcr,
   projectFacsimileReaderPage
@@ -421,6 +420,7 @@ const requestFetch = useRequestFetch()
 
 type CurrentReaderPage =
   | { status: "success", identity: string, reader: ReaderPageData }
+  | { status: "missing-page", identity: string, reader: ReaderMissingPageData }
   | { status: "error", identity: string }
 
 const { data, error, refresh: refreshReader, status: readerFetchStatus } = await useAsyncData<CurrentReaderPage>(
@@ -435,6 +435,12 @@ const { data, error, refresh: refreshReader, status: readerFetchStatus } = await
       })
       return { status: "success" as const, identity, reader: currentReader }
     } catch (requestError) {
+      if (isRecord(requestError) && requestError.statusCode === 404) {
+        const result = requestError.data as ReaderMissingPageData | undefined
+        if (result?.missingPage && result.pageName === requestParts[2]) {
+          return { status: "missing-page" as const, identity, reader: result }
+        }
+      }
       if (import.meta.server) throw requestError
       return { status: "error" as const, identity }
     }
@@ -444,18 +450,15 @@ const { data, error, refresh: refreshReader, status: readerFetchStatus } = await
 
 if (import.meta.server) {
   if (error.value) {
-    const statusCode = error.value.statusCode ?? 500
     throw createError({
-      statusCode,
-      statusMessage: error.value.statusMessage ?? "Reader page unavailable",
-      data: statusCode === 404
-        ? readerMissingPageErrorData(pageParam.value) ?? undefined
-        : undefined
+      statusCode: error.value.statusCode ?? 500,
+      statusMessage: error.value.statusMessage ?? "Reader page unavailable"
     })
   }
-  if (!data.value || data.value.status !== "success") {
+  if (!data.value || data.value.status === "error") {
     throw createError({ statusCode: 502, statusMessage: "Reader page unavailable" })
   }
+  if (data.value.status === "missing-page") setResponseStatus(404)
 }
 
 const sourceInfoRequestIdentity = computed(() => JSON.stringify([
@@ -471,7 +474,7 @@ const sourceInfoState = shallowRef<{
   similarWorks: SimilarWork[]
 } | null>(null)
 watch(data, current => {
-  if (current?.status !== "success") return
+  if (!current || current.status === "error") return
   const [author, title, , media] = JSON.parse(current.identity) as string[]
   sourceInfoState.value = {
     identity: JSON.stringify([author, title, media]),
@@ -495,6 +498,12 @@ watch(sourceInfoRequested, open => {
 const currentReader = computed(() => {
   const current = data.value
   return current?.status === "success" && current.identity === readerRequestIdentity.value
+    ? current.reader
+    : null
+})
+const missingReader = computed(() => {
+  const current = data.value
+  return current?.status === "missing-page" && current.identity === readerRequestIdentity.value
     ? current.reader
     : null
 })
@@ -608,11 +617,19 @@ watch(
   { immediate: true }
 )
 onBeforeUnmount(() => facsimileOcrController?.abort())
-const reader = computed(() => (
-  projectedFacsimileReader.value ?? currentReader.value ?? retainedReader.value
-))
+const readerPage = computed(() => {
+  const retained = retainedReader.value
+  return projectedFacsimileReader.value ?? currentReader.value ?? (
+    !missingReader.value
+      && retainedReaderOwner.value === sourceInfoRequestIdentity.value
+      && retained?.pageNames.includes(pageParam.value)
+      ? retained
+      : null
+  )
+})
+const reader = computed(() => missingReader.value ?? readerPage.value)
 const quickSearchReaderContext = computed(() => {
-  const current = reader.value
+  const current = readerPage.value
   if (!current) return null
   const info = current.mediaType === "etext"
     ? Object.fromEntries(Object.entries(current).filter(([key]) => key !== "html"))
@@ -672,9 +689,9 @@ const primaryReaderFailed = computed(
   () => data.value?.status === "error" &&
     data.value.identity === readerRequestIdentity.value
 )
-const etextReader = computed(() => reader.value?.mediaType === "etext" ? reader.value : null)
+const etextReader = computed(() => readerPage.value?.mediaType === "etext" ? readerPage.value : null)
 const facsimileReader = computed(
-  () => reader.value?.mediaType === "faksimil" ? reader.value : null
+  () => readerPage.value?.mediaType === "faksimil" ? readerPage.value : null
 )
 const focusMode = computed(() => route.query.fokus !== undefined)
 const readerTitleTooltip = computed(() => reader.value
@@ -701,7 +718,7 @@ const ocrMode = computed(() => Boolean(
   explicitOcrRequested.value && facsimileReader.value?.ocrOverlay
 ))
 const searchState = computed(() => {
-  const current = reader.value
+  const current = readerPage.value
   if (!current?.searchable) return null
   const state = parseCanonicalSearchState()
   if (!state || state.snapshot !== null || !import.meta.client) return state
@@ -962,7 +979,9 @@ const readerSliderStyles = computed(() => {
   }
 })
 const pageTitle = computed(
-  () => readerDocumentTitle(reader.value, sourceInfoRequested.value)
+  () => missingReader.value && !sourceInfoRequested.value
+    ? `${missingReader.value.title} – sidan kan inte hittas | Litteraturbanken`
+    : readerDocumentTitle(reader.value, sourceInfoRequested.value)
 )
 const currentPart = computed(() => {
   const currentReader = reader.value
@@ -1045,7 +1064,7 @@ const hitFetch = await useAsyncData(
         activeHitRequestController = null
         const identity = hitSearchIdentity.value
         const state = searchState.value
-        const currentReader = reader.value
+        const currentReader = readerPage.value
         if (
           !state ||
           !currentReader ||
@@ -1157,7 +1176,7 @@ function selectedHitIndex(rawHitIndex: unknown): number | null {
   return Number.isSafeInteger(index) && index <= maximumNavigableHit ? index : null
 }
 
-function selectedHitRouteMatchesReader(currentReader: ReaderPage): boolean {
+function selectedHitRouteMatchesReader(currentReader: Pick<ReaderPage, "workId" | "mediaType">): boolean {
   if (route.query.s_lbworkid !== currentReader.workId) return false
   return route.query.s_mediatype === undefined
     || route.query.s_mediatype === currentReader.mediaType
@@ -1171,7 +1190,7 @@ type LegacyHighlightTarget = Readonly<{
 }>
 
 const selectedSearchHit = computed<LegacyHighlightTarget | null>(() => {
-  const currentReader = reader.value
+  const currentReader = readerPage.value
   if (!currentReader?.searchable) return null
   if (route.query.q !== undefined || route.query.hit !== undefined) return null
 
@@ -1307,7 +1326,7 @@ function hitLookupContext(index: number): HitLookupContext | null {
   if (!state || !response) return null
   if (index < 0 || index >= response.total_hits || index > maximumNavigableHit) return null
 
-  const currentReader = reader.value
+  const currentReader = readerPage.value
   if (!currentReader || currentReader.pageName !== pageParam.value) return null
   return {
     state,
@@ -1661,7 +1680,7 @@ type FirstWorkSearchHitResult =
   | Readonly<{ status: "hit", hit: WorkSearchHit, snapshot: string }>
 
 async function requestFirstWorkSearchHit(
-  currentReader: ReaderPage,
+  currentReader: Pick<ReaderPage, "workId" | "mediaType" | "pageMap">,
   state: CanonicalSearchState,
   signal: AbortSignal
 ): Promise<FirstWorkSearchHitResult> {
@@ -1781,7 +1800,7 @@ type LastPageView = {
 }
 
 function writeLastPageView(): void {
-  const currentReader = reader.value
+  const currentReader = readerPage.value
   if (!currentReader) return
   const current: LastPageView = {
     pageix: currentReader.pageIndex,
@@ -1895,8 +1914,8 @@ useHead(() => ({
       ? [{ name: "part", content: currentPart.value.title_id }]
       : [])
   ],
-  link: readerHeadLinks(reader.value),
-  style: readerHeadStyles(reader.value)
+  link: readerHeadLinks(etextReader.value),
+  style: readerHeadStyles(etextReader.value)
 }))
 
 function pageHref(pageName: string): string {
@@ -1918,9 +1937,9 @@ function hitHref(hit: WorkSearchHit): string {
 }
 
 function selectFacsimileSize(size: ReaderFacsimileSize): void {
-  const identityMatchedReader = reader.value
+  const identityMatchedReader = facsimileReader.value
   if (
-    identityMatchedReader?.mediaType !== "faksimil"
+    !identityMatchedReader
     || !identityMatchedReader.sources.some(source => source.size === size)
   ) return
 
@@ -2073,7 +2092,7 @@ function readerTargetForAction(
 }
 
 function keyboardPageTarget(event: KeyboardEvent): string | null {
-  const currentReader = reader.value
+  const currentReader = readerPage.value
   if (!currentReader) return null
   const action = keyboardNavigationAction(event, {
     altArrowAction: "part",
@@ -2113,14 +2132,14 @@ function showProductionShortcutMessage(message: string): void {
   }, 2200)
 }
 
-async function copyReaderWorkId(currentReader: ReaderPage): Promise<void> {
+async function copyReaderWorkId(currentReader: Pick<ReaderPage, "editorWorkId" | "workId">): Promise<void> {
   const value = currentReader.editorWorkId || currentReader.workId
   showProductionShortcutMessage(
     await copyProductionValue(value) ? "Kopierade lbworkid" : "Kunde inte kopiera lbworkid"
   )
 }
 
-async function copyReaderUrn(currentReader: ReaderPage): Promise<void> {
+async function copyReaderUrn(currentReader: Pick<ReaderPage, "urn">): Promise<void> {
   const url = urnResolverUrl(currentReader.urn)
   if (!url) {
     showProductionShortcutMessage("Ingen urn hittades")
@@ -2260,8 +2279,15 @@ watch(readerRequestIdentity, () => {
         :aria-label="`${reader.title}, sida ${reader.pageName}`"
         @click="toggleFocusBar"
       >
+        <div v-if="missingReader" class="reader-missing-page">
+          <p role="alert">Hittar ingen sida '{{ missingReader.pageName }}' i verket.</p>
+          <NuxtLink
+            v-if="missingReader.startPageName"
+            :to="pageHref(missingReader.startPageName)"
+          >Gå till första sidan</NuxtLink>
+        </div>
         <ReaderEtextContent
-          v-if="etextReader"
+          v-else-if="etextReader"
           :html="markedReaderHtml"
         />
         <ReaderFacsimileImage
@@ -2319,7 +2345,7 @@ watch(readerRequestIdentity, () => {
               >{{ reader.title }}</a>
               <span v-if="reader.imprintYear"> ({{ reader.imprintYear }})</span>
             </div>
-            <span class="reader-page-position sr-only mb-5 block">{{ pageRouteDraftName }} av {{ reader.pageCount }}</span>
+            <span v-if="!missingReader" class="reader-page-position sr-only mb-5 block">{{ pageRouteDraftName }} av {{ reader.pageCount }}</span>
 
             <hr class="mb-5 block mx-0 mt-0 w-[67%] border-[#d3d3d3] text-left">
 
@@ -2416,7 +2442,7 @@ watch(readerRequestIdentity, () => {
               >Gå till sista sidan</a>
               <br>
               <form class="goto mb-[0.4em] block whitespace-nowrap mr-[2px] sc" @submit.prevent="submitGoto"><button type="button" class="reader-action-button" @click="toggleGoto">Gå till sida . . .
-                <span class="pages mr-[3px] text-[0.8em]">{{ pageRouteDraftName }} av {{ reader.endPageName || reader.pageCount }}</span></button>
+                <span v-if="!missingReader" class="pages mr-[3px] text-[0.8em]">{{ pageRouteDraftName }} av {{ reader.endPageName || reader.pageCount }}</span></button>
                 <template v-if="showGotoInput">
                   <input ref="gotoInput" v-model="gotoPage" type="text" aria-label="Gå till sida">
                   <button type="submit" class="goto-submit" aria-label="Gå"><i class="fa fa-angle-double-right" /></button>
@@ -2451,7 +2477,7 @@ watch(readerRequestIdentity, () => {
               <span class="expl small ml-1 mt-[14px] inline-block w-[170px] text-xs" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
             </nav>
 
-            <div class="w-11/12 mb-5 block">
+            <div v-if="!missingReader" class="w-11/12 mb-5 block">
               <span
                 class="rzslider mt-3 slider-large"
                 :class="{ active: sliderDraftIndex !== null }"

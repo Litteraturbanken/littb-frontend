@@ -1,24 +1,18 @@
 import { describe, expect, test } from "vitest"
 
 import {
-  maximumReaderMissingPageNameLength,
-  readerMissingPageErrorCode,
-  readerMissingPageErrorData,
-  readerMissingPageName
-} from "../../app/lib/reader-missing-page"
+  isReaderMissingPageName,
+  maximumReaderMissingPageNameLength
+} from "../../shared/utils/reader-missing-page"
 
-describe("Reader missing-page error payload", () => {
-  test("round-trips bounded text without interpreting markup", () => {
-    const pageName = "A&B'<script>alert(1)</script>"
-    const data = readerMissingPageErrorData(pageName)
-
-    expect(data).toEqual({ code: readerMissingPageErrorCode, pageName })
-    expect(readerMissingPageName(data)).toBe(pageName)
+describe("Reader missing-page label", () => {
+  test("accepts bounded text to display as escaped content", () => {
+    expect(isReaderMissingPageName("A&B'<script>alert(1)</script>")).toBe(true)
   })
 
   test("accepts the exact maximum and rejects unbounded or control-bearing names", () => {
     const maximum = "x".repeat(maximumReaderMissingPageNameLength)
-    expect(readerMissingPageName(readerMissingPageErrorData(maximum))).toBe(maximum)
+    expect(isReaderMissingPageName(maximum)).toBe(true)
 
     for (const invalid of [
       "",
@@ -28,18 +22,7 @@ describe("Reader missing-page error payload", () => {
       null,
       ["page"]
     ]) {
-      expect(readerMissingPageErrorData(invalid)).toBeNull()
-    }
-  })
-
-  test("rejects malformed and extended payloads", () => {
-    for (const invalid of [
-      null,
-      { code: "other", pageName: "missing" },
-      { code: readerMissingPageErrorCode, pageName: 3 },
-      { code: readerMissingPageErrorCode, pageName: "missing", html: "<b>unsafe</b>" }
-    ]) {
-      expect(readerMissingPageName(invalid)).toBeNull()
+      expect(isReaderMissingPageName(invalid)).toBe(false)
     }
   })
 })

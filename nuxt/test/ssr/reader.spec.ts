@@ -1556,9 +1556,17 @@ test("an unknown e-text page is a work-specific real 404", async ({ request }) =
   )
   expect(response.status()).toBe(404)
   const html = await response.text()
-  expect(html).toContain("<title>Sidan kan inte hittas | Litteraturbanken</title>")
-  expect(html).toContain("Hittar ingen sida &#39;missing&#39; i verket.")
-  expect(html).not.toContain("DOKTOR GLAS")
+  const { document } = parseHTML(html)
+  expect(document.title).toBe("Doktor Glas – sidan kan inte hittas | Litteraturbanken")
+  expect(document.querySelector(".reader-context .title")?.textContent).toBe("Doktor Glas")
+  expect(document.querySelector(".reader-context .author")?.textContent).toContain("Hjalmar Söderberg")
+  expect(document.querySelector(".reader-missing-page [role='alert']")?.textContent)
+    .toBe("Hittar ingen sida 'missing' i verket.")
+  expect(document.querySelector(".reader-missing-page a")?.getAttribute("href")).toBe(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
+  )
+  expect(document.querySelector(".reader_main .etext")).toBeNull()
+  expect(document.querySelector(".reader-page-position")).toBeNull()
   const recorded = await readerRequests(request)
   expect(recorded.filter(path => path.includes("/res_"))).toHaveLength(0)
   expect(await readerManifestRequests(request)).toEqual([
@@ -1578,9 +1586,14 @@ test("an encoded faksimil page is escaped in the work-specific 404", async ({ re
   )
   expect(html).not.toContain("<script>alert(1)</script>")
   expect(html).not.toContain("onerror=")
+  const { document } = parseHTML(html)
+  expect(document.querySelector(".reader-context .title")?.textContent).toBe("Doktor Glas")
+  expect(document.querySelector(".reader_main picture")).toBeNull()
   expect(await readerManifestRequests(request)).toEqual([
     expectedReaderManifest("SöderbergH", "DoktorGlas", "faksimil")
   ])
+  const { html: content, ocr, jpeg } = await separateReaderRequests(request)
+  expect({ content, ocr, jpeg }).toEqual({ content: [], ocr: [], jpeg: [] })
 })
 
 test("an unbounded Reader page name falls back to the generic 404 copy", async ({ request }) => {
@@ -1603,6 +1616,15 @@ test("an unbounded Reader page name falls back to the generic 404 copy", async (
   expect(await readerManifestRequests(request)).toEqual(Array(2).fill(
     expectedReaderManifest("SöderbergH", "DoktorGlas")
   ))
+})
+
+test("an unknown Reader work keeps the generic 404", async ({ request }) => {
+  const response = await request.get("/författare/SöderbergH/titlar/Rallarliv/sida/missing/etext")
+  expect(response.status()).toBe(404)
+  const { document } = parseHTML(await response.text())
+  expect(document.title).toBe("Sidan kan inte hittas | Litteraturbanken")
+  expect(document.querySelector(".reader-context")).toBeNull()
+  expect(document.body.textContent).not.toContain("Hittar ingen sida")
 })
 
 test("a malformed Reader source stays a generic 502", async ({ request }) => {

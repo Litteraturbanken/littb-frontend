@@ -3287,7 +3287,7 @@ test("known sparse faksimil pages project immediately without a Reader API reque
   expect(readerApiRequests).toEqual([])
 })
 
-test("unknown faksimil pages retain the Reader API validation fallback", async ({ page }) => {
+test("unknown faksimil pages keep their work and allow recovery", async ({ page }) => {
   await page.goto(`${sparseFacsimilePath}?storlek=2`, { waitUntil: "networkidle" })
   await page.evaluate(() => {
     const root = document.querySelector("#__nuxt") as HTMLElement & {
@@ -3318,14 +3318,43 @@ test("unknown faksimil pages retain the Reader API validation fallback", async (
 
   await apiRequest
   await expect(page).toHaveURL(/\/sida\/missing\/faksimil$/)
-  await expect(page.locator(".reader_main")).toHaveCount(0)
-  await expect(page.getByRole("alert")).toHaveText("Läsarsidan kunde inte hämtas.")
+  await expect(page.locator(".reader_main img")).toHaveCount(0)
+  const work = page.locator(".reader-context > div").first()
+  await expect(work.locator(".title")).toHaveText("SparseFacsimileSizes")
+  await expect(work.locator(".author")).toContainText("Selma Lagerlöf")
+  const missing = page.locator(".reader-missing-page")
+  await expect(missing.getByRole("alert")).toHaveText("Hittar ingen sida 'missing' i verket.")
   await expect.poll(() => page.evaluate(() => (
     window as typeof window & { __readerReadyPages?: Array<[string, boolean]> }
   ).__readerReadyPages)).toContainEqual([
     "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/SparseFacsimileSizes/sida/missing/faksimil",
     false
   ])
+  await missing.getByRole("link", { name: "Gå till första sidan" }).click()
+  await expect(missing).toHaveCount(0)
+  await expect(page.locator(".reader_main img")).toHaveCount(1)
+  await expect(page).not.toHaveTitle(/sidan kan inte hittas/)
+})
+
+test("missing e-text pages recover on client navigation", async ({ page }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  const historyBefore = await rawStoredPageViews(page)
+  const missingPath = storedReaderPath.replace("/-2/etext", "/100000/etext")
+  await navigateClient(page, missingPath)
+
+  await expect(page).toHaveURL(missingPath)
+  await expect(page).toHaveTitle("Doktor Glas – sidan kan inte hittas | Litteraturbanken")
+  await expect(page.locator(".reader_main .etext")).toHaveCount(0)
+  expect(await rawStoredPageViews(page)).toEqual(historyBefore)
+
+  const response = await page.reload({ waitUntil: "networkidle" })
+  expect(response?.status()).toBe(404)
+  await expect(page).toHaveTitle("Doktor Glas – sidan kan inte hittas | Litteraturbanken")
+  await page.locator(".reader-missing-page").getByRole("link", { name: "Gå till första sidan" }).click()
+  await expect(page).toHaveURL(storedReaderPath)
+  await expect(page).toHaveTitle("Doktor Glas sida -2 etext | Litteraturbanken")
+  await expect(page.locator(".reader_main .etext")).toBeVisible()
+  await expect(page.locator(".reader-missing-page")).toHaveCount(0)
 })
 
 test("faksimil size replacement preserves raw query owners and its fragment", async ({ page }) => {

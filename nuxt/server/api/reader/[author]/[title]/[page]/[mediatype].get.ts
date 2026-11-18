@@ -1,4 +1,6 @@
 import type { ReaderPage } from "#shared/types/reader"
+import type { ReaderMissingPageData } from "#shared/types/reader-data"
+import { isReaderMissingPageName } from "#shared/utils/reader-missing-page"
 import { readerAuthorContributionSuffix } from "#shared/utils/reader-author"
 import { issueManagedReaderHtml } from "#shared/utils/renderable-html"
 import { resolveReaderPartNavigation } from "#shared/utils/reader-part-navigation"
@@ -10,10 +12,9 @@ import type {
 
 type ReaderEvent = Parameters<typeof getRouterParam>[0]
 type ReaderMetadata = Awaited<ReturnType<typeof loadReaderMetadata>>
-type ReaderMetadataPage = ReaderMetadata["pages"][number]
 
 function requiredParam(event: Parameters<typeof getRouterParam>[0], name: string): string {
-  const value = getRouterParam(event, name)
+  const value = getRouterParam(event, name, { decode: name === "page" })
   if (!value) {
     throw createError({ statusCode: 404, statusMessage: "Reader page not found" })
   }
@@ -50,14 +51,6 @@ function workContributorText(contributors: ReaderPage["contributors"]): string {
   return `${labels.slice(0, -1).join(", ")} & ${labels.at(-1)}`
 }
 
-function readerPagePosition(metadata: ReaderMetadata, pageName: string): number {
-  const position = metadata.pages.findIndex(page => page.page_name === pageName)
-  if (position < 0) {
-    throw createError({ statusCode: 404, statusMessage: "Reader page not found" })
-  }
-  return position
-}
-
 function alternateMediaTarget(
   metadata: ReaderMetadata,
   pageName: string,
@@ -72,53 +65,55 @@ function alternateMediaTarget(
     : null
 }
 
-function commonReaderPage(
-  metadata: ReaderMetadata,
-  currentPage: ReaderMetadataPage,
-  currentPosition: number,
-  pageName: string
-) {
-  const partNavigation = resolveReaderPartNavigation(metadata.parts, currentPage.page_index)
+function commonReaderWork(metadata: ReaderMetadata, pageName: string) {
   const knownNames = new Set(metadata.pages.map(page => page.page_name))
   return {
-    alternateMedia: alternateMediaTarget(metadata, pageName, currentPage.page_index),
     alternateMediaPageMap: metadata.alternateMedia?.pages ?? null,
     author: metadata.author,
     contributors: metadata.contributors,
     declaredPageCount: metadata.declaredPageCount ?? null,
-    description:
-      `${metadata.displayTitle} av ${workContributorText(metadata.contributors)}, ` +
-      `sida ${pageName} som ${metadata.mediaType}.`,
     editorWorkId: metadata.editorWorkId,
     fullTitle: metadata.fullTitle,
     hasDramawebben: metadata.hasDramawebben,
     hasNyaVagar: metadata.hasNyaVagar,
     imprintYear: metadata.imprintYear,
     isDrama: metadata.isDrama,
-    currentPartIndex: partNavigation.currentPartIndex,
     endPageName: metadata.endPageName && knownNames.has(metadata.endPageName)
       ? metadata.endPageName
       : null,
-    nextPageName: metadata.pages[currentPosition + metadata.pageStep]?.page_name ?? null,
-    nextPartPageName: partNavigation.nextPartPageName,
     pageCount: metadata.pages.length,
-    pageIndex: currentPage.page_index,
     pageMap: metadata.pages.map(page => ({ ...page })),
     pageName,
     pageNames: metadata.pages.map(page => page.page_name),
     pageStep: metadata.pageStep,
     parts: metadata.parts,
-    previousPageName: metadata.pages[currentPosition - metadata.pageStep]?.page_name ?? null,
-    previousPartPageName: partNavigation.previousPartPageName,
     searchable: metadata.searchable,
     sliderMaximum: readerSliderMaximum(metadata.pages, metadata.declaredPageCount),
     startPageName: metadata.startPageName && knownNames.has(metadata.startPageName)
       ? metadata.startPageName
       : null,
-    sliderPercent: readerSliderPercent(currentPage.page_index, metadata.declaredPageCount),
     title: metadata.displayTitle,
     urn: metadata.urn,
     workId: metadata.workId
+  }
+}
+
+function commonReaderPage(metadata: ReaderMetadata, currentPosition: number, pageName: string) {
+  const pageIndex = metadata.pages[currentPosition]!.page_index
+  const partNavigation = resolveReaderPartNavigation(metadata.parts, pageIndex)
+  return {
+    ...commonReaderWork(metadata, pageName),
+    alternateMedia: alternateMediaTarget(metadata, pageName, pageIndex),
+    description:
+      `${metadata.displayTitle} av ${workContributorText(metadata.contributors)}, ` +
+      `sida ${pageName} som ${metadata.mediaType}.`,
+    currentPartIndex: partNavigation.currentPartIndex,
+    nextPageName: metadata.pages[currentPosition + metadata.pageStep]?.page_name ?? null,
+    nextPartPageName: partNavigation.nextPartPageName,
+    pageIndex,
+    previousPageName: metadata.pages[currentPosition - metadata.pageStep]?.page_name ?? null,
+    previousPartPageName: partNavigation.previousPartPageName,
+    sliderPercent: readerSliderPercent(pageIndex, metadata.declaredPageCount)
   }
 }
 
@@ -175,9 +170,34 @@ const readerPageHandler = defineEventHandler(async event => {
   const mediaType = requiredParam(event, "mediatype")
   const { manifest, sourceInfo } = await loadReaderData(event, author, titlePath, mediaType)
   const metadata = readerMetadataFromManifest(event, manifest)
-  const currentPosition = readerPagePosition(metadata, pageName)
-  const currentPage = metadata.pages[currentPosition]!
-  const commonPage = commonReaderPage(metadata, currentPage, currentPosition, pageName)
+  const currentPosition = metadata.pages.findIndex(page => page.page_name === pageName)
+  if (currentPosition < 0) {
+    if (!isReaderMissingPageName(pageName)) {
+      throw createError({ statusCode: 404, statusMessage: "Reader page not found" })
+    }
+    const work = commonReaderWork(metadata, pageName)
+    const missingPage: ReaderMissingPageData = {
+      ...work,
+      missingPage: true,
+      mediaType: metadata.mediaType,
+      description: `${metadata.displayTitle} av ${workContributorText(metadata.contributors)}.`,
+      pageIndex: null,
+      alternateMedia: null,
+      currentPartIndex: null,
+      nextPageName: null,
+      nextPartPageName: null,
+      previousPageName: null,
+      previousPartPageName: null,
+      sliderMaximum: null,
+      sliderPercent: 0,
+      startPageName: work.startPageName ?? work.pageNames[0] ?? null,
+      sourceInfo,
+      similarWorks: sourceInfo ? await loadReaderSimilarWorks(event, metadata.workId, metadata.mediaType) : []
+    }
+    setResponseStatus(event, 404)
+    return missingPage
+  }
+  const commonPage = commonReaderPage(metadata, currentPosition, pageName)
   const [page, similarWorks] = await Promise.all([
     metadata.mediaType === "faksimil"
       ? facsimileReaderPage(event, metadata, currentPosition, commonPage)
