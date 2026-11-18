@@ -155,4 +155,5 @@ export type LibraryPaginationModel = Readonly<{
     next: RouteLocationRaw | null
     entries: readonly LibraryPaginationEntry[]
     compactEntries?: readonly LibraryPaginationEntry[]
+    minimumEntries?: readonly LibraryPaginationEntry[]
 }>

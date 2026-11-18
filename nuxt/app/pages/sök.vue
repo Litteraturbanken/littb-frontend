@@ -7,7 +7,7 @@ import type { LocationQueryRaw } from "vue-router"
 import TextSearchPageActions from "~/components/search/TextSearchPageActions.vue"
 import LibraryPagination from "~/components/library/LibraryPagination.vue"
 import type { LibraryPaginationModel } from "~/lib/library/component-models"
-import { legacyPaginationItems, mobilePaginationItems } from "~/lib/legacy-pagination"
+import { legacyPaginationItems, mobilePaginationItems, type LegacyPaginationItem } from "~/lib/legacy-pagination"
 
 import searchBackground from "~/assets/img/sok_bkg.jpg"
 import type {
@@ -1240,18 +1240,20 @@ const pagination = computed<LibraryPaginationModel>(() => {
     path: route.path,
     query: textSearchPageQuery(rawQuery.value, page) as LocationQueryRaw
   })
+  const pageEntry = (item: LegacyPaginationItem) => ({
+    ...item,
+    to: pageHref(item.page),
+    ellipsis: item.label === "..."
+  })
+  const compactEntries = mobilePaginationItems(totalPages.value, displayedPage.value).map(pageEntry)
   return {
     currentPage: displayedPage.value,
     pageCount: totalPages.value,
     previous: displayedPage.value <= 1 ? null : pageHref(displayedPage.value - 1),
     next: displayedPage.value >= totalPages.value ? null : pageHref(displayedPage.value + 1),
-    compactEntries: mobilePaginationItems(totalPages.value, displayedPage.value).map(item => ({ ...item, to: pageHref(item.page), ellipsis: item.label === "..." })),
-    entries: (mobileSearchLayout.value ? mobilePaginationItems : legacyPaginationItems)(totalPages.value, displayedPage.value)
-      .map(item => ({
-      ...item,
-      to: pageHref(item.page),
-      ellipsis: item.label === "..."
-    }))
+    entries: mobileSearchLayout.value ? compactEntries : legacyPaginationItems(totalPages.value, displayedPage.value).map(pageEntry),
+    compactEntries,
+    minimumEntries: legacyPaginationItems(totalPages.value, displayedPage.value, { boundaryCount: 1, windowSize: 1 }).map(pageEntry)
   }
 })
 const visibleWorkCount = computed(() => results.value?.works.length ?? 0)
@@ -1848,7 +1850,7 @@ v-for="item in [
             :inert="!paginationReady"
             :aria-busy="!paginationReady"
           >
-            <LibraryPagination :model="pagination" :compact="mobileSearchLayout" @select-page="goToPage" />
+            <LibraryPagination :model="pagination" :compact="mobileSearchLayout" fit-container @select-page="goToPage" />
           </section>
           <div v-if="results?.totalWorks === 0">Din sökning gav inga träffar</div>
           <div
@@ -1965,7 +1967,7 @@ v-for="item in [
             :inert="!paginationReady"
             :aria-busy="!paginationReady"
           >
-            <LibraryPagination :model="pagination" :compact="mobileSearchLayout" @select-page="goToPage($event, true)" />
+            <LibraryPagination :model="pagination" :compact="mobileSearchLayout" fit-container @select-page="goToPage($event, true)" />
           </section>
         </div>
       </div>

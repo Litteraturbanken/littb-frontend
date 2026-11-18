@@ -138,3 +138,54 @@ test("container measurement attaches when a single-page pager first becomes visi
   expect(await pager.locator('[aria-current="page"]').evaluate(element => getComputedStyle(element).fontSize)).toBe("16px")
   expect(await pager.evaluate(element => element.scrollWidth - element.clientWidth)).toBe(0)
 })
+
+
+test("both search pagers keep the full navigation on one row as their container changes", async ({ page }) => {
+  await page.route("**/api/v2/text-search/results", async route => {
+    const body = route.request().postDataJSON()
+    const response = await route.fetch({ postData: { ...body, page: 1 } })
+    const data = await response.json()
+    data.page = body.page
+    data.totals = { works: 8520, documents: 8520, occurrences: 68160 }
+    await route.fulfill({ response, json: data })
+  })
+  const panels = page.locator(".text-search-pagination")
+  const pagers = panels.locator(".library-pagination")
+  async function expectOneRow(current: number) {
+    await expect(pagers).toHaveCount(2)
+    for (const pager of await pagers.all()) {
+      await expect(pager.locator('[aria-current="page"]')).toHaveText(String(current))
+      await expect(pager.getByRole("link", { name: "Sida 1", exact: true })).toBeVisible()
+      await expect(pager.getByRole("link", { name: "Sida 284", exact: true })).toBeVisible()
+      if (current > 1) await expect(pager.getByRole("link", { name: "Föregående" })).toHaveAttribute("rel", "prev")
+      if (current < 284) await expect(pager.getByRole("link", { name: "Nästa" })).toHaveAttribute("rel", "next")
+    }
+    await expect.poll(() => pagers.evaluateAll(navs => navs.map(nav => {
+      const boxes = Array.from(nav.querySelectorAll("li > a, li > span"), item => item.getBoundingClientRect())
+      return Math.max(...boxes.map(box => box.top)) - Math.min(...boxes.map(box => box.top)) < 2
+        && nav.scrollWidth - nav.clientWidth <= 1
+    }))).toEqual([true, true])
+  }
+
+  for (const current of [278, 1, 142, 284]) {
+    await page.setViewportSize({ width: 1275, height: 900 })
+    await page.goto(`/s%C3%B6k?fras=overflow&traffsida=${current}`, { waitUntil: "networkidle" })
+    await expectOneRow(current)
+    for (const width of [375, 1087, 1440]) {
+      await page.setViewportSize({ width, height: 900 })
+      await expectOneRow(current)
+    }
+  }
+
+  await page.setViewportSize({ width: 1275, height: 900 })
+  await page.goto("/s%C3%B6k?fras=overflow&traffsida=142", { waitUntil: "networkidle" })
+  await expectOneRow(142)
+  const pager = pagers.first()
+  const initialCount = await pager.locator("[data-library-page]").count()
+  await panels.evaluateAll(elements => elements.forEach(element => { element.style.width = "200px" }))
+  await expectOneRow(142)
+  expect(await pager.locator("[data-library-page]").count()).toBeLessThan(initialCount)
+  await panels.evaluateAll(elements => elements.forEach(element => { element.style.removeProperty("width") }))
+  await expectOneRow(142)
+  await expect(pager.locator("[data-library-page]")).toHaveCount(initialCount)
+})

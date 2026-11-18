@@ -2,11 +2,17 @@
 import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue"
 import type { LibraryPaginationModel } from "~/lib/library/component-models"
 
-const props = withDefaults(defineProps<{ model: LibraryPaginationModel, compact?: boolean }>(), { compact: undefined })
+const props = withDefaults(defineProps<{
+    model: LibraryPaginationModel
+    compact?: boolean
+    fitContainer?: boolean
+}>(), { compact: undefined })
 const emit = defineEmits<{ selectPage: [page: number] }>()
 const narrow = ref(false)
 const element = ref<HTMLElement | null>(null)
+const sizing = ref<HTMLElement | null>(null)
 const availableWidth = ref(Infinity)
+const measuredWidths = ref<number[]>([])
 let resizeObserver: ResizeObserver | null = null
 let query: MediaQueryList | null = null
 function syncWidth() { narrow.value = query?.matches ?? false }
@@ -15,16 +21,31 @@ onMounted(() => {
     query = window.matchMedia("(max-width: 767px)")
     syncWidth()
     query.addEventListener("change", syncWidth)
-    resizeObserver = new ResizeObserver(entries => { availableWidth.value = entries[0]?.contentRect.width ?? Infinity })
-    if (element.value) resizeObserver.observe(element.value)
+    resizeObserver = new ResizeObserver(observations => {
+        for (const observation of observations) {
+            if (observation.target === element.value) availableWidth.value = observation.contentRect.width
+        }
+        measuredWidths.value = Array.from(sizing.value?.children ?? [], row => row.getBoundingClientRect().width)
+    })
+    observePagination()
 })
-watch(element, current => {
+function observePagination() {
     resizeObserver?.disconnect()
-    if (current) resizeObserver?.observe(current)
-})
+    if (element.value) resizeObserver?.observe(element.value)
+    for (const row of sizing.value?.children ?? []) resizeObserver?.observe(row)
+}
 onBeforeUnmount(() => { query?.removeEventListener("change", syncWidth); resizeObserver?.disconnect() })
 const compactLayout = computed(() => (props.compact ?? narrow.value) || availableWidth.value < 520)
-const entries = computed(() => compactLayout.value || availableWidth.value < (props.model.pageCount >= 1000 ? 850 : 700) ? props.model.compactEntries ?? props.model.entries : props.model.entries)
+const preferredEntries = computed(() => compactLayout.value || availableWidth.value < (props.model.pageCount >= 1000 ? 850 : 700) ? props.model.compactEntries ?? props.model.entries : props.model.entries)
+const entryOptions = computed(() => [...new Set([
+    preferredEntries.value, props.model.compactEntries, props.model.minimumEntries
+].filter(option => option !== undefined))])
+watch([element, sizing, entryOptions], observePagination, { flush: "post" })
+const entries = computed(() => {
+    if (!props.fitContainer || measuredWidths.value.length !== entryOptions.value.length) return preferredEntries.value
+    const fitting = measuredWidths.value.findIndex(width => width <= availableWidth.value)
+    return entryOptions.value[fitting] ?? entryOptions.value.at(-1)
+})
 function select(event: MouseEvent, page: number) {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
@@ -49,10 +70,33 @@ function select(event: MouseEvent, page: number) {
             </li>
         </ul>
     </nav>
+    <div v-if="fitContainer && model.pageCount > 1" ref="sizing" class="pagination-sizing" :class="{ compact: compactLayout }" aria-hidden="true">
+        <ul v-for="(option, index) in entryOptions" :key="index" class="pagination sc">
+            <li><span><span>←</span><span v-if="!compactLayout"> Föregående</span></span></li>
+            <li v-for="item in option" :key="item.key" :class="{ active: item.page === model.currentPage && !item.ellipsis, ellipsis: item.ellipsis }">
+                <span>{{ item.ellipsis ? '…' : item.label }}</span>
+            </li>
+            <li><span><span v-if="!compactLayout">Nästa </span><span>→</span></span></li>
+        </ul>
+    </div>
 </template>
 
 <style scoped>
 .library-pagination { max-width: 100%; }
+.pagination-sizing {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+}
+.pagination-sizing .pagination {
+    width: max-content;
+    max-width: none;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+.pagination-sizing .pagination > .active > span { font-weight: bold; }
 .pagination {
     display: flex;
     font-size: 16px;
@@ -64,8 +108,8 @@ function select(event: MouseEvent, page: number) {
     border-radius: 0;
 }
 .pagination > li { display: block; }
-.library-pagination .pagination > li > a,
-.library-pagination .pagination > li > span {
+:is(.library-pagination, .pagination-sizing) .pagination > li > a,
+:is(.library-pagination, .pagination-sizing) .pagination > li > span {
     display: block;
     float: none;
     min-width: 2em;
