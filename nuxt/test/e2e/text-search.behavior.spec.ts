@@ -1990,6 +1990,27 @@ test("pagination uses legacy URLs through reload, history, keyboard and filters"
   expect((await requests(request, "results")).at(-1)?.body).not.toHaveProperty("snapshot")
 })
 
+test("the lower pager keeps its viewport position through result height changes", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?fras=pager-anchor")
+  const lowerPager = page.getByRole("navigation", { name: "Sidnavigation" }).last()
+  const hits = page.locator("#results tr.sentence .match")
+  await expect(hits).toHaveCount(30)
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  await expect(lowerPager).toBeInViewport()
+  const pagerTop = () => lowerPager.evaluate(pager => pager.getBoundingClientRect().top)
+  const initialTop = await pagerTop()
+
+  await lowerPager.getByRole("link", { name: "Nästa" }).click()
+  await expect(page).toHaveURL(/traffsida=2/)
+  await expect(hits).toHaveCount(150)
+  await expect.poll(pagerTop).toBeCloseTo(initialTop, 0)
+
+  await lowerPager.getByRole("link", { name: "Föregående" }).press("Enter")
+  await expect(page).not.toHaveURL(/traffsida=/)
+  await expect(hits).toHaveCount(30)
+  await expect.poll(pagerTop).toBeCloseTo(initialTop, 0)
+})
+
 test("pagination cannot reuse a previous response while a new primary request is pending", async ({
   page,
   request

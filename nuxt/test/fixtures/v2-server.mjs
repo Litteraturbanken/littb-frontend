@@ -2715,6 +2715,9 @@ function inventoryForTextSearch(body) {
   if (body.query === "scroll-restoration") return overflowTextSearchWorks(body.query).map(work => ({
     ...work, author_id: "StrindbergA", title_id: "RodaRummet", mediatype: "etext"
   }))
+  if (body.query === "pager-anchor") return overflowTextSearchWorks(body.query).map((work, index) => (
+    index < 30 ? { ...work, allHighlights: work.allHighlights.slice(0, 1) } : work
+  ))
   if (body.query === "overflow") return overflowTextSearchWorks(body.query)
   if (body.query === "exact-totals") return exactTotalsWorks(body.query)
   if (body.query === "same-media") {

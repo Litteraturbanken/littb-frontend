@@ -1290,10 +1290,42 @@ watch(
   { flush: "post" }
 )
 
-function goToPage(page: number) {
+const lowerPager = ref<HTMLElement | null>(null)
+let lowerPagerAnchor: { fullPath: string } | null = null
+
+function goToPage(page: number, keepLowerPagerPosition = false) {
   const query = pageQuery(page)
-  if (query) void navigate(query)
+  if (!query) return
+  const anchor = keepLowerPagerPosition && page !== state.value.page
+    ? { fullPath: router.resolve({ name: route.name as string, query: query as LocationQueryRaw }).fullPath }
+    : null
+  lowerPagerAnchor = anchor
+  void navigate(query).then(failure => {
+    if (failure && lowerPagerAnchor === anchor) lowerPagerAnchor = null
+  })
 }
+
+watch(() => route.fullPath, fullPath => {
+  if (lowerPagerAnchor?.fullPath !== fullPath) lowerPagerAnchor = null
+}, { flush: "sync" })
+
+watch(acceptedPrimary, async candidate => {
+  const anchor = lowerPagerAnchor
+  if (!anchor || !candidate || anchor.fullPath !== route.fullPath) return
+  const pager = lowerPager.value
+  const bounds = pager?.getBoundingClientRect()
+  // The previous results are still rendered here. If the reader has scrolled away,
+  // leave their new scroll position alone.
+  if (candidate.status !== 200 || !bounds || bounds.bottom <= 0 || bounds.top >= window.innerHeight) {
+    lowerPagerAnchor = null
+    return
+  }
+  await nextTick()
+  if (lowerPagerAnchor !== anchor) return
+  lowerPagerAnchor = null
+  if (!pager?.isConnected) return
+  window.scrollBy({ top: pager.getBoundingClientRect().top - bounds.top, behavior: "instant" })
+}, { flush: "pre" })
 
 const paginationShortcutRoles = new Set([
   "application", "button", "checkbox", "combobox", "grid", "gridcell", "link", "listbox",
@@ -1928,11 +1960,12 @@ v-for="item in [
           </div>
           <section
             v-if="(results?.totalWorks ?? 0) > 0"
+            ref="lowerPager"
             class="text-search-pagination"
             :inert="!paginationReady"
             :aria-busy="!paginationReady"
           >
-            <LibraryPagination :model="pagination" :compact="mobileSearchLayout" @select-page="goToPage" />
+            <LibraryPagination :model="pagination" :compact="mobileSearchLayout" @select-page="goToPage($event, true)" />
           </section>
         </div>
       </div>
