@@ -1,0 +1,34 @@
+// Cardo is a Renaissance-style serif with extended Latin, Greek and Hebrew.
+// Source: https://github.com/google/fonts/tree/main/ofl/cardo
+
+// Include base letters so a base-plus-mark cluster can shape in a single face.
+// Match Requiem's line metrics and scale Cardo to its x-height.
+@font-face {
+    font-family: "Requiem Unicode Fallback";
+    src: url("/assets/fonts/cardo/cardo-regular.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    size-adjust: 94%;
+    ascent-override: 102.13%;
+    descent-override: 30.64%;
+    line-gap-override: 0%;
+    unicode-range: U+0020-024F, U+02B0-036F, U+0370-03FF, U+0590-05FF,
+        U+1D00-1EFF, U+1F00-1FFF, U+20AA, U+25CC, U+2C60-2C7F,
+        U+A720-A7FF, U+AB30-AB6F, U+FB1D-FB4F;
+}
+
+@font-face {
+    font-family: "Requiem Unicode Fallback";
+    src: url("/assets/fonts/cardo/cardo-italic.woff2") format("woff2");
+    font-style: italic;
+    font-weight: 400;
+    font-display: swap;
+    size-adjust: 98%;
+    ascent-override: 97.96%;
+    descent-override: 29.39%;
+    line-gap-override: 0%;
+    unicode-range: U+0020-024F, U+02B0-036F, U+0370-03FF, U+0590-05FF,
+        U+1D00-1EFF, U+1F00-1FFF, U+20AA, U+25CC, U+2C60-2C7F,
+        U+A720-A7FF, U+AB30-AB6F, U+FB1D-FB4F;
+}

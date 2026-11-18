@@ -15,12 +15,12 @@ $mainview-width : $page-width - $main-menu-width - $left-area-width;
 $content-top-margin : 1em;
 
 @mixin small-caps {
-    font-family: "Requiem Text SC A", "Requiem Text SC B";
+    font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
     text-transform: lowercase !important;
 }
 
 @mixin font-normal {
-    font-family: "Requiem Text A", "Requiem Text B";
+    font-family: "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback";
     text-transform: none;
 }
 

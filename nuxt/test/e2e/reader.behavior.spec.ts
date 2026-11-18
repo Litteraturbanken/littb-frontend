@@ -3733,7 +3733,7 @@ test("matches the production work-search disclosure presentation", async ({ page
   await expect(searchbox.locator(".header")).toHaveCSS("font-size", "14.4px")
   await expect(searchbox.locator(".header .title")).toHaveCSS(
     "font-family",
-    '"Requiem Text A", "Requiem Text B"'
+    '"Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback"'
   )
   await expect(searchbox.locator(".ctrls")).toHaveCSS("font-size", "12.6px")
 })

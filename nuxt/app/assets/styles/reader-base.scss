@@ -83,10 +83,10 @@ img {
 }
 
 .font-display {
-    font-family: "Requiem Display A", "Requiem Display B";
+    font-family: "Requiem Display A", "Requiem Display B", "Requiem Unicode Fallback";
 }
 .font-text {
-    font-family: "Requiem Text A", "Requiem Text B";
+    font-family: "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback";
 }
 .start-only {
     display : none;
@@ -670,7 +670,7 @@ body {
     padding-left : $left-gutter-width;
     padding-right : $left-gutter-width;
     white-space: nowrap;
-    font-family : "Requiem Text A", "Requiem Text B", georgia, serif;
+    font-family : "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif;
     // width : $page-width;
     /*background-color: white;*/
     background-color : initial;
@@ -719,7 +719,7 @@ h2 {
 
 }
 h1,h2,h3,h4,h5,h6 {
-    font-family: "Requiem Display A", "Requiem Display B", georgia, serif;
+    font-family: "Requiem Display A", "Requiem Display B", "Requiem Unicode Fallback", georgia, serif;
     font-weight : normal;
 }
 .font-small {
@@ -1026,7 +1026,7 @@ form {
     margin-bottom : 1em;
 }
 .mainnav {
-    font-family : "Requiem Display A", "Requiem Display B", georgia, serif;
+    font-family : "Requiem Display A", "Requiem Display B", "Requiem Unicode Fallback", georgia, serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-size : 1em;

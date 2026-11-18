@@ -2027,7 +2027,7 @@ v-for="item in [
     border: 0;
     background: rgba(255, 255, 255, 0.95);
     color: #333;
-    font-family: "Requiem Text SC A", "Requiem Text SC B";
+    font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
     font-size: 0.8em;
     text-transform: lowercase;
     line-height: 1.4;
@@ -2087,7 +2087,7 @@ v-for="item in [
   border-radius: 0;
   background: white;
   color: #444;
-  font-family: "Requiem Text A", "Requiem Text B", georgia, serif;
+  font-family: "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif;
   font-size: 0.8em;
   text-align: left;
   text-transform: none;
@@ -2143,7 +2143,7 @@ v-for="item in [
   border-top: 0;
   background: white;
   color: #333;
-  font-family: "Requiem Text A", "Requiem Text B", georgia, serif;
+  font-family: "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif;
   font-size: 1rem;
   line-height: 1.2;
 }

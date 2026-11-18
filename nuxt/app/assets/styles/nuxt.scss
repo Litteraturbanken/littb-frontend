@@ -1,4 +1,5 @@
 @use "library-mobile";
+@use "requiem-unicode";
 @use "search-mobile";
 @use "site-navigation";
 @use "ui-motion";
@@ -32,7 +33,7 @@
     .page-about,
     .page-authorInfo
 ) {
-    font-family: "Requiem Text A", "Requiem Text B", "Requiem Text Fallback", georgia, serif;
+    font-family: "Requiem Text A", "Requiem Text B", "Requiem Text Fallback", "Requiem Unicode Fallback", georgia, serif;
 }
 
 .layout-fonts-loading :is(
@@ -43,12 +44,12 @@
     .page-about,
     .page-authorInfo
 ) :is(h1, h2, h3, h4, h5, h6, .font-display, .mainnav, .hits, .links) {
-    font-family: "Requiem Display A", "Requiem Display B", "Requiem Display Fallback", georgia, serif;
+    font-family: "Requiem Display A", "Requiem Display B", "Requiem Display Fallback", "Requiem Unicode Fallback", georgia, serif;
 }
 
 .layout-fonts-loading .page-epub .sc,
 .layout-fonts-loading .page-about :is(.links, .help_submenu) {
-    font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Text SC Metric Fallback", serif;
+    font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Text SC Metric Fallback", "Requiem Unicode Fallback", serif;
 }
 
 .page-search .littb_pager .ctrl .link-control,
@@ -309,7 +310,7 @@
         border: 1px solid lightgrey !important;
         background: white;
         color: #444;
-        font-family: "Requiem Text SC A", "Requiem Text SC B";
+        font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
         font-size: 0.8rem;
     }
 
@@ -452,7 +453,7 @@
         border: 1px solid #999 !important;
         border-radius: 0;
         background: white;
-        font-family: "Requiem Text SC A", "Requiem Text SC B";
+        font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
         font-size: 1rem !important;
         line-height: 1.2 !important;
     }
@@ -540,7 +541,7 @@
         padding: 6px 6px 0;
         margin: 16px 0 0 10px;
         color: #999;
-        font-family: "Requiem Text SC A", "Requiem Text SC B";
+        font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
         font-size: 1.1rem;
         font-weight: 400;
         line-height: 1.2;
@@ -557,7 +558,7 @@
         margin-left: 0;
         list-style: none;
         color: #333;
-        font-family: "Requiem Text SC A", "Requiem Text SC B";
+        font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
         font-size: 1rem;
         font-weight: 400;
         line-height: 1.2;
@@ -659,7 +660,7 @@
         min-height: 28px;
         border: 0 !important;
         background: transparent;
-        font-family: "Requiem Text A", "Requiem Text B", georgia, serif;
+        font-family: "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif;
         font-size: inherit;
         text-transform: none;
     }
@@ -668,7 +669,7 @@
         margin-top: 0;
         border: 1px solid lightgrey;
         border-top: 0;
-        font-family: "Requiem Text A", "Requiem Text B", georgia, serif;
+        font-family: "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif;
         font-size: 1rem;
         text-transform: none;
     }
@@ -719,7 +720,7 @@
     &.title_select .select2-selection__choice {
         max-width: 350px;
         overflow: hidden;
-        font-family: "Requiem Text A", "Requiem Text B";
+        font-family: "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback";
         text-overflow: ellipsis;
         text-transform: uppercase;
         white-space: nowrap;
@@ -763,7 +764,7 @@
         border: 1px solid lightgrey;
         border-radius: 0;
         background: white;
-        font-family: "Requiem Text SC A", "Requiem Text SC B";
+        font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
         font-size: 13.6px;
         line-height: 16.32px;
         text-transform: lowercase;

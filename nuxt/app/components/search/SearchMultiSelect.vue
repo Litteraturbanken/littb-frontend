@@ -331,7 +331,7 @@ class="multiselect__option" :class="{
   margin: 0;
   border: 0;
   background: transparent;
-  font-family: "Requiem Text SC A", "Requiem Text SC B";
+  font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
   font-size: 16px;
   line-height: 30px;
   text-transform: lowercase;
@@ -340,7 +340,7 @@ class="multiselect__option" :class="{
 .search-multiselect--single .multiselect__content-wrapper {
   width: 100%;
   border-radius: 0;
-  font-family: "Requiem Text SC A", "Requiem Text SC B";
+  font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
   font-size: 16px;
   line-height: 1.2;
   text-transform: lowercase;

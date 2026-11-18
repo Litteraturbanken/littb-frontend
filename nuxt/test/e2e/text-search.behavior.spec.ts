@@ -490,7 +490,7 @@ test("search options keep their first-paint geometry while legacy layout CSS rea
 
   await expect(options).toHaveCSS(
     "font-family",
-    '"Requiem Text SC A", "Requiem Text SC B"'
+    '"Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback"'
   )
   await expect(options).toHaveCSS("text-transform", "lowercase")
   await expect(options).toHaveCSS("margin-top", "17px")
@@ -622,7 +622,7 @@ test("advanced multiselects reserve small caps for their filter inputs", async (
 
   await expect(selection).toHaveCSS(
     "font-family",
-    '"Requiem Text A", "Requiem Text B", georgia, serif'
+    '"Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif'
   )
   await expect(selection).toHaveCSS("font-size", "17px")
   await expect(selection).toHaveCSS("text-transform", "none")
@@ -630,7 +630,7 @@ test("advanced multiselects reserve small caps for their filter inputs", async (
   const input = authors.locator("input.multiselect__input")
   await expect(input).toHaveCSS(
     "font-family",
-    '"Requiem Text SC A", "Requiem Text SC B"'
+    '"Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback"'
   )
   await expect(input).toHaveCSS("font-size", "13.6px")
   await expect(input).toHaveCSS("text-transform", "lowercase")
@@ -694,7 +694,7 @@ test("gender dropdown matches the production trigger and open menu", async ({ pa
 
   await expect(trigger).toHaveCSS(
     "font-family",
-    '"Requiem Text A", "Requiem Text B", georgia, serif'
+    '"Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif'
   )
   await expect(trigger).toHaveCSS("font-size", "13.6px")
   await expect(trigger).toHaveCSS("text-transform", "none")
@@ -710,7 +710,7 @@ test("gender dropdown matches the production trigger and open menu", async ({ pa
   await expect(menu).toHaveCSS("border-bottom", "1px solid rgb(170, 170, 170)")
   await expect(first).toHaveCSS(
     "font-family",
-    '"Requiem Text A", "Requiem Text B", georgia, serif'
+    '"Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif'
   )
   await expect(first).toHaveCSS("font-size", "16px")
   await expect(first).toHaveCSS("line-height", "19.2px")
@@ -2486,7 +2486,7 @@ test("author facet and pager controls inherit production small-caps casing", asy
   for (const control of controls) {
     await expect(control).toHaveCSS(
       "font-family",
-      '"Requiem Text SC A", "Requiem Text SC B"'
+      '"Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback"'
     )
     await expect(control).toHaveCSS("text-transform", "lowercase")
   }
