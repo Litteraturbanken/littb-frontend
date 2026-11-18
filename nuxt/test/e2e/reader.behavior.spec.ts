@@ -5294,7 +5294,7 @@ test("page-position slider previews pointer input and commits exactly once on re
   const bubble = page.locator(".reader-context .rz-bubble.rz-model-value")
   await expect(bubble).toHaveText("-1")
   await expect(bubble).toHaveCSS("opacity", "1")
-  await expect(bubble).toHaveCSS("font-size", "12px")
+  await expect(bubble).toHaveCSS("font-size", "16px")
   const [bubbleBox, sliderBox] = await Promise.all([bubble.boundingBox(), slider.boundingBox()])
   expect(bubbleBox).not.toBeNull()
   expect(sliderBox).not.toBeNull()

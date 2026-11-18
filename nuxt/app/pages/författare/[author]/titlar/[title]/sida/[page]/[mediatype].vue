@@ -2470,7 +2470,7 @@ watch(readerRequestIdentity, () => {
                 />
                 <span
                   v-if="sliderDraftIndex !== null"
-                  class="rz-bubble rz-model-value"
+                  class="rz-bubble rz-model-value text-base"
                   :style="sliderBubbleStyles"
                   aria-hidden="true"
                 >{{ sliderPageName(sliderDraftIndex) }}</span>
