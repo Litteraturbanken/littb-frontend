@@ -3471,3 +3471,44 @@ test("library pagination respects scrolling away while the next result is pendin
     release()
   }
 })
+
+test("library restores the pre-click pager position relative to scrolling during loading", async ({ page }) => {
+  await page.setViewportSize({ width: 1275, height: 1438 })
+  await page.goto("/bibliotek?filter=deep-pagination&sida=1004")
+  await expect(page.locator("[data-library-mounted]")).toBeVisible()
+  await page.evaluate(() => document.fonts.ready)
+  // Model the layout shift ahead of the pager that occurs while the next page loads on Stage.
+  await page.addStyleTag({
+    content: ".library-results:has([data-library-loading]) tbody { border-top: 43px solid transparent; }"
+  })
+  const pager = page.getByRole("navigation", { name: "Sidnavigation" })
+  const previous = pager.getByRole("link", { name: "Sida 1003", exact: true })
+  await previous.scrollIntoViewIfNeeded()
+  const pagerTop = () => pager.evaluate(element => element.getBoundingClientRect().top)
+  const initialTop = await pagerTop()
+  const initialScroll = await page.evaluate(() => window.scrollY)
+
+  let release!: () => void
+  const pending = new Promise<void>(resolve => { release = resolve })
+  await page.route("**/api/v2/library/search", async route => {
+    if (route.request().postDataJSON().page === 1003) await pending
+    await route.continue()
+  })
+  try {
+    await previous.click()
+    await expect(page).toHaveURL(/sida=1003/)
+    await expect(page.locator("[data-library-loading]")).toHaveCount(1)
+    await expect.poll(pagerTop).toBeCloseTo(initialTop + 43, 0)
+
+    // Scroll toward the old results while keeping their pager visible.
+    await page.evaluate(() => window.scrollBy(0, -36))
+    const scrollChange = await page.evaluate(() => window.scrollY) - initialScroll
+    expect(scrollChange).toBe(-36)
+    await expect(pager).toBeInViewport()
+    release()
+    await expect(page.locator("[data-library-result]")).toHaveCount(100)
+    await expect.poll(pagerTop).toBeCloseTo(initialTop - scrollChange, 0)
+  } finally {
+    release()
+  }
+})

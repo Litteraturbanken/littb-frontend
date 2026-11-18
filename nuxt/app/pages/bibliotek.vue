@@ -673,7 +673,7 @@ let downloadCountVersion = 0
 let downloadCountController: AbortController | null = null
 let ownedNavigation: { key: string; version: number } | null = null
 const libraryResultsContainer = ref<HTMLElement | null>(null)
-let pagerNavigation: { fullPath: string } | null = null
+let pagerNavigation: { fullPath: string; pager: HTMLElement; documentTop: number } | null = null
 
 watch(() => route.fullPath, fullPath => {
     if (pagerNavigation?.fullPath !== fullPath) pagerNavigation = null
@@ -1161,7 +1161,12 @@ function selectSort(key: QueryState["sort"]) {
 function selectPage(page: number) {
     const boundedPage = Math.max(1, Math.min(page, Math.max(1, pageCount.value)))
     const target = { path: route.path, query: queryFor({ ...currentState(), page: boundedPage }) }
-    const navigation = boundedPage === currentPage.value ? null : { fullPath: router.resolve(target).fullPath }
+    const pager = libraryResultsContainer.value?.querySelector<HTMLElement>(".library-pagination")
+    const navigation = pager && boundedPage !== currentPage.value ? {
+        fullPath: router.resolve(target).fullPath,
+        pager,
+        documentTop: pager.getBoundingClientRect().top + window.scrollY
+    } : null
     pagerNavigation = navigation
     void router.push(target).then(failure => {
         if (failure && pagerNavigation === navigation) pagerNavigation = null
@@ -1169,16 +1174,17 @@ function selectPage(page: number) {
 }
 
 function capturePagerPosition(version: number) {
-    const fullPath = route.fullPath
-    if (pagerNavigation?.fullPath !== fullPath) return
-    const pager = libraryResultsContainer.value?.querySelector<HTMLElement>(".library-pagination")
-    if (!pager) return
+    const navigation = pagerNavigation
+    if (navigation?.fullPath !== route.fullPath) return
+    const { fullPath, pager, documentTop } = navigation
     const bounds = pager.getBoundingClientRect()
     // The old rows are still rendered. Leave the viewport alone if the reader scrolled away.
     if (bounds.bottom <= 0 || bounds.top >= window.innerHeight) return
+    // Use the pre-navigation layout with the reader's current scroll offset.
+    const viewportTop = documentTop - window.scrollY
     return () => {
         if (version !== requestVersion || fullPath !== route.fullPath || !pager.isConnected) return
-        window.scrollBy({ top: pager.getBoundingClientRect().top - bounds.top, behavior: "instant" })
+        window.scrollBy({ top: pager.getBoundingClientRect().top - viewportTop, behavior: "instant" })
     }
 }
 
