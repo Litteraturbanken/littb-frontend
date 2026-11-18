@@ -616,6 +616,10 @@
         display: block;
         height: auto;
         width: auto;
+
+        .markee::before {
+            content: none;
+        }
     }
 
     .reader-page {
