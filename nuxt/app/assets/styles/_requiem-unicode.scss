@@ -1,7 +1,8 @@
 // Prefer Cardo's narrower en dash in every Requiem stack.
 @font-face {
     font-family: "Requiem En Dash";
-    src: url("/assets/fonts/cardo/cardo-regular.woff2") format("woff2");
+    src: url("/assets/fonts/cardo/cardo-en-dash.ttf") format("truetype");
+    size-adjust: 91%;
     font-display: swap;
     unicode-range: U+2013;
 }
