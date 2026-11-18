@@ -103,7 +103,7 @@ async function linkContracts(page: Page, selector: string): Promise<LinkContract
 
 async function expectRichTitles(page: Page) {
   await expect(page.locator("h1.text-balance.max-w-5xl"))
-    .toContainText("August Strindberg (1849-1912)")
+    .toContainText("August Strindberg (1849–1912)")
   await expect(page.locator(".unbox h2").first()).toHaveText("Tillgängliga verk")
   await expect(page.locator(".unbox")).toContainText("Röda rummet")
   await expect(page.getByRole("img", { name: "Porträtt av August Strindberg" }))
@@ -117,7 +117,7 @@ async function expectRichTitles(page: Page) {
 
 async function expectRichMore(page: Page) {
   await expect(page.locator("h1.text-balance.max-w-5xl"))
-    .toContainText("August Strindberg (1849-1912)")
+    .toContainText("August Strindberg (1849–1912)")
   await expect(page.locator(".unbox h2").first()).toHaveText("Verk om August Strindberg")
   await expect(page.locator(".unbox")).toContainText("August Strindberg (1940)")
   await expect(page.locator(".portrait_container, .ext_links")).toHaveCount(0)
@@ -339,7 +339,7 @@ test("same-variant author navigation makes one request and replaces all author s
 
   await routerPush(page, sparseTitlesPath)
   await expect(page).toHaveURL(new RegExp(`${sparseTitlesPath}$`))
-  await expect(page.locator("h1")).toContainText("Selma Lagerlöf (1858-1940)")
+  await expect(page.locator("h1")).toContainText("Selma Lagerlöf (1858–1940)")
   await expect(page.locator(".unbox h2")).toHaveText(["Tillgängliga verk"])
   await expect(page.locator(".unbox")).toContainText("Gösta Berlings saga")
   await expect(page.locator("body")).not.toContainText("August Strindberg")

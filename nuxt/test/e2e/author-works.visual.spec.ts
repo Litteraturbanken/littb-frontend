@@ -27,7 +27,7 @@ const visualCases: VisualCase[] = [
     name: "rich-titlar",
     route: "/f%C3%B6rfattare/StrindbergA/titlar",
     authorId: "StrindbergA",
-    heading: "August Strindberg (1849-1912)",
+    heading: "August Strindberg (1849–1912)",
     sectionHeadings: [
       "Tillgängliga verk",
       "Dikter, noveller, essäer, etc. som ingår i andra verk",
@@ -45,7 +45,7 @@ const visualCases: VisualCase[] = [
     name: "rich-mer",
     route: "/f%C3%B6rfattare/StrindbergA/mer",
     authorId: "StrindbergA",
-    heading: "August Strindberg (1849-1912)",
+    heading: "August Strindberg (1849–1912)",
     sectionHeadings: [
       "Verk om August Strindberg",
       "Kortare texter om August Strindberg",
@@ -61,7 +61,7 @@ const visualCases: VisualCase[] = [
     name: "sparse-titlar",
     route: "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar",
     authorId: "LagerlöfS",
-    heading: "Selma Lagerlöf (1858-1940)",
+    heading: "Selma Lagerlöf (1858–1940)",
     sectionHeadings: ["Tillgängliga verk"],
     firstTitle: "Gösta Berlings saga (1891)",
     activeLink: "Verk",

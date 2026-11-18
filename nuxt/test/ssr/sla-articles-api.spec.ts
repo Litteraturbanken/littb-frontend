@@ -134,7 +134,7 @@ test("returns the exact bounded article response", async ({ request }) => {
     author: {
       authorId: "LagerlöfS",
       fullName: "Selma Lagerlöf",
-      lifespan: "1858-1940",
+      lifespan: "1858–1940",
       hasIntroduction: true,
       hasDramawebben: true,
       searchUrl: "/sok?forfattare=Lagerl%C3%B6fS&avancerad",

@@ -1064,7 +1064,7 @@ useHead(() => ({
 }
 .controls :deep(.filter_btn),
 .controls > .clear_filter {
-  font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
+  font-family: "Requiem En Dash", "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
   font-size: 16px;
   line-height: 24px;
   letter-spacing: normal;
@@ -1072,7 +1072,7 @@ useHead(() => ({
   padding: 4px 12px;
 }
 .controls > input.filter {
-  font-family: "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif;
+  font-family: "Requiem En Dash", "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif;
   font-size: 16px;
   line-height: 24px;
   letter-spacing: normal;

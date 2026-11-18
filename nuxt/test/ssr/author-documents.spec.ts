@@ -103,7 +103,7 @@ for (const documentCase of [
     route: "/författare/S%C3%B6derbergH/presentation",
     title: "Hjalmar Söderberg, Presentation | Litteraturbanken",
     description: "Hjalmar Söderberg, Presentation",
-    heading: "Hjalmar Söderberg (1869-1941)",
+    heading: "Hjalmar Söderberg (1869–1941)",
     links: ["Introduktion", "Verk", "Ljud", "Sök i texterna"],
     body: "Hjalmar Söderberg, född 1869",
     author: "S%C3%B6derbergH",
@@ -113,7 +113,7 @@ for (const documentCase of [
     route: "/författare/Lagerl%C3%B6fS/bibliografi",
     title: "Selma Lagerlöf, Bibliografi | Litteraturbanken",
     description: "Selma Lagerlöf, Bibliografi",
-    heading: "Selma Lagerlöf (1858-1940)",
+    heading: "Selma Lagerlöf (1858–1940)",
     links: ["Introduktion", "Verk", "Ljud", "Dramawebben", "Sök i texterna"],
     body: "Selma Lagerlöf. Bibliografi",
     author: "Lagerl%C3%B6fS",
@@ -169,7 +169,7 @@ test("SSR renders the exact Almqvist Mera om shell and frozen managed body", asy
     .toBe("Carl Jonas Love Almqvist, Mera om")
   expect(document.body.getAttribute("class")).toBe("focus page-authorInfo ready")
   expect(document.querySelector("h1")?.textContent?.replace(/\s+/gu, " ").trim())
-    .toBe("Carl Jonas Love Almqvist (1793-1866)")
+    .toBe("Carl Jonas Love Almqvist (1793–1866)")
   expect([...document.querySelectorAll("ul.links a")].map(link => link.textContent?.trim()))
     .toEqual(["Introduktion", "Verk", "Sök i texterna"])
 
@@ -226,7 +226,7 @@ test("SSR renders the exact SLA Om texterna shell and bounded managed body", asy
   const host = document.querySelector("#mainview > .contents > div")
   expect(host).not.toBeNull()
   expect(host?.querySelector(":scope > h1")?.textContent?.replace(/\s+/gu, " ").trim())
-    .toBe("Selma Lagerlöf (1858-1940)")
+    .toBe("Selma Lagerlöf (1858–1940)")
   expect(host?.querySelector(":scope > nav > ul.links")).not.toBeNull()
   expect([...document.querySelectorAll("ul.links a")].map(link => link.textContent?.trim()))
     .toEqual(["Introduktion", "Verk", "Ljud", "Dramawebben", "Sök i texterna"])

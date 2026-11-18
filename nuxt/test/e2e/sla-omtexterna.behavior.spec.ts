@@ -165,7 +165,7 @@ async function expectExactLanding(page: Page) {
     .toHaveAttribute("content", "Selma Lagerlöf, Om texterna")
   await expect(page.locator("body")).toHaveClass("focus page-authorInfo site-sla ready")
   await expect(page.locator("#mainview > .contents > div > h1"))
-    .toHaveText("Selma Lagerlöf (1858-1940)")
+    .toHaveText("Selma Lagerlöf (1858–1940)")
   await expect(page.locator("#mainview > .contents > div > h1")).toBeVisible()
   await expect(page.locator("#mainview > .contents > div > nav > ul.links")).toBeHidden()
   await expect(page.locator(".portrait_container, .portrait")).toHaveCount(0)
@@ -275,7 +275,7 @@ test("a late SLA result cannot replace a newer adjacent author document", async 
         author: {
           authorId: "LagerlöfS",
           fullName: "Selma Lagerlöf",
-          lifespan: "1858-1940",
+          lifespan: "1858–1940",
           hasIntroduction: true,
           hasDramawebben: true,
           searchUrl: "/sök?författare=LagerlöfS",

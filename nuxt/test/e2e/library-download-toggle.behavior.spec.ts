@@ -14,7 +14,7 @@ for (const width of [390, 1440]) {
     await expect(toggle).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
     await expect(toggle).toHaveCSS("padding", "0px")
     await expect(toggle).toHaveCSS("font-size", "16px")
-    await expect(toggle).toHaveCSS("font-family", /^"?Requiem Text SC A"?, "?Requiem Text SC B"?, "?Requiem Unicode Fallback"?$/)
+    await expect(toggle).toHaveCSS("font-family", /^"?Requiem En Dash"?, "?Requiem Text SC A"?, "?Requiem Text SC B"?, "?Requiem Unicode Fallback"?$/)
     expect(await toggle.evaluate(element => Number.parseFloat(getComputedStyle(element).lineHeight))).toBeCloseTo(19.2, 4)
     expect(await toggle.locator(".fa-download").evaluate(element => Number.parseFloat(getComputedStyle(element).fontSize))).toBeCloseTo(13.6, 4)
     await expect(toggle.locator(".fa-download")).toHaveCSS("margin-right", "4px")

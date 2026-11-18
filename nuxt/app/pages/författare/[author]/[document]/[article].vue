@@ -41,7 +41,7 @@ function isExactAuthor(value: unknown): boolean {
   return Object.keys(value).length === 7
     && value.authorId === "LagerlöfS"
     && value.fullName === "Selma Lagerlöf"
-    && value.lifespan === "1858-1940"
+    && value.lifespan === "1858–1940"
     && value.hasIntroduction === true
     && value.hasDramawebben === true
     && value.searchUrl === "/sok?forfattare=Lagerl%C3%B6fS&avancerad"

@@ -145,7 +145,7 @@ describe("author lifespan formatting", () => {
   test.each([
     ["1849", null, "f. 1849"],
     [null, "1940", "d. 1940"],
-    ["1849", "1912", "1849-1912"],
+    ["1849", "1912", "1849–1912"],
     [null, null, ""],
     ["0000", "0000", ""],
     ["0000", "1940", "d. 1940"],
@@ -337,7 +337,7 @@ describe("safe author profile view model", () => {
     expect(view).toEqual({
       authorId: "StrindbergA",
       fullName: "August Strindberg",
-      lifespan: "1849-1912",
+      lifespan: "1849–1912",
       introductionHtml: "<p>Ordinary intro</p>",
       introductionBy: "Gösta M. Bergman",
       sourceHtml: ["<i>Ordinary source</i>"],

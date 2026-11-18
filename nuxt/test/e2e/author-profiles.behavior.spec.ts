@@ -695,7 +695,7 @@ test("converted profile navigation keeps SPA state and Back restores the profile
     .click()
 
   await expect(page).toHaveURL(/\/f%C3%B6rfattare\/StrindbergA\/titlar$/)
-  await expect(page.locator("h1")).toContainText("August Strindberg (1849-1912)")
+  await expect(page.locator("h1")).toContainText("August Strindberg (1849–1912)")
   expect(await page.evaluate(() => (
     window as typeof window & { __authorProfileSentinel?: string }
   ).__authorProfileSentinel)).toBe("profile-stayed-mounted")

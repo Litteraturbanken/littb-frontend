@@ -606,7 +606,7 @@ test("SSR renders EPUB immediately with a null inactive PDF count", async ({ req
   expect(row?.querySelector('[data-library-tooltip-kind="title"]')
     ?.getAttribute("data-library-tooltip-content")).toBe("Gösta Berlings saga. Roman")
   expect(row?.querySelector('[data-library-tooltip-kind="author"]')
-    ?.getAttribute("data-library-tooltip-content")).toBe("Selma Lagerlöf (1858-1940)")
+    ?.getAttribute("data-library-tooltip-content")).toBe("Selma Lagerlöf (1858–1940)")
   expect(document.querySelector('[role="tooltip"]')).toBeNull()
   expect((await libraryV2Requests(request)).search[0]?.body).toEqual({
     mode: "epub",

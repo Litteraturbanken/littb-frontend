@@ -120,7 +120,7 @@ describe("typed Library boundary", () => {
 
   test("normalizes author tooltip input", () => {
     expect(libraryAuthorTooltipText(author, "Lagerlöf")).toBe(
-      "Lagerlöf, Selma (1858-1940)"
+      "Lagerlöf, Selma (1858–1940)"
     )
   })
 
@@ -209,7 +209,7 @@ describe("typed Library boundary", () => {
     [1946, 0, "f. 1946"],
     [null, 1946, "d. 1946"],
     [0, 1946, "d. 1946"],
-    [1858, 1940, "1858-1940"],
+    [1858, 1940, "1858–1940"],
     [null, null, ""],
     [0, 0, ""]
   ])("matches legacy authorYear for %s / %s", (birth, death, years) => {

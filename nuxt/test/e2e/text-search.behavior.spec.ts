@@ -490,7 +490,7 @@ test("search options keep their first-paint geometry while legacy layout CSS rea
 
   await expect(options).toHaveCSS(
     "font-family",
-    '"Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback"'
+    '"Requiem En Dash", "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback"'
   )
   await expect(options).toHaveCSS("text-transform", "lowercase")
   await expect(options).toHaveCSS("margin-top", "17px")
@@ -562,8 +562,8 @@ test("Headless UI multiselect preserves declared option order, unknown selection
   await expect(authors.getByRole("button", { name: "Ta bort Strindberg" })).toBeVisible()
   await expect(authors.getByRole("button", { name: "Ta bort missing" })).toBeVisible()
   await authors.getByRole("button", { name: "Visa alternativ för Författarskap" }).click()
-  await expect(authors.getByRole("option", { name: "Lagerlöf, Selma (1858-1940)" })).toBeVisible()
-  await authors.getByRole("option", { name: "Lagerlöf, Selma (1858-1940)" }).click()
+  await expect(authors.getByRole("option", { name: "Lagerlöf, Selma (1858–1940)" })).toBeVisible()
+  await authors.getByRole("option", { name: "Lagerlöf, Selma (1858–1940)" }).click()
   await expect.poll(() => new URL(page.url()).searchParams.get("forfattare"))
     .toBe("LagerlöfS,StrindbergA,missing")
 
@@ -603,7 +603,7 @@ test("Headless UI multiselect accepts Enter selection and keeps legacy dropdown 
   const authors = page.locator(".author_select")
   const control = authors.getByRole("combobox")
   await control.press("ArrowDown")
-  const option = authors.getByRole("option", { name: "Lagerlöf, Selma (1858-1940)" })
+  const option = authors.getByRole("option", { name: "Lagerlöf, Selma (1858–1940)" })
     .locator(".multiselect__option")
   await expect(option).toHaveCSS("padding-top", "6px")
   await expect(option).toHaveCSS("min-height", "0px")
@@ -622,7 +622,7 @@ test("advanced multiselects reserve small caps for their filter inputs", async (
 
   await expect(selection).toHaveCSS(
     "font-family",
-    '"Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif'
+    '"Requiem En Dash", "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif'
   )
   await expect(selection).toHaveCSS("font-size", "17px")
   await expect(selection).toHaveCSS("text-transform", "none")
@@ -630,7 +630,7 @@ test("advanced multiselects reserve small caps for their filter inputs", async (
   const input = authors.locator("input.multiselect__input")
   await expect(input).toHaveCSS(
     "font-family",
-    '"Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback"'
+    '"Requiem En Dash", "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback"'
   )
   await expect(input).toHaveCSS("font-size", "13.6px")
   await expect(input).toHaveCSS("text-transform", "lowercase")
@@ -644,15 +644,15 @@ test("both author multiselects filter their existing options locally", async ({ 
       selector: ".author_select",
       name: "Författarskap",
       query: "lagerlöf",
-      expected: "Lagerlöf, Selma (1858-1940)",
-      excluded: "Strindberg, August (1849-1912)"
+      expected: "Lagerlöf, Selma (1858–1940)",
+      excluded: "Strindberg, August (1849–1912)"
     },
     {
       selector: ".about_select",
       name: "Om ett författarskap",
       query: "strindberg",
-      expected: "Strindberg, August (1849-1912)",
-      excluded: "Lagerlöf, Selma (1858-1940)"
+      expected: "Strindberg, August (1849–1912)",
+      excluded: "Lagerlöf, Selma (1858–1940)"
     }
   ]) {
     const root = page.locator(control.selector)
@@ -694,7 +694,7 @@ test("gender dropdown matches the production trigger and open menu", async ({ pa
 
   await expect(trigger).toHaveCSS(
     "font-family",
-    '"Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif'
+    '"Requiem En Dash", "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif'
   )
   await expect(trigger).toHaveCSS("font-size", "13.6px")
   await expect(trigger).toHaveCSS("text-transform", "none")
@@ -710,7 +710,7 @@ test("gender dropdown matches the production trigger and open menu", async ({ pa
   await expect(menu).toHaveCSS("border-bottom", "1px solid rgb(170, 170, 170)")
   await expect(first).toHaveCSS(
     "font-family",
-    '"Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif'
+    '"Requiem En Dash", "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", georgia, serif'
   )
   await expect(first).toHaveCSS("font-size", "16px")
   await expect(first).toHaveCSS("line-height", "19.2px")
@@ -2486,7 +2486,7 @@ test("author facet and pager controls inherit production small-caps casing", asy
   for (const control of controls) {
     await expect(control).toHaveCSS(
       "font-family",
-      '"Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback"'
+      '"Requiem En Dash", "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback"'
     )
     await expect(control).toHaveCSS("text-transform", "lowercase")
   }

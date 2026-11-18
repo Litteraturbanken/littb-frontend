@@ -195,7 +195,7 @@ test("matches the Angular SLA omtexterna authority", async ({ page, request }, t
     exact: true
   }).first()).toBeVisible()
   await expect(page.locator("#mainview > .contents > div > h1"))
-    .toHaveText("Selma Lagerlöf (1858-1940)")
+    .toHaveText("Selma Lagerlöf (1858–1940)")
   await expect(page.locator("#mainview > .contents > div > h1")).toBeVisible()
   await expect(page.locator("#mainview > .contents > div > nav > ul.links")).toBeHidden()
   await expect(page.locator(".portrait_container, .portrait")).toHaveCount(0)

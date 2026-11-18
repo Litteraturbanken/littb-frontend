@@ -936,7 +936,7 @@ for (const mode of ["works", "latest", "epub", "pdf"] as const) {
 
     await author.focus()
     await expect(page.getByRole("tooltip")).toHaveText(
-      mode === "pdf" ? "Selma Lagerlöf (1858-1940)" : "Hjalmar Söderberg (1869-1941)",
+      mode === "pdf" ? "Selma Lagerlöf (1858–1940)" : "Hjalmar Söderberg (1869–1941)",
       { timeout: 700 }
     )
     await author.blur()

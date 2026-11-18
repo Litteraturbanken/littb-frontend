@@ -39,7 +39,7 @@ test("SSR renders the complete ordinary author profile from one private request"
   expect(document.body.className).toBe("focus page-authorInfo ready")
   expect(document.documentElement.getAttribute("style")).toContain("forf2_bkg.jpg")
   expect(compactText(document.querySelector("h1.text-balance.max-w-5xl")?.textContent))
-    .toBe("August Strindberg (1849-1912)")
+    .toBe("August Strindberg (1849–1912)")
 
   const navigation = document.querySelector('nav[aria-label="Författarsidor"]')
   const introduction = navigation?.querySelector('a[href="/f%C3%B6rfattare/StrindbergA"]')
@@ -274,7 +274,7 @@ test("SSR omits absent sparse-profile sections without inventing fallbacks", asy
   const { document } = parseHTML(await response.text())
 
   expect(document.title).toBe("Selma Lagerlöf, Introduktion | Litteraturbanken")
-  expect(compactText(document.querySelector("h1")?.textContent)).toBe("Selma Lagerlöf (1858-1940)")
+  expect(compactText(document.querySelector("h1")?.textContent)).toBe("Selma Lagerlöf (1858–1940)")
   expect(document.querySelector(".introtext")?.textContent?.trim())
     .toBe("Selma Lagerlöf var författare och Nobelpristagare.")
   expect(document.querySelector(".introauthor, .source, .pseudonym, .other_name"))

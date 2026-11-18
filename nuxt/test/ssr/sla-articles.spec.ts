@@ -109,7 +109,7 @@ test("SSR renders the exact SLA article shell and page-local managed body", asyn
 
   const host = document.querySelector("#mainview > .contents > div")
   expect(host?.querySelector(":scope > h1")?.textContent?.replace(/\s+/gu, " ").trim())
-    .toBe("Selma Lagerlöf (1858-1940)")
+    .toBe("Selma Lagerlöf (1858–1940)")
   expect(host?.querySelector(":scope > nav > ul.links")).not.toBeNull()
   expect([...document.querySelectorAll("ul.links a")].map(link => link.textContent?.trim()))
     .toEqual(["Introduktion", "Verk", "Ljud", "Dramawebben", "Sök i texterna"])

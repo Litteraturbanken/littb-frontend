@@ -172,7 +172,7 @@ test("mer remains AuthorWorksContent and performs no semer source request", asyn
   request
 }) => {
   await page.goto("/författare/StrindbergA/mer", { waitUntil: "networkidle" })
-  await expect(page.locator("h1").first()).toContainText("August Strindberg (1849-1912)")
+  await expect(page.locator("h1").first()).toContainText("August Strindberg (1849–1912)")
   await expect(page.locator(".unbox h2").first()).toHaveText("Verk om August Strindberg")
   await expect(page.locator(".unbox")).toContainText("August Strindberg (1940)")
   expect(await documentRequests(request)).toEqual([])

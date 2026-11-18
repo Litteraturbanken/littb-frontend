@@ -64,7 +64,7 @@ test("loads and sanitizes the exact Söderberg presentation through private orig
   expect(payload.author).toEqual({
     authorId: "SöderbergH",
     fullName: "Hjalmar Söderberg",
-    lifespan: "1869-1941",
+    lifespan: "1869–1941",
     hasIntroduction: true,
     hasDramawebben: false,
     searchUrl: "/sok?forfattare=S%C3%B6derbergH&avancerad",
@@ -98,7 +98,7 @@ test("loads the exact Lagerlöf bibliography and preserves inline PDF behavior",
   expect(payload.author).toEqual({
     authorId: "LagerlöfS",
     fullName: "Selma Lagerlöf",
-    lifespan: "1858-1940",
+    lifespan: "1858–1940",
     hasIntroduction: true,
     hasDramawebben: true,
     searchUrl: "/sok?forfattare=Lagerl%C3%B6fS&avancerad",
@@ -124,7 +124,7 @@ test("loads and sanitizes the exact Almqvist semer document through private orig
   expect(payload.author).toEqual({
     authorId: "AlmqvistCJL",
     fullName: "Carl Jonas Love Almqvist",
-    lifespan: "1793-1866",
+    lifespan: "1793–1866",
     hasIntroduction: true,
     hasDramawebben: false,
     searchUrl: "/sok?forfattare=AlmqvistCJL&avancerad",
@@ -165,7 +165,7 @@ test("loads the exact SLA landing through the fixed bounded source", async ({ re
   expect(payload.author).toEqual({
     authorId: "LagerlöfS",
     fullName: "Selma Lagerlöf",
-    lifespan: "1858-1940",
+    lifespan: "1858–1940",
     hasIntroduction: true,
     hasDramawebben: true,
     searchUrl: "/sok?forfattare=Lagerl%C3%B6fS&avancerad",

@@ -127,13 +127,13 @@ const label = computed(() => props.displayLabel ?? props.options.find(option => 
 
 
 .search-single-select .select2-selection__rendered {
-  font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
+  font-family: "Requiem En Dash", "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
   font-size: 16px;
   text-transform: lowercase;
 }
 .search-single-select .catalog_placeholder { color: #999; }
 .search-single-select .library-gender-options {
-  font-family: "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
+  font-family: "Requiem En Dash", "Requiem Text SC A", "Requiem Text SC B", "Requiem Unicode Fallback";
   text-transform: lowercase;
 }
 /* The catalog retains its compact existing 34px control row. */

@@ -114,7 +114,7 @@ const matchingCommands = computed(() => {
 function remoteRow(item: QuickSearchItem, index: number): SearchRow {
   return {
     id: `remote-${index}-${item.url}`,
-    label: item.label,
+    label: item.kind === "author" ? item.label.replace(/\((\d{1,4})-(\d{1,4})\)$/u, "($1–$2)") : item.label,
     typeLabel: item.type_label,
     mediaTypeLabel: item.media_type_label,
     url: item.url,

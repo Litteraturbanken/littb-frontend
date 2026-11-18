@@ -194,10 +194,10 @@ export const dramawebbenCatalogResponse = {
 
 export const dramawebbenCatalogExpected = {
   authors: [
-    "Agrell, Alfhild 1849-1923",
+    "Agrell, Alfhild 1849–1923",
     "Anonym",
-    "Strindberg, August 1849-1912",
-    "Wahlenberg, Anna 1858-1933"
+    "Strindberg, August 1849–1912",
+    "Wahlenberg, Anna 1858–1933"
   ],
   plays: [
     "Agrell, Alfhild Dömd etext faksimil pdf",

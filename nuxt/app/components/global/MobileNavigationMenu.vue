@@ -59,7 +59,7 @@ onMounted(() => { loadMenuFonts.value = true })
       color: var(--menu-ink);
       background: var(--menu-paper);
       text-align: left;
-      font-family: "Requiem Text A", "Requiem Unicode Fallback", Georgia, serif;
+      font-family: "Requiem En Dash", "Requiem Text A", "Requiem Unicode Fallback", Georgia, serif;
       a { color: inherit; text-decoration: none; }
       a:hover { text-decoration: underline; }
       :is(a, button, input):focus-visible { outline: 2px solid var(--menu-accent); outline-offset: 3px; }
@@ -71,7 +71,7 @@ onMounted(() => { loadMenuFonts.value = true })
       .menu-search-section { position: relative; z-index: 2; }
       .menu-search-body { position: relative; }
       .menu-quick-search input { width: 100%; min-width: 0; min-height: 48px; padding: 10px 12px; border: 1px solid var(--menu-line); border-radius: 0; background: var(--menu-paper); color: var(--menu-ink); font: 16px/1.4 Arial, sans-serif; box-sizing: border-box; }
-      .menu-quick-search input::placeholder { color: var(--menu-placeholder, #767676); opacity: 1; font-family: "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", Georgia, serif; font-size: 18px; }
+      .menu-quick-search input::placeholder { color: var(--menu-placeholder, #767676); opacity: 1; font-family: "Requiem En Dash", "Requiem Text A", "Requiem Text B", "Requiem Unicode Fallback", Georgia, serif; font-size: 18px; }
       .menu-search-options { position: absolute; top: 100%; left: 0; right: 0; z-index: 1; width: 100%; max-width: none; max-height: 260px; overflow-y: auto; background: var(--menu-paper); border: 1px solid var(--menu-line); margin-top: 4px; }
       .menu-search-status { position: absolute; top: 100%; left: 0; right: 0; z-index: 1; margin: 4px 0 0; padding: 10px 12px; border: 1px solid var(--menu-line); background: var(--menu-paper); color: var(--menu-ink); }
       .menu-search-options li a { display: block; min-height: 44px; padding: 10px 12px; font-size: 18px; line-height: 1.3; overflow-wrap: anywhere; }

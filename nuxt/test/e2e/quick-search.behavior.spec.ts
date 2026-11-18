@@ -71,7 +71,7 @@ test("opens from the trigger with exact empty chrome, closes by backdrop, restor
   expect(await queries(request)).toEqual([])
 
   await input.fill("strindberg")
-  await expect(page.getByText("Strindberg, August (1849-1912)", { exact: true })).toBeVisible()
+  await expect(page.getByText("Strindberg, August (1849–1912)", { exact: true })).toBeVisible()
   await page.locator(".modal-backdrop").click({ position: { x: 2, y: 2 } })
   await expect(page.getByRole("dialog")).toHaveCount(0)
   await expect(page.locator("body")).not.toHaveClass(/\bmodal-open\b/)
@@ -148,7 +148,7 @@ test("debounces for 200 ms, aborts prior work, and ignores a stale completion", 
 
   await page.waitForTimeout(550)
   await expect(page.getByText("Inga träffar.", { exact: true })).toBeVisible()
-  await expect(page.getByText("Strindberg, August (1849-1912)", { exact: true })).toHaveCount(0)
+  await expect(page.getByText("Strindberg, August (1849–1912)", { exact: true })).toHaveCount(0)
 })
 
 test("composes remote rows, exact local command order, correction, no-hit, slash, and failure states", async ({ page, request }) => {
@@ -157,7 +157,7 @@ test("composes remote rows, exact local command order, correction, no-hit, slash
 
   await search(page, "strindberg")
   await expect(page.locator(".quick-search-options .quick-search-label")).toHaveText([
-    "Strindberg, August (1849-1912)",
+    "Strindberg, August (1849–1912)",
     "Strindberg – Röda rummet",
     "Lagerlöf – Landskapet"
   ])
@@ -188,7 +188,7 @@ test("composes remote rows, exact local command order, correction, no-hit, slash
   await expect(page.locator(".quick-search-correction .type_label")).toHaveText("Menade du")
   await page.getByText("strindberg", { exact: true }).click()
   await expect(page.locator("#autocomplete")).toHaveValue("strindberg")
-  await expect(page.getByText("Strindberg, August (1849-1912)", { exact: true })).toBeVisible()
+  await expect(page.getByText("Strindberg, August (1849–1912)", { exact: true })).toBeVisible()
   await expect(page.getByRole("dialog")).toBeVisible()
 
   await request.put(`${fixture}/_quick_search_failure`)

@@ -56,7 +56,7 @@ test("SSR renders rich authored works with the legacy DOM, actions, and sidebar"
   expect(document.body.className).toBe("focus page-authorInfo ready")
   expect(document.documentElement.getAttribute("style")).toContain("forf2_bkg.jpg")
   expect(compactText(document.querySelector("h1.text-balance.max-w-5xl")?.textContent))
-    .toBe("August Strindberg (1849-1912)")
+    .toBe("August Strindberg (1849–1912)")
 
   const navigation = document.querySelector('nav[aria-label="Författarsidor"]')
   expect([...navigation?.querySelectorAll("a") ?? []].map(link => [
@@ -190,7 +190,7 @@ test("SSR renders rich about works without the portrait sidebar", async ({ reque
   expect(document.body.className).toBe("focus page-authorInfo ready")
   expect(document.documentElement.getAttribute("style")).toContain("forf2_bkg.jpg")
   expect(compactText(document.querySelector("h1")?.textContent))
-    .toBe("August Strindberg (1849-1912)")
+    .toBe("August Strindberg (1849–1912)")
   expect(document.querySelector("nav li.active, nav [aria-current=page]")).toBeNull()
 
   const listing = document.querySelector(".page_content .unbox")
@@ -231,7 +231,7 @@ test("SSR omits sparse and empty sections without inventing author content", asy
 
   expect(sparseDocument.title).toBe("Selma Lagerlöf, Tillgängliga verk | Litteraturbanken")
   expect(compactText(sparseDocument.querySelector("h1")?.textContent))
-    .toBe("Selma Lagerlöf (1858-1940)")
+    .toBe("Selma Lagerlöf (1858–1940)")
   expect([...sparseDocument.querySelectorAll(".page_content .unbox h2")].map(node => (
     node.textContent?.trim()
   ))).toEqual(["Tillgängliga verk"])

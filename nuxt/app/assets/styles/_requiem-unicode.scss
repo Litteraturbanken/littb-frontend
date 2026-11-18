@@ -1,3 +1,11 @@
+// Prefer Cardo's narrower en dash in every Requiem stack.
+@font-face {
+    font-family: "Requiem En Dash";
+    src: url("/assets/fonts/cardo/cardo-regular.woff2") format("woff2");
+    font-display: swap;
+    unicode-range: U+2013;
+}
+
 // Cardo is a Renaissance-style serif with extended Latin, Greek and Hebrew.
 // Source: https://github.com/google/fonts/tree/main/ofl/cardo
 

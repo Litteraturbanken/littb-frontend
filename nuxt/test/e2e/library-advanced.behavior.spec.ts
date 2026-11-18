@@ -99,7 +99,7 @@ test("inert Library tooltip hosts join keyboard order and reveal their full text
 
   await tabTo(page, author, 10)
   await expect(author).toBeFocused()
-  await expect(page.getByRole("tooltip")).toHaveText("Hjalmar Söderberg (1869-1941)")
+  await expect(page.getByRole("tooltip")).toHaveText("Hjalmar Söderberg (1869–1941)")
   await expect(author).toHaveAttribute("aria-describedby", await page.getByRole("tooltip").getAttribute("id"))
   await expect(author).toHaveCSS("outline-style", "none")
   await expect(author).toHaveCSS("box-shadow", "none")

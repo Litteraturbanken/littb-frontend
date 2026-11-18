@@ -50,7 +50,7 @@ describe("library tooltip metadata", () => {
       full_name: "Hjalmar Söderberg",
       birth: { plain: "1869" },
       death: { plain: "1941" }
-    }, "Söderberg")).toBe("Hjalmar Söderberg (1869-1941)")
+    }, "Söderberg")).toBe("Hjalmar Söderberg (1869–1941)")
     expect(libraryAuthorTooltipText({
       full_name: "Hjalmar Söderberg",
       birth: { plain: "0000" }

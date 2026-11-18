@@ -4,7 +4,7 @@
 
 @layer utilities {
     .sc {
-        font-family: "Requiem Text SC A", "Requiem Text SC B";
+        font-family: "Requiem En Dash", "Requiem Text SC A", "Requiem Text SC B";
         text-transform: lowercase !important;
     }
 }
