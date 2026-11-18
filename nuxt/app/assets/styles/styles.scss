@@ -2315,6 +2315,10 @@ body > .header {
 
     .chronology {
         font-size: 1rem;
+        i {
+            position: relative;
+            top: 1px;
+        }
     }
 
     #leftCorridor {
