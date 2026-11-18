@@ -79,6 +79,7 @@ const commands: Command[] = [
 ]
 
 const inputId = useId()
+const presentation = useTemplateRef<HTMLElement>("presentation")
 const trigger = ref<HTMLAnchorElement | null>(null)
 const isOpen = ref(props.modelValue ?? props.initiallyOpen)
 // Dialog owns interaction state; its closed shell is inert while presentation leaves.
@@ -469,7 +470,7 @@ onBeforeUnmount(() => {
         :appear="!inline"
         @after-leave="finishClose"
       >
-      <div v-if="isOpen || inline" class="quick-search-presentation">
+      <div v-if="isOpen || inline" ref="presentation" class="quick-search-presentation">
       <div v-if="!inline" class="modal-backdrop quick-search-backdrop" aria-hidden="true" @click="close" />
       <div :class="inline ? 'menu-search-content' : 'modal-dialog modal-sm'">
         <component :is="inline ? 'div' : DialogPanel" :class="{ 'modal-content': !inline }">
@@ -509,7 +510,11 @@ onBeforeUnmount(() => {
                       <span v-if="row.typeLabel" class="type_label">
                         {{ row.typeLabel }}<template v-if="row.mediaTypeLabel">, {{ row.mediaTypeLabel }}</template>
                       </span>
-                      <span class="quick-search-label">{{ row.label }}</span>
+                      <QuickSearchResultLabel
+                        :label="row.label"
+                        :active="optionActive && !row.disabled"
+                        :tooltip-container="presentation"
+                      />
                     </a>
                   </li>
                 </ComboboxOption>

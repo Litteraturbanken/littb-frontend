@@ -369,3 +369,40 @@ test("quick search respects reduced motion", async ({ page }) => {
   await expect(page.getByRole("dialog")).toHaveCount(0)
   await expect(page.locator(".site-shell > #mainview")).toHaveCSS("filter", "none")
 })
+
+test("only truncated active results show their full label", async ({ page }) => {
+  await page.setViewportSize({ width: 1275, height: 900 })
+  await openShell(page)
+  await openQuickSearch(page)
+  await search(page, "samlade verk 8")
+
+  const fullLabel = "Almqvist – Samlade Verk 8. Återkomsten; Araminta May; Urnan; Kapellet; Palatset; Godolphin; Svenska fattigdomens betydelse; Skaldens natt; Skällnora Qvarn; Friherrinnan"
+  const longResult = page.getByRole("option", { name: `Verk, etext ${fullLabel}`, exact: true })
+  const shortResult = page.getByRole("option", { name: /Lagerlöf – Landskapet/ })
+  const tooltip = page.locator(".quick-search-result-tooltip:visible")
+
+  await shortResult.hover()
+  await expect(tooltip).toHaveCount(0)
+  await longResult.hover()
+  await expect(tooltip).toHaveText(fullLabel)
+  const [rowBounds, tooltipBounds] = await Promise.all([longResult.boundingBox(), tooltip.boundingBox()])
+  expect(tooltipBounds!.x).toBeGreaterThan(rowBounds!.x + rowBounds!.width)
+  expect(tooltipBounds!.x + tooltipBounds!.width).toBeLessThan(1275)
+
+  await page.locator("#autocomplete").press("ArrowDown")
+  await expect(shortResult).toHaveClass(/\bactive\b/)
+  await expect(tooltip).toHaveCount(0)
+  await page.locator("#autocomplete").press("ArrowUp")
+  await expect(longResult).toHaveClass(/\bactive\b/)
+  await expect(tooltip).toHaveText(fullLabel)
+
+  await page.setViewportSize({ width: 900, height: 600 })
+  await expect(tooltip).toBeVisible()
+  const narrowBounds = (await tooltip.boundingBox())!
+  expect(narrowBounds.x).toBeGreaterThanOrEqual(0)
+  expect(narrowBounds.x + narrowBounds.width).toBeLessThanOrEqual(900)
+  expect(narrowBounds.y + narrowBounds.height).toBeLessThanOrEqual(600)
+
+  await page.keyboard.press("Escape")
+  await expect(tooltip).toHaveCount(0)
+})
