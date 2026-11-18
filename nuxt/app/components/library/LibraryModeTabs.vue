@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatSwedishCount } from "#shared/utils/format-count"
 import type { LibraryModeTab } from "~/lib/library/component-models"
 
 defineProps<{
@@ -50,7 +51,7 @@ function navigateTab(
                     v-if="tab.count !== null"
                     class="num_hits"
                     :class="{ parts: tab.mode === 'parts' }"
-                    >: {{ tab.count }}</span
+                    >: {{ formatSwedishCount(tab.count) }}</span
                 ></a
             ></NuxtLink
         >

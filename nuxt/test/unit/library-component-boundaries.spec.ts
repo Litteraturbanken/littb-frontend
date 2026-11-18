@@ -188,7 +188,7 @@ describe("Library component ownership", () => {
       { mode: "all", label: "Alla träffar", count: null, to: "/bibliotek?filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: false },
       { mode: "latest", label: "Nytt", count: null, to: "/bibliotek?visa=latest&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
       { mode: "authors", label: "Författare", count: 12, to: "/bibliotek?visa=authors&filter=berg", active: true, disabledLook: true, disabled: false, separatorBefore: true },
-      { mode: "works", label: "Verk", count: 34, to: "/bibliotek?visa=works&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
+      { mode: "works", label: "Verk", count: 12345, to: "/bibliotek?visa=works&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
       { mode: "parts", label: "Dikt, novell, etc.", count: 0, to: "/bibliotek?visa=parts&filter=berg", active: false, disabledLook: true, disabled: false, separatorBefore: true },
       { mode: "epub", label: "Epub", count: 56, to: "/bibliotek?visa=epub&filter=berg", active: false, disabledLook: false, disabled: false, separatorBefore: true },
       { mode: "pdf", label: "PDF", count: null, to: "/bibliotek?visa=pdf&filter=berg", active: false, disabledLook: true, disabled: false, separatorBefore: true }
@@ -208,7 +208,7 @@ describe("Library component ownership", () => {
 
     const links = [...target.querySelectorAll<HTMLAnchorElement>("a")]
     expect(links.map(link => link.textContent)).toEqual([
-      "Alla träffar", "Nytt", "Författare: 12", "Verk: 34", "Dikt, novell, etc.: 0", "Epub: 56", "PDF"
+      "Alla träffar", "Nytt", "Författare: 12", "Verk: 12\u00a0345", "Dikt, novell, etc.: 0", "Epub: 56", "PDF"
     ])
     expect(links.map(link => link.getAttribute("href"))).toEqual([
       "/bibliotek?filter=berg",

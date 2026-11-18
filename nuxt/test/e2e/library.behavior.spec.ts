@@ -420,7 +420,7 @@ test("ordinary Strindberg tabs retain counts and expose authors EPUB and PDF", a
 
   await expect(page.locator('[data-library-tab="authors"]')).toHaveText("Författare: 7")
   await expect(page.locator('[data-library-tab="works"]')).toHaveText("Verk: 465")
-  await expect(page.locator('[data-library-tab="parts"]')).toHaveText("Dikt, novell, etc.: 1039")
+  await expect(page.locator('[data-library-tab="parts"]')).toHaveText(/^Dikt, novell, etc\.: 1 039$/)
   await expect(page.locator('[data-library-tab="epub"]')).toHaveText("Epub: 136")
   await expect(page.locator('[data-library-tab="pdf"]')).toHaveText("PDF: 265")
 
