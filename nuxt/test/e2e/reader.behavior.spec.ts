@@ -3116,6 +3116,12 @@ test("faksimil size replacement changes exact sources and stops at both edges", 
   const larger = sizeControls.getByRole("button", { name: "Större" })
   const historyLength = await page.evaluate(() => window.history.length)
 
+  await smaller.click()
+  await expect(page).toHaveURL(`${facsimilePath}?storlek=2`)
+  await larger.click()
+  await expect(page).toHaveURL(facsimilePath)
+  await expect(image).toHaveAttribute("src", facsimileSource(3, 9))
+
   await larger.click()
   await expect(page).toHaveURL(`${facsimilePath}?storlek=4`)
   await expect(image).toHaveAttribute("src", facsimileSource(4, 9))
@@ -3182,16 +3188,16 @@ test("sparse faksimil controls select nearest sizes and preserve replacement his
   expect(await page.evaluate(() => window.history.length)).toBe(readerHistoryLength)
 
   await smaller.click()
-  await expect(page).toHaveURL(`${sparseFacsimilePath}?bare&space=a%20b&storlek=2` +
-    "&repeat=%2f&repeat=%2F#scan")
+  const preferredSizeQuery = "?bare&space=a%20b&repeat=%2f&repeat=%2F#scan"
+  await expect.poll(() => page.evaluate(() => location.pathname + location.search + location.hash))
+    .toBe(`${storedSparseFacsimilePath}${preferredSizeQuery}`)
   await expect(image).toHaveAttribute("src", sparseFacsimileSource(2, 9))
   expect(await page.evaluate(() => window.history.length)).toBe(readerHistoryLength)
 
   await page.goBack()
   await expect(page).toHaveURL("/bibliotek")
   await page.goForward()
-  await expect(page).toHaveURL(`${sparseFacsimilePath}?bare&space=a%20b&storlek=2` +
-    "&repeat=%2f&repeat=%2F#scan")
+  await expect(page).toHaveURL(`${sparseFacsimilePath}${preferredSizeQuery}`)
   expect(problems).toEqual([])
 })
 
@@ -3214,7 +3220,7 @@ test("sparse faksimil Läsfokus controls select nearest sizes", async ({ page })
   await expect(smaller).toBeEnabled()
   await expect(larger).toBeDisabled()
   await smaller.click()
-  await expect(page).toHaveURL(`${sparseFacsimilePath}?bare&storlek=2&fokus#scan`)
+  await expect(page).toHaveURL(`${sparseFacsimilePath}?bare&fokus#scan`)
 })
 
 test("known sparse faksimil pages project immediately without a Reader API request", async ({

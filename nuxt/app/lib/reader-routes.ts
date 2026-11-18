@@ -89,7 +89,7 @@ export function readerFullPathWithFragment(
 export function readerFullPathWithQueryValue(
   fullPath: string,
   key: string,
-  value: string
+  value: string | null
 ): string {
   const { beforeFragment, fragment } = splitFragment(fullPath)
   const queryIndex = beforeFragment.indexOf("?")
@@ -98,12 +98,14 @@ export function readerFullPathWithQueryValue(
   let replaced = false
   const segments = (rawQuery ? rawQuery.split("&") : []).flatMap(segment => {
     if (decodedQuerySegmentKey(segment) !== key) return [segment]
-    if (replaced) return []
+    if (value === null || replaced) return []
     replaced = true
     return [`${encodeURIComponent(key)}=${encodeURIComponent(value)}`]
   })
-  if (!replaced) segments.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-  return `${path}?${segments.join("&")}${fragment}`
+  if (value !== null && !replaced) {
+    segments.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+  }
+  return `${path}${segments.length > 0 ? `?${segments.join("&")}` : ""}${fragment}`
 }
 
 export function readerPartAuthorKey(authorId: string, index: number): string {

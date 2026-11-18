@@ -142,6 +142,10 @@ describe("Reader contents raw-query ownership", () => {
     )
     expect(readerFullPathWithQueryValue("/reader#scan", "storlek", "4"))
       .toBe("/reader?storlek=4#scan")
+    expect(readerFullPathWithQueryValue(raw, "storlek", null))
+      .toBe("/reader?bare&plus=a+b&space=a%20b&repeat=%2f&repeat=%2F#scan%20nine")
+    expect(readerFullPathWithQueryValue("/reader?storlek=4#scan", "storlek", null))
+      .toBe("/reader#scan")
   })
 
   test("gives repeated part authors occurrence-stable unique keys", () => {

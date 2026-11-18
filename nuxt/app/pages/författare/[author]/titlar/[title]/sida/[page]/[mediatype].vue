@@ -1924,8 +1924,9 @@ function selectFacsimileSize(size: ReaderFacsimileSize): void {
     || !identityMatchedReader.sources.some(source => source.size === size)
   ) return
 
+  const sizeQueryValue = size === identityMatchedReader.preferredSize ? null : String(size)
   void navigateRawFullPath(
-    readerFullPathWithQueryValue(searchNavigationFullPath.value, "storlek", String(size)),
+    readerFullPathWithQueryValue(searchNavigationFullPath.value, "storlek", sizeQueryValue),
     true,
     rawFullPath.value
   )
