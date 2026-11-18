@@ -1,7 +1,7 @@
-// Prefer Cardo's narrower en dash in every Requiem stack.
+// Cardo's en dash with a 91-unit stroke (originally 145), centered on the original outline.
 @font-face {
     font-family: "Requiem En Dash";
-    src: url("/assets/fonts/cardo/cardo-en-dash.ttf") format("truetype");
+    src: url("/assets/fonts/cardo/cardo-en-dash-fine.ttf") format("truetype");
     size-adjust: 91%;
     font-display: swap;
     unicode-range: U+2013;
