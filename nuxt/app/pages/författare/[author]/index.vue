@@ -103,8 +103,9 @@ async function redirectToCanonical(candidate: ProfileResponse | null, identity: 
   if (!candidate || candidate.identity !== identity || !candidate.canonicalPath) return
   const requestedAuthor = identity.slice("ordinary:".length)
   const rootPath = authorProfilePath(requestedAuthor)
-  const canonicalPath = candidate.canonicalPath
-  if (canonicalPath === authorProfilePath(requestedAuthor, "titlar") && hasWorks.value === false) return
+  const canonicalPath = candidate.canonicalPath === authorProfilePath(requestedAuthor, "titlar") && hasWorks.value === false
+    ? authorProfilePath(requestedAuthor, "mer")
+    : candidate.canonicalPath
   if (canonicalPath !== rootPath) {
     const redirectIdentity = `${identity}:${canonicalPath}:${route.fullPath}`
     if (redirectedIdentity.value === redirectIdentity) return
