@@ -90,10 +90,16 @@
     text-decoration: underline;
 }
 
-.page-search .chronology {
+.page-search .chronology,
+.page-library .chronology {
     display: flex;
     align-items: center;
     column-gap: 0.25em;
+
+    .fa-clock-o {
+        position: relative;
+        top: 3px;
+    }
 
     .sc {
         margin-top: 0;
