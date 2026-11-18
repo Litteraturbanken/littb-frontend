@@ -3428,4 +3428,46 @@ for (const { mode, last, tail, selector } of [
     await expect(page).toHaveURL(new RegExp(`sida=${last}(?:&|$)`))
     await expect(page.locator(selector)).toHaveCount(tail)
   })
+
+  test(`the ${mode} pager keeps its viewport position when more rows render`, async ({ page }) => {
+    await page.goto(`/bibliotek?visa=${mode}&filter=deep-pagination&sort=titlar&sida=${last}`)
+    await expect(page.locator("[data-library-mounted]")).toBeVisible()
+    await expect(page.locator(selector)).toHaveCount(tail)
+    const pager = page.getByRole("navigation", { name: "Sidnavigation" })
+    const pagerTop = () => pager.evaluate(element => element.getBoundingClientRect().top)
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+    await expect(pager).toBeInViewport()
+    const previousTop = await pagerTop()
+    await pager.getByRole("link", { name: "Föregående" }).press("Enter")
+    await expect(page).toHaveURL(new RegExp(`sida=${last - 1}(?:&|$)`))
+    await expect(page.locator(selector)).toHaveCount(100)
+    await expect.poll(pagerTop).toBeCloseTo(previousTop, 0)
+  })
 }
+
+test("library pagination respects scrolling away while the next result is pending", async ({ page }) => {
+  await page.goto("/bibliotek?filter=deep-pagination&sort=titlar&sida=1004")
+  await expect(page.locator("[data-library-mounted]")).toBeVisible()
+  const pager = page.getByRole("navigation", { name: "Sidnavigation" })
+  const rows = page.locator("[data-library-result]")
+  await expect(rows).toHaveCount(60)
+
+  let release!: () => void
+  const pending = new Promise<void>(resolve => { release = resolve })
+  await page.route("**/api/v2/library/search", async route => {
+    if (route.request().postDataJSON().page === 1003) await pending
+    await route.continue()
+  })
+  try {
+    await pager.getByRole("link", { name: "Föregående" }).click()
+    await expect(page).toHaveURL(/sida=1003/)
+    await expect(rows).toHaveCount(60)
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await expect(pager).not.toBeInViewport()
+    release()
+    await expect(rows).toHaveCount(100)
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
+  } finally {
+    release()
+  }
+})

@@ -672,6 +672,12 @@ let summaryController: AbortController | null = null
 let downloadCountVersion = 0
 let downloadCountController: AbortController | null = null
 let ownedNavigation: { key: string; version: number } | null = null
+const libraryResultsContainer = ref<HTMLElement | null>(null)
+let pagerNavigation: { fullPath: string } | null = null
+
+watch(() => route.fullPath, fullPath => {
+    if (pagerNavigation?.fullPath !== fullPath) pagerNavigation = null
+}, { flush: "sync" })
 
 function selectedSortForCurrentMode(): QueryState["sort"] {
     if (currentMode.value === "all") return selectedSort.value
@@ -1041,11 +1047,14 @@ async function runBrowserRequest(state: QueryState, version: number) {
         () => null
     )
     if (!isCurrentLibraryPageRequest(state, version, activeController, pageData)) return
-    if (!await reconcileResultPage(state, pageData, version, activeController)) return
+    if (!await reconcileResultPage(state, pageData, version, activeController) || version !== requestVersion) return
+    const restorePager = pageData.response.failed ? undefined : capturePagerPosition(version)
+    pagerNavigation = null
     assignLibraryPageResult(pageData, pageResultHandlers)
     updatePageModeState(state, pageData)
     updateLibrarySummaryFromPage(state, pageData)
     loading.value = false
+    if (restorePager) void nextTick(restorePager)
     if (controller === activeController) controller = null
     refreshAfterPageRequest(state, pageData)
 }
@@ -1072,6 +1081,7 @@ async function persistAndRequest(state: QueryState, version: number) {
 
 function beginIntent(state: QueryState, delay = 0) {
     const captured = Object.freeze({ ...state })
+    pagerNavigation = null
     const version = invalidateIntent()
     currentMode.value = captured.mode
     invalidateLibrarySummary(captured.filter, captured.advancedFilters)
@@ -1150,7 +1160,26 @@ function selectSort(key: QueryState["sort"]) {
 
 function selectPage(page: number) {
     const boundedPage = Math.max(1, Math.min(page, Math.max(1, pageCount.value)))
-    void router.push({ path: route.path, query: queryFor({ ...currentState(), page: boundedPage }) })
+    const target = { path: route.path, query: queryFor({ ...currentState(), page: boundedPage }) }
+    const navigation = boundedPage === currentPage.value ? null : { fullPath: router.resolve(target).fullPath }
+    pagerNavigation = navigation
+    void router.push(target).then(failure => {
+        if (failure && pagerNavigation === navigation) pagerNavigation = null
+    })
+}
+
+function capturePagerPosition(version: number) {
+    const fullPath = route.fullPath
+    if (pagerNavigation?.fullPath !== fullPath) return
+    const pager = libraryResultsContainer.value?.querySelector<HTMLElement>(".library-pagination")
+    if (!pager) return
+    const bounds = pager.getBoundingClientRect()
+    // The old rows are still rendered. Leave the viewport alone if the reader scrolled away.
+    if (bounds.bottom <= 0 || bounds.top >= window.innerHeight) return
+    return () => {
+        if (version !== requestVersion || fullPath !== route.fullPath || !pager.isConnected) return
+        window.scrollBy({ top: pager.getBoundingClientRect().top - bounds.top, behavior: "instant" })
+    }
 }
 
 async function loadAllAuthors() {
@@ -2031,7 +2060,7 @@ onUnmounted(() => {
                     </div>
                 </LibrarySearchControls>
             </div>
-            <div class="library-results flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
+            <div ref="libraryResultsContainer" class="library-results flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
                 <LibrarySourceDownloadWorkspace
                     v-if="currentMode === 'works' && downloadMode"
                     ref="sourceDownloadWorkspace"
