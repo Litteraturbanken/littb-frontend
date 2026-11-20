@@ -33,20 +33,23 @@ async function listen(listener: RequestListener): Promise<{
   }
 }
 
-async function redProxyOrigin(
+async function readerProxyOrigin(
   contentBase: string,
-  onEvent?: (event: H3Event) => void
+  onEvent?: (event: H3Event) => void,
+  prefix: "/red" | "/export/faksimil" = "/red"
 ): Promise<string> {
   vi.stubGlobal("defineEventHandler", (handler: unknown) => handler)
   vi.stubGlobal("useRuntimeConfig", () => ({ contentBase }))
-  const handler = (await import("../../server/routes/red/[...path]")).default
+  const handler = prefix === "/red"
+    ? (await import("../../server/routes/red/[...path]")).default
+    : (await import("../../server/routes/export/faksimil/[...path]")).default
   const observedHandler = (event: H3Event) => {
     onEvent?.(event)
     return handler(event)
   }
   const router = createRouter()
-    .get("/red/**:path", observedHandler)
-    .head("/red/**:path", observedHandler)
+    .get(`${prefix}/**:path`, observedHandler)
+    .head(`${prefix}/**:path`, observedHandler)
   const { origin } = await listen(toNodeListener(createApp().use(router.handler)))
   return origin
 }
@@ -89,7 +92,37 @@ afterEach(async () => {
 })
 
 describe("red content proxy boundary", () => {
-  test("cancels a streaming upstream response when the downstream client disconnects", async () => {
+  test("streams concurrent facsimiles to slow clients without writing past backpressure", async () => {
+    const payload = Buffer.alloc(8 * 1024 * 1024, 0x91)
+    const upstream = await listen((_request, response) => response.end(payload))
+    let writesWhileFull = 0
+    let drainEvents = 0
+    const origin = await readerProxyOrigin(upstream.origin, ({ node: { res } }) => {
+      const write = res.write.bind(res)
+      res.on("drain", () => { drainEvents++ })
+      res.write = (...args: Parameters<typeof res.write>) => {
+        if (res.writableNeedDrain) writesWhileFull++
+        return write(...args)
+      }
+    }, "/export/faksimil")
+
+    async function download() {
+      const response = await fetch(`${origin}/export/faksimil/sample.pdf`)
+      const chunks: Uint8Array[] = []
+      for await (const chunk of response.body!) {
+        chunks.push(chunk)
+        await new Promise(resolve => setTimeout(resolve, 1))
+      }
+      expect(Buffer.concat(chunks).equals(payload)).toBe(true)
+    }
+
+    await Promise.all([download(), download()])
+    expect(drainEvents).toBeGreaterThan(0)
+    expect(writesWhileFull).toBe(0)
+  })
+
+  test.each(["/red", "/export/faksimil"] as const)(
+    "cancels the %s upstream response when the downstream client disconnects", async (prefix) => {
     let requestAborted = false
     let responseClosedBeforeEnd = false
     let resolveClosed!: (closedBeforeCompletion: boolean) => void
@@ -112,13 +145,13 @@ describe("red content proxy boundary", () => {
         resolveClosed(!completed)
       })
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin, (event) => {
+    const proxyOrigin = await readerProxyOrigin(upstream.origin, (event) => {
       event.node.req.once("aborted", () => { requestAborted = true })
       event.node.res.once("close", () => {
         responseClosedBeforeEnd = !event.node.res.writableEnded
       })
-    })
-    const url = new URL("/red/assets/slow.bin", proxyOrigin)
+    }, prefix)
+    const url = new URL(`${prefix}/assets/slow.bin`, proxyOrigin)
 
     const downstream = httpRequest(url)
     downstream.on("error", () => undefined)
@@ -154,7 +187,7 @@ describe("red content proxy boundary", () => {
     })
     let request: IncomingMessage | undefined
     let response: ServerResponse | undefined
-    const proxyOrigin = await redProxyOrigin(upstream.origin, (event) => {
+    const proxyOrigin = await readerProxyOrigin(upstream.origin, (event) => {
       request = event.node.req
       response = event.node.res
     })
@@ -174,7 +207,7 @@ describe("red content proxy boundary", () => {
       response.writeHead(200, { "content-type": "text/plain" })
       response.end("asset")
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const encoded = await rawRequest(
       proxyOrigin,
@@ -209,7 +242,7 @@ describe("red content proxy boundary", () => {
       response.writeHead(200)
       response.end("unexpected")
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await rawRequest(proxyOrigin, path)
 
@@ -224,7 +257,7 @@ describe("red content proxy boundary", () => {
       response.writeHead(200, { "content-type": "text/plain" })
       response.end("asset")
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/images/cover.txt`, {
       headers: {
@@ -253,7 +286,7 @@ describe("red content proxy boundary", () => {
       response.writeHead(200, { "content-type": "text/plain" })
       response.end("asset")
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
       headers: {
@@ -304,7 +337,7 @@ describe("red content proxy boundary", () => {
       })
       response.end("asset")
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await rawRequest(proxyOrigin, "/red/images/cover.txt", {
       connection: "range",
@@ -333,7 +366,7 @@ describe("red content proxy boundary", () => {
       response.end("not proxied through the redirect")
     })
     upstreamOrigin = upstream.origin
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const relative = await fetch(`${proxyOrigin}/red/images/relative.jpg`, {
       redirect: "manual"
@@ -374,7 +407,7 @@ describe("red content proxy boundary", () => {
       response.writeHead(302, { location })
       response.end()
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
       redirect: "manual"
@@ -392,7 +425,7 @@ describe("red content proxy boundary", () => {
     })
     const target = new URL(upstream.origin)
     credentialLocation = `${target.protocol}//reader:secret@${target.host}/red/images/private.jpg`
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
       redirect: "manual"
@@ -410,7 +443,7 @@ describe("red content proxy boundary", () => {
     })
     const target = new URL(upstream.origin)
     schemeLocation = `https://${target.host}/red/images/private.jpg`
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
       redirect: "manual"
@@ -428,7 +461,7 @@ describe("red content proxy boundary", () => {
       })
       response.end()
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
       redirect: "manual"
@@ -453,7 +486,7 @@ describe("red content proxy boundary", () => {
       })
       response.end()
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
       headers: {
@@ -493,7 +526,7 @@ describe("red content proxy boundary", () => {
       })
       response.end("not returned for HEAD")
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
       headers: { range: "bytes=10-19" },
@@ -527,7 +560,7 @@ describe("red content proxy boundary", () => {
       })
       response.end()
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
       headers: { "if-none-match": '"asset-v1"' }
@@ -556,7 +589,7 @@ describe("red content proxy boundary", () => {
       response.writeHead(200)
       response.end("unexpected match")
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`, {
       headers: { "if-match": '"stale-asset"' }
@@ -595,7 +628,7 @@ describe("red content proxy boundary", () => {
       })
       response.end("asset")
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`)
     await response.text()
@@ -660,7 +693,7 @@ describe("red content proxy boundary", () => {
       })
       response.end(gzipSync("compressed asset"))
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/assets/compressed.txt`, {
       headers: { "accept-encoding": "client-only-encoding" }
@@ -689,7 +722,7 @@ describe("red content proxy boundary", () => {
       })
       response.end("data")
     })
-    const proxyOrigin = await redProxyOrigin(upstream.origin)
+    const proxyOrigin = await readerProxyOrigin(upstream.origin)
 
     const response = await fetch(`${proxyOrigin}/red/images/cover.jpg`)
 

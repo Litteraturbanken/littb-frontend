@@ -1,3 +1,6 @@
+import { Readable } from "node:stream"
+import type { ReadableStream as NodeReadableStream } from "node:stream/web"
+import { pipeline } from "node:stream/promises"
 import {
   createError,
   getRequestHeader,
@@ -285,8 +288,13 @@ export async function proxyReaderSourceRequest(
         redirect: "manual",
         signal: controller.signal
       },
-      onResponse: (proxyEvent, response) => {
+      onResponse: async (proxyEvent, response) => {
         allowReaderResponseHeaders(proxyEvent, response, target, base)
+        if (prefix === "/export/faksimil" && response.body) {
+          // H3 skips its own body copy once the response has been sent.
+          const source = Readable.fromWeb(response.body as NodeReadableStream<Uint8Array>)
+          await pipeline(source, proxyEvent.node.res, { signal: controller.signal })
+        }
       }
     })
   } catch (error) {
