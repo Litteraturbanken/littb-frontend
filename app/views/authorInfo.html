@@ -104,7 +104,7 @@
                 </div>
                 <div class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75" 
                     ng-if="authorInfo.wikidata.sbl_link || authorInfo.wikidata.skbl_link || authorInfo.wikidata.sol_link || authorInfo.wikidata.wikipedia" >
-                    <h3 class="sc mt-0">Författaren i uppslagsverk</h3>
+                    <h3 class="sc mt-0">{{encyclopediaHeading}}</h3>
                     <ul class="list-item pl-4 ">
                         <li ng-if="authorInfo.wikidata.sbl_link"><a target="_blank"  ng-href="https://sok.riksarkivet.se/sbl/Presentation.aspx?id={{authorInfo.wikidata.sbl_link}}">Svenskt biografiskt lexikon</a></li>
                         <li ng-if="authorInfo.wikidata.skbl_link"><a target="_blank"  ng-href="https://www.skbl.se/sv/artikel/{{authorInfo.wikidata.skbl_link}}">Svenskt kvinnobiografiskt lexikon</a></li>

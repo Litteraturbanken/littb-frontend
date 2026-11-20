@@ -308,7 +308,9 @@ class AuthorInfoPageCtrl {
                 if (!data) return
 
                 s.authorInfo = data
-                s.moreAboutHeading = Object.prototype.hasOwnProperty.call(data, "type")
+                const hasType = Object.prototype.hasOwnProperty.call(data, "type")
+                s.encyclopediaHeading = hasType ? "I uppslagsverk" : "Författaren i uppslagsverk"
+                s.moreAboutHeading = hasType
                     ? `Mer om ${data.full_name}`
                     : "Mer om författarskapet"
 
