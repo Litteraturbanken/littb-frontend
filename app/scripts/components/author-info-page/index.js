@@ -7,6 +7,12 @@ const $ = window.$
 const c = typeof console !== "undefined" && console !== null ? console : { log: _.noop }
 const littb = angular.module("littbApp")
 
+const longNameLabels = new Map([
+    ["organization", "organisationen"],
+    ["publisher", "utgivaren"],
+    ["person", "personen"]
+])
+
 class AuthorInfoPageCtrl {
     static $inject = [
         "$scope",
@@ -310,8 +316,10 @@ class AuthorInfoPageCtrl {
                 s.authorInfo = data
                 const hasType = Object.prototype.hasOwnProperty.call(data, "type")
                 s.encyclopediaHeading = hasType ? "I uppslagsverk" : "Författaren i uppslagsverk"
+                const name = data.full_name
+                const subject = Array.from(name.normalize("NFC")).length > 40 ? longNameLabels.get(data.type) : null
                 s.moreAboutHeading = hasType
-                    ? `Mer om ${data.full_name}`
+                    ? `Mer om ${subject || name}`
                     : "Mer om författarskapet"
 
                 refreshExternalDoc(s.showpage, this.$routeParams)
