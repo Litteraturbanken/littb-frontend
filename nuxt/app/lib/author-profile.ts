@@ -22,9 +22,14 @@ export function authorMoreAboutHeading(author: { full_name: string, has_type?: b
   return author.has_type ? `Mer om ${author.full_name}` : "Mer om författarskapet"
 }
 
+export function authorEncyclopediaHeading(author: { has_type?: boolean }): string {
+  return author.has_type ? "I uppslagsverk" : "Författaren i uppslagsverk"
+}
+
 export type AuthorProfileView = {
   authorId: string
   fullName: string
+  encyclopediaHeading: string
   moreAboutHeading: string
   lifespan: string
   introductionHtml: SanitizedHtml<"author-profile">
@@ -394,6 +399,7 @@ export function createAuthorProfileView(
   return {
     authorId: profile.author_id,
     fullName: profile.full_name,
+    encyclopediaHeading: authorEncyclopediaHeading(profile),
     moreAboutHeading: authorMoreAboutHeading(profile),
     lifespan: formatAuthorYears(profile.birth_year, profile.death_year),
     introductionHtml,

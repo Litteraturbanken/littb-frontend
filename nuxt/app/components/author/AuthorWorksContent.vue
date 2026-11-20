@@ -7,6 +7,7 @@ import {
   type AuthorWorksResponse
 } from "~/lib/author-works"
 import {
+  authorEncyclopediaHeading,
   authorMoreAboutHeading,
   authorProfilePath,
   formatAuthorYears,
@@ -184,7 +185,7 @@ function isDownloadTitle(work: AuthorWork): boolean {
             v-if="author.encyclopedia_links.length"
             class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75"
           >
-            <h3 class="sc mt-0">Författaren i uppslagsverk</h3>
+            <h3 class="sc mt-0">{{ authorEncyclopediaHeading(author) }}</h3>
             <ul class="list-item pl-4">
               <li v-for="link in author.encyclopedia_links" :key="link.url">
                 <a

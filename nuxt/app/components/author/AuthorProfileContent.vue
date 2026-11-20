@@ -159,7 +159,7 @@ onBeforeUnmount(() => {
             v-if="profile.encyclopediaLinks.length"
             class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75"
           >
-            <h3 class="sc mt-0">Författaren i uppslagsverk</h3>
+            <h3 class="sc mt-0">{{ profile.encyclopediaHeading }}</h3>
             <ul class="list-item pl-4">
               <li v-for="link in profile.encyclopediaLinks" :key="link.url">
                 <a :href="link.url" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
