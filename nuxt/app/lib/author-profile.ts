@@ -18,8 +18,23 @@ import type { components } from "./api/generated/lbapi"
 type AuthorProfile = components["schemas"]["AuthorProfile"]
 type AuthorProfileVariant = "ordinary" | "dramawebben"
 
-export function authorMoreAboutHeading(author: { full_name: string, has_type?: boolean }): string {
-  return author.has_type ? `Mer om ${author.full_name}` : "Mer om författarskapet"
+const longNameLabels = new Map([
+  ["organization", "organisationen"],
+  ["publisher", "utgivaren"],
+  ["person", "personen"]
+])
+
+export function authorMoreAboutHeading(author: {
+  full_name: string
+  has_type?: boolean
+  editorial_type?: string | null
+}): string {
+  if (!author.has_type) return "Mer om författarskapet"
+  const name = author.full_name
+  const subject = Array.from(name.normalize("NFC")).length > 40
+    ? longNameLabels.get(author.editorial_type ?? "")
+    : undefined
+  return `Mer om ${subject ?? name}`
 }
 
 export function authorEncyclopediaHeading(author: { has_type?: boolean }): string {

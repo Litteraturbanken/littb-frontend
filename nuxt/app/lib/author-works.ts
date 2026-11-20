@@ -344,6 +344,7 @@ function isShell(value: unknown): boolean {
       "full_name",
       "birth_year",
       "death_year",
+      ...(Object.hasOwn(value, "editorial_type") ? ["editorial_type"] : []),
       ...(Object.hasOwn(value, "has_type") ? ["has_type"] : []),
       "has_introduction",
       "has_dramawebben",
@@ -355,6 +356,7 @@ function isShell(value: unknown): boolean {
       "encyclopedia_links"
     ])) return false
   return (!Object.hasOwn(value, "has_type") || typeof value.has_type === "boolean")
+    && (!Object.hasOwn(value, "editorial_type") || isNullableString(value.editorial_type))
     && hasShellIdentity(value)
     && typeof value.has_introduction === "boolean"
     && typeof value.has_dramawebben === "boolean"

@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 
 import type { components } from "../../app/lib/api/generated/lbapi"
 import {
+  authorMoreAboutHeading,
   authorProfilePath,
   createAuthorProfileView,
   encodeRfc3986Segment,
@@ -18,6 +19,20 @@ import {
 } from "../fixtures/author-profile-data.mjs"
 
 type AuthorProfile = components["schemas"]["AuthorProfile"]
+
+describe("long author names in the sidebar", () => {
+  test.each([
+    ["organization", "organisationen"],
+    ["publisher", "utgivaren"],
+    ["person", "personen"],
+    ["unknown", "Å".repeat(41)]
+  ])("uses the appropriate subject for %s above 40 characters", (type, subject) => {
+    const author = { has_type: true, editorial_type: type, full_name: "Å".repeat(41) }
+    expect(authorMoreAboutHeading(author)).toBe(`Mer om ${subject}`)
+    author.full_name = "Å".repeat(40)
+    expect(authorMoreAboutHeading(author)).toBe(`Mer om ${author.full_name}`)
+  })
+})
 
 describe("author route validation", () => {
   test.each(["StrindbergA", "SöderbergH", "LagerlöfS", "Émilie_du-Châtelet2"])(

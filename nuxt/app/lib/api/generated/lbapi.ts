@@ -665,6 +665,8 @@ export interface components {
             /** Death Year */
             death_year: string | null;
             dramawebben: components["schemas"]["DramawebbenProfile"] | null;
+            /** Editorial Type */
+            editorial_type: string | null;
             /** Encyclopedia Links */
             encyclopedia_links: components["schemas"]["ProfileLink"][];
             /** Full Name */
@@ -818,6 +820,8 @@ export interface components {
             birth_year: string | null;
             /** Death Year */
             death_year: string | null;
+            /** Editorial Type */
+            editorial_type: string | null;
             /** Encyclopedia Links */
             encyclopedia_links: components["schemas"]["ProfileLink"][];
             /** Full Name */
