@@ -334,9 +334,13 @@ describe("safe author profile view model", () => {
     const profile = maliciousProfile()
     const view = createAuthorProfileView(profile, "ordinary")
 
+    expect(createAuthorProfileView({ ...profile, has_type: true }, "ordinary").moreAboutHeading)
+      .toBe("Mer om August Strindberg")
+
     expect(view).toEqual({
       authorId: "StrindbergA",
       fullName: "August Strindberg",
+      moreAboutHeading: "Mer om författarskapet",
       lifespan: "1849–1912",
       introductionHtml: "<p>Ordinary intro</p>",
       introductionBy: "Gösta M. Bergman",

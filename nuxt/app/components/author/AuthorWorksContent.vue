@@ -7,6 +7,7 @@ import {
   type AuthorWorksResponse
 } from "~/lib/author-works"
 import {
+  authorMoreAboutHeading,
   authorProfilePath,
   formatAuthorYears,
   sanitizeAuthorHtml
@@ -155,7 +156,7 @@ function isDownloadTitle(work: AuthorWork): boolean {
             v-if="hasAuthorshipLinks"
             class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75 max-w-xs"
           >
-            <h3 class="sc mt-0">Mer om författarskapet</h3>
+            <h3 class="sc mt-0">{{ authorMoreAboutHeading(author) }}</h3>
             <section>
               <ul class="list-item pl-4">
                 <li v-if="hasAboutContent">

@@ -18,9 +18,14 @@ import type { components } from "./api/generated/lbapi"
 type AuthorProfile = components["schemas"]["AuthorProfile"]
 type AuthorProfileVariant = "ordinary" | "dramawebben"
 
+export function authorMoreAboutHeading(author: { full_name: string, has_type?: boolean }): string {
+  return author.has_type ? `Mer om ${author.full_name}` : "Mer om författarskapet"
+}
+
 export type AuthorProfileView = {
   authorId: string
   fullName: string
+  moreAboutHeading: string
   lifespan: string
   introductionHtml: SanitizedHtml<"author-profile">
   introductionBy: string
@@ -389,6 +394,7 @@ export function createAuthorProfileView(
   return {
     authorId: profile.author_id,
     fullName: profile.full_name,
+    moreAboutHeading: authorMoreAboutHeading(profile),
     lifespan: formatAuthorYears(profile.birth_year, profile.death_year),
     introductionHtml,
     introductionBy: introductionBy?.full_name ?? "",

@@ -344,6 +344,7 @@ function isShell(value: unknown): boolean {
       "full_name",
       "birth_year",
       "death_year",
+      ...(Object.hasOwn(value, "has_type") ? ["has_type"] : []),
       "has_introduction",
       "has_dramawebben",
       "search_url",
@@ -353,7 +354,8 @@ function isShell(value: unknown): boolean {
       "related_links",
       "encyclopedia_links"
     ])) return false
-  return hasShellIdentity(value)
+  return (!Object.hasOwn(value, "has_type") || typeof value.has_type === "boolean")
+    && hasShellIdentity(value)
     && typeof value.has_introduction === "boolean"
     && typeof value.has_dramawebben === "boolean"
     && hasShellLinks(value)

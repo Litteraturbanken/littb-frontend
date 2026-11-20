@@ -135,7 +135,7 @@ onBeforeUnmount(() => {
             v-if="profile.hasMore || profile.relatedLinks.length || profile.mapUrl"
             class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75 max-w-xs"
           >
-            <h3 class="sc mt-0">Mer om författarskapet</h3>
+            <h3 class="sc mt-0">{{ profile.moreAboutHeading }}</h3>
             <section>
               <ul class="list-item pl-4">
                 <li v-if="profile.hasMore">

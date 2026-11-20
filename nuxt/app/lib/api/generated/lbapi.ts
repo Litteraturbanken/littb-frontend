@@ -671,6 +671,8 @@ export interface components {
             full_name: string;
             /** Has More */
             has_more: boolean;
+            /** Has Type */
+            has_type: boolean;
             introduction_by: components["schemas"]["AuthorSummary"] | null;
             /** Introduction Html */
             introduction_html: string | null;
@@ -824,6 +826,8 @@ export interface components {
             has_dramawebben: boolean;
             /** Has Introduction */
             has_introduction: boolean;
+            /** Has Type */
+            has_type: boolean;
             /** Map Url */
             map_url: string | null;
             portrait: components["schemas"]["AuthorPortrait"] | null;
