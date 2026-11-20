@@ -308,6 +308,9 @@ class AuthorInfoPageCtrl {
                 if (!data) return
 
                 s.authorInfo = data
+                s.moreAboutHeading = Object.prototype.hasOwnProperty.call(data, "type")
+                    ? `Mer om ${data.full_name}`
+                    : "Mer om författarskapet"
 
                 refreshExternalDoc(s.showpage, this.$routeParams)
                 this.backend
