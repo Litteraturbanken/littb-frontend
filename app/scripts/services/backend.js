@@ -88,12 +88,11 @@ const createExpandMediatypes = _ =>
                     let pdfExport = _.find(work.export, { type: "pdf" })
 
                     if (!hasRealPDF && pdfExport) {
+                        const filename = `${getMainAuthor(main).authorid}_${main.work_titleid || main.titleid}`
                         mediatypes.push({
                             label: "pdf",
-                            url: `export/faksimil/${main.lbworkid}.pdf`,
-                            filename: `${getMainAuthor(main).authorid}_${
-                                main.work_titleid || main.titleid
-                            }`,
+                            url: `export/faksimil/${main.lbworkid}.pdf?filename=${encodeURIComponent(filename)}.pdf`,
+                            filename,
                             filesize: getFileSize(pdfExport.size),
                             downloadable: true
                         })
